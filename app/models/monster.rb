@@ -80,7 +80,8 @@ class Monster < ApplicationRecord
       "status_immune" => status_immune,
       "abilities" => ability_slugs,
       "ai" => ai_script,
-      "rewards" => rewards
+      "rewards" => rewards,
+      "image" => { "book" => "monsters", "slug" => slug }
     }
   end
 

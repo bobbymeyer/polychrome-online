@@ -56,7 +56,7 @@ module Battle
 
     # Party members who must submit a command before the round can run.
     def awaiting
-      ctx.side("party").select { |u| ctx.alive?(u) && !ctx.disabled?(u) }.map { |u| u["id"] }
+      State.able_to_act(state)
     end
 
     def missing_inputs

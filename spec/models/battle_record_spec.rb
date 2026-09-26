@@ -1,0 +1,110 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe BattleRecord do
+  include ActiveJob::TestHelper
+
+  let(:battle) { start_battle }
+
+  def command(actor, kind: "ability", ability: "attack", target: nil)
+    { "type" => "command", "actor" => actor, "command" => { "kind" => kind, "ability" => ability, "target" => target }.compact }
+  end
+
+  def run_round(battle)
+    battle.awaiting_input.each { |id| battle.apply!(command(id), actor: id) }
+  end
+
+  it "starts from the books with the initial state stored alongside" do
+    expect(battle).to be_persisted
+    expect(battle.model_name.param_key).to eq("battle")
+    expect(battle.initial_state).to eq(battle.state)
+    expect(battle.units.map { |u| u["id"] }).to eq(%w[bartz_1 faris_2 goblin_a goblin_b])
+    expect(battle.party.first).to include("name" => "Bartz", "abilities" => [ "attack", "cure" ],
+                                          "image" => { "book" => "jobs", "slug" => "knight" })
+    expect(battle.unit("goblin_a")["image"]).to eq("book" => "monsters", "slug" => "goblin")
+  end
+
+  describe "#apply!" do
+    it "persists the action and its events in order and advances the state" do
+      before, events = battle.apply!(command("bartz_1"), actor: "bartz_1")
+      expect(before["inputs"]).to eq({})
+      expect(events.map { |e| e["type"] }).to eq([ "command_accepted" ])
+      expect(battle.reload.state["inputs"]).to have_key("bartz_1")
+
+      battle.apply!(command("faris_2"), actor: "faris_2")
+      battle.reload
+      expect(battle.round).to eq(2)
+      expect(battle.battle_actions.map { |a| [ a.position, a.actor ] }).to eq([ [ 0, "bartz_1" ], [ 1, "faris_2" ] ])
+      expect(battle.battle_events.map(&:position)).to eq((0...battle.battle_events.size).to_a)
+      expect(battle.battle_events.map(&:kind)).to include("round_start", "turn_start", "round_end")
+    end
+
+    it "replays exactly from initial state and the action log (§4)" do
+      4.times { run_round(battle) unless battle.reload.over? }
+      battle.reload
+      state, events = battle.replay
+      expect(state).to eq(battle.state)
+      expect(events.map { |e| e.except("step") }).to eq(battle.battle_events.map(&:payload))
+    end
+
+    it "saves nothing when the resolver rejects the action" do
+      expect { battle.apply!(command("goblin_a"), actor: "goblin_a") }.to raise_error(Battle::InvalidAction)
+      expect(battle.reload.battle_actions).to be_empty
+      expect(battle.state).to eq(battle.initial_state)
+    end
+
+    it "broadcasts one beat per action" do
+      expect { battle.apply!(command("bartz_1"), actor: "bartz_1") }
+        .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle-beat", "battle_beats"))
+    end
+
+    it "records the battle's end" do
+      battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+      expect(battle.reload).to be_over
+      expect(battle.status).to eq("victory")
+    end
+  end
+
+  describe "input timer" do
+    let(:battle) { start_battle(input_seconds: 30) }
+
+    it "arms a timeout job for each round" do
+      expect(battle.deadline_at).to be_within(2.seconds).of(30.seconds.from_now)
+      expect(BattleTimeoutJob).to have_been_enqueued.with(battle, 1)
+
+      run_round(battle)
+      expect(battle.reload.round).to eq(2)
+      expect(battle.deadline_at).to be_within(2.seconds).of(30.seconds.from_now + BattleRecord::ANIMATION_GRACE)
+      expect(BattleTimeoutJob).to have_been_enqueued.with(battle, 2)
+    end
+
+    it "runs the round with defaults when the deadline passes" do
+      battle.apply!(command("bartz_1"), actor: "bartz_1")
+      travel_to(battle.deadline_at + 1.second) do
+        BattleTimeoutJob.perform_now(battle.reload, 1)
+      end
+      battle.reload
+      expect(battle.round).to eq(2)
+      expect(battle.battle_actions.last).to have_attributes(actor: "system", payload: { "type" => "timeout" })
+      expect(battle.battle_events.find_by(kind: "timeout").payload["defaulted"]).to eq([ "faris_2" ])
+    end
+
+    it "ignores a timer for a round that already ran" do
+      run_round(battle)
+      travel_to(1.hour.from_now) do
+        expect { BattleTimeoutJob.perform_now(battle.reload, 1) }.not_to change(BattleAction, :count)
+      end
+    end
+
+    it "ignores a timer that fires early" do
+      expect { BattleTimeoutJob.perform_now(battle, 1) }.not_to change(BattleAction, :count)
+    end
+  end
+
+  it "sets playback speed for everyone" do
+    expect { battle.set_speed!(4) }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_playback"))
+    expect(battle.reload.playback_speed).to eq(4)
+    expect { battle.set_speed!(3) }.to raise_error(ActiveRecord::RecordInvalid)
+  end
+end

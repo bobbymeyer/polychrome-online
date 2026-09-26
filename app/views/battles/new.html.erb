@@ -1,0 +1,55 @@
+<% content_for :title, "New battle" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Battles", world_battles_path(@world) %> / New</div>
+<h1>New battle</h1>
+<% if @error %><div class="form-errors" role="alert"><p><%= @error %></p></div><% end %>
+
+<% jobs = @world.jobs.order(:name).map { |j| [ j.name, j.slug ] } %>
+<% monsters = @world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.slug ] } %>
+<%= form_with url: world_battles_path(@world), scope: :battle, class: "book-form" do |f| %>
+  <div class="field-row">
+    <div class="field"><%= f.label :name %><%= f.text_field :name, value: @setup[:name] %></div>
+    <div class="field">
+      <%= f.label :input_seconds, "Input timer" %>
+      <%= f.select :input_seconds, BattleRecord::INPUT_TIMERS.map { |s| [ s ? "#{s} seconds" : "None", s ] }, selected: @setup[:input_seconds].presence&.to_i %>
+    </div>
+    <div class="field"><%= f.label :seed %><%= f.number_field :seed, value: @setup[:seed], placeholder: "random" %></div>
+    <div class="field field--check">
+      <%= f.hidden_field :escapable, value: "0", id: nil %>
+      <%= f.check_box :escapable, { checked: @setup[:escapable] != "0" }, "1", nil %>
+      <%= f.label :escapable, "Can flee" %>
+    </div>
+  </div>
+
+  <fieldset class="panel">
+    <legend>Party</legend>
+    <p class="hint">A stand-in until characters (build step 4): a name and a job, at a fixed base stat line, with the job's best gear from the Armory.</p>
+    <table class="grid-form">
+      <thead><tr><th>Name</th><th>Job</th></tr></thead>
+      <tbody>
+        <% @setup[:party].each_with_index do |member, i| %>
+          <tr>
+            <td><%= text_field_tag "battle[party][#{i}][name]", member[:name], placeholder: "defaults to the job", "aria-label": "Party member #{i + 1} name" %></td>
+            <td><%= select_tag "battle[party][#{i}][job]", options_for_select(jobs, member[:job]), include_blank: "(empty)", "aria-label": "Party member #{i + 1} job" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Encounter</legend>
+    <table class="grid-form">
+      <thead><tr><th>Monster</th><th>Count</th></tr></thead>
+      <tbody>
+        <% @setup[:encounter].each_with_index do |row, i| %>
+          <tr>
+            <td><%= select_tag "battle[encounter][#{i}][monster]", options_for_select(monsters, row[:monster]), include_blank: "(none)", "aria-label": "Monster #{i + 1}" %></td>
+            <td><%= number_field_tag "battle[encounter][#{i}][count]", row[:count], min: 1, max: 8, "aria-label": "Monster #{i + 1} count" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <div class="actions"><%= f.submit "Start battle", class: "button" %></div>
+<% end %>

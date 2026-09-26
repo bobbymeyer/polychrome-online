@@ -1,0 +1,8 @@
+<h2>Take a seat</h2>
+<p class="hint">No accounts yet: pick who you're playing. Anyone can take any seat.</p>
+<div class="menu">
+  <%= button_to "Game Master", battle_seat_path(@battle), params: { seat: "gm" }, class: "menu__item" %>
+  <% @battle.party.each do |unit| %>
+    <%= button_to unit["name"], battle_seat_path(@battle), params: { seat: unit["id"] }, class: "menu__item" %>
+  <% end %>
+</div>

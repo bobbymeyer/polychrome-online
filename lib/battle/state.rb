@@ -142,6 +142,54 @@ module Battle
       end
     end
 
+    # --- read-only queries for the UI -------------------------------------
+    # Rules live here so views never re-derive them (§12). The resolver
+    # uses the same functions.
+
+    # Party members who can act this round (alive, not asleep or paralysed).
+    def able_to_act(state)
+      state["units"].select do |u|
+        u["side"] == "party" && u["hp"].positive? &&
+          u["statuses"].none? { |s| DISABLING_STATUSES.include?(s["kind"]) }
+      end.map { |u| u["id"] }
+    end
+
+    # Party members the round is still waiting on.
+    def awaiting_input(state)
+      return [] unless state["status"] == "input"
+
+      able_to_act(state) - state["inputs"].keys
+    end
+
+    def ability_cost(ability)
+      ability.fetch("cost", {}).fetch("mp", 0)
+    end
+
+    # Can this unit pay for and use the ability right now?
+    def usable?(unit, ability)
+      return false unless unit["abilities"].include?(ability["id"])
+      return false if ability["kind"] == "magic" && unit["statuses"].any? { |s| s["kind"] == "silence" }
+
+      unit["mp"] >= ability_cost(ability)
+    end
+
+    def revives?(ability)
+      ability["effects"].any? { |e| e["primitive"] == "revive" }
+    end
+
+    # Unit ids a player may pick as the target, or nil when the ability's
+    # targeting needs no choice (self, all, random).
+    def target_options(state, unit, ability)
+      living = ->(u) { u["hp"].positive? }
+      case ability["target"]
+      when "single_enemy"
+        state["units"].select { |u| u["side"] != unit["side"] && living.(u) }.map { |u| u["id"] }
+      when "single_ally"
+        allies = state["units"].select { |u| u["side"] == unit["side"] }
+        allies.select { |u| revives?(ability) ? !living.(u) : living.(u) }.map { |u| u["id"] }
+      end
+    end
+
     def validate_ability!(ability)
       id = ability["id"]
       raise ArgumentError, "#{id}: unknown kind #{ability['kind']}" unless ABILITY_KINDS.include?(ability.fetch("kind", "skill"))

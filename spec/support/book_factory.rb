@@ -32,3 +32,27 @@ end
 RSpec.configure do |config|
   config.include BookFactory
 end
+
+# A battle started from minimal books: two knights against goblins.
+module BattleFactory
+  def start_battle(world: nil, goblins: 2, input_seconds: nil, seed: 7, **options)
+    world ||= create_world
+    create_ability(world, slug: "cure", kind: "magic", target: "single_ally", effects: [ { primitive: "heal", power: 20 } ]) unless world.abilities.exists?(slug: "cure")
+    unless world.jobs.exists?(slug: "knight")
+      create_item(world) unless world.items.exists?(slug: "sword")
+      create_job(world).job_levels.create!(level: 1, abp: 10, ability: world.abilities.find_by!(slug: "cure"))
+    end
+    create_monster(world) unless world.monsters.exists?(slug: "goblin")
+    party = QuickParty.new(world).build([ { name: "Bartz", job: "knight" }, { name: "Faris", job: "knight" } ])
+    BattleRecord.start!(world: world, name: "Test battle", party: party, encounter: { "goblin" => goblins },
+                        seed: seed, input_seconds: input_seconds, **options)
+  end
+
+  def turbo_stream_for(record)
+    record.to_gid_param # the stream name Turbo broadcasts to for a single record
+  end
+end
+
+RSpec.configure do |config|
+  config.include BattleFactory
+end

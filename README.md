@@ -8,6 +8,8 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
 - **Step 1 (done):** the battle resolver and stat derivation, pure Ruby in `lib/`.
 - **Step 2 (done):** the books (Bestiary, Job Compendium, Grimoire, Armory) as
   Rails admin CRUD with rendered pages, plus base-world seed data.
+- **Step 3 (done):** the battle screen. One party against one encounter, with
+  Turbo Streams, a Stimulus event player and anime.js gestures.
 
 ```
 bundle install
@@ -45,11 +47,50 @@ page with its stat block, prose, image and cross-references ("Used by",
   consumable, or equipment for a slot.
 - There's no authentication yet. The books are an open admin surface.
 
+## Battle screen
+
+Start one from a world page (**New battle**), then open the battle URL in other
+browsers and have each player take a seat.
+
+- `BattleRecord` is the persisted battle (the `battles` table). It isn't called
+  `Battle` because that's the engine's namespace. `#apply!` runs the resolver
+  inside one SQLite write transaction and stores the action in
+  `battle_actions` and the resolver's events in `battle_events`. `#replay`
+  rebuilds the state exactly from `initial_state` and the action log.
+- **One broadcast per action (§6).** Each action broadcasts a *beat*: the
+  events, the board before them and the board after them. The
+  `battle-player` Stimulus controller plays beats in order as anime.js
+  timelines, and swaps in the "after" board only when the timeline completes.
+  Log text is written server-side (`BattlesHelper#battle_log_line`), so the
+  JavaScript never describes or computes an outcome.
+- **Skip and fast-forward.** Skip is `timeline.complete()`, which still
+  applies every change in order. The GM's fast-forward sets the playback speed
+  for everyone. A reload or late join renders the current state and never
+  replays events.
+- **Command panel.** Each seat has its own panel, a Turbo Frame that reloads
+  after each beat. After an action, the response is a placeholder with no
+  battle state in it, so the panel can't spoil a round before it has played.
+- **Input timer.** It is a `BattleTimeoutJob` scheduled for the round's
+  deadline. When it fires, missing commands default to each unit's last one,
+  or Attack.
+- **Seats need no accounts yet.** A seat (GM or a party member) is remembered
+  in the session, and anyone can take any seat. The server does enforce that
+  a player can only command their own unit and only the GM can override.
+- **Art comes from the books.** A unit's sprite is its monster's or job's
+  image slot, with the variant recipe applied; without an image it shows a
+  lettered plate. Sprite rips go in through those image slots (stored
+  locally in `storage/`), never into the repo (§8).
+- **The party is a stand-in** until characters exist in step 4
+  (`QuickParty`): a name and a job at a fixed base stat line, with the job's
+  best gear from the Armory.
+
 ## Layout
 
 | Path | What |
 | --- | --- |
 | `app/models`, `app/controllers/{bestiary,compendium,grimoire,armory}` | The books |
+| `app/models/battle_record.rb`, `app/jobs/battle_timeout_job.rb` | Persisted battles, the action/event log, the input timer |
+| `app/javascript/controllers/battle_player_controller.js`, `app/javascript/battle/gestures.js` | The event player and the motion gestures (§3.2) |
 | `db/seeds/base_world.rb` | The base world's first entries (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |
 | `lib/battle/resolver.rb` | `Battle::Resolver.apply(state, action) -> [new_state, events]` |

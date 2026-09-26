@@ -1,0 +1,10 @@
+<%# One broadcast beat (§6): the events, the board before them, and the board after them. The player
+    shows `before`, plays the events, and only swaps in `after` when the timeline completes, so the
+    broadcast can't spoil the outcome. Log lines line up one-to-one with events. %>
+<div data-controller="battle-beat"
+     data-battle-beat-events-value="<%= events.to_json %>"
+     data-battle-beat-abilities-value="<%= battle.state['abilities'].transform_values { |a| a.slice('name', 'gesture', 'kind') }.to_json %>">
+  <template data-battle-beat-target="before"><%= render "battles/board", battle: battle, state: before %></template>
+  <template data-battle-beat-target="after"><%= render "battles/board", battle: battle, state: battle.state %></template>
+  <template data-battle-beat-target="log"><% events.each do |event| %><li><%= battle_log_line(event, battle.state) %></li><% end %></template>
+</div>

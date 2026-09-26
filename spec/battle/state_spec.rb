@@ -94,4 +94,42 @@ RSpec.describe Battle::State do
       end
     end
   end
+
+  describe "UI queries" do
+    let(:state) { Battle::State.normalize(build_battle) }
+
+    it "lists who can act and who the round is waiting on" do
+      unit(state, "vivi")["hp"] = 0
+      unit(state, "rosa")["statuses"] << { "kind" => "sleep", "turns" => 2 }
+      state["inputs"]["bartz"] = { "kind" => "defend" }
+      expect(described_class.able_to_act(state)).to eq(%w[bartz locke])
+      expect(described_class.awaiting_input(state)).to eq(%w[locke])
+      expect(described_class.awaiting_input(state.merge("status" => "victory"))).to eq([])
+    end
+
+    it "matches the resolver on what counts as a legal target" do
+      unit(state, "bartz")["hp"] = 0
+      rosa = unit(state, "rosa")
+      expect(described_class.target_options(state, rosa, state["abilities"]["cure"])).to eq(%w[vivi rosa locke])
+      expect(described_class.target_options(state, rosa, state["abilities"]["raise"])).to eq(%w[bartz])
+      expect(described_class.target_options(state, rosa, state["abilities"]["attack"])).to eq(%w[goblin_a goblin_b goblin_c])
+      expect(described_class.target_options(state, rosa, state["abilities"]["cura"])).to be_nil
+
+      # every offered target is accepted by the resolver
+      %w[cure raise attack].each do |ability|
+        described_class.target_options(state, rosa, state["abilities"][ability]).each do |target|
+          expect { Battle::Resolver.apply(state, command("rosa", ability, target)) }.not_to raise_error
+        end
+      end
+    end
+
+    it "knows when an ability is usable" do
+      vivi = unit(state, "vivi")
+      fire = state["abilities"]["fire"]
+      expect(described_class.usable?(vivi, fire)).to be(true)
+      expect(described_class.usable?(vivi.merge("mp" => 3), fire)).to be(false)
+      expect(described_class.usable?(vivi.merge("statuses" => [ { "kind" => "silence", "turns" => 1 } ]), fire)).to be(false)
+      expect(described_class.usable?(unit(state, "bartz"), fire)).to be(false)
+    end
+  end
 end

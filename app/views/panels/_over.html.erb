@@ -1,0 +1,7 @@
+<% result = { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." } %>
+<h2><%= result.fetch(@battle.status, @battle.status.humanize) %></h2>
+<p class="hint">
+  Round <%= @battle.round %> · <%= pluralize(@battle.battle_actions.count, "action") %> ·
+  replays exactly from seed <%= @battle.seed %>.
+</p>
+<%= link_to "Another battle", new_world_battle_path(@battle.world), class: "button", data: { turbo_frame: "_top" } %>

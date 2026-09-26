@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_170000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -56,6 +56,46 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_150000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "battle_actions", force: :cascade do |t|
+    t.integer "battle_id", null: false
+    t.integer "position", null: false
+    t.string "actor", null: false
+    t.json "payload", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["battle_id", "position"], name: "index_battle_actions_on_battle_id_and_position", unique: true
+    t.index ["battle_id"], name: "index_battle_actions_on_battle_id"
+  end
+
+  create_table "battle_events", force: :cascade do |t|
+    t.integer "battle_id", null: false
+    t.integer "battle_action_id", null: false
+    t.integer "position", null: false
+    t.string "kind", null: false
+    t.json "payload", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["battle_action_id"], name: "index_battle_events_on_battle_action_id"
+    t.index ["battle_id", "position"], name: "index_battle_events_on_battle_id_and_position", unique: true
+    t.index ["battle_id"], name: "index_battle_events_on_battle_id"
+  end
+
+  create_table "battles", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "name", null: false
+    t.integer "seed", null: false
+    t.string "status", default: "input", null: false
+    t.integer "round", default: 1, null: false
+    t.json "initial_state", null: false
+    t.json "state", null: false
+    t.integer "input_seconds"
+    t.datetime "deadline_at"
+    t.integer "playback_speed", default: 1, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id"], name: "index_battles_on_world_id"
   end
 
   create_table "items", force: :cascade do |t|
@@ -141,6 +181,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_150000) do
   add_foreign_key "abilities", "worlds"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "battle_actions", "battles"
+  add_foreign_key "battle_events", "battle_actions"
+  add_foreign_key "battle_events", "battles"
+  add_foreign_key "battles", "worlds"
   add_foreign_key "items", "worlds"
   add_foreign_key "job_levels", "abilities"
   add_foreign_key "job_levels", "jobs"

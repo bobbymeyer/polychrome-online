@@ -1,7 +1,11 @@
 <% content_for :title, @world.name %>
 <div class="book-header">
   <h1><%= @world.name %></h1>
-  <%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %>
+  <div class="actions">
+    <%= link_to "Battles", world_battles_path(@world), class: "button button--quiet" %>
+    <%= link_to "New battle", new_world_battle_path(@world), class: "button" %>
+    <%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %>
+  </div>
 </div>
 <% if @world.description.present? %>
   <div class="prose"><%= simple_format(@world.description) %></div>

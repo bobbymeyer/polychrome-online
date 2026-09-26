@@ -82,19 +82,16 @@ module Battle
     end
 
     def revives?(ability)
-      ability["effects"].any? { |e| e["primitive"] == "revive" }
+      State.revives?(ability)
     end
 
     # Can this unit pay for and use the ability right now?
     def usable?(u, ability)
-      return false unless u["abilities"].include?(ability["id"])
-      return false if ability["kind"] == "magic" && status?(u, "silence")
-
-      u["mp"] >= ability_cost(ability)
+      State.usable?(u, ability)
     end
 
     def ability_cost(ability)
-      ability.fetch("cost", {}).fetch("mp", 0)
+      State.ability_cost(ability)
     end
 
     # --- mutations that always emit --------------------------------------

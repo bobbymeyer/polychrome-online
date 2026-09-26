@@ -3,8 +3,18 @@ Rails.application.routes.draw do
 
   root "worlds#index"
 
+  # The battle screen (§6): one long-lived page fed by Turbo Streams. The
+  # command panel is a Turbo Frame reloaded after each beat plays.
+  resources :battles, only: :show do
+    resource :seat, only: %i[create destroy]
+    resource :panel, only: :show
+    resources :actions, only: :create, controller: "battle_actions"
+    resource :playback, only: :update
+  end
+
   # Each book is a resource namespace inside its world (docs/HANDOFF.md §7).
   resources :worlds, param: :slug, except: :destroy do
+    resources :battles, only: %i[index new create], shallow: true
     namespace :bestiary do
       resources :monsters, param: :slug
     end

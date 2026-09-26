@@ -1,0 +1,48 @@
+<% content_for :title, @battle.name %>
+<% content_for :head do %>
+  <%# The battle screen is one long-lived page (§9.9): never show a stale cached snapshot. %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
+<div class="battle" data-controller="battle-player"
+     data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
+     data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded">
+  <%= turbo_stream_from @battle %>
+
+  <header class="battle__header">
+    <div>
+      <p class="eyebrow"><%= link_to @world.name, world_path(@world) %> · Battle</p>
+      <h1><%= @battle.name %></h1>
+    </div>
+    <div class="battle__controls">
+      <%= render "battles/playback", battle: @battle %>
+      <button type="button" class="button button--quiet" data-battle-player-target="skip"
+              data-action="battle-player#skip" hidden>Skip ▶▶</button>
+    </div>
+  </header>
+
+  <div class="stage" data-battle-player-target="stage">
+    <div data-battle-player-target="boardContainer">
+      <%= render "battles/board", battle: @battle, state: @battle.state %>
+    </div>
+    <div class="fx" data-battle-player-target="fx" aria-hidden="true"></div>
+  </div>
+
+  <div class="battle__lower">
+    <%= turbo_frame_tag "command_panel", src: battle_panel_path(@battle), class: "command-frame",
+                        data: { battle_player_target: "panel" } do %>
+      <div class="window"><p class="muted">Loading…</p></div>
+    <% end %>
+
+    <section class="window battle-log" aria-label="Battle log">
+      <ol data-battle-player-target="log" aria-live="polite">
+        <% @log.each do |event| %>
+          <% line = battle_log_line(event.payload, @battle.state) %>
+          <% if line %><li><%= line %></li><% end %>
+        <% end %>
+      </ol>
+    </section>
+  </div>
+
+  <div id="battle_beats" hidden></div>
+</div>

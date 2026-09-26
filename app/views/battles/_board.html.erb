@@ -1,0 +1,42 @@
+<%# The shared battle board, rendered from a resolver state. Identical for every viewer, so it holds
+    nothing seat-specific: enemy HP stays hidden (the GM sees it in the command panel). %>
+<% inputs = state["inputs"] || {} %>
+<div class="board">
+  <div class="field">
+    <% %w[enemy party].each do |side| %>
+      <div class="field__side field__side--<%= side %>">
+        <% state["units"].select { |u| u["side"] == side }.each do |unit| %>
+          <div class="unit unit--<%= side %> <%= 'is-ko' if unit['hp'].zero? %>" data-unit="<%= unit['id'] %>">
+            <div class="sprite" data-sprite><%= unit_sprite(battle, unit) %></div>
+            <div class="unit__label"><%= unit["name"] %></div>
+            <ul class="badges" data-badges>
+              <% unit["statuses"].each do |status| %>
+                <li class="badge badge--<%= status['kind'] %>" data-status="<%= status['kind'] %>"><%= status["kind"].humanize %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <ol class="roster window" aria-label="Party">
+    <% state["units"].select { |u| u["side"] == "party" }.each do |unit| %>
+      <li class="roster__row <%= 'is-ko' if unit['hp'].zero? %>" data-roster="<%= unit['id'] %>" data-max-hp="<%= unit['stats']['max_hp'] %>">
+        <span class="roster__ready" data-ready><%= "▶" if inputs.key?(unit["id"]) %></span>
+        <span class="roster__name"><%= unit["name"] %></span>
+        <span class="roster__hp">
+          <span class="label">HP</span>
+          <span data-hp><%= unit["hp"] %></span><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
+          <span class="bar"><span class="bar__fill bar__fill--<%= hp_band(unit) %>" data-hp-bar style="width: <%= hp_percent(unit) %>%"></span></span>
+        </span>
+        <span class="roster__mp"><span class="label">MP</span> <span data-mp><%= unit["mp"] %></span></span>
+        <ul class="badges" data-badges>
+          <% unit["statuses"].each do |status| %>
+            <li class="badge badge--<%= status['kind'] %>" data-status="<%= status['kind'] %>"><%= status["kind"].humanize %></li>
+          <% end %>
+        </ul>
+      </li>
+    <% end %>
+  </ol>
+</div>

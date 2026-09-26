@@ -1,0 +1,83 @@
+<% state = @battle.state %>
+<% awaiting = @battle.awaiting_input %>
+<div class="command-panel__head">
+  <h2>Game Master · Round <%= @battle.round %></h2>
+  <%= render "panels/countdown" %>
+</div>
+
+<section>
+  <h3>Waiting on</h3>
+  <% if awaiting.empty? %>
+    <p class="muted">Nobody.</p>
+  <% else %>
+    <div class="menu menu--row">
+      <% awaiting.each do |id| %>
+        <%= button_to "Auto #{unit_name(state, id)}", battle_actions_path(@battle), class: "menu__item",
+                      params: { gm: { op: "auto", unit: id } } %>
+      <% end %>
+      <%= button_to "Run the round now", battle_actions_path(@battle), class: "menu__item menu__item--accent",
+                    params: { gm: { op: "execute_round" } } %>
+    </div>
+  <% end %>
+</section>
+
+<section>
+  <h3>Units</h3>
+  <table class="book-table book-table--plain gm-units">
+    <thead><tr><th>Unit</th><th class="num">HP</th><th class="num">MP</th><th>Status</th></tr></thead>
+    <tbody>
+      <% state["units"].each do |u| %>
+        <tr class="<%= 'is-ko' if u['hp'].zero? %>">
+          <td><%= u["name"] %></td>
+          <td class="num"><%= u["hp"] %>/<%= u["stats"]["max_hp"] %></td>
+          <td class="num"><%= u["mp"] %>/<%= u["stats"]["max_mp"] %></td>
+          <td><%= (u["statuses"].map { |s| "#{s['kind'].humanize} (#{s['turns']})" } + u["buffs"].map { |b| "#{stat_label(b['stat'])} #{signed(b['amount'])}%" }).join(", ") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>
+
+<details class="gm-override">
+  <summary>Override <span class="muted">(logged for everyone to see)</span></summary>
+  <%= form_with url: battle_actions_path(@battle), scope: :gm, class: "book-form" do |f| %>
+    <div class="field-row">
+      <div class="field">
+        <%= f.label :op, "Change" %>
+        <%= f.select :op, [ [ "Set HP", "set_hp" ], [ "Set MP", "set_mp" ], [ "Inflict status", "add_status" ], [ "Cure status", "remove_status" ] ] %>
+      </div>
+      <div class="field">
+        <%= f.label :unit %>
+        <%= f.select :unit, state["units"].map { |u| [ u["name"], u["id"] ] } %>
+      </div>
+      <div class="field"><%= f.label :value, "HP / MP" %><%= f.number_field :value, min: 0 %></div>
+      <div class="field">
+        <%= f.label :status %>
+        <%= f.select :status, Battle::STATUSES.map { |s| [ s.humanize, s ] }, include_blank: true %>
+      </div>
+      <div class="field"><%= f.label :turns %><%= f.number_field :turns, min: 1, placeholder: 3 %></div>
+    </div>
+    <div class="field"><%= f.label :note, "Note for the table" %><%= f.text_field :note, placeholder: "optional" %></div>
+    <%= f.submit "Apply override", class: "button" %>
+  <% end %>
+</details>
+
+<section>
+  <h3>Pacing</h3>
+  <div class="menu menu--row">
+    <% BattleRecord::SPEEDS.each do |speed| %>
+      <%= button_to "×#{speed}", battle_playback_path(@battle), method: :patch, params: { speed: speed },
+                    class: [ "menu__item", ("is-current" if @battle.playback_speed == speed) ] %>
+    <% end %>
+  </div>
+</section>
+
+<section>
+  <h3>End the battle</h3>
+  <div class="menu menu--row">
+    <% { "victory" => "Victory", "defeat" => "Defeat", "fled" => "Party escapes" }.each do |result, label| %>
+      <%= button_to label, battle_actions_path(@battle), class: "menu__item", params: { gm: { op: "end_battle", result: result } },
+                    form: { data: { turbo_confirm: "End the battle: #{label}? Everyone will see this." } } %>
+    <% end %>
+  </div>
+</section>
