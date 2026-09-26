@@ -1,8 +1,12 @@
 # Design
 
-The mechanics are JRPG. The presentation is not: it is set as if Josef Müller-Brockmann had been
-asked to port the game to modern screens. Every page follows these rules. The stylesheet is
-`app/assets/stylesheets/application.css`.
+The mechanics are JRPG. The presentation **starts** Swiss instead of SNES: it begins from what
+Josef Müller-Brockmann might have done porting the game to modern screens. That makes it a
+starting point, not a rulebook, and the game's needs come first. When play needs something the
+Swiss defaults don't give (more colour for state, an ornament that reads faster, a box around
+something), make the change on purpose and record it under "Divergences" at the end.
+
+The stylesheet is `app/assets/stylesheets/application.css`.
 
 ## Paper and type
 
@@ -23,11 +27,11 @@ asked to port the game to modern screens. Every page follows these rules. The st
 
 ## Colour
 
-Colour means interaction, and only interaction. There is one colour: Swiss red `#d71920`.
+The starting point: colour means interaction, and there is one colour, Swiss red `#d71920`.
 
 - **Red:** links, buttons, menu and command options, form focus, disclosure triangles, map
   places and paths the GM can edit (on hover), and the dialogue's advance square.
-- **State is never red.** HP, KO, the current room, whose turn it is and where the party stands
+- **State is not red by default.** HP, KO, the current room, whose turn it is and where the party stands
   are all shown with black geometry, weight, fill and outline.
 - A selected option (the current pacing, say) is filled black. A pressed toggle (a pinned
   element) is filled red.
@@ -85,3 +89,12 @@ keyboard, a mouse or a finger.
   When your turn starts below the fold, the menu scrolls into view.
 - **Touch:** menu items are at least 48px tall and buttons at least 44px on coarse pointers. The
   keyboard legend is hidden on devices without hover.
+
+## Divergences
+
+Record each place where the game needed more than the Swiss defaults: what changed and why.
+
+- **The play layer** (above) adds a game-menu cursor, a help line, highlighted targets and key
+  bindings. It changes behaviour rather than style, so it is less a break from Swiss than an
+  addition to it.
+
