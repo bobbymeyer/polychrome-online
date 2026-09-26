@@ -39,6 +39,12 @@ Rails.application.routes.draw do
     resources :npcs, only: %i[new create]
 
     # The table (§7): the live session page with the dialogue box and log.
+    resources :flags, only: %i[create update destroy] do
+      post :bump, on: :member
+    end
+    # Every GM diff on this campaign's locations, with reverts (§7).
+    resource :changes, only: :show
+
     resource :table, only: :show
     resource :table_seat, only: %i[create destroy]
     resource :composer, only: :show
@@ -72,6 +78,7 @@ Rails.application.routes.draw do
       post :enter
       post :move
       post :take_treasure
+      post :revert
     end
   end
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"

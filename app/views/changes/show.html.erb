@@ -1,0 +1,35 @@
+<% content_for :title, "#{@campaign.name} · GM changes" %>
+<div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / GM changes</div>
+<h1>GM changes</h1>
+<p class="hint">
+  Towns and dungeons are rolled from a template and a seed; everything you've changed sits on top as an override (§7).
+  Revert one to go back to what was rolled. Rerolling keeps all of these.
+</p>
+
+<% if @locations.empty? %>
+  <p class="empty">No locations yet. Roll one from a place on the map.</p>
+<% end %>
+
+<% @locations.each do |location| %>
+  <% changes = location.changes %>
+  <section class="window">
+    <div class="book-header">
+      <h2><%= link_to location.name, location_path(location) %></h2>
+      <span class="muted"><%= location.location_template.name %> · seed <%= location.seed %><%= " · at #{location.map_node.name}" if location.map_node %></span>
+    </div>
+    <% if changes.empty? %>
+      <p class="empty">As rolled.</p>
+    <% else %>
+      <ul class="location-list">
+        <% changes.each do |change| %>
+          <li>
+            <span><%= change["summary"] %></span>
+            <%= button_to "Revert", revert_location_path(location),
+                          params: { kind: change["kind"], key: change["key"], return_to: campaign_changes_path(@campaign) },
+                          class: "pin", form: { data: { turbo_confirm: "Revert: #{change['summary']}?" } } %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </section>
+<% end %>

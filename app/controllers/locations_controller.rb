@@ -74,6 +74,13 @@ class LocationsController < ApplicationController
     back
   end
 
+  # Undo one GM change (from the campaign's changes page or here).
+  def revert
+    @location.revert!(params.expect(:kind), params[:key].presence)
+    back_to = url_from(params[:return_to])
+    back_to ? redirect_to(back_to, notice: "Reverted.", status: :see_other) : back("Reverted.")
+  end
+
   def take_treasure
     @location.take_treasure!(params.expect(:room))
     back "Added to the party bag."

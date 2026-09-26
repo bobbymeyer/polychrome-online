@@ -484,3 +484,14 @@ form.inline { display: inline; }
 .floorplan__room.is-unknown rect { fill: #1e2130; stroke-dasharray: 5 4; }
 .floorplan__room.is-resolved rect { fill: #2a2e3e; }
 .floorplan__room.is-current rect { stroke: var(--accent); stroke-width: 4; }
+
+/* Flags */
+.flag-table td { vertical-align: middle; }
+.flag-value { margin: 0; flex-wrap: nowrap; }
+.flag-value input[type=text] { width: 12rem; }
+.flag-value input[type=submit] { margin: 0; }
+.flag-tools { display: flex; gap: .4rem; align-items: center; justify-content: flex-end; }
+.flag-tools form { margin: 0; }
+.table__side { display: grid; gap: 1rem; align-content: start; }
+.table__side > .window { margin: 0; }
+.party-knows h2 { margin-bottom: .25rem; }

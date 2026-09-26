@@ -114,6 +114,69 @@ class Location < ApplicationRecord
     key
   end
 
+  # --- diffs (§7: GM diffs are overrides on top of the seed) --------------------
+
+  # Every way the GM has changed this location from what was rolled, as
+  # [{ "kind", "key", "summary" }], each revertible with #revert!.
+  def changes
+    list = []
+    if overrides["name"]
+      list << change("name", nil, "Renamed to #{overrides['name']} (rolled as #{generated['name']})")
+    end
+    overrides.fetch("pins", {}).each do |key, element|
+      list << change("pin", key, "Pinned #{element['name']}")
+    end
+    npcs.order(:id).each do |npc|
+      list << change("npc", npc.id.to_s,
+                     npc.location_key ? "Pinned #{npc.name} (now a real NPC)" : "Wrote in #{npc.name}#{", #{npc.title}" if npc.title.present?}")
+    end
+    if overrides.key?("stock")
+      names = campaign.world.items.where(slug: overrides["stock"]).pluck(:name)
+      list << change("stock", nil, "Shop stock set to #{names.to_sentence.presence || 'nothing'}")
+    end
+    if overrides["boss"]
+      list << change("boss", nil, "Boss placed: #{campaign.describe_encounter(overrides['boss'])}")
+    end
+    overrides.fetch("added_rooms", []).each do |room|
+      list << change("room", room["key"], "Added room #{room['name']}")
+    end
+    list
+  end
+
+  def revert!(kind, key = nil)
+    case kind
+    when "name" then rename!(nil)
+    when "pin" then unpin!(key)
+    when "npc"
+      npc = npcs.find(key)
+      npc.location_key ? unpin!(npc.location_key) : npc.destroy!
+      touch
+    when "stock" then set_stock!(nil)
+    when "boss" then place_boss!({})
+    when "room" then remove_room!(key)
+    else raise ArgumentError, "Unknown change #{kind}"
+    end
+  end
+
+  # Remove a hand-authored room, and any rooms added off it.
+  def remove_room!(key)
+    added = overrides.fetch("added_rooms", [])
+    raise ArgumentError, "No added room #{key}" unless added.any? { |r| r["key"] == key }
+
+    doomed = [ key ]
+    loop do
+      more = added.select { |r| doomed.include?(r["connect"]) }.map { |r| r["key"] } - doomed
+      break if more.empty?
+
+      doomed.concat(more)
+    end
+
+    remaining = added.reject { |r| doomed.include?(r["key"]) }
+    progress = self.progress.merge("visited" => visited - doomed)
+    progress["current"] = view["entrance"] if doomed.include?(progress["current"])
+    update!(overrides: overrides.merge("added_rooms" => remaining), progress: progress)
+  end
+
   # --- town ---------------------------------------------------------------------
 
   # The roster: each generated slot shows its real NPC once pinned, then the
@@ -204,6 +267,10 @@ class Location < ApplicationRecord
   end
 
   private
+
+  def change(kind, key, summary)
+    { "kind" => kind, "key" => key, "summary" => summary }
+  end
 
   def announce(target)
     decision = target["decision"]

@@ -49,6 +49,16 @@
     </section>
     </div>
 
+    <div class="table__side">
+    <% known = @campaign.flags.shown_to_players.order(:key) %>
+    <% if known.any? %>
+      <section class="window party-knows" aria-label="What the party knows">
+        <h2>The party knows</h2>
+        <dl class="facts">
+          <% known.each do |flag| %><dt><%= flag.label %></dt><dd><%= flag.value.presence || "yes" %></dd><% end %>
+        </dl>
+      </section>
+    <% end %>
     <section class="window chat-log" aria-label="Log">
       <ol id="chat_log" data-dialogue-target="log">
         <% @messages.each do |message| %>
@@ -56,6 +66,7 @@
         <% end %>
       </ol>
     </section>
+    </div>
   </div>
 
   <% if @seat %>

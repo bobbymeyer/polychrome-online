@@ -19,6 +19,9 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   Encounter Tables book.
 - **Step 7 (done):** the town and dungeon generators, the Gazetteer and
   Generator Tables books, and exploring dungeons room by room.
+- **Step 8 (done, without pins):** campaign flags, and a GM changes page listing
+  every override on generated locations, each with a revert. World-version
+  pins are deliberately not built yet (see below).
 
 ```
 bundle install
@@ -95,9 +98,9 @@ other browsers and have each player take a seat.
 
 ## Characters and jobs
 
-A world has campaigns (§4). For now a campaign is just a party, a shared bag
-and gil; flags, diffs and edition pins come in step 8. Its `world_version`
-column is the §9.8 pin, designed but not used yet.
+A world has campaigns (§4): a party, a shared bag, gil, flags, a map and its
+locations. The `world_version` column is the §9.8 pin, designed but not used
+(see "Campaign flags and GM changes").
 
 - **Level:** comes from EXP (`Stats::Growth`, pure, like `Stats::Derivation`).
 - **Stats are never stored.** The sheet shows each derivation stage: level
@@ -221,6 +224,22 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   - Players see only the rooms they've been in, plus the exits out of them.
 - **Live updates** use Rails 8 page refreshes (morphing): each viewer re-fetches
   their own page, so what only the GM may see is never sent to a player.
+
+## Campaign flags and GM changes
+
+- **Flags (§4)** are the GM's campaign state: `met_the_king = yes`,
+  `crystals_found = 2`. Whole-number flags get −1/+1 buttons. A flag marked
+  public shows at the table under "The party knows"; the rest are GM-only and
+  never rendered for players.
+- **GM changes** (`/campaigns/:id/changes`) lists every override on the
+  campaign's generated locations (§7: "GM diffs are overrides on top").
+  That covers renames, pins, pinned or written-in NPCs, shop stock, placed
+  bosses and added rooms. Each one reverts on its own; revert them all and
+  the location is exactly what was rolled.
+- **World-version pins (§9.8) are not built**, by decision. Campaigns read the
+  books live, so editing the Bestiary changes live campaigns, as §9.8 warns.
+  The unused `campaigns.world_version` column is the seam for when a second
+  author makes that matter (§1: no edition tooling until then).
 
 ## Layout
 

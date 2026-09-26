@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -179,6 +179,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_010000) do
     t.index ["character_id", "slot"], name: "index_equipment_slots_on_character_id_and_slot", unique: true
     t.index ["character_id"], name: "index_equipment_slots_on_character_id"
     t.index ["item_id"], name: "index_equipment_slots_on_item_id"
+  end
+
+  create_table "flags", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.string "key", null: false
+    t.string "value", default: "", null: false
+    t.text "note"
+    t.boolean "public", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id", "key"], name: "index_flags_on_campaign_id_and_key", unique: true
+    t.index ["campaign_id"], name: "index_flags_on_campaign_id"
   end
 
   create_table "generator_tables", force: :cascade do |t|
@@ -410,6 +422,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_010000) do
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"
+  add_foreign_key "flags", "campaigns"
   add_foreign_key "generator_tables", "worlds"
   add_foreign_key "inventories", "campaigns"
   add_foreign_key "inventories", "items"

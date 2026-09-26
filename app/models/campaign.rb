@@ -13,6 +13,7 @@ class Campaign < ApplicationRecord
   has_many :map_edges, dependent: :destroy
   has_many :map_nodes, dependent: :destroy
   has_many :locations, dependent: :destroy
+  has_many :flags, dependent: :delete_all
   belongs_to :current_node, class_name: "MapNode", optional: true
 
   # Travel encounters use their own seeded RNG, stored here like a battle's.
