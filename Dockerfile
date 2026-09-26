@@ -23,11 +23,15 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Set production environment variables and enable jemalloc for reduced memory usage and latency.
+# SOLID_QUEUE_IN_PUMA runs the job worker inside Puma (config/puma.rb). It is not
+# optional either: battle round timers are BattleTimeoutJob, so without a worker a
+# timed round never resolves when its clock runs out.
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+    LD_PRELOAD="/usr/local/lib/libjemalloc.so" \
+    SOLID_QUEUE_IN_PUMA="1"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
