@@ -14,40 +14,40 @@ module BattleFixtures
   def abilities
     {
       fire: { name: "Fire", kind: "magic", target: "single_enemy", cost: { mp: 4 },
-              effects: [{ primitive: "elemental", element: "fire", power: 20, hits: 1 }] },
+              effects: [ { primitive: "elemental", element: "fire", power: 20, hits: 1 } ] },
       firaga_all: { name: "Fira", kind: "magic", target: "all_enemies", cost: { mp: 10 },
-                    effects: [{ primitive: "elemental", element: "fire", power: 18 }] },
+                    effects: [ { primitive: "elemental", element: "fire", power: 18 } ] },
       blizzard: { name: "Blizzard", kind: "magic", target: "single_enemy", cost: { mp: 4 },
-                  effects: [{ primitive: "elemental", element: "ice", power: 20 }] },
+                  effects: [ { primitive: "elemental", element: "ice", power: 20 } ] },
       cure: { name: "Cure", kind: "magic", target: "single_ally", cost: { mp: 4 },
-              effects: [{ primitive: "heal", power: 25 }] },
+              effects: [ { primitive: "heal", power: 25 } ] },
       cura: { name: "Cura", kind: "magic", target: "all_allies", cost: { mp: 9 },
-              effects: [{ primitive: "heal", power: 18 }] },
+              effects: [ { primitive: "heal", power: 18 } ] },
       raise: { name: "Raise", kind: "magic", target: "single_ally", cost: { mp: 10 },
-               effects: [{ primitive: "revive", fraction: 25 }] },
+               effects: [ { primitive: "revive", fraction: 25 } ] },
       bio: { name: "Bio", kind: "magic", target: "single_enemy", cost: { mp: 6 },
-             effects: [{ primitive: "elemental", element: "dark", power: 12 },
-                       { primitive: "status", kind: "poison", chance: 100, duration: 4 }] },
+             effects: [ { primitive: "elemental", element: "dark", power: 12 },
+                       { primitive: "status", kind: "poison", chance: 100, duration: 4 } ] },
       sleep: { name: "Sleep", kind: "magic", target: "single_enemy", cost: { mp: 3 },
-               effects: [{ primitive: "status", kind: "sleep", chance: 70, duration: 3 }] },
+               effects: [ { primitive: "status", kind: "sleep", chance: 70, duration: 3 } ] },
       silence: { name: "Silence", kind: "magic", target: "single_enemy", cost: { mp: 3 },
-                 effects: [{ primitive: "status", kind: "silence", chance: 100, duration: 3 }] },
+                 effects: [ { primitive: "status", kind: "silence", chance: 100, duration: 3 } ] },
       drain: { name: "Drain", kind: "magic", target: "single_enemy", cost: { mp: 5 },
-               effects: [{ primitive: "drain", power: 20 }] },
+               effects: [ { primitive: "drain", power: 20 } ] },
       double_cut: { name: "Double Cut", kind: "skill", target: "single_enemy", cost: { mp: 0 },
-                    effects: [{ primitive: "physical", power: 60, hits: 2 }] },
+                    effects: [ { primitive: "physical", power: 60, hits: 2 } ] },
       war_cry: { name: "War Cry", kind: "skill", target: "self", cost: { mp: 2 },
-                 effects: [{ primitive: "buff", stat: "str", amount: 50, duration: 3 }] },
+                 effects: [ { primitive: "buff", stat: "str", amount: 50, duration: 3 } ] },
       armor_break: { name: "Armor Break", kind: "skill", target: "single_enemy", cost: { mp: 2 },
-                     effects: [{ primitive: "debuff", stat: "def", amount: 50, duration: 3 }] },
+                     effects: [ { primitive: "debuff", stat: "def", amount: 50, duration: 3 } ] },
       haste: { name: "Haste", kind: "magic", target: "single_ally", cost: { mp: 5 },
-               effects: [{ primitive: "status", kind: "haste", chance: 100, duration: 3 }] },
+               effects: [ { primitive: "status", kind: "haste", chance: 100, duration: 3 } ] },
       meteor: { name: "Meteor", kind: "magic", target: "random_enemy", cost: { mp: 15 },
-                effects: [{ primitive: "elemental", element: "earth", power: 15, hits: 4 }] },
+                effects: [ { primitive: "elemental", element: "earth", power: 15, hits: 4 } ] },
       smoke_bomb: { name: "Smoke Bomb", kind: "skill", target: "self", cost: { mp: 0 },
-                    effects: [{ primitive: "escape" }] },
+                    effects: [ { primitive: "escape" } ] },
       goblin_punch: { name: "Goblin Punch", kind: "skill", target: "single_enemy", cost: { mp: 0 },
-                      effects: [{ primitive: "physical", power: 150, hits: 1 }] }
+                      effects: [ { primitive: "physical", power: 150, hits: 1 } ] }
     }
   end
 
@@ -65,21 +65,21 @@ module BattleFixtures
   end
 
   def goblins(count = 3)
-    [{ id: "goblin", name: "Goblin", count: count,
+    [ { id: "goblin", name: "Goblin", count: count,
        stats: stats(max_hp: 45, max_mp: 0, str: 9, atk: 8, agi: 8, def: 3, mdef: 2),
        elements: { fire: "weak" }, rewards: { exp: 6, gil: 12 },
        abilities: %w[goblin_punch],
-       ai: [{ if: { chance: 25 }, use: "goblin_punch" }, { use: "attack" }] }]
+       ai: [ { if: { chance: 25 }, use: "goblin_punch" }, { use: "attack" } ] } ]
   end
 
   def ogre
-    [{ id: "ogre", name: "Ogre",
+    [ { id: "ogre", name: "Ogre",
        stats: stats(max_hp: 400, max_mp: 30, str: 20, atk: 18, agi: 7, def: 12, mdef: 6, mag: 8),
        elements: { ice: "absorb", fire: "resist" }, status_immune: %w[sleep], rewards: { exp: 80, gil: 150 },
        abilities: %w[cure war_cry],
-       ai: [{ if: { self_hp_below: 30 }, use: "cure", target: "self" },
+       ai: [ { if: { self_hp_below: 30 }, use: "cure", target: "self" },
             { if: { round_multiple: 3 }, use: "war_cry" },
-            { use: "attack", target: "lowest_hp" }] }]
+            { use: "attack", target: "lowest_hp" } ] } ]
   end
 end
 
@@ -134,10 +134,10 @@ module BattleHelpers
       u["side"] == "party" && u["hp"].positive? &&
         u["statuses"].none? { |s| Battle::DISABLING_STATUSES.include?(s["kind"]) }
     end
-    awaiting.reduce([state, []]) do |(s, log), u|
+    awaiting.reduce([ state, [] ]) do |(s, log), u|
       action = %w[defend flee].include?(ability) ? command(u["id"], kind: ability) : command(u["id"], ability)
       s, events = apply(s, action)
-      [s, log + events]
+      [ s, log + events ]
     end
   end
 end

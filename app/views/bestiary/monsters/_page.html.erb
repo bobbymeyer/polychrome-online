@@ -1,0 +1,69 @@
+<header class="book-page__header">
+  <%= entry_portrait(entry) %>
+  <div>
+    <p class="eyebrow">Bestiary · Level <%= entry.level %></p>
+    <h1><%= entry.name %></h1>
+    <dl class="facts">
+      <dt>EXP</dt><dd><%= entry.exp %></dd>
+      <dt>Gil</dt><dd><%= entry.gil %></dd>
+      <dt>ABP</dt><dd><%= entry.abp %></dd>
+    </dl>
+  </div>
+</header>
+
+<% if entry.description.present? %>
+  <div class="prose"><%= simple_format(entry.description) %></div>
+<% end %>
+
+<section class="window">
+  <h2>Stat block</h2>
+  <dl class="stat-block">
+    <% Stats::NAMES.each do |stat| %>
+      <div><dt><%= stat_label(stat) %></dt><dd><%= number_with_delimiter(entry.stats[stat]) %></dd></div>
+    <% end %>
+  </dl>
+  <% if entry.elements.any? || entry.status_immune.any? %>
+    <dl class="facts facts--wide">
+      <% entry.elements.group_by { |_, a| a }.each do |affinity, pairs| %>
+        <dt><%= term(affinity) %></dt><dd><%= pairs.map { |element, _| term(element) }.join(", ") %></dd>
+      <% end %>
+      <% if entry.status_immune.any? %>
+        <dt>Immune to</dt><dd><%= entry.status_immune.map { |s| term(s) }.join(", ") %></dd>
+      <% end %>
+    </dl>
+  <% end %>
+</section>
+
+<section class="window">
+  <h2>Behavior</h2>
+  <% abilities = entry.abilities.index_by(&:slug) %>
+  <ol class="ai-script">
+    <% entry.ai_script.each do |rule| %>
+      <li>
+        <% conditions = rule.fetch("if", {}) %>
+        <%= conditions.empty? ? "Otherwise" : "If " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") %>:
+        <% ability = abilities[rule["use"]] %>
+        <%= ability ? link_to(ability.name, world_grimoire_ability_path(@world, ability)) : "Attack" %>
+        <% if rule["target"] %><span class="muted">→ <%= term(rule["target"]) %></span><% end %>
+      </li>
+    <% end %>
+  </ol>
+  <% unless entry.ai_script.last&.then { |rule| rule["if"].blank? } %>
+    <p class="hint">When no rule matches: Attack.</p>
+  <% end %>
+</section>
+
+<section class="window">
+  <h2>Drops</h2>
+  <% if entry.drops.empty? %>
+    <p class="empty">Nothing.</p>
+  <% else %>
+    <% items = entry.drop_items %>
+    <ul class="refs">
+      <% entry.drops.each do |drop| %>
+        <% item = items[drop["item"]] %>
+        <li><%= item ? link_to(item.name, world_armory_item_path(@world, item)) : drop["item"] %> (<%= drop["chance"] %>%)</li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

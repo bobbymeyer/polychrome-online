@@ -1,0 +1,15 @@
+<table class="book-table">
+  <thead><tr><th class="num">Lv</th><th>Name</th><th class="num">HP</th><th>Weak</th><th class="num">EXP</th><th class="num">Gil</th></tr></thead>
+  <tbody>
+    <% entries.each do |monster| %>
+      <tr>
+        <td class="num"><%= monster.level %></td>
+        <td><%= link_to monster.name, entry_path(monster) %></td>
+        <td class="num"><%= number_with_delimiter(monster.stats["max_hp"]) %></td>
+        <td><%= monster.elements.select { |_, a| a == "weak" }.keys.map { |e| term(e) }.join(", ").presence || "—" %></td>
+        <td class="num"><%= monster.exp %></td>
+        <td class="num"><%= monster.gil %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

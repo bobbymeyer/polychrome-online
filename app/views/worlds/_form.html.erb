@@ -1,0 +1,19 @@
+<%= form_with model: world, class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: world %>
+  <div class="field-row">
+    <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
+    <div class="field">
+      <%= f.label :slug %>
+      <% if world.persisted? %>
+        <code class="slug"><%= world.slug %></code>
+      <% else %>
+        <%= f.text_field :slug, required: true %>
+      <% end %>
+    </div>
+  </div>
+  <div class="field"><%= f.label :description %><%= f.text_area :description, rows: 4 %></div>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", world.persisted? ? world_path(world) : worlds_path, class: "button button--quiet" %>
+  </div>
+<% end %>

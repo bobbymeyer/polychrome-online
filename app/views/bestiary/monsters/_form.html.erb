@@ -1,0 +1,97 @@
+<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: entry %>
+  <%= render "book_entries/identity_fields", f: f %>
+  <div class="field-row">
+    <div class="field"><%= f.label :level %><%= f.number_field :level, min: 1 %></div>
+    <div class="field"><%= f.label :exp, "EXP" %><%= f.number_field :exp, min: 0 %></div>
+    <div class="field"><%= f.label :gil %><%= f.number_field :gil, min: 0 %></div>
+    <div class="field"><%= f.label :abp, "ABP" %><%= f.number_field :abp, min: 0 %></div>
+  </div>
+
+  <fieldset class="panel">
+    <legend>Stat block</legend>
+    <div class="stat-inputs">
+      <% Stats::NAMES.each do |stat| %>
+        <div class="field">
+          <label for="monster_stats_<%= stat %>"><%= stat_label(stat) %></label>
+          <%= number_field_tag jsonb_field_name(f, :stats, stat), entry.stats[stat], id: "monster_stats_#{stat}", min: 0, required: true %>
+        </div>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Affinities</legend>
+    <div class="stat-inputs">
+      <% Battle::ELEMENTS.each do |element| %>
+        <div class="field">
+          <label for="monster_elements_<%= element %>"><%= term(element) %></label>
+          <%= select_tag jsonb_field_name(f, :elements, element),
+                         options_for_select([["Normal", "normal"]] + Battle::AFFINITIES.map { |a| [term(a), a] }, entry.elements[element]),
+                         id: "monster_elements_#{element}" %>
+        </div>
+      <% end %>
+    </div>
+    <h3>Immune to</h3>
+    <%= hidden_field_tag "monster[status_immune][]", "", id: nil %>
+    <div class="checks">
+      <% Battle::STATUSES.each do |status| %>
+        <label>
+          <%= check_box_tag "monster[status_immune][]", status, entry.status_immune.include?(status), id: "monster_immune_#{status}" %>
+          <%= term(status) %>
+        </label>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>AI script</legend>
+    <p class="hint">First matching rule wins; all filled conditions must hold. With no rule matching, it attacks. Leave "Use" blank to remove a row.</p>
+    <% abilities = [["Attack", "attack"]] + @world.abilities.order(:name).map { |a| [a.name, a.slug] } %>
+    <table class="grid-form">
+      <thead>
+        <tr><th>Own HP &lt; %</th><th>Ally HP &lt; %</th><th>Ally down</th><th>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th></tr>
+      </thead>
+      <tbody>
+        <% rows_with_blanks(entry.ai_script).each_with_index do |rule, i| %>
+          <% c = rule.fetch("if", {}) %>
+          <% name = ->(key) { jsonb_field_name(f, :ai_script, i, key) } %>
+          <tr>
+            <td><%= number_field_tag name.(:self_hp_below), c["self_hp_below"], min: 1, max: 100, "aria-label": "Own HP below, rule #{i + 1}" %></td>
+            <td><%= number_field_tag name.(:ally_hp_below), c["ally_hp_below"], min: 1, max: 100, "aria-label": "Ally HP below, rule #{i + 1}" %></td>
+            <td>
+              <%= hidden_field_tag name.(:ally_ko), "0", id: nil %>
+              <%= check_box_tag name.(:ally_ko), "1", c["ally_ko"], id: nil, "aria-label": "Ally down, rule #{i + 1}" %>
+            </td>
+            <td><%= number_field_tag name.(:round_multiple), c["round_multiple"], min: 1, "aria-label": "Every Nth round, rule #{i + 1}" %></td>
+            <td><%= number_field_tag name.(:chance), c["chance"], min: 1, max: 100, "aria-label": "Chance, rule #{i + 1}" %></td>
+            <td><%= select_tag name.(:use), options_for_select(abilities, rule["use"]), include_blank: true, "aria-label": "Use, rule #{i + 1}" %></td>
+            <td><%= select_tag name.(:target), options_for_select(Battle::AI::STRATEGIES.map { |s| [term(s), s] }, rule["target"]), include_blank: "Default", "aria-label": "Target, rule #{i + 1}" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Drop table</legend>
+    <% items = @world.items.order(:name).map { |item| [item.name, item.slug] } %>
+    <table class="grid-form">
+      <thead><tr><th>Item</th><th>Chance %</th></tr></thead>
+      <tbody>
+        <% rows_with_blanks(entry.drops).each_with_index do |drop, i| %>
+          <tr>
+            <td><%= select_tag jsonb_field_name(f, :drops, i, :item), options_for_select(items, drop["item"]), include_blank: true, "aria-label": "Drop item #{i + 1}" %></td>
+            <td><%= number_field_tag jsonb_field_name(f, :drops, i, :chance), drop["chance"], min: 1, max: 100, "aria-label": "Drop chance #{i + 1}" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <%= render "book_entries/art_fields", f: f %>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", entry.persisted? ? entry_path(entry) : entries_path, class: "button button--quiet" %>
+  </div>
+<% end %>

@@ -30,7 +30,7 @@ RSpec.describe Battle::Resolver do
 
     def symbolize(obj)
       case obj
-      when Hash then obj.to_h { |k, v| [k.to_sym, symbolize(v)] }
+      when Hash then obj.to_h { |k, v| [ k.to_sym, symbolize(v) ] }
       when Array then obj.map { |v| symbolize(v) }
       else obj
       end
@@ -40,7 +40,7 @@ RSpec.describe Battle::Resolver do
   describe "input phase" do
     it "accepts commands without resolving until the whole party is in" do
       s, events = apply(state, command("bartz"))
-      expect(events).to eq([{ "type" => "command_accepted", "actor" => "bartz" }])
+      expect(events).to eq([ { "type" => "command_accepted", "actor" => "bartz" } ])
       expect(s["inputs"]).to eq("bartz" => { "kind" => "ability", "ability" => "attack", "target" => nil })
       expect(s["rng"]).to eq(state["rng"])
     end
@@ -60,7 +60,7 @@ RSpec.describe Battle::Resolver do
 
     it "does not wait for units who cannot act" do
       s = with_unit(state, "vivi", hp: 0)
-      s = with_unit(s, "rosa", statuses: [{ "kind" => "sleep", "turns" => 2 }])
+      s = with_unit(s, "rosa", statuses: [ { "kind" => "sleep", "turns" => 2 } ])
       s, = apply(s, command("bartz"))
       s, events = apply(s, command("locke"))
       expect(types(events)).to include("round_start")
@@ -87,7 +87,7 @@ RSpec.describe Battle::Resolver do
       it("insufficient MP") { rejects(command("vivi", "meteor"), /lacks MP/, from: with_unit(state, "vivi", mp: 3)) }
 
       it "magic while silenced" do
-        rejects(command("vivi", "fire"), /silenced/, from: with_unit(state, "vivi", statuses: [{ "kind" => "silence", "turns" => 2 }]))
+        rejects(command("vivi", "fire"), /silenced/, from: with_unit(state, "vivi", statuses: [ { "kind" => "silence", "turns" => 2 } ]))
       end
 
       it "fleeing an inescapable battle" do
@@ -167,7 +167,7 @@ RSpec.describe Battle::Resolver do
     end
 
     it "skips disabled units but still ticks their statuses" do
-      s = with_unit(state, "goblin_a", statuses: [{ "kind" => "paralyze", "turns" => 1 }])
+      s = with_unit(state, "goblin_a", statuses: [ { "kind" => "paralyze", "turns" => 1 } ])
       s, events = full_round(s, "defend")
       goblin_turn = events.drop_while { |e| e != { "type" => "turn_start", "unit" => "goblin_a" } }.first(4)
       expect(types(goblin_turn)).to eq(%w[turn_start turn_skipped status_expired turn_end])
@@ -178,7 +178,7 @@ RSpec.describe Battle::Resolver do
     it "fails a spell when silence landed between input and execution" do
       s = with_unit(state, "vivi", stats: stats(agi: 1, max_hp: 70, max_mp: 40, mag: 18))
       s, = apply(s, command("vivi", "fire", "goblin_a"))
-      s = with_unit(s, "vivi", statuses: [{ "kind" => "silence", "turns" => 3 }])
+      s = with_unit(s, "vivi", statuses: [ { "kind" => "silence", "turns" => 3 } ])
       s, = apply(s, command("bartz", kind: "defend"))
       s, = apply(s, command("rosa", kind: "defend"))
       _, events = apply(s, command("locke", kind: "defend"))
@@ -225,7 +225,7 @@ RSpec.describe Battle::Resolver do
     end
 
     it "ends in defeat when the party falls" do
-      s = build_battle(party: [BattleFixtures.party.first], enemies: BattleFixtures.ogre)
+      s = build_battle(party: [ BattleFixtures.party.first ], enemies: BattleFixtures.ogre)
       s = with_unit(s, "bartz", hp: 1, stats: stats(agi: 1, max_hp: 120))
       s, events = apply(s, command("bartz", kind: "defend"))
       expect(s["status"]).to eq("defeat")
@@ -337,7 +337,7 @@ RSpec.describe Battle::Resolver do
     end
 
     it "remove_status cures" do
-      s = with_unit(state, "bartz", statuses: [{ "kind" => "poison", "turns" => 5 }])
+      s = with_unit(state, "bartz", statuses: [ { "kind" => "poison", "turns" => 5 } ])
       s, events = apply(s, gm("remove_status", unit: "bartz", status: "poison"))
       expect(events.last).to include("type" => "status_expired", "reason" => "gm")
       expect(unit(s, "bartz")["statuses"]).to be_empty
@@ -364,7 +364,7 @@ RSpec.describe Battle::Resolver do
     it "heals itself when low" do
       s = with_unit(boss_fight, "ogre", hp: 50)
       _, events = full_round(s, "defend")
-      expect(of_type(ogre_turn(events), :cast).sole).to include("ability" => "cure", "targets" => ["ogre"])
+      expect(of_type(ogre_turn(events), :cast).sole).to include("ability" => "cure", "targets" => [ "ogre" ])
     end
 
     it "follows round-based rules" do
@@ -376,7 +376,7 @@ RSpec.describe Battle::Resolver do
     it "targets the weakest party member when told to" do
       s = with_unit(boss_fight, "vivi", hp: 5)
       _, events = full_round(s, "defend")
-      expect(of_type(ogre_turn(events), :attack).sole["targets"]).to eq(["vivi"])
+      expect(of_type(ogre_turn(events), :attack).sole["targets"]).to eq([ "vivi" ])
     end
 
     it "skips rules it cannot pay for" do
@@ -386,7 +386,7 @@ RSpec.describe Battle::Resolver do
     end
 
     it "falls back to attacking when silenced" do
-      s = with_unit(boss_fight, "ogre", hp: 50, statuses: [{ "kind" => "silence", "turns" => 3 }])
+      s = with_unit(boss_fight, "ogre", hp: 50, statuses: [ { "kind" => "silence", "turns" => 3 } ])
       _, events = full_round(s, "defend")
       expect(types(ogre_turn(events))).not_to include("action_failed")
       expect(of_type(ogre_turn(events), :attack)).not_to be_empty

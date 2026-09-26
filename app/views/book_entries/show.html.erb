@@ -1,0 +1,10 @@
+<% content_for :title, "#{@entry.name} · #{book_title}" %>
+<div class="crumbs"><%= link_to book_title, entries_path %> / <%= @entry.name %></div>
+<article class="book-page">
+  <%= render "page", entry: @entry %>
+</article>
+<div class="actions">
+  <%= link_to "Edit", polymorphic_path([:edit, @world, book_key, @entry]), class: "button" %>
+  <%= button_to "Delete", entry_path(@entry), method: :delete, class: "button button--danger",
+                form: { data: { turbo_confirm: "Delete #{@entry.name}? This cannot be undone." } } %>
+</div>

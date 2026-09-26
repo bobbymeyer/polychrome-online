@@ -134,7 +134,7 @@ RSpec.describe "Battle resolver properties" do
         next unless (i % 7).zero?
 
         reloaded = JSON.parse(JSON.generate(before))
-        expect(Battle::Resolver.apply(reloaded, action)).to eq([after, events])
+        expect(Battle::Resolver.apply(reloaded, action)).to eq([ after, events ])
       end
     end
   end

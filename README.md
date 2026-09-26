@@ -5,19 +5,52 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
 
 ## Status
 
-Build order step 1 is done: the battle resolver and stat derivation, as pure
-Ruby with RSpec. There's no web app yet. When the Rails app arrives, `lib/`
-carries over unchanged.
+- **Step 1 (done):** the battle resolver and stat derivation, pure Ruby in `lib/`.
+- **Step 2 (done):** the books (Bestiary, Job Compendium, Grimoire, Armory) as
+  Rails admin CRUD with rendered pages, plus base-world seed data.
 
 ```
 bundle install
-bin/rspec
+bin/rails db:setup      # creates the databases, loads the schema, seeds the base world
+bin/rails server        # http://localhost:3000
+bin/rspec               # all specs; bin/ci also runs RuboCop, Brakeman and audits
 ```
+
+It needs PostgreSQL running locally.
+
+## Books
+
+Every book is a resource namespace inside a world, e.g.
+`/worlds/base/bestiary/monsters/ogre`. An entry has two faces: a form, and a
+page with its stat block, prose, image and cross-references ("Used by",
+"Taught by", "Dropped by", "Equippable by").
+
+- The structured parts of an entry (stat blocks, effect lists, AI scripts,
+  drop tables) are stored as jsonb in exactly the shape the engine reads.
+  Models validate them against the engine's own closed vocabularies:
+  `Ability` asks `Battle::State.validate_ability!`, so the Grimoire can't hold
+  an effect the resolver would reject.
+- **Slugs are an entry's identity** inside its world and can't change after
+  creation. They're the engine's ids and what AI scripts and drop tables use to
+  refer to other entries.
+- Each entry has an image slot (Active Storage) and a variant recipe (hue,
+  scale, flip), applied with CSS. It also has `image_seed` and `image_prompt`
+  columns for the future generation pipeline.
+- `World#battle(seed:, party:, monsters: { "goblin" => 3 })` builds a battle
+  state straight from the books. `Job#to_derivation`, `Job#passives` and
+  `Item#to_equipment` feed `Stats::Derivation`.
+- The learn table is `job_levels` (§4 calls it `job_learn_tables`): one row per
+  job level, with its ABP cost and the ability it teaches.
+- Items and equipment share one `items` table. `category` decides which: a
+  consumable, or equipment for a slot.
+- There's no authentication yet. The books are an open admin surface.
 
 ## Layout
 
 | Path | What |
 | --- | --- |
+| `app/models`, `app/controllers/{bestiary,compendium,grimoire,armory}` | The books |
+| `db/seeds/base_world.rb` | The base world's first entries (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |
 | `lib/battle/resolver.rb` | `Battle::Resolver.apply(state, action) -> [new_state, events]` |
 | `lib/battle/effects.rb` | The mechanic primitives (§3.1) and their formulas |

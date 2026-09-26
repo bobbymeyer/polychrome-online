@@ -1,0 +1,29 @@
+<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: entry %>
+  <%= render "book_entries/identity_fields", f: f %>
+  <div class="field-row">
+    <div class="field">
+      <%= f.label :kind %>
+      <%= f.select :kind, Ability::KINDS.map { |k| [term(k), k] } %>
+      <p class="hint">Magic is blocked by Silence.</p>
+    </div>
+    <div class="field">
+      <%= f.label :target %>
+      <%= f.select :target, Battle::TARGETINGS.map { |t| [term(t), t] }, include_blank: true %>
+    </div>
+    <div class="field">
+      <%= f.label :mp_cost, "MP cost" %>
+      <%= f.number_field :mp_cost, min: 0 %>
+    </div>
+    <div class="field">
+      <%= f.label :gesture %>
+      <%= f.select :gesture, Ability::GESTURES.map { |g| [term(g), g] }, include_blank: "None" %>
+    </div>
+  </div>
+  <%= render "book_entries/effect_rows", f: f %>
+  <%= render "book_entries/art_fields", f: f %>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", entry.persisted? ? entry_path(entry) : entries_path, class: "button button--quiet" %>
+  </div>
+<% end %>

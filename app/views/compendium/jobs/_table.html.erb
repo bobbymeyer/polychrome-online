@@ -1,0 +1,13 @@
+<table class="book-table">
+  <thead><tr><th>Name</th><th>Strengths</th><th>Abilities</th><th class="num">Levels</th></tr></thead>
+  <tbody>
+    <% entries.includes(job_levels: :ability).each do |job| %>
+      <tr>
+        <td><%= link_to job.name, entry_path(job) %></td>
+        <td><%= job.stat_multipliers.select { |_, v| v > 100 }.keys.map { |s| stat_label(s) }.join(", ").presence || "—" %></td>
+        <td><%= job.job_levels.map { |l| l.ability.name }.join(", ").presence || "—" %></td>
+        <td class="num"><%= job.job_levels.size %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

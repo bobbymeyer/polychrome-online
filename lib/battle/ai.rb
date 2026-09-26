@@ -29,10 +29,10 @@ module Battle
         target = pick_target(ctx, unit, ability, rule["target"])
         next if target == :none
 
-        return [ability, target]
+        return [ ability, target ]
       end
 
-      [ctx.ability("attack"), nil]
+      [ ctx.ability("attack"), nil ]
     end
 
     def conditions_met?(ctx, unit, conditions)
@@ -65,9 +65,9 @@ module Battle
       when "single_ally"
         pool = if ctx.revives?(ability)
                  ctx.allies(unit, alive: false).reject { |a| ctx.alive?(a) }
-               else
+        else
                  ctx.allies(unit)
-               end
+        end
         choose_from(ctx, pool, strategy || "lowest_hp", unit)
       else
         ctx.revives?(ability) && ctx.allies(unit, alive: false).all? { |a| ctx.alive?(a) } ? :none : nil
@@ -79,10 +79,10 @@ module Battle
       return :none if pool.empty?
 
       chosen = case strategy
-               when "lowest_hp" then pool.min_by { |u| [ctx.hp_percent(u), u["hp"]] }
-               when "highest_hp" then pool.max_by { |u| [u["hp"], -ctx.units.index(u)] }
-               else ctx.rng.pick(pool)
-               end
+      when "lowest_hp" then pool.min_by { |u| [ ctx.hp_percent(u), u["hp"] ] }
+      when "highest_hp" then pool.max_by { |u| [ u["hp"], -ctx.units.index(u) ] }
+      else ctx.rng.pick(pool)
+      end
       chosen["id"]
     end
   end

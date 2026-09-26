@@ -1,0 +1,14 @@
+<table class="book-table">
+  <thead><tr><th>Name</th><th>Kind</th><th>Target</th><th class="num">MP</th><th>Effects</th></tr></thead>
+  <tbody>
+    <% entries.each do |ability| %>
+      <tr>
+        <td><%= link_to ability.name, entry_path(ability) %></td>
+        <td><%= term(ability.kind) %></td>
+        <td><%= term(ability.target) %></td>
+        <td class="num"><%= ability.mp_cost %></td>
+        <td><%= ability.effects.map { |e| describe_effect(e) }.join("; ") %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

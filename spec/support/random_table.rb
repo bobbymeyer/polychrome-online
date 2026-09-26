@@ -17,7 +17,7 @@ class RandomTable
     @initial = Battle::State.build(
       seed: seed,
       party: BattleFixtures.party.sample(@chooser.rand(1..4), random: @chooser),
-      enemies: enemies || [BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre].sample(random: @chooser),
+      enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre ].sample(random: @chooser),
       abilities: BattleFixtures.abilities,
       escapable: @chooser.rand(4) != 0
     )
@@ -33,7 +33,7 @@ class RandomTable
       action = next_action(state)
       after, events = Battle::Resolver.apply(state, action)
       @actions << action
-      @steps << [state, action, after, events]
+      @steps << [ state, action, after, events ]
       state = after
     end
     state
@@ -71,11 +71,11 @@ class RandomTable
   def target_for(state, u, ability)
     revive = ability["effects"].any? { |e| e["primitive"] == "revive" }
     pool = case ability["target"]
-           when "single_enemy" then state["units"].select { |o| o["side"] != u["side"] && o["hp"].positive? }
-           when "single_ally"
+    when "single_enemy" then state["units"].select { |o| o["side"] != u["side"] && o["hp"].positive? }
+    when "single_ally"
              state["units"].select { |o| o["side"] == u["side"] && (revive ? o["hp"].zero? : o["hp"].positive?) }
-           else []
-           end
+    else []
+    end
     return nil if pool.empty? || @chooser.rand(5).zero? # sometimes leave it to the engine
 
     pool.sample(random: @chooser)["id"]

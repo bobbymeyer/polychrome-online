@@ -51,7 +51,7 @@ RSpec.describe Battle::Effects do
       rng = ScriptedRng.new(99)
       ctx = Battle::Context.new(state, rng: rng)
       described_class.apply(ctx, ctx.unit("bartz"), ctx.unit("goblin_a"), effect("physical"))
-      expect(ctx.events).to eq([{ "type" => "miss", "actor" => "bartz", "target" => "goblin_a", "reason" => "evaded" }])
+      expect(ctx.events).to eq([ { "type" => "miss", "actor" => "bartz", "target" => "goblin_a", "reason" => "evaded" } ])
     end
 
     it "halves hit chance when blind" do
@@ -151,7 +151,7 @@ RSpec.describe Battle::Effects do
     it "lands at 100% regardless of spr" do
       described_class.apply(ctx, vivi, goblin, effect("status", kind: "poison", chance: 100, duration: 4))
       expect(ctx.events.sole).to include("type" => "status_applied", "status" => "poison", "turns" => 4)
-      expect(goblin["statuses"]).to eq([{ "kind" => "poison", "turns" => 4 }])
+      expect(goblin["statuses"]).to eq([ { "kind" => "poison", "turns" => 4 } ])
     end
 
     it "reduces chance by the target's spr" do
@@ -181,7 +181,7 @@ RSpec.describe Battle::Effects do
       described_class.apply(ctx, vivi, goblin, effect("status", kind: "poison", chance: 100, duration: 2))
       described_class.apply(ctx, vivi, goblin, effect("status", kind: "poison", chance: 100, duration: 5))
       described_class.apply(ctx, vivi, goblin, effect("status", kind: "poison", chance: 100, duration: 1))
-      expect(goblin["statuses"]).to eq([{ "kind" => "poison", "turns" => 5 }])
+      expect(goblin["statuses"]).to eq([ { "kind" => "poison", "turns" => 5 } ])
     end
   end
 
@@ -213,8 +213,8 @@ RSpec.describe Battle::Effects do
     it "adds a signed percent modifier" do
       described_class.apply(ctx, bartz, bartz, effect("buff", stat: "str", amount: 50, duration: 3))
       described_class.apply(ctx, bartz, goblin, effect("debuff", stat: "def", amount: 50, duration: 2))
-      expect(bartz["buffs"]).to eq([{ "stat" => "str", "amount" => 50, "turns" => 3 }])
-      expect(goblin["buffs"]).to eq([{ "stat" => "def", "amount" => -50, "turns" => 2 }])
+      expect(bartz["buffs"]).to eq([ { "stat" => "str", "amount" => 50, "turns" => 3 } ])
+      expect(goblin["buffs"]).to eq([ { "stat" => "def", "amount" => -50, "turns" => 2 } ])
       expect(ctx.stat(bartz, "str")).to eq(21)
       expect(ctx.stat(goblin, "def")).to eq(1)
     end
@@ -270,7 +270,7 @@ RSpec.describe Battle::Effects do
       bartz["statuses"] << { "kind" => "poison", "turns" => 2 }
       described_class.upkeep(ctx, bartz)
       expect(ctx.events.sole).to include("type" => "damage", "amount" => 7, "status" => "poison")
-      expect(bartz["statuses"]).to eq([{ "kind" => "poison", "turns" => 1 }])
+      expect(bartz["statuses"]).to eq([ { "kind" => "poison", "turns" => 1 } ])
     end
 
     it "expires statuses and buffs whose duration runs out" do

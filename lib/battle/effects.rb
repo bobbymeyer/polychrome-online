@@ -44,7 +44,7 @@ module Battle
       amount = mitigate(vary(ctx, base), ctx.stat(target, "def"))
       amount *= 2 if crit
       amount /= 2 if target["defending"]
-      amount = [amount, 1].max
+      amount = [ amount, 1 ].max
 
       ctx.emit(:crit, actor: actor["id"], target: target["id"]) if crit
       ctx.deal_damage(target, amount, actor: actor["id"], crit: crit)
@@ -64,7 +64,7 @@ module Battle
       amount = magic_amount(ctx, actor, target, effect)
       amount *= 2 if affinity == "weak"
       amount /= 2 if affinity == "resist"
-      amount = [amount, 1].max
+      amount = [ amount, 1 ].max
 
       if affinity == "absorb"
         ctx.restore_hp(target, amount, actor: actor["id"], element: element, absorbed: true)
@@ -93,14 +93,14 @@ module Battle
 
     # heal(power): power scaled by the caster's mag.
     def heal(ctx, actor, target, effect)
-      amount = [vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"))), 1].max
+      amount = [ vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"))), 1 ].max
       ctx.restore_hp(target, amount, actor: actor["id"])
     end
 
     # drain(power): non-elemental magic damage returned to the caster as HP.
     def drain(ctx, actor, target, effect)
-      amount = [magic_amount(ctx, actor, target, effect), 1].max
-      taken = [amount, target["hp"]].min
+      amount = [ magic_amount(ctx, actor, target, effect), 1 ].max
+      taken = [ amount, target["hp"] ].min
       ctx.deal_damage(target, amount, actor: actor["id"], drain: true)
       ctx.restore_hp(actor, taken, source: target["id"], drain: true)
     end
@@ -155,7 +155,7 @@ module Battle
     # End-of-turn upkeep for a unit: poison, then duration ticks.
     def upkeep(ctx, unit)
       if ctx.status?(unit, "poison")
-        ctx.deal_damage(unit, [unit["stats"]["max_hp"] / POISON_DIVISOR, 1].max, status: "poison")
+        ctx.deal_damage(unit, [ unit["stats"]["max_hp"] / POISON_DIVISOR, 1 ].max, status: "poison")
         return unless ctx.alive?(unit)
       end
 
@@ -179,7 +179,7 @@ module Battle
     end
 
     def crit_chance(ctx, actor, target)
-      (BASE_CRIT + [ctx.stat(actor, "agi") - ctx.stat(target, "agi"), 0].max / 4).clamp(0, CRIT_CEILING)
+      (BASE_CRIT + [ ctx.stat(actor, "agi") - ctx.stat(target, "agi"), 0 ].max / 4).clamp(0, CRIT_CEILING)
     end
 
     # Sleeping or paralysed targets cannot dodge. The hit roll is still

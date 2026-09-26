@@ -1,0 +1,4 @@
+<% content_for :title, "New #{entry_class.model_name.human.downcase} · #{book_title}" %>
+<div class="crumbs"><%= link_to book_title, entries_path %> / New</div>
+<h1>New <%= entry_class.model_name.human.downcase %></h1>
+<%= render "form", entry: @entry %>

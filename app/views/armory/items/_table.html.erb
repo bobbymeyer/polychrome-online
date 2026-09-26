@@ -1,0 +1,20 @@
+<table class="book-table">
+  <thead><tr><th>Name</th><th>Category</th><th>Slot</th><th>Bonuses / effects</th><th class="num">Price</th></tr></thead>
+  <tbody>
+    <% entries.each do |item| %>
+      <tr>
+        <td><%= link_to item.name, entry_path(item) %></td>
+        <td><%= term(item.category) %></td>
+        <td><%= item.slot ? term(item.slot) : "—" %></td>
+        <td>
+          <% if item.equipment? %>
+            <%= item.stats.map { |stat, value| "#{stat_label(stat)} #{signed(value)}" }.join(", ") %>
+          <% else %>
+            <%= item.effects.map { |e| describe_effect(e) }.join("; ") %>
+          <% end %>
+        </td>
+        <td class="num"><%= number_with_delimiter(item.price) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

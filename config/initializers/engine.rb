@@ -1,0 +1,6 @@
+# frozen_string_literal: true
+
+# The battle engine and stat derivation are pure Ruby with no Rails
+# dependency (docs/HANDOFF.md §12), so they are required directly rather
+# than autoloaded.
+require Rails.root.join("lib/battle").to_s

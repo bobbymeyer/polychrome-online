@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= [content_for(:title), "Polychrome"].compact.join(" · ") %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="application-name" content="Polychrome">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <%= link_to "Polychrome", root_path, class: "topbar__brand" %>
+      <% if @world&.persisted? %>
+        <nav class="topbar__books" aria-label="Books">
+          <%= link_to @world.name, world_path(@world), class: "topbar__world" %>
+          <%= book_nav_link "Bestiary", world_bestiary_monsters_path(@world), :bestiary %>
+          <%= book_nav_link "Compendium", world_compendium_jobs_path(@world), :compendium %>
+          <%= book_nav_link "Grimoire", world_grimoire_abilities_path(@world), :grimoire %>
+          <%= book_nav_link "Armory", world_armory_items_path(@world), :armory %>
+        </nav>
+      <% end %>
+    </header>
+
+    <main class="page">
+      <% flash.each do |type, message| %>
+        <div class="flash flash--<%= type %>" role="status"><%= message %></div>
+      <% end %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+<%# Name, slug and description: the fields every book entry shares. %>
+<div class="field-row">
+  <div class="field">
+    <%= f.label :name %>
+    <%= f.text_field :name, required: true %>
+  </div>
+  <div class="field">
+    <%= f.label :slug %>
+    <% if f.object.persisted? %>
+      <code class="slug"><%= f.object.slug %></code>
+      <p class="hint">Fixed after creation: scripts and drop tables refer to it.</p>
+    <% else %>
+      <%= f.text_field :slug, placeholder: "from the name" %>
+      <p class="hint">Lowercase, digits and underscores. Can't change later.</p>
+    <% end %>
+  </div>
+</div>
+<div class="field">
+  <%= f.label :description, "Prose" %>
+  <%= f.text_area :description, rows: 3 %>
+</div>

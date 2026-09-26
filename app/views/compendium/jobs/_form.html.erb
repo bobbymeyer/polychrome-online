@@ -1,0 +1,75 @@
+<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: entry %>
+  <%= render "book_entries/identity_fields", f: f %>
+
+  <fieldset class="panel">
+    <legend>Stat multipliers (%)</legend>
+    <p class="hint">Applied to base stats. Blank means 100.</p>
+    <div class="stat-inputs">
+      <% Stats::NAMES.each do |stat| %>
+        <div class="field">
+          <label for="job_stat_multipliers_<%= stat %>"><%= stat_label(stat) %></label>
+          <%= number_field_tag jsonb_field_name(f, :stat_multipliers, stat), entry.stat_multipliers[stat],
+                               id: "job_stat_multipliers_#{stat}", min: 0, max: 500, placeholder: 100 %>
+        </div>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Equip permissions</legend>
+    <%= hidden_field_tag "job[equip_categories][]", "", id: nil %>
+    <div class="checks">
+      <% Item::EQUIPMENT_CATEGORIES.each do |category| %>
+        <label>
+          <%= check_box_tag "job[equip_categories][]", category, entry.equip_categories.include?(category), id: "job_equip_#{category}" %>
+          <%= term(category) %>
+        </label>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Innates</legend>
+    <p class="hint">Passive bonuses while this job is set. Leave the stat blank to remove a row.</p>
+    <table class="grid-form">
+      <thead><tr><th>Stat</th><th>Add</th><th>Percent</th></tr></thead>
+      <tbody>
+        <% rows_with_blanks(entry.innates, blanks: 1).each_with_index do |passive, i| %>
+          <tr>
+            <td><%= select_tag jsonb_field_name(f, :innates, i, :stat), options_for_select(Stats::NAMES.map { |s| [stat_label(s), s] }, passive["stat"]), include_blank: true, "aria-label": "Innate stat #{i + 1}" %></td>
+            <td><%= number_field_tag jsonb_field_name(f, :innates, i, :add), passive["add"], "aria-label": "Innate add #{i + 1}" %></td>
+            <td><%= number_field_tag jsonb_field_name(f, :innates, i, :percent), passive["percent"], "aria-label": "Innate percent #{i + 1}" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Learn table</legend>
+    <p class="hint">Each job level costs ABP and teaches one ability from the Grimoire.</p>
+    <% abilities = @world.abilities.order(:name).map { |a| [a.name, a.id] } %>
+    <table class="grid-form">
+      <thead><tr><th>Level</th><th>ABP</th><th>Ability</th><th>Remove</th></tr></thead>
+      <tbody>
+        <% levels = entry.job_levels.to_a %>
+        <% levels += Array.new(2) { entry.job_levels.build } unless levels.count(&:new_record?) >= 2 %>
+        <%= f.fields_for :job_levels, levels do |lf| %>
+          <tr>
+            <td><%= lf.number_field :level, min: 1, "aria-label": "Level" %></td>
+            <td><%= lf.number_field :abp, min: 0, "aria-label": "ABP" %></td>
+            <td><%= lf.select :ability_id, abilities, { include_blank: true }, "aria-label": "Ability" %></td>
+            <td><% if lf.object.persisted? %><%= lf.check_box :_destroy, "aria-label": "Remove" %><% end %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <%= render "book_entries/art_fields", f: f %>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", entry.persisted? ? entry_path(entry) : entries_path, class: "button button--quiet" %>
+  </div>
+<% end %>

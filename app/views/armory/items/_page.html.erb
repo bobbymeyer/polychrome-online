@@ -1,0 +1,64 @@
+<header class="book-page__header">
+  <%= entry_portrait(entry) %>
+  <div>
+    <p class="eyebrow">Armory · <%= term(entry.category) %></p>
+    <h1><%= entry.name %></h1>
+    <dl class="facts">
+      <% if entry.slot %><dt>Slot</dt><dd><%= term(entry.slot) %></dd><% end %>
+      <dt>Price</dt><dd><%= number_with_delimiter(entry.price) %> gil</dd>
+      <% if entry.consumable? %><dt>Target</dt><dd><%= term(entry.target) %></dd><% end %>
+    </dl>
+  </div>
+</header>
+
+<% if entry.description.present? %>
+  <div class="prose"><%= simple_format(entry.description) %></div>
+<% end %>
+
+<section class="window">
+  <% if entry.equipment? %>
+    <h2>Bonuses</h2>
+    <% if entry.stats.empty? %>
+      <p class="empty">No stat bonuses.</p>
+    <% else %>
+      <dl class="stat-block stat-block--compact">
+        <% entry.stats.each do |stat, value| %>
+          <div><dt><%= stat_label(stat) %></dt><dd><%= signed(value) %></dd></div>
+        <% end %>
+      </dl>
+    <% end %>
+  <% else %>
+    <h2>When used</h2>
+    <ol class="effects">
+      <% entry.effects.each do |effect| %>
+        <li><%= describe_effect(effect) %></li>
+      <% end %>
+    </ol>
+  <% end %>
+</section>
+
+<section class="window">
+  <h2>Cross-references</h2>
+  <% jobs = entry.equipment? ? entry.equippable_by : [] %>
+  <% droppers = entry.dropped_by %>
+  <% if jobs.empty? && droppers.empty? %>
+    <p class="empty">Nothing in this world refers to <%= entry.name %> yet.</p>
+  <% end %>
+  <% if jobs.any? %>
+    <h3>Equippable by</h3>
+    <ul class="refs refs--inline">
+      <% jobs.each do |job| %>
+        <li><%= link_to job.name, world_compendium_job_path(@world, job) %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <% if droppers.any? %>
+    <h3>Dropped by</h3>
+    <ul class="refs">
+      <% droppers.each do |monster| %>
+        <% chance = monster.drops.find { |d| d["item"] == entry.slug }["chance"] %>
+        <li><%= link_to monster.name, world_bestiary_monster_path(@world, monster) %> (<%= chance %>%)</li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

@@ -1,0 +1,87 @@
+# frozen_string_literal: true
+
+# CRUD shared by every book. Each book is a namespace with one controller
+# that names its model, its title and its permitted params; views live in
+# the book's own folder, with shared shells in app/views/book_entries.
+class BookEntriesController < ApplicationController
+  class_attribute :entry_class, :book_title, :book_key
+
+  before_action :set_world
+  before_action :set_entry, only: %i[show edit update destroy]
+
+  helper_method :entry_class, :book_title, :book_key, :entry_path, :entries_path
+
+  def index
+    @entries = ordered(scope)
+  end
+
+  def show; end
+
+  def new
+    @entry = scope.new
+  end
+
+  def edit; end
+
+  def create
+    @entry = scope.new(entry_params)
+    if @entry.save
+      redirect_to entry_path(@entry), notice: "#{@entry.name} was added to the #{book_title}."
+    else
+      render :new, status: :unprocessable_content
+    end
+  end
+
+  def update
+    if @entry.update(entry_params.except(:slug))
+      redirect_to entry_path(@entry), notice: "#{@entry.name} was updated."
+    else
+      render :edit, status: :unprocessable_content
+    end
+  end
+
+  def destroy
+    if @entry.destroy
+      redirect_to entries_path, notice: "#{@entry.name} was removed from the #{book_title}.", status: :see_other
+    else
+      redirect_to entry_path(@entry), alert: @entry.errors.full_messages.to_sentence, status: :see_other
+    end
+  end
+
+  private
+
+  def set_world
+    @world = World.find_by!(slug: params[:world_slug])
+  end
+
+  def set_entry
+    @entry = scope.find_by!(slug: params[:slug])
+  end
+
+  def scope
+    @world.public_send(entry_class.model_name.plural)
+  end
+
+  def ordered(relation)
+    relation.alphabetical
+  end
+
+  def entry_path(entry)
+    polymorphic_path([ @world, book_key, entry ])
+  end
+
+  def entries_path
+    polymorphic_path([ @world, book_key, entry_class ])
+  end
+
+  # Every param any primitive takes; the model keeps only the ones the
+  # chosen primitive uses.
+  def effect_fields
+    [ "primitive", *Battle::PRIMITIVE_PARAMS.values.flat_map { |spec| spec[:required] + spec[:optional] }.uniq ]
+  end
+
+  # Art fields every book entry shares (§3.3, §8).
+  def art_params
+    [ :image, :image_seed, :image_prompt, { variant: %i[hue scale flip] } ]
+  end
+end

@@ -1,0 +1,81 @@
+<header class="book-page__header">
+  <%= entry_portrait(entry) %>
+  <div>
+    <p class="eyebrow">Job Compendium</p>
+    <h1><%= entry.name %></h1>
+    <dl class="facts">
+      <dt>Job levels</dt><dd><%= entry.job_levels.size %></dd>
+      <dt>ABP to master</dt><dd><%= entry.total_abp %></dd>
+    </dl>
+  </div>
+</header>
+
+<% if entry.description.present? %>
+  <div class="prose"><%= simple_format(entry.description) %></div>
+<% end %>
+
+<section class="window">
+  <h2>Stat modifiers</h2>
+  <dl class="stat-block">
+    <% Stats::NAMES.each do |stat| %>
+      <% pct = entry.stat_multipliers.fetch(stat, 100) %>
+      <div class="<%= 'is-up' if pct > 100 %> <%= 'is-down' if pct < 100 %>">
+        <dt><%= stat_label(stat) %></dt><dd>×<%= format("%.2f", pct / 100.0) %></dd>
+      </div>
+    <% end %>
+  </dl>
+  <% if entry.innates.any? %>
+    <h3>Innate</h3>
+    <ul class="refs">
+      <% entry.innates.each do |passive| %>
+        <li>
+          <%= stat_label(passive["stat"]) %>
+          <%= [(signed(passive["add"]) if passive["add"]), ("#{signed(passive['percent'])}%" if passive["percent"])].compact.join(", ") %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>
+
+<section class="window">
+  <h2>Learn table</h2>
+  <% if entry.job_levels.empty? %>
+    <p class="empty"><%= entry.name %> teaches nothing. It has no limits either.</p>
+  <% else %>
+    <table class="book-table book-table--plain">
+      <thead><tr><th class="num">Level</th><th class="num">ABP</th><th>Ability</th><th>Kind</th></tr></thead>
+      <tbody>
+        <% entry.job_levels.includes(:ability).each do |level| %>
+          <tr>
+            <td class="num"><%= level.level %></td>
+            <td class="num"><%= level.abp %></td>
+            <td><%= link_to level.ability.name, world_grimoire_ability_path(@world, level.ability) %></td>
+            <td><%= term(level.ability.kind) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</section>
+
+<section class="window">
+  <h2>Equipment</h2>
+  <% if entry.equip_categories.empty? %>
+    <p class="empty">Can't equip anything.</p>
+  <% else %>
+    <ul class="refs refs--inline">
+      <% entry.equip_categories.each do |category| %>
+        <li><%= term(category) %></li>
+      <% end %>
+    </ul>
+    <% gear = @world.items.where(category: entry.equip_categories).order(:category, :name) %>
+    <% if gear.any? %>
+      <h3>In the Armory</h3>
+      <ul class="refs refs--inline">
+        <% gear.each do |item| %>
+          <li><%= link_to item.name, world_armory_item_path(@world, item) %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% end %>
+</section>

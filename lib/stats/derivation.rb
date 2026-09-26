@@ -52,7 +52,7 @@ module Stats
         percent = name_passives.sum { |p| Integer(p.fetch("percent", 0)) }
         value = value * (100 + percent) / 100
 
-        [name, clamp(name, value)]
+        [ name, clamp(name, value) ]
       end
     end
 
@@ -73,7 +73,7 @@ module Stats
       stats.to_h do |name, value|
         pct = modifiers[name].clamp(MODIFIER_FLOOR, MODIFIER_CEILING)
         pct = 0 unless MODIFIABLE.include?(name)
-        [name, clamp(name, Integer(value) * (100 + pct) / 100)]
+        [ name, clamp(name, Integer(value) * (100 + pct) / 100) ]
       end
     end
 
@@ -83,7 +83,7 @@ module Stats
     end
 
     def stringify(hash)
-      hash.to_h { |k, v| [k.to_s, v] }
+      hash.to_h { |k, v| [ k.to_s, v ] }
     end
   end
 end

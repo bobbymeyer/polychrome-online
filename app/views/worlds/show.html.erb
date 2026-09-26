@@ -1,0 +1,28 @@
+<% content_for :title, @world.name %>
+<div class="book-header">
+  <h1><%= @world.name %></h1>
+  <%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %>
+</div>
+<% if @world.description.present? %>
+  <div class="prose"><%= simple_format(@world.description) %></div>
+<% end %>
+
+<div class="shelf">
+  <% [
+       ["Bestiary", :bestiary, "Monsters: stat blocks, affinities, behavior, drops.", @world.monsters],
+       ["Job Compendium", :compendium, "Jobs: stat modifiers, equipment, learn tables.", @world.jobs],
+       ["Grimoire", :grimoire, "Abilities, composed from the engine's primitives.", @world.abilities],
+       ["Armory", :armory, "Items and equipment.", @world.items]
+     ].each do |title, book, blurb, entries| %>
+    <section class="window shelf__book">
+      <h2><%= link_to title, polymorphic_path([@world, book, entries.klass]) %></h2>
+      <p><%= blurb %></p>
+      <p class="muted"><%= pluralize(entries.count, "entry") %></p>
+      <ul class="refs refs--inline">
+        <% entries.order(:name).limit(8).each do |entry| %>
+          <li><%= link_to entry.name, polymorphic_path([@world, book, entry]) %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+</div>

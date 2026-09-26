@@ -47,7 +47,7 @@ RSpec.describe Battle::Replay do
       end
     end
 
-    [build_battle(seed: seed, enemies: BattleFixtures.ogre + BattleFixtures.goblins(2), escapable: false), actions, state]
+    [ build_battle(seed: seed, enemies: BattleFixtures.ogre + BattleFixtures.goblins(2), escapable: false), actions, state ]
   end
 
   it "plays a boss fight to a conclusion" do

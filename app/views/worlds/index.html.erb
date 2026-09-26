@@ -1,0 +1,17 @@
+<% content_for :title, "Worlds" %>
+<div class="book-header">
+  <h1>Worlds</h1>
+  <%= link_to "New world", new_world_path, class: "button" %>
+</div>
+<% if @worlds.empty? %>
+  <p class="empty">No worlds yet. Run <code>bin/rails db:seed</code> for the base world.</p>
+<% else %>
+  <ul class="world-list">
+    <% @worlds.each do |world| %>
+      <li class="window">
+        <h2><%= link_to world.name, world %></h2>
+        <% if world.description.present? %><p><%= world.description %></p><% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

@@ -11,6 +11,22 @@ module Battle
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
   PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape].freeze
+
+  # Parameters each primitive takes, split into required and optional
+  # (optional ones have defaults in Battle::Effects). String-valued params
+  # are named in PRIMITIVE_STRING_PARAMS; everything else is an integer.
+  PRIMITIVE_PARAMS = {
+    "physical" => { required: [], optional: %w[power hits] },
+    "elemental" => { required: %w[element power], optional: %w[hits] },
+    "status" => { required: %w[kind], optional: %w[chance duration] },
+    "heal" => { required: %w[power], optional: [] },
+    "drain" => { required: %w[power], optional: [] },
+    "buff" => { required: %w[stat amount], optional: %w[duration] },
+    "debuff" => { required: %w[stat amount], optional: %w[duration] },
+    "revive" => { required: [], optional: %w[fraction] },
+    "escape" => { required: [], optional: [] }
+  }.freeze
+  PRIMITIVE_STRING_PARAMS = %w[element kind stat].freeze
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
   ELEMENTS = %w[fire ice bolt water wind earth holy dark].freeze
   AFFINITIES = %w[weak resist immune absorb].freeze
@@ -29,7 +45,7 @@ module Battle
     "kind" => "attack",
     "target" => "single_enemy",
     "cost" => { "mp" => 0 },
-    "effects" => [{ "primitive" => "physical", "power" => 100, "hits" => 1 }]
+    "effects" => [ { "primitive" => "physical", "power" => 100, "hits" => 1 } ]
   }.freeze
 
   # Battle state is a plain, JSON-shaped hash with string keys. It is what the
@@ -101,7 +117,7 @@ module Battle
         "mp" => spec.fetch("mp", stats["max_mp"]).clamp(0, stats["max_mp"]),
         "statuses" => [],
         "buffs" => [],
-        "abilities" => (["attack"] + spec.fetch("abilities", [])).uniq,
+        "abilities" => ([ "attack" ] + spec.fetch("abilities", [])).uniq,
         "elements" => elements,
         "status_immune" => spec.fetch("status_immune", []),
         "ai" => spec.fetch("ai", []),
@@ -137,6 +153,17 @@ module Battle
       effects.each do |effect|
         primitive = effect["primitive"]
         raise ArgumentError, "#{id}: unknown primitive #{primitive}" unless PRIMITIVES.include?(primitive)
+
+        params = PRIMITIVE_PARAMS.fetch(primitive)
+        missing = params[:required] - effect.keys
+        raise ArgumentError, "#{id}: #{primitive} needs #{missing.join(', ')}" if missing.any?
+
+        unknown = effect.keys - [ "primitive" ] - params[:required] - params[:optional]
+        raise ArgumentError, "#{id}: #{primitive} does not take #{unknown.join(', ')}" if unknown.any?
+
+        (effect.keys - [ "primitive" ] - PRIMITIVE_STRING_PARAMS).each do |param|
+          raise ArgumentError, "#{id}: #{primitive} #{param} must be an integer" unless effect[param].is_a?(Integer)
+        end
 
         case primitive
         when "elemental"

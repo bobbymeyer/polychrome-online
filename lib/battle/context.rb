@@ -16,7 +16,7 @@ module Battle
 
     def finish
       state["rng"] = rng.state
-      [state, events]
+      [ state, events ]
     end
 
     def emit(type, **data)
@@ -100,13 +100,13 @@ module Battle
     # --- mutations that always emit --------------------------------------
 
     def deal_damage(target, amount, **extra)
-      target["hp"] = [target["hp"] - amount, 0].max
+      target["hp"] = [ target["hp"] - amount, 0 ].max
       emit(:damage, target: target["id"], amount: amount, hp: target["hp"], **extra)
       knock_out(target) if target["hp"].zero?
     end
 
     def restore_hp(target, amount, **extra)
-      target["hp"] = [target["hp"] + amount, target["stats"]["max_hp"]].min
+      target["hp"] = [ target["hp"] + amount, target["stats"]["max_hp"] ].min
       emit(:heal, target: target["id"], amount: amount, hp: target["hp"], **extra)
     end
 
@@ -126,7 +126,7 @@ module Battle
     def add_status(target, kind, turns)
       existing = target["statuses"].find { |s| s["kind"] == kind }
       if existing
-        existing["turns"] = [existing["turns"], turns].max
+        existing["turns"] = [ existing["turns"], turns ].max
       else
         target["statuses"] << { "kind" => kind, "turns" => turns }
       end

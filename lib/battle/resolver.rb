@@ -251,7 +251,7 @@ module Battle
         next unless ctx.alive?(u)
 
         agi = ctx.stat(u, "agi")
-        [-(agi + ctx.rng.int(agi / 4 + 1)), index, u["id"]]
+        [ -(agi + ctx.rng.int(agi / 4 + 1)), index, u["id"] ]
       end.sort.map(&:last)
     end
 
@@ -348,17 +348,17 @@ module Battle
       chosen = target_id && ctx.find_unit(target_id)
 
       case ability["target"]
-      when "self" then [unit]
+      when "self" then [ unit ]
       when "single_enemy"
         chosen = nil unless chosen && chosen["side"] != unit["side"] && ctx.alive?(chosen)
-        [chosen || ctx.rng.pick(ctx.opponents(unit))].compact
+        [ chosen || ctx.rng.pick(ctx.opponents(unit)) ].compact
       when "single_ally"
         fallen = ctx.allies(unit, alive: false).reject { |a| ctx.alive?(a) }
         valid = chosen && chosen["side"] == unit["side"] && (revive ? !ctx.alive?(chosen) : ctx.alive?(chosen))
-        return [chosen] if valid
-        return [ctx.rng.pick(fallen)].compact if revive
+        return [ chosen ] if valid
+        return [ ctx.rng.pick(fallen) ].compact if revive
 
-        [ctx.allies(unit).min_by { |a| [ctx.hp_percent(a), a["hp"]] }]
+        [ ctx.allies(unit).min_by { |a| [ ctx.hp_percent(a), a["hp"] ] } ]
       when "all_enemies" then ctx.opponents(unit)
       when "all_allies" then ctx.allies(unit, alive: !revive)
       end

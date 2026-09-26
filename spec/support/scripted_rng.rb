@@ -14,7 +14,7 @@ class ScriptedRng < Battle::Rng
 
   def int(n)
     @draws += 1
-    value = @queue.empty? ? [@default, n - 1].min : @queue.shift
+    value = @queue.empty? ? [ @default, n - 1 ].min : @queue.shift
     raise ArgumentError, "scripted #{value} out of range 0...#{n}" unless value < n
 
     value

@@ -1,0 +1,41 @@
+<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: entry %>
+  <%= render "book_entries/identity_fields", f: f %>
+  <div class="field-row">
+    <div class="field">
+      <%= f.label :category %>
+      <%= f.select :category, Item::CATEGORIES.map { |category, slot| [slot ? "#{term(category)} (#{term(slot)})" : term(category), category] } %>
+    </div>
+    <div class="field">
+      <%= f.label :price %>
+      <%= f.number_field :price, min: 0 %>
+    </div>
+  </div>
+
+  <fieldset class="panel">
+    <legend>Equipment bonuses</legend>
+    <p class="hint">Flat additions for equipment. Leave blank for consumables.</p>
+    <div class="stat-inputs">
+      <% Stats::NAMES.each do |stat| %>
+        <div class="field">
+          <label for="item_stats_<%= stat %>"><%= stat_label(stat) %></label>
+          <%= number_field_tag jsonb_field_name(f, :stats, stat), entry.stats[stat], id: "item_stats_#{stat}" %>
+        </div>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>When used (consumables)</legend>
+    <div class="field">
+      <%= f.label :target %>
+      <%= f.select :target, Battle::TARGETINGS.map { |t| [term(t), t] }, include_blank: "—" %>
+    </div>
+  </fieldset>
+  <%= render "book_entries/effect_rows", f: f %>
+  <%= render "book_entries/art_fields", f: f %>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", entry.persisted? ? entry_path(entry) : entries_path, class: "button button--quiet" %>
+  </div>
+<% end %>

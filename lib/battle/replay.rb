@@ -16,7 +16,7 @@ module Battle
         log.concat(events.map { |e| e.merge("step" => step) })
         state
       end
-      [final, log]
+      [ final, log ]
     end
   end
 end

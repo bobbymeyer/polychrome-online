@@ -1,0 +1,30 @@
+<%# Effect list in the closed primitive vocabulary (§3.1). Params a primitive doesn't take are ignored. %>
+<fieldset class="panel">
+  <legend>Effects</legend>
+  <p class="hint">Applied in order to each target. Leave a row's primitive blank to remove it.</p>
+  <table class="grid-form">
+    <thead>
+      <tr>
+        <th>Primitive</th><th>Power</th><th>Hits</th><th>Element</th><th>Status</th><th>Chance %</th>
+        <th>Duration</th><th>Stat</th><th>Amount %</th><th>Revive %</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% rows_with_blanks(f.object.effects).each_with_index do |effect, i| %>
+        <% name = ->(key) { jsonb_field_name(f, :effects, i, key) } %>
+        <tr>
+          <td><%= select_tag name.(:primitive), options_for_select(Battle::PRIMITIVES.map { |p| [term(p), p] }, effect["primitive"]), include_blank: true, "aria-label": "Primitive #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:power), effect["power"], "aria-label": "Power #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:hits), effect["hits"], min: 1, "aria-label": "Hits #{i + 1}" %></td>
+          <td><%= select_tag name.(:element), options_for_select(Battle::ELEMENTS.map { |e| [term(e), e] }, effect["element"]), include_blank: true, "aria-label": "Element #{i + 1}" %></td>
+          <td><%= select_tag name.(:kind), options_for_select(Battle::STATUSES.map { |s| [term(s), s] }, effect["kind"]), include_blank: true, "aria-label": "Status #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:chance), effect["chance"], min: 0, max: 100, "aria-label": "Chance #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:duration), effect["duration"], min: 1, "aria-label": "Duration #{i + 1}" %></td>
+          <td><%= select_tag name.(:stat), options_for_select(Stats::MODIFIABLE.map { |s| [stat_label(s), s] }, effect["stat"]), include_blank: true, "aria-label": "Stat #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:amount), effect["amount"], "aria-label": "Amount #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:fraction), effect["fraction"], min: 0, max: 100, "aria-label": "Revive fraction #{i + 1}" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</fieldset>

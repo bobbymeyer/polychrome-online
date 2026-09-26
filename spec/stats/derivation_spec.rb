@@ -33,7 +33,7 @@ RSpec.describe Stats::Derivation do
       derived = described_class.derive(
         base: base,
         job: { multipliers: { atk: 200 } },
-        equipment: [{ stats: { atk: 12, def: 3 } }, { "stats" => { "def" => 4 } }]
+        equipment: [ { stats: { atk: 12, def: 3 } }, { "stats" => { "def" => 4 } } ]
       )
       expect(derived["atk"]).to eq(12) # job multiplies base 0, not the weapon
       expect(derived["def"]).to eq(7)
@@ -42,8 +42,8 @@ RSpec.describe Stats::Derivation do
     it "applies passive additions before passive percentages" do
       derived = described_class.derive(
         base: base,
-        equipment: [{ stats: { str: 10 } }],
-        passives: [{ stat: "str", add: 10 }, { stat: "str", percent: 50 }, { stat: "agi", percent: -25 }]
+        equipment: [ { stats: { str: 10 } } ],
+        passives: [ { stat: "str", add: 10 }, { stat: "str", percent: 50 }, { stat: "agi", percent: -25 } ]
       )
       expect(derived["str"]).to eq((20 + 10 + 10) * 150 / 100)
       expect(derived["agi"]).to eq(12)
@@ -52,14 +52,14 @@ RSpec.describe Stats::Derivation do
     it "clamps to caps" do
       derived = described_class.derive(
         base: base.merge("max_hp" => 9000, "str" => 250),
-        passives: [{ stat: "max_hp", percent: 50 }, { stat: "str", add: 100 }]
+        passives: [ { stat: "max_hp", percent: 50 }, { stat: "str", add: 100 } ]
       )
       expect(derived["max_hp"]).to eq(9999)
       expect(derived["str"]).to eq(255)
     end
 
     it "never lets a penalty push a stat below its floor" do
-      derived = described_class.derive(base: base, passives: [{ stat: "max_hp", add: -500 }, { stat: "agi", add: -99 }])
+      derived = described_class.derive(base: base, passives: [ { stat: "max_hp", add: -500 }, { stat: "agi", add: -99 } ])
       expect(derived["max_hp"]).to eq(1)
       expect(derived["agi"]).to eq(0)
     end
@@ -70,7 +70,7 @@ RSpec.describe Stats::Derivation do
 
     it "is pure" do
       frozen = base.freeze
-      equipment = [{ "stats" => { "atk" => 5 }.freeze }.freeze].freeze
+      equipment = [ { "stats" => { "atk" => 5 }.freeze }.freeze ].freeze
       expect { described_class.derive(base: frozen, equipment: equipment) }.not_to raise_error
       expect(described_class.derive(base: base, equipment: equipment))
         .to eq(described_class.derive(base: base, equipment: equipment))
@@ -79,8 +79,8 @@ RSpec.describe Stats::Derivation do
     it "keeps every stat within [floor, cap] for arbitrary inputs" do
       rng = Random.new(7)
       500.times do
-        b = Stats::NAMES.to_h { |n| [n, rng.rand(0..400)] }
-        job = { "multipliers" => Stats::NAMES.to_h { |n| [n, rng.rand(0..300)] } }
+        b = Stats::NAMES.to_h { |n| [ n, rng.rand(0..400) ] }
+        job = { "multipliers" => Stats::NAMES.to_h { |n| [ n, rng.rand(0..300) ] } }
         equip = Array.new(rng.rand(0..3)) { { "stats" => { Stats::NAMES.sample(random: rng) => rng.rand(-50..200) } } }
         passives = Array.new(rng.rand(0..3)) do
           { "stat" => Stats::NAMES.sample(random: rng), rng.rand(2).zero? ? "add" : "percent" => rng.rand(-100..100) }
@@ -112,15 +112,15 @@ RSpec.describe Stats::Derivation do
     end
 
     it "stacks buffs additively" do
-      result = described_class.effective(derived, buffs: [{ stat: "str", amount: 50 }, { stat: "str", amount: -20 }])
+      result = described_class.effective(derived, buffs: [ { stat: "str", amount: 50 }, { stat: "str", amount: -20 } ])
       expect(result["str"]).to eq(26)
     end
 
     it "applies stat-altering statuses" do
-      expect(described_class.effective(derived, statuses: ["haste"])["agi"]).to eq(24)
-      expect(described_class.effective(derived, statuses: ["slow"])["agi"]).to eq(8)
+      expect(described_class.effective(derived, statuses: [ "haste" ])["agi"]).to eq(24)
+      expect(described_class.effective(derived, statuses: [ "slow" ])["agi"]).to eq(8)
       expect(described_class.effective(derived, statuses: %w[haste slow])["agi"]).to eq(16)
-      expect(described_class.effective(derived, statuses: ["poison"])).to eq(derived)
+      expect(described_class.effective(derived, statuses: [ "poison" ])).to eq(derived)
     end
 
     it "clamps the combined modifier" do
@@ -131,7 +131,7 @@ RSpec.describe Stats::Derivation do
     end
 
     it "never modifies HP/MP pools" do
-      result = described_class.effective(derived, buffs: [{ stat: "max_hp", amount: 100 }])
+      result = described_class.effective(derived, buffs: [ { stat: "max_hp", amount: 100 } ])
       expect(result["max_hp"]).to eq(200)
     end
   end

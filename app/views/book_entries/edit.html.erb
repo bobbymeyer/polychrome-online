@@ -1,0 +1,4 @@
+<% content_for :title, "Edit #{@entry.name} · #{book_title}" %>
+<div class="crumbs"><%= link_to book_title, entries_path %> / <%= link_to @entry.name_in_database || @entry.name, entry_path(@entry) %> / Edit</div>
+<h1>Edit <%= @entry.name_in_database || @entry.name %></h1>
+<%= render "form", entry: @entry %>

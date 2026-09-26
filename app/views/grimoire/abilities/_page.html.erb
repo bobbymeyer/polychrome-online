@@ -1,0 +1,50 @@
+<header class="book-page__header">
+  <%= entry_portrait(entry) %>
+  <div>
+    <p class="eyebrow">Grimoire · <%= term(entry.kind) %></p>
+    <h1><%= entry.name %></h1>
+    <dl class="facts">
+      <dt>Target</dt><dd><%= term(entry.target) %></dd>
+      <dt>Cost</dt><dd><%= entry.mp_cost.zero? ? "Free" : "#{entry.mp_cost} MP" %></dd>
+      <% if entry.gesture.present? %><dt>Gesture</dt><dd><%= term(entry.gesture) %></dd><% end %>
+    </dl>
+  </div>
+</header>
+
+<% if entry.description.present? %>
+  <div class="prose"><%= simple_format(entry.description) %></div>
+<% end %>
+
+<section class="window">
+  <h2>Effects</h2>
+  <ol class="effects">
+    <% entry.effects.each do |effect| %>
+      <li><%= describe_effect(effect) %></li>
+    <% end %>
+  </ol>
+</section>
+
+<section class="window">
+  <h2>Cross-references</h2>
+  <% levels = entry.job_levels.includes(:job).order(:level) %>
+  <% monsters = entry.monsters_using %>
+  <% if levels.empty? && monsters.empty? %>
+    <p class="empty">Nothing in this world uses <%= entry.name %> yet.</p>
+  <% end %>
+  <% if levels.any? %>
+    <h3>Taught by</h3>
+    <ul class="refs">
+      <% levels.each do |level| %>
+        <li><%= link_to level.job.name, world_compendium_job_path(@world, level.job) %> at job level <%= level.level %> (<%= level.abp %> ABP)</li>
+      <% end %>
+    </ul>
+  <% end %>
+  <% if monsters.any? %>
+    <h3>Used by</h3>
+    <ul class="refs">
+      <% monsters.each do |monster| %>
+        <li><%= link_to monster.name, world_bestiary_monster_path(@world, monster) %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>
