@@ -1,0 +1,13 @@
+<%= form_with model: npc, url: npc.persisted? ? npc_path(npc) : campaign_npcs_path(@campaign), class: "book-form", multipart: true do |f| %>
+  <%= render "book_entries/errors", entry: npc %>
+  <div class="field-row">
+    <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
+    <div class="field"><%= f.label :title %><%= f.text_field :title, placeholder: "Innkeeper, Captain of the Guard…" %></div>
+  </div>
+  <div class="field"><%= f.label :description, "Notes (GM only)" %><%= f.text_area :description, rows: 3 %></div>
+  <%= render "portraits/fields", owner: npc %>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", campaign_path(@campaign), class: "button button--quiet" %>
+  </div>
+<% end %>

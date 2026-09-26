@@ -8,6 +8,8 @@
 # Stats::Growth (level -> base) and Stats::Derivation (base x job +
 # equipment + innates) modules.
 class Character < ApplicationRecord
+  include Portrayed
+
   SLOTS = %w[weapon shield head body accessory].freeze
 
   belongs_to :campaign
@@ -15,6 +17,8 @@ class Character < ApplicationRecord
   has_many :character_jobs, dependent: :destroy
   has_many :ability_slots, -> { order(:position) }, dependent: :destroy
   has_many :equipment_slots, dependent: :destroy
+  has_many :messages, as: :speaker, dependent: :destroy
+  has_many :whispers_received, class_name: "Message", foreign_key: :recipient_id, dependent: :destroy
 
   # Creation-only inputs: the level and current-job level to start at.
   attribute :starting_level, :integer
@@ -180,6 +184,11 @@ class Character < ApplicationRecord
   def reload(*)
     @stat_stages = nil
     super
+  end
+
+  # Without a portrait of their own, a character is drawn as their job.
+  def fallback_portrait_entry
+    job
   end
 
   # --- battle --------------------------------------------------------------

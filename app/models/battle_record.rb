@@ -39,8 +39,17 @@ class BattleRecord < ApplicationRecord
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable)
-    create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
-            input_seconds: input_seconds).tap(&:open_round!)
+    battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
+                     input_seconds: input_seconds)
+    battle.open_round!
+    battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against " \
+                     "#{encounter.map { |slug, count| "#{count} × #{campaign.world.monsters.find_by(slug: slug)&.name || slug}" }.to_sentence}.")
+    battle
+  end
+
+  # A system line at the campaign's table, linking back to this battle.
+  def announce!(body)
+    campaign&.messages&.create!(kind: "system", battle: self, body: body)
   end
 
   def over?
@@ -147,6 +156,18 @@ class BattleRecord < ApplicationRecord
       end
     end
     update!(settlement: summary)
+    announce!(settlement_line(summary))
+  end
+
+  def settlement_line(summary)
+    parts = [ { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." }.fetch(summary["result"], "It's over.") ]
+    parts << "#{summary['gil']} gil." if summary["gil"].positive?
+    parts << "Found #{summary['drops'].to_sentence}." if summary["drops"].any?
+    summary["members"].each do |member|
+      parts << "#{member['name']} reached level #{member['level'].last}." if member["level"]
+      parts << "#{member['name']} learned #{member['learned'].to_sentence}." if member["learned"].any?
+    end
+    "#{name}: #{parts.join(' ')}"
   end
 
   def next_position(association)

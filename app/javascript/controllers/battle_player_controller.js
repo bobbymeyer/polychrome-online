@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { createTimeline } from "animejs"
-import { gesture } from "battle/gestures"
+import { gesture } from "motion/gestures"
 
 // The event player (docs/HANDOFF.md §6).
 //

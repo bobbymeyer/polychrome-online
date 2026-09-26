@@ -1,4 +1,4 @@
-// The motion vocabulary (docs/HANDOFF.md §3.2): whole-sprite transforms only,
+// The motion vocabulary (docs/HANDOFF.md §3.2): whole-element transforms only,
 // as anime.js tween presets. Battle and UI chrome use the same set, so the
 // whole app moves the same way.
 //

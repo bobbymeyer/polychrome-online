@@ -313,3 +313,62 @@ a.menu__item:hover, button.menu__item:hover:not(:disabled) { background: #fff2; 
 .book-table tr.is-current td { color: var(--accent); }
 .equipment-inputs { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .level-up { color: var(--accent); font-weight: 700; margin-left: .25rem; }
+
+/* ---------------------------------------------------------------------------
+ * The table: dialogue box, log, composer
+ * ------------------------------------------------------------------------- */
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+form.inline { display: inline; }
+
+.table__main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1rem; align-items: start; }
+@media (max-width: 800px) { .table__main { grid-template-columns: 1fr; } }
+
+.dialogue {
+  display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; align-items: start;
+  min-height: 190px; cursor: pointer; position: relative;
+}
+.dialogue__name { margin: 0 0 .35rem; color: var(--accent); font-weight: 800; letter-spacing: .02em; }
+.dialogue__body { margin: 0; font-size: 1.15rem; line-height: 1.55; white-space: pre-wrap; }
+.dialogue__more { position: absolute; right: 1rem; bottom: .5rem; color: var(--accent); animation: dialogue-more 1s ease-in-out infinite; }
+@keyframes dialogue-more { 50% { transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .dialogue__more { animation: none; } }
+
+.speaker-portrait { display: grid; place-items: center; object-fit: cover; flex: none; border: 2px solid var(--window-border); border-radius: var(--radius); background: #0008; }
+.speaker-portrait--small { width: 40px; height: 40px; border-width: 1px; border-radius: 6px; }
+.speaker-portrait--medium { width: 64px; height: 64px; }
+.speaker-portrait--large { width: 140px; height: 140px; }
+.speaker-portrait--plate { font-weight: 800; color: var(--accent); background: radial-gradient(circle at 35% 30%, #5b6fd8, #1a2670); }
+.speaker-portrait--small.speaker-portrait--plate { font-size: 1.1rem; }
+.speaker-portrait--medium.speaker-portrait--plate { font-size: 1.8rem; }
+.speaker-portrait--large.speaker-portrait--plate { font-size: 4rem; }
+.speaker-portrait--narrator { background: radial-gradient(circle at 35% 30%, #6b6b8a, #1e1e33); color: var(--ink-muted); }
+.speaker-portrait--empty { color: var(--ink-muted); background: #0006; }
+@media (max-width: 640px) {
+  .dialogue { grid-template-columns: 1fr; }
+  .speaker-portrait--large { width: 96px; height: 96px; }
+}
+
+.chat-log { max-height: 60vh; overflow-y: auto; }
+.chat-log ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.chat-line { display: grid; grid-template-columns: auto 1fr; gap: .6rem; align-items: start; }
+.chat-line.is-pending { display: none; }
+.chat-line__head { margin: 0; font-size: .85rem; display: flex; flex-wrap: wrap; gap: .1rem .5rem; align-items: baseline; }
+.chat-line__head time { margin-left: auto; font-size: .75rem; }
+.chat-line__body p { margin: .1rem 0 0; }
+.chat-line__tag { color: #d0a6ff; font-size: .8rem; }
+.chat-line--whisper .chat-line__body { color: #e6d0ff; font-style: italic; }
+.chat-line--dialogue strong { color: var(--accent); }
+.chat-line--system { grid-template-columns: 1fr; }
+.chat-line--system .chat-line__body { margin: 0; padding: .35rem .6rem; border-left: 3px solid var(--accent); background: #0004; font-size: .9rem; }
+
+.composer { margin-top: 1rem; }
+.composer__controls { display: flex; flex-wrap: wrap; gap: 0 1rem; }
+.composer__controls .field { flex: 0 1 220px; }
+.composer__row { display: flex; gap: .75rem; align-items: flex-end; }
+.composer__row textarea { flex: 1; resize: vertical; }
+
+.portrait-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.portrait-field { display: grid; grid-template-columns: auto 1fr; gap: .25rem .6rem; align-items: center; }
+.portrait-field .speaker-portrait { grid-row: span 3; }
+.portrait-field input[type=file] { font-size: .8rem; }

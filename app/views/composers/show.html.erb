@@ -1,0 +1,39 @@
+<%= turbo_frame_tag "composer" do %>
+  <% seat = table_seat %>
+  <%= form_with model: @message, url: campaign_messages_path(@campaign), class: "window composer",
+                data: { controller: "composer", action: "keydown->composer#key" } do |f| %>
+    <%= render "book_entries/errors", entry: @message %>
+    <div class="composer__controls">
+      <% if seat == "gm" %>
+        <div class="field">
+          <label for="message_speaker">Speak as</label>
+          <%= select_tag "message[speaker]",
+                         options_for_select([ [ "Narrator", "narrator" ] ] + @campaign.npcs.order(:name).map { |npc| [ [ npc.name, npc.title.presence ].compact.join(", "), "npc:#{npc.id}" ] },
+                                            @message.speaker.is_a?(Npc) ? "npc:#{@message.speaker.id}" : "narrator"),
+                         id: "message_speaker" %>
+        </div>
+        <div class="field">
+          <label for="message_whisper_to">To</label>
+          <%= select_tag "message[whisper_to]",
+                         options_for_select([ [ "Everyone", "" ] ] + @campaign.characters.order(:created_at).map { |c| [ "Whisper to #{c.name}", c.id ] }, @message.recipient&.id),
+                         id: "message_whisper_to" %>
+        </div>
+      <% else %>
+        <div class="field">
+          <label for="message_whisper_to">To</label>
+          <%= select_tag "message[whisper_to]", options_for_select([ [ "Everyone", "" ], [ "Whisper to the GM", "gm" ] ], @message.whisper? ? "gm" : ""),
+                         id: "message_whisper_to" %>
+        </div>
+      <% end %>
+      <div class="field">
+        <%= f.label :expression %>
+        <%= f.select :expression, Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] } %>
+      </div>
+    </div>
+    <div class="composer__row">
+      <%= f.text_area :body, rows: 2, placeholder: seat == "gm" ? "Say something as them… (Enter to send)" : "Say something… (Enter to send)", autofocus: @refocus,
+                      data: { composer_target: "body" }, "aria-label": "Message" %>
+      <%= f.submit "Send", class: "button" %>
+    </div>
+  <% end %>
+<% end %>

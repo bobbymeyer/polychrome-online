@@ -1,0 +1,6 @@
+<% content_for :title, "Edit #{@npc.name}" %>
+<div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @npc.name_in_database %></div>
+<h1>Edit <%= @npc.name_in_database %></h1>
+<%= render "form", npc: @npc %>
+<%= button_to "Remove from the cast", npc_path(@npc), method: :delete, class: "button button--danger",
+              form: { data: { turbo_confirm: "Remove #{@npc.name}? Their lines stay in the log." } } %>

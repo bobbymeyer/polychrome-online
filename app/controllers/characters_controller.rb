@@ -2,6 +2,7 @@
 
 class CharactersController < ApplicationController
   include CampaignScoped
+  include PortraitUploads
 
   before_action :set_campaign, only: %i[new create]
   before_action :set_character, only: %i[show edit update destroy]
@@ -28,6 +29,7 @@ class CharactersController < ApplicationController
 
   def update
     if @character.update(params.expect(character: %i[name player_name]))
+      @character.update_portraits!(**portrait_params)
       redirect_to character_path(@character), notice: "#{@character.name} was updated."
     else
       render :edit, status: :unprocessable_content

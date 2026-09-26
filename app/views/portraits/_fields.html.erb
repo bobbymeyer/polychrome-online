@@ -1,0 +1,23 @@
+<%# One image per expression. owner: an Npc or Character. %>
+<fieldset class="panel">
+  <legend>Portraits</legend>
+  <p class="hint">One image per expression. Missing ones fall back to Neutral<%= ", then to the job's image" if owner.is_a?(Character) %>.</p>
+  <div class="portrait-fields">
+    <% existing = owner.portraits.includes(image_attachment: :blob).index_by(&:expression) %>
+    <% Portrait::EXPRESSIONS.each do |expression| %>
+      <div class="portrait-field">
+        <% portrait = existing[expression] %>
+        <% if portrait&.image&.attached? %>
+          <%= image_tag url_for(portrait.image), alt: "", class: "speaker-portrait speaker-portrait--small" %>
+        <% else %>
+          <span class="speaker-portrait speaker-portrait--small speaker-portrait--plate speaker-portrait--empty">?</span>
+        <% end %>
+        <label for="portraits_images_<%= expression %>"><%= expression.humanize %></label>
+        <%= file_field_tag "portraits[images][#{expression}]", accept: "image/*", id: "portraits_images_#{expression}" %>
+        <% if portrait %>
+          <label class="checks"><%= check_box_tag "portraits[remove][]", expression, false, id: "portraits_remove_#{expression}" %> Remove</label>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</fieldset>

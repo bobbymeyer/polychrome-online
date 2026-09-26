@@ -1,0 +1,68 @@
+<% content_for :title, "#{@campaign.name} · Table" %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+<% end %>
+
+<div class="table" data-controller="dialogue" data-action="chat-line:arrived->dialogue#arrive keydown@window->dialogue#key">
+  <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
+  <%= turbo_stream_from @campaign, :table %>
+  <% if @seat == "gm" %>
+    <%= turbo_stream_from @campaign, :gm %>
+  <% elsif @seat %>
+    <%= turbo_stream_from @seat, :whispers %>
+  <% end %>
+
+  <header class="battle__header">
+    <div>
+      <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · Table</p>
+      <h1><%= @campaign.name %></h1>
+    </div>
+    <% if @battle %>
+      <%= link_to "⚔ #{@battle.name} is on →", battle_path(@battle), class: "button" %>
+    <% end %>
+  </header>
+
+  <div class="table__main">
+    <section class="dialogue window" data-dialogue-target="box" data-action="click->dialogue#advance"
+             aria-label="Dialogue" <%= "hidden" unless @last_dialogue %>>
+      <div class="dialogue__portrait" data-dialogue-target="portrait">
+        <%= speaker_portrait(@last_dialogue&.speaker, @last_dialogue&.expression, size: :large) if @last_dialogue %>
+      </div>
+      <div class="dialogue__text">
+        <p class="dialogue__name" data-dialogue-target="name"><%= @last_dialogue&.speaker_name %></p>
+        <p class="dialogue__body" data-dialogue-target="text"><%= @last_dialogue&.body %></p>
+        <span class="dialogue__more" data-dialogue-target="more" hidden>▼</span>
+      </div>
+      <p class="visually-hidden" aria-live="polite" data-dialogue-target="live"></p>
+    </section>
+
+    <section class="window chat-log" aria-label="Log">
+      <ol id="chat_log" data-dialogue-target="log">
+        <% @messages.each do |message| %>
+          <%= render "messages/message", message: message %>
+        <% end %>
+      </ol>
+    </section>
+  </div>
+
+  <% if @seat %>
+    <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
+      <div class="window"><p class="muted">Loading…</p></div>
+    <% end %>
+    <p class="hint">
+      At the table as <strong><%= @seat == "gm" ? "GM" : @seat.name %></strong>.
+      <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
+    </p>
+  <% else %>
+    <section class="window">
+      <h2>Take a seat</h2>
+      <p class="hint">No accounts yet: pick who you're playing. Anyone can take any seat.</p>
+      <div class="menu">
+        <%= button_to "Game Master", campaign_table_seat_path(@campaign), params: { seat: "gm" }, class: "menu__item" %>
+        <% @campaign.characters.order(:created_at).each do |character| %>
+          <%= button_to character.name, campaign_table_seat_path(@campaign), params: { seat: character.id }, class: "menu__item" %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</div>

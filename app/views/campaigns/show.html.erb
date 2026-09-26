@@ -6,7 +6,8 @@
     <p class="muted"><%= number_with_delimiter(@campaign.gil) %> gil</p>
   </div>
   <div class="actions">
-    <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button" %>
+    <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
+    <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" %>
     <%= button_to "Rest at an inn", campaign_rest_path(@campaign), class: "button button--quiet",
                   form: { data: { turbo_confirm: "Restore everyone to full HP and MP?" } } %>
     <%= link_to "Edit", edit_campaign_path(@campaign), class: "button button--quiet" %>
@@ -30,6 +31,29 @@
             <p class="muted"><%= character.player_name.presence || "No player" %></p>
             <p>Lv <%= character.level %> <%= character.job.name %> <span class="muted">(job Lv <%= character.character_job.level %>)</span></p>
             <p>HP <%= character.current_hp %>/<%= character.stats["max_hp"] %> · MP <%= character.current_mp %>/<%= character.stats["max_mp"] %></p>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</section>
+
+<section>
+  <div class="book-header">
+    <h2>Cast</h2>
+    <%= link_to "New NPC", new_campaign_npc_path(@campaign), class: "button button--quiet" %>
+  </div>
+  <% npcs = @campaign.npcs.order(:name) %>
+  <% if npcs.empty? %>
+    <p class="empty">No NPCs yet. The GM speaks as them at the table.</p>
+  <% else %>
+    <div class="roster-cards">
+      <% npcs.each do |npc| %>
+        <%= link_to edit_npc_path(npc), class: "window character-card" do %>
+          <%= speaker_portrait(npc, "neutral", size: :medium) %>
+          <div>
+            <h3><%= npc.name %></h3>
+            <% if npc.title.present? %><p class="muted"><%= npc.title %></p><% end %>
           </div>
         <% end %>
       <% end %>

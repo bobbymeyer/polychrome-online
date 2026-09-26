@@ -27,7 +27,16 @@ Rails.application.routes.draw do
     resources :battles, only: %i[new create]
     resources :inventories, only: %i[create update], path: "bag"
     resource :rest, only: :create
+    resources :npcs, only: %i[new create]
+
+    # The table (§7): the live session page with the dialogue box and log.
+    resource :table, only: :show
+    resource :table_seat, only: %i[create destroy]
+    resource :composer, only: :show
+    resources :messages, only: :create
   end
+
+  resources :npcs, only: %i[edit update destroy]
 
   resources :characters, only: %i[show edit update destroy] do
     resource :job, only: :update, controller: "character_jobs"

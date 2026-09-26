@@ -1,0 +1,4 @@
+<% content_for :title, "New NPC" %>
+<div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / New NPC</div>
+<h1>New NPC</h1>
+<%= render "form", npc: @npc %>

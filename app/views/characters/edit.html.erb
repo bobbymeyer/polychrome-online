@@ -1,12 +1,13 @@
 <% content_for :title, "Edit #{@character.name}" %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= link_to @character.name_in_database, character_path(@character) %> / Edit</div>
 <h1>Edit <%= @character.name_in_database %></h1>
-<%= form_with model: @character, url: character_path(@character), class: "book-form" do |f| %>
+<%= form_with model: @character, url: character_path(@character), class: "book-form", multipart: true do |f| %>
   <%= render "book_entries/errors", entry: @character %>
   <div class="field-row">
     <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
     <div class="field"><%= f.label :player_name, "Player" %><%= f.text_field :player_name %></div>
   </div>
+  <%= render "portraits/fields", owner: @character %>
   <div class="actions">
     <%= f.submit class: "button" %>
     <%= link_to "Cancel", character_path(@character), class: "button button--quiet" %>

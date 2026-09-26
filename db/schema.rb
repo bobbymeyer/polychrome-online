@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_210000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -220,6 +220,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_190000) do
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
 
+  create_table "messages", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.string "speaker_type"
+    t.integer "speaker_id"
+    t.integer "recipient_id"
+    t.integer "battle_id"
+    t.string "kind", default: "say", null: false
+    t.string "scope", default: "table", null: false
+    t.string "expression"
+    t.text "body", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["battle_id"], name: "index_messages_on_battle_id"
+    t.index ["campaign_id", "created_at"], name: "index_messages_on_campaign_id_and_created_at"
+    t.index ["campaign_id"], name: "index_messages_on_campaign_id"
+    t.index ["recipient_id"], name: "index_messages_on_recipient_id"
+    t.index ["speaker_type", "speaker_id"], name: "index_messages_on_speaker"
+  end
+
   create_table "monsters", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -241,6 +260,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_190000) do
     t.datetime "updated_at", null: false
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
+  end
+
+  create_table "npcs", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.string "name", null: false
+    t.string "title"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_npcs_on_campaign_id"
+  end
+
+  create_table "portraits", force: :cascade do |t|
+    t.string "owner_type", null: false
+    t.integer "owner_id", null: false
+    t.string "expression", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["owner_type", "owner_id", "expression"], name: "index_portraits_on_owner_type_and_owner_id_and_expression", unique: true
+    t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
   end
 
   create_table "worlds", force: :cascade do |t|
@@ -275,5 +314,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_190000) do
   add_foreign_key "job_levels", "abilities"
   add_foreign_key "job_levels", "jobs"
   add_foreign_key "jobs", "worlds"
+  add_foreign_key "messages", "battles"
+  add_foreign_key "messages", "campaigns"
+  add_foreign_key "messages", "characters", column: "recipient_id"
   add_foreign_key "monsters", "worlds"
+  add_foreign_key "npcs", "campaigns"
 end

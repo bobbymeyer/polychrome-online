@@ -13,6 +13,8 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
 - **Step 4 (done):** characters and jobs: creation, EXP and levels, ABP and job
   levels, ability slots, equipment from a shared bag, and battle results that
   flow back to the party.
+- **Step 5 (done):** the table: chat with portraits and expressions, and GM
+  possession of NPCs.
 
 ```
 bundle install
@@ -113,6 +115,37 @@ column is the §9.8 pin, designed but not used yet.
 - **GM tools:** add items to the bag, adjust gil, grant EXP/ABP, and rest the
   party at an inn.
 
+## The table (chat)
+
+Each campaign has a **table** (`/campaigns/:id/table`), the live page for
+everything outside battle.
+
+- **Dialogue box vs chat (§9.5).** Following the handoff's lean, GM and NPC
+  lines play in a JRPG dialogue box one at a time, typed out beside the
+  speaker's portrait. Player lines go straight into the side log. A dialogue
+  line joins the log only after the box has typed it. Click (or Escape) to
+  finish a line or move to the next; queued lines also move on by themselves.
+  Each viewer reads at their own pace.
+- **GM possession.** From the GM seat, the composer's "Speak as" picks the
+  narrator or any NPC, with an expression. The chosen speaker sticks between
+  lines. The server decides who a line is from, based on the seat: players
+  always speak as their own character.
+- **Portraits and expressions.** NPCs and characters get one image per
+  expression, from a closed set (neutral, happy, sad, angry, surprised,
+  worried, determined). Missing ones fall back to neutral; for a character,
+  then to their job's image; then to a lettered plate. Portrait reactions
+  (e.g. angry → shake) use the same gestures as battle (§3.2), now in
+  `app/javascript/motion/gestures.js`.
+- **Whispers** go player → GM or GM → player. They're scoped broadcasts: each
+  seat's page is signed only for the table stream plus its own whisper stream
+  (the GM's, or that character's), so other players' browsers never receive
+  them. After a whisper, the composer goes back to "Everyone".
+- **Battles post at the table.** Each battle posts a line when it starts, with
+  a "Join the battle" link, and a line with the outcome when it ends. Your
+  table seat carries into the battle, so players land on their own character.
+- NPCs belong to the campaign (the "Cast" section of the campaign page). The
+  town generator in step 7 will create them too.
+
 ## Layout
 
 | Path | What |
@@ -121,6 +154,7 @@ column is the §9.8 pin, designed but not used yet.
 | `app/models/battle_record.rb`, `app/jobs/battle_timeout_job.rb` | Persisted battles, the action/event log, the input timer |
 | `app/models/campaign.rb`, `app/models/character.rb` | Campaigns, the party bag, characters, jobs, equipment and ability slots |
 | `lib/stats/growth.rb` | EXP to level to base stats, and ABP to job level |
+| `app/models/message.rb`, `app/javascript/controllers/dialogue_controller.js` | Table messages, their scoped broadcasts, and the dialogue box |
 | `app/javascript/controllers/battle_player_controller.js`, `app/javascript/battle/gestures.js` | The event player and the motion gestures (§3.2) |
 | `db/seeds/base_world.rb` | The base world's first entries (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |
