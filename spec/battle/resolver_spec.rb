@@ -78,7 +78,7 @@ RSpec.describe Battle::Resolver do
       it("KO'd actors") { rejects(command("bartz"), /cannot act/, from: with_unit(state, "bartz", hp: 0)) }
       it("unknown abilities") { rejects(command("bartz", "ultima"), /no ability/) }
       it("abilities the unit does not know") { rejects(command("bartz", "fire"), /does not know/) }
-      it("unknown command kinds") { rejects(command("bartz", kind: "item"), /unknown command/) }
+      it("unknown command kinds") { rejects(command("bartz", kind: "summon"), /unknown command/) }
       it("targets that don't exist") { rejects(command("bartz", "attack", "nobody"), /no unit/) }
       it("attacking an ally") { rejects(command("bartz", "attack", "vivi"), /not an enemy/) }
       it("healing an enemy") { rejects(command("rosa", "cure", "goblin_a"), /not an ally/) }

@@ -39,6 +39,51 @@ class Campaign < ApplicationRecord
     row.update!(quantity: row.quantity + count)
   end
 
+  # --- shopping ------------------------------------------------------------
+
+  # Buy from a town's stock with party gil. Raises ArgumentError with a
+  # reason the table can read.
+  def buy!(item, quantity, at:, by:)
+    quantity = quantity.to_i.clamp(1, 99)
+    raise ArgumentError, "#{at.name} doesn't sell #{item.name}" unless at.stock_items.include?(item)
+
+    cost = item.price * quantity
+    transaction do
+      reload
+      raise ArgumentError, "The party has #{gil} gil; #{quantity} × #{item.name} costs #{cost}" if cost > gil
+
+      update!(gil: gil - cost)
+      add_item!(item, quantity)
+      messages.create!(kind: "system", body: "#{by} bought #{quantity} × #{item.name} in #{at.name} for #{cost} gil.")
+    end
+  end
+
+  # Sell from the bag, for half the price.
+  def sell!(item, quantity, at:, by:)
+    quantity = quantity.to_i.clamp(1, 99)
+    transaction do
+      row = inventories.find_by(item: item)
+      raise ArgumentError, "The bag has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
+
+      row.update!(quantity: row.quantity - quantity)
+      earned = item.resale_price * quantity
+      update!(gil: gil + earned)
+      messages.create!(kind: "system", body: "#{by} sold #{quantity} × #{item.name} in #{at.name} for #{earned} gil.")
+    end
+  end
+
+  # The consumables a battle can use, as the engine wants them.
+  def battle_items
+    bag.select { |row| row.item.consumable? && row.item.effects.any? }
+       .to_h { |row| [ row.item.slug, row.item.to_engine(row.quantity) ] }
+  end
+
+  # Take up to n out of the bag (the bag may have changed since).
+  def use_items!(item, n)
+    row = inventories.find_by(item: item)
+    row&.update!(quantity: [ row.quantity - n, 0 ].max)
+  end
+
   def take_item!(item)
     row = inventories.find_by(item: item)
     unless row&.quantity&.positive?

@@ -47,7 +47,19 @@ module BattleFixtures
       smoke_bomb: { name: "Smoke Bomb", kind: "skill", target: "self", cost: { mp: 0 },
                     effects: [ { primitive: "escape" } ] },
       goblin_punch: { name: "Goblin Punch", kind: "skill", target: "single_enemy", cost: { mp: 0 },
-                      effects: [ { primitive: "physical", power: 150, hits: 1 } ] }
+                      effects: [ { primitive: "physical", power: 150, hits: 1 } ] },
+      esuna: { name: "Esuna", kind: "magic", target: "single_ally", cost: { mp: 5 },
+               effects: [ { primitive: "cleanse" } ] }
+    }
+  end
+
+  # The party's shared items (§3.1: same effect vocabulary as abilities).
+  def items(potion: 2, phoenix_down: 1, antidote: 1, remedy: 1)
+    {
+      potion: { name: "Potion", target: "single_ally", effects: [ { primitive: "heal", power: 30 } ], count: potion },
+      phoenix_down: { name: "Phoenix Down", target: "single_ally", effects: [ { primitive: "revive", fraction: 25 } ], count: phoenix_down },
+      antidote: { name: "Antidote", target: "single_ally", effects: [ { primitive: "cleanse", kind: "poison" } ], count: antidote },
+      remedy: { name: "Remedy", target: "single_ally", effects: [ { primitive: "cleanse" } ], count: remedy }
     }
   end
 
@@ -87,8 +99,8 @@ module BattleHelpers
   def stats(**overrides) = BattleFixtures.stats(**overrides)
 
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
-                   abilities: BattleFixtures.abilities, escapable: true)
-    Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable)
+                   abilities: BattleFixtures.abilities, escapable: true, items: {})
+    Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items)
   end
 
   def apply(state, action)

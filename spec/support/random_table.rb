@@ -19,7 +19,9 @@ class RandomTable
       party: BattleFixtures.party.sample(@chooser.rand(1..4), random: @chooser),
       enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre ].sample(random: @chooser),
       abilities: BattleFixtures.abilities,
-      escapable: @chooser.rand(4) != 0
+      escapable: @chooser.rand(4) != 0,
+      items: BattleFixtures.items(potion: @chooser.rand(0..3), phoenix_down: @chooser.rand(0..2),
+                                  antidote: @chooser.rand(0..2), remedy: @chooser.rand(0..1))
     )
     @actions = []
     @steps = [] # [state_before, action, state_after, events]
@@ -59,6 +61,10 @@ class RandomTable
     roll = @chooser.rand(100)
     return cmd(u, "kind" => "defend") if roll < 8
     return cmd(u, "kind" => "flee") if roll < 11 && state["escapable"]
+    if roll < 22
+      item = state["items"].values.select { |i| Battle::State.items_left(state, i["id"], except: u["id"]).positive? }.sample(random: @chooser)
+      return cmd(u, "kind" => "item", "item" => item["id"], "target" => target_for(state, u, item)) if item
+    end
 
     usable = u["abilities"].map { |id| state["abilities"][id] }.select do |a|
       u["mp"] >= a.dig("cost", "mp").to_i &&
@@ -70,6 +76,10 @@ class RandomTable
 
   def target_for(state, u, ability)
     revive = ability["effects"].any? { |e| e["primitive"] == "revive" }
+    if ability["effects"].any? { |e| e["primitive"] == "cleanse" } # a player cures whoever needs it
+      sick = state["units"].select { |o| o["side"] == u["side"] && o["hp"].positive? && o["statuses"].any? }
+      return sick.sample(random: @chooser)["id"] if sick.any?
+    end
     pool = case ability["target"]
     when "single_enemy" then state["units"].select { |o| o["side"] != u["side"] && o["hp"].positive? }
     when "single_ally"

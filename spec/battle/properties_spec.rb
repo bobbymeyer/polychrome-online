@@ -20,6 +20,17 @@ RSpec.describe "Battle resolver properties" do
                                   turn_start turn_end flee victory defeat gm_override buff_applied
                                   buff_expired turn_skipped timeout])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
+    expect(all_events.map { |e| e["type"] }).to include("item_used")
+  end
+
+  it "only uses up items by using them, one at a time, never below zero" do
+    each_step do |_, before, _, after, events|
+      before["items"].each do |id, item|
+        used = events.count { |e| e["type"] == "item_used" && e["item"] == id }
+        expect(after["items"][id]["count"]).to eq(item["count"] - used)
+        expect(after["items"][id]["count"]).to be >= 0
+      end
+    end
   end
 
   it "keeps HP and MP within bounds, as integers" do

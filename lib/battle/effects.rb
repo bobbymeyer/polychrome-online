@@ -28,8 +28,19 @@ module Battle
       when "debuff" then modify(ctx, target, effect, -1)
       when "revive" then revive(ctx, target, effect)
       when "escape" then escape(ctx, actor)
+      when "cleanse" then cleanse(ctx, actor, target, effect)
       else raise Error, "unknown primitive #{effect['primitive']}"
       end
+    end
+
+    # cleanse(kind): cure one status, or every harmful one. No RNG: a cure
+    # always works. Curing nothing is a miss, so the table sees it happen.
+    def cleanse(ctx, actor, target, effect)
+      kinds = effect["kind"] ? [ effect["kind"] ] : HARMFUL_STATUSES
+      cured = kinds.select { |kind| ctx.status?(target, kind) }
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "nothing_to_cure") if cured.empty?
+
+      cured.each { |kind| ctx.remove_status(target, kind, reason: "cured") }
     end
 
     # physical(power, hits): (atk + str) * power%, softened by def.

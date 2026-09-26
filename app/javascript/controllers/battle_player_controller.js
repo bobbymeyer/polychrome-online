@@ -124,6 +124,9 @@ export default class extends Controller {
         return 0
       case "attack":
         return gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
+      case "item_used":
+        this.caption(tl, e.name || e.item, at)
+        return Math.max(gesture(tl, this.sprite(e.actor), "bounce", at), 450)
       case "cast": {
         const ability = this.abilities[e.ability] || {}
         this.caption(tl, ability.name || e.ability, at)
@@ -145,7 +148,7 @@ export default class extends Controller {
         gesture(tl, this.stageTarget, "flash", at)
         return 260
       case "miss":
-        this.popup(tl, e.target || e.actor, e.reason === "immune" ? "IMMUNE" : "MISS", "miss", at)
+        this.popup(tl, e.target || e.actor, { immune: "IMMUNE", nothing_to_cure: "NO EFFECT" }[e.reason] || "MISS", "miss", at)
         return 380
       case "status_applied":
         tl.call(() => this.setStatus(e.target, e.status, true), at)
@@ -154,6 +157,10 @@ export default class extends Controller {
         return 450
       case "status_expired":
         tl.call(() => this.setStatus(e.target, e.status, false), at)
+        if (e.reason === "cured") {
+          this.popup(tl, e.target, `${this.humanize(e.status)} cured`, "status", at, `status-${e.status}`)
+          return 380
+        }
         return 250
       case "buff_applied":
         this.popup(tl, e.target, `${e.stat.toUpperCase()} ${e.amount > 0 ? "up" : "down"}`, "status", at)

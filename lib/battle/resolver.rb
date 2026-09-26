@@ -11,13 +11,15 @@ module Battle
   # control returns to input. Actions:
   #
   #   { type: "command", actor: "hero", command: { kind: "ability", ability: "fire", target: "goblin_a" } }
+  #   { type: "command", actor: "hero", command: { kind: "item", item: "potion", target: "hero" } }
   #   { type: "command", actor: "hero", command: { kind: "defend" } }
   #   { type: "command", actor: "hero", command: { kind: "flee" } }
   #   { type: "timeout" }          # input timer expired: fill gaps with defaults and run
   #   { type: "gm_override", op: "...", ... }   # see #gm_override
   #
   # A missing command defaults to the unit's last command if it is still
-  # usable, otherwise Attack on a random target.
+  # usable (never an item: nobody spends the party's items by default),
+  # otherwise Attack on a random target.
   class Resolver
     GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle].freeze
     END_RESULTS = %w[victory defeat fled].freeze
@@ -84,6 +86,7 @@ module Battle
 
         return { "kind" => "flee" }
       end
+      return validate_item(unit, cmd) if kind == "item"
 
       ability = ctx.ability(cmd.fetch("ability", "attack"))
       raise InvalidAction, "#{unit['id']} does not know #{ability['id']}" unless unit["abilities"].include?(ability["id"])
@@ -93,6 +96,15 @@ module Battle
       target = cmd["target"]
       validate_target(unit, ability, target) if target
       { "kind" => "ability", "ability" => ability["id"], "target" => target }
+    end
+
+    def validate_item(unit, cmd)
+      item = ctx.item(cmd["item"])
+      raise InvalidAction, "no #{item['name']} left" unless State.items_left(state, item["id"], except: unit["id"]).positive?
+
+      target = cmd["target"]
+      validate_target(unit, item, target) if target
+      { "kind" => "item", "item" => item["id"], "target" => target }
     end
 
     def validate_target(unit, ability, target_id)
@@ -118,6 +130,7 @@ module Battle
       case cmd["kind"]
       when "defend" then true
       when "flee" then state["escapable"]
+      when "item" then false
       else ctx.usable?(unit, ctx.ability(cmd["ability"]))
       end
     end
@@ -279,8 +292,22 @@ module Battle
       case cmd["kind"]
       when "defend" then ctx.emit(:defend, actor: unit["id"])
       when "flee" then Effects.attempt_flee(ctx, unit)
+      when "item" then use_item(unit, ctx.item(cmd["item"]), cmd["target"])
       else use_ability(unit, ctx.ability(cmd["ability"]), cmd["target"])
       end
+    end
+
+    # An item works like an ability with no cost, and silence doesn't stop
+    # it. It is used up when used, even if its target has gone.
+    def use_item(unit, item, target_id)
+      return ctx.emit(:action_failed, actor: unit["id"], item: item["id"], reason: "no_item") unless item["count"].positive?
+
+      item["count"] -= 1
+      targets = resolve_targets(unit, item, target_id)
+      ctx.emit(:item_used, actor: unit["id"], item: item["id"], name: item["name"], targets: targets.map { |t| t["id"] }, left: item["count"])
+      return ctx.emit(:miss, actor: unit["id"], item: item["id"], reason: "no_target") if targets.empty?
+
+      apply_effects(unit, item, targets)
     end
 
     def use_ability(unit, ability, target_id)
@@ -305,6 +332,10 @@ module Battle
         return ctx.emit(:miss, actor: unit["id"], ability: ability["id"], reason: "no_target")
       end
 
+      apply_effects(unit, ability, targets)
+    end
+
+    def apply_effects(unit, ability, targets)
       targets.each do |target|
         ability["effects"].each do |effect|
           hits(effect).times do

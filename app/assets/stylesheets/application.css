@@ -687,3 +687,10 @@ details[open] summary { margin-bottom: 16px; }
 /* Accounts */
 .auth { max-width: 480px; }
 
+/* Shops */
+.shop-table td { vertical-align: middle; }
+.shop-form { margin: 0; flex-wrap: nowrap; gap: 8px; }
+.shop-form input[type=number] { width: 72px; }
+.shop-table__buy { width: 1%; white-space: nowrap; }
+.shop-purse { font-size: 18px; }
+

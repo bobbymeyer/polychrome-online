@@ -38,6 +38,13 @@ module BattlesHelper
     parts.join(" · ")
   end
 
+  # The help line for an item: what it hits and does, and how many are left.
+  def item_help(item, left)
+    return "None left: the party has used or spoken for every #{item['name']}." unless left.positive?
+
+    [ term(item["target"]), *item["effects"].map { |e| describe_effect(e) }, "#{left} left" ].join(" · ")
+  end
+
   AFFINITY_LABELS = { "weak" => "Weak to", "resist" => "Resists", "immune" => "Immune to", "absorb" => "Absorbs" }.freeze
 
   # What you can see of a target: an ally's HP and MP. For an enemy, what the
@@ -99,6 +106,7 @@ module BattlesHelper
     when "cast"
       verb = state["abilities"].dig(event["ability"], "kind") == "magic" ? "casts" : "uses"
       "#{name.('actor')} #{verb} #{ability_name(state, event['ability'])}."
+    when "item_used" then "#{name.('actor')} uses #{item_phrase(event['name'])}."
     when "crit" then "Critical hit!"
     when "damage" then damage_line(event, name.("target"))
     when "heal" then event["absorbed"] ? "#{name.('target')} absorbs #{event['amount']} HP." : "#{name.('target')} recovers #{event['amount']} HP."
@@ -113,12 +121,16 @@ module BattlesHelper
     when "defend" then "#{name.('actor')} defends."
     when "flee" then flee_line(event)
     when "turn_skipped" then skipped_line(event, name.("unit"))
-    when "action_failed" then event["reason"] == "silenced" ? "#{name.('actor')} is silenced!" : "#{name.('actor')} doesn't have the MP."
+    when "action_failed" then action_failed_line(event, name.("actor"), state)
     when "timeout" then "Time's up! #{event['defaulted'].map { |id| unit_name(state, id) }.to_sentence} act on reflex." if event["defaulted"].any?
     when "victory" then victory_line(event)
     when "defeat" then "The party has fallen…"
     when "gm_override" then gm_line(event, state)
     end
+  end
+
+  def item_name(state, id)
+    state.fetch("items", {}).dig(id, "name") || id.to_s.humanize
   end
 
   private
@@ -136,16 +148,31 @@ module BattlesHelper
     when "immune" then "#{target} is unaffected."
     when "resisted" then "#{target} resists #{event['status'].to_s.humanize}."
     when "not_ko" then "#{target} is already standing."
-    else "#{ability_name(state, event['ability'])} has no target."
+    when "nothing_to_cure" then "#{target} has nothing to cure."
+    else "#{event['item'] ? item_name(state, event['item']) : ability_name(state, event['ability'])} has no target."
     end
   end
 
   def status_expired_line(event, target)
     case event["reason"]
     when "woke" then "#{target} wakes up."
+    when "cured" then "#{target} is cured of #{event['status'].humanize.downcase}."
     when "gm" then nil # the gm_override line already said it
     else "#{target}'s #{event['status'].humanize} wears off."
     end
+  end
+
+  def action_failed_line(event, actor, state)
+    case event["reason"]
+    when "silenced" then "#{actor} is silenced!"
+    when "no_item" then "There's no #{item_name(state, event['item'])} left."
+    else "#{actor} doesn't have the MP."
+    end
+  end
+
+  # "a Potion", "an Antidote", "an Echo Screen".
+  def item_phrase(name)
+    "#{name.to_s.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{name}"
   end
 
   def flee_line(event)
