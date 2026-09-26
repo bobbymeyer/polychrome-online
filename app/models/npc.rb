@@ -3,6 +3,7 @@
 # Someone the GM can speak as (§7, GM possession).
 class Npc < ApplicationRecord
   include Portrayed
+  include ArtSubject
 
   belongs_to :campaign
   belongs_to :location, optional: true

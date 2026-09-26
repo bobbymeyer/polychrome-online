@@ -1,0 +1,8 @@
+<%# One image recipe (§8), as ComfyUI will get it (apart from the seed). %>
+<dl class="facts">
+  <dt>Prompt</dt><dd><%= recipe["positive"] %></dd>
+  <dt>Negative</dt><dd><%= recipe["negative"].presence || "—" %></dd>
+  <dt>LoRAs</dt><dd><%= Array(recipe["loras"]).map { |l| "#{l['name']} #{l['strength']}" }.join(" · ").presence || "none" %></dd>
+  <dt>Checkpoint</dt><dd><code><%= recipe["checkpoint"] %></code></dd>
+  <dt>Size</dt><dd><%= recipe["width"] %> × <%= recipe["height"] %><% if recipe["transparent"] %><%= Comfy.config[:rembg_node].present? ? ", background removed" : ", background kept (no removal node is set)" %><% end %></dd>
+</dl>

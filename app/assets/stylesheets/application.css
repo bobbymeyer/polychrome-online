@@ -650,3 +650,34 @@ details[open] summary { margin-bottom: 16px; }
 .flag-value input[type=submit] { margin: 0; }
 .flag-tools { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
 .flag-tools form { margin: 0; }
+
+/* ---------------------------------------------------------------------------
+ * The asset pipeline (§8): prompt layers and the candidate strip
+ * ------------------------------------------------------------------------- */
+
+.art-layers { list-style: none; margin: 0 0 8px; padding: 0; counter-reset: layer; }
+.art-layers li { display: grid; grid-template-columns: 64px 1fr; gap: 0 16px; padding: 8px 0 7px; border-bottom: 1px solid var(--rule); }
+.art-layers li > .label { grid-row: span 3; padding-top: 4px; }
+.art-layers p { margin: 0; }
+.art-layers__loras { font-family: var(--mono); font-size: 13px; color: var(--grey); }
+.lora-rows { max-width: 640px; margin-bottom: 16px; }
+.lora-rows td:first-child { width: 75%; }
+
+.candidate-strip { list-style: none; margin: 16px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); gap: 24px var(--gutter); }
+.candidate figure { margin: 0 0 8px; }
+.candidate img, .candidate__empty {
+  display: grid; place-items: center; width: 100%; aspect-ratio: 1; object-fit: contain;
+  background-color: var(--wash);
+  /* A light checkerboard, so a removed background reads as removed. */
+  background-image: linear-gradient(45deg, var(--paper) 25%, transparent 25%, transparent 75%, var(--paper) 75%),
+                    linear-gradient(45deg, var(--paper) 25%, transparent 25%, transparent 75%, var(--paper) 75%);
+  background-size: 16px 16px; background-position: 0 0, 8px 8px;
+}
+.candidate__empty { font-size: 32px; font-weight: 700; color: var(--grey); }
+.candidate.is-running .candidate__empty, .candidate.is-queued .candidate__empty { animation: candidate-wait 1.2s steps(2, jump-none) infinite; }
+@keyframes candidate-wait { 50% { color: var(--rule); } }
+@media (prefers-reduced-motion: reduce) { .candidate__empty { animation: none !important; } }
+.candidate.is-failed .candidate__empty { background: var(--paper); box-shadow: inset 0 0 0 1px var(--rule); font-size: 14px; }
+.candidate figcaption { font-size: 13px; line-height: 16px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.art-batch__status { font-weight: 600; }
+

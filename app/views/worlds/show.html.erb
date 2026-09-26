@@ -3,6 +3,7 @@
   <h1><%= @world.name %></h1>
   <div class="actions">
     <%= link_to "New campaign", new_world_campaign_path(@world), class: "button" %>
+    <%= link_to "Art direction", world_art_direction_path(@world), class: "button button--quiet" %>
     <%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %>
   </div>
 </div>

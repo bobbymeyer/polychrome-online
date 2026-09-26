@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_200500) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -26,6 +26,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
+    t.json "image_recipe"
     t.index ["world_id", "slug"], name: "index_abilities_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_abilities_on_world_id"
   end
@@ -67,6 +70,46 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "art_batches", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "entry_type", null: false
+    t.integer "entry_id", null: false
+    t.json "recipe", default: {}, null: false
+    t.string "status", default: "queued", null: false
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entry_type", "entry_id"], name: "index_art_batches_on_entry"
+    t.index ["world_id"], name: "index_art_batches_on_world_id"
+  end
+
+  create_table "art_candidates", force: :cascade do |t|
+    t.integer "art_batch_id", null: false
+    t.integer "position", null: false
+    t.integer "seed", null: false
+    t.string "comfy_prompt_id"
+    t.string "status", default: "queued", null: false
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["art_batch_id"], name: "index_art_candidates_on_art_batch_id"
+  end
+
+  create_table "art_types", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "kind", null: false
+    t.text "prompt"
+    t.text "negative"
+    t.json "loras", default: [], null: false
+    t.integer "width", default: 1024, null: false
+    t.integer "height", default: 1024, null: false
+    t.boolean "transparent", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id", "kind"], name: "index_art_types_on_world_id_and_kind", unique: true
+    t.index ["world_id"], name: "index_art_types_on_world_id"
   end
 
   create_table "battle_actions", force: :cascade do |t|
@@ -149,6 +192,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.integer "mp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
   end
@@ -166,6 +211,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
+    t.json "image_recipe"
     t.index ["world_id", "slug"], name: "index_encounter_tables_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_encounter_tables_on_world_id"
   end
@@ -205,6 +253,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
+    t.json "image_recipe"
     t.index ["world_id", "slug"], name: "index_generator_tables_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_generator_tables_on_world_id"
   end
@@ -235,6 +286,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
+    t.json "image_recipe"
     t.index ["world_id", "slug"], name: "index_items_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_items_on_world_id"
   end
@@ -265,6 +319,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "ability_slots", default: 1, null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
+    t.json "image_recipe"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -282,6 +339,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
+    t.json "image_recipe"
     t.index ["encounter_table_id"], name: "index_location_templates_on_encounter_table_id"
     t.index ["world_id", "slug"], name: "index_location_templates_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_location_templates_on_world_id"
@@ -367,6 +427,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
+    t.json "image_recipe"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end
@@ -380,6 +443,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.datetime "updated_at", null: false
     t.integer "location_id"
     t.string "location_key"
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
     t.index ["campaign_id"], name: "index_npcs_on_campaign_id"
     t.index ["location_id"], name: "index_npcs_on_location_id"
   end
@@ -390,6 +455,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.string "expression", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "image_seed"
+    t.text "image_prompt"
+    t.json "image_recipe"
     t.index ["owner_type", "owner_id", "expression"], name: "index_portraits_on_owner_type_and_owner_id_and_expression", unique: true
     t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
   end
@@ -400,6 +468,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_style"
+    t.text "art_negative"
+    t.json "art_loras", default: [], null: false
+    t.string "art_checkpoint"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end
 
@@ -408,6 +480,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_030000) do
   add_foreign_key "ability_slots", "characters"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "art_batches", "worlds"
+  add_foreign_key "art_candidates", "art_batches"
+  add_foreign_key "art_types", "worlds"
   add_foreign_key "battle_actions", "battles"
   add_foreign_key "battle_events", "battle_actions"
   add_foreign_key "battle_events", "battles"

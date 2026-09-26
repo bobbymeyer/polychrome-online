@@ -1,0 +1,13 @@
+<%# LoRA rows for one layer of an image recipe (§8). name: the param prefix; loras: [{ "name", "strength" }]. %>
+<% id = name.parameterize(separator: "_") %>
+<table class="grid-form lora-rows">
+  <thead><tr><th scope="col">LoRA</th><th scope="col">Strength</th></tr></thead>
+  <tbody>
+    <% rows_with_blanks(loras, blanks: 1).each_with_index do |lora, i| %>
+      <tr>
+        <td><input type="text" name="<%= name %>[<%= i %>][name]" value="<%= lora['name'] %>" list="comfy-loras" aria-label="LoRA <%= i + 1 %>" id="<%= id %>_<%= i %>_name"></td>
+        <td><input type="number" name="<%= name %>[<%= i %>][strength]" value="<%= lora['strength'] %>" step="0.05" min="-5" max="5" placeholder="1.0" aria-label="LoRA <%= i + 1 %> strength" id="<%= id %>_<%= i %>_strength"></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

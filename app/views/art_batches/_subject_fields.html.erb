@@ -1,0 +1,9 @@
+<%# The subject's own layer, edited where it is generated. subject: a book entry or a speaker. %>
+<div class="field">
+  <%= label_tag "entry_art_notes", "#{subject.name}: specifics" %>
+  <% speaker = subject.is_a?(ArtSubject) %>
+  <%= text_area_tag "entry[art_notes]", subject.art_notes, rows: 2, id: "entry_art_notes", placeholder: (speaker ? "white beard, brass goggles, oil-stained apron" : subject.description) %>
+  <p class="hint"><%= speaker ? "What they look like: hair, clothes, build. Their notes stay private and never go into a prompt." : "Blank uses the description." %></p>
+</div>
+<%= render "art_directions/installed" %>
+<%= render "art_directions/loras", name: "entry[art_loras]", loras: subject.art_loras %>

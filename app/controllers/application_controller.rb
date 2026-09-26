@@ -4,4 +4,17 @@ class ApplicationController < ActionController::Base
 
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
+
+  helper_method :entry_page
+
+  private
+
+  # Where something with generated art is edited, from the thing alone (the
+  # asset pipeline, §8): a book entry's page, or a speaker's edit page.
+  def entry_page(entry, **options)
+    case entry
+    when Portrait then polymorphic_path([ :edit, entry.owner ], **options)
+    else polymorphic_path([ entry.world, ArtDirection::BOOKS.fetch(entry.art_kind), entry ], **options)
+    end
+  end
 end

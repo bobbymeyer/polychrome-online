@@ -1,0 +1,62 @@
+<% content_for :title, "Art direction · #{@world.name}" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Art direction</div>
+<header class="book-header">
+  <h1>Art direction</h1>
+</header>
+<p class="prose">
+  Every image prompt is built in three layers: this world's house style, then the framing for the kind
+  of entry, then the entry's own specifics (set on its page). Each layer can add LoRAs. When the same
+  LoRA appears twice, the later layer's strength wins, and 0 turns it off.
+</p>
+
+<%= form_with url: world_art_direction_path(@world), method: :patch, class: "book-form" do |f| %>
+  <%= render "art_directions/installed" %>
+
+  <fieldset class="panel">
+    <legend><%= @world.name %>: house style</legend>
+    <div class="field">
+      <%= label_tag "world_art_style", "Style" %>
+      <%= text_area_tag "world[art_style]", @world.art_style, rows: 2, id: "world_art_style", placeholder: "16-bit JRPG sprite, crisp pixel art, limited palette" %>
+    </div>
+    <div class="field">
+      <%= label_tag "world_art_negative", "Negative" %>
+      <%= text_area_tag "world[art_negative]", @world.art_negative, rows: 2, id: "world_art_negative", placeholder: "photo, 3d render, blurry, watermark" %>
+    </div>
+    <div class="field">
+      <%= label_tag "world_art_checkpoint", "Checkpoint" %>
+      <%= text_field_tag "world[art_checkpoint]", @world.art_checkpoint, id: "world_art_checkpoint", list: "comfy-checkpoints", placeholder: Comfy.config[:checkpoint] %>
+      <p class="hint">Blank uses <code><%= Comfy.config[:checkpoint] %></code>.</p>
+    </div>
+    <%= render "art_directions/loras", name: "world[art_loras]", loras: @world.art_loras %>
+  </fieldset>
+
+  <% @types.each do |type| %>
+    <fieldset class="panel" id="type_<%= type.kind %>">
+      <legend><%= type.label %></legend>
+      <% prefix = "types[#{type.kind}]" %>
+      <div class="field">
+        <%= label_tag "types_#{type.kind}_prompt", "Framing" %>
+        <%= text_area_tag "#{prefix}[prompt]", type.prompt, rows: 2, id: "types_#{type.kind}_prompt" %>
+      </div>
+      <div class="field">
+        <%= label_tag "types_#{type.kind}_negative", "Negative" %>
+        <%= text_area_tag "#{prefix}[negative]", type.negative, rows: 1, id: "types_#{type.kind}_negative" %>
+      </div>
+      <div class="field-row">
+        <div class="field"><%= label_tag "types_#{type.kind}_width", "Width" %><%= number_field_tag "#{prefix}[width]", type.width, min: 256, max: 2048, step: 64, id: "types_#{type.kind}_width" %></div>
+        <div class="field"><%= label_tag "types_#{type.kind}_height", "Height" %><%= number_field_tag "#{prefix}[height]", type.height, min: 256, max: 2048, step: 64, id: "types_#{type.kind}_height" %></div>
+        <div class="field field--check">
+          <%= hidden_field_tag "#{prefix}[transparent]", "0", id: nil %>
+          <%= check_box_tag "#{prefix}[transparent]", "1", type.transparent, id: "types_#{type.kind}_transparent" %>
+          <%= label_tag "types_#{type.kind}_transparent", "Remove the background" %>
+        </div>
+      </div>
+      <%= render "art_directions/loras", name: "#{prefix}[loras]", loras: type.loras %>
+    </fieldset>
+  <% end %>
+
+  <% if Comfy.config[:rembg_node].blank? %>
+    <p class="hint">No background-removal node is set (<code>COMFY_REMBG_NODE</code>), so backgrounds are kept for now.</p>
+  <% end %>
+  <div class="actions"><%= f.submit "Save art direction", class: "button" %></div>
+<% end %>

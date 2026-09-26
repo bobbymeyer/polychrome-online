@@ -1,0 +1,40 @@
+<%# Generating a speaker's portraits (§8), below their edit form (uploads live in the form).
+    owner: an Npc or Character. Each expression is one more layer after the speaker. %>
+<% world = owner.art_world %>
+<% batch = ArtBatch.where(entry: owner.portraits).order(:id).last %>
+<% chosen = batch&.entry&.expression || "neutral" %>
+<% sample = owner.portraits.find_by(expression: chosen) || Portrait.new(owner: owner, expression: chosen) %>
+<% neutral_seed = owner.portraits.find_by(expression: "neutral")&.image_seed %>
+<%= turbo_frame_tag "art_panel", data: { src: world_art_panel_path(world, entry_type: "portrait", owner_type: owner.model_name.singular, owner_id: owner.id) } do %>
+<section class="window art-studio" id="art" aria-label="Portrait art">
+  <h2>Generate portraits</h2>
+  <p class="hint">Each expression is its own image: upload it in the form above, or generate it here.</p>
+
+  <h3>The prompt, in layers</h3>
+  <%= render "art_batches/layers", art: sample %>
+
+  <%= form_with url: world_art_batches_path(world), class: "book-form" do |f| %>
+    <%= hidden_field_tag :entry_type, "portrait" %>
+    <%= hidden_field_tag :owner_type, owner.model_name.singular %>
+    <%= hidden_field_tag :owner_id, owner.id %>
+    <%= render "art_batches/subject_fields", subject: owner %>
+    <div class="inline-form">
+      <div class="field">
+        <%= label_tag :expression %>
+        <%= select_tag :expression, options_for_select(Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] }, chosen) %>
+      </div>
+      <div class="field"><%= label_tag :count, "Candidates" %><%= number_field_tag :count, Comfy.config[:candidates], min: 1, max: 8 %></div>
+      <%= submit_tag "Generate", class: "button" %>
+    </div>
+    <p class="hint">
+      <% if neutral_seed %>
+        For other expressions the first candidate reuses the Neutral portrait's seed (<%= neutral_seed %>), so the face stays closer.
+      <% else %>
+        Generate Neutral first: other expressions start from its seed, so the face stays closer.
+      <% end %>
+    </p>
+  <% end %>
+
+  <%= render "art_batches/strip", batch: batch if batch %>
+</section>
+<% end %>

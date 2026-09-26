@@ -1,4 +1,4 @@
-<%# Image slot and variant recipe (§3.3), plus the generation columns (§8). %>
+<%# Image slot and variant recipe (§3.3). Generation (§8) happens on the entry's page. %>
 <fieldset class="panel">
   <legend>Art</legend>
   <div class="art-fields">
@@ -25,17 +25,7 @@
       </div>
     </div>
   </div>
-  <details>
-    <summary>Generation record</summary>
-    <div class="field-row">
-      <div class="field">
-        <%= f.label :image_seed %>
-        <%= f.number_field :image_seed %>
-      </div>
-      <div class="field field--wide">
-        <%= f.label :image_prompt %>
-        <%= f.text_area :image_prompt, rows: 2 %>
-      </div>
-    </div>
-  </details>
+  <% if f.object.respond_to?(:art_recipe) && f.object.persisted? %>
+    <p class="hint">Uploading an image replaces a generated one. To generate one with ComfyUI, use the Art section on this entry's page.</p>
+  <% end %>
 </fieldset>

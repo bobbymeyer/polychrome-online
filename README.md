@@ -23,6 +23,11 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   every override on generated locations, each with a revert. World-version
   pins are deliberately not built yet: campaigns read the books live, so a
   change to a book shows up in every campaign straight away.
+- **Step 9 (done):** the asset pipeline. Every image slot can be uploaded or
+  generated with ComfyUI: all seven books, and each speaker's portraits. The
+  prompt is composed in layers (world, content type, subject, and a portrait's
+  expression), and each layer can add LoRAs. You pick from a strip of
+  candidates, and the winner keeps its seed and recipe.
 - **Presentation:** starts Swiss instead of SNES and diverges where play needs
   it, per [`docs/DESIGN.md`](docs/DESIGN.md). Inter
   in black on white, a 12-column grid, geometry for state, grey controls and red for
@@ -249,6 +254,68 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   The unused `campaigns.world_version` column is the seam for when a second
   author makes that matter (§1: no edition tooling until then).
 
+## Art (the asset pipeline)
+
+Every image slot can be uploaded or generated with
+[ComfyUI](https://github.com/comfyanonymous/ComfyUI) (§8):
+
+- **Book entries** in all seven books. Upload on the edit form; generate in
+  the Art section of the entry's page.
+- **Speaker portraits,** one per expression, for NPCs and characters. Upload
+  in their edit form; generate in "Generate portraits" below it.
+
+- **The prompt is composed in three layers.** Each layer can add LoRAs:
+  - **World:** the house style, the negative prompt, and optionally a
+    checkpoint. Edited on the world's Art direction page.
+  - **Content type:** framing per kind of entry, such as "profile view, full
+    body", plus a negative prompt, size, and whether to remove the background.
+    Also on the Art direction page, and seeded from `config/comfy.yml`.
+  - **Subject:** a book entry's name and specifics (blank uses its
+    description), or a speaker's name, title or job, and looks. An NPC's
+    notes are GM-private and never go into a prompt.
+  - **Expression** (portraits only): words per expression from
+    `config/comfy.yml`, such as "smiling happily".
+
+  When the same LoRA appears in two layers, the later layer's strength wins,
+  and 0 turns it off.
+- **The workflow is built, not templated.** `Comfy::Graph` builds the ComfyUI
+  graph from the composed recipe each time:
+  1. Checkpoint.
+  2. One chained LoraLoader per LoRA.
+  3. The prompts, the sampler and the decode.
+  4. Background removal, when the type asks for it and `COMFY_REMBG_NODE`
+     names an installed node.
+  5. SaveImage.
+- **Candidates.** Generate queues 1–8 candidates, each its own ComfyUI prompt
+  with its own seed. `ArtBatchJob` submits them and checks back every few
+  seconds without holding a worker. Each image appears on the page as it
+  lands, for everyone viewing it. Only the art section reloads (a Turbo Frame
+  and a `reload_frame` stream action), so a half-typed form elsewhere on the
+  page is left alone. For a portrait, the first candidate reuses the Neutral
+  portrait's seed, so the face stays closer across expressions.
+  "Use this" makes one the entry's image and
+  stores its `image_seed`, `image_prompt` and full `image_recipe`, so it can
+  be regenerated exactly. Uploading an image by hand clears them.
+- **Settings** are environment variables, read by `config/comfy.yml`:
+
+  | Variable | Default |
+  | --- | --- |
+  | `COMFY_URL` | `http://127.0.0.1:8188` |
+  | `COMFY_CHECKPOINT` | `sd_xl_base_1.0.safetensors` |
+  | `COMFY_REMBG_NODE` | blank (keeps backgrounds) |
+  | `COMFY_REMBG_INPUT` | `image` |
+
+  LoRA and checkpoint fields suggest whatever ComfyUI reports as installed.
+- **ComfyUI on the same machine as the container.**
+  - Start ComfyUI with `--listen`: by default it only accepts connections from
+    127.0.0.1, which excludes the container.
+  - Run the container with
+    `--add-host=host.docker.internal:host-gateway`.
+  - Set `COMFY_URL=http://host.docker.internal:8188`.
+  - `SOLID_QUEUE_IN_PUMA` (set in the Dockerfile) runs the job worker that
+    drives generation.
+  - Images are also kept in ComfyUI's `output/polychrome/` folder.
+
 ## Layout
 
 | Path | What |
@@ -263,6 +330,7 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
 | `lib/generators/` | Town and dungeon generators, and GM overrides on top (pure, seeded) |
 | `app/models/location.rb`, `app/views/locations/` | Campaign locations: skyline, floorplan, GM controls, exploration |
 | `app/javascript/controllers/battle_player_controller.js`, `app/javascript/battle/gestures.js` | The event player and the motion gestures (§3.2) |
+| `app/models/comfy/`, `app/models/art_*.rb`, `app/models/concerns/artwork.rb`, `app/jobs/art_batch_job.rb` | The asset pipeline: the ComfyUI client, the graph builder, layered recipes, batches and candidates |
 | `db/seeds/base_world.rb` | The base world's first entries (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |
 | `lib/battle/resolver.rb` | `Battle::Resolver.apply(state, action) -> [new_state, events]` |

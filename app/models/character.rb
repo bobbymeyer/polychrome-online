@@ -9,6 +9,7 @@
 # equipment + innates) modules.
 class Character < ApplicationRecord
   include Portrayed
+  include ArtSubject
 
   SLOTS = %w[weapon shield head body accessory].freeze
 

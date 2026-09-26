@@ -1,0 +1,14 @@
+<%# The layers an image prompt is composed from (§8), top to bottom. art: anything with Artwork. %>
+<ol class="art-layers">
+  <% art.art_layers.each do |layer| %>
+    <li>
+      <span class="label"><%= layer["role"] %></span>
+      <strong><%= layer["label"] %></strong>
+      <p><%= layer["prompt"].presence || tag.span("nothing yet", class: "muted") %></p>
+      <% if layer["loras"].any? %>
+        <p class="art-layers__loras"><%= layer["loras"].map { |l| "#{l['name']} #{l['strength']}" }.join(" · ") %></p>
+      <% end %>
+    </li>
+  <% end %>
+</ol>
+<p class="hint"><%= link_to "Edit the world and type layers", world_art_direction_path(art.art_world) %></p>

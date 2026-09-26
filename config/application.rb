@@ -40,5 +40,8 @@ module Polychrome
 
     # Don't generate system test files.
     config.generators.system_tests = nil
+
+    # The asset pipeline's ComfyUI settings (config/comfy.yml).
+    config.x.comfy = config_for(:comfy)
   end
 end
