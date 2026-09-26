@@ -149,7 +149,7 @@ export default class extends Controller {
         return 380
       case "status_applied":
         tl.call(() => this.setStatus(e.target, e.status, true), at)
-        this.popup(tl, e.target, this.humanize(e.status), "status", at)
+        this.popup(tl, e.target, this.humanize(e.status), "status", at, `status-${e.status}`)
         gesture(tl, this.sprite(e.target), "tint", at)
         return 450
       case "status_expired":
@@ -290,13 +290,13 @@ export default class extends Controller {
 
   // --- transient effects in the fx layer (text nodes created and removed) ---
 
-  popup(tl, id, text, kind, at) {
+  popup(tl, id, text, kind, at, extra = "") {
     const anchor = this.sprite(id)
     if (!anchor) return
     const stage = this.stageTarget.getBoundingClientRect()
     const box = anchor.getBoundingClientRect()
     const el = document.createElement("span")
-    el.className = `popup popup--${kind}`
+    el.className = `popup popup--${kind} ${extra}`.trim()
     el.textContent = text
     el.style.left = `${box.left - stage.left + box.width / 2}px`
     el.style.top = `${box.top - stage.top + box.height * 0.3}px`

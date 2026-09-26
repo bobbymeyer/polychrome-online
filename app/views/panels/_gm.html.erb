@@ -27,7 +27,7 @@
     <thead><tr><th>Unit</th><th class="num">HP</th><th class="num">MP</th><th>Status</th></tr></thead>
     <tbody>
       <% state["units"].each do |u| %>
-        <tr class="<%= 'is-ko' if u['hp'].zero? %>">
+        <tr class="<%= 'is-ko' if u['hp'].zero? %> <%= 'is-low' if hp_band(u) == 'danger' %>">
           <td><%= u["name"] %></td>
           <td class="num"><%= u["hp"] %>/<%= u["stats"]["max_hp"] %></td>
           <td class="num"><%= u["mp"] %>/<%= u["stats"]["max_mp"] %></td>

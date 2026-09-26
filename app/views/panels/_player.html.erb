@@ -4,7 +4,7 @@
 <div class="command-panel__head">
   <h2><%= unit["name"] %></h2>
   <span class="command-panel__vitals">
-    <span class="label">HP</span> <strong><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
+    <span class="label">HP</span> <strong class="<%= 'is-low' if hp_band(unit) == 'danger' %>"><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
     <span class="label">MP</span> <strong><%= unit["mp"] %></strong><span class="muted">/<%= unit["stats"]["max_mp"] %></span>
   </span>
   <%= render "panels/countdown" %>
@@ -20,7 +20,7 @@
     <div class="menu">
       <% (Battle::State.target_options(state, unit, @choosing) || []).each do |target_id| %>
         <%= button_to unit_name(state, target_id), battle_actions_path(@battle), class: "menu__item",
-                      data: { unit_id: target_id, help: target_help(state, target_id) },
+                      data: { unit_id: target_id, help: target_help(@battle, state, target_id) },
                       params: { command: { kind: "ability", ability: @choosing["id"], target: target_id } } %>
       <% end %>
     </div>

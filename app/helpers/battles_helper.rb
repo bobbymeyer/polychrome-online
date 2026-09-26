@@ -38,8 +38,11 @@ module BattlesHelper
     parts.join(" · ")
   end
 
-  # What you can see of a target: an ally's HP and MP; an enemy's condition.
-  def target_help(state, id)
+  AFFINITY_LABELS = { "weak" => "Weak to", "resist" => "Resists", "immune" => "Immune to", "absorb" => "Absorbs" }.freeze
+
+  # What you can see of a target: an ally's HP and MP. For an enemy, what the
+  # Bestiary says (its level and affinities), but never its HP.
+  def target_help(battle, state, id)
     target = state["units"].find { |u| u["id"] == id }
     return "" unless target
 
@@ -47,9 +50,22 @@ module BattlesHelper
     facts = if target["side"] == "party"
       [ "HP #{target['hp']}/#{target['stats']['max_hp']}", "MP #{target['mp']}" ]
     else
-      [ target["hp"].zero? ? "Down" : "Enemy" ]
+      enemy_facts(battle, target)
     end
     (facts + statuses).join(" · ")
+  end
+
+  def enemy_facts(battle, target)
+    return [ "Down" ] if target["hp"].zero?
+
+    level = battle && unit_art(battle, target).try(:level)
+    facts = [ level ? "Level #{level}" : "Enemy" ]
+    AFFINITY_LABELS.each do |affinity, label|
+      names = target.fetch("elements", {}).select { |_, a| a == affinity }.keys
+      names += target.fetch("status_immune", []) if affinity == "immune"
+      facts << "#{label} #{names.map { |n| term(n) }.to_sentence}" if names.any?
+    end
+    facts
   end
 
   def hp_percent(unit)

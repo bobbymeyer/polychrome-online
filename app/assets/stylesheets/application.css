@@ -30,6 +30,16 @@
   --wash: #f3f3f3;
   --signal: #d71920;
   --signal-dark: #a8121a;
+  /* State colours: divergences from the one-colour start (docs/DESIGN.md). */
+  --caution: #f0a500;
+  --caution-ink: #945800;
+  --poison: #2f8a3e;
+  --sleep: #3f63c8;
+  --paralyze: #e8c300;
+  --silence: #7a48b5;
+  --blind: #3a3a3a;
+  --haste: #0b7f8c;
+  --slow: #8a6a36;
   --unit: 8px;
   --gutter: 24px;
   --measure: 1200px;
@@ -330,6 +340,15 @@ details[open] summary { margin-bottom: 16px; }
 
 .badges { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
 .badge { font-size: 10px; line-height: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 0 4px; border: 1px solid var(--ink); white-space: nowrap; }
+/* Each status has its own colour, as in the games, so a row of them reads at a glance. */
+.badge--poison, .badge--sleep, .badge--paralyze, .badge--silence, .badge--blind, .badge--haste, .badge--slow { color: var(--paper); border-color: transparent; }
+.badge--poison { background: var(--poison); }
+.badge--sleep { background: var(--sleep); }
+.badge--paralyze { background: var(--paralyze); color: var(--ink); }
+.badge--silence { background: var(--silence); }
+.badge--blind { background: var(--blind); }
+.badge--haste { background: var(--haste); }
+.badge--slow { background: var(--slow); }
 
 .roster { list-style: none; margin: 16px 0 0; padding: 0; display: grid; border-top: 2px solid var(--ink); }
 .roster.window { padding-top: 0; margin-bottom: 0; }
@@ -344,7 +363,9 @@ details[open] summary { margin-bottom: 16px; }
 .roster__row.is-ko { color: var(--grey); }
 .roster__hp { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 4px; }
 .roster__hp [data-hp] { font-size: 20px; font-weight: 700; }
-.roster__row:has(.bar__fill--danger) [data-hp] { font-weight: 900; text-decoration: underline; text-decoration-thickness: 2px; }
+/* Low HP (a quarter or less) turns amber, as in the games. */
+.roster__row:has(.bar__fill--danger) [data-hp], .command-panel__vitals .is-low { color: var(--caution-ink); font-weight: 800; }
+.bar .bar__fill--danger { background: var(--caution); }
 .roster .badges { justify-content: flex-start; }
 .bar { flex-basis: 100%; height: 4px; background: var(--rule); margin-top: 4px; }
 .bar__fill { display: block; height: 100%; background: var(--ink); transition: width .25s; }
@@ -366,7 +387,9 @@ details[open] summary { margin-bottom: 16px; }
 .popup--heal::before { content: "+"; }
 .popup--crit { background: var(--ink); color: var(--paper); font-size: 14px; line-height: 20px; letter-spacing: .04em; margin-top: -32px; padding: 0 6px; }
 .popup--miss, .popup--status { font-size: 13px; line-height: 16px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-.popup--poison { font-style: italic; }
+.popup--poison { color: var(--poison); }
+.popup.status-poison { color: var(--poison); } .popup.status-sleep { color: var(--sleep); } .popup.status-paralyze { color: #8a7400; }
+.popup.status-silence { color: var(--silence); } .popup.status-blind { color: var(--blind); } .popup.status-haste { color: var(--haste); } .popup.status-slow { color: var(--slow); }
 .banner {
   position: absolute; left: 0; top: 50%; translate: 0 -50%; transform-origin: left center; opacity: 0;
   margin: 0; padding: 0 8px; white-space: nowrap; background: var(--paper);
@@ -429,6 +452,7 @@ details[open] summary { margin-bottom: 16px; }
 .countdown { margin: 0; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .countdown.is-urgent { background: var(--ink); color: var(--paper); padding: 0 8px; }
 .gm-units tr.is-ko td { color: var(--grey); text-decoration: line-through; }
+.gm-units tr.is-low td:nth-child(2) { color: var(--caution-ink); font-weight: 800; }
 .gm-override { margin-top: 24px; }
 .gm-override form { margin-top: 8px; }
 .battle-log { max-height: 360px; overflow-y: auto; }

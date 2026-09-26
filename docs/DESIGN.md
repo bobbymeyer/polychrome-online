@@ -31,7 +31,7 @@ The starting point: colour means interaction, and there is one colour, Swiss red
 
 - **Red:** links, buttons, menu and command options, form focus, disclosure triangles, map
   places and paths the GM can edit (on hover), and the dialogue's advance square.
-- **State is not red by default.** HP, KO, the current room, whose turn it is and where the party stands
+- **State is not red by default** (state colours for low HP and statuses are listed under Divergences). HP, KO, the current room, whose turn it is and where the party stands
   are all shown with black geometry, weight, fill and outline.
 - A selected option (the current pacing, say) is filled black. A pressed toggle (a pinned
   element) is filled red.
@@ -78,7 +78,7 @@ keyboard, a mouse or a finger.
   goes back. 1–9 picks an item directly. Movement wraps around the menu, and the cursor
   remembers where it was when the panel reloads.
 - **A help line** under the menu says what the cursor is on: the target, the effects and the MP
-  cost. While you pick a target, it shows an ally's HP. A command you can't use stays
+  cost. While you pick a target, it shows an ally's HP, or an enemy's level and affinities. A command you can't use stays
   selectable with a dashed outline, and the help line says why it's unavailable.
 - **Targets** light up on the battlefield (a red frame) as the cursor passes over them. While
   you choose, the units themselves can be clicked.
@@ -97,4 +97,14 @@ Record each place where the game needed more than the Swiss defaults: what chang
 - **The play layer** (above) adds a game-menu cursor, a help line, highlighted targets and key
   bindings. It changes behaviour rather than style, so it is less a break from Swiss than an
   addition to it.
+- **Low HP turns amber.** At a quarter of max HP or less, the HP number and bar go amber
+  (`--caution`), in the roster, the player's own panel and the GM's unit table. A bold black
+  number read too slowly mid-fight. Amber stays clear of the interaction red.
+- **Statuses are colour-coded,** as in the games: poison green, sleep blue, paralyze yellow,
+  silence purple, blind charcoal, haste teal and slow brown. They are solid badges, and a newly
+  applied status pops up in its own colour. A row of identical black outlines couldn't be read
+  at a glance. Red is still kept for interaction.
+- **Enemy targets show what the Bestiary knows.** The help line gives the enemy's level and its
+  affinities (weak to, resists, immune to, absorbs, including status immunities), but never its
+  HP. Players can already read these in the Bestiary, so the battle doesn't hide them.
 
