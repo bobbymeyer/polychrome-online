@@ -81,6 +81,7 @@ class Monster < ApplicationRecord
       "abilities" => ability_slugs,
       "ai" => ai_script,
       "rewards" => rewards,
+      "drops" => drops,
       "image" => { "book" => "monsters", "slug" => slug }
     }
   end

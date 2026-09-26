@@ -1,0 +1,4 @@
+<% content_for :title, "Edit #{@campaign.name}" %>
+<div class="crumbs"><%= link_to @campaign.name_in_database, campaign_path(@campaign) %> / Edit</div>
+<h1>Edit <%= @campaign.name_in_database %></h1>
+<%= render "form", campaign: @campaign %>

@@ -122,6 +122,7 @@ module Battle
         "status_immune" => spec.fetch("status_immune", []),
         "ai" => spec.fetch("ai", []),
         "rewards" => spec.fetch("rewards", {}),
+        "drops" => spec.fetch("drops", []),
         "image" => spec["image"],
         "defending" => false,
         "last_command" => nil

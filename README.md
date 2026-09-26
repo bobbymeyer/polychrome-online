@@ -10,6 +10,9 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   Rails admin CRUD with rendered pages, plus base-world seed data.
 - **Step 3 (done):** the battle screen. One party against one encounter, with
   Turbo Streams, a Stimulus event player and anime.js gestures.
+- **Step 4 (done):** characters and jobs: creation, EXP and levels, ABP and job
+  levels, ability slots, equipment from a shared bag, and battle results that
+  flow back to the party.
 
 ```
 bundle install
@@ -49,8 +52,8 @@ page with its stat block, prose, image and cross-references ("Used by",
 
 ## Battle screen
 
-Start one from a world page (**New battle**), then open the battle URL in other
-browsers and have each player take a seat.
+Start one from a campaign page (**New battle**), then open the battle URL in
+other browsers and have each player take a seat.
 
 - `BattleRecord` is the persisted battle (the `battles` table). It isn't called
   `Battle` because that's the engine's namespace. `#apply!` runs the resolver
@@ -80,9 +83,35 @@ browsers and have each player take a seat.
   image slot, with the variant recipe applied; without an image it shows a
   lettered plate. Sprite rips go in through those image slots (stored
   locally in `storage/`), never into the repo (§8).
-- **The party is a stand-in** until characters exist in step 4
-  (`QuickParty`): a name and a job at a fixed base stat line, with the job's
-  best gear from the Armory.
+- **The party is the campaign's characters.** They bring their current HP/MP
+  and derived stats in. When the battle ends, `BattleRecord#settle!` writes
+  results back in the same transaction as the ending action (see below).
+
+## Characters and jobs
+
+A world has campaigns (§4). For now a campaign is just a party, a shared bag
+and gil; flags, diffs and edition pins come in step 8. Its `world_version`
+column is the §9.8 pin, designed but not used yet.
+
+- **Level:** comes from EXP (`Stats::Growth`, pure, like `Stats::Derivation`).
+- **Stats are never stored.** The sheet shows each derivation stage: level
+  base, × job, + gear, + the job's innates.
+- **Job progress:** each job a character has held keeps its own ABP
+  (`character_jobs`). A learn-table row's ABP is the cost of reaching that
+  level from the one before, so a job is at level N once its total ABP covers
+  the first N rows. New characters pick a starting level and job level.
+- **Abilities:** a character can use what their current job has taught them,
+  plus learned abilities from other jobs placed in that job's free slots
+  (`jobs.ability_slots`; Freelancer 2, others 1, FF5-style).
+- **Equipment** comes out of the party bag and goes back into it. Changing job
+  returns gear the new job can't use to the bag.
+- **Battle results:** HP/MP always carry over. On a victory, EXP is split among
+  the characters still standing (FF5-style), each of them gets the full ABP for
+  their current job, gil goes to the party, and dropped items go into the bag.
+  The engine rolls drops at victory with the battle's own RNG, so loot is part
+  of the replay. The result panel reports level-ups and newly learned abilities.
+- **GM tools:** add items to the bag, adjust gil, grant EXP/ABP, and rest the
+  party at an inn.
 
 ## Layout
 
@@ -90,6 +119,8 @@ browsers and have each player take a seat.
 | --- | --- |
 | `app/models`, `app/controllers/{bestiary,compendium,grimoire,armory}` | The books |
 | `app/models/battle_record.rb`, `app/jobs/battle_timeout_job.rb` | Persisted battles, the action/event log, the input timer |
+| `app/models/campaign.rb`, `app/models/character.rb` | Campaigns, the party bag, characters, jobs, equipment and ability slots |
+| `lib/stats/growth.rb` | EXP to level to base stats, and ABP to job level |
 | `app/javascript/controllers/battle_player_controller.js`, `app/javascript/battle/gestures.js` | The event player and the motion gestures (§3.2) |
 | `db/seeds/base_world.rb` | The base world's first entries (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |
@@ -149,6 +180,6 @@ resulting `hp`, so the view never computes an outcome.
 
 ## Not in yet (deliberately)
 
-Items and inventory (step 4), drop tables, and ABP awards. The victory event
-sums the enemies' `rewards` hashes but awards nothing itself. All the numbers
+Using items in battle (consumables sit in the bag for now), shops, and a way
+to cure a status: the primitive set has no cleanse yet (§3.1). All the numbers
 are first guesses (§9.2) and will change in playtesting.

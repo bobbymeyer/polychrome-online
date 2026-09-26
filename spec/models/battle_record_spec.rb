@@ -6,6 +6,8 @@ RSpec.describe BattleRecord do
   include ActiveJob::TestHelper
 
   let(:battle) { start_battle }
+  let(:bartz) { battle.party.first["id"] }
+  let(:faris) { battle.party.second["id"] }
 
   def command(actor, kind: "ability", ability: "attack", target: nil)
     { "type" => "command", "actor" => actor, "command" => { "kind" => kind, "ability" => ability, "target" => target }.compact }
@@ -19,23 +21,26 @@ RSpec.describe BattleRecord do
     expect(battle).to be_persisted
     expect(battle.model_name.param_key).to eq("battle")
     expect(battle.initial_state).to eq(battle.state)
-    expect(battle.units.map { |u| u["id"] }).to eq(%w[bartz_1 faris_2 goblin_a goblin_b])
+    expect(battle.units.map { |u| u["id"] }).to eq([ bartz, faris, "goblin_a", "goblin_b" ])
+    bartz_character = battle.campaign.characters.find_by!(name: "Bartz")
+    expect(bartz).to eq("character_#{bartz_character.id}")
     expect(battle.party.first).to include("name" => "Bartz", "abilities" => [ "attack", "cure" ],
-                                          "image" => { "book" => "jobs", "slug" => "knight" })
+                                          "image" => { "book" => "jobs", "slug" => "knight" },
+                                          "stats" => bartz_character.stats)
     expect(battle.unit("goblin_a")["image"]).to eq("book" => "monsters", "slug" => "goblin")
   end
 
   describe "#apply!" do
     it "persists the action and its events in order and advances the state" do
-      before, events = battle.apply!(command("bartz_1"), actor: "bartz_1")
+      before, events = battle.apply!(command(bartz), actor: bartz)
       expect(before["inputs"]).to eq({})
       expect(events.map { |e| e["type"] }).to eq([ "command_accepted" ])
-      expect(battle.reload.state["inputs"]).to have_key("bartz_1")
+      expect(battle.reload.state["inputs"]).to have_key(bartz)
 
-      battle.apply!(command("faris_2"), actor: "faris_2")
+      battle.apply!(command(faris), actor: faris)
       battle.reload
       expect(battle.round).to eq(2)
-      expect(battle.battle_actions.map { |a| [ a.position, a.actor ] }).to eq([ [ 0, "bartz_1" ], [ 1, "faris_2" ] ])
+      expect(battle.battle_actions.map { |a| [ a.position, a.actor ] }).to eq([ [ 0, bartz ], [ 1, faris ] ])
       expect(battle.battle_events.map(&:position)).to eq((0...battle.battle_events.size).to_a)
       expect(battle.battle_events.map(&:kind)).to include("round_start", "turn_start", "round_end")
     end
@@ -55,7 +60,7 @@ RSpec.describe BattleRecord do
     end
 
     it "broadcasts one beat per action" do
-      expect { battle.apply!(command("bartz_1"), actor: "bartz_1") }
+      expect { battle.apply!(command(bartz), actor: bartz) }
         .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle-beat", "battle_beats"))
     end
 
@@ -80,14 +85,14 @@ RSpec.describe BattleRecord do
     end
 
     it "runs the round with defaults when the deadline passes" do
-      battle.apply!(command("bartz_1"), actor: "bartz_1")
+      battle.apply!(command(bartz), actor: bartz)
       travel_to(battle.deadline_at + 1.second) do
         BattleTimeoutJob.perform_now(battle.reload, 1)
       end
       battle.reload
       expect(battle.round).to eq(2)
       expect(battle.battle_actions.last).to have_attributes(actor: "system", payload: { "type" => "timeout" })
-      expect(battle.battle_events.find_by(kind: "timeout").payload["defaulted"]).to eq([ "faris_2" ])
+      expect(battle.battle_events.find_by(kind: "timeout").payload["defaulted"]).to eq([ faris ])
     end
 
     it "ignores a timer for a round that already ran" do
@@ -99,6 +104,65 @@ RSpec.describe BattleRecord do
 
     it "ignores a timer that fires early" do
       expect { BattleTimeoutJob.perform_now(battle, 1) }.not_to change(BattleAction, :count)
+    end
+  end
+
+  describe "settlement" do
+    let(:campaign) { battle.campaign }
+    let(:characters) { battle.characters_by_unit }
+
+    def win!(battle)
+      battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+    end
+
+    it "splits EXP among the standing, gives each their job ABP, and pays the party" do
+      battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => faris, "value" => 0 }, actor: "gm")
+      bartz_character = characters[bartz]
+      exp_before = bartz_character.exp
+      win!(battle)
+
+      bartz_character.reload
+      expect(bartz_character.exp).to eq(exp_before + 20) # 2 goblins x 10 EXP, one standing
+      expect(bartz_character.character_job.abp).to eq(10 + 4) # started at job level 1, +2 ABP per goblin
+      expect(characters[faris].reload.exp).to eq(Stats::Growth.exp_for_level(5))
+      expect(campaign.reload.gil).to eq(10)
+      expect(battle.reload.settlement).to include("result" => "victory", "gil" => 10,
+                                                  "members" => [ { "name" => "Bartz", "exp" => 20, "abp" => 4, "learned" => [] } ])
+    end
+
+    it "writes HP and MP back to the characters" do
+      battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => bartz, "value" => 3 }, actor: "gm")
+      battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "fled" }, actor: "gm")
+      expect(characters[bartz].reload.current_hp).to eq(3)
+      expect(battle.reload.settlement).to include("result" => "fled", "members" => [])
+      expect(campaign.reload.gil).to eq(0)
+    end
+
+    it "puts drops in the party bag" do
+      potion = create_item(campaign.world, slug: "potion", category: "consumable", stats: {}, target: "single_ally",
+                                           effects: [ { primitive: "heal", power: 30 } ])
+      campaign.world.monsters.find_by!(slug: "goblin").update!(drops: [ { item: "potion", chance: 100 } ])
+      battle = start_battle(campaign: campaign)
+      win!(battle)
+      expect(campaign.quantity_of(potion)).to eq(2)
+      expect(battle.reload.settlement["drops"]).to eq(%w[Potion Potion])
+    end
+
+    it "reports level-ups and newly learned abilities" do
+      wyrm_world = campaign.world
+      wyrm_world.monsters.find_by!(slug: "goblin").update!(exp: 500, abp: 30)
+      heal = create_ability(wyrm_world, slug: "shield_bash", kind: "skill", effects: [ { primitive: "physical", power: 90 } ])
+      wyrm_world.jobs.find_by!(slug: "knight").job_levels.create!(level: 2, abp: 20, ability: heal)
+      battle = start_battle(campaign: campaign)
+      win!(battle)
+      member = battle.reload.settlement["members"].find { |m| m["name"] == "Bartz" }
+      expect(member["level"]).to eq([ 5, 8 ]) # 200 + 1000 / 2 = 700 EXP
+      expect(member["learned"]).to eq([ "Shield bash" ])
+    end
+
+    it "happens once" do
+      win!(battle)
+      expect { battle.send(:settle!, []) }.not_to(change { campaign.reload.gil })
     end
   end
 

@@ -136,7 +136,7 @@ module Seeds
 
     JOBS = {
       freelancer: { name: "Freelancer", description: "No talents, no limits. Every hero starts here.",
-                    stat_multipliers: {}, equip_categories: Item::EQUIPMENT_CATEGORIES,
+                    stat_multipliers: {}, ability_slots: 2, equip_categories: Item::EQUIPMENT_CATEGORIES,
                     innates: [], levels: [] },
       knight: { name: "Knight", description: "Heavy armor, a long sword and the resolve to stand in front.",
                 stat_multipliers: { max_hp: 130, str: 120, vit: 120, agi: 90, mag: 60 },

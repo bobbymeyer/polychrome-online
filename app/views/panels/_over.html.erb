@@ -1,7 +1,28 @@
 <% result = { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." } %>
+<% settlement = @battle.settlement || {} %>
 <h2><%= result.fetch(@battle.status, @battle.status.humanize) %></h2>
+
+<% if settlement["result"] == "victory" %>
+  <ul class="refs">
+    <% if settlement["gil"].to_i.positive? %><li><%= settlement["gil"] %> gil for the party</li><% end %>
+    <% if settlement["drops"].present? %><li>Found <%= settlement["drops"].to_sentence %></li><% end %>
+    <% settlement["members"].each do |member| %>
+      <li>
+        <strong><%= member["name"] %></strong>: <%= member["exp"] %> EXP, <%= member["abp"] %> ABP.
+        <% if member["level"] %><span class="level-up">Level <%= member["level"].last %>!</span><% end %>
+        <% if member["learned"].present? %><span class="level-up">Learned <%= member["learned"].to_sentence %>!</span><% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>
+
 <p class="hint">
   Round <%= @battle.round %> · <%= pluralize(@battle.battle_actions.count, "action") %> ·
   replays exactly from seed <%= @battle.seed %>.
 </p>
-<%= link_to "Another battle", new_world_battle_path(@battle.world), class: "button", data: { turbo_frame: "_top" } %>
+<% if @battle.campaign %>
+  <div class="actions">
+    <%= link_to "Back to #{@battle.campaign.name}", campaign_path(@battle.campaign), class: "button", data: { turbo_frame: "_top" } %>
+    <%= link_to "Another battle", new_campaign_battle_path(@battle.campaign), class: "button button--quiet", data: { turbo_frame: "_top" } %>
+  </div>
+<% end %>

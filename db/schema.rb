@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_190000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -28,6 +28,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_170000) do
     t.datetime "updated_at", null: false
     t.index ["world_id", "slug"], name: "index_abilities_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_abilities_on_world_id"
+  end
+
+  create_table "ability_slots", force: :cascade do |t|
+    t.integer "character_id", null: false
+    t.integer "ability_id", null: false
+    t.integer "position", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ability_id"], name: "index_ability_slots_on_ability_id"
+    t.index ["character_id", "position"], name: "index_ability_slots_on_character_id_and_position", unique: true
+    t.index ["character_id"], name: "index_ability_slots_on_character_id"
   end
 
   create_table "active_storage_attachments", force: :cascade do |t|
@@ -95,7 +106,69 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_170000) do
     t.integer "playback_speed", default: 1, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "campaign_id"
+    t.json "settlement"
+    t.index ["campaign_id"], name: "index_battles_on_campaign_id"
     t.index ["world_id"], name: "index_battles_on_world_id"
+  end
+
+  create_table "campaigns", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "name", null: false
+    t.integer "gil", default: 0, null: false
+    t.integer "world_version"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id"], name: "index_campaigns_on_world_id"
+  end
+
+  create_table "character_jobs", force: :cascade do |t|
+    t.integer "character_id", null: false
+    t.integer "job_id", null: false
+    t.integer "abp", default: 0, null: false
+    t.integer "level", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id", "job_id"], name: "index_character_jobs_on_character_id_and_job_id", unique: true
+    t.index ["character_id"], name: "index_character_jobs_on_character_id"
+    t.index ["job_id"], name: "index_character_jobs_on_job_id"
+  end
+
+  create_table "characters", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.integer "job_id", null: false
+    t.string "name", null: false
+    t.string "player_name"
+    t.integer "exp", default: 0, null: false
+    t.integer "level", default: 1, null: false
+    t.integer "hp"
+    t.integer "mp"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_characters_on_campaign_id"
+    t.index ["job_id"], name: "index_characters_on_job_id"
+  end
+
+  create_table "equipment_slots", force: :cascade do |t|
+    t.integer "character_id", null: false
+    t.integer "item_id", null: false
+    t.string "slot", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id", "slot"], name: "index_equipment_slots_on_character_id_and_slot", unique: true
+    t.index ["character_id"], name: "index_equipment_slots_on_character_id"
+    t.index ["item_id"], name: "index_equipment_slots_on_item_id"
+  end
+
+  create_table "inventories", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.integer "item_id", null: false
+    t.integer "quantity", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id", "item_id"], name: "index_inventories_on_campaign_id_and_item_id", unique: true
+    t.index ["campaign_id"], name: "index_inventories_on_campaign_id"
+    t.index ["item_id"], name: "index_inventories_on_item_id"
   end
 
   create_table "items", force: :cascade do |t|
@@ -142,6 +215,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_170000) do
     t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "ability_slots", default: 1, null: false
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -179,12 +253,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_170000) do
   end
 
   add_foreign_key "abilities", "worlds"
+  add_foreign_key "ability_slots", "abilities"
+  add_foreign_key "ability_slots", "characters"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "battle_actions", "battles"
   add_foreign_key "battle_events", "battle_actions"
   add_foreign_key "battle_events", "battles"
+  add_foreign_key "battles", "campaigns"
   add_foreign_key "battles", "worlds"
+  add_foreign_key "campaigns", "worlds"
+  add_foreign_key "character_jobs", "characters"
+  add_foreign_key "character_jobs", "jobs"
+  add_foreign_key "characters", "campaigns"
+  add_foreign_key "characters", "jobs"
+  add_foreign_key "equipment_slots", "characters"
+  add_foreign_key "equipment_slots", "items"
+  add_foreign_key "inventories", "campaigns"
+  add_foreign_key "inventories", "items"
   add_foreign_key "items", "worlds"
   add_foreign_key "job_levels", "abilities"
   add_foreign_key "job_levels", "jobs"

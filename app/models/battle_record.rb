@@ -24,19 +24,22 @@ class BattleRecord < ApplicationRecord
   end
 
   belongs_to :world
+  belongs_to :campaign, optional: true
   has_many :battle_actions, -> { order(:position) }, foreign_key: :battle_id, inverse_of: :battle, dependent: :destroy
   has_many :battle_events, -> { order(:position) }, foreign_key: :battle_id, inverse_of: :battle, dependent: :delete_all
 
   validates :name, presence: true
+  validates :campaign, presence: true, on: :create
   validates :playback_speed, inclusion: { in: SPEEDS }
   validates :input_seconds, inclusion: { in: INPUT_TIMERS }
 
-  # party:     unit specs (see QuickParty)
-  # encounter: { "goblin" => 3, "wolf" => 1 }
-  def self.start!(world:, name:, party:, encounter:, seed: nil, escapable: true, input_seconds: nil)
+  # Start a battle for some of a campaign's characters.
+  #   encounter: { "goblin" => 3, "wolf" => 1 }
+  def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil)
     seed = seed.presence&.to_i || Random.new_seed % 2**31
-    state = world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable)
-    create!(world: world, name: name, seed: seed, initial_state: state, state: state,
+    party = characters.map(&:battle_spec)
+    state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable)
+    create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
             input_seconds: input_seconds).tap(&:open_round!)
   end
 
@@ -79,6 +82,7 @@ class BattleRecord < ApplicationRecord
       self.round = after["round"]
       self.deadline_at = nil if over?
       save!
+      settle!(events) if over?
     end
     open_round! if !over? && round != before["round"]
     broadcast_beat(before, events)
@@ -97,12 +101,53 @@ class BattleRecord < ApplicationRecord
     Battle::Replay.run(initial_state, battle_actions.map(&:payload))
   end
 
+  # Characters in this battle, keyed by unit id.
+  def characters_by_unit
+    ids = party.filter_map { |u| Character.from_battle_unit(u["id"]) }
+    campaign.characters.where(id: ids).index_by(&:battle_unit_id)
+  end
+
   def set_speed!(speed)
     update!(playback_speed: speed)
     broadcast_replace_to self, target: "battle_playback", partial: "battles/playback", locals: { battle: self }
   end
 
   private
+
+  # When the battle ends, what happened is written back to the campaign:
+  # HP/MP always; on victory, EXP split among the standing, ABP to each
+  # standing character's current job, gil, and the dropped items. Runs
+  # once, inside the transaction of the action that ended the battle.
+  def settle!(events)
+    return if settlement
+
+    characters = characters_by_unit
+    party.each do |unit|
+      characters[unit["id"]]&.update!(hp: unit["hp"], mp: unit["mp"])
+    end
+
+    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [] }
+    victory = events.find { |e| e["type"] == "victory" }
+    if victory
+      rewards = victory["rewards"]
+      standing = party.select { |u| u["hp"].positive? }.filter_map { |u| characters[u["id"]] }
+      exp_share = standing.empty? ? 0 : rewards["exp"].to_i / standing.size
+      standing.each do |character|
+        summary["members"] << { "name" => character.name }.merge(character.gain!(exp: exp_share, abp: rewards["abp"].to_i))
+      end
+
+      campaign.increment!(:gil, rewards["gil"].to_i)
+      summary["gil"] = rewards["gil"].to_i
+      items = world.items.where(slug: victory["drops"]).index_by(&:slug)
+      victory["drops"].each do |slug|
+        next unless (item = items[slug])
+
+        campaign.add_item!(item)
+        summary["drops"] << item.name
+      end
+    end
+    update!(settlement: summary)
+  end
 
   def next_position(association)
     (public_send(association).maximum(:position) || -1) + 1

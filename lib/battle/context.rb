@@ -147,7 +147,16 @@ module Battle
         emit(:defeat)
       elsif side("enemy").none? { |u| alive?(u) }
         state["status"] = "victory"
-        emit(:victory, rewards: rewards)
+        emit(:victory, rewards: rewards, drops: roll_drops)
+      end
+    end
+
+    # Each defeated enemy drops at most one item: its drop table is tried in
+    # order with the battle's RNG, so loot is part of the replay too.
+    def roll_drops
+      side("enemy").filter_map do |enemy|
+        drop = enemy["drops"].find { |d| rng.percent?(d["chance"]) }
+        drop && drop["item"]
       end
     end
 

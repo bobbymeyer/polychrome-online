@@ -2,16 +2,12 @@
 
 class BattlesController < ApplicationController
   include BattleSeat
+  include CampaignScoped
 
-  PARTY_SLOTS = 4
   ENCOUNTER_SLOTS = 3
 
-  before_action :set_world, only: %i[index new create]
+  before_action :set_campaign, only: %i[new create]
   before_action :set_battle, only: :show
-
-  def index
-    @battles = @world.battles.order(updated_at: :desc)
-  end
 
   def new
     @setup = default_setup
@@ -19,16 +15,16 @@ class BattlesController < ApplicationController
 
   def create
     @setup = setup_params
-    party = QuickParty.new(@world).build(@setup[:party].select { |m| m[:job].present? })
+    characters = @campaign.characters.where(id: @setup[:characters]).order(:created_at).to_a
     encounter = @setup[:encounter].select { |row| row[:monster].present? }
                                   .to_h { |row| [ row[:monster], row[:count].to_i.clamp(1, 8) ] }
-    if party.empty? || encounter.empty?
-      @error = "A battle needs at least one party member and one monster."
-      return render :new, status: :unprocessable_content
+    @error = if characters.none?(&:conscious?) then "Pick at least one character who is still standing."
+    elsif encounter.empty? then "Pick at least one monster."
     end
+    return render :new, status: :unprocessable_content if @error
 
     @battle = BattleRecord.start!(
-      world: @world, name: @setup[:name].presence || "Battle", party: party, encounter: encounter,
+      campaign: @campaign, characters: characters, name: @setup[:name].presence || "Battle", encounter: encounter,
       seed: @setup[:seed], escapable: @setup[:escapable] != "0", input_seconds: @setup[:input_seconds].presence&.to_i
     )
     take_seat("gm")
@@ -44,24 +40,20 @@ class BattlesController < ApplicationController
 
   private
 
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
-
   def default_setup
-    jobs = @world.jobs.where.not(slug: "freelancer").order(:name).limit(PARTY_SLOTS).pluck(:slug)
     monster = @world.monsters.order(:level).first&.slug
     {
       name: "Battle", seed: nil, escapable: "1", input_seconds: "60",
-      party: Array.new(PARTY_SLOTS) { |i| { name: "", job: jobs[i].to_s } },
+      characters: @campaign.characters.select(&:conscious?).first(4).map(&:id),
       encounter: [ { monster: monster.to_s, count: "3" } ] + Array.new(ENCOUNTER_SLOTS - 1) { { monster: "", count: "1" } }
     }
   end
 
   def setup_params
-    raw = params.expect(battle: [ :name, :seed, :escapable, :input_seconds,
-                                  { party: [ %i[name job] ], encounter: [ %i[monster count] ] } ])
-    rows = ->(value) { JsonCasting.rows(value).map(&:symbolize_keys) }
-    raw.to_h.symbolize_keys.merge(party: rows.(raw[:party]), encounter: rows.(raw[:encounter]))
+    raw = params.expect(battle: [ :name, :seed, :escapable, :input_seconds, { characters: [], encounter: [ %i[monster count] ] } ])
+    raw.to_h.symbolize_keys.merge(
+      characters: Array(raw[:characters]).compact_blank.map(&:to_i),
+      encounter: JsonCasting.rows(raw[:encounter]).map(&:symbolize_keys)
+    )
   end
 end

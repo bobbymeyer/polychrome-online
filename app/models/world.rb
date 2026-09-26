@@ -8,6 +8,7 @@ class World < ApplicationRecord
   has_many :items, dependent: :destroy
   has_many :jobs, dependent: :destroy
   has_many :monsters, dependent: :destroy
+  has_many :campaigns, dependent: :destroy
   has_many :battles, class_name: "BattleRecord", dependent: :destroy
 
   validates :name, presence: true

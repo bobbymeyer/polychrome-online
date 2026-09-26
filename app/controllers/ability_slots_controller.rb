@@ -1,0 +1,16 @@
+# frozen_string_literal: true
+
+class AbilitySlotsController < ApplicationController
+  include CampaignScoped
+
+  before_action :set_character
+
+  def update
+    ids = params.fetch(:ability_slots, {}).permit(abilities: []).fetch(:abilities, []).compact_blank
+    abilities = @world.abilities.where(id: ids).index_by(&:id)
+    @character.set_ability_slots!(ids.map { |id| abilities[id.to_i] })
+    redirect_to character_path(@character), notice: "Abilities set.", status: :see_other
+  rescue ActiveRecord::RecordInvalid => e
+    sheet_error(e.record.errors.full_messages.to_sentence)
+  end
+end

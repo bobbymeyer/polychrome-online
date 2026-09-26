@@ -2,13 +2,24 @@
 <div class="book-header">
   <h1><%= @world.name %></h1>
   <div class="actions">
-    <%= link_to "Battles", world_battles_path(@world), class: "button button--quiet" %>
-    <%= link_to "New battle", new_world_battle_path(@world), class: "button" %>
+    <%= link_to "New campaign", new_world_campaign_path(@world), class: "button" %>
     <%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %>
   </div>
 </div>
 <% if @world.description.present? %>
   <div class="prose"><%= simple_format(@world.description) %></div>
+<% end %>
+
+<% campaigns = @world.campaigns.order(updated_at: :desc) %>
+<% if campaigns.any? %>
+  <section class="window">
+    <h2>Campaigns</h2>
+    <ul class="refs">
+      <% campaigns.each do |campaign| %>
+        <li><%= link_to campaign.name, campaign_path(campaign) %> <span class="muted">· <%= pluralize(campaign.characters.count, "character") %></span></li>
+      <% end %>
+    </ul>
+  </section>
 <% end %>
 
 <div class="shelf">

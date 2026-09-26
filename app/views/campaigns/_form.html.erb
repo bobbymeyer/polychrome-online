@@ -1,0 +1,13 @@
+<%= form_with model: campaign, url: campaign.persisted? ? campaign_path(campaign) : world_campaigns_path(@world), class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: campaign %>
+  <div class="field-row">
+    <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
+    <% if campaign.persisted? %>
+      <div class="field"><%= f.label :gil, "Party gil" %><%= f.number_field :gil, min: 0 %></div>
+    <% end %>
+  </div>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", campaign.persisted? ? campaign_path(campaign) : world_path(@world), class: "button button--quiet" %>
+  </div>
+<% end %>

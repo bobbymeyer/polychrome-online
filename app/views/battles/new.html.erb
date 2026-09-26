@@ -1,11 +1,10 @@
 <% content_for :title, "New battle" %>
-<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Battles", world_battles_path(@world) %> / New</div>
+<div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / New battle</div>
 <h1>New battle</h1>
 <% if @error %><div class="form-errors" role="alert"><p><%= @error %></p></div><% end %>
 
-<% jobs = @world.jobs.order(:name).map { |j| [ j.name, j.slug ] } %>
 <% monsters = @world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.slug ] } %>
-<%= form_with url: world_battles_path(@world), scope: :battle, class: "book-form" do |f| %>
+<%= form_with url: campaign_battles_path(@campaign), scope: :battle, class: "book-form" do |f| %>
   <div class="field-row">
     <div class="field"><%= f.label :name %><%= f.text_field :name, value: @setup[:name] %></div>
     <div class="field">
@@ -22,18 +21,21 @@
 
   <fieldset class="panel">
     <legend>Party</legend>
-    <p class="hint">A stand-in until characters (build step 4): a name and a job, at a fixed base stat line, with the job's best gear from the Armory.</p>
-    <table class="grid-form">
-      <thead><tr><th>Name</th><th>Job</th></tr></thead>
-      <tbody>
-        <% @setup[:party].each_with_index do |member, i| %>
-          <tr>
-            <td><%= text_field_tag "battle[party][#{i}][name]", member[:name], placeholder: "defaults to the job", "aria-label": "Party member #{i + 1} name" %></td>
-            <td><%= select_tag "battle[party][#{i}][job]", options_for_select(jobs, member[:job]), include_blank: "(empty)", "aria-label": "Party member #{i + 1} job" %></td>
-          </tr>
+    <% characters = @campaign.characters.includes(:job).order(:created_at) %>
+    <% if characters.empty? %>
+      <p class="empty">This campaign has no characters. <%= link_to "Create one", new_campaign_character_path(@campaign) %>.</p>
+    <% else %>
+      <%= hidden_field_tag "battle[characters][]", "", id: nil %>
+      <div class="checks">
+        <% characters.each do |character| %>
+          <label class="<%= 'muted' unless character.conscious? %>">
+            <%= check_box_tag "battle[characters][]", character.id, @setup[:characters].include?(character.id), id: "battle_character_#{character.id}" %>
+            <%= character.name %> <span class="muted">Lv <%= character.level %> <%= character.job.name %>, HP <%= character.current_hp %>/<%= character.stats["max_hp"] %></span>
+          </label>
         <% end %>
-      </tbody>
-    </table>
+      </div>
+      <p class="hint">Characters bring their current HP and MP. Fallen characters start the battle down.</p>
+    <% end %>
   </fieldset>
 
   <fieldset class="panel">

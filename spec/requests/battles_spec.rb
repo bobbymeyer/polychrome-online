@@ -5,6 +5,8 @@ require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Battle screen", type: :request do
   let(:battle) { start_battle }
+  let(:bartz) { battle.party.first["id"] }
+  let(:faris) { battle.party.second["id"] }
 
   def sit(seat)
     post battle_seat_path(battle), params: { seat: seat }
@@ -20,37 +22,47 @@ RSpec.describe "Battle screen", type: :request do
 
   describe "setting up" do
     let!(:world) { Seeds::BaseWorld.run }
+    let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
+    let!(:bartz_character) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5) }
+    let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5) }
 
-    it "starts a battle from the books and seats the creator as GM" do
-      get new_world_battle_path(world)
-      expect(response).to have_http_status(:ok)
+    it "starts a battle for the chosen characters and seats the creator as GM" do
+      get new_campaign_battle_path(campaign)
+      expect(response.body).to include("Bartz", "Lenna")
 
-      post world_battles_path(world), params: { battle: {
-        name: "Ambush", seed: "42", escapable: "1", input_seconds: "60",
-        party: { "0" => { name: "Bartz", job: "knight" }, "1" => { name: "", job: "white_mage" }, "2" => { name: "", job: "" } },
+      post campaign_battles_path(campaign), params: { battle: {
+        name: "Ambush", seed: "42", escapable: "1", input_seconds: "60", characters: [ "", lenna.id.to_s ],
         encounter: { "0" => { monster: "goblin", count: "3" }, "1" => { monster: "", count: "1" } }
       } }
       battle = BattleRecord.last
       expect(response).to redirect_to(battle_path(battle))
-      expect(battle).to have_attributes(name: "Ambush", seed: 42, input_seconds: 60)
-      expect(battle.units.map { |u| u["name"] }).to eq([ "Bartz", "White Mage", "Goblin A", "Goblin B", "Goblin C" ])
+      expect(battle).to have_attributes(name: "Ambush", seed: 42, input_seconds: 60, campaign: campaign)
+      expect(battle.units.map { |u| u["name"] }).to eq([ "Lenna", "Goblin A", "Goblin B", "Goblin C" ])
 
       get battle_panel_path(battle)
       expect(response.body).to include("Game Master · Round 1")
     end
 
-    it "needs a party and an encounter" do
-      post world_battles_path(world), params: { battle: {
-        name: "Empty", party: { "0" => { name: "", job: "" } }, encounter: { "0" => { monster: "goblin", count: "1" } }
+    it "needs someone standing and a monster" do
+      bartz_character.update!(hp: 0)
+      post campaign_battles_path(campaign), params: { battle: {
+        name: "Doomed", characters: [ bartz_character.id.to_s ], encounter: { "0" => { monster: "goblin", count: "1" } }
       } }
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("at least one party member")
+      expect(response.body).to include("still standing")
+
+      post campaign_battles_path(campaign), params: { battle: {
+        name: "Empty", characters: [ lenna.id.to_s ], encounter: { "0" => { monster: "", count: "1" } }
+      } }
+      expect(response.body).to include("at least one monster")
     end
 
-    it "lists a world's battles" do
-      start_battle(world: world)
-      get world_battles_path(world)
-      expect(response.body).to include("Test battle")
+    it "only uses the campaign's own characters" do
+      other = world.campaigns.create!(name: "Other").characters.create!(name: "Stranger", job: world.jobs.first)
+      post campaign_battles_path(campaign), params: { battle: {
+        name: "X", characters: [ other.id.to_s, lenna.id.to_s ], encounter: { "0" => { monster: "goblin", count: "1" } }
+      } }
+      expect(BattleRecord.last.party.map { |u| u["name"] }).to eq([ "Lenna" ])
     end
   end
 
@@ -59,7 +71,7 @@ RSpec.describe "Battle screen", type: :request do
       get battle_path(battle)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('data-controller="battle-player"', "turbo-cable-stream-source",
-                                        'data-unit="goblin_a"', 'data-roster="bartz_1"', 'id="command_panel"')
+                                        'data-unit="goblin_a"', %(data-roster="#{bartz}"), 'id="command_panel"')
     end
 
     it "shows the log so far to a late joiner, without replaying anything" do
@@ -80,7 +92,7 @@ RSpec.describe "Battle screen", type: :request do
       get battle_panel_path(battle)
       expect(response.body).to include("Take a seat", "Game Master", "Bartz", "Faris")
 
-      sit("bartz_1")
+      sit(bartz)
       get battle_panel_path(battle)
       expect(response.body).to include("Seated as <strong>Bartz</strong>", "Attack", "Cure", "Defend")
     end
@@ -100,7 +112,7 @@ RSpec.describe "Battle screen", type: :request do
   end
 
   describe "players" do
-    before { sit("bartz_1") }
+    before { sit(bartz) }
 
     it "pick a target, then submit, and get a placeholder that holds no battle state" do
       get battle_panel_path(battle, ability: "attack")
@@ -110,13 +122,13 @@ RSpec.describe "Battle screen", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("data-resolving")
       expect(response.body).not_to include("Goblin", "Round", "HP")
-      expect(battle.reload.state["inputs"]["bartz_1"]).to include("target" => "goblin_b")
+      expect(battle.reload.state["inputs"][bartz]).to include("target" => "goblin_b")
     end
 
     it "always act as their own seat, whatever the params say" do
-      post battle_actions_path(battle), params: { command: { kind: "defend" }, actor: "faris_2" }
-      expect(battle.reload.state["inputs"].keys).to eq([ "bartz_1" ])
-      expect(battle.battle_actions.last.actor).to eq("bartz_1")
+      post battle_actions_path(battle), params: { command: { kind: "defend" }, actor: faris }
+      expect(battle.reload.state["inputs"].keys).to eq([ bartz ])
+      expect(battle.battle_actions.last.actor).to eq(bartz)
     end
 
     it "see the waiting state after submitting, and can change their command" do
@@ -128,9 +140,9 @@ RSpec.describe "Battle screen", type: :request do
     end
 
     it "get the resolver's reason when an action is illegal" do
-      command!(kind: "ability", ability: "attack", target: "faris_2")
+      command!(kind: "ability", ability: "attack", target: faris)
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("faris_2 is not an enemy")
+      expect(response.body).to include("#{faris} is not an enemy")
     end
 
     it "cannot send GM overrides" do
@@ -154,7 +166,7 @@ RSpec.describe "Battle screen", type: :request do
     end
 
     it "auto-pilots an absent player and runs the round, all logged" do
-      gm!(op: "auto", unit: "bartz_1")
+      gm!(op: "auto", unit: bartz)
       gm!(op: "execute_round")
       battle.reload
       expect(battle.round).to eq(2)

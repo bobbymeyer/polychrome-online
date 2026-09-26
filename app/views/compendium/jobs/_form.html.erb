@@ -1,6 +1,13 @@
 <%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
   <%= render "book_entries/errors", entry: entry %>
   <%= render "book_entries/identity_fields", f: f %>
+  <div class="field-row">
+    <div class="field">
+      <%= f.label :ability_slots, "Free ability slots" %>
+      <%= f.number_field :ability_slots, min: 0, max: 4 %>
+      <p class="hint">How many abilities learned in other jobs a character can bring into this one.</p>
+    </div>
+  </div>
 
   <fieldset class="panel">
     <legend>Stat multipliers (%)</legend>

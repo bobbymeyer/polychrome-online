@@ -2,9 +2,9 @@
     nothing seat-specific: enemy HP stays hidden (the GM sees it in the command panel). %>
 <% inputs = state["inputs"] || {} %>
 <div class="board">
-  <div class="field">
+  <div class="battlefield">
     <% %w[enemy party].each do |side| %>
-      <div class="field__side field__side--<%= side %>">
+      <div class="battlefield__side battlefield__side--<%= side %>">
         <% state["units"].select { |u| u["side"] == side }.each do |unit| %>
           <div class="unit unit--<%= side %> <%= 'is-ko' if unit['hp'].zero? %>" data-unit="<%= unit['id'] %>">
             <div class="sprite" data-sprite><%= unit_sprite(battle, unit) %></div>

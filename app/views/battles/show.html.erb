@@ -11,7 +11,9 @@
 
   <header class="battle__header">
     <div>
-      <p class="eyebrow"><%= link_to @world.name, world_path(@world) %> · Battle</p>
+      <p class="eyebrow">
+        <%= @battle.campaign ? link_to(@battle.campaign.name, campaign_path(@battle.campaign)) : link_to(@world.name, world_path(@world)) %> · Battle
+      </p>
       <h1><%= @battle.name %></h1>
     </div>
     <div class="battle__controls">

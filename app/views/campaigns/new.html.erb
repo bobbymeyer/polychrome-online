@@ -1,0 +1,4 @@
+<% content_for :title, "New campaign" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / New campaign</div>
+<h1>New campaign</h1>
+<%= render "form", campaign: @campaign %>

@@ -1,0 +1,144 @@
+<% content_for :title, @character.name %>
+<% stages = @character.stat_stages %>
+<% cj = @character.character_job %>
+<div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @character.name %></div>
+
+<article class="book-page">
+  <header class="book-page__header">
+    <%= entry_portrait(@character.job) %>
+    <div>
+      <p class="eyebrow">Character<%= " · played by #{@character.player_name}" if @character.player_name.present? %></p>
+      <h1><%= @character.name %></h1>
+      <dl class="facts">
+        <dt>Level</dt>
+        <dd><%= @character.level %> <span class="muted">(<%= @character.exp %> EXP<%= ", #{@character.exp_to_next} to next" if @character.exp_to_next %>)</span></dd>
+        <dt>Job</dt>
+        <dd>
+          <%= link_to @character.job.name, world_compendium_job_path(@world, @character.job) %>
+          Lv <%= cj.level %>
+          <span class="muted">(<%= cj.abp %> ABP<%= cj.mastered? ? ", mastered" : ", #{cj.abp_to_next} to next" %>)</span>
+        </dd>
+        <dt>HP</dt><dd><%= @character.current_hp %> / <%= @character.stats["max_hp"] %><%= " · down" unless @character.conscious? %></dd>
+        <dt>MP</dt><dd><%= @character.current_mp %> / <%= @character.stats["max_mp"] %></dd>
+      </dl>
+    </div>
+  </header>
+
+  <section class="window">
+    <h2>Stats</h2>
+    <p class="hint">Derived, never stored: level base × job, plus equipment, plus the job's innates.</p>
+    <table class="book-table book-table--plain stat-table">
+      <thead>
+        <tr><th>Stat</th><th class="num">Base</th><th class="num">Job</th><th class="num">Gear</th><th class="num">Total</th></tr>
+      </thead>
+      <tbody>
+        <% Stats::NAMES.each do |stat| %>
+          <tr>
+            <td><%= stat_label(stat) %></td>
+            <td class="num"><%= stages[:base][stat] %></td>
+            <td class="num"><%= stages[:job][stat] %></td>
+            <td class="num"><%= stages[:equipment][stat] %></td>
+            <td class="num"><strong><%= stages[:total][stat] %></strong></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="window">
+    <h2>Equipment</h2>
+    <% equipped = @character.equipped %>
+    <% bag = @campaign.bag.map(&:item) %>
+    <%= form_with url: character_equipment_path(@character), method: :patch, scope: :equipment, class: "book-form" do |f| %>
+      <div class="stat-inputs equipment-inputs">
+        <% Character::SLOTS.each do |slot| %>
+          <% current = equipped[slot]&.item %>
+          <% options = ([ current ].compact + bag.select { |item| item.slot == slot && @character.job.equips?(item) }).uniq %>
+          <div class="field">
+            <%= f.label slot, term(slot) %>
+            <%= f.select slot, options.map { |item| [ item.name, item.id ] }, { include_blank: "—", selected: current&.id } %>
+          </div>
+        <% end %>
+      </div>
+      <p class="hint">Choices come from the party bag, limited to what a <%= @character.job.name %> can use.</p>
+      <%= f.submit "Update equipment", class: "button" %>
+    <% end %>
+  </section>
+
+  <section class="window">
+    <h2>Abilities</h2>
+    <h3>From <%= @character.job.name %></h3>
+    <% native = @character.native_abilities %>
+    <% if native.empty? %>
+      <p class="empty">Nothing learned in this job yet. Attack is always available.</p>
+    <% else %>
+      <ul class="refs refs--inline">
+        <% native.each do |ability| %>
+          <li><%= link_to ability.name, world_grimoire_ability_path(@world, ability) %></li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <h3>Free slots (<%= @character.job.ability_slots %>)</h3>
+    <% slottable = @character.learned_abilities - native %>
+    <% if @character.job.ability_slots.zero? %>
+      <p class="empty"><%= @character.job.name %> has no free slots.</p>
+    <% elsif slottable.empty? %>
+      <p class="empty">Learn abilities in other jobs to bring them here.</p>
+    <% else %>
+      <% slotted = @character.slotted_abilities %>
+      <%= form_with url: character_ability_slots_path(@character), method: :patch, scope: :ability_slots, class: "book-form" do |f| %>
+        <div class="field-row">
+          <% @character.job.ability_slots.times do |i| %>
+            <div class="field">
+              <label for="ability_slot_<%= i %>">Slot <%= i + 1 %></label>
+              <%= select_tag "ability_slots[abilities][]", options_for_select(slottable.map { |a| [ a.name, a.id ] }, slotted[i]&.id),
+                             include_blank: "—", id: "ability_slot_#{i}" %>
+            </div>
+          <% end %>
+        </div>
+        <%= f.submit "Set abilities", class: "button" %>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="window">
+    <h2>Jobs</h2>
+    <table class="book-table book-table--plain">
+      <thead><tr><th>Job</th><th class="num">Lv</th><th class="num">ABP</th><th>Learned</th></tr></thead>
+      <tbody>
+        <% @character.character_jobs.includes(job: { job_levels: :ability }).sort_by { |j| j.job.name }.each do |job_progress| %>
+          <tr class="<%= 'is-current' if job_progress.job_id == @character.job_id %>">
+            <td><%= link_to job_progress.job.name, world_compendium_job_path(@world, job_progress.job) %><%= " (current)" if job_progress.job_id == @character.job_id %></td>
+            <td class="num"><%= job_progress.level %>/<%= job_progress.job.job_levels.size %></td>
+            <td class="num"><%= job_progress.abp %></td>
+            <td><%= job_progress.learned_abilities.map(&:name).join(", ").presence || "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <%= form_with url: character_job_path(@character), method: :patch, class: "book-form inline-form" do |f| %>
+      <div class="field">
+        <%= f.label :job_id, "Change job" %>
+        <%= f.select :job_id, @world.jobs.order(:name).map { |j| [ j.name, j.id ] }, selected: @character.job_id %>
+      </div>
+      <%= f.submit "Change job", class: "button" %>
+    <% end %>
+    <p class="hint">Changing job keeps each job's ABP. Gear the new job can't use goes back to the bag.</p>
+  </section>
+
+  <details class="window">
+    <summary>GM: grant EXP / ABP</summary>
+    <%= form_with url: character_grant_path(@character), scope: :grant, class: "book-form inline-form" do |f| %>
+      <div class="field"><%= f.label :exp, "EXP" %><%= f.number_field :exp, min: 0, value: 0 %></div>
+      <div class="field"><%= f.label :abp, "ABP (#{@character.job.name})" %><%= f.number_field :abp, min: 0, value: 0 %></div>
+      <%= f.submit "Grant", class: "button" %>
+    <% end %>
+  </details>
+</article>
+
+<div class="actions">
+  <%= link_to "Edit", edit_character_path(@character), class: "button" %>
+  <%= button_to "Remove from party", character_path(@character), method: :delete, class: "button button--danger",
+                form: { data: { turbo_confirm: "Remove #{@character.name}? Their gear goes back to the bag." } } %>
+</div>

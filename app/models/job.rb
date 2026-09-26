@@ -11,6 +11,7 @@ class Job < ApplicationRecord
   accepts_nested_attributes_for :job_levels, allow_destroy: true,
                                              reject_if: ->(attrs) { attrs["id"].blank? && attrs["ability_id"].blank? }
 
+  validates :ability_slots, numericality: { only_integer: true, in: 0..4 }
   validate :multipliers_are_percentages
   validate :equip_categories_exist
   validate :innates_are_passives

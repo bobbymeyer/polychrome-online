@@ -224,6 +224,21 @@ RSpec.describe Battle::Resolver do
       expect(s["round"]).to eq(1)
     end
 
+    it "rolls drops at victory with the battle's RNG, at most one per enemy" do
+      enemies = BattleFixtures.goblins(2).map { |g| g.merge(drops: [ { item: "potion", chance: 100 }, { item: "elixir", chance: 100 } ]) }
+      s = build_battle(enemies: enemies)
+      s = with_unit(with_unit(s, "goblin_a", hp: 0), "goblin_b", hp: 1)
+      s, events = full_round(s)
+      expect(s["status"]).to eq("victory")
+      expect(of_type(events, :victory).sole["drops"]).to eq(%w[potion potion])
+    end
+
+    it "drops nothing when the rolls fail" do
+      s = build_battle(enemies: [ BattleFixtures.goblins(1).first.merge(drops: [ { item: "potion", chance: 0 } ]) ])
+      s, events = apply(s, gm("end_battle", result: "victory"))
+      expect(of_type(events, :victory).sole).to include("drops" => [], "rewards" => { "exp" => 6, "gil" => 12 })
+    end
+
     it "ends in defeat when the party falls" do
       s = build_battle(party: [ BattleFixtures.party.first ], enemies: BattleFixtures.ogre)
       s = with_unit(s, "bartz", hp: 1, stats: stats(agi: 1, max_hp: 120))

@@ -33,18 +33,31 @@ RSpec.configure do |config|
   config.include BookFactory
 end
 
-# A battle started from minimal books: two knights against goblins.
+# A campaign with two knights, and battles for them against goblins.
 module BattleFactory
-  def start_battle(world: nil, goblins: 2, input_seconds: nil, seed: 7, **options)
-    world ||= create_world
-    create_ability(world, slug: "cure", kind: "magic", target: "single_ally", effects: [ { primitive: "heal", power: 20 } ]) unless world.abilities.exists?(slug: "cure")
-    unless world.jobs.exists?(slug: "knight")
-      create_item(world) unless world.items.exists?(slug: "sword")
-      create_job(world).job_levels.create!(level: 1, abp: 10, ability: world.abilities.find_by!(slug: "cure"))
-    end
-    create_monster(world) unless world.monsters.exists?(slug: "goblin")
-    party = QuickParty.new(world).build([ { name: "Bartz", job: "knight" }, { name: "Faris", job: "knight" } ])
-    BattleRecord.start!(world: world, name: "Test battle", party: party, encounter: { "goblin" => goblins },
+  def knight_world
+    world = create_world
+    cure = create_ability(world, slug: "cure", kind: "magic", target: "single_ally", effects: [ { primitive: "heal", power: 20 } ])
+    create_item(world)
+    create_job(world).job_levels.create!(level: 1, abp: 10, ability: cure)
+    create_monster(world, exp: 10, gil: 5, abp: 2)
+    world
+  end
+
+  def create_campaign(world: knight_world, name: "The Crystal Road")
+    world.campaigns.create!(name: name)
+  end
+
+  def create_character(campaign, name: "Bartz", job: nil, **attrs)
+    job ||= campaign.world.jobs.find_by!(slug: "knight")
+    campaign.characters.create!({ name: name, job: job, starting_level: 5, starting_job_level: 1 }.merge(attrs))
+  end
+
+  def start_battle(campaign: nil, goblins: 2, input_seconds: nil, seed: 7, **options)
+    campaign ||= create_campaign
+    characters = campaign.characters.order(:created_at).to_a
+    characters = [ create_character(campaign, name: "Bartz"), create_character(campaign, name: "Faris") ] if characters.empty?
+    BattleRecord.start!(campaign: campaign, characters: characters, name: "Test battle", encounter: { "goblin" => goblins },
                         seed: seed, input_seconds: input_seconds, **options)
   end
 

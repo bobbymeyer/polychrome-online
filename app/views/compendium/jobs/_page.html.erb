@@ -6,6 +6,7 @@
     <dl class="facts">
       <dt>Job levels</dt><dd><%= entry.job_levels.size %></dd>
       <dt>ABP to master</dt><dd><%= entry.total_abp %></dd>
+      <dt>Ability slots</dt><dd><%= entry.ability_slots %></dd>
     </dl>
   </div>
 </header>
@@ -43,12 +44,14 @@
     <p class="empty"><%= entry.name %> teaches nothing. It has no limits either.</p>
   <% else %>
     <table class="book-table book-table--plain">
-      <thead><tr><th class="num">Level</th><th class="num">ABP</th><th>Ability</th><th>Kind</th></tr></thead>
+      <thead><tr><th class="num">Level</th><th class="num">ABP</th><th class="num">Total</th><th>Ability</th><th>Kind</th></tr></thead>
       <tbody>
+        <% total = 0 %>
         <% entry.job_levels.includes(:ability).each do |level| %>
           <tr>
             <td class="num"><%= level.level %></td>
             <td class="num"><%= level.abp %></td>
+            <td class="num"><%= total += level.abp %></td>
             <td><%= link_to level.ability.name, world_grimoire_ability_path(@world, level.ability) %></td>
             <td><%= term(level.ability.kind) %></td>
           </tr>
