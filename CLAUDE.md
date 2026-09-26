@@ -1,0 +1,5 @@
+# CLAUDE.md
+
+- `docs/HANDOFF.md` is the design contract. Read it before writing code. Where a shortcut conflicts with it, the document wins.
+- `lib/battle` and `lib/stats` are pure functions over plain data: no ActiveRecord, no I/O, no global state. Randomness only comes from the RNG state stored in the battle state.
+- Run the tests with `bin/rspec`. A change to resolver behaviour needs the property specs (`spec/battle/properties_spec.rb`) to stay green.

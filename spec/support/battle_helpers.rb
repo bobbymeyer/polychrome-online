@@ -1,0 +1,143 @@
+# frozen_string_literal: true
+
+# A tiny slice of the base world, as plain data, for resolver specs.
+module BattleFixtures
+  module_function
+
+  def stats(**overrides)
+    {
+      max_hp: 100, max_mp: 20, str: 10, mag: 10, vit: 10, spr: 10,
+      agi: 10, atk: 10, def: 5, mdef: 5
+    }.merge(overrides).transform_keys(&:to_s)
+  end
+
+  def abilities
+    {
+      fire: { name: "Fire", kind: "magic", target: "single_enemy", cost: { mp: 4 },
+              effects: [{ primitive: "elemental", element: "fire", power: 20, hits: 1 }] },
+      firaga_all: { name: "Fira", kind: "magic", target: "all_enemies", cost: { mp: 10 },
+                    effects: [{ primitive: "elemental", element: "fire", power: 18 }] },
+      blizzard: { name: "Blizzard", kind: "magic", target: "single_enemy", cost: { mp: 4 },
+                  effects: [{ primitive: "elemental", element: "ice", power: 20 }] },
+      cure: { name: "Cure", kind: "magic", target: "single_ally", cost: { mp: 4 },
+              effects: [{ primitive: "heal", power: 25 }] },
+      cura: { name: "Cura", kind: "magic", target: "all_allies", cost: { mp: 9 },
+              effects: [{ primitive: "heal", power: 18 }] },
+      raise: { name: "Raise", kind: "magic", target: "single_ally", cost: { mp: 10 },
+               effects: [{ primitive: "revive", fraction: 25 }] },
+      bio: { name: "Bio", kind: "magic", target: "single_enemy", cost: { mp: 6 },
+             effects: [{ primitive: "elemental", element: "dark", power: 12 },
+                       { primitive: "status", kind: "poison", chance: 100, duration: 4 }] },
+      sleep: { name: "Sleep", kind: "magic", target: "single_enemy", cost: { mp: 3 },
+               effects: [{ primitive: "status", kind: "sleep", chance: 70, duration: 3 }] },
+      silence: { name: "Silence", kind: "magic", target: "single_enemy", cost: { mp: 3 },
+                 effects: [{ primitive: "status", kind: "silence", chance: 100, duration: 3 }] },
+      drain: { name: "Drain", kind: "magic", target: "single_enemy", cost: { mp: 5 },
+               effects: [{ primitive: "drain", power: 20 }] },
+      double_cut: { name: "Double Cut", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+                    effects: [{ primitive: "physical", power: 60, hits: 2 }] },
+      war_cry: { name: "War Cry", kind: "skill", target: "self", cost: { mp: 2 },
+                 effects: [{ primitive: "buff", stat: "str", amount: 50, duration: 3 }] },
+      armor_break: { name: "Armor Break", kind: "skill", target: "single_enemy", cost: { mp: 2 },
+                     effects: [{ primitive: "debuff", stat: "def", amount: 50, duration: 3 }] },
+      haste: { name: "Haste", kind: "magic", target: "single_ally", cost: { mp: 5 },
+               effects: [{ primitive: "status", kind: "haste", chance: 100, duration: 3 }] },
+      meteor: { name: "Meteor", kind: "magic", target: "random_enemy", cost: { mp: 15 },
+                effects: [{ primitive: "elemental", element: "earth", power: 15, hits: 4 }] },
+      smoke_bomb: { name: "Smoke Bomb", kind: "skill", target: "self", cost: { mp: 0 },
+                    effects: [{ primitive: "escape" }] },
+      goblin_punch: { name: "Goblin Punch", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+                      effects: [{ primitive: "physical", power: 150, hits: 1 }] }
+    }
+  end
+
+  def party
+    [
+      { id: "bartz", name: "Bartz", stats: stats(max_hp: 120, str: 14, atk: 14, agi: 12, def: 8),
+        abilities: %w[double_cut war_cry armor_break smoke_bomb] },
+      { id: "vivi", name: "Vivi", stats: stats(max_hp: 70, max_mp: 40, mag: 18, str: 6, atk: 4, agi: 9),
+        abilities: %w[fire firaga_all blizzard bio sleep silence drain meteor] },
+      { id: "rosa", name: "Rosa", stats: stats(max_hp: 80, max_mp: 40, mag: 16, spr: 16, atk: 5, agi: 10),
+        abilities: %w[cure cura raise haste] },
+      { id: "locke", name: "Locke", stats: stats(max_hp: 90, str: 11, atk: 12, agi: 18),
+        abilities: %w[double_cut smoke_bomb] }
+    ]
+  end
+
+  def goblins(count = 3)
+    [{ id: "goblin", name: "Goblin", count: count,
+       stats: stats(max_hp: 45, max_mp: 0, str: 9, atk: 8, agi: 8, def: 3, mdef: 2),
+       elements: { fire: "weak" }, rewards: { exp: 6, gil: 12 },
+       abilities: %w[goblin_punch],
+       ai: [{ if: { chance: 25 }, use: "goblin_punch" }, { use: "attack" }] }]
+  end
+
+  def ogre
+    [{ id: "ogre", name: "Ogre",
+       stats: stats(max_hp: 400, max_mp: 30, str: 20, atk: 18, agi: 7, def: 12, mdef: 6, mag: 8),
+       elements: { ice: "absorb", fire: "resist" }, status_immune: %w[sleep], rewards: { exp: 80, gil: 150 },
+       abilities: %w[cure war_cry],
+       ai: [{ if: { self_hp_below: 30 }, use: "cure", target: "self" },
+            { if: { round_multiple: 3 }, use: "war_cry" },
+            { use: "attack", target: "lowest_hp" }] }]
+  end
+end
+
+module BattleHelpers
+  def stats(**overrides) = BattleFixtures.stats(**overrides)
+
+  def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
+                   abilities: BattleFixtures.abilities, escapable: true)
+    Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable)
+  end
+
+  def apply(state, action)
+    Battle::Resolver.apply(state, action)
+  end
+
+  def command(actor, ability = "attack", target = nil, kind: "ability")
+    { type: "command", actor: actor, command: { kind: kind, ability: ability, target: target } }
+  end
+
+  def gm(op, **params)
+    { type: "gm_override", actor: "gm", op: op, **params }
+  end
+
+  def unit(state, id)
+    state["units"].find { |u| u["id"] == id }
+  end
+
+  def of_type(events, type)
+    events.select { |e| e["type"] == type.to_s }
+  end
+
+  def types(events)
+    events.map { |e| e["type"] }
+  end
+
+  # Replace a unit's fields in a state (test setup only).
+  def with_unit(state, id, **fields)
+    state = Battle::State.normalize(state)
+    unit(state, id).merge!(fields.transform_keys(&:to_s))
+    Battle::State.normalize(state)
+  end
+
+  # Events of one unit's turn, from turn_start to (excluding) turn_end.
+  def turn_of(events, id)
+    events.drop_while { |e| e["type"] != "turn_start" || e["unit"] != id }
+          .take_while { |e| e["type"] != "turn_end" }
+  end
+
+  # Submit the same kind of command for every party member awaiting input.
+  def full_round(state, ability = "attack")
+    awaiting = state["units"].select do |u|
+      u["side"] == "party" && u["hp"].positive? &&
+        u["statuses"].none? { |s| Battle::DISABLING_STATUSES.include?(s["kind"]) }
+    end
+    awaiting.reduce([state, []]) do |(s, log), u|
+      action = %w[defend flee].include?(ability) ? command(u["id"], kind: ability) : command(u["id"], ability)
+      s, events = apply(s, action)
+      [s, log + events]
+    end
+  end
+end
