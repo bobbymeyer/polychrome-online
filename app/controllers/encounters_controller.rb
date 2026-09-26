@@ -17,6 +17,7 @@ class EncountersController < ApplicationController
 
   def destroy
     @campaign.wave_off_encounter!
-    panel notice: "Encounter waved off."
+    back_to = url_from(params[:return_to])
+    back_to ? redirect_to(back_to, notice: "Encounter waved off.", status: :see_other) : panel(notice: "Encounter waved off.")
   end
 end

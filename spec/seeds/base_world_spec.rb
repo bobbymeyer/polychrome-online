@@ -20,7 +20,8 @@ RSpec.describe Seeds::BaseWorld do
   end
 
   it "leaves every entry valid" do
-    [ world.abilities, world.items, world.jobs, world.monsters, JobLevel.all ].each do |scope|
+    [ world.abilities, world.items, world.jobs, world.monsters, JobLevel.all, world.encounter_tables,
+      world.generator_tables, world.location_templates ].each do |scope|
       scope.each { |entry| expect(entry).to be_valid, "#{entry.class} #{entry.try(:slug)}: #{entry.errors.full_messages}" }
     end
   end

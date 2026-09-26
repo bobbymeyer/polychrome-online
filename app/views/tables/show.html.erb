@@ -28,7 +28,12 @@
     <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
     <section class="window table__map" aria-label="Map">
       <%= render "maps/canvas", campaign: @campaign, gm: @seat == "gm" %>
-      <p class="hint"><%= link_to(@seat == "gm" ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %></p>
+      <p class="hint">
+        <%= link_to(@seat == "gm" ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %>
+        <% if (here = @campaign.current_node&.location) %>
+          · <%= link_to "#{here.dungeon? ? 'Explore' : 'Visit'} #{here.name} →", location_path(here) %>
+        <% end %>
+      </p>
     </section>
     <section class="dialogue window" data-dialogue-target="box" data-action="click->dialogue#advance"
              aria-label="Dialogue" <%= "hidden" unless @last_dialogue %>>

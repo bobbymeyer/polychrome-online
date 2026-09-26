@@ -1,0 +1,43 @@
+<header class="book-page__header">
+  <%= entry_portrait(entry) %>
+  <div>
+    <p class="eyebrow">Generator Tables · <%= entry.kind.humanize %></p>
+    <h1><%= entry.name %></h1>
+    <dl class="facts"><dt>Rows</dt><dd><%= entry.entries.size %></dd></dl>
+  </div>
+</header>
+<% if entry.description.present? %><div class="prose"><%= simple_format(entry.description) %></div><% end %>
+
+<section class="window">
+  <h2>Rows</h2>
+  <% columns = entry.fields + [ "weight" ] %>
+  <% items = @world.items.index_by(&:slug) %>
+  <table class="book-table book-table--plain">
+    <thead><tr><% columns.each do |c| %><th><%= c.humanize %></th><% end %></tr></thead>
+    <tbody>
+      <% entry.entries.each do |row| %>
+        <tr>
+          <% columns.each do |c| %>
+            <td>
+              <% if c == "item" && items[row["item"]] %>
+                <%= link_to items[row["item"]].name, world_armory_item_path(@world, items[row["item"]]) %>
+              <% else %>
+                <%= row[c] || (c == "weight" ? 1 : "—") %>
+              <% end %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>
+
+<% users = @world.location_templates.order(:name).select { |t| t.config.fetch("tables", []).empty? || t.config["tables"].include?(entry.slug) } %>
+<% if users.any? %>
+  <section class="window">
+    <h2>Used by</h2>
+    <ul class="refs refs--inline">
+      <% users.each do |template| %><li><%= link_to template.name, world_gazetteer_location_template_path(@world, template) %></li><% end %>
+    </ul>
+  </section>
+<% end %>

@@ -20,6 +20,12 @@ Rails.application.routes.draw do
     namespace :encounters do
       resources :encounter_tables, param: :slug, path: "tables"
     end
+    namespace :gazetteer do
+      resources :location_templates, param: :slug, path: "templates"
+    end
+    namespace :generation do
+      resources :generator_tables, param: :slug, path: "tables"
+    end
 
     # The campaign layer (§2): a party's run through the world.
     resources :campaigns, only: %i[new create]
@@ -50,6 +56,23 @@ Rails.application.routes.draw do
   resources :map_nodes, only: %i[edit update destroy], path: "map/nodes" do
     post :place_party, on: :member
     resources :map_edges, only: :create, path: "paths"
+    resource :location, only: :create, controller: "node_locations"
+  end
+
+  # Towns and dungeons (§7). Everything but viewing is a GM control.
+  resources :locations, only: %i[show update] do
+    member do
+      post :reroll
+      post :pin
+      post :unpin
+      patch :stock
+      patch :boss
+      post :add_npc
+      post :add_room
+      post :enter
+      post :move
+      post :take_treasure
+    end
   end
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"
 

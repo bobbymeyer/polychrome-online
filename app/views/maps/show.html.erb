@@ -19,6 +19,13 @@
     <aside class="window map-panel">
       <h2>Where are we?</h2>
       <p><%= @campaign.current_node ? "The party is at #{@campaign.current_node.name}." : "The journey hasn't started." %></p>
+      <% places = @campaign.map_nodes.where(visible: true).where.not(location_id: nil).includes(:location).order(:name) %>
+      <% if places.any? %>
+        <h3>Places</h3>
+        <ul class="refs">
+          <% places.each do |node| %><li><%= link_to node.location.name, location_path(node.location) %></li><% end %>
+        </ul>
+      <% end %>
       <%= render "maps/legend" %>
       <p class="hint">The GM moves the party. Sit at the table as GM to edit the map.</p>
     </aside>

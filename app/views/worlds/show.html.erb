@@ -28,7 +28,9 @@
        ["Job Compendium", :compendium, "Jobs: stat modifiers, equipment, learn tables.", @world.jobs],
        ["Grimoire", :grimoire, "Abilities, composed from the engine's primitives.", @world.abilities],
        ["Armory", :armory, "Items and equipment.", @world.items],
-       ["Encounter Tables", :encounters, "Weighted monster groups by terrain and tier.", @world.encounter_tables]
+       ["Encounter Tables", :encounters, "Weighted monster groups by terrain and tier.", @world.encounter_tables],
+       ["Gazetteer", :gazetteer, "Town and dungeon templates that locations are rolled from.", @world.location_templates],
+       ["Generator Tables", :generation, "Names, hooks, rooms, buildings and loot for the generators.", @world.generator_tables]
      ].each do |title, book, blurb, entries| %>
     <section class="window shelf__book">
       <h2><%= link_to title, polymorphic_path([@world, book, entries.klass]) %></h2>

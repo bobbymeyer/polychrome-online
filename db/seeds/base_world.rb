@@ -19,6 +19,11 @@ module Seeds
       ITEMS.each { |slug, attrs| upsert(world.items, slug, attrs) }
       MONSTERS.each { |slug, attrs| upsert(world.monsters, slug, attrs) }
       ENCOUNTER_TABLES.each { |slug, attrs| upsert(world.encounter_tables, slug, attrs) }
+      GENERATOR_TABLES.each { |slug, attrs| upsert(world.generator_tables, slug, attrs) }
+      LOCATION_TEMPLATES.each do |slug, attrs|
+        table = attrs[:encounter_table] && world.encounter_tables.find_by!(slug: attrs[:encounter_table])
+        upsert(world.location_templates, slug, attrs.except(:encounter_table).merge(encounter_table: table))
+      end
       JOBS.each do |slug, attrs|
         levels = attrs.fetch(:levels)
         job = upsert(world.jobs, slug, attrs.except(:levels))
@@ -245,6 +250,79 @@ module Seeds
                            { weight: 1, monsters: { flan: 2 } } ] },
       mountain_pass: { name: "Mountain Pass", terrain: "mountain", tier: 3,
                        entries: [ { weight: 1, monsters: { ogre: 1 } }, { weight: 3, monsters: { wolf: 3 } } ] }
+    }.freeze
+
+    def texts(*strings, **fields)
+      strings.map { |text| { text: text }.merge(fields) }
+    end
+
+    GENERATOR_TABLES = {
+      town_names: { name: "Town names", kind: "place_names",
+                    entries: texts("Tule", "Carwen", "Walse", "Karnak", "Istory", "Jachol", "Lix", "Mirage") },
+      dungeon_names: { name: "Dungeon names", kind: "place_names",
+                       entries: texts("Wind Shrine", "Torna Canal", "Ship Graveyard", "Pyramid of Moore", "Drakenvale Caves", "Sealed Castle") },
+      given_names: { name: "Given names", kind: "names",
+                     entries: texts("Mira", "Oskar", "Lenne", "Dorn", "Pell", "Hask", "Ivy", "Brand", "Sella", "Tobin", "Wren", "Garrick", "Nessa", "Rook") },
+      town_hooks: { name: "Townsfolk hooks", kind: "hooks",
+                    entries: texts("Owes the guild more than they'll say.", "Saw green lights on the hill three nights running.",
+                                   "Lost a brother to the mountain pass.", "Sells maps that are mostly right.",
+                                   "Wants an escort north and can't pay yet.", "Is hiding a runaway in the cellar.",
+                                   "Swears the wind stopped last week, then started again.", "Collects crystal shards. Asks about them.",
+                                   "Knows the old way into the shrine.", "Wants their stolen ring back, no questions asked.") },
+      service_names: { name: "Service names", kind: "service_names",
+                       entries: texts("The Sleepy Chocobo", "The Crossed Keys", "Last Light Inn", service: "inn") +
+                                texts("Odds & Ends", "The Tinker's Cart", "Crystal Supply", service: "shop") +
+                                texts("Adventurers' Hall", "The Compass Guild", service: "guild") +
+                                texts("Chapel of Light", "Shrine of the Four Winds", service: "temple") },
+      buildings: { name: "Building archetypes", kind: "buildings",
+                   entries: [ { text: "Inn", service: "inn", width: 90, height: 90, roof: "peak" },
+                              { text: "Shop", service: "shop", width: 70, height: 70, roof: "peak" },
+                              { text: "Guild", service: "guild", width: 80, height: 105, roof: "flat" },
+                              { text: "Temple", service: "temple", width: 70, height: 135, roof: "dome" },
+                              { text: "House", width: 50, height: 60, weight: 4 },
+                              { text: "Cottage", width: 45, height: 50, roof: "peak", weight: 2 },
+                              { text: "Tower", width: 36, height: 125 },
+                              { text: "Warehouse", width: 95, height: 55, roof: "flat" },
+                              { text: "Windmill", width: 40, height: 100, roof: "peak" } ] },
+      shop_stock: { name: "General store stock", kind: "stock",
+                    entries: %w[potion hi_potion phoenix_down smoke_pellet broadsword dagger rod staff buckler leather_cap cotton_robe]
+                               .map { |item| { item: item } } },
+      rooms: { name: "Room names", kind: "rooms",
+               entries: texts("Flooded Hall", "Ossuary", "Collapsed Stair", "Crystal Chamber", "Guardroom", "Cistern",
+                              "Vault", "Crossing", "Chapel", "Kennels", "Forge", "Gallery", "Well Room", "Barracks") },
+      room_events: { name: "Room events", kind: "room_events",
+                     entries: texts("A voice asks each of you for your name, and repeats it back wrong.",
+                                    "The floor tilts. Something rolls toward the dark end of the room.",
+                                    "Old bones, arranged in a careful circle. One is missing.",
+                                    "A mural shows four heroes. Their faces have been scratched out.",
+                                    "Wind howls through a crack in the wall, though you're far underground.",
+                                    "A goblin, too scared to fight, offers to trade a secret for its life.") },
+      forks: { name: "Fork costs", kind: "forks",
+               entries: texts("A rope bridge: someone must stay behind to hold it.",
+                              "Poison gas: everyone who goes this way loses a tenth of their HP.",
+                              "A sealed door that opens only for 100 gil in the slot.",
+                              "A narrow crawlway: no heavy armor fits through.",
+                              "Rising water: the way back will be flooded behind you.") },
+      treasure: { name: "Dungeon treasure", kind: "treasure",
+                  entries: [ { item: "potion", weight: 4 }, { item: "hi_potion", weight: 2 }, { item: "phoenix_down", weight: 2 },
+                             { item: "power_ring" }, { item: "bronze_armor" } ] }
+    }.freeze
+
+    LOCATION_TEMPLATES = {
+      village: { name: "Village", kind: "town", description: "A small town on the road: an inn, a shop, a handful of worried people.",
+                 config: { services: { inn: 100, shop: 90, guild: 20, temple: 40 }, npcs: [ 3, 5 ], stock: [ 4, 6 ], buildings: [ 8, 11 ],
+                           tables: %w[town_names given_names town_hooks service_names buildings shop_stock] } },
+      port_town: { name: "Port town", kind: "town", description: "Busy, crowded, full of rumours from the sea.",
+                   config: { services: { inn: 100, shop: 100, guild: 80, temple: 60 }, npcs: [ 5, 8 ], stock: [ 6, 9 ], buildings: [ 12, 16 ],
+                             tables: %w[town_names given_names town_hooks service_names buildings shop_stock] } },
+      goblin_cave: { name: "Goblin cave", kind: "dungeon", encounter_table: "grasslands",
+                     description: "A short, twisting cave. A good first dungeon.",
+                     config: { rooms: [ 5, 7 ], loops: 1, decisions: { encounter: 4, event: 2, treasure: 2, fork: 1 }, boss: { goblin_chief: 1 },
+                               tables: %w[dungeon_names rooms room_events forks treasure] } },
+      barrow: { name: "Barrow", kind: "dungeon", encounter_table: "barrow",
+                description: "Old graves dug deep into the hill, and something that won't stay buried.",
+                config: { rooms: [ 8, 11 ], loops: 2, decisions: { encounter: 5, event: 3, treasure: 2, fork: 2 }, boss: { dark_mage: 1, zombie: 2 },
+                          tables: %w[dungeon_names rooms room_events forks treasure] } }
     }.freeze
   end
 end

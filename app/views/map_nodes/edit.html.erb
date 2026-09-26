@@ -4,6 +4,26 @@
     <h2><%= @node.name_in_database %> <span class="muted">· <%= @node.kind %><%= ", hidden" unless @node.visible_in_database %></span></h2>
     <%= render "form", node: @node %>
 
+    <h3>Location</h3>
+    <% if @node.location %>
+      <p><%= link_to "Open #{@node.location.name} →", location_path(@node.location), data: { turbo_frame: "_top" } %>
+        <span class="muted">(<%= @node.location.location_template.name %>)</span></p>
+    <% else %>
+      <% templates = @world.location_templates.order(:kind, :name) %>
+      <% if templates.empty? %>
+        <p class="empty">Add a template to the Gazetteer to generate towns and dungeons.</p>
+      <% else %>
+        <%= form_with url: map_node_location_path(@node), class: "book-form inline-form", data: { turbo_frame: "_top" } do |f| %>
+          <div class="field">
+            <%= label_tag :location_template_id, "Roll from" %>
+            <%= select_tag :location_template_id, options_for_select(templates.map { |t| [ "#{t.name} (#{t.kind})", t.id ] },
+                                                                     templates.find { |t| t.kind == (@node.kind == "dungeon" ? "dungeon" : "town") }&.id) %>
+          </div>
+          <%= f.submit "Generate", class: "button" %>
+        <% end %>
+      <% end %>
+    <% end %>
+
     <div class="menu menu--row">
       <% unless @node.party_here? %>
         <%= button_to "Put the party here", place_party_map_node_path(@node), class: "menu__item menu__item--accent" %>

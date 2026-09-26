@@ -432,3 +432,55 @@ form.inline { display: inline; }
 .table__stage > .window { margin: 0; }
 .table__map { padding: .5rem; }
 .table__map .hint { margin: .4rem .25rem 0; line-height: 1.4; }
+
+/* ---------------------------------------------------------------------------
+ * Locations: towns (skyline) and dungeons (floorplan)
+ * ------------------------------------------------------------------------- */
+
+.skyline-window { padding: .5rem; }
+.skyline { width: 100%; height: auto; display: block; border-radius: 4px; }
+.skyline__sky { fill: #1a2350; }
+.skyline__ground { fill: #22301f; }
+.skyline__wall { stroke: #0b0f1e; stroke-width: 2; }
+.skyline__building--tone0 .skyline__wall { fill: #6b5a8c; }
+.skyline__building--tone1 .skyline__wall { fill: #5a6f8c; }
+.skyline__building--tone2 .skyline__wall { fill: #7a6a5a; }
+.skyline__roof { fill: #8a3b3b; stroke: #0b0f1e; stroke-width: 2; }
+.skyline__building--temple .skyline__roof { fill: #d9c27a; }
+.skyline__building--guild .skyline__roof { fill: #3b5a8a; }
+.skyline__window { fill: #2a2f45; }
+.skyline__window.is-lit { fill: #ffd66b; }
+.skyline__sign { fill: var(--accent); font: 800 13px var(--font); letter-spacing: .08em; }
+
+.location-list { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.location-list li { display: flex; gap: .75rem; align-items: center; justify-content: space-between; }
+.location-list--people li { justify-content: flex-start; }
+.location-list--people li > div:first-of-type { flex: 1; }
+.location-list__tools { display: flex; gap: .5rem; align-items: center; }
+.location-list li.is-resolved { opacity: .55; }
+.location-list form { margin: 0; }
+.hook { margin: .1rem 0 0; font-style: italic; color: var(--ink-muted); }
+.speaker-portrait--generated { background: radial-gradient(circle at 35% 30%, #4a5a7a, #1e2436); color: var(--ink-muted); }
+.pin { font-size: .8rem; padding: .2rem .5rem; }
+.pin.is-pinned { border-color: var(--accent); color: var(--accent); background: transparent; }
+.checks--columns { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.gm-tools { padding: .5rem 1.25rem; }
+
+.floorplan { width: 100%; height: auto; display: block; border-radius: 4px; }
+.floorplan__rock { fill: #151722; }
+.floorplan__path line { stroke: #6d6a5a; stroke-width: 12; stroke-linecap: round; }
+.floorplan__path--costly line { stroke: #8a4a3a; stroke-dasharray: 14 8; }
+.floorplan__path text { fill: #ff9c7a; font: 900 20px var(--font); }
+.floorplan__room rect { fill: #3a3f55; stroke: #9aa0c0; stroke-width: 2; }
+.floorplan__room text { fill: var(--ink); }
+.floorplan__name { font: 700 15px var(--font); }
+.floorplan__glyph { font: 900 20px var(--font); }
+.floorplan__room.is-encounter .floorplan__glyph { fill: #ff9c7a; }
+.floorplan__room.is-boss rect { stroke: var(--danger); stroke-width: 3; }
+.floorplan__room.is-boss .floorplan__glyph { fill: var(--danger); }
+.floorplan__room.is-treasure .floorplan__glyph { fill: var(--accent); }
+.floorplan__room.is-event .floorplan__glyph { fill: #9fb4ff; }
+.floorplan__room.is-fork .floorplan__glyph { fill: #8ff0a4; }
+.floorplan__room.is-unknown rect { fill: #1e2130; stroke-dasharray: 5 4; }
+.floorplan__room.is-resolved rect { fill: #2a2e3e; }
+.floorplan__room.is-current rect { stroke: var(--accent); stroke-width: 4; }

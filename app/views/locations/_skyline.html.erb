@@ -1,0 +1,32 @@
+<%# A town's generated skyline (§7), drawn from its building archetypes. `view` is generator output. %>
+<% ground = 190 %>
+<% x = 10 %>
+<% buildings = view.fetch("skyline", []).map { |b| placed = b.merge("x" => x); x += b["width"] + 6; placed } %>
+<% width = [ x + 4, 300 ].max %>
+<svg class="skyline" viewBox="0 0 <%= width %> 220" role="img" aria-label="The skyline of <%= view['name'] %>">
+  <rect class="skyline__sky" x="0" y="0" width="<%= width %>" height="<%= ground %>" />
+  <rect class="skyline__ground" x="0" y="<%= ground %>" width="<%= width %>" height="30" />
+  <% buildings.each_with_index do |b, i| %>
+    <% top = ground - b["height"] %>
+    <g class="skyline__building skyline__building--<%= b['service'] || 'plain' %> skyline__building--tone<%= i % 3 %>">
+      <% case b["roof"] %>
+      <% when "peak" %>
+        <polygon class="skyline__roof" points="<%= b['x'] - 4 %>,<%= top %> <%= b['x'] + b['width'] / 2 %>,<%= top - b['width'] / 2.5 %> <%= b['x'] + b['width'] + 4 %>,<%= top %>" />
+      <% when "dome" %>
+        <path class="skyline__roof" d="M<%= b['x'] %>,<%= top %> A<%= b['width'] / 2 %>,<%= b['width'] / 2.2 %> 0 0 1 <%= b['x'] + b['width'] %>,<%= top %> Z" />
+      <% else %>
+        <rect class="skyline__roof" x="<%= b['x'] - 2 %>" y="<%= top - 6 %>" width="<%= b['width'] + 4 %>" height="6" />
+      <% end %>
+      <rect class="skyline__wall" x="<%= b['x'] %>" y="<%= top %>" width="<%= b['width'] %>" height="<%= b['height'] %>" />
+      <% (b["height"] / 26).times do |row| %>
+        <% (b["width"] / 22).times do |col| %>
+          <% lit = (i * 7 + row * 3 + col) % 5 < 2 %>
+          <rect class="skyline__window <%= 'is-lit' if lit %>" x="<%= b['x'] + 7 + col * 22 %>" y="<%= top + 9 + row * 26 %>" width="9" height="11" />
+        <% end %>
+      <% end %>
+      <% if b["service"] %>
+        <text class="skyline__sign" x="<%= b['x'] + b['width'] / 2 %>" y="<%= ground + 22 %>" text-anchor="middle"><%= b["service"].upcase %></text>
+      <% end %>
+    </g>
+  <% end %>
+</svg>

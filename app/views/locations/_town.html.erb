@@ -1,0 +1,103 @@
+<section class="window skyline-window">
+  <%= render "locations/skyline", view: view %>
+</section>
+
+<div class="two-up">
+  <section class="window">
+    <h2>Services</h2>
+    <% if view["services"].empty? %>
+      <p class="empty">Nothing here for travellers.</p>
+    <% else %>
+      <ul class="location-list">
+        <% view["services"].each do |service| %>
+          <li>
+            <span><strong><%= service["name"] %></strong> <span class="muted"><%= service["kind"].humanize %></span></span>
+            <% if gm %><%= render "locations/pin", location: location, key: service["key"] %><% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <% if view["services"].any? { |s| s["kind"] == "shop" } %>
+      <h3>For sale</h3>
+      <% items = location.stock_items %>
+      <% if items.empty? %>
+        <p class="empty">The shelves are bare.</p>
+      <% else %>
+        <table class="book-table book-table--plain">
+          <tbody>
+            <% items.each do |item| %>
+              <tr>
+                <td><%= link_to item.name, world_armory_item_path(@world, item) %></td>
+                <td class="muted"><%= term(item.category) %></td>
+                <td class="num"><%= number_with_delimiter(item.price) %> gil</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+      <% if gm %>
+        <details>
+          <summary>GM: set the stock</summary>
+          <%= form_with url: stock_location_path(location), method: :patch, scope: :stock, class: "book-form" do |f| %>
+            <%= hidden_field_tag "stock[items][]", "", id: nil %>
+            <div class="checks checks--columns">
+              <% chosen = view["stock"] %>
+              <% @world.items.order(:category, :name).each do |item| %>
+                <label><%= check_box_tag "stock[items][]", item.slug, chosen.include?(item.slug), id: "stock_#{item.slug}" %> <%= item.name %></label>
+              <% end %>
+            </div>
+            <div class="actions">
+              <%= f.submit "Set stock", class: "button" %>
+            </div>
+          <% end %>
+          <% if location.overrides.key?("stock") %>
+            <%= button_to "Back to the rolled stock", stock_location_path(location), method: :patch, params: { reset: 1 }, class: "link-button" %>
+          <% end %>
+        </details>
+      <% end %>
+    <% end %>
+  </section>
+
+  <section class="window">
+    <h2>People</h2>
+    <ul class="location-list location-list--people">
+      <% location.roster.each do |slot| %>
+        <% npc = slot["npc"] %>
+        <% generated = slot["generated"] %>
+        <li>
+          <%= speaker_portrait(npc, "neutral", size: :medium) if npc %>
+          <% unless npc %><span class="speaker-portrait speaker-portrait--medium speaker-portrait--plate speaker-portrait--generated"><%= generated["name"].first %></span><% end %>
+          <div>
+            <strong><%= npc&.name || generated["name"] %></strong>
+            <span class="muted"><%= npc&.title || generated["title"] %></span>
+            <% hook = npc ? npc.description : generated["hook"] %>
+            <% if hook.present? && gm %><p class="hook"><%= hook %></p><% end %>
+          </div>
+          <% if gm %>
+            <div class="location-list__tools">
+              <% if generated %>
+                <%= render "locations/pin", location: location, key: generated["key"], hint: "Make them a real NPC you can speak as at the table" %>
+              <% end %>
+              <% if npc %><%= link_to "Edit", edit_npc_path(npc), class: "link-button" %><% end %>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+    <% if gm %>
+      <p class="hint">Pinning someone makes them a real NPC: they join the cast and you can speak as them at the table.</p>
+      <details>
+        <summary>GM: write someone in</summary>
+        <%= form_with url: add_npc_location_path(location), scope: :npc, class: "book-form" do |f| %>
+          <div class="field-row">
+            <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
+            <div class="field"><%= f.label :title %><%= f.text_field :title %></div>
+          </div>
+          <div class="field"><%= f.label :description, "Hook" %><%= f.text_field :description %></div>
+          <%= f.submit "Add", class: "button" %>
+        <% end %>
+      </details>
+    <% end %>
+  </section>
+</div>

@@ -1,0 +1,13 @@
+<table class="book-table">
+  <thead><tr><th>Name</th><th>Kind</th><th class="num">Rows</th><th>For example</th></tr></thead>
+  <tbody>
+    <% entries.each do |table| %>
+      <tr>
+        <td><%= link_to table.name, entry_path(table) %></td>
+        <td><%= table.kind.humanize %></td>
+        <td class="num"><%= table.entries.size %></td>
+        <td class="muted"><%= table.entries.first(3).map { |e| e["text"] || e["item"] }.join(" · ").truncate(80) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

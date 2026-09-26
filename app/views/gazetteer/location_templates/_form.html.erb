@@ -1,0 +1,76 @@
+<% s = entry.settings %>
+<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: entry %>
+  <%= render "book_entries/identity_fields", f: f %>
+  <div class="field-row">
+    <div class="field"><%= f.label :kind %><%= f.select :kind, LocationTemplate::KINDS.map { |k| [ k.humanize, k ] } %></div>
+  </div>
+  <% field = ->(key) { json_field_name(f, :config, key) } %>
+
+  <fieldset class="panel">
+    <legend>Towns</legend>
+    <p class="hint">Used when the kind is Town.</p>
+    <div class="stat-inputs">
+      <% Generators::Town::SERVICES.each do |service| %>
+        <div class="field">
+          <label for="config_services_<%= service %>"><%= service.humanize %> %</label>
+          <%= number_field_tag json_field_name(f, :config, :services, service), s.dig("services", service) || LocationTemplate::DEFAULTS.dig("town", "services", service), min: 0, max: 100, id: "config_services_#{service}" %>
+        </div>
+      <% end %>
+      <% %w[npcs stock buildings].each do |key| %>
+        <% range = s[key] || LocationTemplate::DEFAULTS.dig("town", key) %>
+        <div class="field"><label for="config_<%= key %>_min"><%= key.humanize %> min</label><%= number_field_tag field.("#{key}_min"), range[0], min: 0, max: 30, id: "config_#{key}_min" %></div>
+        <div class="field"><label for="config_<%= key %>_max"><%= key.humanize %> max</label><%= number_field_tag field.("#{key}_max"), range[1], min: 0, max: 30, id: "config_#{key}_max" %></div>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Dungeons</legend>
+    <p class="hint">Used when the kind is Dungeon. Every room gets one decision, picked by these weights; forks only go where there's a choice of ways.</p>
+    <div class="stat-inputs">
+      <% range = s["rooms"] || LocationTemplate::DEFAULTS.dig("dungeon", "rooms") %>
+      <div class="field"><label for="config_rooms_min">Rooms min</label><%= number_field_tag field.("rooms_min"), range[0], min: 2, max: 30, id: "config_rooms_min" %></div>
+      <div class="field"><label for="config_rooms_max">Rooms max</label><%= number_field_tag field.("rooms_max"), range[1], min: 2, max: 30, id: "config_rooms_max" %></div>
+      <div class="field"><label for="config_loops">Loops</label><%= number_field_tag field.("loops"), s["loops"] || 1, min: 0, max: 5, id: "config_loops" %></div>
+      <% %w[encounter event treasure fork].each do |decision| %>
+        <div class="field">
+          <label for="config_decisions_<%= decision %>"><%= decision.humanize %> weight</label>
+          <%= number_field_tag json_field_name(f, :config, :decisions, decision), s.dig("decisions", decision) || LocationTemplate::DEFAULTS.dig("dungeon", "decisions", decision), min: 0, id: "config_decisions_#{decision}" %>
+        </div>
+      <% end %>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <%= f.label :encounter_table_id, "Encounter table" %>
+        <%= f.select :encounter_table_id, @world.encounter_tables.order(:tier, :name).map { |t| [ "#{t.name} (tier #{t.tier})", t.id ] }, include_blank: "None" %>
+      </div>
+      <% boss_slug, boss_count = (s["boss"] || {}).first %>
+      <div class="field">
+        <label for="config_boss_monster">Boss</label>
+        <%= select_tag field.("boss_monster"), options_for_select(@world.monsters.order(:level, :name).map { |m| [ m.name, m.slug ] }, boss_slug), include_blank: "Strongest group from the table", id: "config_boss_monster" %>
+      </div>
+      <div class="field"><label for="config_boss_count">Boss count</label><%= number_field_tag field.("boss_count"), boss_count || 1, min: 1, max: 8, id: "config_boss_count" %></div>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Generator tables</legend>
+    <p class="hint">Which tables to draw names, hooks, rooms and loot from. Tick none to use every table in the world.</p>
+    <%= hidden_field_tag "#{f.object_name}[config][tables][]", "", id: nil %>
+    <div class="checks">
+      <% chosen = entry.config.fetch("tables", []) %>
+      <% @world.generator_tables.order(:kind, :name).each do |table| %>
+        <label>
+          <%= check_box_tag "#{f.object_name}[config][tables][]", table.slug, chosen.include?(table.slug), id: "config_tables_#{table.slug}" %>
+          <%= table.name %> <span class="muted">(<%= table.kind.humanize.downcase %>)</span>
+        </label>
+      <% end %>
+    </div>
+  </fieldset>
+  <%= render "book_entries/art_fields", f: f %>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", entry.persisted? ? entry_path(entry) : entries_path, class: "button button--quiet" %>
+  </div>
+<% end %>

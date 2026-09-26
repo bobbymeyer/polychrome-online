@@ -1,0 +1,44 @@
+<%# A dungeon's floorplan (§7): rooms and paths, drawn from generator output.
+    shown: room keys drawn in full; known: keys drawn as unexplored exits ("?"); both nil = show all.
+    current: the party's room. resolved: room keys whose decision has been dealt with. %>
+<% shown = local_assigns[:shown] %>
+<% known = local_assigns[:known] || [] %>
+<% current = local_assigns[:current] %>
+<% resolved = local_assigns[:resolved] || [] %>
+<% full = ->(key) { shown.nil? || shown.include?(key) } %>
+<% drawn = ->(key) { full.(key) || known.include?(key) } %>
+<% rooms = view.fetch("rooms", []).select { |r| drawn.(r["key"]) }.index_by { |r| r["key"] } %>
+<% glyphs = { "encounter" => "⚔", "boss" => "☠", "treasure" => "◆", "event" => "✦", "fork" => "⑂" } %>
+<svg class="floorplan" viewBox="0 0 <%= Generators::Dungeon::WIDTH %> <%= Generators::Dungeon::HEIGHT %>" role="img"
+     aria-label="Floorplan of <%= view['name'] %><%= ", the party is in #{rooms[current]['name']}" if current && rooms[current] %>">
+  <rect class="floorplan__rock" x="0" y="0" width="<%= Generators::Dungeon::WIDTH %>" height="<%= Generators::Dungeon::HEIGHT %>" />
+  <% view.fetch("paths", []).each do |path| %>
+    <% a = rooms[path["from"]] %>
+    <% b = rooms[path["to"]] %>
+    <% next unless a && b && (full.(a["key"]) || full.(b["key"])) %>
+    <g class="floorplan__path <%= 'floorplan__path--costly' if path['cost'] %>">
+      <title><%= path["cost"] ? "Cost: #{path['cost']}" : "#{a['name']} – #{b['name']}" %></title>
+      <line x1="<%= a['x'] %>" y1="<%= a['y'] %>" x2="<%= b['x'] %>" y2="<%= b['y'] %>" />
+      <% if path["cost"] %>
+        <text x="<%= (a['x'] + b['x']) / 2 %>" y="<%= (a['y'] + b['y']) / 2 + 7 %>" text-anchor="middle">⚠</text>
+      <% end %>
+    </g>
+  <% end %>
+  <% rooms.each_value do |room| %>
+    <% open = full.(room["key"]) %>
+    <g class="floorplan__room <%= 'is-unknown' unless open %> <%= 'is-current' if room['key'] == current %> <%= 'is-resolved' if resolved.include?(room['key']) %> <%= "is-#{room['decision']['kind']}" if open %>"
+       transform="translate(<%= room['x'] %> <%= room['y'] %>)">
+      <title><%= open ? "#{room['name']}: #{room['decision']['kind']}" : "Unexplored" %></title>
+      <rect x="-58" y="-24" width="116" height="48" rx="6" />
+      <% if open %>
+        <text class="floorplan__glyph" x="-44" y="7" text-anchor="middle"><%= glyphs[room["decision"]["kind"]] %></text>
+        <text class="floorplan__name" x="6" y="6" text-anchor="middle"><%= room["name"].truncate(14) %></text>
+      <% else %>
+        <text class="floorplan__name" x="0" y="7" text-anchor="middle">?</text>
+      <% end %>
+      <% if room["key"] == current %>
+        <g class="map-party__flag" transform="translate(40 -26)"><path d="M0,0 L0,-26 L18,-19 L0,-12" /></g>
+      <% end %>
+    </g>
+  <% end %>
+</svg>

@@ -8,6 +8,7 @@ class MapNode < ApplicationRecord
   HEIGHT = 700
 
   belongs_to :campaign
+  belongs_to :location, optional: true
   has_many :outgoing_edges, class_name: "MapEdge", foreign_key: :from_node_id, dependent: :destroy, inverse_of: :from_node
   has_many :incoming_edges, class_name: "MapEdge", foreign_key: :to_node_id, dependent: :destroy, inverse_of: :to_node
 

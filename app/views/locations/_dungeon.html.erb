@@ -1,0 +1,108 @@
+<% current = location.progress["current"] %>
+<% here = location.current_room %>
+<% glyph_names = { "encounter" => "Encounter", "boss" => "Boss", "treasure" => "Treasure", "event" => "Event", "fork" => "Fork" } %>
+<% describe = lambda do |room|
+     d = room["decision"]
+     case d["kind"]
+     when "encounter", "boss" then "#{glyph_names[d['kind']]}: #{@campaign.describe_encounter(d['monsters'])}"
+     when "treasure"
+       "Treasure: #{@world.items.find_by(slug: d['item'])&.name || d['item']}#{' (taken)' if location.resolved?(room['key'])}"
+     else "#{glyph_names[d['kind']]}: #{d['text']}"
+     end
+   end %>
+
+<div class="map-layout">
+  <section class="window map-window">
+    <% if gm %>
+      <%= render "locations/floorplan", view: view, current: current, resolved: location.progress.fetch("resolved", []) %>
+    <% else %>
+      <% seen = view["rooms"].map { |r| r["key"] }.select { |k| location.seen_by_players?(k) } %>
+      <%= render "locations/floorplan", view: view, current: current, shown: location.visited, known: seen - location.visited %>
+      <% if location.visited.empty? %><p class="hint">Nobody has gone in yet.</p><% end %>
+    <% end %>
+  </section>
+
+  <aside class="window map-panel">
+    <% if here %>
+      <h2><%= here["name"] %></h2>
+      <p><%= describe.(here) if gm || location.resolved?(here["key"]) || here["decision"]["kind"] == "treasure" %></p>
+    <% else %>
+      <h2><%= location.visited.any? ? "Outside" : "The way in" %></h2>
+    <% end %>
+
+    <% if gm %>
+      <% if (encounter = @campaign.pending_encounter) %>
+        <section class="encounter-call">
+          <h3>Encounter!</h3>
+          <p><%= @campaign.describe_encounter(encounter["monsters"]) %> <span class="muted">(<%= encounter["table"] %>)</span></p>
+          <div class="menu menu--row">
+            <%= button_to "Fight", campaign_encounter_path(@campaign), class: "menu__item menu__item--accent" %>
+            <%= button_to "Wave it off", campaign_encounter_path(@campaign), method: :delete, params: { return_to: location_path(location) }, class: "menu__item" %>
+          </div>
+        </section>
+      <% end %>
+
+      <% if here.nil? %>
+        <%= button_to "Lead the party in", enter_location_path(location), class: "button" %>
+      <% else %>
+        <% if here["decision"]["kind"] == "treasure" && !location.resolved?(here["key"]) %>
+          <%= button_to "Hand over the treasure", take_treasure_location_path(location), params: { room: here["key"] }, class: "button" %>
+        <% end %>
+        <h3>Ways on</h3>
+        <div class="menu">
+          <% location.neighbours(here["key"]).each do |key| %>
+            <% room = location.room(key) %>
+            <% cost = location.path_between(here["key"], key)&.dig("cost") %>
+            <%= button_to move_location_path(location), params: { room: key }, class: "menu__item", title: cost do %>
+              <%= room["name"] %> <% if cost %><span class="menu__cost">⚠ cost</span><% elsif location.visited.include?(key) %><span class="menu__cost">visited</span><% end %>
+            <% end %>
+          <% end %>
+        </div>
+        <p class="hint">Moving reveals the room to the players and plays its decision at the table.</p>
+      <% end %>
+
+      <details>
+        <summary>GM: every room</summary>
+        <ul class="location-list location-list--rooms">
+          <% view["rooms"].each do |room| %>
+            <li class="<%= 'is-resolved' if location.resolved?(room['key']) %>">
+              <span><strong><%= room["name"] %></strong><%= " (added)" if room["added"] %><br><span class="muted"><%= describe.(room) %></span></span>
+              <% unless room["added"] %><%= render "locations/pin", location: location, key: room["key"] %><% end %>
+            </li>
+          <% end %>
+        </ul>
+      </details>
+
+      <details>
+        <summary>GM: place the boss</summary>
+        <%= form_with url: boss_location_path(location), method: :patch, scope: :boss, class: "book-form" do |f| %>
+          <% boss = location.overrides["boss"]&.first %>
+          <div class="field-row">
+            <div class="field"><%= f.label :monster %><%= f.select :monster, @world.monsters.order(:level, :name).map { |m| [ m.name, m.slug ] }, include_blank: "As rolled", selected: boss&.first %></div>
+            <div class="field"><%= f.label :count %><%= f.number_field :count, value: boss&.last || 1, min: 1, max: 8 %></div>
+          </div>
+          <%= f.submit "Place boss", class: "button" %>
+        <% end %>
+      </details>
+
+      <details>
+        <summary>GM: add a room</summary>
+        <%= form_with url: add_room_location_path(location), scope: :room, class: "book-form" do |f| %>
+          <div class="field-row">
+            <div class="field"><%= f.label :name %><%= f.text_field :name, placeholder: "Hidden Room" %></div>
+            <div class="field"><%= f.label :connect, "Off" %><%= f.select :connect, view["rooms"].map { |r| [ r["name"], r["key"] ] } %></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><%= f.label :kind, "Decision" %><%= f.select :kind, [ [ "Event", "event" ], [ "Encounter", "encounter" ], [ "Treasure", "treasure" ] ] %></div>
+            <div class="field"><%= f.label :monster %><%= f.select :monster, @world.monsters.order(:level, :name).map { |m| [ m.name, m.slug ] }, include_blank: true %></div>
+            <div class="field"><%= f.label :count %><%= f.number_field :count, value: 1, min: 1, max: 8 %></div>
+            <div class="field"><%= f.label :item %><%= f.select :item, @world.items.order(:name).map { |i| [ i.name, i.slug ] }, include_blank: true %></div>
+          </div>
+          <div class="field"><%= f.label :text, "Event text" %><%= f.text_field :text %></div>
+          <%= f.submit "Add room", class: "button" %>
+        <% end %>
+      </details>
+    <% end %>
+    <p class="hint">⚔ encounter · ✦ event · ◆ treasure · ⑂ fork · ⚠ a costly way · ☠ boss</p>
+  </aside>
+</div>

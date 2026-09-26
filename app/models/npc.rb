@@ -5,6 +5,7 @@ class Npc < ApplicationRecord
   include Portrayed
 
   belongs_to :campaign
+  belongs_to :location, optional: true
   has_many :messages, as: :speaker, dependent: :nullify
 
   validates :name, presence: true

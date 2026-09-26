@@ -1,0 +1,20 @@
+<table class="book-table">
+  <thead><tr><th>Name</th><th>Kind</th><th>Shape</th><th>Encounters</th></tr></thead>
+  <tbody>
+    <% entries.includes(:encounter_table).each do |template| %>
+      <% s = template.settings %>
+      <tr>
+        <td><%= link_to template.name, entry_path(template) %></td>
+        <td><%= term(template.kind) %></td>
+        <td>
+          <% if template.town? %>
+            <%= s["npcs"].join("–") %> townsfolk, <%= s["services"].select { |_, c| c.to_i.positive? }.keys.map(&:humanize).join(", ") %>
+          <% else %>
+            <%= s["rooms"].join("–") %> rooms, <%= pluralize(s["loops"], "loop") %>
+          <% end %>
+        </td>
+        <td><%= template.encounter_table&.name || "—" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

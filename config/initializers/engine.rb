@@ -5,3 +5,4 @@
 # than autoloaded.
 require Rails.root.join("lib/battle").to_s
 require Rails.root.join("lib/pointcrawl").to_s
+require Rails.root.join("lib/generators").to_s

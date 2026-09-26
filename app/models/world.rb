@@ -9,6 +9,8 @@ class World < ApplicationRecord
   has_many :jobs, dependent: :destroy
   has_many :monsters, dependent: :destroy
   has_many :encounter_tables, dependent: :destroy
+  has_many :generator_tables, dependent: :destroy
+  has_many :location_templates, dependent: :destroy
   has_many :campaigns, dependent: :destroy
   has_many :battles, class_name: "BattleRecord", dependent: :destroy
 

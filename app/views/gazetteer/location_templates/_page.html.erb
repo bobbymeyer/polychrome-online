@@ -1,0 +1,63 @@
+<% s = entry.settings %>
+<header class="book-page__header">
+  <%= entry_portrait(entry) %>
+  <div>
+    <p class="eyebrow">Gazetteer · <%= term(entry.kind) %></p>
+    <h1><%= entry.name %></h1>
+    <dl class="facts">
+      <% if entry.town? %>
+        <dt>Townsfolk</dt><dd><%= s["npcs"].join("–") %></dd>
+        <dt>Buildings</dt><dd><%= s["buildings"].join("–") %></dd>
+        <dt>Shop stock</dt><dd><%= s["stock"].join("–") %> items</dd>
+      <% else %>
+        <dt>Rooms</dt><dd><%= s["rooms"].join("–") %>, <%= pluralize(s["loops"], "loop") %></dd>
+        <dt>Encounters</dt>
+        <dd><%= entry.encounter_table ? link_to(entry.encounter_table.name, world_encounters_encounter_table_path(@world, entry.encounter_table)) : "None" %></dd>
+        <% if s["boss"] %>
+          <dt>Boss</dt><dd><%= s["boss"].map { |slug, n| "#{n} × #{@world.monsters.find_by(slug: slug)&.name || slug}" }.to_sentence %></dd>
+        <% end %>
+      <% end %>
+    </dl>
+  </div>
+</header>
+
+<% if entry.description.present? %><div class="prose"><%= simple_format(entry.description) %></div><% end %>
+
+<section class="window">
+  <h2>Chances</h2>
+  <% if entry.town? %>
+    <ul class="refs refs--inline">
+      <% s["services"].each do |service, chance| %><li><%= service.humanize %>: <%= chance %>%</li><% end %>
+    </ul>
+  <% else %>
+    <% total = s["decisions"].values.sum.nonzero? || 1 %>
+    <ul class="refs refs--inline">
+      <% s["decisions"].each do |decision, weight| %><li><%= decision.humanize %>: <%= (100.0 * weight / total).round %>%</li><% end %>
+      <li>Boss: the deepest room</li>
+    </ul>
+  <% end %>
+  <h3>Draws from</h3>
+  <ul class="refs refs--inline">
+    <% entry.generator_tables.order(:kind, :name).each do |table| %>
+      <li><%= link_to table.name, world_generation_generator_table_path(@world, table) %> <span class="muted">(<%= table.kind.humanize.downcase %>)</span></li>
+    <% end %>
+  </ul>
+</section>
+
+<% seed = (params[:seed] || 1).to_i %>
+<% example = entry.town? ?
+     Generators::Town.generate(seed: seed, template: s, tables: entry.table_entries) :
+     Generators::Dungeon.generate(seed: seed, template: s, encounters: entry.encounter_table&.entries || [], tables: entry.table_entries) %>
+<section class="window">
+  <div class="book-header">
+    <h2>Example: <%= example["name"] %></h2>
+    <%= link_to "Another example", entry_path(entry) + "?seed=#{seed + 1}", class: "button button--quiet" %>
+  </div>
+  <% if entry.town? %>
+    <%= render "locations/skyline", view: example %>
+    <p class="hint"><%= example["services"].map { |sv| sv["name"] }.to_sentence %>. <%= pluralize(example["npcs"].size, "townsperson") %>, <%= pluralize(example["stock"].size, "item") %> in stock.</p>
+  <% else %>
+    <%= render "locations/floorplan", view: example %>
+    <p class="hint"><%= pluralize(example["rooms"].size, "room") %>, <%= pluralize(example["paths"].size, "path") %>. ⚔ encounter · ✦ event · ◆ treasure · ⑂ fork (⚠ marks the costly way) · ☠ boss</p>
+  <% end %>
+</section>

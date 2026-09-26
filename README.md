@@ -17,6 +17,8 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   possession of NPCs.
 - **Step 6 (done):** the pointcrawl map with GM edit tools, travel, and the
   Encounter Tables book.
+- **Step 7 (done):** the town and dungeon generators, the Gazetteer and
+  Generator Tables books, and exploring dungeons room by room.
 
 ```
 bundle install
@@ -180,6 +182,46 @@ Each campaign has a map (`/campaigns/:id/map`), and the table shows it too.
   weighted monster groups by terrain and tier (§2, §4), seeded with five
   tables. Monster pages list the tables they appear in.
 
+## Towns and dungeons
+
+A map place can hold a **location**, rolled from a Gazetteer template (§7).
+
+- **Stored:** only template + seed + GM overrides. What the location contains
+  is generated from those on every view, by the pure `Generators::Town` and
+  `Generators::Dungeon`, then `Generators::Overrides`. Rendering is derived,
+  never the source of truth (§12). Reroll = new seed.
+- **Two new books.** The **Gazetteer** holds town and dungeon templates:
+  service chances, roster and stock sizes, room counts, loops, decision
+  weights, encounter table, boss. Each template's page renders an example
+  you can reroll. **Generator Tables** hold the raw material: place and
+  person names, NPC hooks, service names, building archetypes, shop stock,
+  room names, room events, fork costs and treasure. A template chooses which
+  tables it draws from.
+- **Towns:** a service roster (inn, shop, guild, temple), townsfolk with
+  one-line hooks (GM-only), shop stock with Armory prices, and an SVG skyline
+  built from the building archetypes.
+- **Dungeons:** a room graph that branches and loops, drawn as an SVG
+  floorplan. Every room carries a decision (§7): an encounter from the
+  template's encounter table, an event, treasure, or a fork with a visible
+  cost on one of its ways onward. The deepest room holds the boss. The
+  generator specs check this over hundreds of seeds.
+- **GM controls (§7):**
+  - **Reroll.**
+  - **Pin:** pinned services and rooms survive a reroll. Pinning a
+    townsperson makes them a real campaign NPC you can speak as at the table.
+  - **Add:** write in an NPC, or add a room off an existing one.
+  - **Place the boss.**
+  - **Override the shop stock.**
+- **Exploring a dungeon** (a nested pointcrawl):
+  - The GM leads the party in and moves them room to room, and each room plays
+    its decision at the table. Events are narrated in the dialogue box.
+  - Encounters and the boss wait to be fought or waved off, as on the map.
+  - The GM hands treasure over to the party bag. Taking a costly way posts its
+    cost.
+  - Players see only the rooms they've been in, plus the exits out of them.
+- **Live updates** use Rails 8 page refreshes (morphing): each viewer re-fetches
+  their own page, so what only the GM may see is never sent to a player.
+
 ## Layout
 
 | Path | What |
@@ -191,6 +233,8 @@ Each campaign has a map (`/campaigns/:id/map`), and the table shows it too.
 | `app/models/message.rb`, `app/javascript/controllers/dialogue_controller.js` | Table messages, their scoped broadcasts, and the dialogue box |
 | `app/models/map_node.rb`, `app/models/map_edge.rb`, `app/javascript/controllers/map_editor_controller.js` | The pointcrawl map and its editor |
 | `lib/pointcrawl/encounters.rb` | Encounter rolls on travel (pure, seeded) |
+| `lib/generators/` | Town and dungeon generators, and GM overrides on top (pure, seeded) |
+| `app/models/location.rb`, `app/views/locations/` | Campaign locations: skyline, floorplan, GM controls, exploration |
 | `app/javascript/controllers/battle_player_controller.js`, `app/javascript/battle/gestures.js` | The event player and the motion gestures (§3.2) |
 | `db/seeds/base_world.rb` | The base world's first entries (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |

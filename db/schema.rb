@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_010000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -181,6 +181,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_230000) do
     t.index ["item_id"], name: "index_equipment_slots_on_item_id"
   end
 
+  create_table "generator_tables", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "slug", null: false
+    t.string "name", null: false
+    t.string "kind", null: false
+    t.json "entries", default: [], null: false
+    t.text "description"
+    t.json "variant", default: {}, null: false
+    t.integer "image_seed"
+    t.text "image_prompt"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id", "slug"], name: "index_generator_tables_on_world_id_and_slug", unique: true
+    t.index ["world_id"], name: "index_generator_tables_on_world_id"
+  end
+
   create_table "inventories", force: :cascade do |t|
     t.integer "campaign_id", null: false
     t.integer "item_id", null: false
@@ -241,6 +257,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_230000) do
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
 
+  create_table "location_templates", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "slug", null: false
+    t.string "name", null: false
+    t.string "kind", null: false
+    t.json "config", default: {}, null: false
+    t.integer "encounter_table_id"
+    t.text "description"
+    t.json "variant", default: {}, null: false
+    t.integer "image_seed"
+    t.text "image_prompt"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["encounter_table_id"], name: "index_location_templates_on_encounter_table_id"
+    t.index ["world_id", "slug"], name: "index_location_templates_on_world_id_and_slug", unique: true
+    t.index ["world_id"], name: "index_location_templates_on_world_id"
+  end
+
+  create_table "locations", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.integer "location_template_id", null: false
+    t.integer "seed", null: false
+    t.json "overrides", default: {}, null: false
+    t.json "progress", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_locations_on_campaign_id"
+    t.index ["location_template_id"], name: "index_locations_on_location_template_id"
+  end
+
   create_table "map_edges", force: :cascade do |t|
     t.integer "campaign_id", null: false
     t.integer "from_node_id", null: false
@@ -266,7 +312,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_230000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "location_id"
     t.index ["campaign_id"], name: "index_map_nodes_on_campaign_id"
+    t.index ["location_id"], name: "index_map_nodes_on_location_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -318,7 +366,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_230000) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "location_id"
+    t.string "location_key"
     t.index ["campaign_id"], name: "index_npcs_on_campaign_id"
+    t.index ["location_id"], name: "index_npcs_on_location_id"
   end
 
   create_table "portraits", force: :cascade do |t|
@@ -359,20 +410,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_230000) do
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"
+  add_foreign_key "generator_tables", "worlds"
   add_foreign_key "inventories", "campaigns"
   add_foreign_key "inventories", "items"
   add_foreign_key "items", "worlds"
   add_foreign_key "job_levels", "abilities"
   add_foreign_key "job_levels", "jobs"
   add_foreign_key "jobs", "worlds"
+  add_foreign_key "location_templates", "encounter_tables"
+  add_foreign_key "location_templates", "worlds"
+  add_foreign_key "locations", "campaigns"
+  add_foreign_key "locations", "location_templates"
   add_foreign_key "map_edges", "campaigns"
   add_foreign_key "map_edges", "encounter_tables"
   add_foreign_key "map_edges", "map_nodes", column: "from_node_id"
   add_foreign_key "map_edges", "map_nodes", column: "to_node_id"
   add_foreign_key "map_nodes", "campaigns"
+  add_foreign_key "map_nodes", "locations"
   add_foreign_key "messages", "battles"
   add_foreign_key "messages", "campaigns"
   add_foreign_key "messages", "characters", column: "recipient_id"
   add_foreign_key "monsters", "worlds"
   add_foreign_key "npcs", "campaigns"
+  add_foreign_key "npcs", "locations"
 end
