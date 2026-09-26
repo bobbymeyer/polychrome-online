@@ -5,6 +5,7 @@
 # vocabulary as abilities.
 class Item < ApplicationRecord
   include BookEntry
+  include Artwork
 
   # Category -> equipment slot. Jobs grant equip permission by category.
   CATEGORIES = {

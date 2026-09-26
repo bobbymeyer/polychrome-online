@@ -1,0 +1,7 @@
+<%# What ComfyUI has installed, as suggestions for the LoRA and checkpoint fields. Empty if it can't be reached. %>
+<% installed = Comfy.installed %>
+<datalist id="comfy-loras"><% installed[:loras].each do |lora| %><option value="<%= lora %>"><% end %></datalist>
+<datalist id="comfy-checkpoints"><% installed[:checkpoints].each do |checkpoint| %><option value="<%= checkpoint %>"><% end %></datalist>
+<% if installed[:loras].empty? && installed[:checkpoints].empty? %>
+  <p class="hint">ComfyUI at <code><%= Comfy.config[:url] %></code> isn't answering, so there are no suggestions for LoRA and checkpoint names. Type them as ComfyUI names the files.</p>
+<% end %>

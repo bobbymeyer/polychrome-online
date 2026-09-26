@@ -1,0 +1,66 @@
+# The asset pipeline's ComfyUI settings (docs/HANDOFF.md §8, README "Art").
+#
+# ComfyUI runs on the same machine as the app. From inside the app's container
+# that is usually http://host.docker.internal:8188 (with
+# --add-host=host.docker.internal:host-gateway on Linux), and ComfyUI itself
+# must be started with --listen so it accepts connections from the container.
+#
+# Prompts and LoRAs are not set here: they are composed from the world, the
+# content type and the entry, and edited in the app ("Art direction"). The
+# `defaults` below only seed a world's content types the first time.
+shared: &shared
+  url: <%= ENV.fetch("COMFY_URL", "http://127.0.0.1:8188") %>
+  # Used when a world names no checkpoint of its own.
+  checkpoint: <%= ENV.fetch("COMFY_CHECKPOINT", "sd_xl_base_1.0.safetensors") %>
+  # A background-removal node installed in your ComfyUI, for example
+  # "Image Remove Background (rembg)". Blank skips the step. It goes before
+  # SaveImage for content types marked transparent.
+  rembg_node: <%= ENV.fetch("COMFY_REMBG_NODE", "") %>
+  rembg_input: <%= ENV.fetch("COMFY_REMBG_INPUT", "image") %>
+  sampler: euler
+  scheduler: normal
+  steps: 25
+  cfg: 6.5
+  candidates: 4
+  # Give up on a batch that hasn't finished after this many seconds.
+  timeout: 900
+
+  defaults:
+    monster:
+      prompt: "a single monster, full body, standing, profile view facing left, centered, plain white background"
+      negative: "multiple creatures, cropped, text"
+      width: 1024
+      height: 1024
+      transparent: true
+    job:
+      prompt: "a single adventurer, full body, standing, profile view facing right, centered, plain white background"
+      negative: "multiple people, cropped, text"
+      width: 832
+      height: 1216
+      transparent: true
+    item:
+      prompt: "an item icon, a single object, centered, plain white background"
+      negative: "hands, people, cropped, text"
+      width: 1024
+      height: 1024
+      transparent: true
+    ability:
+      prompt: "a spell or skill emblem, a single symbol, centered, plain white background"
+      negative: "people, cropped, text"
+      width: 1024
+      height: 1024
+      transparent: true
+    location_template:
+      prompt: "an establishing view of a place, no people"
+      negative: "text"
+      width: 1216
+      height: 832
+      transparent: false
+
+development:
+  <<: *shared
+test:
+  <<: *shared
+  url: http://comfy.test
+production:
+  <<: *shared

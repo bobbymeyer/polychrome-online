@@ -1,0 +1,92 @@
+<%# The asset pipeline on an entry's page (§8): the three prompt layers, the entry's own layer to
+    edit, and the candidate strip. The page refreshes itself as candidates land. %>
+<% recipe = entry.art_recipe %>
+<% batch = entry.art_batch %>
+<section class="window art-studio" id="art" aria-label="Art">
+  <h2>Art</h2>
+
+  <% if entry.image.attached? && entry.image_seed %>
+    <p>Generated, seed <strong><%= entry.image_seed %></strong>.</p>
+    <% if entry.image_recipe.present? %>
+      <details>
+        <summary>How it was made</summary>
+        <%= render "art_batches/recipe", recipe: entry.image_recipe %>
+      </details>
+    <% end %>
+  <% elsif entry.image.attached? %>
+    <p class="muted">Uploaded by hand.</p>
+  <% else %>
+    <p class="muted">No image yet.</p>
+  <% end %>
+
+  <h3>The prompt, in layers</h3>
+  <ol class="art-layers">
+    <% entry.art_layers.each_with_index do |layer, i| %>
+      <li>
+        <span class="label"><%= %w[World Type Entry][i] %></span>
+        <strong><%= layer["label"] %></strong>
+        <p><%= layer["prompt"].presence || tag.span("nothing yet", class: "muted") %></p>
+        <% if layer["loras"].any? %>
+          <p class="art-layers__loras"><%= layer["loras"].map { |l| "#{l['name']} #{l['strength']}" }.join(" · ") %></p>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+  <p class="hint"><%= link_to "Edit the world and type layers", world_art_direction_path(entry.world) %></p>
+
+  <%= form_with url: world_art_batches_path(entry.world), class: "book-form" do |f| %>
+    <%= hidden_field_tag :entry_type, entry.art_kind %>
+    <%= hidden_field_tag :entry_slug, entry.slug %>
+    <div class="field">
+      <%= label_tag "entry_art_notes", "#{entry.name}: specifics" %>
+      <%= text_area_tag "entry[art_notes]", entry.art_notes, rows: 2, id: "entry_art_notes", placeholder: entry.description %>
+      <p class="hint">Blank uses the description.</p>
+    </div>
+    <%= render "art_directions/installed" %>
+    <%= render "art_directions/loras", name: "entry[art_loras]", loras: entry.art_loras %>
+    <div class="inline-form">
+      <div class="field"><%= label_tag :count, "Candidates" %><%= number_field_tag :count, Comfy.config[:candidates], min: 1, max: 8 %></div>
+      <%= submit_tag "Generate", class: "button" %>
+    </div>
+  <% end %>
+
+  <details>
+    <summary>The composed prompt</summary>
+    <%= render "art_batches/recipe", recipe: recipe %>
+  </details>
+
+  <% if batch %>
+    <div class="art-batch" id="<%= dom_id(batch) %>">
+      <h3>Candidates</h3>
+      <% case batch.status %>
+      <% when "queued", "running" %>
+        <p class="art-batch__status" role="status">
+          Generating: <%= batch.candidates.count(&:finished?) %> of <%= batch.candidates.size %> in.
+        </p>
+      <% when "failed" %>
+        <p class="form-errors" role="alert"><%= batch.error %></p>
+      <% end %>
+      <ol class="candidate-strip">
+        <% batch.candidates.each do |candidate| %>
+          <li class="candidate is-<%= candidate.status %>" id="<%= dom_id(candidate) %>">
+            <figure>
+              <% if candidate.image.attached? %>
+                <%= image_tag url_for(candidate.image), alt: "Candidate #{candidate.position + 1}, seed #{candidate.seed}" %>
+              <% else %>
+                <span class="candidate__empty"><%= candidate.status == "failed" ? "Failed" : "…" %></span>
+              <% end %>
+              <figcaption>Seed <%= candidate.seed %><%= tag.span(" · #{candidate.error}", class: "muted") if candidate.error && candidate.status == "failed" && batch.status != "failed" %></figcaption>
+            </figure>
+            <% if candidate.image.attached? %>
+              <%# "advance", not a same-page morph: morphing away the form that was just submitted crashed Chromium. %>
+              <%= button_to "Use this", pick_world_art_candidate_path(entry.world, candidate), class: "button",
+                            form: { data: { turbo_action: "advance" } } %>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+      <%= button_to "Discard these", world_art_batch_path(entry.world, batch), method: :delete, class: "link-button",
+                    form: { data: { turbo_action: "advance" } } %>
+    </div>
+  <% end %>
+</section>

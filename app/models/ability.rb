@@ -4,6 +4,7 @@
 # `effects` is stored in exactly the shape Battle::Resolver reads.
 class Ability < ApplicationRecord
   include BookEntry
+  include Artwork
 
   KINDS = %w[skill magic].freeze
   # Motion gestures (§3.2): the view's hint for how the caster moves.

@@ -143,6 +143,7 @@ GM controls: reroll, pin, add hand-authored NPC/room, place boss, override stock
 - Book entries have an image slot (Active Storage) plus variant recipe. Nothing references pixels, so replacing an image is a file replace.
 - Build phase: sprite rips as placeholders. They never enter a shared deploy or an export. Layout decisions made against them are provisional.
 - Later: a ComfyUI pipeline. Entry fields → prompt template per asset class → LoRA-anchored generation → 4–8 candidates → rembg → candidate strip in the book panel → pick → store winner with seed and prompt on the entry. Design the entry columns (`image_seed`, `image_prompt`) now; build the pipeline later.
+  - Built (step 9), with one change: the "prompt template per asset class" became three composed layers (world style, content-type framing, entry specifics), each able to add LoRAs, and the ComfyUI graph is built from the recipe rather than filled into a fixed workflow. The winner also stores its full recipe (`image_recipe`). rembg is a ComfyUI node named in config, skipped when none is set. See README "Art".
 - Later still: human artists. The pipeline output is their brief.
 
 ## 9. Known problems, ranked

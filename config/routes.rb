@@ -27,6 +27,14 @@ Rails.application.routes.draw do
       resources :generator_tables, param: :slug, path: "tables"
     end
 
+    # The asset pipeline (§8): the world's art direction, and generating
+    # candidates for an entry's image with ComfyUI.
+    resource :art_direction, only: %i[show update], path: "art"
+    resources :art_batches, only: %i[create destroy], path: "art/batches"
+    resources :art_candidates, only: [], path: "art/candidates" do
+      post :pick, on: :member
+    end
+
     # The campaign layer (§2): a party's run through the world.
     resources :campaigns, only: %i[new create]
   end

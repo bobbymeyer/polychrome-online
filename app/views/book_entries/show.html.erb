@@ -1,8 +1,15 @@
 <% content_for :title, "#{@entry.name} · #{book_title}" %>
+<% if @entry.respond_to?(:art_recipe) %>
+  <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
+  <%= turbo_stream_from @entry, :art %>
+<% end %>
 <div class="crumbs"><%= link_to book_title, entries_path %> / <%= @entry.name %></div>
 <article class="book-page">
   <%= render "page", entry: @entry %>
 </article>
+<% if @entry.respond_to?(:art_recipe) %>
+  <%= render "art_batches/studio", entry: @entry %>
+<% end %>
 <div class="actions">
   <%= link_to "Edit", polymorphic_path([:edit, @world, book_key, @entry]), class: "button" %>
   <%= button_to "Delete", entry_path(@entry), method: :delete, class: "button button--danger",

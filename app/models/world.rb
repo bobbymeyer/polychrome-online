@@ -13,12 +13,25 @@ class World < ApplicationRecord
   has_many :location_templates, dependent: :destroy
   has_many :campaigns, dependent: :destroy
   has_many :battles, class_name: "BattleRecord", dependent: :destroy
+  has_many :art_types, dependent: :destroy
+  has_many :art_batches, dependent: :destroy
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true, format: { with: BookEntry::SLUG_FORMAT }
 
   def to_param
     slug_in_database || slug
+  end
+
+  def art_loras=(value)
+    super(ArtDirection.loras(value))
+  end
+
+  # A content type's framing (§8), made from config/comfy.yml the first time.
+  def art_type(kind)
+    art_types.find_by(kind: kind) || art_types.create!(kind: kind, **ArtType.defaults_for(kind).symbolize_keys)
+  rescue ActiveRecord::RecordNotUnique
+    art_types.find_by!(kind: kind)
   end
 
   # The world's Grimoire in the resolver's library format.
