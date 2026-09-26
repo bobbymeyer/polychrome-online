@@ -17,13 +17,32 @@ module TableSeat
 
   private
 
-  # "gm", a Character of this campaign, or nil.
+  # "gm", a Character of this campaign, or nil. With no seat chosen yet, the
+  # obvious one: your only character here, or the GM seat if it's your
+  # campaign and you play nobody in it.
   def table_seat(campaign = @campaign)
-    seat = session.dig(:table_seats, campaign.id.to_s)
+    seat = session.dig(:table_seats, seat_key(campaign))
+    return default_table_seat(campaign) if seat.nil?
+    return nil if seat == "" # stood up on purpose
     return (can_gm?(campaign) ? "gm" : nil) if seat == "gm"
 
-    character = campaign.characters.find_by(id: seat) if seat.present?
+    character = campaign.characters.find_by(id: seat)
     character if character && can_play?(character)
+  end
+
+  # Seats belong to the account, not the browser: two people signing in on
+  # one browser never share a seat.
+  def seat_key(record)
+    "#{current_user&.id}:#{record.id}"
+  end
+
+  def default_table_seat(campaign)
+    return nil unless current_user
+
+    mine = campaign.characters.where(user: current_user).limit(2).to_a
+    return mine.first if mine.one?
+
+    "gm" if mine.empty? && campaign.gm_id == current_user.id
   end
 
   # Take a seat if this account may. Returns whether it did.
@@ -45,10 +64,12 @@ module TableSeat
   end
 
   def take_table_seat(campaign, seat)
-    session[:table_seats] = (session[:table_seats] || {}).merge(campaign.id.to_s => seat.to_s)
+    session[:table_seats] = (session[:table_seats] || {}).merge(seat_key(campaign) => seat.to_s)
   end
 
+  # Recorded as an empty seat (not deleted) so the obvious seat doesn't
+  # silently take over again.
   def leave_table_seat(campaign)
-    session[:table_seats]&.delete(campaign.id.to_s)
+    session[:table_seats] = (session[:table_seats] || {}).merge(seat_key(campaign) => "")
   end
 end

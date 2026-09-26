@@ -116,6 +116,8 @@ a.play:hover { color: var(--signal-dark); }
 @media (max-width: 800px) {
   .topbar__brand, .topbar__books, .topbar__account { grid-column: 1 / -1; }
   .topbar__account { justify-self: start; margin-top: var(--unit); }
+  /* On a phone the header keeps the world's name (its page lists the books). */
+  .topbar__book { display: none; }
   .topbar__books { margin-top: var(--unit); }
 }
 

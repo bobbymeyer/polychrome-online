@@ -109,6 +109,11 @@ other browsers and have each player take a seat.
   RNG, so a Potion heals the same as in battle. Cures only work in battle,
   where statuses exist. Using items outside battle is blocked while a battle
   is on, because its settlement writes HP back.
+- **The current battle.** The table's "… is on →" button follows the newest
+  battle still being fought, for everyone, as battles start and end. Only
+  that battle's log line says "Join the battle". The GM can **call off** a
+  battle nobody will finish, from the campaign page or the battle. It then
+  counts for nothing: no settlement, and HP and items stay as they were.
 - **Input timer.** It is a `BattleTimeoutJob` scheduled for the round's
   deadline. When it fires, missing commands default to each unit's last one,
   or Attack.
@@ -290,6 +295,12 @@ generator (email and password, with `bcrypt`), plus a sign-up page.
 
 - **Admin rules.** Anyone can be made an admin. The last admin can't be
   demoted or removed.
+- **Seats pick themselves.** At a table or battle you haven't sat at, you're
+  seated as your only character, or as the GM of your own campaign when you
+  play nobody in it. Standing up ("Change seat") sticks. Seats belong to
+  the account, so two people on one browser never share one.
+- **The home page** lists your campaigns (ones you play in or GM), then the
+  rest to join, then the worlds.
 - **Claiming.** A character with no owner, such as one made before
   accounts existed, becomes yours when you sit as them. Campaigns made
   before accounts have no GM until an admin picks one; admins run them

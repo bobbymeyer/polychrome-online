@@ -1,6 +1,22 @@
-<% content_for :title, "Worlds" %>
+<% content_for :title, "Home" %>
+<section class="window" aria-label="Your campaigns">
+  <h2>Your campaigns</h2>
+  <% if @my_campaigns.empty? %>
+    <p class="empty">None yet. Pick one below, make a character in it, and you're in.</p>
+  <% else %>
+    <%= render "worlds/campaign_list", campaigns: @my_campaigns %>
+  <% end %>
+</section>
+
+<% if @other_campaigns.any? %>
+  <section class="window" aria-label="Other campaigns">
+    <h2><%= @my_campaigns.empty? ? "Campaigns" : "Other campaigns" %></h2>
+    <%= render "worlds/campaign_list", campaigns: @other_campaigns %>
+  </section>
+<% end %>
+
 <div class="book-header">
-  <h1>Worlds</h1>
+  <h2>Worlds</h2>
   <%= link_to "New world", new_world_path, class: "button" if admin? %>
 </div>
 <% if @worlds.empty? %>

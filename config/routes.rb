@@ -116,6 +116,7 @@ Rails.application.routes.draw do
   # The battle screen (§6): one long-lived page fed by Turbo Streams. The
   # command panel is a Turbo Frame reloaded after each beat plays.
   resources :battles, only: :show do
+    post :call_off, on: :member
     resource :seat, only: %i[create destroy]
     resource :panel, only: :show
     resources :actions, only: :create, controller: "battle_actions"

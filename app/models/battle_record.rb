@@ -47,6 +47,10 @@ class BattleRecord < ApplicationRecord
     battle
   end
 
+  # One callback: after_create_commit and after_update_commit naming the same
+  # method would keep only the last.
+  after_commit :refresh_table_header, on: %i[create update], if: -> { previously_new_record? || saved_change_to_status? }
+
   # A system line at the campaign's table, linking back to this battle.
   def announce!(body)
     campaign&.messages&.create!(kind: "system", battle: self, body: body)
@@ -54,6 +58,23 @@ class BattleRecord < ApplicationRecord
 
   def over?
     status != "input"
+  end
+
+  # Plain words for the status, for players.
+  STATUS_LABELS = { "input" => "Under way", "victory" => "Won", "defeat" => "Lost", "fled" => "Fled", "abandoned" => "Called off" }.freeze
+
+  def status_label
+    STATUS_LABELS.fetch(status) { status.humanize }
+  end
+
+  # The GM gives up on a battle that nobody will finish. It didn't happen:
+  # no settlement, nobody's HP or items change, and the table stops
+  # pointing at it. (Not a resolver action: the fight itself isn't resolved.)
+  def call_off!
+    return if over?
+
+    update!(status: "abandoned", deadline_at: nil)
+    announce!("#{name} was called off.")
   end
 
   def units
@@ -184,6 +205,14 @@ class BattleRecord < ApplicationRecord
       parts << "#{member['name']} learned #{member['learned'].to_sentence}." if member["learned"].any?
     end
     "#{name}: #{parts.join(' ')}"
+  end
+
+  # The table's "… is on" button follows the current battle for everyone.
+  def refresh_table_header
+    return unless campaign
+
+    Turbo::StreamsChannel.broadcast_replace_to(campaign, :table, target: "table_battle",
+                                               partial: "tables/current_battle", locals: { campaign: campaign })
   end
 
   def next_position(association)

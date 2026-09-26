@@ -14,6 +14,5 @@ class TablesController < ApplicationController
     @seat = table_seat
     @messages = Message.visible_to(@campaign, @seat).last(LOG_LENGTH)
     @last_dialogue = @messages.reverse.find(&:dialogue?)
-    @battle = @campaign.battles.where(status: "input").order(created_at: :desc).first
   end
 end

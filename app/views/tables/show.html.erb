@@ -18,9 +18,7 @@
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · Table</p>
       <h1><%= @campaign.name %></h1>
     </div>
-    <% if @battle %>
-      <%= link_to "#{@battle.name} is on →", battle_path(@battle), class: "button play" %>
-    <% end %>
+    <%= render "tables/current_battle", campaign: @campaign %>
   </header>
 
   <div class="table__main">

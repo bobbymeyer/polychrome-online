@@ -5,8 +5,14 @@ class WorldsController < ApplicationController
   before_action :require_admin, except: %i[index show]
   before_action :set_world, only: %i[show edit update]
 
+  # Home: your campaigns first (the ones you play in or GM), then the rest
+  # to join, then the worlds and their books.
   def index
     @worlds = World.order(:name)
+    campaigns = Campaign.includes(:world, :gm, characters: :user).order(updated_at: :desc)
+    @my_campaigns, @other_campaigns = campaigns.partition do |c|
+      c.gm_id == current_user.id || c.characters.any? { |ch| ch.user_id == current_user.id }
+    end
   end
 
   def show; end

@@ -18,7 +18,10 @@ class CharactersController < ApplicationController
     # can make one at any level.
     fields = can_gm?(@campaign) ? %i[name player_name job_id starting_level starting_job_level] : %i[name player_name job_id]
     @character = @campaign.characters.new(params.expect(character: fields).merge(user: current_user))
-    @character.starting_level ||= @campaign.characters.minimum(:level) unless can_gm?(@campaign)
+    unless can_gm?(@campaign)
+      @character.starting_level ||= @campaign.characters.minimum(:level)
+      @character.starting_job_level = 1 # the job's first ability, like the GM's default
+    end
     if @character.save
       redirect_to character_path(@character), notice: "#{@character.name} joins the party."
     else

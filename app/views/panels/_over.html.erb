@@ -1,4 +1,4 @@
-<% result = { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." } %>
+<% result = { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away.", "abandoned" => "Called off. Nothing came of it." } %>
 <% settlement = @battle.settlement || {} %>
 <h2><%= result.fetch(@battle.status, @battle.status.humanize) %></h2>
 
@@ -20,13 +20,17 @@
   </ul>
 <% end %>
 
-<p class="hint">
-  Round <%= @battle.round %> · <%= pluralize(@battle.battle_actions.count, "action") %> ·
-  replays exactly from seed <%= @battle.seed %>.
-</p>
+<% if battle_gm? %>
+  <p class="hint">
+    Round <%= @battle.round %> · <%= pluralize(@battle.battle_actions.count, "action") %> ·
+    replays exactly from seed <%= @battle.seed %>.
+  </p>
+<% end %>
 <% if @battle.campaign %>
   <div class="actions">
-    <%= link_to "Back to #{@battle.campaign.name}", campaign_path(@battle.campaign), class: "button", data: { turbo_frame: "_top" } %>
-    <%= link_to "Another battle", new_campaign_battle_path(@battle.campaign), class: "button button--quiet", data: { turbo_frame: "_top" } %>
+    <%= link_to "Back to the table", campaign_table_path(@battle.campaign), class: "button", data: { turbo_frame: "_top" } %>
+    <% if battle_gm? %>
+      <%= link_to "Another battle", new_campaign_battle_path(@battle.campaign), class: "button button--quiet", data: { turbo_frame: "_top" } %>
+    <% end %>
   </div>
 <% end %>

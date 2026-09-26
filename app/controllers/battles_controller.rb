@@ -8,7 +8,7 @@ class BattlesController < ApplicationController
 
   before_action :set_campaign, only: %i[new create]
   before_action :require_campaign_gm, only: %i[new create]
-  before_action :set_battle, only: :show
+  before_action :set_battle, only: %i[show call_off]
 
   def new
     @setup = default_setup
@@ -33,6 +33,14 @@ class BattlesController < ApplicationController
   rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound => e
     @error = e.message
     render :new, status: :unprocessable_content
+  end
+
+  # For a battle nobody will finish (BattleRecord#call_off!).
+  def call_off
+    return forbid unless battle_gm?
+
+    @battle.call_off!
+    redirect_back_or_to battle_path(@battle), notice: "#{@battle.name} was called off.", status: :see_other
   end
 
   def show

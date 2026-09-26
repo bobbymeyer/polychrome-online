@@ -25,7 +25,7 @@
     <% end %>
   </div>
   <% unless can_gm?(@campaign) %>
-    <p class="hint">A new character starts at the party's lowest level; the GM can grant more.</p>
+    <p class="hint">A new character starts at the party's lowest level, knowing their job's first ability. The GM can grant more.</p>
   <% end %>
   <div class="actions">
     <%= f.submit "Create character", class: "button" %>

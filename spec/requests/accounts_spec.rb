@@ -121,14 +121,13 @@ RSpec.describe "Accounts", type: :request do
       bartz.update!(user: make_user("Someone"))
       faris.update!(user: lenna)
 
+      # Her only character is the obvious seat: she's already in it.
       get battle_panel_path(battle)
-      expect(response.body).to include("Faris")
+      expect(response.body).to include("Seated as <strong>Faris</strong>")
       expect(response.body).not_to include("Game Master")
-      post battle_seat_path(battle), params: { seat: "gm" }
-      get battle_panel_path(battle)
-      expect(response.body).to include("Take a seat")
 
-      post battle_seat_path(battle), params: { seat: faris.battle_unit_id }
+      post battle_seat_path(battle), params: { seat: "gm" }
+      post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
       get battle_panel_path(battle)
       expect(response.body).to include("Seated as <strong>Faris</strong>")
       post battle_actions_path(battle), params: { gm: { op: "execute_round" } }

@@ -87,6 +87,11 @@ class Campaign < ApplicationRecord
     battles.where(status: "input").exists?
   end
 
+  # The battle the table points at: the newest one still being fought.
+  def current_battle
+    battles.where(status: "input").order(created_at: :desc, id: :desc).first
+  end
+
   # Items from the bag that do something outside battle (healing, revival).
   def field_items
     bag.select { |row| row.item.consumable? && Battle::Field.usable?(row.item.to_engine(row.quantity)) }

@@ -143,7 +143,7 @@ RSpec.describe "Campaigns and characters", type: :request do
       post battle_seat_path(battle), params: { seat: "gm" }
       post battle_actions_path(battle), params: { gm: { op: "end_battle", result: "victory" } }
       get battle_panel_path(battle)
-      expect(response.body).to include("Victory!", "Bartz</strong>: 6 EXP, 1 ABP", "Back to Crystal Road")
+      expect(response.body).to include("Victory!", "Bartz</strong>: 6 EXP, 1 ABP", "Back to the table")
       expect(bartz.reload.exp).to eq(Stats::Growth.exp_for_level(5) + 6)
     end
   end
