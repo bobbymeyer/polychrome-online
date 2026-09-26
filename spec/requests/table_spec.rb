@@ -23,11 +23,11 @@ RSpec.describe "The table", type: :request do
   it "offers seats, then subscribes each seat to its own streams only" do
     get campaign_table_path(campaign)
     expect(response.body).to include("Take a seat", "Game Master", "Bartz", "Lenna")
-    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(1)
+    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(2) # table + players' map
 
     sit(bartz.id)
     get campaign_table_path(campaign)
-    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(2)
+    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(3) # + Bartz's whispers
     expect(response.body).to include("At the table as <strong>Bartz</strong>")
   end
 

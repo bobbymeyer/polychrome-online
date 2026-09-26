@@ -1,0 +1,14 @@
+<table class="book-table">
+  <thead><tr><th class="num">Tier</th><th>Name</th><th>Terrain</th><th>Groups</th></tr></thead>
+  <tbody>
+    <% entries.each do |table| %>
+      <% names = table.monsters %>
+      <tr>
+        <td class="num"><%= table.tier %></td>
+        <td><%= link_to table.name, entry_path(table) %></td>
+        <td><%= term(table.terrain) %></td>
+        <td><%= table.entries.map { |e| e["monsters"].map { |slug, n| "#{n} #{names[slug]&.name || slug}" }.join(" + ") }.join(" · ") %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

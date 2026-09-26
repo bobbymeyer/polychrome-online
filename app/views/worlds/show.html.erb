@@ -27,7 +27,8 @@
        ["Bestiary", :bestiary, "Monsters: stat blocks, affinities, behavior, drops.", @world.monsters],
        ["Job Compendium", :compendium, "Jobs: stat modifiers, equipment, learn tables.", @world.jobs],
        ["Grimoire", :grimoire, "Abilities, composed from the engine's primitives.", @world.abilities],
-       ["Armory", :armory, "Items and equipment.", @world.items]
+       ["Armory", :armory, "Items and equipment.", @world.items],
+       ["Encounter Tables", :encounters, "Weighted monster groups by terrain and tier.", @world.encounter_tables]
      ].each do |title, book, blurb, entries| %>
     <section class="window shelf__book">
       <h2><%= link_to title, polymorphic_path([@world, book, entries.klass]) %></h2>

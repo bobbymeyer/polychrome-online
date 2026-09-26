@@ -1,0 +1,15 @@
+<%= form_with model: node, url: node.persisted? ? map_node_path(node) : campaign_map_nodes_path(@campaign), class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: node %>
+  <%= f.hidden_field :x %>
+  <%= f.hidden_field :y %>
+  <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, autofocus: node.new_record? %></div>
+  <div class="field-row">
+    <div class="field"><%= f.label :kind %><%= f.select :kind, MapNode::KINDS.map { |k| [ k.humanize, k ] } %></div>
+    <div class="field field--check">
+      <%= f.check_box :visible %>
+      <%= f.label :visible, "Revealed to players" %>
+    </div>
+  </div>
+  <div class="field"><%= f.label :notes, "GM notes" %><%= f.text_area :notes, rows: 2 %></div>
+  <%= f.submit node.persisted? ? "Save" : "Add to map", class: "button" %>
+<% end %>

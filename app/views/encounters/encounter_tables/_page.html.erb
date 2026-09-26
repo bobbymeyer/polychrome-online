@@ -1,0 +1,41 @@
+<header class="book-page__header">
+  <%= entry_portrait(entry) %>
+  <div>
+    <p class="eyebrow">Encounter Tables · Tier <%= entry.tier %></p>
+    <h1><%= entry.name %></h1>
+    <dl class="facts">
+      <dt>Terrain</dt><dd><%= term(entry.terrain) %></dd>
+      <dt>Groups</dt><dd><%= entry.entries.size %></dd>
+    </dl>
+  </div>
+</header>
+
+<% if entry.description.present? %>
+  <div class="prose"><%= simple_format(entry.description) %></div>
+<% end %>
+
+<section class="window">
+  <h2>Groups</h2>
+  <% names = entry.monsters %>
+  <table class="book-table book-table--plain">
+    <thead><tr><th class="num">Weight</th><th class="num">Chance</th><th>Monsters</th></tr></thead>
+    <tbody>
+      <% entry.entries.each do |group| %>
+        <tr>
+          <td class="num"><%= group["weight"] %></td>
+          <td class="num"><%= (100.0 * group["weight"] / entry.total_weight).round %>%</td>
+          <td>
+            <%= safe_join(group["monsters"].map { |slug, count|
+                  monster = names[slug]
+                  safe_join([ "#{count} × ", monster ? link_to(monster.name, world_bestiary_monster_path(@world, monster)) : slug ])
+                }, ", ") %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p class="hint">
+    Crossing an open path with this table meets a group <%= Pointcrawl::Encounters::CHANCE["open"] %>% of the time;
+    a dangerous path, every time.
+  </p>
+</section>

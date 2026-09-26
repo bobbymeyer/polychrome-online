@@ -1,0 +1,7 @@
+<%= turbo_frame_tag "map_panel", class: "map-panel" do %>
+  <div class="window">
+    <h2>New place</h2>
+    <%= render "form", node: @node %>
+    <%= link_to "◀ Back", campaign_map_panel_path(@campaign), class: "link-button" %>
+  </div>
+<% end %>

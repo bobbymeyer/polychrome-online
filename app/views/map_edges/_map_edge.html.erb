@@ -1,0 +1,15 @@
+<% a = edge.from_node %>
+<% b = edge.to_node %>
+<g class="map-edge map-edge--<%= edge.state %> <%= 'is-hidden' unless edge.visible? %>"
+   <% if gm %>data-map-edge data-edit-url="<%= edit_map_edge_path(edge) %>"<% end %>>
+  <title>
+    <%= a.name %> – <%= b.name %>: <%= edge.state %><%= ", #{edge.encounter_table.name}" if gm && edge.encounter_table %>
+  </title>
+  <line class="map-edge__line" x1="<%= a.x %>" y1="<%= a.y %>" x2="<%= b.x %>" y2="<%= b.y %>" />
+  <% if gm %>
+    <line class="map-edge__hit" x1="<%= a.x %>" y1="<%= a.y %>" x2="<%= b.x %>" y2="<%= b.y %>" />
+  <% end %>
+  <% if edge.blocked? %>
+    <text class="map-edge__mark" x="<%= (a.x + b.x) / 2 %>" y="<%= (a.y + b.y) / 2 + 6 %>" text-anchor="middle">✕</text>
+  <% end %>
+</g>

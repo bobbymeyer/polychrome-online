@@ -6,6 +6,7 @@
 <div class="table" data-controller="dialogue" data-action="chat-line:arrived->dialogue#arrive keydown@window->dialogue#key">
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= turbo_stream_from @campaign, :table %>
+  <%= turbo_stream_from @campaign, (@seat == "gm" ? :map_gm : :map) %>
   <% if @seat == "gm" %>
     <%= turbo_stream_from @campaign, :gm %>
   <% elsif @seat %>
@@ -23,6 +24,12 @@
   </header>
 
   <div class="table__main">
+    <div class="table__stage">
+    <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
+    <section class="window table__map" aria-label="Map">
+      <%= render "maps/canvas", campaign: @campaign, gm: @seat == "gm" %>
+      <p class="hint"><%= link_to(@seat == "gm" ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %></p>
+    </section>
     <section class="dialogue window" data-dialogue-target="box" data-action="click->dialogue#advance"
              aria-label="Dialogue" <%= "hidden" unless @last_dialogue %>>
       <div class="dialogue__portrait" data-dialogue-target="portrait">
@@ -35,6 +42,7 @@
       </div>
       <p class="visually-hidden" aria-live="polite" data-dialogue-target="live"></p>
     </section>
+    </div>
 
     <section class="window chat-log" aria-label="Log">
       <ol id="chat_log" data-dialogue-target="log">

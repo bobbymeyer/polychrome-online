@@ -17,6 +17,9 @@ Rails.application.routes.draw do
     namespace :armory do
       resources :items, param: :slug
     end
+    namespace :encounters do
+      resources :encounter_tables, param: :slug, path: "tables"
+    end
 
     # The campaign layer (§2): a party's run through the world.
     resources :campaigns, only: %i[new create]
@@ -34,7 +37,21 @@ Rails.application.routes.draw do
     resource :table_seat, only: %i[create destroy]
     resource :composer, only: :show
     resources :messages, only: :create
+
+    # The pointcrawl map (§7). The side panel is a Turbo Frame; the SVG
+    # updates by broadcast for every viewer.
+    resource :map, only: :show
+    resource :map_panel, only: :show
+    resources :map_nodes, only: %i[new create], path: "map/nodes"
+    resource :travel, only: :create
+    resource :encounter, only: %i[create destroy]
   end
+
+  resources :map_nodes, only: %i[edit update destroy], path: "map/nodes" do
+    post :place_party, on: :member
+    resources :map_edges, only: :create, path: "paths"
+  end
+  resources :map_edges, only: %i[edit update destroy], path: "map/paths"
 
   resources :npcs, only: %i[edit update destroy]
 

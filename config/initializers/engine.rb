@@ -4,3 +4,4 @@
 # dependency (docs/HANDOFF.md §12), so they are required directly rather
 # than autoloaded.
 require Rails.root.join("lib/battle").to_s
+require Rails.root.join("lib/pointcrawl").to_s

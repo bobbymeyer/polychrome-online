@@ -1,0 +1,29 @@
+# frozen_string_literal: true
+
+# A point on a campaign's pointcrawl map (§4, §7). Hidden until the GM
+# reveals it or the party arrives.
+class MapNode < ApplicationRecord
+  KINDS = %w[town dungeon field event].freeze
+  WIDTH = 1000
+  HEIGHT = 700
+
+  belongs_to :campaign
+  has_many :outgoing_edges, class_name: "MapEdge", foreign_key: :from_node_id, dependent: :destroy, inverse_of: :from_node
+  has_many :incoming_edges, class_name: "MapEdge", foreign_key: :to_node_id, dependent: :destroy, inverse_of: :to_node
+
+  validates :name, presence: true
+  validates :kind, inclusion: { in: KINDS }
+  validates :x, numericality: { only_integer: true, in: 0..WIDTH }
+  validates :y, numericality: { only_integer: true, in: 0..HEIGHT }
+
+  before_destroy { campaign.update_columns(current_node_id: nil) if campaign.current_node_id == id }
+  after_commit { campaign.broadcast_map }
+
+  def edges
+    campaign.map_edges.where(from_node: self).or(campaign.map_edges.where(to_node: self))
+  end
+
+  def party_here?
+    campaign.current_node_id == id
+  end
+end

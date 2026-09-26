@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../lib/battle"
+require_relative "../lib/pointcrawl"
 Dir[File.join(__dir__, "support", "**", "*.rb")].sort.each { |f| require f }
 
 RSpec.configure do |config|

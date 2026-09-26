@@ -1,0 +1,16 @@
+<g class="map-node map-node--<%= node.kind %> <%= 'is-hidden' unless node.visible? %> <%= 'is-party' if party&.id == node.id %>"
+   transform="translate(<%= node.x %> <%= node.y %>)"
+   <% if gm %>data-map-node data-edit-url="<%= edit_map_node_path(node) %>" data-update-url="<%= map_node_path(node, format: :json) %>" tabindex="0" role="button"<% end %>>
+  <title><%= node.name %> (<%= node.kind %><%= ", hidden" unless node.visible? %>)</title>
+  <% case node.kind %>
+  <% when "town" %>
+    <path class="map-node__shape" d="M-15,6 L-15,-7 L0,-19 L15,-7 L15,6 Z" /><rect class="map-node__detail" x="-4" y="-4" width="8" height="10" />
+  <% when "dungeon" %>
+    <path class="map-node__shape" d="M-17,8 L0,-19 L17,8 Z" /><path class="map-node__detail" d="M-5,8 L-5,0 A5,5 0 0 1 5,0 L5,8 Z" />
+  <% when "event" %>
+    <path class="map-node__shape" d="M0,-15 L15,0 L0,15 L-15,0 Z" /><text class="map-node__glyph" y="5" text-anchor="middle">!</text>
+  <% else %>
+    <circle class="map-node__shape" r="10" />
+  <% end %>
+  <text class="map-node__label" y="32" text-anchor="middle"><%= node.name %></text>
+</g>

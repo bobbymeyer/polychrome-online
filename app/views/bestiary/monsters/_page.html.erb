@@ -67,3 +67,15 @@
     </ul>
   <% end %>
 </section>
+
+<% tables = @world.encounter_tables.select { |table| table.entries.any? { |group| group["monsters"].key?(entry.slug) } } %>
+<% if tables.any? %>
+  <section class="window">
+    <h2>Found in</h2>
+    <ul class="refs refs--inline">
+      <% tables.each do |table| %>
+        <li><%= link_to table.name, world_encounters_encounter_table_path(@world, table) %></li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

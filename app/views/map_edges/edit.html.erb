@@ -1,0 +1,25 @@
+<%= turbo_frame_tag "map_panel", class: "map-panel" do %>
+  <div class="window">
+    <%= render "maps/panel_flash" %>
+    <h2><%= @edge.from_node.name %> – <%= @edge.to_node.name %></h2>
+    <%= form_with model: @edge, url: map_edge_path(@edge), class: "book-form" do |f| %>
+      <%= render "book_entries/errors", entry: @edge %>
+      <div class="field-row">
+        <div class="field"><%= f.label :state %><%= f.select :state, MapEdge::STATES.map { |s| [ s.humanize, s ] } %></div>
+        <div class="field">
+          <%= f.label :encounter_table_id, "Encounters" %>
+          <%= f.select :encounter_table_id, @world.encounter_tables.order(:tier, :name).map { |t| [ "#{t.name} (tier #{t.tier})", t.id ] }, include_blank: "None" %>
+        </div>
+      </div>
+      <div class="field">
+        <%= f.label :travel_event, "Travel event" %>
+        <%= f.text_area :travel_event, rows: 3, placeholder: "Narrated in the dialogue box when the party crosses." %>
+      </div>
+      <%= f.submit "Save", class: "button" %>
+    <% end %>
+    <div class="actions">
+      <%= link_to "◀ Back", campaign_map_panel_path(@campaign), class: "link-button" %>
+      <%= button_to "Cut path", map_edge_path(@edge), method: :delete, class: "button button--danger" %>
+    </div>
+  </div>
+<% end %>

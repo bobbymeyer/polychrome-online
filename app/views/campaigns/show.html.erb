@@ -7,6 +7,7 @@
   </div>
   <div class="actions">
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
+    <%= link_to "Map", campaign_map_path(@campaign), class: "button button--quiet" %>
     <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" %>
     <%= button_to "Rest at an inn", campaign_rest_path(@campaign), class: "button button--quiet",
                   form: { data: { turbo_confirm: "Restore everyone to full HP and MP?" } } %>

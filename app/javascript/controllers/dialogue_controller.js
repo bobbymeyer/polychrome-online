@@ -11,6 +11,7 @@ import { GESTURES } from "motion/gestures"
 // lines also move on by themselves, so a busy GM doesn't strand anyone.
 // Nothing here is shared: each viewer reads at their own pace.
 const TYPE_MS = 22
+const BATCH_MS = 60
 const HOLD_MS = 1600
 const HOLD_PER_CHAR_MS = 35
 
@@ -28,6 +29,7 @@ export default class extends Controller {
   }
 
   disconnect() {
+    clearTimeout(this.startTimer)
     this.stopTyping()
     clearTimeout(this.holdTimer)
   }
@@ -37,7 +39,14 @@ export default class extends Controller {
     if (!line.dialogueValue) return this.scrollLog()
 
     this.queue.push(line)
-    if (!this.current) return this.next()
+    this.queue.sort((a, b) => a.idValue - b.idValue)
+    if (!this.current) {
+      // Lines sent together can arrive in any order: let the batch land and
+      // sort before starting.
+      clearTimeout(this.startTimer)
+      this.startTimer = setTimeout(() => this.current || this.next(), BATCH_MS)
+      return
+    }
 
     this.moreTarget.hidden = false
     if (!this.typing) this.scheduleNext()

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_26_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_26_230000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -119,6 +119,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_210000) do
     t.integer "world_version"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "current_node_id"
+    t.integer "rng", default: 0, null: false
+    t.json "pending_encounter"
+    t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["world_id"], name: "index_campaigns_on_world_id"
   end
 
@@ -147,6 +151,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_210000) do
     t.datetime "updated_at", null: false
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
+  end
+
+  create_table "encounter_tables", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "slug", null: false
+    t.string "name", null: false
+    t.string "terrain", null: false
+    t.integer "tier", default: 1, null: false
+    t.json "entries", default: [], null: false
+    t.text "description"
+    t.json "variant", default: {}, null: false
+    t.integer "image_seed"
+    t.text "image_prompt"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id", "slug"], name: "index_encounter_tables_on_world_id_and_slug", unique: true
+    t.index ["world_id"], name: "index_encounter_tables_on_world_id"
   end
 
   create_table "equipment_slots", force: :cascade do |t|
@@ -218,6 +239,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_210000) do
     t.integer "ability_slots", default: 1, null: false
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
+  end
+
+  create_table "map_edges", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.integer "from_node_id", null: false
+    t.integer "to_node_id", null: false
+    t.string "state", default: "open", null: false
+    t.integer "encounter_table_id"
+    t.text "travel_event"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_map_edges_on_campaign_id"
+    t.index ["encounter_table_id"], name: "index_map_edges_on_encounter_table_id"
+    t.index ["from_node_id"], name: "index_map_edges_on_from_node_id"
+    t.index ["to_node_id"], name: "index_map_edges_on_to_node_id"
+  end
+
+  create_table "map_nodes", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.string "name", null: false
+    t.string "kind", default: "field", null: false
+    t.integer "x", null: false
+    t.integer "y", null: false
+    t.boolean "visible", default: false, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_map_nodes_on_campaign_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -301,11 +350,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_210000) do
   add_foreign_key "battle_events", "battles"
   add_foreign_key "battles", "campaigns"
   add_foreign_key "battles", "worlds"
+  add_foreign_key "campaigns", "map_nodes", column: "current_node_id"
   add_foreign_key "campaigns", "worlds"
   add_foreign_key "character_jobs", "characters"
   add_foreign_key "character_jobs", "jobs"
   add_foreign_key "characters", "campaigns"
   add_foreign_key "characters", "jobs"
+  add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"
   add_foreign_key "inventories", "campaigns"
@@ -314,6 +365,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_210000) do
   add_foreign_key "job_levels", "abilities"
   add_foreign_key "job_levels", "jobs"
   add_foreign_key "jobs", "worlds"
+  add_foreign_key "map_edges", "campaigns"
+  add_foreign_key "map_edges", "encounter_tables"
+  add_foreign_key "map_edges", "map_nodes", column: "from_node_id"
+  add_foreign_key "map_edges", "map_nodes", column: "to_node_id"
+  add_foreign_key "map_nodes", "campaigns"
   add_foreign_key "messages", "battles"
   add_foreign_key "messages", "campaigns"
   add_foreign_key "messages", "characters", column: "recipient_id"

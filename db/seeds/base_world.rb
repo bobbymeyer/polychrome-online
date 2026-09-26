@@ -18,6 +18,7 @@ module Seeds
       ABILITIES.each { |slug, attrs| upsert(world.abilities, slug, attrs) }
       ITEMS.each { |slug, attrs| upsert(world.items, slug, attrs) }
       MONSTERS.each { |slug, attrs| upsert(world.monsters, slug, attrs) }
+      ENCOUNTER_TABLES.each { |slug, attrs| upsert(world.encounter_tables, slug, attrs) }
       JOBS.each do |slug, attrs|
         levels = attrs.fetch(:levels)
         job = upsert(world.jobs, slug, attrs.except(:levels))
@@ -226,6 +227,24 @@ module Seeds
                                   { use: "attack" } ],
                       drops: [ { item: "power_ring", chance: 100 } ],
                       description: "Grew around a shard of the fire crystal. The first real boss." }
+    }.freeze
+
+    ENCOUNTER_TABLES = {
+      grasslands: { name: "Grasslands", terrain: "plains", tier: 1,
+                    description: "Open country between the first towns.",
+                    entries: [ { weight: 4, monsters: { goblin: 3 } }, { weight: 2, monsters: { wolf: 2 } },
+                               { weight: 1, monsters: { goblin: 2, wolf: 1 } } ] },
+      old_forest: { name: "Old Forest", terrain: "forest", tier: 1,
+                    entries: [ { weight: 3, monsters: { killer_bee: 3 } }, { weight: 2, monsters: { wolf: 3 } },
+                               { weight: 1, monsters: { goblin_chief: 1, goblin: 2 } } ] },
+      dunes: { name: "Dunes", terrain: "desert", tier: 2,
+               entries: [ { weight: 3, monsters: { sand_worm: 1 } }, { weight: 2, monsters: { killer_bee: 4 } } ] },
+      barrow: { name: "Barrow", terrain: "crypt", tier: 2,
+                description: "Old graves that don't stay shut.",
+                entries: [ { weight: 3, monsters: { zombie: 2 } }, { weight: 2, monsters: { zombie: 1, dark_mage: 1 } },
+                           { weight: 1, monsters: { flan: 2 } } ] },
+      mountain_pass: { name: "Mountain Pass", terrain: "mountain", tier: 3,
+                       entries: [ { weight: 1, monsters: { ogre: 1 } }, { weight: 3, monsters: { wolf: 3 } } ] }
     }.freeze
   end
 end

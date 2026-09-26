@@ -1,0 +1,29 @@
+<%# The campaign's map as SVG (§7). Rendered once per audience: the GM's copy includes hidden places
+    (dimmed); the players' copy leaves them out entirely, so they never reach a player's browser. %>
+<% nodes = campaign.map_nodes.order(:id).to_a %>
+<% nodes = nodes.select(&:visible?) unless gm %>
+<% ids = nodes.map(&:id) %>
+<% edges = campaign.map_edges.includes(:from_node, :to_node, :encounter_table).order(:id).select { |e| ids.include?(e.from_node_id) && ids.include?(e.to_node_id) } %>
+<% party = nodes.find { |n| n.id == campaign.current_node_id } %>
+<div id="map_canvas" class="map-canvas">
+  <svg viewBox="0 0 <%= MapNode::WIDTH %> <%= MapNode::HEIGHT %>" class="map" role="img"
+       aria-label="Map of <%= campaign.name %><%= ": the party is at #{party.name}" if party %>" data-map-editor-target="svg">
+    <rect class="map__ground" x="0" y="0" width="<%= MapNode::WIDTH %>" height="<%= MapNode::HEIGHT %>" data-map-ground />
+    <g class="map__edges">
+      <%= render partial: "map_edges/map_edge", collection: edges, as: :edge, locals: { gm: gm } %>
+    </g>
+    <g class="map__nodes">
+      <%= render partial: "map_nodes/map_node", collection: nodes, as: :node, locals: { gm: gm, party: party } %>
+    </g>
+    <% if party %>
+      <g class="map-party" transform="translate(<%= party.x %> <%= party.y - 30 %>)" aria-hidden="true">
+        <g class="map-party__flag"><path d="M0,0 L0,-26 L18,-19 L0,-12" /></g>
+      </g>
+    <% end %>
+    <% if nodes.empty? %>
+      <text class="map__empty" x="<%= MapNode::WIDTH / 2 %>" y="<%= MapNode::HEIGHT / 2 %>" text-anchor="middle">
+        <%= gm ? "Click anywhere to add the first place." : "Nothing on the map yet." %>
+      </text>
+    <% end %>
+  </svg>
+</div>

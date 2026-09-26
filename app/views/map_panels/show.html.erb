@@ -1,0 +1,46 @@
+<%= turbo_frame_tag "map_panel", class: "map-panel" do %>
+  <div class="window">
+    <%= render "maps/panel_flash" %>
+    <% here = @campaign.current_node %>
+    <h2><%= here ? "The party is at #{here.name}" : "The party isn't on the map" %></h2>
+
+    <% if (encounter = @campaign.pending_encounter) %>
+      <section class="encounter-call">
+        <h3>Encounter!</h3>
+        <p><%= @campaign.describe_encounter(encounter["monsters"]) %> <span class="muted">(<%= encounter["table"] %>)</span></p>
+        <div class="menu menu--row">
+          <%= button_to "Fight", campaign_encounter_path(@campaign), class: "menu__item menu__item--accent", form: { data: { turbo_frame: "_top" } } %>
+          <%= button_to "Wave it off", campaign_encounter_path(@campaign), method: :delete, class: "menu__item",
+                        form: { data: { turbo_confirm: "Wave off the encounter? The table will see that you did." } } %>
+        </div>
+      </section>
+    <% end %>
+
+    <% if here %>
+      <h3>Paths from here</h3>
+      <% paths = here.edges.includes(:from_node, :to_node, :encounter_table) %>
+      <% if paths.empty? %>
+        <p class="empty">None yet. Select <%= here.name %> and connect it.</p>
+      <% else %>
+        <div class="menu">
+          <% paths.each do |edge| %>
+            <% there = edge.other_end(here) %>
+            <% label = safe_join([ "To #{there.name}", tag.span(edge.state, class: "menu__cost") ], " ") %>
+            <% if edge.blocked? %>
+              <button class="menu__item" disabled><%= label %></button>
+            <% else %>
+              <%= button_to label, campaign_travel_path(@campaign), params: { edge_id: edge.id }, class: "menu__item" %>
+            <% end %>
+          <% end %>
+        </div>
+        <p class="hint">Open paths with an encounter table meet something <%= Pointcrawl::Encounters::CHANCE["open"] %>% of the time; dangerous paths, always. The roll uses the campaign's seeded RNG.</p>
+      <% end %>
+    <% else %>
+      <p class="hint">Select a place, then "Put the party here".</p>
+    <% end %>
+
+    <h3>Editing</h3>
+    <p class="hint">Click empty ground to add a place. Click a place or a path to edit it. Drag places to move them.</p>
+    <%= render "maps/legend" %>
+  </div>
+<% end %>

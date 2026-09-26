@@ -15,6 +15,8 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   flow back to the party.
 - **Step 5 (done):** the table: chat with portraits and expressions, and GM
   possession of NPCs.
+- **Step 6 (done):** the pointcrawl map with GM edit tools, travel, and the
+  Encounter Tables book.
 
 ```
 bundle install
@@ -146,6 +148,38 @@ everything outside battle.
 - NPCs belong to the campaign (the "Cast" section of the campaign page). The
   town generator in step 7 will create them too.
 
+## The pointcrawl map
+
+Each campaign has a map (`/campaigns/:id/map`), and the table shows it too.
+
+- **Places and paths** are `map_nodes` (town, dungeon, field or event;
+  revealed or hidden) and `map_edges` (open, dangerous or blocked, with an
+  optional encounter table and travel event), per §4. They're drawn as SVG
+  from Rails partials.
+- **GM editing, all by clicking:**
+  - Click empty ground to add a place, click a place or path to edit it in
+    the side panel, and drag a place to move it.
+  - From a place's panel: reveal it, connect it to another place, or put the
+    party there.
+  - From a path's panel: change its state, pick its encounter table, write
+    its travel event, or cut it.
+  - Every change reaches every viewer by Turbo Stream.
+- **Scoped per audience:** the map is rendered twice, once for the GM (with
+  hidden places, dimmed) and once for players (without them), each on its own
+  signed stream. A hidden place never reaches a player's browser.
+- **Travel:** the GM moves the party along a path from where it stands.
+  Arriving reveals the destination. The table gets a departure line, then
+  the path's travel event narrated in the dialogue box.
+- **Encounters:** a path with an encounter table rolls on it: 25% of the time
+  on an open path, every time on a dangerous one, never on a blocked one.
+  - The roll (`Pointcrawl::Encounters`, pure) uses an RNG stored on the
+    campaign, like a battle's, so the GM can't quietly re-roll.
+  - A hit waits for the GM: **Fight** starts a battle for everyone standing,
+    **Wave it off** clears it. Both are announced at the table.
+- **Encounter Tables** is the sixth book (`/worlds/:world/encounters/tables`):
+  weighted monster groups by terrain and tier (§2, §4), seeded with five
+  tables. Monster pages list the tables they appear in.
+
 ## Layout
 
 | Path | What |
@@ -155,6 +189,8 @@ everything outside battle.
 | `app/models/campaign.rb`, `app/models/character.rb` | Campaigns, the party bag, characters, jobs, equipment and ability slots |
 | `lib/stats/growth.rb` | EXP to level to base stats, and ABP to job level |
 | `app/models/message.rb`, `app/javascript/controllers/dialogue_controller.js` | Table messages, their scoped broadcasts, and the dialogue box |
+| `app/models/map_node.rb`, `app/models/map_edge.rb`, `app/javascript/controllers/map_editor_controller.js` | The pointcrawl map and its editor |
+| `lib/pointcrawl/encounters.rb` | Encounter rolls on travel (pure, seeded) |
 | `app/javascript/controllers/battle_player_controller.js`, `app/javascript/battle/gestures.js` | The event player and the motion gestures (§3.2) |
 | `db/seeds/base_world.rb` | The base world's first entries (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |

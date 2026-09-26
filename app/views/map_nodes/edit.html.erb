@@ -1,0 +1,47 @@
+<%= turbo_frame_tag "map_panel", class: "map-panel" do %>
+  <div class="window">
+    <%= render "maps/panel_flash" %>
+    <h2><%= @node.name_in_database %> <span class="muted">· <%= @node.kind %><%= ", hidden" unless @node.visible_in_database %></span></h2>
+    <%= render "form", node: @node %>
+
+    <div class="menu menu--row">
+      <% unless @node.party_here? %>
+        <%= button_to "Put the party here", place_party_map_node_path(@node), class: "menu__item menu__item--accent" %>
+      <% end %>
+    </div>
+
+    <h3>Connect to…</h3>
+    <% others = @campaign.map_nodes.where.not(id: @node.id).order(:name) %>
+    <% if others.empty? %>
+      <p class="empty">Add another place first.</p>
+    <% else %>
+      <%= form_with model: MapEdge.new, url: map_node_map_edges_path(@node), class: "book-form" do |f| %>
+        <div class="field-row">
+          <div class="field"><%= f.label :to_node_id, "Place" %><%= f.select :to_node_id, others.map { |n| [ n.name, n.id ] } %></div>
+          <div class="field"><%= f.label :state %><%= f.select :state, MapEdge::STATES.map { |s| [ s.humanize, s ] } %></div>
+        </div>
+        <div class="field">
+          <%= f.label :encounter_table_id, "Encounters" %>
+          <%= f.select :encounter_table_id, @world.encounter_tables.order(:tier, :name).map { |t| [ "#{t.name} (tier #{t.tier})", t.id ] }, include_blank: "None" %>
+        </div>
+        <%= f.submit "Connect", class: "button" %>
+      <% end %>
+    <% end %>
+
+    <% paths = @node.edges.includes(:from_node, :to_node) %>
+    <% if paths.any? %>
+      <h3>Paths</h3>
+      <ul class="refs">
+        <% paths.each do |edge| %>
+          <li><%= link_to "To #{edge.other_end(@node).name}", edit_map_edge_path(edge) %> <span class="muted">· <%= edge.state %></span></li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <div class="actions">
+      <%= link_to "◀ Back", campaign_map_panel_path(@campaign), class: "link-button" %>
+      <%= button_to "Remove place", map_node_path(@node), method: :delete, class: "button button--danger",
+                    form: { data: { turbo_confirm: "Remove #{@node.name} and its paths?" } } %>
+    </div>
+  </div>
+<% end %>

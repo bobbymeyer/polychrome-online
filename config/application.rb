@@ -28,7 +28,7 @@ module Polychrome
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     # lib/battle and lib/stats are the pure engine (docs/HANDOFF.md §5, §12). They are
     # plain required Ruby, not Zeitwerk-managed; see config/initializers/engine.rb.
-    config.autoload_lib(ignore: %w[assets tasks battle stats battle.rb stats.rb])
+    config.autoload_lib(ignore: %w[assets tasks battle stats pointcrawl battle.rb stats.rb pointcrawl.rb])
 
     # Configuration for the application, engines, and railties goes here.
     #

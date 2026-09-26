@@ -1,0 +1,35 @@
+<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: entry %>
+  <%= render "book_entries/identity_fields", f: f %>
+  <div class="field-row">
+    <div class="field"><%= f.label :terrain %><%= f.select :terrain, EncounterTable::TERRAINS.map { |t| [ term(t), t ] } %></div>
+    <div class="field"><%= f.label :tier %><%= f.number_field :tier, min: 1, max: 10 %></div>
+  </div>
+
+  <fieldset class="panel">
+    <legend>Groups</legend>
+    <p class="hint">Each group is picked in proportion to its weight. Leave the first monster blank to remove a row.</p>
+    <% monsters = @world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.slug ] } %>
+    <table class="grid-form">
+      <thead><tr><th>Weight</th><th>Monster</th><th>Count</th><th>With</th><th>Count</th></tr></thead>
+      <tbody>
+        <% rows_with_blanks(entry.entries).each_with_index do |group, i| %>
+          <% pairs = group.fetch("monsters", {}).to_a %>
+          <% name = ->(key) { json_field_name(f, :entries, i, key) } %>
+          <tr>
+            <td><%= number_field_tag name.(:weight), group["weight"], min: 1, "aria-label": "Weight #{i + 1}" %></td>
+            <td><%= select_tag name.(:monster), options_for_select(monsters, pairs.dig(0, 0)), include_blank: true, "aria-label": "Monster #{i + 1}" %></td>
+            <td><%= number_field_tag name.(:count), pairs.dig(0, 1), min: 1, max: EncounterTable::MAX_GROUP, "aria-label": "Count #{i + 1}" %></td>
+            <td><%= select_tag name.(:monster_2), options_for_select(monsters, pairs.dig(1, 0)), include_blank: true, "aria-label": "Second monster #{i + 1}" %></td>
+            <td><%= number_field_tag name.(:count_2), pairs.dig(1, 1), min: 1, max: EncounterTable::MAX_GROUP, "aria-label": "Second count #{i + 1}" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+  <%= render "book_entries/art_fields", f: f %>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", entry.persisted? ? entry_path(entry) : entries_path, class: "button button--quiet" %>
+  </div>
+<% end %>
