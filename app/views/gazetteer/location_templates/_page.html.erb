@@ -58,6 +58,7 @@
     <p class="hint"><%= example["services"].map { |sv| sv["name"] }.to_sentence %>. <%= pluralize(example["npcs"].size, "townsperson") %>, <%= pluralize(example["stock"].size, "item") %> in stock.</p>
   <% else %>
     <%= render "locations/floorplan", view: example %>
-    <p class="hint"><%= pluralize(example["rooms"].size, "room") %>, <%= pluralize(example["paths"].size, "path") %>. ⚔ encounter · ✦ event · ◆ treasure · ⑂ fork (⚠ marks the costly way) · ☠ boss</p>
+    <p class="hint"><%= pluralize(example["rooms"].size, "room") %>, <%= pluralize(example["paths"].size, "path") %>.</p>
+    <%= render "locations/marker_legend" %>
   <% end %>
 </section>

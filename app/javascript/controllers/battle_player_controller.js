@@ -146,7 +146,7 @@ export default class extends Controller {
         tl.call(() => this.setStatus(e.target, e.status, false), at)
         return 250
       case "buff_applied":
-        this.popup(tl, e.target, `${e.stat.toUpperCase()} ${e.amount > 0 ? "▲" : "▼"}`, e.amount > 0 ? "heal" : "status", at)
+        this.popup(tl, e.target, `${e.stat.toUpperCase()} ${e.amount > 0 ? "up" : "down"}`, "status", at)
         return 380
       case "buff_expired":
         return 120
@@ -225,8 +225,7 @@ export default class extends Controller {
   }
 
   setReady(id, ready) {
-    const marker = this.rosterEl(id)?.querySelector("[data-ready]")
-    if (marker) marker.textContent = ready ? "▶" : ""
+    this.rosterEl(id)?.querySelector("[data-ready]")?.classList.toggle("is-ready", ready)
   }
 
   setHp(id, hp) {

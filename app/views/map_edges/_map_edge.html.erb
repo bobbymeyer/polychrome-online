@@ -10,6 +10,6 @@
     <line class="map-edge__hit" x1="<%= a.x %>" y1="<%= a.y %>" x2="<%= b.x %>" y2="<%= b.y %>" />
   <% end %>
   <% if edge.blocked? %>
-    <text class="map-edge__mark" x="<%= (a.x + b.x) / 2 %>" y="<%= (a.y + b.y) / 2 + 6 %>" text-anchor="middle">✕</text>
+    <path class="map-edge__mark" transform="translate(<%= (a.x + b.x) / 2 %> <%= (a.y + b.y) / 2 %>)" d="M-7,-7 L7,7 M7,-7 L-7,7" />
   <% end %>
 </g>

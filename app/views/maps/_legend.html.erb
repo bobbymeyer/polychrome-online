@@ -1,8 +1,11 @@
 <dl class="map-legend">
-  <dt><svg viewBox="-20 -20 40 40" aria-hidden="true"><path class="map-legend__town" d="M-15,6 L-15,-7 L0,-19 L15,-7 L15,6 Z" /></svg></dt><dd>Town</dd>
-  <dt><svg viewBox="-20 -20 40 40" aria-hidden="true"><path class="map-legend__dungeon" d="M-17,8 L0,-19 L17,8 Z" /></svg></dt><dd>Dungeon</dd>
-  <dt><svg viewBox="-20 -20 40 40" aria-hidden="true"><circle class="map-legend__field" r="10" /></svg></dt><dd>Field</dd>
-  <dt><svg viewBox="-20 -20 40 40" aria-hidden="true"><path class="map-legend__event" d="M0,-15 L15,0 L0,15 L-15,0 Z" /></svg></dt><dd>Event</dd>
+  <% [ %w[town Town], %w[dungeon Dungeon], %w[field Field], %w[event Event] ].each do |kind, label| %>
+    <dt><svg viewBox="-16 -16 32 32" aria-hidden="true"><%= render "map_nodes/shape", kind: kind %></svg></dt><dd><%= label %></dd>
+  <% end %>
+  <% if local_assigns[:gm] %>
+    <dt><svg viewBox="-16 -16 32 32" aria-hidden="true"><%= render "map_nodes/shape", kind: "town", extra: "is-outline" %></svg></dt><dd>Hidden from the players</dd>
+  <% end %>
+  <dt><svg viewBox="-16 -16 32 32" aria-hidden="true"><%= render "maps/party_marker" %></svg></dt><dd>The party</dd>
   <dt class="map-legend__path map-legend__path--open"></dt><dd>Open path</dd>
   <dt class="map-legend__path map-legend__path--dangerous"></dt><dd>Dangerous path</dd>
   <dt class="map-legend__path map-legend__path--blocked"></dt><dd>Blocked</dd>

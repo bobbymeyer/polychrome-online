@@ -1,0 +1,14 @@
+<%# A room's decision as a shape (docs/DESIGN.md): encounter square, boss large square,
+    treasure diamond, event circle, fork a branching line. Centred on 0,0. %>
+<% case kind %>
+<% when "encounter" %>
+  <rect class="floorplan__marker" x="-5" y="-5" width="10" height="10" />
+<% when "boss" %>
+  <rect class="floorplan__marker" x="-8" y="-8" width="16" height="16" />
+<% when "treasure" %>
+  <path class="floorplan__marker" d="M0,-7 L7,0 L0,7 L-7,0 Z" />
+<% when "event" %>
+  <circle class="floorplan__marker" r="5" />
+<% when "fork" %>
+  <path class="floorplan__marker floorplan__marker--fork" d="M0,8 L0,0 L-6,-7 M0,0 L6,-7" />
+<% end %>

@@ -54,7 +54,7 @@
             <% room = location.room(key) %>
             <% cost = location.path_between(here["key"], key)&.dig("cost") %>
             <%= button_to move_location_path(location), params: { room: key }, class: "menu__item", title: cost do %>
-              <%= room["name"] %> <% if cost %><span class="menu__cost">⚠ cost</span><% elsif location.visited.include?(key) %><span class="menu__cost">visited</span><% end %>
+              <%= room["name"] %> <% if cost %><span class="menu__cost">costly</span><% elsif location.visited.include?(key) %><span class="menu__cost">visited</span><% end %>
             <% end %>
           <% end %>
         </div>
@@ -103,6 +103,6 @@
         <% end %>
       </details>
     <% end %>
-    <p class="hint">⚔ encounter · ✦ event · ◆ treasure · ⑂ fork · ⚠ a costly way · ☠ boss</p>
+    <%= render "locations/marker_legend" %>
   </aside>
 </div>

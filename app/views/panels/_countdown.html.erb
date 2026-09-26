@@ -1,5 +1,5 @@
 <% if @battle.deadline_at && !@battle.over? %>
   <p class="countdown" data-controller="countdown" data-countdown-deadline-value="<%= @battle.deadline_at.iso8601 %>">
-    ⏱ <span data-countdown-target="clock"></span>
+    <span data-countdown-target="clock"></span>
   </p>
 <% end %>

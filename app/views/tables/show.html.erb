@@ -19,7 +19,7 @@
       <h1><%= @campaign.name %></h1>
     </div>
     <% if @battle %>
-      <%= link_to "⚔ #{@battle.name} is on →", battle_path(@battle), class: "button" %>
+      <%= link_to "#{@battle.name} is on →", battle_path(@battle), class: "button" %>
     <% end %>
   </header>
 
@@ -43,7 +43,7 @@
       <div class="dialogue__text">
         <p class="dialogue__name" data-dialogue-target="name"><%= @last_dialogue&.speaker_name %></p>
         <p class="dialogue__body" data-dialogue-target="text"><%= @last_dialogue&.body %></p>
-        <span class="dialogue__more" data-dialogue-target="more" hidden>▼</span>
+        <span class="dialogue__more" data-dialogue-target="more" hidden></span>
       </div>
       <p class="visually-hidden" aria-live="polite" data-dialogue-target="live"></p>
     </section>

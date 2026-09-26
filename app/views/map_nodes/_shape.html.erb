@@ -1,0 +1,11 @@
+<%# A place's shape (docs/DESIGN.md): town square, dungeon triangle, event diamond, field circle. %>
+<% case kind %>
+<% when "town" %>
+  <rect class="map-node__shape <%= local_assigns[:extra] %>" x="-12" y="-12" width="24" height="24" />
+<% when "dungeon" %>
+  <path class="map-node__shape <%= local_assigns[:extra] %>" d="M0,-15 L15,11 L-15,11 Z" />
+<% when "event" %>
+  <path class="map-node__shape <%= local_assigns[:extra] %>" d="M0,-14 L14,0 L0,14 L-14,0 Z" />
+<% else %>
+  <circle class="map-node__shape <%= local_assigns[:extra] %>" r="9" />
+<% end %>

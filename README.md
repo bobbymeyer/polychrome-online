@@ -21,7 +21,11 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   Generator Tables books, and exploring dungeons room by room.
 - **Step 8 (done, without pins):** campaign flags, and a GM changes page listing
   every override on generated locations, each with a revert. World-version
-  pins are deliberately not built yet (see below).
+  pins are deliberately not built yet: campaigns read the books live, so a
+  change to a book shows up in every campaign straight away.
+- **Presentation:** Swiss style, per [`docs/DESIGN.md`](docs/DESIGN.md). Inter
+  in black on white, a 12-column grid, geometry for state, and red only for
+  things you can press. The mechanics stay JRPG.
 
 ```
 bundle install
@@ -128,7 +132,7 @@ Each campaign has a **table** (`/campaigns/:id/table`), the live page for
 everything outside battle.
 
 - **Dialogue box vs chat (§9.5).** Following the handoff's lean, GM and NPC
-  lines play in a JRPG dialogue box one at a time, typed out beside the
+  lines play in a dialogue box one at a time, typed out beside the
   speaker's portrait. Player lines go straight into the side log. A dialogue
   line joins the log only after the box has typed it. Click (or Escape) to
   finish a line or move to the next; queued lines also move on by themselves.

@@ -1,6 +1,6 @@
 <%# A pin toggle for a generated element (GM only). %>
 <% if location.pinned?(key) %>
-  <%= button_to "📌 Pinned", unpin_location_path(location), params: { key: key }, class: "pin is-pinned", title: "Unpin: a reroll will replace it" %>
+  <%= button_to "Pinned", unpin_location_path(location), params: { key: key }, class: "pin is-pinned", title: "Unpin: a reroll will replace it" %>
 <% else %>
   <%= button_to "Pin", pin_location_path(location), params: { key: key }, class: "pin", title: local_assigns[:hint] || "Keep this through rerolls" %>
 <% end %>

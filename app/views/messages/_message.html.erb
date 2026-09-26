@@ -14,7 +14,7 @@
     data-chat-line-portrait-value="<%= speaker_portrait_url(message.speaker, message.expression) %>">
   <% if message.system? %>
     <p class="chat-line__body">
-      ⚔ <%= message.body %>
+      <%= message.body %>
       <% if message.battle %>
         <%= link_to(message.battle.over? ? "See the battle" : "Join the battle →", battle_path(message.battle), data: { turbo_frame: "_top" }) %>
       <% end %>

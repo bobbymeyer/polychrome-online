@@ -12,7 +12,8 @@ export const GESTURES = {
   lunge: (dir) => ({ translateX: [0, 32 * dir, 0], duration: 360, ease: "inOutQuad" }),
   pop: () => ({ scale: [0.6, 1.15, 1], opacity: [0.4, 1, 1], duration: 380, ease: "outBack" }),
   float: () => ({ translateY: [0, -12, 0], duration: 600, ease: "inOutSine" }),
-  tint: () => ({ filter: ["hue-rotate(0deg) saturate(1)", "hue-rotate(140deg) saturate(2)", "hue-rotate(0deg) saturate(1)"], duration: 520, ease: "linear" }),
+  // Monochrome, so a status lands as a quick inversion rather than a colour shift.
+  tint: () => ({ filter: ["invert(0)", "invert(1)", "invert(0)", "invert(1)", "invert(0)"], duration: 520, ease: "linear" }),
   slide: (dir) => ({ translateX: [0, 90 * dir], opacity: [1, 0], duration: 520, ease: "inQuad" })
 }
 

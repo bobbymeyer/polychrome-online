@@ -16,8 +16,8 @@
       <%= render partial: "map_nodes/map_node", collection: nodes, as: :node, locals: { gm: gm, party: party } %>
     </g>
     <% if party %>
-      <g class="map-party" transform="translate(<%= party.x %> <%= party.y - 30 %>)" aria-hidden="true">
-        <g class="map-party__flag"><path d="M0,0 L0,-26 L18,-19 L0,-12" /></g>
+      <g class="map-party" transform="translate(<%= party.x %> <%= party.y - 22 %>)" aria-hidden="true">
+        <%= render "maps/party_marker" %>
       </g>
     <% end %>
     <% if nodes.empty? %>
