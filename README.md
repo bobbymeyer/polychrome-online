@@ -26,6 +26,9 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
 - **Presentation:** Swiss style, per [`docs/DESIGN.md`](docs/DESIGN.md). Inter
   in black on white, a 12-column grid, geometry for state, and red only for
   things you can press. The mechanics stay JRPG.
+- **Play pass:** the menus play like a game. There's a keyboard cursor, a help
+  line, targets highlighted on the field (and clickable), a "You" marker, and
+  keys to skip playback and advance dialogue. See "Play" in `docs/DESIGN.md`.
 
 ```
 bundle install

@@ -35,4 +35,27 @@ RSpec.describe BattlesHelper, type: :helper do
       .to eq("Goblin A takes 9 damage. It's super effective!")
     expect(helper.battle_log_line({ "type" => "victory", "rewards" => { "exp" => 18, "gil" => 36 } }, state)).to eq("Victory! 18 EXP and 36 gil.")
   end
+
+  describe "the command help line" do
+    let(:state) { build_battle }
+    let(:vivi) { unit(state, "vivi") }
+    let(:fire) { state["abilities"]["fire"] }
+
+    it "says what an ability hits, does and costs" do
+      expect(helper.ability_help(vivi, fire)).to eq("Single enemy · Fire damage, power #{fire['effects'].first['power']} · #{Battle::State.ability_cost(fire)} MP")
+    end
+
+    it "says why an ability can't be used" do
+      vivi["mp"] = 0
+      expect(helper.ability_help(vivi, fire)).to eq("Not enough MP (needs #{Battle::State.ability_cost(fire)}, you have 0).")
+      vivi["statuses"] << { "kind" => "silence", "turns" => 2 }
+      expect(helper.ability_help(vivi, fire)).to start_with("Silenced")
+    end
+
+    it "shows an ally's HP and MP but never an enemy's" do
+      expect(helper.target_help(state, "vivi")).to start_with("HP #{vivi['hp']}/#{vivi['stats']['max_hp']} · MP #{vivi['mp']}")
+      expect(helper.target_help(state, "goblin_a")).to eq("Enemy")
+      expect(helper.target_help(state, "goblin_a")).not_to include("HP")
+    end
+  end
 end

@@ -1,8 +1,12 @@
 <% state = @battle.state %>
 <% command = state["inputs"][unit["id"]] %>
+<div data-controller="menu" data-menu-primary-value="true" data-menu-autofocus-value="true" data-menu-you-value="<%= unit['id'] %>">
 <div class="command-panel__head">
   <h2><%= unit["name"] %></h2>
-  <span class="muted">HP <%= unit["hp"] %>/<%= unit["stats"]["max_hp"] %> · MP <%= unit["mp"] %></span>
+  <span class="command-panel__vitals">
+    <span class="label">HP</span> <strong><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
+    <span class="label">MP</span> <strong><%= unit["mp"] %></strong><span class="muted">/<%= unit["stats"]["max_mp"] %></span>
+  </span>
   <%= render "panels/countdown" %>
 </div>
 
@@ -12,14 +16,16 @@
   <p>You can't act this round (<%= unit["statuses"].map { |s| s["kind"].humanize }.to_sentence %>).</p>
 <% elsif @choosing %>
   <div data-choosing>
-    <p><strong><%= @choosing["name"] %></strong>: choose a target.</p>
+    <p class="command-panel__prompt"><strong><%= @choosing["name"] %></strong>: choose a target.</p>
     <div class="menu">
       <% (Battle::State.target_options(state, unit, @choosing) || []).each do |target_id| %>
         <%= button_to unit_name(state, target_id), battle_actions_path(@battle), class: "menu__item",
+                      data: { unit_id: target_id, help: target_help(state, target_id) },
                       params: { command: { kind: "ability", ability: @choosing["id"], target: target_id } } %>
       <% end %>
     </div>
-    <%= link_to "◀ Back", battle_panel_path(@battle), class: "link-button" %>
+    <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
+    <%= link_to "Back", battle_panel_path(@battle), class: "link-button", data: { menu_back: true } %>
   </div>
 <% elsif command && !params[:change] %>
   <p>
@@ -27,25 +33,31 @@
     <% if command["target"] %>→ <%= unit_name(state, command["target"]) %><% end %>.
     Waiting for <%= (@battle.awaiting_input.map { |id| unit_name(state, id) }.to_sentence.presence || "the round to run") %>.
   </p>
-  <%= link_to "Change command", battle_panel_path(@battle, change: 1), class: "link-button" %>
+  <%= link_to "Change command", battle_panel_path(@battle, change: 1), class: "link-button", data: { menu_back: true } %>
 <% else %>
   <div class="menu">
     <% unit["abilities"].map { |id| state["abilities"][id] }.each do |ability| %>
       <% usable = Battle::State.usable?(unit, ability) %>
       <% cost = Battle::State.ability_cost(ability) %>
       <% label = safe_join([ ability["name"], (tag.span("#{cost} MP", class: "menu__cost") if cost.positive?) ].compact, " ") %>
+      <% help = ability_help(unit, ability) %>
       <% if !usable %>
-        <button class="menu__item" disabled><%= label %></button>
+        <button type="button" class="menu__item" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= ability['name'] %>"><%= label %></button>
       <% elsif Battle::State.target_options(state, unit, ability) %>
-        <%= link_to label, battle_panel_path(@battle, ability: ability["id"]), class: "menu__item" %>
+        <%= link_to label, battle_panel_path(@battle, ability: ability["id"]), class: "menu__item", data: { help: help, menu_key: ability["name"] } %>
       <% else %>
-        <%= button_to label, battle_actions_path(@battle), class: "menu__item",
+        <%= button_to label, battle_actions_path(@battle), class: "menu__item", data: { help: help, menu_key: ability["name"] },
                       params: { command: { kind: "ability", ability: ability["id"] } } %>
       <% end %>
     <% end %>
-    <%= button_to "Defend", battle_actions_path(@battle), class: "menu__item", params: { command: { kind: "defend" } } %>
+    <%= button_to "Defend", battle_actions_path(@battle), class: "menu__item", data: { help: "Halve the damage you take this round." },
+                  params: { command: { kind: "defend" } } %>
     <% if state["escapable"] %>
-      <%= button_to "Flee", battle_actions_path(@battle), class: "menu__item", params: { command: { kind: "flee" } } %>
+      <%= button_to "Flee", battle_actions_path(@battle), class: "menu__item", data: { help: "Try to get the whole party away. It can fail." },
+                    params: { command: { kind: "flee" } } %>
     <% end %>
   </div>
+  <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
 <% end %>
+<p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick</p>
+</div>

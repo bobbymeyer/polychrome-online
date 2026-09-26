@@ -57,8 +57,15 @@ export default class extends Controller {
     if (this.queue.length) this.next()
   }
 
+  // Escape works anywhere, even mid-sentence in the composer. Enter, Space and
+  // Z work when you aren't typing or on a control.
   key(event) {
-    if (event.key === "Escape" && this.current) this.advance()
+    if (!this.current || event.altKey || event.ctrlKey || event.metaKey) return
+    if (event.key === "Escape") return this.advance()
+    if (!["Enter", " ", "z", "Z"].includes(event.key)) return
+    if (event.target.closest?.("input, textarea, select, button, a, [contenteditable]")) return
+    event.preventDefault()
+    this.advance()
   }
 
   next() {

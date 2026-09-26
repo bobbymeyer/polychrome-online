@@ -81,7 +81,7 @@
     <section class="window">
       <h2>Take a seat</h2>
       <p class="hint">No accounts yet: pick who you're playing. Anyone can take any seat.</p>
-      <div class="menu">
+      <div class="menu" data-controller="menu" data-menu-primary-value="true">
         <%= button_to "Game Master", campaign_table_seat_path(@campaign), params: { seat: "gm" }, class: "menu__item" %>
         <% @campaign.characters.order(:created_at).each do |character| %>
           <%= button_to character.name, campaign_table_seat_path(@campaign), params: { seat: character.id }, class: "menu__item" %>

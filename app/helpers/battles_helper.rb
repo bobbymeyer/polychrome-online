@@ -23,6 +23,35 @@ module BattlesHelper
     end
   end
 
+  # The help line for a command (docs/DESIGN.md, "Play"): what it hits, what it
+  # does, what it costs; or why it can't be used right now.
+  def ability_help(unit, ability)
+    cost = Battle::State.ability_cost(ability)
+    unless Battle::State.usable?(unit, ability)
+      silenced = ability["kind"] == "magic" && unit["statuses"].any? { |s| s["kind"] == "silence" }
+      return silenced ? "Silenced: no magic until it wears off." : "Not enough MP (needs #{cost}, you have #{unit['mp']})."
+    end
+
+    parts = [ term(ability["target"]) ]
+    parts.concat(ability["effects"].map { |e| describe_effect(e) })
+    parts << "#{cost} MP" if cost.positive?
+    parts.join(" · ")
+  end
+
+  # What you can see of a target: an ally's HP and MP; an enemy's condition.
+  def target_help(state, id)
+    target = state["units"].find { |u| u["id"] == id }
+    return "" unless target
+
+    statuses = target["statuses"].map { |s| s["kind"].humanize }
+    facts = if target["side"] == "party"
+      [ "HP #{target['hp']}/#{target['stats']['max_hp']}", "MP #{target['mp']}" ]
+    else
+      [ target["hp"].zero? ? "Down" : "Enemy" ]
+    end
+    (facts + statuses).join(" · ")
+  end
+
   def hp_percent(unit)
     (100.0 * unit["hp"] / unit["stats"]["max_hp"]).round
   end

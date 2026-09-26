@@ -63,3 +63,25 @@ No emoji or pictographic glyphs. An arrow (→) is typography and may follow a l
 The gestures in HANDOFF §3.2 stay. `tint` is an inversion pulse, because a hue shift is
 invisible in black and white. Banners are giant black type, set flush left on the stage.
 Captions are black bars with white type.
+
+## Play
+
+The Swiss surface still has to play like a JRPG. Anything a player does in a turn works from the
+keyboard, a mouse or a finger.
+
+- **Command menus** (`menu` Stimulus controller) have a cursor, and the cursor is the red fill.
+  It follows the arrow keys and the mouse. Enter, Space or Z chooses, and Esc, X or Backspace
+  goes back. 1–9 picks an item directly. Movement wraps around the menu, and the cursor
+  remembers where it was when the panel reloads.
+- **A help line** under the menu says what the cursor is on: the target, the effects and the MP
+  cost. While you pick a target, it shows an ally's HP. A command you can't use stays
+  selectable with a dashed outline, and the help line says why it's unavailable.
+- **Targets** light up on the battlefield (a red frame) as the cursor passes over them. While
+  you choose, the units themselves can be clicked.
+- **You** are marked with a small black "You" tag on the field and in the roster.
+- **Playback** is skipped with Enter, Space or Esc as well as the Skip button. **Dialogue**
+  advances with Enter, Space or Z when you aren't typing, and with Esc at any time.
+- **One screen:** on a laptop the field, the party's HP and MP, and the commands fit together.
+  When your turn starts below the fold, the menu scrolls into view.
+- **Touch:** menu items are at least 48px tall and buttons at least 44px on coarse pointers. The
+  keyboard legend is hidden on devices without hover.

@@ -43,6 +43,16 @@ export default class extends Controller {
     this.current?.timeline.complete()
   }
 
+  // While a beat plays, the confirm and cancel keys skip it (the menu is
+  // hidden until it ends, so they can't mean anything else).
+  key(event) {
+    if (!this.current || event.altKey || event.ctrlKey || event.metaKey) return
+    if (event.target.closest?.("input, textarea, select, [contenteditable]")) return
+    if (!["Enter", " ", "Escape", "z", "Z", "x", "X"].includes(event.key)) return
+    event.preventDefault()
+    this.skip()
+  }
+
   // GM fast-forward arrives as a replaced #battle_playback element.
   playbackTargetConnected() {
     if (this.current) this.current.timeline.speed = this.speed

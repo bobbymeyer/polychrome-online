@@ -290,6 +290,9 @@ details[open] summary { margin-bottom: 16px; }
 
 .battle__header { display: flex; flex-wrap: wrap; gap: 16px var(--gutter); align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
 .battle__header h1 { margin: 0; }
+/* In battle the field, the party and the commands share one screen. */
+.battle .battle__header { margin-bottom: 16px; }
+.battle .battle__header h1 { font-size: 32px; line-height: 40px; }
 .battle__controls { display: flex; gap: 16px; align-items: center; }
 .playback { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
@@ -299,11 +302,11 @@ details[open] summary { margin-bottom: 16px; }
 /* The field: enemies left, party right, standing on one black line. */
 .battlefield {
   display: grid; grid-template-columns: 1fr minmax(128px, 30%); gap: var(--gutter);
-  min-height: 272px; padding: 32px 0;
+  min-height: 232px; padding: 16px 0;
   border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink);
 }
 .battlefield__side { display: flex; flex-wrap: wrap; align-content: center; gap: 24px 32px; }
-.battlefield__side--party { flex-direction: column; flex-wrap: nowrap; align-items: flex-end; justify-content: center; gap: 16px; border-left: 1px solid var(--rule); }
+.battlefield__side--party { flex-direction: column; flex-wrap: nowrap; align-items: flex-end; justify-content: center; gap: 8px; border-left: 1px solid var(--rule); }
 
 .unit { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
 .unit--party { flex-direction: row-reverse; gap: 12px; }
@@ -312,7 +315,7 @@ details[open] summary { margin-bottom: 16px; }
 .unit.is-ko .unit__label { color: var(--grey); }
 
 .sprite { width: 88px; height: 88px; display: grid; place-items: center; will-change: transform; }
-.unit--party .sprite { width: 56px; height: 56px; }
+.unit--party .sprite { width: 48px; height: 48px; }
 .sprite__image { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
 /* Enemies are black squares, the party black circles; knocked out, only the outline is left. */
 .sprite__plate {
@@ -328,11 +331,11 @@ details[open] summary { margin-bottom: 16px; }
 .badges { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
 .badge { font-size: 10px; line-height: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 0 4px; border: 1px solid var(--ink); white-space: nowrap; }
 
-.roster { list-style: none; margin: 24px 0 0; padding: 0; display: grid; border-top: 2px solid var(--ink); }
+.roster { list-style: none; margin: 16px 0 0; padding: 0; display: grid; border-top: 2px solid var(--ink); }
 .roster.window { padding-top: 0; margin-bottom: 0; }
 .roster__row {
   display: grid; grid-template-columns: 16px minmax(96px, 1fr) minmax(144px, 2fr) 80px minmax(0, 2fr);
-  gap: 16px; align-items: center; padding: 8px 0 7px; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums;
+  gap: 16px; align-items: center; padding: 4px 0 3px; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums;
 }
 .roster__ready { display: block; width: 10px; height: 10px; }
 .roster__ready.is-ready { background: var(--ink); }
@@ -376,8 +379,41 @@ details[open] summary { margin-bottom: 16px; }
   padding: 4px 12px; background: var(--ink); color: var(--paper); font-weight: 700; white-space: nowrap;
 }
 
+/* Play (docs/DESIGN.md): the cursor, the help line, targeting, "you". */
+.menu__item.is-cursor { background: var(--signal); color: var(--paper); }
+.menu__item.is-cursor .menu__cost { color: inherit; }
+.menu__item.is-cursor:focus-visible { outline: none; }
+.menu__item[aria-disabled="true"] { color: var(--grey); border-color: var(--rule); background: var(--paper); cursor: not-allowed; }
+.menu__item[aria-disabled="true"].is-cursor { border-color: var(--grey); border-style: dashed; background: var(--wash); color: var(--grey); }
+.menu-help { min-height: 48px; margin: 0 0 16px; padding-top: 8px; border-top: 1px solid var(--ink); font-size: 14px; line-height: 20px; }
+.menu-help.is-flashing { animation: menu-help-flash .4s steps(2, jump-none) 2; }
+@keyframes menu-help-flash { 50% { background: var(--ink); color: var(--paper); } }
+.keys { margin: 16px 0 0; font-size: 11px; line-height: 16px; color: var(--grey); }
+@media (hover: none) { .keys { display: none; } }
+.command-panel__vitals { display: inline-flex; align-items: baseline; gap: 4px; font-variant-numeric: tabular-nums; }
+.command-panel__vitals strong { font-size: 20px; }
+.command-panel__vitals .label + strong { margin-left: 2px; }
+.command-panel__vitals .muted + .label { margin-left: 12px; }
+.command-panel__prompt { font-size: 18px; }
+
+.unit.is-targetable, .roster__row.is-targetable { cursor: pointer; }
+.unit.is-targeted .sprite { outline: 3px solid var(--signal); outline-offset: 6px; }
+.unit.is-targeted .unit__label, .roster__row.is-targeted .roster__name { color: var(--signal); }
+.roster__row.is-targeted { box-shadow: inset 4px 0 0 var(--signal); }
+.unit.is-you .unit__label::after, .roster__row.is-you .roster__name::after {
+  content: "You"; margin-left: 6px; padding: 0 4px; vertical-align: 1px;
+  font-size: 10px; line-height: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  background: var(--ink); color: var(--paper);
+}
+
+/* Fingers need room. */
+@media (pointer: coarse) {
+  .menu__item { min-height: 48px; align-items: center; }
+  .button, button, input[type=submit] { min-height: 44px; }
+}
+
 /* Lower half: command panel and log */
-.battle__lower { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 var(--gutter); margin-top: 48px; align-items: start; }
+.battle__lower { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0 var(--gutter); margin-top: 32px; align-items: start; }
 .battle__lower > :first-child { grid-column: span 7; }
 .battle__lower > :last-child { grid-column: span 5; }
 @media (max-width: 800px) { .battle__lower > :first-child, .battle__lower > :last-child { grid-column: 1 / -1; } }

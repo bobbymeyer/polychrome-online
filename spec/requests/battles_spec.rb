@@ -125,6 +125,19 @@ RSpec.describe "Battle screen", type: :request do
       expect(battle.reload.state["inputs"][bartz]).to include("target" => "goblin_b")
     end
 
+    it "get a playable menu: help for every command, the unusable ones explained, targets tied to their units" do
+      state = battle.state
+      state["units"].find { |u| u["id"] == bartz }["mp"] = 0
+      battle.update!(state: state)
+
+      get battle_panel_path(battle)
+      expect(response.body).to include(%(data-controller="menu"), %(data-menu-you-value="#{bartz}"), "Single enemy · Physical")
+      expect(response.body).to match(/aria-disabled="true" data-help="Not enough MP[^"]*"[^>]*>Cure/)
+
+      get battle_panel_path(battle, ability: "attack")
+      expect(response.body).to include('data-unit-id="goblin_a"', 'data-menu-back="true"')
+    end
+
     it "always act as their own seat, whatever the params say" do
       post battle_actions_path(battle), params: { command: { kind: "defend" }, actor: faris }
       expect(battle.reload.state["inputs"].keys).to eq([ bartz ])
