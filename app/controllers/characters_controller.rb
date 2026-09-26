@@ -14,10 +14,10 @@ class CharactersController < ApplicationController
   end
 
   def create
-    # A player's new character is theirs and starts where the GM says; the GM
-    # can make one at any level.
+    # A player's new character is theirs and starts at the party's lowest
+    # level. The GM's are unclaimed, for players to sit as, at any level.
     fields = can_gm?(@campaign) ? %i[name player_name job_id starting_level starting_job_level] : %i[name player_name job_id]
-    @character = @campaign.characters.new(params.expect(character: fields).merge(user: current_user))
+    @character = @campaign.characters.new(params.expect(character: fields).merge(user: (current_user unless can_gm?(@campaign))))
     unless can_gm?(@campaign)
       @character.starting_level ||= @campaign.characters.minimum(:level)
       @character.starting_job_level = 1 # the job's first ability, like the GM's default

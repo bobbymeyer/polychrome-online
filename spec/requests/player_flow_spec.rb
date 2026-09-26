@@ -54,6 +54,15 @@ RSpec.describe "The player's way through", type: :request do
     expect(response.body).to include("At the table as <strong>GM</strong>")
   end
 
+  it "leaves the GM's characters unclaimed, and seats the GM as GM even if they own one" do
+    post campaign_characters_path(campaign), params: { character: { name: "Bartz", job_id: knight.id } }
+    expect(campaign.characters.find_by!(name: "Bartz").user).to be_nil
+
+    campaign.characters.create!(name: "Faris", job: knight, user: @admin) # made before this fix
+    get campaign_table_path(campaign)
+    expect(response.body).to include("At the table as <strong>GM</strong>")
+  end
+
   it "points the table at the newest battle, live, and stops once it's over or called off" do
     bartz = campaign.characters.create!(name: "Bartz", job: knight)
     old = battle_with(bartz)

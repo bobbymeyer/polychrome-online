@@ -18,8 +18,8 @@ module TableSeat
   private
 
   # "gm", a Character of this campaign, or nil. With no seat chosen yet, the
-  # obvious one: your only character here, or the GM seat if it's your
-  # campaign and you play nobody in it.
+  # obvious one: the GM seat if it's your campaign, otherwise your only
+  # character here.
   def table_seat(campaign = @campaign)
     seat = session.dig(:table_seats, seat_key(campaign))
     return default_table_seat(campaign) if seat.nil?
@@ -39,10 +39,10 @@ module TableSeat
   def default_table_seat(campaign)
     return nil unless current_user
 
-    mine = campaign.characters.where(user: current_user).limit(2).to_a
-    return mine.first if mine.one?
+    return "gm" if campaign.gm_id == current_user.id
 
-    "gm" if mine.empty? && campaign.gm_id == current_user.id
+    mine = campaign.characters.where(user: current_user).limit(2).to_a
+    mine.first if mine.one?
   end
 
   # Take a seat if this account may. Returns whether it did.
