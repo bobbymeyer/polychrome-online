@@ -16,7 +16,7 @@
     <p class="chat-line__body">
       <%= message.body %>
       <% if message.battle %>
-        <%= link_to(message.battle.over? ? "See the battle" : "Join the battle →", battle_path(message.battle), data: { turbo_frame: "_top" }) %>
+        <%= link_to(message.battle.over? ? "See the battle" : "Join the battle →", battle_path(message.battle), class: ("play" unless message.battle.over?), data: { turbo_frame: "_top" }) %>
       <% end %>
     </p>
   <% else %>

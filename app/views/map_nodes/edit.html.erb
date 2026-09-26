@@ -59,7 +59,7 @@
     <% end %>
 
     <div class="actions">
-      <%= link_to "◀ Back", campaign_map_panel_path(@campaign), class: "link-button" %>
+      <%= link_to "Back", campaign_map_panel_path(@campaign), class: "link-button" %>
       <%= button_to "Remove place", map_node_path(@node), method: :delete, class: "button button--danger",
                     form: { data: { turbo_confirm: "Remove #{@node.name} and its paths?" } } %>
     </div>

@@ -19,7 +19,7 @@
       <h1><%= @campaign.name %></h1>
     </div>
     <% if @battle %>
-      <%= link_to "#{@battle.name} is on →", battle_path(@battle), class: "button" %>
+      <%= link_to "#{@battle.name} is on →", battle_path(@battle), class: "button play" %>
     <% end %>
   </header>
 

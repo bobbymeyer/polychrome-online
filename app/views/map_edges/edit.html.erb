@@ -18,7 +18,7 @@
       <%= f.submit "Save", class: "button" %>
     <% end %>
     <div class="actions">
-      <%= link_to "◀ Back", campaign_map_panel_path(@campaign), class: "link-button" %>
+      <%= link_to "Back", campaign_map_panel_path(@campaign), class: "link-button" %>
       <%= button_to "Cut path", map_edge_path(@edge), method: :delete, class: "button button--danger" %>
     </div>
   </div>

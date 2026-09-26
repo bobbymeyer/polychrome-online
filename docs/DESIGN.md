@@ -27,15 +27,25 @@ The stylesheet is `app/assets/stylesheets/application.css`.
 
 ## Colour
 
-The starting point: colour means interaction, and there is one colour, Swiss red `#d71920`.
+Colour is kept for the game. Red, Swiss red `#d71920`, means **a game move**. Everything else
+you can press is grey, so the moves stand out.
 
-- **Red:** links, buttons, menu and command options, form focus, disclosure triangles, map
-  places and paths the GM can edit (on hover), and the dialogue's advance square.
-- **State is not red by default** (state colours for low HP and statuses are listed under Divergences). HP, KO, the current room, whose turn it is and where the party stands
-  are all shown with black geometry, weight, fill and outline.
-- A selected option (the current pacing, say) is filled black. A pressed toggle (a pinned
-  element) is filled red.
+- **Red (`.play`, `.menu__item--accent`):** battle commands and targets (with the red frame on
+  the field), travel on the map, the ways on in a dungeon, leading the party in, handing over
+  treasure, Fight, joining a battle that is on, Send at the table, starting a battle, and the
+  dialogue's advance square.
+- **Grey (the default):** navigation, the book pages, crumbs, admin and GM bookkeeping (Edit,
+  Save, Reroll, Pin, flags, Wave it off, Auto), disclosures, form focus, seat pickers and map
+  editing. Links are grey with a light underline and go black on hover. Buttons are a grey
+  fill, and quiet buttons are a grey outline.
+- **State is not red by default** (state colours for low HP and statuses are listed under
+  Divergences). HP, KO, the current room, whose turn it is and where the party stands are shown
+  with black geometry, weight, fill and outline.
+- A selected option (the current pacing, say) is filled black, and so is a pinned element.
 - Uploaded images are content and keep their own colours.
+
+When you add a control, ask whether pressing it moves the game. If it does, give it `play`.
+Otherwise leave it grey.
 
 ## Geometry
 
@@ -73,7 +83,8 @@ Captions are black bars with white type.
 The Swiss surface still has to play like a JRPG. Anything a player does in a turn works from the
 keyboard, a mouse or a finger.
 
-- **Command menus** (`menu` Stimulus controller) have a cursor, and the cursor is the red fill.
+- **Command menus** (`menu` Stimulus controller) have a cursor. In a game menu the cursor is
+  the red fill; in any other menu it is grey.
   It follows the arrow keys and the mouse. Enter, Space or Z chooses, and Esc, X or Backspace
   goes back. 1–9 picks an item directly. Movement wraps around the menu, and the cursor
   remembers where it was when the panel reloads.
@@ -107,4 +118,7 @@ Record each place where the game needed more than the Swiss defaults: what chang
 - **Enemy targets show what the Bestiary knows.** The help line gives the enemy's level and its
   affinities (weak to, resists, immune to, absorbs, including status immunities), but never its
   HP. Players can already read these in the Bestiary, so the battle doesn't hide them.
+- **Grey controls, red moves.** The starting point made every interactive thing red, so
+  navigation and admin drowned out the game. Controls are now grey, and red is kept for game
+  moves (`.play`).
 

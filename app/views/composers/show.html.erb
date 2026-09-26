@@ -33,7 +33,7 @@
     <div class="composer__row">
       <%= f.text_area :body, rows: 2, placeholder: seat == "gm" ? "Say something as them… (Enter to send)" : "Say something… (Enter to send)", autofocus: @refocus,
                       data: { composer_target: "body" }, "aria-label": "Message" %>
-      <%= f.submit "Send", class: "button" %>
+      <%= f.submit "Send", class: "button play" %>
     </div>
   <% end %>
 <% end %>

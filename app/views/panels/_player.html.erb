@@ -17,7 +17,7 @@
 <% elsif @choosing %>
   <div data-choosing>
     <p class="command-panel__prompt"><strong><%= @choosing["name"] %></strong>: choose a target.</p>
-    <div class="menu">
+    <div class="menu play">
       <% (Battle::State.target_options(state, unit, @choosing) || []).each do |target_id| %>
         <%= button_to unit_name(state, target_id), battle_actions_path(@battle), class: "menu__item",
                       data: { unit_id: target_id, help: target_help(@battle, state, target_id) },
@@ -35,7 +35,7 @@
   </p>
   <%= link_to "Change command", battle_panel_path(@battle, change: 1), class: "link-button", data: { menu_back: true } %>
 <% else %>
-  <div class="menu">
+  <div class="menu play">
     <% unit["abilities"].map { |id| state["abilities"][id] }.each do |ability| %>
       <% usable = Battle::State.usable?(unit, ability) %>
       <% cost = Battle::State.ability_cost(ability) %>

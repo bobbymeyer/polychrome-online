@@ -43,13 +43,13 @@
       <% end %>
 
       <% if here.nil? %>
-        <%= button_to "Lead the party in", enter_location_path(location), class: "button" %>
+        <%= button_to "Lead the party in", enter_location_path(location), class: "button play" %>
       <% else %>
         <% if here["decision"]["kind"] == "treasure" && !location.resolved?(here["key"]) %>
-          <%= button_to "Hand over the treasure", take_treasure_location_path(location), params: { room: here["key"] }, class: "button" %>
+          <%= button_to "Hand over the treasure", take_treasure_location_path(location), params: { room: here["key"] }, class: "button play" %>
         <% end %>
         <h3>Ways on</h3>
-        <div class="menu">
+        <div class="menu play">
           <% location.neighbours(here["key"]).each do |key| %>
             <% room = location.room(key) %>
             <% cost = location.path_between(here["key"], key)&.dig("cost") %>
