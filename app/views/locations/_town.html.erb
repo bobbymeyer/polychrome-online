@@ -72,8 +72,27 @@
               <% end %>
             </tbody>
           </table>
-          <p class="hint">Shops pay half the price. Gear someone is wearing isn't in the bag, so it can't be sold.</p>
         <% end %>
+
+        <% worn = shopping ? @campaign.characters.order(:created_at).select { |c| can_manage?(c) }.flat_map { |c| c.equipment_slots.includes(:item).map { |slot| [ c, slot ] } } : [] %>
+        <% if worn.any? %>
+          <h3>Sell what the party is wearing</h3>
+          <table class="book-table book-table--plain shop-table">
+            <tbody>
+              <% worn.each do |character, slot| %>
+                <tr>
+                  <td><%= slot.item.name %> <span class="muted"><%= character.name %>, <%= term(slot.slot).downcase %></span></td>
+                  <td class="num"><%= number_with_delimiter(slot.item.resale_price) %> gil</td>
+                  <td class="shop-table__buy">
+                    <%= button_to "Sell", sell_worn_location_shop_path(location), params: { character_id: character.id, slot: slot.slot },
+                                  class: "button play", form: { data: { turbo_confirm: "Take #{slot.item.name} off #{character.name} and sell it for #{slot.item.resale_price} gil?" } } %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+        <% if shopping %><p class="hint">Shops pay half the price.</p><% end %>
       </div>
       <% if gm %>
         <details>

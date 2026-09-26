@@ -98,6 +98,7 @@ Rails.application.routes.draw do
     resource :shop, only: [] do
       post :buy
       post :sell
+      post :sell_worn
     end
   end
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"
@@ -109,6 +110,7 @@ Rails.application.routes.draw do
     resource :equipment, only: :update
     resource :ability_slots, only: :update
     resource :grant, only: :create
+    resource :item_use, only: :create
   end
 
   # The battle screen (§6): one long-lived page fed by Turbo Streams. The

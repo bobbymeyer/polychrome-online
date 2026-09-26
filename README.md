@@ -213,8 +213,10 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
 
 - **Shops.** A town with a shop sells its stock for party gil and buys items
   back from the bag at half price (`ShopsController`, `Campaign#buy!` and
-  `#sell!`). Players can only shop in the town where the party is; the GM
-  can shop anywhere. Every purchase and sale is announced at the table.
+  `#sell!`). Gear someone is wearing can be sold too: it comes off, then
+  sells. Only that character's player or the GM can do that. Players can
+  only shop in the town where the party is; the GM can shop anywhere. Every
+  purchase and sale is announced at the table.
 
 - **Stored:** only template + seed + GM overrides. What the location contains
   is generated from those on every view, by the pure `Generators::Town` and

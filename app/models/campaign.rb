@@ -72,6 +72,48 @@ class Campaign < ApplicationRecord
     end
   end
 
+  # Sell something a party member is wearing: it comes off, then sells.
+  def sell_worn!(character, slot, at:, by:)
+    item = character.equipment_slots.find_by(slot: slot)&.item or raise ArgumentError, "#{character.name} isn't wearing anything there"
+    transaction do
+      character.unequip!(slot)
+      sell!(item, 1, at: at, by: by)
+    end
+  end
+
+  # --- using items outside battle ---------------------------------------------
+
+  def battle_on?
+    battles.where(status: "input").exists?
+  end
+
+  # Items from the bag that do something outside battle (healing, revival).
+  def field_items
+    bag.select { |row| row.item.consumable? && Battle::Field.usable?(row.item.to_engine(row.quantity)) }
+  end
+
+  # One party member uses an item from the bag on another (or themselves),
+  # through the engine's own formulas (Battle::Field) and the campaign's RNG.
+  def use_item!(item, user:, target:)
+    raise ArgumentError, "Not while a battle is on: use it from the battle's Item menu" if battle_on?
+    raise ArgumentError, "#{target.name} isn't in this party" unless target.campaign_id == id
+
+    transaction do
+      reload
+      raise ArgumentError, "There's no #{item.name} in the bag" unless quantity_of(item).positive?
+
+      before = target.current_hp
+      hp, _events, next_rng = Battle::Field.use_item(item.to_engine(1), user: user.battle_spec, target: target.battle_spec, rng: rng)
+      take_item!(item)
+      target.update!(hp: hp)
+      update!(rng: next_rng)
+      on = target == user ? "" : " on #{target.name}"
+      messages.create!(kind: "system", body: "#{user.name} uses #{item.name}#{on}: HP #{before} → #{hp}.")
+    end
+  rescue Battle::InvalidAction => e
+    raise ArgumentError, e.message
+  end
+
   # The consumables a battle can use, as the engine wants them.
   def battle_items
     bag.select { |row| row.item.consumable? && row.item.effects.any? }
