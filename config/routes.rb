@@ -1,4 +1,9 @@
 Rails.application.routes.draw do
+  # Accounts. The first one made is the admin.
+  resource :session
+  resources :passwords, param: :token
+  resource :registration, only: %i[new create]
+  resources :users, only: %i[index update destroy]
   get "up" => "rails/health#show", as: :rails_health_check
 
   root "worlds#index"

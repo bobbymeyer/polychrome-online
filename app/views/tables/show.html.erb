@@ -80,11 +80,12 @@
   <% else %>
     <section class="window">
       <h2>Take a seat</h2>
-      <p class="hint">No accounts yet: pick who you're playing. Anyone can take any seat.</p>
+      <p class="hint">Sit as your character, or as the GM if this is your campaign. A character nobody has claimed becomes yours when you sit as them.</p>
       <div class="menu" data-controller="menu" data-menu-primary-value="true">
-        <%= button_to "Game Master", campaign_table_seat_path(@campaign), params: { seat: "gm" }, class: "menu__item" %>
-        <% @campaign.characters.order(:created_at).each do |character| %>
-          <%= button_to character.name, campaign_table_seat_path(@campaign), params: { seat: character.id }, class: "menu__item" %>
+        <%= button_to "Game Master", campaign_table_seat_path(@campaign), params: { seat: "gm" }, class: "menu__item" if can_gm?(@campaign) %>
+        <% @campaign.characters.order(:created_at).select { |c| can_play?(c) }.each do |character| %>
+          <%= button_to character.name + (character.user_id ? "" : " (unclaimed)"), campaign_table_seat_path(@campaign),
+                        params: { seat: character.id }, class: "menu__item" %>
         <% end %>
       </div>
     </section>

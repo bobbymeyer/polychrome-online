@@ -4,6 +4,7 @@
 # starts from, and the framing for each content type. Both layers can add
 # LoRAs. The entry's own layer is edited on its page.
 class ArtDirectionsController < ApplicationController
+  before_action :require_admin
   before_action :set_world
 
   def show

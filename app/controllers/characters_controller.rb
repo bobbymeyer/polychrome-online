@@ -6,6 +6,7 @@ class CharactersController < ApplicationController
 
   before_action :set_campaign, only: %i[new create]
   before_action :set_character, only: %i[show edit update destroy]
+  before_action :require_character_manager, only: %i[edit update destroy]
 
   def new
     @character = @campaign.characters.new(starting_level: 5, starting_job_level: 1,
@@ -13,9 +14,11 @@ class CharactersController < ApplicationController
   end
 
   def create
-    @character = @campaign.characters.new(
-      params.expect(character: %i[name player_name job_id starting_level starting_job_level])
-    )
+    # A player's new character is theirs and starts where the GM says; the GM
+    # can make one at any level.
+    fields = can_gm?(@campaign) ? %i[name player_name job_id starting_level starting_job_level] : %i[name player_name job_id]
+    @character = @campaign.characters.new(params.expect(character: fields).merge(user: current_user))
+    @character.starting_level ||= @campaign.characters.minimum(:level) unless can_gm?(@campaign)
     if @character.save
       redirect_to character_path(@character), notice: "#{@character.name} joins the party."
     else
@@ -28,7 +31,7 @@ class CharactersController < ApplicationController
   def edit; end
 
   def update
-    if @character.update(params.expect(character: %i[name player_name]))
+    if @character.update(params.expect(character: can_gm?(@campaign) ? %i[name player_name user_id] : %i[name player_name]))
       @character.update_portraits!(**portrait_params)
       redirect_to character_path(@character), notice: "#{@character.name} was updated."
     else

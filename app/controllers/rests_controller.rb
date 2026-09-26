@@ -4,6 +4,7 @@ class RestsController < ApplicationController
   include CampaignScoped
 
   before_action :set_campaign
+  before_action :require_campaign_gm
 
   def create
     @campaign.rest!

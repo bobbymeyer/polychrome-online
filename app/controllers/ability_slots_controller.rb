@@ -4,6 +4,7 @@ class AbilitySlotsController < ApplicationController
   include CampaignScoped
 
   before_action :set_character
+  before_action :require_character_manager
 
   def update
     ids = params.fetch(:ability_slots, {}).permit(abilities: []).fetch(:abilities, []).compact_blank

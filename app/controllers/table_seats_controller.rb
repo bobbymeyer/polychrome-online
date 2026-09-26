@@ -7,8 +7,7 @@ class TableSeatsController < ApplicationController
   before_action :set_campaign
 
   def create
-    seat = params.expect(:seat)
-    take_table_seat(@campaign, seat) if seat == "gm" || @campaign.characters.exists?(id: seat)
+    claim_table_seat(@campaign, params.expect(:seat))
     redirect_to campaign_table_path(@campaign), status: :see_other
   end
 

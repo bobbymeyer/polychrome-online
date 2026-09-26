@@ -27,6 +27,13 @@
           <%= book_nav_link "Generators", world_generation_generator_tables_path(@world), :generation %>
         </nav>
       <% end %>
+      <% if current_user %>
+        <nav class="topbar__account" aria-label="Account">
+          <span><%= current_user.name %><%= tag.span(" · admin", class: "muted") if admin? %></span>
+          <% if admin? %><%= link_to "Accounts", users_path %><% end %>
+          <%= button_to "Sign out", session_path, method: :delete, class: "link-button", form: { class: "inline" } %>
+        </nav>
+      <% end %>
     </header>
 
     <main class="page">

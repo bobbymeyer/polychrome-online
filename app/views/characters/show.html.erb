@@ -49,6 +49,11 @@
     <h2>Equipment</h2>
     <% equipped = @character.equipped %>
     <% bag = @campaign.bag.map(&:item) %>
+    <% unless can_manage?(@character) %>
+      <dl class="facts">
+        <% Character::SLOTS.each do |slot| %><dt><%= term(slot) %></dt><dd><%= equipped[slot]&.item&.name || "—" %></dd><% end %>
+      </dl>
+    <% else %>
     <%= form_with url: character_equipment_path(@character), method: :patch, scope: :equipment, class: "book-form" do |f| %>
       <div class="stat-inputs equipment-inputs">
         <% Character::SLOTS.each do |slot| %>
@@ -62,6 +67,7 @@
       </div>
       <p class="hint">Choices come from the party bag, limited to what a <%= @character.job.name %> can use.</p>
       <%= f.submit "Update equipment", class: "button" %>
+    <% end %>
     <% end %>
   </section>
 
@@ -85,6 +91,8 @@
       <p class="empty"><%= @character.job.name %> has no free slots.</p>
     <% elsif slottable.empty? %>
       <p class="empty">Learn abilities in other jobs to bring them here.</p>
+    <% elsif !can_manage?(@character) %>
+      <ul class="refs refs--inline"><% @character.slotted_abilities.compact.each do |ability| %><li><%= ability.name %></li><% end %></ul>
     <% else %>
       <% slotted = @character.slotted_abilities %>
       <%= form_with url: character_ability_slots_path(@character), method: :patch, scope: :ability_slots, class: "book-form" do |f| %>
@@ -117,6 +125,7 @@
         <% end %>
       </tbody>
     </table>
+    <% if can_manage?(@character) %>
     <%= form_with url: character_job_path(@character), method: :patch, class: "book-form inline-form" do |f| %>
       <div class="field">
         <%= f.label :job_id, "Change job" %>
@@ -125,8 +134,10 @@
       <%= f.submit "Change job", class: "button" %>
     <% end %>
     <p class="hint">Changing job keeps each job's ABP. Gear the new job can't use goes back to the bag.</p>
+    <% end %>
   </section>
 
+  <% if can_gm?(@campaign) %>
   <details class="window">
     <summary>GM: grant EXP / ABP</summary>
     <%= form_with url: character_grant_path(@character), scope: :grant, class: "book-form inline-form" do |f| %>
@@ -135,10 +146,13 @@
       <%= f.submit "Grant", class: "button" %>
     <% end %>
   </details>
+  <% end %>
 </article>
 
+<% if can_manage?(@character) %>
 <div class="actions">
   <%= link_to "Edit", edit_character_path(@character), class: "button" %>
   <%= button_to "Remove from party", character_path(@character), method: :delete, class: "button button--danger",
                 form: { data: { turbo_confirm: "Remove #{@character.name}? Their gear goes back to the bag." } } %>
 </div>
+<% end %>

@@ -11,6 +11,8 @@ class ArtBatchesController < ApplicationController
 
   def create
     entry, subject = target
+    return forbid unless can_generate?(entry)
+
     subject.update!(params.fetch(:entry, {}).permit(:art_notes, art_loras: {}))
     # A speaker shows one strip at a time, whichever expression it is for.
     ArtBatch.where(entry: subject.portraits).destroy_all if entry.is_a?(Portrait)
@@ -22,6 +24,8 @@ class ArtBatchesController < ApplicationController
   def destroy
     batch = @world.art_batches.find(params[:id])
     entry = batch.entry
+    return forbid unless can_generate?(entry)
+
     batch.destroy!
     redirect_to entry_page(entry, anchor: "art")
   end

@@ -1,0 +1,26 @@
+<% content_for :title, "Accounts" %>
+<header class="book-header"><h1>Accounts</h1></header>
+<p class="prose">Admins build the world, make the art, start campaigns and can GM any of them. Everyone else plays their own characters, and GMs the campaigns you give them (on the campaign's edit page).</p>
+<table class="book-table">
+  <thead><tr><th>Name</th><th>Email</th><th>GMs</th><th class="num">Characters</th><th>Admin</th><th></th></tr></thead>
+  <tbody>
+    <% @users.each do |user| %>
+      <tr id="<%= dom_id(user) %>">
+        <td><strong><%= user.name %></strong><%= " (you)" if user == current_user %></td>
+        <td><%= user.email_address %></td>
+        <td><%= user.gm_campaigns.map(&:name).to_sentence.presence || "—" %></td>
+        <td class="num"><%= user.characters.size %></td>
+        <td>
+          <%= button_to user.admin? ? "Admin" : "Make admin", user_path(user), method: :patch, params: { user: { admin: !user.admin? } },
+                        class: [ "pin", ("is-pinned" if user.admin?) ], title: user.admin? ? "Take admin away" : "Make an admin" %>
+        </td>
+        <td>
+          <% unless user == current_user %>
+            <%= button_to "Remove", user_path(user), method: :delete, class: "link-button",
+                          form: { data: { turbo_confirm: "Remove #{user.name}'s account? Their characters stay, with nobody playing them." } } %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

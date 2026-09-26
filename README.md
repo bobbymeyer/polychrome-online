@@ -28,6 +28,8 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   prompt is composed in layers (world, content type, subject, and a portrait's
   expression), and each layer can add LoRAs. You pick from a strip of
   candidates, and the winner keeps its seed and recipe.
+- **Accounts:** a login, with the first account as admin. A campaign has a GM
+  account and characters belong to players. See "Accounts".
 - **Presentation:** starts Swiss instead of SNES and diverges where play needs
   it, per [`docs/DESIGN.md`](docs/DESIGN.md). Inter
   in black on white, a 12-column grid, geometry for state, grey controls and red for
@@ -98,9 +100,10 @@ other browsers and have each player take a seat.
 - **Input timer.** It is a `BattleTimeoutJob` scheduled for the round's
   deadline. When it fires, missing commands default to each unit's last one,
   or Attack.
-- **Seats need no accounts yet.** A seat (GM or a party member) is remembered
-  in the session, and anyone can take any seat. The server does enforce that
-  a player can only command their own unit and only the GM can override.
+- **Seats follow accounts** (see "Accounts"). The GM seat is the campaign
+  GM's or an admin's, and a party member's seat is its player's. The server
+  enforces that a player only commands their own unit and only the GM can
+  override.
 - **Art comes from the books.** A unit's sprite is its monster's or job's
   image slot, with the variant recipe applied; without an image it shows a
   lettered plate. Sprite rips go in through those image slots (stored
@@ -253,6 +256,32 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   books live, so editing the Bestiary changes live campaigns, as §9.8 warns.
   The unused `campaigns.world_version` column is the seam for when a second
   author makes that matter (§1: no edition tooling until then).
+
+## Accounts
+
+Everything needs an account, except signing in, making an account,
+resetting a password, and `/up`. Sign-in is the Rails 8 authentication
+generator (email and password, with `bcrypt`), plus a sign-up page.
+
+| Who | What they can do |
+| --- | --- |
+| **Admin** (the first account ever made) | Everything: the books, worlds, art direction and book art. Starts campaigns (and GMs them) and can GM any campaign. Manages accounts on the Accounts page. |
+| **A campaign's GM** (whoever an admin picks on the campaign's edit page) | Runs that campaign: the GM seat, map, flags, locations, battles, NPCs, the bag, rests, EXP grants, starting levels, and generating its speakers' portraits. |
+| **Player** (anyone else) | Makes characters, which start at the party's lowest level. Sits as, equips and levels their own characters. Reads the books. |
+
+- **Admin rules.** Anyone can be made an admin. The last admin can't be
+  demoted or removed.
+- **Claiming.** A character with no owner, such as one made before
+  accounts existed, becomes yours when you sit as them. Campaigns made
+  before accounts have no GM until an admin picks one; admins run them
+  meanwhile.
+- **Enforcement.** Pages hide what you can't do, and the server refuses it
+  anyway. Seats are re-checked against the account on every request.
+- **On a fresh deploy, make your account first.** Whoever signs up first
+  becomes the admin.
+- **Password reset emails** need Action Mailer configured for production
+  (SMTP settings, and a `from` address in `ApplicationMailer`). Until then,
+  an admin can't reset anyone's password from the app.
 
 ## Art (the asset pipeline)
 

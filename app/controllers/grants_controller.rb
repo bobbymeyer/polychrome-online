@@ -5,6 +5,7 @@ class GrantsController < ApplicationController
   include CampaignScoped
 
   before_action :set_character
+  before_action :require_campaign_gm
 
   def create
     grant = params.expect(grant: %i[exp abp])

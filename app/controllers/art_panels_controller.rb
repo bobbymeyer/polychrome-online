@@ -9,8 +9,13 @@ class ArtPanelsController < ApplicationController
 
   def show
     if speaker_request?
-      render partial: "art_batches/portraits", locals: { owner: art_speaker }
+      owner = art_speaker
+      return head :forbidden unless can_gm?(owner.campaign)
+
+      render partial: "art_batches/portraits", locals: { owner: owner }
     else
+      return head :forbidden unless admin?
+
       render partial: "art_batches/studio", locals: { entry: art_entry }
     end
   end

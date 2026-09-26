@@ -2,6 +2,7 @@
 
 # A world's page is the table of contents of its books.
 class WorldsController < ApplicationController
+  before_action :require_admin, except: %i[index show]
   before_action :set_world, only: %i[show edit update]
 
   def index

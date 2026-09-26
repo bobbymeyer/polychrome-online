@@ -12,6 +12,7 @@
       <%= f.label :job_id, "Starting job" %>
       <%= f.select :job_id, @world.jobs.order(:name).map { |j| [ j.name, j.id ] } %>
     </div>
+    <% if can_gm?(@campaign) %>
     <div class="field">
       <%= f.label :starting_level, "Level" %>
       <%= f.number_field :starting_level, min: 1, max: Stats::Growth::MAX_LEVEL %>
@@ -21,7 +22,11 @@
       <%= f.number_field :starting_job_level, min: 0 %>
       <p class="hint">Starts with that much of the job's learn table already learned.</p>
     </div>
+    <% end %>
   </div>
+  <% unless can_gm?(@campaign) %>
+    <p class="hint">A new character starts at the party's lowest level; the GM can grant more.</p>
+  <% end %>
   <div class="actions">
     <%= f.submit "Create character", class: "button" %>
     <%= link_to "Cancel", campaign_path(@campaign), class: "button button--quiet" %>
