@@ -103,6 +103,12 @@ other browsers and have each player take a seat.
   Two players can't both queue the last one. An absent player never
   defaults to an item. When the battle ends, whatever was used comes out of
   the bag. Gear never comes into battle.
+- **Items outside battle.** From a character's sheet, that character can use
+  a healing or reviving item from the bag on anyone in the party.
+  `Battle::Field` runs the same effect formulas, using the campaign's seeded
+  RNG, so a Potion heals the same as in battle. Cures only work in battle,
+  where statuses exist. Using items outside battle is blocked while a battle
+  is on, because its settlement writes HP back.
 - **Input timer.** It is a `BattleTimeoutJob` scheduled for the round's
   deadline. When it fires, missing commands default to each unit's last one,
   or Attack.
@@ -431,6 +437,4 @@ resulting `hp`, so the view never computes an outcome.
 
 ## Not in yet (deliberately)
 
-Using items outside battle (from the character sheet), and selling gear
-someone is wearing. All the numbers are first guesses (§9.2) and will change
-in playtesting.
+All the numbers are first guesses (§9.2) and will change in playtesting.
