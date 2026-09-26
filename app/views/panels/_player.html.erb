@@ -15,13 +15,35 @@
 <% elsif !Battle::State.able_to_act(state).include?(unit["id"]) %>
   <p>You can't act this round (<%= unit["statuses"].map { |s| s["kind"].humanize }.to_sentence %>).</p>
 <% elsif @choosing %>
+  <% item = @choosing["kind"] == "item" %>
   <div data-choosing>
     <p class="command-panel__prompt"><strong><%= @choosing["name"] %></strong>: choose a target.</p>
     <div class="menu play">
       <% (Battle::State.target_options(state, unit, @choosing) || []).each do |target_id| %>
+        <% command = item ? { kind: "item", item: @choosing["id"], target: target_id } : { kind: "ability", ability: @choosing["id"], target: target_id } %>
         <%= button_to unit_name(state, target_id), battle_actions_path(@battle), class: "menu__item",
-                      data: { unit_id: target_id, help: target_help(@battle, state, target_id) },
-                      params: { command: { kind: "ability", ability: @choosing["id"], target: target_id } } %>
+                      data: { unit_id: target_id, help: target_help(@battle, state, target_id) }, params: { command: command } %>
+      <% end %>
+    </div>
+    <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
+    <%= link_to "Back", battle_panel_path(@battle, (item ? { items: 1 } : {})), class: "link-button", data: { menu_back: true } %>
+  </div>
+<% elsif @item_menu %>
+  <div data-choosing>
+    <p class="command-panel__prompt"><strong>Items</strong>: shared by the whole party.</p>
+    <div class="menu play">
+      <% state.fetch("items", {}).each_value do |it| %>
+        <% left = Battle::State.items_left(state, it["id"], except: unit["id"]) %>
+        <% label = safe_join([ it["name"], tag.span("×#{left}", class: "menu__cost") ], " ") %>
+        <% help = item_help(it, left) %>
+        <% if left <= 0 %>
+          <button type="button" class="menu__item" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= it['name'] %>"><%= label %></button>
+        <% elsif Battle::State.target_options(state, unit, it) %>
+          <%= link_to label, battle_panel_path(@battle, item: it["id"]), class: "menu__item", data: { help: help, menu_key: it["name"] } %>
+        <% else %>
+          <%= button_to label, battle_actions_path(@battle), class: "menu__item", data: { help: help, menu_key: it["name"] },
+                        params: { command: { kind: "item", item: it["id"] } } %>
+        <% end %>
       <% end %>
     </div>
     <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
@@ -29,7 +51,7 @@
   </div>
 <% elsif command && !params[:change] %>
   <p>
-    Ready: <strong><%= command["kind"] == "ability" ? ability_name(state, command["ability"]) : command["kind"].humanize %></strong>
+    Ready: <strong><%= case command["kind"] when "ability" then ability_name(state, command["ability"]) when "item" then item_name(state, command["item"]) else command["kind"].humanize end %></strong>
     <% if command["target"] %>→ <%= unit_name(state, command["target"]) %><% end %>.
     Waiting for <%= (@battle.awaiting_input.map { |id| unit_name(state, id) }.to_sentence.presence || "the round to run") %>.
   </p>
@@ -48,6 +70,11 @@
       <% else %>
         <%= button_to label, battle_actions_path(@battle), class: "menu__item", data: { help: help, menu_key: ability["name"] },
                       params: { command: { kind: "ability", ability: ability["id"] } } %>
+      <% end %>
+    <% end %>
+    <% if state.fetch("items", {}).any? %>
+      <%= link_to battle_panel_path(@battle, items: 1), class: "menu__item", data: { help: "Use something from the party's bag.", menu_key: "Item" } do %>
+        Item <span class="menu__cost">×<%= state["items"].values.sum { |i| Battle::State.items_left(state, i["id"], except: unit["id"]) } %></span>
       <% end %>
     <% end %>
     <%= button_to "Defend", battle_actions_path(@battle), class: "menu__item", data: { help: "Halve the damage you take this round." },

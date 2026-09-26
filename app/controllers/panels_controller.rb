@@ -9,7 +9,10 @@ class PanelsController < ApplicationController
   before_action :set_battle
 
   def show
-    @choosing = @battle.state["abilities"][params[:ability]] if params[:ability]
+    state = @battle.state
+    @choosing = state["abilities"][params[:ability]] if params[:ability]
+    @choosing = state.fetch("items", {})[params[:item]]&.merge("kind" => "item") if params[:item]
+    @item_menu = params[:items].present?
     render layout: false
   end
 end

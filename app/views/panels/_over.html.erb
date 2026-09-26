@@ -2,6 +2,10 @@
 <% settlement = @battle.settlement || {} %>
 <h2><%= result.fetch(@battle.status, @battle.status.humanize) %></h2>
 
+<% if settlement["used"].present? %>
+  <p>Used <%= settlement["used"].map { |name, n| "#{n} × #{name}" }.to_sentence %>.</p>
+<% end %>
+
 <% if settlement["result"] == "victory" %>
   <ul class="refs">
     <% if settlement["gil"].to_i.positive? %><li><%= settlement["gil"] %> gil for the party</li><% end %>

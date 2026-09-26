@@ -94,6 +94,11 @@ Rails.application.routes.draw do
       post :take_treasure
       post :revert
     end
+    # A town's shop: buy from its stock, sell from the bag.
+    resource :shop, only: [] do
+      post :buy
+      post :sell
+    end
   end
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"
 

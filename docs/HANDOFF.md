@@ -46,6 +46,7 @@ Ability effects are a fixed set of named formulas with parameters. First set:
 - `buff(stat, amount, duration)` / `debuff(...)`
 - `revive(fraction)`
 - `escape`
+- `cleanse(kind)`: cure one status, or every harmful one when no kind is named. Added when the base world needed cures (Antidote, Remedy, Esuna).
 
 Plus targeting: `self`, `single_ally`, `single_enemy`, `all_allies`, `all_enemies`, `random_enemy`. Add primitives only when the base world needs one. No expression language.
 

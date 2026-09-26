@@ -10,7 +10,7 @@ module Battle
 
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
-  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape].freeze
+  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse].freeze
 
   # Parameters each primitive takes, split into required and optional
   # (optional ones have defaults in Battle::Effects). String-valued params
@@ -24,15 +24,19 @@ module Battle
     "buff" => { required: %w[stat amount], optional: %w[duration] },
     "debuff" => { required: %w[stat amount], optional: %w[duration] },
     "revive" => { required: [], optional: %w[fraction] },
-    "escape" => { required: [], optional: [] }
+    "escape" => { required: [], optional: [] },
+    # Cures one named status, or every harmful one when none is named.
+    "cleanse" => { required: [], optional: %w[kind] }
   }.freeze
   PRIMITIVE_STRING_PARAMS = %w[element kind stat].freeze
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
   ELEMENTS = %w[fire ice bolt water wind earth holy dark].freeze
   AFFINITIES = %w[weak resist immune absorb].freeze
   STATUSES = %w[poison sleep paralyze silence blind haste slow].freeze
+  # What a cleanse with no kind cures: everything but the good ones.
+  HARMFUL_STATUSES = (STATUSES - %w[haste]).freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
-  COMMAND_KINDS = %w[ability defend flee].freeze
+  COMMAND_KINDS = %w[ability item defend flee].freeze
   SIDES = %w[party enemy].freeze
 
   # Statuses that stop a unit from taking its turn (and from being asked
@@ -66,12 +70,23 @@ module Battle
     # party:     [{ id:, name:, stats:, abilities: [...], elements: {}, status_immune: [] , hp:, mp: }]
     # enemies:   same shape plus ai: [rules], rewards: {}, and optional count: n
     # abilities: { "fire" => { name:, kind:, target:, cost: { mp: }, effects: [...] } }
-    def build(seed:, party:, enemies:, abilities: {}, escapable: true)
+    # items:     the party's usable items, shared by everyone in it:
+    #            { "potion" => { name:, target:, effects: [...], count: 3 } }
+    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {})
       library = normalize(abilities)
       library["attack"] ||= normalize(ATTACK)
       library.each do |id, ability|
         ability["id"] = id
         validate_ability!(ability)
+      end
+
+      bag = normalize(items).to_h do |id, item|
+        item["id"] = id
+        validate_ability!(item.merge("kind" => "skill"))
+        count = item.fetch("count", 0)
+        raise ArgumentError, "#{id}: count must be a whole number of at least 0" unless count.is_a?(Integer) && count >= 0
+
+        [ id, item.slice("id", "name", "target", "effects").merge("count" => count) ]
       end
 
       units = normalize(party).map { |spec| unit(spec, "party") }
@@ -93,6 +108,7 @@ module Battle
         "status" => "input",
         "escapable" => escapable ? true : false,
         "abilities" => library,
+        "items" => bag,
         "units" => units,
         "inputs" => {}
       }
@@ -178,6 +194,17 @@ module Battle
       ability["effects"].any? { |e| e["primitive"] == "revive" }
     end
 
+    # How many of an item the party can still commit to this round: the
+    # count, less what other members have already queued. (Items are shared,
+    # so two players can't both spend the last Potion.)
+    def items_left(state, item_id, except: nil)
+      item = state.fetch("items", {})[item_id]
+      return 0 unless item
+
+      queued = state["inputs"].count { |id, cmd| id != except && cmd["kind"] == "item" && cmd["item"] == item_id }
+      item["count"] - queued
+    end
+
     # Unit ids a player may pick as the target, or nil when the ability's
     # targeting needs no choice (self, all, random).
     def target_options(state, unit, ability)
@@ -219,6 +246,8 @@ module Battle
           raise ArgumentError, "#{id}: unknown element #{effect['element']}" unless ELEMENTS.include?(effect["element"])
         when "status"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" unless STATUSES.include?(effect["kind"])
+        when "cleanse"
+          raise ArgumentError, "#{id}: unknown status #{effect['kind']}" if effect["kind"] && !STATUSES.include?(effect["kind"])
         when "buff", "debuff"
           raise ArgumentError, "#{id}: cannot modify #{effect['stat']}" unless Stats::MODIFIABLE.include?(effect["stat"])
         end

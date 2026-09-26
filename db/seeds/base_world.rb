@@ -108,7 +108,10 @@ module Seeds
                     description: "A bite that keeps hurting." },
       howl: { name: "Howl", kind: "skill", target: "all_allies", mp_cost: 0, gesture: "shake",
               effects: [ { primitive: "buff", stat: "agi", amount: 30, duration: 3 } ],
-              description: "The pack moves faster together." }
+              description: "The pack moves faster together." },
+      esuna: { name: "Esuna", kind: "magic", target: "single_ally", mp_cost: 5, gesture: "float",
+               effects: [ { primitive: "cleanse" } ],
+               description: "Lifts every affliction from one ally." }
     }.freeze
 
     ITEMS = {
@@ -120,6 +123,14 @@ module Seeds
                    effects: [ { primitive: "heal", power: 80 } ], description: "Restores a good deal of HP." },
       smoke_pellet: { name: "Smoke Pellet", category: "consumable", price: 80, target: "self",
                       effects: [ { primitive: "escape" } ], description: "For when the plan was bad." },
+      antidote: { name: "Antidote", category: "consumable", price: 50, target: "single_ally",
+                  effects: [ { primitive: "cleanse", kind: "poison" } ], description: "Bitter, and it works." },
+      eye_drops: { name: "Eye Drops", category: "consumable", price: 50, target: "single_ally",
+                   effects: [ { primitive: "cleanse", kind: "blind" } ], description: "Clears the eyes of darkness." },
+      echo_screen: { name: "Echo Screen", category: "consumable", price: 50, target: "single_ally",
+                     effects: [ { primitive: "cleanse", kind: "silence" } ], description: "Gives a silenced throat back its voice." },
+      remedy: { name: "Remedy", category: "consumable", price: 250, target: "single_ally",
+                effects: [ { primitive: "cleanse" } ], description: "Cures everything that ails you, except being down." },
       broadsword: { name: "Broadsword", category: "sword", price: 200, stats: { atk: 14 },
                     description: "A plain, honest blade." },
       dagger: { name: "Dagger", category: "knife", price: 120, stats: { atk: 9, agi: 2 },
@@ -168,7 +179,7 @@ module Seeds
                     stat_multipliers: { max_hp: 80, max_mp: 140, mag: 120, spr: 130, str: 60 },
                     equip_categories: %w[staff robe hat accessory],
                     innates: [ { stat: "mdef", percent: 20 } ],
-                    levels: [ [ "cure", 10 ], [ "silence", 20 ], [ "cura", 40 ], [ "haste", 50 ], [ "raise", 80 ] ] }
+                    levels: [ [ "cure", 10 ], [ "silence", 20 ], [ "esuna", 30 ], [ "cura", 40 ], [ "haste", 50 ], [ "raise", 80 ] ] }
     }.freeze
 
     MONSTERS = {
@@ -285,7 +296,8 @@ module Seeds
                               { text: "Warehouse", width: 95, height: 55, roof: "flat" },
                               { text: "Windmill", width: 40, height: 100, roof: "peak" } ] },
       shop_stock: { name: "General store stock", kind: "stock",
-                    entries: %w[potion hi_potion phoenix_down smoke_pellet broadsword dagger rod staff buckler leather_cap cotton_robe]
+                    entries: %w[potion hi_potion phoenix_down smoke_pellet antidote eye_drops echo_screen remedy
+                                broadsword dagger rod staff buckler leather_cap cotton_robe]
                                .map { |item| { item: item } } },
       rooms: { name: "Room names", kind: "rooms",
                entries: texts("Flooded Hall", "Ossuary", "Collapsed Stair", "Crystal Chamber", "Guardroom", "Cistern",

@@ -97,6 +97,12 @@ other browsers and have each player take a seat.
 - **Command panel.** Each seat has its own panel, a Turbo Frame that reloads
   after each beat. After an action, the response is a placeholder with no
   battle state in it, so the panel can't spoil a round before it has played.
+- **Items.** A battle starts with the party's usable items from the campaign
+  bag (`state["items"]`, counts shared by the whole party). "Item" is a
+  command like an ability: it has no MP cost and silence doesn't stop it.
+  Two players can't both queue the last one. An absent player never
+  defaults to an item. When the battle ends, whatever was used comes out of
+  the bag. Gear never comes into battle.
 - **Input timer.** It is a `BattleTimeoutJob` scheduled for the round's
   deadline. When it fires, missing commands default to each unit's last one,
   or Attack.
@@ -204,6 +210,11 @@ Each campaign has a map (`/campaigns/:id/map`), and the table shows it too.
 ## Towns and dungeons
 
 A map place can hold a **location**, rolled from a Gazetteer template (§7).
+
+- **Shops.** A town with a shop sells its stock for party gil and buys items
+  back from the bag at half price (`ShopsController`, `Campaign#buy!` and
+  `#sell!`). Players can only shop in the town where the party is; the GM
+  can shop anywhere. Every purchase and sale is announced at the table.
 
 - **Stored:** only template + seed + GM overrides. What the location contains
   is generated from those on every view, by the pure `Generators::Town` and
@@ -418,6 +429,6 @@ resulting `hp`, so the view never computes an outcome.
 
 ## Not in yet (deliberately)
 
-Using items in battle (consumables sit in the bag for now), shops, and a way
-to cure a status: the primitive set has no cleanse yet (§3.1). All the numbers
-are first guesses (§9.2) and will change in playtesting.
+Using items outside battle (from the character sheet), and selling gear
+someone is wearing. All the numbers are first guesses (§9.2) and will change
+in playtesting.

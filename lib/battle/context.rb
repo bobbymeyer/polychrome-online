@@ -41,6 +41,10 @@ module Battle
       state["abilities"][id] or raise InvalidAction, "no ability #{id.inspect}"
     end
 
+    def item(id)
+      state.fetch("items", {})[id] or raise InvalidAction, "the party has no #{id.inspect}"
+    end
+
     def over?
       state["status"] != "input"
     end

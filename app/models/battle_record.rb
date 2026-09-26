@@ -38,7 +38,7 @@ class BattleRecord < ApplicationRecord
   def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil)
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
-    state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable)
+    state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items)
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
                      input_seconds: input_seconds)
     battle.open_round!
@@ -135,7 +135,7 @@ class BattleRecord < ApplicationRecord
       characters[unit["id"]]&.update!(hp: unit["hp"], mp: unit["mp"])
     end
 
-    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [] }
+    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items! }
     victory = events.find { |e| e["type"] == "victory" }
     if victory
       rewards = victory["rewards"]
@@ -159,8 +159,24 @@ class BattleRecord < ApplicationRecord
     announce!(settlement_line(summary))
   end
 
+  # Items used in battle come out of the bag. Returns { "Potion" => 2 }.
+  def use_up_items!
+    carried = initial_state.fetch("items", {})
+    return {} if carried.empty?
+
+    items = world.items.where(slug: carried.keys).index_by(&:slug)
+    carried.each_with_object({}) do |(slug, item), used|
+      n = item["count"] - state.dig("items", slug, "count").to_i
+      next unless n.positive? && items[slug]
+
+      campaign.use_items!(items[slug], n)
+      used[item["name"]] = n
+    end
+  end
+
   def settlement_line(summary)
     parts = [ { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." }.fetch(summary["result"], "It's over.") ]
+    parts << "Used #{summary['used'].map { |name, n| "#{n} × #{name}" }.to_sentence}." if summary["used"].present?
     parts << "#{summary['gil']} gil." if summary["gil"].positive?
     parts << "Found #{summary['drops'].to_sentence}." if summary["drops"].any?
     summary["members"].each do |member|

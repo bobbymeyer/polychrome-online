@@ -46,6 +46,16 @@ class Item < ApplicationRecord
     super(Ability.normalize_effects(rows))
   end
 
+  # The engine's view of a consumable the party carries (Battle::State.build items:).
+  def to_engine(count)
+    { "name" => name, "target" => target, "effects" => effects, "count" => count }
+  end
+
+  # Selling back fetches half the price.
+  def resale_price
+    price / 2
+  end
+
   # Stats::Derivation equipment piece.
   def to_equipment
     { "stats" => stats }

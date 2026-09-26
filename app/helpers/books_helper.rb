@@ -54,6 +54,7 @@ module BooksHelper
     when "debuff" then "#{stat_label(e['stat'])} −#{e['amount']}% for #{e.fetch('duration', 3)} turns"
     when "revive" then "Revive at #{e.fetch('fraction', 25)}% HP"
     when "escape" then "Escape from battle"
+    when "cleanse" then e["kind"] ? "Cure #{term(e['kind']).downcase}" : "Cure every harmful status"
     else e.to_s
     end
   end
