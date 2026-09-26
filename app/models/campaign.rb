@@ -5,6 +5,7 @@
 # diffs and edition pins arrive with build step 8.
 class Campaign < ApplicationRecord
   belongs_to :world
+  belongs_to :gm, class_name: "User", optional: true
   has_many :characters, dependent: :destroy
   has_many :inventories, dependent: :delete_all
   has_many :battles, class_name: "BattleRecord", dependent: :destroy

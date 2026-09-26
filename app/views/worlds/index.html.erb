@@ -1,7 +1,7 @@
 <% content_for :title, "Worlds" %>
 <div class="book-header">
   <h1>Worlds</h1>
-  <%= link_to "New world", new_world_path, class: "button" %>
+  <%= link_to "New world", new_world_path, class: "button" if admin? %>
 </div>
 <% if @worlds.empty? %>
   <p class="empty">No worlds yet. Run <code>bin/rails db:seed</code> for the base world.</p>

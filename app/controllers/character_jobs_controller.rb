@@ -5,6 +5,7 @@ class CharacterJobsController < ApplicationController
   include CampaignScoped
 
   before_action :set_character
+  before_action :require_character_manager
 
   def update
     job = @world.jobs.find(params.expect(:job_id))

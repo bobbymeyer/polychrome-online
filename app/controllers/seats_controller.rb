@@ -7,7 +7,11 @@ class SeatsController < ApplicationController
 
   def create
     seat = params.expect(:seat)
-    take_seat(seat) if seat == "gm" || @battle.unit(seat)&.dig("side") == "party"
+    if may_sit?(seat)
+      character = seat_character(seat)
+      character.update!(user: current_user) if character && character.user_id.nil?
+      take_seat(seat)
+    end
     redirect_to battle_panel_path(@battle)
   end
 

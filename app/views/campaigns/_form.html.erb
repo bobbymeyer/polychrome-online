@@ -4,6 +4,12 @@
     <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
     <% if campaign.persisted? %>
       <div class="field"><%= f.label :gil, "Party gil" %><%= f.number_field :gil, min: 0 %></div>
+      <% if admin? %>
+        <div class="field">
+          <%= f.label :gm_id, "GM" %>
+          <%= f.select :gm_id, User.alphabetical.map { |u| [ u.name, u.id ] }, include_blank: "Nobody (admins run it)" %>
+        </div>
+      <% end %>
     <% end %>
   </div>
   <div class="actions">

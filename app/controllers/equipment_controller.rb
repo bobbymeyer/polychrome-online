@@ -6,6 +6,7 @@ class EquipmentController < ApplicationController
   include CampaignScoped
 
   before_action :set_character
+  before_action :require_character_manager
 
   def update
     choices = params.expect(equipment: Character::SLOTS).to_h

@@ -1,5 +1,5 @@
 <% content_for :title, "Edit #{@character.name}" %>
-<%= turbo_stream_from @character, :art %>
+<%= turbo_stream_from @character, :art if can_gm?(@campaign) %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= link_to @character.name_in_database, character_path(@character) %> / Edit</div>
 <h1>Edit <%= @character.name_in_database %></h1>
 <%= form_with model: @character, url: character_path(@character), class: "book-form", multipart: true do |f| %>
@@ -7,6 +7,12 @@
   <div class="field-row">
     <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
     <div class="field"><%= f.label :player_name, "Player" %><%= f.text_field :player_name %></div>
+    <% if can_gm?(@campaign) %>
+      <div class="field">
+        <%= f.label :user_id, "Player's account" %>
+        <%= f.select :user_id, User.alphabetical.map { |u| [ u.name, u.id ] }, include_blank: "Nobody yet" %>
+      </div>
+    <% end %>
   </div>
   <%= render "portraits/fields", owner: @character %>
   <div class="actions">
@@ -14,4 +20,4 @@
     <%= link_to "Cancel", character_path(@character), class: "button button--quiet" %>
   </div>
 <% end %>
-<%= render "art_batches/portraits", owner: @character %>
+<%= render "art_batches/portraits", owner: @character if can_gm?(@campaign) %>

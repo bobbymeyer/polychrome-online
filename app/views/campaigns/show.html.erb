@@ -8,10 +8,12 @@
   <div class="actions">
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
     <%= link_to "Map", campaign_map_path(@campaign), class: "button button--quiet" %>
+    <% if can_gm?(@campaign) %>
     <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" %>
     <%= button_to "Rest at an inn", campaign_rest_path(@campaign), class: "button button--quiet",
                   form: { data: { turbo_confirm: "Restore everyone to full HP and MP?" } } %>
     <%= link_to "Edit", edit_campaign_path(@campaign), class: "button button--quiet" %>
+    <% end %>
   </div>
 </div>
 
@@ -42,7 +44,7 @@
 <section>
   <div class="book-header">
     <h2>Cast</h2>
-    <%= link_to "New NPC", new_campaign_npc_path(@campaign), class: "button button--quiet" %>
+    <%= link_to "New NPC", new_campaign_npc_path(@campaign), class: "button button--quiet" if can_gm?(@campaign) %>
   </div>
   <% npcs = @campaign.npcs.order(:name) %>
   <% if npcs.empty? %>
@@ -50,13 +52,14 @@
   <% else %>
     <div class="roster-cards">
       <% npcs.each do |npc| %>
-        <%= link_to edit_npc_path(npc), class: "window character-card" do %>
+        <% card = capture do %>
           <%= speaker_portrait(npc, "neutral", size: :medium) %>
           <div>
             <h3><%= npc.name %></h3>
             <% if npc.title.present? %><p class="muted"><%= npc.title %></p><% end %>
           </div>
         <% end %>
+        <%= can_gm?(@campaign) ? link_to(card, edit_npc_path(npc), class: "window character-card") : tag.div(card, class: "window character-card") %>
       <% end %>
     </div>
   <% end %>
@@ -131,6 +134,7 @@
         </tbody>
       </table>
     <% end %>
+    <% if can_gm?(@campaign) %>
     <details>
       <summary>GM: add items</summary>
       <%= form_with url: campaign_inventories_path(@campaign), scope: :inventory, class: "book-form" do |f| %>
@@ -141,6 +145,7 @@
         <%= f.submit "Add to bag", class: "button" %>
       <% end %>
     </details>
+    <% end %>
   </section>
 
   <section class="window">

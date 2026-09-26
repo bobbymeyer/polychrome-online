@@ -5,6 +5,7 @@ class InventoriesController < ApplicationController
   include CampaignScoped
 
   before_action :set_campaign
+  before_action :require_campaign_gm
 
   def create
     entry = params.expect(inventory: %i[item_id quantity])

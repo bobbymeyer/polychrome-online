@@ -14,6 +14,7 @@ class Character < ApplicationRecord
   SLOTS = %w[weapon shield head body accessory].freeze
 
   belongs_to :campaign
+  belongs_to :user, optional: true
   belongs_to :job
   has_many :character_jobs, dependent: :destroy
   has_many :ability_slots, -> { order(:position) }, dependent: :destroy

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_200500) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_200503) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -165,7 +165,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200500) do
     t.integer "current_node_id"
     t.integer "rng", default: 0, null: false
     t.json "pending_encounter"
+    t.integer "gm_id"
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
+    t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["world_id"], name: "index_campaigns_on_world_id"
   end
 
@@ -194,8 +196,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200500) do
     t.datetime "updated_at", null: false
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
+    t.integer "user_id"
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
+    t.index ["user_id"], name: "index_characters_on_user_id"
   end
 
   create_table "encounter_tables", force: :cascade do |t|
@@ -462,6 +466,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200500) do
     t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
   end
 
+  create_table "sessions", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "email_address", null: false
+    t.string "password_digest", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "name"
+    t.boolean "admin", default: false, null: false
+    t.index ["email_address"], name: "index_users_on_email_address", unique: true
+  end
+
   create_table "worlds", force: :cascade do |t|
     t.string "name", null: false
     t.string "slug", null: false
@@ -489,11 +512,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200500) do
   add_foreign_key "battles", "campaigns"
   add_foreign_key "battles", "worlds"
   add_foreign_key "campaigns", "map_nodes", column: "current_node_id"
+  add_foreign_key "campaigns", "users", column: "gm_id", on_delete: :nullify
   add_foreign_key "campaigns", "worlds"
   add_foreign_key "character_jobs", "characters"
   add_foreign_key "character_jobs", "jobs"
   add_foreign_key "characters", "campaigns"
   add_foreign_key "characters", "jobs"
+  add_foreign_key "characters", "users", on_delete: :nullify
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"
@@ -521,4 +546,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200500) do
   add_foreign_key "monsters", "worlds"
   add_foreign_key "npcs", "campaigns"
   add_foreign_key "npcs", "locations"
+  add_foreign_key "sessions", "users"
 end

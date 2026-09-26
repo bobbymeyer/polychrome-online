@@ -6,6 +6,7 @@
 class BookEntriesController < ApplicationController
   class_attribute :entry_class, :book_title, :book_key
 
+  before_action :require_admin, except: %i[index show]
   before_action :set_world
   before_action :set_entry, only: %i[show edit update destroy]
 

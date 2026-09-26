@@ -3,7 +3,9 @@
 class CampaignsController < ApplicationController
   include TableSeat
 
+  before_action :require_admin, only: %i[new create]
   before_action :set_campaign, only: %i[show edit update]
+  before_action :require_campaign_gm, only: %i[edit update]
 
   def new
     @world = World.find_by!(slug: params[:world_slug])
@@ -12,7 +14,7 @@ class CampaignsController < ApplicationController
 
   def create
     @world = World.find_by!(slug: params[:world_slug])
-    @campaign = @world.campaigns.new(params.expect(campaign: %i[name]))
+    @campaign = @world.campaigns.new(params.expect(campaign: %i[name]).merge(gm: current_user))
     if @campaign.save
       redirect_to @campaign, notice: "#{@campaign.name} begins."
     else
@@ -28,7 +30,8 @@ class CampaignsController < ApplicationController
   def edit; end
 
   def update
-    if @campaign.update(params.expect(campaign: %i[name gil]))
+    # Only an admin hands a campaign to another GM.
+    if @campaign.update(params.expect(campaign: admin? ? %i[name gil gm_id] : %i[name gil]))
       redirect_to @campaign, notice: "#{@campaign.name} was updated."
     else
       render :edit, status: :unprocessable_content

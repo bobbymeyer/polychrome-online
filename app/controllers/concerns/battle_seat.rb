@@ -2,17 +2,17 @@
 
 # Who is sitting where at a battle: "gm", a party unit id, or nobody.
 #
-# There are no accounts yet, so a seat is just a choice remembered in the
-# session. Anyone can take any seat; this decides which controls a browser
-# sees, not who is allowed to see them. Without a battle seat, the seat at
-# the campaign's table carries over: the GM stays GM, and a character's
-# player controls that character's unit.
+# A seat is a choice remembered in the session, checked against the account
+# on every request: the GM seat is the campaign's GM's (a campaign-less
+# battle's is an admin's), and a party unit's seat its character's player's.
+# Without a battle seat, the seat at the campaign's table carries over: the
+# GM stays GM, and a character's player controls that character's unit.
 module BattleSeat
   extend ActiveSupport::Concern
   include TableSeat
 
   included do
-    helper_method :current_seat, :gm_seat?, :seat_unit
+    helper_method :current_seat, :gm_seat?, :seat_unit, :battle_gm?, :may_sit?
   end
 
   private
@@ -24,7 +24,24 @@ module BattleSeat
 
   def current_seat
     seat = session.dig(:seats, @battle.id.to_s) || seat_from_table
-    seat if seat == "gm" || @battle.unit(seat)&.dig("side") == "party"
+    seat if may_sit?(seat)
+  end
+
+  def may_sit?(seat)
+    return battle_gm? if seat == "gm"
+    return false unless @battle.unit(seat)&.dig("side") == "party"
+
+    character = seat_character(seat)
+    character.nil? || can_play?(character)
+  end
+
+  def battle_gm?
+    @battle.campaign ? can_gm?(@battle.campaign) : admin?
+  end
+
+  # The campaign character a party unit stands for, if any.
+  def seat_character(unit_id)
+    @battle.campaign&.characters&.find { |c| c.battle_unit_id == unit_id }
   end
 
   def seat_from_table

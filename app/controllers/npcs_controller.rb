@@ -6,6 +6,7 @@ class NpcsController < ApplicationController
 
   before_action :set_campaign, only: %i[new create]
   before_action :set_npc, only: %i[edit update destroy]
+  before_action :require_campaign_gm
 
   def new
     @npc = @campaign.npcs.new

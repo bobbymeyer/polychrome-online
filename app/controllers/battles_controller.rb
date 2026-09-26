@@ -7,6 +7,7 @@ class BattlesController < ApplicationController
   ENCOUNTER_SLOTS = 3
 
   before_action :set_campaign, only: %i[new create]
+  before_action :require_campaign_gm, only: %i[new create]
   before_action :set_battle, only: :show
 
   def new
