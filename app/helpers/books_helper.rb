@@ -69,8 +69,8 @@ module BooksHelper
     end
   end
 
-  # Field name for a jsonb key inside a form: monster[stats][str]
-  def jsonb_field_name(form, *keys)
+  # Field name for a JSON column key inside a form: monster[stats][str]
+  def json_field_name(form, *keys)
     form.object_name + keys.map { |k| "[#{k}]" }.join
   end
 

@@ -16,7 +16,7 @@ bin/rails server        # http://localhost:3000
 bin/rspec               # all specs; bin/ci also runs RuboCop, Brakeman and audits
 ```
 
-It needs PostgreSQL running locally.
+No database server needed: it's SQLite, with databases stored in `storage/`.
 
 ## Books
 
@@ -26,7 +26,7 @@ page with its stat block, prose, image and cross-references ("Used by",
 "Taught by", "Dropped by", "Equippable by").
 
 - The structured parts of an entry (stat blocks, effect lists, AI scripts,
-  drop tables) are stored as jsonb in exactly the shape the engine reads.
+  drop tables) are stored as JSON in exactly the shape the engine reads.
   Models validate them against the engine's own closed vocabularies:
   `Ability` asks `Battle::State.validate_ability!`, so the Grimoire can't hold
   an effect the resolver would reject.

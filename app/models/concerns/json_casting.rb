@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-# Form values arrive as strings; jsonb columns hold the engine's types.
+# Form values arrive as strings; JSON columns hold the engine's types.
 # Blank means "not set". A value that isn't a whole number is kept as-is so
 # validation can report it instead of silently becoming 0.
-module JsonbCasting
+module JsonCasting
   module_function
 
   def integer(value)

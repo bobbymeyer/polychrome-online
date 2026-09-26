@@ -37,8 +37,8 @@ module BookEntry
   def variant=(recipe)
     recipe = (recipe || {}).to_h.stringify_keys
     super({
-      "hue" => JsonbCasting.integer(recipe["hue"]),
-      "scale" => JsonbCasting.integer(recipe["scale"]),
+      "hue" => JsonCasting.integer(recipe["hue"]),
+      "scale" => JsonCasting.integer(recipe["scale"]),
       "flip" => ActiveModel::Type::Boolean.new.cast(recipe["flip"]) || nil
     }.compact.reject { |key, value| (key == "hue" && value.zero?) || (key == "scale" && value == 100) })
   end

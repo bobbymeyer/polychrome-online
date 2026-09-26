@@ -2,7 +2,7 @@
 
 # The setting layer's books (docs/HANDOFF.md §4). Every book table carries
 # world_id. Structured parts of an entry that the engine reads verbatim
-# (stat blocks, effect lists, AI scripts) are jsonb in the engine's own
+# (stat blocks, effect lists, AI scripts) are JSON in the engine's own
 # shape; the models validate them against the engine's closed vocabularies.
 class CreateBooks < ActiveRecord::Migration[8.1]
   def change
@@ -20,7 +20,7 @@ class CreateBooks < ActiveRecord::Migration[8.1]
       t.string :kind, null: false, default: "skill"
       t.string :target, null: false
       t.integer :mp_cost, null: false, default: 0
-      t.jsonb :effects, null: false, default: []
+      t.json :effects, null: false, default: []
       t.string :gesture
       t.text :description
       book_art(t)
@@ -34,9 +34,9 @@ class CreateBooks < ActiveRecord::Migration[8.1]
       t.string :name, null: false
       t.string :category, null: false
       t.integer :price, null: false, default: 0
-      t.jsonb :stats, null: false, default: {}
+      t.json :stats, null: false, default: {}
       t.string :target
-      t.jsonb :effects, null: false, default: []
+      t.json :effects, null: false, default: []
       t.text :description
       book_art(t)
       t.timestamps
@@ -47,9 +47,9 @@ class CreateBooks < ActiveRecord::Migration[8.1]
       t.references :world, null: false, foreign_key: true
       t.string :slug, null: false
       t.string :name, null: false
-      t.jsonb :stat_multipliers, null: false, default: {}
-      t.jsonb :equip_categories, null: false, default: []
-      t.jsonb :innates, null: false, default: []
+      t.json :stat_multipliers, null: false, default: {}
+      t.json :equip_categories, null: false, default: []
+      t.json :innates, null: false, default: []
       t.text :description
       book_art(t)
       t.timestamps
@@ -72,11 +72,11 @@ class CreateBooks < ActiveRecord::Migration[8.1]
       t.string :slug, null: false
       t.string :name, null: false
       t.integer :level, null: false, default: 1
-      t.jsonb :stats, null: false, default: {}
-      t.jsonb :elements, null: false, default: {}
-      t.jsonb :status_immune, null: false, default: []
-      t.jsonb :ai_script, null: false, default: []
-      t.jsonb :drops, null: false, default: []
+      t.json :stats, null: false, default: {}
+      t.json :elements, null: false, default: {}
+      t.json :status_immune, null: false, default: []
+      t.json :ai_script, null: false, default: []
+      t.json :drops, null: false, default: []
       t.integer :exp, null: false, default: 0
       t.integer :gil, null: false, default: 0
       t.integer :abp, null: false, default: 0
@@ -92,7 +92,7 @@ class CreateBooks < ActiveRecord::Migration[8.1]
   # §3.3 / §8: an image slot (Active Storage) plus a variant recipe, and the
   # columns the later generation pipeline will fill.
   def book_art(t)
-    t.jsonb :variant, null: false, default: {}
+    t.json :variant, null: false, default: {}
     t.integer :image_seed
     t.text :image_prompt
   end

@@ -17,7 +17,7 @@ class Job < ApplicationRecord
 
   # Percent per stat (120 = x1.2). Blank or 100 means unmodified.
   def stat_multipliers=(values)
-    super((values || {}).to_h.stringify_keys.transform_values { |v| JsonbCasting.integer(v) }.compact.reject { |_, v| v == 100 })
+    super((values || {}).to_h.stringify_keys.transform_values { |v| JsonCasting.integer(v) }.compact.reject { |_, v| v == 100 })
   end
 
   def equip_categories=(values)
@@ -26,11 +26,11 @@ class Job < ApplicationRecord
 
   # Rows of { stat, add, percent } — the Stats::Derivation passive shape.
   def innates=(rows)
-    super(JsonbCasting.rows(rows).filter_map do |row|
+    super(JsonCasting.rows(rows).filter_map do |row|
       next if row["stat"].blank?
 
-      { "stat" => row["stat"].to_s, "add" => JsonbCasting.integer(row["add"]),
-        "percent" => JsonbCasting.integer(row["percent"]) }.compact
+      { "stat" => row["stat"].to_s, "add" => JsonCasting.integer(row["add"]),
+        "percent" => JsonCasting.integer(row["percent"]) }.compact
     end)
   end
 
@@ -56,7 +56,7 @@ class Job < ApplicationRecord
   def multipliers_are_percentages
     unknown = stat_multipliers.keys - Stats::NAMES
     errors.add(:stat_multipliers, "has unknown stats: #{unknown.join(', ')}") if unknown.any?
-    bad = stat_multipliers.reject { |_, v| JsonbCasting.integer?(v) && v.between?(0, 500) }
+    bad = stat_multipliers.reject { |_, v| JsonCasting.integer?(v) && v.between?(0, 500) }
     errors.add(:stat_multipliers, "must be whole percents from 0 to 500 (#{bad.keys.join(', ')})") if bad.any?
   end
 
@@ -69,7 +69,7 @@ class Job < ApplicationRecord
     innates.each do |passive|
       errors.add(:innates, "#{passive['stat']} is not a stat") unless Stats::NAMES.include?(passive["stat"])
       values = passive.slice("add", "percent").values
-      errors.add(:innates, "#{passive['stat']} needs a whole-number add or percent") if values.empty? || !values.all? { |v| JsonbCasting.integer?(v) }
+      errors.add(:innates, "#{passive['stat']} needs a whole-number add or percent") if values.empty? || !values.all? { |v| JsonCasting.integer?(v) }
     end
   end
 end

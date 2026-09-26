@@ -11,15 +11,15 @@
       <div class="field-row">
         <div class="field">
           <label for="<%= f.object_name %>_variant_hue">Hue shift (°)</label>
-          <%= number_field_tag jsonb_field_name(f, :variant, :hue), f.object.variant["hue"], id: "#{f.object_name}_variant_hue", min: -180, max: 180 %>
+          <%= number_field_tag json_field_name(f, :variant, :hue), f.object.variant["hue"], id: "#{f.object_name}_variant_hue", min: -180, max: 180 %>
         </div>
         <div class="field">
           <label for="<%= f.object_name %>_variant_scale">Scale (%)</label>
-          <%= number_field_tag jsonb_field_name(f, :variant, :scale), f.object.variant["scale"], id: "#{f.object_name}_variant_scale", min: 25, max: 400, placeholder: 100 %>
+          <%= number_field_tag json_field_name(f, :variant, :scale), f.object.variant["scale"], id: "#{f.object_name}_variant_scale", min: 25, max: 400, placeholder: 100 %>
         </div>
         <div class="field field--check">
-          <%= hidden_field_tag jsonb_field_name(f, :variant, :flip), "0", id: nil %>
-          <%= check_box_tag jsonb_field_name(f, :variant, :flip), "1", f.object.variant["flip"], id: "#{f.object_name}_variant_flip" %>
+          <%= hidden_field_tag json_field_name(f, :variant, :flip), "0", id: nil %>
+          <%= check_box_tag json_field_name(f, :variant, :flip), "1", f.object.variant["flip"], id: "#{f.object_name}_variant_flip" %>
           <label for="<%= f.object_name %>_variant_flip">Flip</label>
         </div>
       </div>

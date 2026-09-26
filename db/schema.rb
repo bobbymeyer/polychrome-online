@@ -11,20 +11,17 @@
 # It's strongly recommended that you check this file into your version control system.
 
 ActiveRecord::Schema[8.1].define(version: 2026_09_26_150000) do
-  # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_catalog.plpgsql"
-
   create_table "abilities", force: :cascade do |t|
-    t.bigint "world_id", null: false
+    t.integer "world_id", null: false
     t.string "slug", null: false
     t.string "name", null: false
     t.string "kind", default: "skill", null: false
     t.string "target", null: false
     t.integer "mp_cost", default: 0, null: false
-    t.jsonb "effects", default: [], null: false
+    t.json "effects", default: [], null: false
     t.string "gesture"
     t.text "description"
-    t.jsonb "variant", default: {}, null: false
+    t.json "variant", default: {}, null: false
     t.integer "image_seed"
     t.text "image_prompt"
     t.datetime "created_at", null: false
@@ -62,16 +59,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_150000) do
   end
 
   create_table "items", force: :cascade do |t|
-    t.bigint "world_id", null: false
+    t.integer "world_id", null: false
     t.string "slug", null: false
     t.string "name", null: false
     t.string "category", null: false
     t.integer "price", default: 0, null: false
-    t.jsonb "stats", default: {}, null: false
+    t.json "stats", default: {}, null: false
     t.string "target"
-    t.jsonb "effects", default: [], null: false
+    t.json "effects", default: [], null: false
     t.text "description"
-    t.jsonb "variant", default: {}, null: false
+    t.json "variant", default: {}, null: false
     t.integer "image_seed"
     t.text "image_prompt"
     t.datetime "created_at", null: false
@@ -81,8 +78,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_150000) do
   end
 
   create_table "job_levels", force: :cascade do |t|
-    t.bigint "job_id", null: false
-    t.bigint "ability_id", null: false
+    t.integer "job_id", null: false
+    t.integer "ability_id", null: false
     t.integer "level", null: false
     t.integer "abp", null: false
     t.datetime "created_at", null: false
@@ -93,14 +90,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_150000) do
   end
 
   create_table "jobs", force: :cascade do |t|
-    t.bigint "world_id", null: false
+    t.integer "world_id", null: false
     t.string "slug", null: false
     t.string "name", null: false
-    t.jsonb "stat_multipliers", default: {}, null: false
-    t.jsonb "equip_categories", default: [], null: false
-    t.jsonb "innates", default: [], null: false
+    t.json "stat_multipliers", default: {}, null: false
+    t.json "equip_categories", default: [], null: false
+    t.json "innates", default: [], null: false
     t.text "description"
-    t.jsonb "variant", default: {}, null: false
+    t.json "variant", default: {}, null: false
     t.integer "image_seed"
     t.text "image_prompt"
     t.datetime "created_at", null: false
@@ -110,20 +107,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_26_150000) do
   end
 
   create_table "monsters", force: :cascade do |t|
-    t.bigint "world_id", null: false
+    t.integer "world_id", null: false
     t.string "slug", null: false
     t.string "name", null: false
     t.integer "level", default: 1, null: false
-    t.jsonb "stats", default: {}, null: false
-    t.jsonb "elements", default: {}, null: false
-    t.jsonb "status_immune", default: [], null: false
-    t.jsonb "ai_script", default: [], null: false
-    t.jsonb "drops", default: [], null: false
+    t.json "stats", default: {}, null: false
+    t.json "elements", default: {}, null: false
+    t.json "status_immune", default: [], null: false
+    t.json "ai_script", default: [], null: false
+    t.json "drops", default: [], null: false
     t.integer "exp", default: 0, null: false
     t.integer "gil", default: 0, null: false
     t.integer "abp", default: 0, null: false
     t.text "description"
-    t.jsonb "variant", default: {}, null: false
+    t.json "variant", default: {}, null: false
     t.integer "image_seed"
     t.text "image_prompt"
     t.datetime "created_at", null: false

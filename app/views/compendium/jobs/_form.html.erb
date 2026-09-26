@@ -9,7 +9,7 @@
       <% Stats::NAMES.each do |stat| %>
         <div class="field">
           <label for="job_stat_multipliers_<%= stat %>"><%= stat_label(stat) %></label>
-          <%= number_field_tag jsonb_field_name(f, :stat_multipliers, stat), entry.stat_multipliers[stat],
+          <%= number_field_tag json_field_name(f, :stat_multipliers, stat), entry.stat_multipliers[stat],
                                id: "job_stat_multipliers_#{stat}", min: 0, max: 500, placeholder: 100 %>
         </div>
       <% end %>
@@ -37,9 +37,9 @@
       <tbody>
         <% rows_with_blanks(entry.innates, blanks: 1).each_with_index do |passive, i| %>
           <tr>
-            <td><%= select_tag jsonb_field_name(f, :innates, i, :stat), options_for_select(Stats::NAMES.map { |s| [stat_label(s), s] }, passive["stat"]), include_blank: true, "aria-label": "Innate stat #{i + 1}" %></td>
-            <td><%= number_field_tag jsonb_field_name(f, :innates, i, :add), passive["add"], "aria-label": "Innate add #{i + 1}" %></td>
-            <td><%= number_field_tag jsonb_field_name(f, :innates, i, :percent), passive["percent"], "aria-label": "Innate percent #{i + 1}" %></td>
+            <td><%= select_tag json_field_name(f, :innates, i, :stat), options_for_select(Stats::NAMES.map { |s| [stat_label(s), s] }, passive["stat"]), include_blank: true, "aria-label": "Innate stat #{i + 1}" %></td>
+            <td><%= number_field_tag json_field_name(f, :innates, i, :add), passive["add"], "aria-label": "Innate add #{i + 1}" %></td>
+            <td><%= number_field_tag json_field_name(f, :innates, i, :percent), passive["percent"], "aria-label": "Innate percent #{i + 1}" %></td>
           </tr>
         <% end %>
       </tbody>

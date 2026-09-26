@@ -11,7 +11,7 @@
     </thead>
     <tbody>
       <% rows_with_blanks(f.object.effects).each_with_index do |effect, i| %>
-        <% name = ->(key) { jsonb_field_name(f, :effects, i, key) } %>
+        <% name = ->(key) { json_field_name(f, :effects, i, key) } %>
         <tr>
           <td><%= select_tag name.(:primitive), options_for_select(Battle::PRIMITIVES.map { |p| [term(p), p] }, effect["primitive"]), include_blank: true, "aria-label": "Primitive #{i + 1}" %></td>
           <td><%= number_field_tag name.(:power), effect["power"], "aria-label": "Power #{i + 1}" %></td>

@@ -89,7 +89,7 @@ Every table that belongs to a world carries `world_id`. This is the only second-
 
 ### Session
 
-- `battles` — state JSON, seed, status, turn index; row-locked during action application
+- `battles` — state JSON, seed, status, turn index; each action is applied inside one write transaction (SQLite serialises writes, so two actions can never interleave)
 - `battle_actions` — submitted actions, including `actor: :gm` overrides
 - `battle_events` — resolver output log; the replay
 - `messages` — speaker (polymorphic: Character | Npc | Gm), expression, body, scope (table/whisper)
@@ -159,7 +159,9 @@ GM controls: reroll, pin, add hand-authored NPC/room, place boss, override stock
 
 ## 10. Stack
 
-- Rails, Postgres, Hotwire (Turbo Streams + Stimulus), importmap.
+- Omakase Rails until it is painful not to be. Take the Rails 8 defaults and leave them alone until one of them actually hurts.
+- SQLite for everything, including Solid Queue, Solid Cache and Solid Cable in production. Structured book data (stat blocks, effect lists, AI scripts) lives in JSON columns and is read in Ruby. Move to Postgres only when SQLite causes a real problem, like write contention or needing to run on more than one server. Not before.
+- Hotwire (Turbo Streams + Stimulus), importmap.
 - anime.js (MIT) — https://github.com/juliangarnier/anime
 - Active Storage for images.
 - RSpec.

@@ -14,7 +14,7 @@
       <% Stats::NAMES.each do |stat| %>
         <div class="field">
           <label for="monster_stats_<%= stat %>"><%= stat_label(stat) %></label>
-          <%= number_field_tag jsonb_field_name(f, :stats, stat), entry.stats[stat], id: "monster_stats_#{stat}", min: 0, required: true %>
+          <%= number_field_tag json_field_name(f, :stats, stat), entry.stats[stat], id: "monster_stats_#{stat}", min: 0, required: true %>
         </div>
       <% end %>
     </div>
@@ -26,7 +26,7 @@
       <% Battle::ELEMENTS.each do |element| %>
         <div class="field">
           <label for="monster_elements_<%= element %>"><%= term(element) %></label>
-          <%= select_tag jsonb_field_name(f, :elements, element),
+          <%= select_tag json_field_name(f, :elements, element),
                          options_for_select([["Normal", "normal"]] + Battle::AFFINITIES.map { |a| [term(a), a] }, entry.elements[element]),
                          id: "monster_elements_#{element}" %>
         </div>
@@ -55,7 +55,7 @@
       <tbody>
         <% rows_with_blanks(entry.ai_script).each_with_index do |rule, i| %>
           <% c = rule.fetch("if", {}) %>
-          <% name = ->(key) { jsonb_field_name(f, :ai_script, i, key) } %>
+          <% name = ->(key) { json_field_name(f, :ai_script, i, key) } %>
           <tr>
             <td><%= number_field_tag name.(:self_hp_below), c["self_hp_below"], min: 1, max: 100, "aria-label": "Own HP below, rule #{i + 1}" %></td>
             <td><%= number_field_tag name.(:ally_hp_below), c["ally_hp_below"], min: 1, max: 100, "aria-label": "Ally HP below, rule #{i + 1}" %></td>
@@ -81,8 +81,8 @@
       <tbody>
         <% rows_with_blanks(entry.drops).each_with_index do |drop, i| %>
           <tr>
-            <td><%= select_tag jsonb_field_name(f, :drops, i, :item), options_for_select(items, drop["item"]), include_blank: true, "aria-label": "Drop item #{i + 1}" %></td>
-            <td><%= number_field_tag jsonb_field_name(f, :drops, i, :chance), drop["chance"], min: 1, max: 100, "aria-label": "Drop chance #{i + 1}" %></td>
+            <td><%= select_tag json_field_name(f, :drops, i, :item), options_for_select(items, drop["item"]), include_blank: true, "aria-label": "Drop item #{i + 1}" %></td>
+            <td><%= number_field_tag json_field_name(f, :drops, i, :chance), drop["chance"], min: 1, max: 100, "aria-label": "Drop chance #{i + 1}" %></td>
           </tr>
         <% end %>
       </tbody>

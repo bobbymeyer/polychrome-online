@@ -56,7 +56,7 @@ module Battle
     module_function
 
     # Deep-copy and canonicalise: string keys, no symbols. Anything that
-    # survives this survives a round trip through a jsonb column.
+    # survives this survives a round trip through a JSON column.
     def normalize(obj)
       JSON.parse(JSON.generate(obj))
     end

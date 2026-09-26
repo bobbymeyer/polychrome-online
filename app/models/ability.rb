@@ -30,7 +30,7 @@ class Ability < ApplicationRecord
   # numbers are cast. Anything else is left for validation to report.
   # Shared with Item (consumables).
   def self.normalize_effects(rows)
-    JsonbCasting.rows(rows).filter_map do |row|
+    JsonCasting.rows(rows).filter_map do |row|
       primitive = row["primitive"].presence or next
       spec = Battle::PRIMITIVE_PARAMS[primitive]
       next { "primitive" => primitive } unless spec
@@ -39,7 +39,7 @@ class Ability < ApplicationRecord
         value = row[param]
         next if value.blank?
 
-        [ param, Battle::PRIMITIVE_STRING_PARAMS.include?(param) ? value.to_s : JsonbCasting.integer(value) ]
+        [ param, Battle::PRIMITIVE_STRING_PARAMS.include?(param) ? value.to_s : JsonCasting.integer(value) ]
       end
       { "primitive" => primitive }.merge(params.to_h)
     end
@@ -57,8 +57,9 @@ class Ability < ApplicationRecord
   end
 
   # Cross-references (§7: "cross-references between entries are the index").
+  # Books are small, so these filter in Ruby rather than query inside JSON.
   def monsters_using
-    world.monsters.where("ai_script @> ?", [ { use: slug } ].to_json).alphabetical
+    world.monsters.alphabetical.select { |monster| monster.ability_slugs.include?(slug) }
   end
 
   private

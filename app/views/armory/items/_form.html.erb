@@ -19,7 +19,7 @@
       <% Stats::NAMES.each do |stat| %>
         <div class="field">
           <label for="item_stats_<%= stat %>"><%= stat_label(stat) %></label>
-          <%= number_field_tag jsonb_field_name(f, :stats, stat), entry.stats[stat], id: "item_stats_#{stat}" %>
+          <%= number_field_tag json_field_name(f, :stats, stat), entry.stats[stat], id: "item_stats_#{stat}" %>
         </div>
       <% end %>
     </div>

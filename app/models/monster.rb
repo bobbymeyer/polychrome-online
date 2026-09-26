@@ -16,7 +16,7 @@ class Monster < ApplicationRecord
   validate :drops_are_items
 
   def stats=(values)
-    super((values || {}).to_h.stringify_keys.transform_values { |v| JsonbCasting.integer(v) }.compact)
+    super((values || {}).to_h.stringify_keys.transform_values { |v| JsonCasting.integer(v) }.compact)
   end
 
   # Only non-neutral affinities are stored.
@@ -31,24 +31,24 @@ class Monster < ApplicationRecord
   # Accepts engine-shaped rules ({ "if" => {...}, "use", "target" }) or flat
   # form rows ({ "use", "target", "self_hp_below" => "30", ... }).
   def ai_script=(rows)
-    super(JsonbCasting.rows(rows).filter_map do |row|
+    super(JsonCasting.rows(rows).filter_map do |row|
       next if row["use"].blank?
 
       conditions = row.fetch("if") { row.slice(*Battle::AI::CONDITIONS) }.to_h.stringify_keys
       conditions = conditions.filter_map do |name, value|
         next if value.blank? || value == "0" && name == "ally_ko"
 
-        [ name, name == "ally_ko" ? ActiveModel::Type::Boolean.new.cast(value) : JsonbCasting.integer(value) ]
+        [ name, name == "ally_ko" ? ActiveModel::Type::Boolean.new.cast(value) : JsonCasting.integer(value) ]
       end.to_h
       { "if" => conditions.presence, "use" => row["use"].to_s, "target" => row["target"].presence }.compact
     end)
   end
 
   def drops=(rows)
-    super(JsonbCasting.rows(rows).filter_map do |row|
+    super(JsonCasting.rows(rows).filter_map do |row|
       next if row["item"].blank?
 
-      { "item" => row["item"].to_s, "chance" => JsonbCasting.integer(row["chance"]) || 100 }
+      { "item" => row["item"].to_s, "chance" => JsonCasting.integer(row["chance"]) || 100 }
     end)
   end
 
@@ -91,7 +91,7 @@ class Monster < ApplicationRecord
     errors.add(:stats, "is missing #{missing.join(', ')}") if missing.any?
     unknown = stats.keys - Stats::NAMES
     errors.add(:stats, "has unknown stats: #{unknown.join(', ')}") if unknown.any?
-    bad = stats.reject { |name, v| JsonbCasting.integer?(v) && v.between?(name == "max_hp" ? 1 : 0, Stats::CAPS.fetch(name, Float::INFINITY)) }
+    bad = stats.reject { |name, v| JsonCasting.integer?(v) && v.between?(name == "max_hp" ? 1 : 0, Stats::CAPS.fetch(name, Float::INFINITY)) }
     errors.add(:stats, "must be whole numbers within caps (#{bad.keys.join(', ')})") if bad.any?
   end
 
@@ -120,7 +120,7 @@ class Monster < ApplicationRecord
         next errors.add(:ai_script, "#{label} has unknown condition #{name}") unless Battle::AI::CONDITIONS.include?(name)
         next if name == "ally_ko"
 
-        errors.add(:ai_script, "#{label} #{name} must be a positive whole number") unless JsonbCasting.integer?(value) && value.positive?
+        errors.add(:ai_script, "#{label} #{name} must be a positive whole number") unless JsonCasting.integer?(value) && value.positive?
       end
     end
   end
@@ -130,7 +130,7 @@ class Monster < ApplicationRecord
     drops.each do |drop|
       errors.add(:drops, "#{drop['item']} is not in the Armory") unless known.key?(drop["item"])
       chance = drop["chance"]
-      errors.add(:drops, "#{drop['item']} chance must be 1–100") unless JsonbCasting.integer?(chance) && chance.between?(1, 100)
+      errors.add(:drops, "#{drop['item']} chance must be 1–100") unless JsonCasting.integer?(chance) && chance.between?(1, 100)
     end
   end
 end
