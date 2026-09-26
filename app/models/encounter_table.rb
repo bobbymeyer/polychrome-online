@@ -5,6 +5,7 @@
 # (Pointcrawl::Encounters).
 class EncounterTable < ApplicationRecord
   include BookEntry
+  include Artwork
 
   TERRAINS = %w[plains forest desert mountain cave crypt sea town].freeze
   MAX_GROUP = 8

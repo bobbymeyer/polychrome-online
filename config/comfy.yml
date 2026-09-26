@@ -56,6 +56,35 @@ shared: &shared
       width: 1216
       height: 832
       transparent: false
+    encounter_table:
+      prompt: "a scene of what waits on the road, wide view"
+      negative: "text"
+      width: 1216
+      height: 832
+      transparent: false
+    generator_table:
+      prompt: "an illustration"
+      negative: "text"
+      width: 1024
+      height: 1024
+      transparent: false
+    # Speaker portraits for the dialogue box: the speaker is the subject, and
+    # each expression adds the words below.
+    portrait:
+      prompt: "a head and shoulders portrait, facing the viewer, centered, plain background"
+      negative: "multiple people, cropped head, text, hands"
+      width: 1024
+      height: 1024
+      transparent: false
+
+  expressions:
+    neutral: "calm neutral expression"
+    happy: "smiling happily"
+    sad: "sad expression, downcast eyes"
+    angry: "angry expression, furrowed brow"
+    surprised: "surprised expression, wide eyes, open mouth"
+    worried: "worried expression, knitted brow"
+    determined: "determined expression, set jaw"
 
 development:
   <<: *shared

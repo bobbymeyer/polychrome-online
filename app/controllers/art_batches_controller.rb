@@ -1,14 +1,19 @@
 # frozen_string_literal: true
 
-# Generating an entry's image (docs/HANDOFF.md §8). Starting a batch first
-# saves the entry's own layer (its specifics and LoRAs), then queues the
-# candidates with ComfyUI; the page fills in as they land.
+# Generating an image (docs/HANDOFF.md §8) for a book entry, or for one of a
+# speaker's portraits. Starting a batch first saves the subject's own layer
+# (its specifics and LoRAs), then queues the candidates with ComfyUI; the art
+# section fills in as they land.
 class ArtBatchesController < ApplicationController
+  include ArtTargets
+
   before_action :set_world
 
   def create
-    entry = find_entry(params[:entry_type], params[:entry_slug])
-    entry.update!(params.fetch(:entry, {}).permit(:art_notes, art_loras: {}))
+    entry, subject = target
+    subject.update!(params.fetch(:entry, {}).permit(:art_notes, art_loras: {}))
+    # A speaker shows one strip at a time, whichever expression it is for.
+    ArtBatch.where(entry: subject.portraits).destroy_all if entry.is_a?(Portrait)
     ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates])
     redirect_to entry_page(entry, anchor: "art")
   end
@@ -23,13 +28,15 @@ class ArtBatchesController < ApplicationController
 
   private
 
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
-
-  def find_entry(kind, slug)
-    raise ActiveRecord::RecordNotFound unless ArtDirection::KINDS.include?(kind)
-
-    @world.public_send(kind.pluralize).find_by!(slug: slug)
+  # [what gets the image, whose layer the params edit]
+  def target
+    if speaker_request?
+      owner = art_speaker
+      expression = Portrait::EXPRESSIONS.include?(params[:expression]) ? params[:expression] : "neutral"
+      [ owner.portraits.find_or_create_by!(expression: expression), owner ]
+    else
+      entry = art_entry
+      [ entry, entry ]
+    end
   end
 end

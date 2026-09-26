@@ -1,0 +1,31 @@
+<%# One batch's candidates (§8). The page refreshes itself as they land. %>
+<% world = batch.world %>
+<div class="art-batch" id="<%= dom_id(batch) %>">
+  <h3>Candidates<%= " for #{batch.entry.expression.humanize}" if batch.entry.is_a?(Portrait) %></h3>
+  <% case batch.status %>
+  <% when "queued", "running" %>
+    <p class="art-batch__status" role="status">Generating: <%= batch.candidates.count(&:finished?) %> of <%= batch.candidates.size %> in.</p>
+  <% when "failed" %>
+    <p class="form-errors" role="alert"><%= batch.error %></p>
+  <% end %>
+  <ol class="candidate-strip">
+    <% batch.candidates.each do |candidate| %>
+      <li class="candidate is-<%= candidate.status %>" id="<%= dom_id(candidate) %>">
+        <figure>
+          <% if candidate.image.attached? %>
+            <%= image_tag url_for(candidate.image), alt: "Candidate #{candidate.position + 1}, seed #{candidate.seed}" %>
+          <% else %>
+            <span class="candidate__empty"><%= candidate.status == "failed" ? "Failed" : "…" %></span>
+          <% end %>
+          <figcaption>Seed <%= candidate.seed %><%= tag.span(" · #{candidate.error}", class: "muted") if candidate.error && candidate.status == "failed" && batch.status != "failed" %></figcaption>
+        </figure>
+        <% if candidate.image.attached? %>
+          <%# The whole page, since the new image shows outside this frame too. %>
+          <%= button_to "Use this", pick_world_art_candidate_path(world, candidate), class: "button",
+                        form: { data: { turbo_frame: "_top", turbo_action: "advance" } } %>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+  <%= button_to "Discard these", world_art_batch_path(world, batch), method: :delete, class: "link-button" %>
+</div>

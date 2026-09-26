@@ -5,6 +5,7 @@
 # fields depend on the kind.
 class GeneratorTable < ApplicationRecord
   include BookEntry
+  include Artwork
 
   # kind => the fields its entries use (besides "weight").
   KINDS = {

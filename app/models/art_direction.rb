@@ -3,11 +3,12 @@
 # Helpers for composing an image recipe in layers (docs/HANDOFF.md §8): the
 # world's house style, the content type's framing, the entry's specifics.
 module ArtDirection
-  KINDS = %w[monster job item ability location_template].freeze
+  # The book (route namespace) each kind of book entry lives in.
+  BOOKS = { "monster" => :bestiary, "job" => :compendium, "item" => :armory, "ability" => :grimoire,
+            "location_template" => :gazetteer, "encounter_table" => :encounters, "generator_table" => :generation }.freeze
 
-  # The book (route namespace) each kind of entry lives in.
-  BOOKS = { "monster" => :bestiary, "job" => :compendium, "item" => :armory,
-            "ability" => :grimoire, "location_template" => :gazetteer }.freeze
+  # Every kind of image slot: the books, and speaker portraits.
+  KINDS = (BOOKS.keys + %w[portrait]).freeze
 
   module_function
 

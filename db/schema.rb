@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_200500) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -192,6 +192,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
     t.integer "mp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
   end
@@ -209,6 +211,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
     t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
+    t.json "image_recipe"
     t.index ["world_id", "slug"], name: "index_encounter_tables_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_encounter_tables_on_world_id"
   end
@@ -248,6 +253,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
     t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
+    t.json "image_recipe"
     t.index ["world_id", "slug"], name: "index_generator_tables_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_generator_tables_on_world_id"
   end
@@ -435,6 +443,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
     t.datetime "updated_at", null: false
     t.integer "location_id"
     t.string "location_key"
+    t.text "art_notes"
+    t.json "art_loras", default: [], null: false
     t.index ["campaign_id"], name: "index_npcs_on_campaign_id"
     t.index ["location_id"], name: "index_npcs_on_location_id"
   end
@@ -445,6 +455,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200000) do
     t.string "expression", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "image_seed"
+    t.text "image_prompt"
+    t.json "image_recipe"
     t.index ["owner_type", "owner_id", "expression"], name: "index_portraits_on_owner_type_and_owner_id_and_expression", unique: true
     t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
   end

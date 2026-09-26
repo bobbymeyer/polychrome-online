@@ -16,13 +16,17 @@ class ArtBatch < ApplicationRecord
   after_commit :refresh_watchers
 
   # A new batch replaces any earlier one: the strip shows one round at a time.
+  # The first candidate tries the entry's seed hint when it has one (a
+  # portrait's neutral seed), so a face stays closer across expressions.
   def self.start!(entry, count: Comfy.config[:candidates])
     count = count.to_i.clamp(1, 8)
     base = Random.rand(2**31)
+    seeds = Array.new(count) { |i| (base + i) % 2**31 }
+    seeds[0] = entry.art_seed_hint if entry.art_seed_hint
     batch = transaction do
       entry.art_batches.destroy_all
-      create!(world: entry.world, entry: entry, recipe: entry.art_recipe).tap do |b|
-        count.times { |i| b.candidates.create!(position: i, seed: (base + i) % 2**31) }
+      create!(world: entry.art_world, entry: entry, recipe: entry.art_recipe).tap do |b|
+        seeds.each_with_index { |seed, i| b.candidates.create!(position: i, seed: seed) }
       end
     end
     ArtBatchJob.perform_later(batch)
@@ -42,7 +46,8 @@ class ArtBatch < ApplicationRecord
     candidates.each do |candidate|
       next if candidate.comfy_prompt_id
 
-      graph = Comfy::Graph.build(recipe, seed: candidate.seed, prefix: "polychrome/#{entry.slug}-#{candidate.seed}", settings: graph_settings)
+      prefix = "polychrome/#{entry.art_filename(candidate.seed).delete_suffix('.png')}"
+      graph = Comfy::Graph.build(recipe, seed: candidate.seed, prefix: prefix, settings: graph_settings)
       candidate.update!(comfy_prompt_id: client.submit(graph), status: "running")
     end
     update!(status: "running")
@@ -70,8 +75,11 @@ class ArtBatch < ApplicationRecord
     created_at < Comfy.config.fetch(:timeout, 900).to_i.seconds.ago
   end
 
+  # Only the art section reloads (app/javascript/stream_actions.js), so a
+  # form being typed into elsewhere on the page is left alone.
   def refresh_watchers
-    entry&.broadcast_refresh_to(entry, :art)
+    stream = entry&.art_stream
+    Turbo::StreamsChannel.broadcast_action_to(stream, :art, action: :reload_frame, target: "art_panel") if stream
   end
 
   private

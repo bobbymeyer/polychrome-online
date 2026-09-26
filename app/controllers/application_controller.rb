@@ -9,8 +9,12 @@ class ApplicationController < ActionController::Base
 
   private
 
-  # A book entry's page, from the entry alone (the asset pipeline, §8).
+  # Where something with generated art is edited, from the thing alone (the
+  # asset pipeline, §8): a book entry's page, or a speaker's edit page.
   def entry_page(entry, **options)
-    polymorphic_path([ entry.world, ArtDirection::BOOKS.fetch(entry.art_kind), entry ], **options)
+    case entry
+    when Portrait then polymorphic_path([ :edit, entry.owner ], **options)
+    else polymorphic_path([ entry.world, ArtDirection::BOOKS.fetch(entry.art_kind), entry ], **options)
+    end
   end
 end

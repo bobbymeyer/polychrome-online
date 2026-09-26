@@ -1,6 +1,5 @@
 <% content_for :title, "#{@entry.name} · #{book_title}" %>
 <% if @entry.respond_to?(:art_recipe) %>
-  <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
   <%= turbo_stream_from @entry, :art %>
 <% end %>
 <div class="crumbs"><%= link_to book_title, entries_path %> / <%= @entry.name %></div>

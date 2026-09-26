@@ -17,7 +17,10 @@ class ArtType < ApplicationRecord
     super(ArtDirection.loras(value))
   end
 
+  LABELS = { "location_template" => "Locations", "encounter_table" => "Encounter tables",
+             "generator_table" => "Generator tables", "portrait" => "Portraits" }.freeze
+
   def label
-    kind == "location_template" ? "Locations" : kind.pluralize.humanize
+    LABELS.fetch(kind) { kind.pluralize.humanize }
   end
 end

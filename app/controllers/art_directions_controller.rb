@@ -10,6 +10,7 @@ class ArtDirectionsController < ApplicationController
     @types = ArtDirection::KINDS.map { |kind| @world.art_type(kind) }
   end
 
+
   def update
     ArtType.transaction do
       @world.update!(params.expect(world: [ :art_style, :art_negative, :art_checkpoint, { art_loras: {} } ]))

@@ -25,7 +25,7 @@ class ArtCandidate < ApplicationRecord
     return if images.nil?
     return update!(status: "failed", error: "The workflow saved no image") if images.empty?
 
-    image.attach(io: StringIO.new(client.fetch(images.first)), filename: "#{entry.slug}-#{seed}.png", content_type: "image/png")
+    image.attach(io: StringIO.new(client.fetch(images.first)), filename: entry.art_filename(seed), content_type: "image/png")
     update!(status: "done")
   rescue Comfy::Error => e
     update!(status: "failed", error: e.message)

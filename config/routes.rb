@@ -31,6 +31,7 @@ Rails.application.routes.draw do
     # candidates for an entry's image with ComfyUI.
     resource :art_direction, only: %i[show update], path: "art"
     resources :art_batches, only: %i[create destroy], path: "art/batches"
+    resource :art_panel, only: :show, path: "art/panel"
     resources :art_candidates, only: [], path: "art/candidates" do
       post :pick, on: :member
     end

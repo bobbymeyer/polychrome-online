@@ -8,7 +8,7 @@ class ArtCandidatesController < ApplicationController
     candidate = ArtCandidate.joins(:art_batch).where(art_batches: { world_id: world.id }).find(params[:id])
     entry = candidate.entry
     candidate.pick!
-    redirect_to entry_page(entry, anchor: "art"), notice: "#{entry.name} has a new image (seed #{entry.image_seed})."
+    redirect_to entry_page(entry, anchor: "art"), notice: "#{entry.art_title.upcase_first} has a new image (seed #{entry.image_seed})."
   rescue ArgumentError => e
     redirect_to entry_page(entry, anchor: "art"), alert: e.message
   end
