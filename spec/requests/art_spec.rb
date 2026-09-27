@@ -23,6 +23,16 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
     ArtBatchJob.new.perform(batch.reload, client: comfy)
   end
 
+  it "only offers Generate while ComfyUI answers" do
+    allow(Comfy).to receive(:installed).and_return(reachable: false, loras: [], checkpoints: [])
+    get world_bestiary_monster_path(world, goblin)
+    expect(response.body).to match(/<input[^>]*value="Generate"[^>]*disabled/).and include("nothing can be generated")
+
+    allow(Comfy).to receive(:installed).and_return(reachable: true, loras: [], checkpoints: [])
+    get world_bestiary_monster_path(world, goblin)
+    expect(response.body).not_to match(/<input[^>]*value="Generate"[^>]*disabled/)
+  end
+
   it "shows the layers and the composed prompt on the entry's page" do
     world.update!(art_style: "16-bit pixel art")
     get world_bestiary_monster_path(world, goblin)

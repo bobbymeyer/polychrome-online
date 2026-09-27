@@ -44,6 +44,16 @@
   </ul>
 </section>
 
+<% missing = (entry.town? ? GeneratorTable::TOWN_KINDS : GeneratorTable::DUNGEON_KINDS) - entry.table_entries.keys %>
+<% if missing.any? %>
+  <p class="flash flash--alert" role="status">
+    No <%= missing.map { |k| k.humanize.downcase }.to_sentence %> <%= missing.one? ? "table" : "tables" %> to draw from, so
+    those come out as placeholders ("Stranger 1", "Nameless <%= entry.town? ? "Town" : "Depths" %>").
+    <%= link_to "Add a generator table", new_world_generation_generator_table_path(@world) %>, or
+    <%= link_to "tick one on this template", edit_world_gazetteer_location_template_path(@world, entry) %>.
+  </p>
+<% end %>
+
 <% seed = (params[:seed] || 1).to_i %>
 <% example = entry.town? ?
      Generators::Town.generate(seed: seed, template: s, tables: entry.table_entries) :
@@ -55,10 +65,39 @@
   </div>
   <% if entry.town? %>
     <%= render "locations/skyline", view: example %>
-    <p class="hint"><%= example["services"].map { |sv| sv["name"] }.to_sentence %>. <%= pluralize(example["npcs"].size, "townsperson") %>, <%= pluralize(example["stock"].size, "item") %> in stock.</p>
+    <% item_names = @world.items.where(slug: example["stock"]).to_h { |i| [ i.slug, i.name ] } %>
+    <div class="example-columns">
+      <div>
+        <h3>Services</h3>
+        <ul class="refs"><% example["services"].each do |sv| %><li><%= sv["name"] %> <span class="muted"><%= sv["kind"] %></span></li><% end %></ul>
+        <h3>For sale</h3>
+        <p><%= example["stock"].any? ? example["stock"].map { |slug| item_names[slug] || slug }.to_sentence : "Nothing: no shop this time." %></p>
+      </div>
+      <div>
+        <h3>People</h3>
+        <ul class="refs">
+          <% example["npcs"].each do |npc| %>
+            <li><strong><%= npc["name"] %></strong> <span class="muted"><%= npc["title"] %></span><% if npc["hook"] %><br><%= npc["hook"] %><% end %></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
   <% else %>
     <%= render "locations/floorplan", view: example %>
     <p class="hint"><%= pluralize(example["rooms"].size, "room") %>, <%= pluralize(example["paths"].size, "path") %>.</p>
+    <% monster_names = @world.monsters.to_h { |m| [ m.slug, m.name ] } %>
+    <% item_names = @world.items.to_h { |i| [ i.slug, i.name ] } %>
+    <ol class="refs example-rooms">
+      <% example["rooms"].each do |room| %>
+        <% d = room["decision"] %>
+        <li><strong><%= room["name"] %></strong> <span class="muted"><%= d["kind"] %></span>:
+          <%= case d["kind"]
+              when "encounter", "boss" then d["monsters"].map { |slug, n| "#{n} × #{monster_names[slug] || slug}" }.to_sentence
+              when "treasure" then d["gil"] ? "#{d['gil']} gil" : item_names[d["item"]] || d["item"]
+              else d["text"]
+              end %></li>
+      <% end %>
+    </ol>
     <%= render "locations/marker_legend" %>
   <% end %>
 </section>

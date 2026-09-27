@@ -7,7 +7,7 @@ module Generators
   #
   # template: { "services" => { "inn" => 100, "shop" => 80, ... },   percent chance each
   #             "npcs" => [min, max], "stock" => [min, max], "buildings" => [min, max] }
-  # tables:   { "place_names" | "names" | "hooks" | "service_names" | "buildings" | "stock" => [entries] }
+  # tables:   { "town_names" | "names" | "hooks" | "service_names" | "buildings" | "stock" => [entries] }
   #
   # Every generated element has a stable "key", which GM pins refer to.
   module Town
@@ -21,7 +21,7 @@ module Generators
       services = services(pool, template, tables)
       {
         "kind" => "town",
-        "name" => pool.pick(tables.fetch("place_names", []))&.fetch("text") || "Nameless Town",
+        "name" => pool.pick(tables.fetch("town_names", []))&.fetch("text") || "Nameless Town",
         "services" => services,
         "npcs" => npcs(pool, template, tables, services),
         "stock" => stock(pool, template, tables, services),

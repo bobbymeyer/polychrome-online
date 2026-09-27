@@ -1,36 +1,47 @@
-<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
+<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form", data: { controller: "kind-switch" } do |f| %>
   <%= render "book_entries/errors", entry: entry %>
   <%= render "book_entries/identity_fields", f: f %>
   <div class="field-row">
-    <div class="field"><%= f.label :kind %><%= f.select :kind, GeneratorTable::KINDS.keys.map { |k| [ k.humanize, k ] } %></div>
+    <div class="field">
+      <%= f.label :kind %>
+      <%= f.select :kind, GeneratorTable::KINDS.keys.map { |k| [ k.humanize, k ] }, {}, data: { kind_switch_target: "select", action: "kind-switch#update" } %>
+    </div>
   </div>
+  <% show_for = ->(field) { GeneratorTable::KINDS.select { |_, fields| field == "weight" || fields.include?(field) }.keys.join(" ") } %>
+  <% columns = { "text" => "Text", "item" => "Item", "gil" => "Gil", "service" => "Service", "width" => "Width", "height" => "Height", "roof" => "Roof", "weight" => "Weight" } %>
   <fieldset class="panel">
     <legend>Rows</legend>
-    <p class="hint">
-      Fill in the columns the kind uses:
-      <%= GeneratorTable::KINDS.map { |kind, fields| "#{kind.humanize.downcase} → #{fields.join(', ')}" }.join("; ") %>.
-      Weight defaults to 1. Leave text and item blank to remove a row.
-    </p>
+    <p class="hint" data-show-for="treasure">Each row is an item or an amount of gil.</p>
+    <p class="hint">Weight defaults to 1: a row with weight 3 comes up three times as often. Clear a row to remove it.</p>
     <% items = @world.items.order(:name).map { |i| [ i.name, i.slug ] } %>
     <table class="grid-form">
-      <thead><tr><th>Text</th><th>Weight</th><th>Item</th><th>Service</th><th>Width</th><th>Height</th><th>Roof</th></tr></thead>
+      <thead><tr><% columns.each do |key, label| %><th data-show-for="<%= show_for.(key) %>"><%= label %></th><% end %></tr></thead>
       <tbody>
         <% rows_with_blanks(entry.entries, blanks: 3).each_with_index do |row, i| %>
           <% name = ->(key) { json_field_name(f, :entries, i, key) } %>
           <tr>
-            <td><%= text_field_tag name.(:text), row["text"], "aria-label": "Text #{i + 1}" %></td>
-            <td><%= number_field_tag name.(:weight), row["weight"], min: 1, "aria-label": "Weight #{i + 1}" %></td>
-            <td><%= select_tag name.(:item), options_for_select(items, row["item"]), include_blank: true, "aria-label": "Item #{i + 1}" %></td>
-            <td><%= select_tag name.(:service), options_for_select(Generators::Town::SERVICES.map { |s| [ s.humanize, s ] }, row["service"]), include_blank: true, "aria-label": "Service #{i + 1}" %></td>
-            <td><%= number_field_tag name.(:width), row["width"], min: 1, "aria-label": "Width #{i + 1}" %></td>
-            <td><%= number_field_tag name.(:height), row["height"], min: 1, "aria-label": "Height #{i + 1}" %></td>
-            <td><%= select_tag name.(:roof), options_for_select(Generators::Town::ROOFS.map { |r| [ r.humanize, r ] }, row["roof"]), include_blank: true, "aria-label": "Roof #{i + 1}" %></td>
+            <td data-show-for="<%= show_for.("text") %>"><%= text_field_tag name.(:text), row["text"], "aria-label": "Text #{i + 1}" %></td>
+            <td data-show-for="<%= show_for.("item") %>"><%= select_tag name.(:item), options_for_select(items, row["item"]), include_blank: true, "aria-label": "Item #{i + 1}" %></td>
+            <td data-show-for="<%= show_for.("gil") %>"><%= number_field_tag name.(:gil), row["gil"], min: 1, "aria-label": "Gil #{i + 1}" %></td>
+            <td data-show-for="<%= show_for.("service") %>"><%= select_tag name.(:service), options_for_select(Generators::Town::SERVICES.map { |s| [ s.humanize, s ] }, row["service"]), include_blank: true, "aria-label": "Service #{i + 1}" %></td>
+            <td data-show-for="<%= show_for.("width") %>"><%= number_field_tag name.(:width), row["width"], min: 1, "aria-label": "Width #{i + 1}" %></td>
+            <td data-show-for="<%= show_for.("height") %>"><%= number_field_tag name.(:height), row["height"], min: 1, "aria-label": "Height #{i + 1}" %></td>
+            <td data-show-for="<%= show_for.("roof") %>"><%= select_tag name.(:roof), options_for_select(Generators::Town::ROOFS.map { |r| [ r.humanize, r ] }, row["roof"]), include_blank: true, "aria-label": "Roof #{i + 1}" %></td>
+            <td data-show-for="<%= show_for.("weight") %>"><%= number_field_tag name.(:weight), row["weight"], min: 1, placeholder: 1, "aria-label": "Weight #{i + 1}" %></td>
           </tr>
         <% end %>
       </tbody>
     </table>
+
+    <% pasteable = GeneratorTable::PASTE_FORMATS %>
+    <div class="field" data-show-for="<%= pasteable.keys.join(' ') %>">
+      <%= f.label :paste, "Add many at once" %>
+      <%= f.text_area :paste, rows: 6, value: entry.paste %>
+      <% pasteable.each do |kind, format| %>
+        <p class="hint" data-show-for="<%= kind %>">One per line: <%= format %>. Add <code>| 3</code> at the end of a line for a weight.</p>
+      <% end %>
+    </div>
   </fieldset>
-  <%= render "book_entries/art_fields", f: f %>
   <div class="actions">
     <%= f.submit class: "button" %>
     <%= link_to "Cancel", entry.persisted? ? entry_path(entry) : entries_path, class: "button button--quiet" %>

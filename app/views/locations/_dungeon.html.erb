@@ -6,7 +6,7 @@
      case d["kind"]
      when "encounter", "boss" then "#{glyph_names[d['kind']]}: #{@campaign.describe_encounter(d['monsters'])}"
      when "treasure"
-       "Treasure: #{@world.items.find_by(slug: d['item'])&.name || d['item']}#{' (taken)' if location.resolved?(room['key'])}"
+       "Treasure: #{location.describe_treasure(d)}#{' (taken)' if location.resolved?(room['key'])}"
      else "#{glyph_names[d['kind']]}: #{d['text']}"
      end
    end %>
@@ -93,6 +93,7 @@
             <div class="field"><%= f.label :monster %><%= f.select :monster, @world.monsters.order(:level, :name).map { |m| [ m.name, m.slug ] }, include_blank: true %></div>
             <div class="field"><%= f.label :count %><%= f.number_field :count, value: 1, min: 1, max: 8 %></div>
             <div class="field"><%= f.label :item %><%= f.select :item, @world.items.order(:name).map { |i| [ i.name, i.slug ] }, include_blank: true %></div>
+            <div class="field"><%= f.label :gil, "Or gil" %><%= f.number_field :gil, min: 1 %></div>
           </div>
           <div class="field"><%= f.label :text, "Event text" %><%= f.text_field :text %></div>
           <%= f.submit "Add room", class: "button" %>

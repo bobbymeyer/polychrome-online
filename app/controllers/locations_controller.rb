@@ -59,7 +59,7 @@ class LocationsController < ApplicationController
   end
 
   def add_room
-    room = params.expect(room: %i[name connect kind text item monster count])
+    room = params.expect(room: %i[name connect kind text item gil monster count])
     @location.add_room!(name: room[:name].presence || "Hidden Room", connect: room[:connect], decision: decision_from(room))
     back "Room added."
   end
@@ -105,7 +105,8 @@ class LocationsController < ApplicationController
   def decision_from(room)
     case room[:kind]
     when "encounter" then { "kind" => "encounter", "monsters" => { room[:monster] => room[:count].to_i.clamp(1, 8) } }
-    when "treasure" then { "kind" => "treasure", "item" => room[:item] }
+    when "treasure"
+      room[:gil].to_i.positive? ? { "kind" => "treasure", "gil" => room[:gil].to_i } : { "kind" => "treasure", "item" => room[:item] }
     else { "kind" => "event", "text" => room[:text].presence || "Something waits here." }
     end
   end

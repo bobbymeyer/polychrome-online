@@ -238,6 +238,11 @@ button.menu__item--accent:hover:not(:disabled) { background: var(--signal-dark);
  * ------------------------------------------------------------------------- */
 
 .book-page__header { display: grid; grid-template-columns: auto 1fr; gap: var(--gutter); align-items: start; margin-bottom: 48px; }
+.book-page__header--plain { grid-template-columns: 1fr; }
+[data-show-for][hidden] { display: none !important; }
+.example-columns { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gutter); margin-top: 24px; }
+@media (max-width: 640px) { .example-columns { grid-template-columns: 1fr; } }
+.example-rooms { margin-top: 16px; }
 @media (max-width: 640px) { .book-page__header { grid-template-columns: 1fr; } }
 
 .portrait { margin: 0; display: grid; place-items: center; overflow: hidden; background: var(--wash); }

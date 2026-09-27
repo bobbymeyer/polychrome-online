@@ -25,8 +25,10 @@ class WorldsController < ApplicationController
 
   def create
     @world = World.new(params.expect(world: %i[name slug description]))
+    source = World.find_by(slug: params[:copy_from]) if params[:copy_from].present?
     if @world.save
-      redirect_to @world, notice: "#{@world.name} was created."
+      @world.copy_books_from!(source) if source
+      redirect_to @world, notice: source ? "#{@world.name} was created from #{source.name}'s books." : "#{@world.name} was created."
     else
       render :new, status: :unprocessable_content
     end

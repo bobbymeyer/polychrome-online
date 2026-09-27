@@ -62,12 +62,6 @@ shared: &shared
       width: 1216
       height: 832
       transparent: false
-    generator_table:
-      prompt: "an illustration"
-      negative: "text"
-      width: 1024
-      height: 1024
-      transparent: false
     # Speaker portraits for the dialogue box: the speaker is the subject, and
     # each expression adds the words below.
     portrait:

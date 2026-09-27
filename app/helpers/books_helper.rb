@@ -8,6 +8,16 @@ module BooksHelper
     "spr" => "Spr", "agi" => "Agi", "atk" => "Atk", "def" => "Def", "mdef" => "MDef"
   }.freeze
 
+  # Encounter tables for a select, with the levels of what's in them, so the
+  # GM can match a road or dungeon to the party: "Grasslands (Lv 1–2)".
+  def encounter_table_options(world)
+    levels = world.monsters.to_h { |m| [ m.slug, m.level ] }
+    world.encounter_tables.order(:tier, :name).map do |table|
+      found = table.entries.flat_map { |e| e["monsters"].keys }.filter_map { |slug| levels[slug] }.minmax.compact.uniq
+      [ found.any? ? "#{table.name} (Lv #{found.join('–')})" : table.name, table.id ]
+    end
+  end
+
   def stat_label(name)
     STAT_LABELS.fetch(name.to_s, name.to_s.humanize)
   end

@@ -27,6 +27,38 @@ class World < ApplicationRecord
     super(ArtDirection.loras(value))
   end
 
+  BOOKS = %i[abilities items monsters encounter_tables generator_tables location_templates jobs].freeze
+
+  # Start a new world from another one's books: every entry is copied
+  # (images too, sharing the stored file), so the author edits a working
+  # setting instead of an empty one. Books refer to each other by slug, so
+  # copies keep pointing at copies; the few id references are remapped.
+  # Copied in dependency order, so each entry validates against the ones
+  # it names.
+  def copy_books_from!(source)
+    transaction do
+      tables = {}
+      abilities = {}
+      BOOKS.each do |book|
+        source.public_send(book).find_each do |entry|
+          copy = entry.dup
+          copy.world = self
+          copy.encounter_table_id = tables[entry.encounter_table_id] if book == :location_templates
+          copy.save!
+          copy.image.attach(entry.image.blob) if entry.image.attached?
+          tables[entry.id] = copy.id if book == :encounter_tables
+          abilities[entry.id] = copy.id if book == :abilities
+          if book == :jobs
+            entry.job_levels.each { |level| copy.job_levels.create!(level: level.level, abp: level.abp, ability_id: abilities.fetch(level.ability_id)) }
+          end
+        end
+      end
+      source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
+      %w[art_style art_negative art_loras art_checkpoint].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      save!
+    end
+  end
+
   # A content type's framing (§8), made from config/comfy.yml the first time.
   def art_type(kind)
     art_types.find_by(kind: kind) || art_types.create!(kind: kind, **ArtType.defaults_for(kind).symbolize_keys)

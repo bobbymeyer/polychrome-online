@@ -1,15 +1,14 @@
 <% s = entry.settings %>
-<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
+<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form", data: { controller: "kind-switch" } do |f| %>
   <%= render "book_entries/errors", entry: entry %>
   <%= render "book_entries/identity_fields", f: f %>
   <div class="field-row">
-    <div class="field"><%= f.label :kind %><%= f.select :kind, LocationTemplate::KINDS.map { |k| [ k.humanize, k ] } %></div>
+    <div class="field"><%= f.label :kind %><%= f.select :kind, LocationTemplate::KINDS.map { |k| [ k.humanize, k ] }, {}, data: { kind_switch_target: "select", action: "kind-switch#update" } %></div>
   </div>
   <% field = ->(key) { json_field_name(f, :config, key) } %>
 
-  <fieldset class="panel">
-    <legend>Towns</legend>
-    <p class="hint">Used when the kind is Town.</p>
+  <fieldset class="panel" data-show-for="town">
+    <legend>Town</legend>
     <div class="stat-inputs">
       <% Generators::Town::SERVICES.each do |service| %>
         <div class="field">
@@ -25,9 +24,9 @@
     </div>
   </fieldset>
 
-  <fieldset class="panel">
-    <legend>Dungeons</legend>
-    <p class="hint">Used when the kind is Dungeon. Every room gets one decision, picked by these weights; forks only go where there's a choice of ways.</p>
+  <fieldset class="panel" data-show-for="dungeon">
+    <legend>Dungeon</legend>
+    <p class="hint">Every room gets one decision, picked by these weights; forks only go where there's a choice of ways.</p>
     <div class="stat-inputs">
       <% range = s["rooms"] || LocationTemplate::DEFAULTS.dig("dungeon", "rooms") %>
       <div class="field"><label for="config_rooms_min">Rooms min</label><%= number_field_tag field.("rooms_min"), range[0], min: 2, max: 30, id: "config_rooms_min" %></div>
@@ -43,7 +42,7 @@
     <div class="field-row">
       <div class="field">
         <%= f.label :encounter_table_id, "Encounter table" %>
-        <%= f.select :encounter_table_id, @world.encounter_tables.order(:tier, :name).map { |t| [ "#{t.name} (tier #{t.tier})", t.id ] }, include_blank: "None" %>
+        <%= f.select :encounter_table_id, encounter_table_options(@world), include_blank: "None" %>
       </div>
       <% boss_slug, boss_count = (s["boss"] || {}).first %>
       <div class="field">
@@ -56,12 +55,12 @@
 
   <fieldset class="panel">
     <legend>Generator tables</legend>
-    <p class="hint">Which tables to draw names, hooks, rooms and loot from. Tick none to use every table in the world.</p>
+    <p class="hint">Which tables to draw names, hooks, rooms and loot from. Tick none to draw on every table of the kinds this template uses.</p>
     <%= hidden_field_tag "#{f.object_name}[config][tables][]", "", id: nil %>
     <div class="checks">
       <% chosen = entry.config.fetch("tables", []) %>
       <% @world.generator_tables.order(:kind, :name).each do |table| %>
-        <label>
+        <label data-show-for="<%= GeneratorTable::TOWN_KINDS.include?(table.kind) ? "town" : "dungeon" %>">
           <%= check_box_tag "#{f.object_name}[config][tables][]", table.slug, chosen.include?(table.slug), id: "config_tables_#{table.slug}" %>
           <%= table.name %> <span class="muted">(<%= table.kind.humanize.downcase %>)</span>
         </label>

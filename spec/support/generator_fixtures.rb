@@ -10,7 +10,7 @@ module GeneratorFixtures
 
   def town_tables
     {
-      "place_names" => texts("Tule", "Carwen", "Walse"),
+      "town_names" => texts("Tule", "Carwen", "Walse"),
       "names" => texts("Mira", "Oskar", "Lenne", "Dorn", "Pell", "Hask", "Ivy", "Brand"),
       "hooks" => texts("Owes the guild money.", "Saw lights on the hill.", "Lost a brother to the pass.",
                        "Sells maps that are mostly right.", "Wants an escort north.", "Hides a runaway."),
@@ -32,7 +32,7 @@ module GeneratorFixtures
 
   def dungeon_tables
     {
-      "place_names" => texts("Wind Shrine", "Pirate Cave"),
+      "dungeon_names" => texts("Wind Shrine", "Pirate Cave"),
       "rooms" => texts("Flooded Hall", "Ossuary", "Collapsed Stair", "Shrine", "Guardroom", "Cistern", "Vault", "Crossing"),
       "room_events" => texts("A voice asks for a name.", "The floor tilts.", "Old bones, arranged in a circle."),
       "forks" => texts("A rope bridge: someone must stay behind to hold it.", "Poison gas: everyone loses 10% HP."),

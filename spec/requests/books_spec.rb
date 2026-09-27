@@ -24,6 +24,24 @@ RSpec.describe "Books", type: :request do
       expect(World.find_by!(slug: "second").name).to eq("Renamed")
     end
 
+    it "starts a world from another world's books, copies and all" do
+      require Rails.root.join("db/seeds/base_world")
+      base = Seeds::BaseWorld.run
+      base.monsters.find_by!(slug: "goblin").image.attach(io: StringIO.new("png"), filename: "goblin.png", content_type: "image/png")
+      post worlds_path, params: { world: { name: "Ashfall", slug: "ashfall" }, copy_from: "base" }
+      ashfall = World.find_by!(slug: "ashfall")
+      World::BOOKS.each { |book| expect(ashfall.public_send(book).count).to eq(base.public_send(book).count), book.to_s }
+
+      knight = ashfall.jobs.find_by!(slug: "knight")
+      expect(knight.job_levels.map(&:ability)).to all(have_attributes(world_id: ashfall.id))
+      cave = ashfall.location_templates.find_by!(slug: "goblin_cave")
+      expect(cave.encounter_table.world).to eq(ashfall)
+      expect(ashfall.monsters.find_by!(slug: "goblin").image).to be_attached
+
+      ashfall.monsters.find_by!(slug: "goblin").update!(name: "Ash Goblin")
+      expect(base.monsters.find_by!(slug: "goblin").name).to eq("Goblin")
+    end
+
     it "re-renders the form with errors" do
       post worlds_path, params: { world: { name: "", slug: "Bad Slug" } }
       expect(response).to have_http_status(:unprocessable_content)

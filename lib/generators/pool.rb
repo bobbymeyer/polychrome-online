@@ -32,13 +32,13 @@ module Generators
       entries.find { |entry| (target -= weight(entry)).negative? }
     end
 
-    # Like #pick, but prefers text this pool hasn't handed out yet, so one
+    # Like #pick, but prefers rows this pool hasn't handed out yet, so one
     # place doesn't repeat itself until its table runs out. Same number of
     # draws either way.
     def pick_fresh(entries)
-      fresh = entries.reject { |entry| used.include?(entry["text"]) }
+      fresh = entries.reject { |entry| used.include?(entry.except("weight")) }
       chosen = pick(fresh.any? { |entry| weight(entry).positive? } ? fresh : entries)
-      used << chosen["text"] if chosen
+      used << chosen.except("weight") if chosen
       chosen
     end
 

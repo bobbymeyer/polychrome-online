@@ -126,14 +126,24 @@ RSpec.describe "Locations", type: :request do
   describe "the books" do
     it "shows a template with an example, and rerolls the example" do
       get world_gazetteer_location_template_path(world, "goblin_cave")
-      expect(response.body).to include("Goblin cave", "floorplan", "Grasslands", "Another example")
+      expect(response.body).to include("Goblin cave", "floorplan", "Goblin Cave", "Another example")
       get world_gazetteer_location_template_path(world, "village", seed: 7)
-      expect(response.body).to include("skyline", "seed=8")
+      expect(response.body).to include("skyline", "seed=8", "People", "For sale")
+      village = Generators::Town.generate(seed: 7, template: world.location_templates.find_by!(slug: "village").settings,
+                                          tables: world.location_templates.find_by!(slug: "village").table_entries)
+      expect(response.body).to include(ERB::Util.html_escape(village["npcs"].first["hook"]))
+    end
+
+    it "warns when a template has nothing to draw some things from" do
+      empty = World.create!(name: "Empty", slug: "empty")
+      empty.location_templates.create!(name: "Hamlet", slug: "hamlet", kind: "town", config: {})
+      get world_gazetteer_location_template_path(empty, "hamlet")
+      expect(response.body).to include("No town names, names, hooks, service names, buildings, and stock tables", "Stranger 1")
     end
 
     it "has CRUD for generator tables and templates" do
       post world_generation_generator_tables_path(world), params: { generator_table: {
-        name: "Sea names", kind: "place_names", entries: { "0" => { text: "Port Nerve", weight: "2" }, "1" => { text: "" } }
+        name: "Sea names", kind: "town_names", entries: { "0" => { text: "Port Nerve", weight: "2" }, "1" => { text: "" } }
       } }
       expect(response).to redirect_to(world_generation_generator_table_path(world, "sea_names"))
       expect(world.generator_tables.find_by!(slug: "sea_names").entries).to eq([ { "text" => "Port Nerve", "weight" => 2 } ])

@@ -2,6 +2,6 @@
 <% installed = Comfy.installed %>
 <datalist id="comfy-loras"><% installed[:loras].each do |lora| %><option value="<%= lora %>"><% end %></datalist>
 <datalist id="comfy-checkpoints"><% installed[:checkpoints].each do |checkpoint| %><option value="<%= checkpoint %>"><% end %></datalist>
-<% if installed[:loras].empty? && installed[:checkpoints].empty? %>
-  <p class="hint">ComfyUI at <code><%= Comfy.config[:url] %></code> isn't answering, so there are no suggestions for LoRA and checkpoint names. Type them as ComfyUI names the files.</p>
+<% if !installed[:reachable] %>
+  <p class="hint">ComfyUI at <code><%= Comfy.config[:url] %></code> isn't answering, so nothing can be generated and there are no suggestions for LoRA and checkpoint names. Start it and reload; uploading an image on the edit page still works.</p>
 <% end %>

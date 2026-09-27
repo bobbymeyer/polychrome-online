@@ -24,7 +24,7 @@
         <%= select_tag :expression, options_for_select(Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] }, chosen) %>
       </div>
       <div class="field"><%= label_tag :count, "Candidates" %><%= number_field_tag :count, Comfy.config[:candidates], min: 1, max: 8 %></div>
-      <%= submit_tag "Generate", class: "button" %>
+      <%= submit_tag "Generate", class: "button", disabled: !Comfy.installed[:reachable], title: ("ComfyUI isn't answering" unless Comfy.installed[:reachable]) %>
     </div>
     <p class="hint">
       <% if neutral_seed %>

@@ -12,6 +12,15 @@
     </div>
   </div>
   <div class="field"><%= f.label :description %><%= f.text_area :description, rows: 4 %></div>
+  <% unless world.persisted? %>
+    <% sources = World.order(:name) %>
+    <div class="field">
+      <%= label_tag :copy_from, "Start from" %>
+      <%= select_tag :copy_from, options_for_select(sources.map { |w| [ "#{w.name}'s books", w.slug ] }, params[:copy_from] || sources.first&.slug),
+                     include_blank: "Empty books" %>
+      <p class="hint">Copying gives you working monsters, jobs, abilities, items, tables and templates to edit and cut down. Your copies are your own: changing them never touches the original.</p>
+    </div>
+  <% end %>
   <div class="actions">
     <%= f.submit class: "button" %>
     <%= link_to "Cancel", world.persisted? ? world_path(world) : worlds_path, class: "button button--quiet" %>
