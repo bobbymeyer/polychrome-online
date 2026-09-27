@@ -4,6 +4,7 @@
 # base world is seed data (db/seeds). A second author's world is just
 # another row (§1, §9.1).
 class World < ApplicationRecord
+  belongs_to :owner, class_name: "User", optional: true
   has_many :abilities, dependent: :destroy
   has_many :items, dependent: :destroy
   has_many :jobs, dependent: :destroy
@@ -24,6 +25,8 @@ class World < ApplicationRecord
   MUSIC_MAX_BYTES = 25.megabytes
   MUSIC.each { |scene| has_one_attached :"music_#{scene}" }
   validate :music_is_audio
+
+  before_validation(on: :create) { self.slug = name.to_s.parameterize(separator: "_") if slug.blank? }
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true, format: { with: BookEntry::SLUG_FORMAT }

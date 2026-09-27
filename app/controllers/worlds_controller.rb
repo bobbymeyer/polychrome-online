@@ -2,8 +2,8 @@
 
 # A world's page is the table of contents of its books.
 class WorldsController < ApplicationController
-  before_action :require_admin, except: %i[index show]
   before_action :set_world, only: %i[show edit update]
+  before_action :require_world_editor, only: %i[edit update]
 
   # Home: your campaigns first (the ones you play in or GM), then the rest
   # to join, then the worlds and their books.
@@ -24,7 +24,8 @@ class WorldsController < ApplicationController
   def edit; end
 
   def create
-    @world = World.new(params.expect(world: %i[name slug description]))
+    # Anyone can make a world, usually by copying one; it's theirs to edit.
+    @world = World.new(params.expect(world: %i[name slug description]).merge(owner: current_user))
     source = World.find_by(slug: params[:copy_from]) if params[:copy_from].present?
     if @world.save
       if source

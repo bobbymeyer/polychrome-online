@@ -9,7 +9,7 @@
 <% if @entry.respond_to?(:art_recipe) && can_generate?(@entry) %>
   <%= render "art_batches/studio", entry: @entry %>
 <% end %>
-<% if admin? %>
+<% if can_edit_world? %>
 <div class="actions">
   <%= link_to "Edit", polymorphic_path([:edit, @world, book_key, @entry]), class: "button" %>
   <%= button_to "Delete", entry_path(@entry), method: :delete, class: "button button--danger",

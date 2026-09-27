@@ -70,8 +70,34 @@ RSpec.describe "Accounts", type: :request do
       get world_art_direction_path(world)
       expect(response).to redirect_to(root_path)
       expect { post world_art_batches_path(world), params: { entry_type: "monster", entry_slug: "goblin" } }.not_to change(ArtBatch, :count)
-      expect { post worlds_path, params: { world: { name: "Mine", slug: "mine" } } }.not_to change(World, :count)
-      expect { post world_campaigns_path(world), params: { campaign: { name: "Mine" } } }.not_to change(Campaign, :count)
+      get world_path(world)
+      expect(response.body).to include("Copy this world")
+      expect(response.body).not_to include("Edit world")
+    end
+
+    it "runs their own game: a campaign they GM, and a world of their own whose books they and their GMs can change" do
+      post world_campaigns_path(world), params: { campaign: { name: "Lenna's Road" } }
+      expect(Campaign.find_by!(name: "Lenna's Road").gm).to eq(lenna)
+
+      post worlds_path, params: { world: { name: "Ashfall", slug: "ashfall" }, copy_from: world.slug }
+      ashfall = World.find_by!(slug: "ashfall")
+      expect(ashfall.owner).to eq(lenna)
+      ash_goblin = ashfall.monsters.find_by!(slug: "goblin")
+      patch world_bestiary_monster_path(ashfall, ash_goblin), params: { monster: { name: "Ash Goblin" } }
+      expect(ash_goblin.reload.name).to eq("Ash Goblin")
+      get world_path(ashfall)
+      expect(response.body).to include("Edit world")
+
+      # A GM running a campaign in her world can change it too; another GM can't.
+      faris = make_user("Faris")
+      ashfall.campaigns.create!(name: "Faris's Run", gm: faris)
+      sign_in_as(faris)
+      patch world_bestiary_monster_path(ashfall, ash_goblin), params: { monster: { name: "Cinder Goblin" } }
+      expect(ash_goblin.reload.name).to eq("Cinder Goblin")
+      sign_in_as(make_user("Galuf"))
+      patch world_bestiary_monster_path(ashfall, ash_goblin), params: { monster: { name: "Nope" } }
+      expect(ash_goblin.reload.name).to eq("Cinder Goblin")
+      expect(flash[:alert]).to include("Copy it to make your own")
     end
 
     it "makes their own character, at the party's lowest level, and only they (and the GM) run it" do

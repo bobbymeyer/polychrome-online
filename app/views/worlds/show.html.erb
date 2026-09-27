@@ -2,13 +2,20 @@
 <div class="book-header">
   <h1><%= @world.name %></h1>
   <div class="actions">
-    <% if admin? %>
-      <%= link_to "New campaign", new_world_campaign_path(@world), class: "button" %>
-      <%= link_to "Art direction", world_art_direction_path(@world), class: "button button--quiet" %>
-      <%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %>
-    <% end %>
+    <%= link_to "New campaign", new_world_campaign_path(@world), class: "button" %>
+    <%= link_to "Copy this world", new_world_path(copy_from: @world.slug), class: "button button--quiet" %>
+    <% if admin? %><%= link_to "Art direction", world_art_direction_path(@world), class: "button button--quiet" %><% end %>
+    <% if can_edit_world? %><%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %><% end %>
   </div>
 </div>
+<p class="hint">
+  <% if @world.owner %>Made by <%= @world.owner.name %>. <% end %>
+  <% if can_edit_world? %>
+    You can change its books<%= "; so can the GMs of its campaigns" if @world.owner %>.
+  <% else %>
+    Its books are <%= @world.owner ? "#{@world.owner.name}'s" : "the admins'" %>. Run a campaign in it as it is, or copy it to make one you can change as you play.
+  <% end %>
+</p>
 <% if @world.description.present? %>
   <div class="prose"><%= simple_format(@world.description) %></div>
 <% end %>

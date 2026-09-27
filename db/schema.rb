@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_020000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -521,6 +521,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.text "art_negative"
     t.json "art_loras", default: [], null: false
     t.string "art_checkpoint"
+    t.integer "owner_id"
+    t.index ["owner_id"], name: "index_worlds_on_owner_id"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end
 
@@ -575,4 +577,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
   add_foreign_key "scenes", "campaigns"
   add_foreign_key "scenes", "map_nodes", on_delete: :nullify
   add_foreign_key "sessions", "users"
+  add_foreign_key "worlds", "users", column: "owner_id", on_delete: :nullify
 end

@@ -7,7 +7,7 @@
       <% if world.persisted? %>
         <code class="slug"><%= world.slug %></code>
       <% else %>
-        <%= f.text_field :slug, required: true %>
+        <%= f.text_field :slug, placeholder: "From the name" %>
       <% end %>
     </div>
   </div>

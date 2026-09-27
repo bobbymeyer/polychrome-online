@@ -6,7 +6,7 @@ module Authorization
   extend ActiveSupport::Concern
 
   included do
-    helper_method :current_user, :admin?, :can_gm?, :can_play?, :can_manage?, :can_generate?
+    helper_method :current_user, :admin?, :can_gm?, :can_play?, :can_manage?, :can_generate?, :can_edit_world?
   end
 
   private
@@ -21,6 +21,10 @@ module Authorization
 
   def can_gm?(campaign)
     current_user&.can_gm?(campaign) || false
+  end
+
+  def can_edit_world?(world = @world)
+    current_user&.can_edit_world?(world) || false
   end
 
   def can_play?(character)
@@ -39,6 +43,10 @@ module Authorization
 
   def require_admin
     forbid unless admin?
+  end
+
+  def require_world_editor
+    forbid("Only #{@world.owner ? "#{@world.owner.name} and the GMs playing in it" : 'an admin'} can change #{@world.name}. Copy it to make your own.") unless can_edit_world?
   end
 
   def require_campaign_gm

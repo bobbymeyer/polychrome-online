@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
-# An account. The first one ever made is the admin: they build the world
-# (books, art) and can run any campaign. Everyone else plays: they own their
-# characters, and GM the campaigns an admin gives them.
+# An account. The first one ever made is the admin: they keep the Base
+# World (books, art) and can run any campaign. Anyone can play, start a
+# campaign and GM it, or make a world of their own (usually a copy) and
+# change its books as they play.
 class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :characters, dependent: :nullify
+  has_many :worlds, foreign_key: :owner_id, inverse_of: :owner, dependent: :nullify
   has_many :gm_campaigns, class_name: "Campaign", foreign_key: :gm_id, inverse_of: :gm, dependent: :nullify
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
@@ -22,6 +24,16 @@ class User < ApplicationRecord
   before_destroy :keep_an_admin
 
   scope :alphabetical, -> { order(:name, :email_address) }
+
+  # Change a world's books: an admin, or, for a world a GM made, its owner
+  # and the GMs running campaigns in it. The Base World has no owner, so it
+  # stays the admins': GMs copy it to make one of their own.
+  def can_edit_world?(world)
+    return true if admin?
+    return false unless world&.owner_id
+
+    world.owner_id == id || world.campaigns.exists?(gm_id: id)
+  end
 
   def can_gm?(campaign)
     admin? || (campaign.gm_id.present? && campaign.gm_id == id)

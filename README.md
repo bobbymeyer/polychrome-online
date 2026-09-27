@@ -371,10 +371,15 @@ generator (email and password, with `bcrypt`), plus a sign-up page.
 
 | Who | What they can do |
 | --- | --- |
-| **Admin** (the first account ever made) | Everything: the books, worlds, art direction and book art. Starts campaigns (and GMs them) and can GM any campaign. Manages accounts on the Accounts page. |
-| **A campaign's GM** (whoever an admin picks on the campaign's edit page) | Runs that campaign: the GM seat, map, flags, locations, battles, NPCs, the bag, rests, EXP grants, starting levels, and generating its speakers' portraits. |
-| **Player** (anyone else) | Makes characters, which start at the party's lowest level. Sits as, equips and levels their own characters. Reads the books. |
+| **Admin** (the first account ever made) | Everything: every world's books, art direction and book art. Can GM any campaign. Manages accounts on the Accounts page. |
+| **A campaign's GM** (whoever started it, or whoever an admin hands it to) | Runs that campaign: the GM seat, map, flags, locations, battles, scenes, NPCs, the bag, rests, EXP grants, starting levels, and generating its speakers' portraits. |
+| **A world's owner** (whoever made it, usually as a copy) | Changes its books as they play. So do the GMs of campaigns in that world. |
+| **Anyone** | Starts a campaign in any world and GMs it. Makes a world, usually by copying one. Makes characters, which start at the party's lowest level, and sits as, equips and levels their own. Reads every book. |
 
+- **The Base World is the admins'.** It has no owner, so only admins change
+  it: a GM who wants to change the books as they play copies it ("Copy this
+  world") and runs their campaign there. Worlds are live, so this is what
+  keeps one GM's retuned goblin out of another GM's game.
 - **Admin rules.** Anyone can be made an admin. The last admin can't be
   demoted or removed.
 - **Seats pick themselves.** At a table or battle you haven't sat at, you're
