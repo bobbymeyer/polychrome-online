@@ -140,7 +140,7 @@ class World < ApplicationRecord
         end
       end
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
-      %w[art_style art_negative art_loras art_checkpoint].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      %w[art_style art_negative art_loras art_model].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
     end
   end

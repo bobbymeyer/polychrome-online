@@ -502,54 +502,120 @@ Every image slot can be uploaded or generated with
 - **Speaker portraits,** one per expression, for NPCs and characters. Upload
   in their edit form; generate in "Generate portraits" below it.
 
-- **The prompt is composed in three layers.** Each layer can add LoRAs:
-  - **World:** the house style, the negative prompt, and optionally a
-    checkpoint. Edited on the world's Art direction page.
-  - **Content type:** framing per kind of entry, such as "profile view, full
-    body", plus a negative prompt, size, and whether to remove the background.
-    Also on the Art direction page, and seeded from `config/comfy.yml`.
+- **Every image is composed in three layers:** world, content type,
+  subject. Any layer can set a prompt, a model and LoRAs.
+  - **World:** the house style ("line art, hand drawn, monochrome"), the
+    negative prompt, a model and LoRAs. Edited on the world's Art direction
+    page.
+  - **Content type:** framing per kind of entry ("3/4 view of an object",
+    "front view of a building"), plus a negative prompt, size, whether to
+    remove the background, a model and LoRAs. Also on the Art direction
+    page, and seeded from `config/comfy.yml`.
   - **Subject:** a book entry's name and specifics (blank uses its
-    description), or a speaker's name, title or job, and looks. An NPC's
-    notes are GM-private and never go into a prompt.
+    description), or a speaker's name, title or job, and looks. Also a model
+    and LoRAs. Edited where it is generated. An NPC's notes are GM-private
+    and never go into a prompt.
   - **Expression** (portraits only): words per expression from
     `config/comfy.yml`, such as "smiling happily".
+- **How the layers combine:**
+  - **Model:** the lowest layer that names one wins, then `COMFY_MODEL`.
+    Anima is the default.
+  - **LoRAs** stack in layer order, world first. A lower layer that names
+    the same LoRA changes its strength in place, or switches it off with the
+    "On" box. Each layer's page shows the stack from the layers above.
+  - **Prompts** join in order: the model family's quality words, world
+    style, type framing, subject, expression.
+- **Model families** (`families` in `config/comfy.yml`) say how each kind of
+  model runs. They cover Anima, Krea 2 (raw and Turbo), SDXL (with Pony,
+  Illustrious/NoobAI and Lightning/Turbo variants) and SD 1.5. Each family
+  sets:
+  - loaders and the text encoder and VAE files to look for;
+  - steps, CFG, and sampler and scheduler preferences;
+  - CLIP skip and quality words;
+  - whether it uses a negative prompt;
+  - its trained size range. Sizes are scaled into it, keeping their shape.
 
-  When the same LoRA appears in two layers, the later layer's strength wins,
-  and 0 turns it off.
-- **The workflow is built, not templated.** `Comfy::Graph` builds the ComfyUI
-  graph from the composed recipe each time:
-  1. Checkpoint.
-  2. One chained LoraLoader per LoRA.
-  3. The prompts, the sampler and the decode.
-  4. Background removal, when the type asks for it and `COMFY_REMBG_NODE`
-     names an installed node.
-  5. SaveImage.
+  A model's file name picks its family. A name no family matches goes by
+  where the file is: a checkpoint is taken for SDXL, a bare diffusion model
+  for the default family. To teach it a new name, add a `match`. To support
+  a new architecture that loads the same way, add a family.
+- **The workflow is built for each image, not templated.**
+  `Comfy::Workflow` asks ComfyUI what it has installed (`/object_info`, one
+  node at a time) and builds the smallest graph that does the job:
+  - **The model loads the way it is stored.** A checkpoint uses one
+    `CheckpointLoaderSimple`. A bare diffusion model uses `UNETLoader`, plus
+    the family's text encoder (`CLIPLoader` with the first `type` this
+    ComfyUI offers) and its VAE.
+  - **LoRAs chain in stack order.** Each uses `LoraLoaderModelOnly`, or
+    `LoraLoader` for families whose LoRAs train the text encoder too.
+    Switched-off LoRAs are left out.
+  - **The negative prompt is never encoded when CFG is 1**, since the
+    sampler ignores it (`ConditioningZeroOut` instead). With a large text
+    encoder on CPU, that encoding can cost more than the image.
+  - **Only what the family and server call for:** CLIP skip only when the
+    family wants it, the first sampler and scheduler the server has,
+    background removal only if the node is installed.
+  - **A missing file stops the batch before anything is queued**, whether a
+    model, text encoder, VAE or LoRA, with a message naming what is
+    missing. The entry's page previews the workflow ("UNETLoader →
+    CLIPLoader → …") or what is missing, before you press Generate.
 - **Candidates.** Generate queues 1–8 candidates, each its own ComfyUI prompt
-  with its own seed. `ArtBatchJob` submits them and checks back every few
-  seconds without holding a worker. Each image appears on the page as it
-  lands, for everyone viewing it. Only the art section reloads (a Turbo Frame
-  and a `reload_frame` stream action), so a half-typed form elsewhere on the
-  page is left alone. For a portrait, the first candidate reuses the Neutral
-  portrait's seed, so the face stays closer across expressions.
-  "Use this" makes one the entry's image and
-  stores its `image_seed`, `image_prompt` and full `image_recipe`, so it can
-  be regenerated exactly. Uploading an image by hand clears them.
-- **Settings** are environment variables, read by `config/comfy.yml`:
+  with its own seed and the same prompt text. ComfyUI keeps the loaded model
+  and encoded prompt between them. `ArtBatchJob` submits them and checks back
+  every few seconds without holding a worker. Each image appears on the page
+  as it lands, for everyone viewing it. Only the art section reloads (a Turbo
+  Frame and a `reload_frame` stream action), so a half-typed form elsewhere on
+  the page is left alone. For a portrait, the first candidate reuses the
+  Neutral portrait's seed, so the face stays closer across expressions.
+  "Use this" makes one the entry's image and stores its `image_seed`,
+  `image_prompt` and full `image_recipe`, including the workflow's outline,
+  so it can be regenerated exactly. Uploading an image by hand clears them.
+- **Optional: a language model writes the subject** (`PromptWriter`,
+  `config/llm.yml`).
+  - When `LLM_URL` is set, each batch first has the subject layer rewritten
+    in the way the image model reads best: booru tags for Anima, Pony and
+    Illustrious, plain sentences for Krea 2 and SDXL.
+  - Style, framing and quality words are left as written.
+  - It runs once per batch, in the job, and answers are cached.
+  - There's a checkbox to skip it. If the model can't be reached, the batch
+    goes ahead with the prompt as written.
+  - It speaks the OpenAI-compatible chat API: llama.cpp's server,
+    llama-swap, Ollama (`…:11434/v1`), LM Studio, vLLM or a hosted API.
+- **ComfyUI and the language model can be anywhere the app can reach over
+  HTTP.** They can run on the same machine, on a LAN or tailnet, or behind a
+  proxy. Nothing assumes a particular machine or file layout.
+- **Settings** are environment variables, read by `config/comfy.yml` and
+  `config/llm.yml`. Secrets go in the environment, never in git; error
+  messages never repeat them.
 
-  | Variable | Default |
-  | --- | --- |
-  | `COMFY_URL` | `http://127.0.0.1:8188` |
-  | `COMFY_CHECKPOINT` | `sd_xl_base_1.0.safetensors` |
-  | `COMFY_REMBG_NODE` | blank (keeps backgrounds) |
-  | `COMFY_REMBG_INPUT` | `image` |
+  | Variable | Default | What |
+  | --- | --- | --- |
+  | `COMFY_URL` | `http://127.0.0.1:8188` | Where ComfyUI answers. A path prefix and `https://user:pass@host` basic auth both work |
+  | `COMFY_TOKEN` | blank | Sent as `Authorization: Bearer …` |
+  | `COMFY_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
+  | `COMFY_MODEL` | `anima-preview.safetensors` | The model when no layer names one |
+  | `COMFY_REMBG_NODE` | blank (keeps backgrounds) | A background-removal node |
+  | `COMFY_REMBG_INPUT` | `image` | That node's image input |
+  | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1` |
+  | `LLM_MODEL` | blank | The model to ask for, as the server names it |
+  | `LLM_TOKEN`, `LLM_HEADERS` | blank | As for ComfyUI |
+  | `LLM_TIMEOUT` | `120` | Seconds, room for the server to load the model |
 
-  LoRA and checkpoint fields suggest whatever ComfyUI reports as installed.
-- **ComfyUI on the same machine as the container.**
-  - Start ComfyUI with `--listen`: by default it only accepts connections from
-    127.0.0.1, which excludes the container.
+  Model and LoRA fields suggest whatever ComfyUI reports as installed.
+- **Anima** needs three files, from Comfy Org's repackaged release:
+  - `anima-preview.safetensors` in `models/diffusion_models`;
+  - `qwen_3_06b_base.safetensors` in `models/text_encoders`;
+  - `qwen_image_vae.safetensors` in `models/vae`.
+
+  Its LoRAs patch the model only. On Apple Silicon, use bf16 files rather
+  than fp8.
+- **ComfyUI or a language model on the same machine as the container:**
+  - Either service must listen beyond 127.0.0.1 for the container to reach
+    it. For ComfyUI, start it with `--listen`; otherwise use its address on
+    the LAN or tailnet.
   - Run the container with
     `--add-host=host.docker.internal:host-gateway`.
-  - Set `COMFY_URL=http://host.docker.internal:8188`.
+  - Use `http://host.docker.internal:<port>`.
   - `SOLID_QUEUE_IN_PUMA` (set in the Dockerfile) runs the job worker that
     drives generation.
   - Images are also kept in ComfyUI's `output/polychrome/` folder.
@@ -568,7 +634,8 @@ Every image slot can be uploaded or generated with
 | `lib/generators/` | Town and dungeon generators, and GM overrides on top (pure, seeded) |
 | `app/models/location.rb`, `app/views/locations/` | Campaign locations: skyline, floorplan, GM controls, exploration |
 | `app/javascript/controllers/battle_player_controller.js`, `app/javascript/battle/gestures.js` | The event player and the motion gestures (§3.2) |
-| `app/models/comfy/`, `app/models/art_*.rb`, `app/models/concerns/artwork.rb`, `app/jobs/art_batch_job.rb` | The asset pipeline: the ComfyUI client, the graph builder, layered recipes, batches and candidates |
+| `app/models/comfy/`, `app/models/art_*.rb`, `app/models/concerns/artwork.rb`, `app/jobs/art_batch_job.rb` | The asset pipeline: the ComfyUI client, model families, the workflow builder, layered recipes, batches and candidates |
+| `app/models/llm/`, `app/models/prompt_writer.rb` | The optional language model that writes image subjects |
 | `db/seeds/base_world.rb` | The base world's first entries (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |
 | `lib/battle/resolver.rb` | `Battle::Resolver.apply(state, action) -> [new_state, events]` |

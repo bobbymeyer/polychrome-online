@@ -1,7 +1,7 @@
-<%# What ComfyUI has installed, as suggestions for the LoRA and checkpoint fields. Empty if it can't be reached. %>
-<% installed = Comfy.installed %>
-<datalist id="comfy-loras"><% installed[:loras].each do |lora| %><option value="<%= lora %>"><% end %></datalist>
-<datalist id="comfy-checkpoints"><% installed[:checkpoints].each do |checkpoint| %><option value="<%= checkpoint %>"><% end %></datalist>
-<% if !installed[:reachable] %>
-  <p class="hint">ComfyUI at <code><%= Comfy.config[:url] %></code> isn't answering, so nothing can be generated and there are no suggestions for LoRA and checkpoint names. Start it and reload; uploading an image on the edit page still works.</p>
+<%# What ComfyUI has installed, as suggestions for the model and LoRA fields. Empty if it can't be reached. %>
+<% caps = Comfy.capabilities %>
+<datalist id="comfy-loras"><% caps.loras.each do |lora| %><option value="<%= lora %>"><% end %></datalist>
+<datalist id="comfy-models"><% caps.models.each do |model| %><option value="<%= model %>"><% end %></datalist>
+<% if !caps.reachable? %>
+  <p class="hint">ComfyUI at <code><%= Comfy.client.base %></code> isn't answering, so nothing can be generated and there are no suggestions for model and LoRA names. Start it and reload; uploading an image on the edit page still works.</p>
 <% end %>

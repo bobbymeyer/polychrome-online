@@ -18,14 +18,16 @@ class ArtBatch < ApplicationRecord
   # A new batch replaces any earlier one: the strip shows one round at a time.
   # The first candidate tries the entry's seed hint when it has one (a
   # portrait's neutral seed), so a face stays closer across expressions.
-  def self.start!(entry, count: Comfy.config[:candidates])
+  # write: let the language model (if there is one) rewrite the subject.
+  def self.start!(entry, count: Comfy.config[:candidates], write: true)
     count = count.to_i.clamp(1, 8)
     base = Random.rand(2**31)
     seeds = Array.new(count) { |i| (base + i) % 2**31 }
     seeds[0] = entry.art_seed_hint if entry.art_seed_hint
     batch = transaction do
       entry.art_batches.destroy_all
-      create!(world: entry.art_world, entry: entry, recipe: entry.art_recipe).tap do |b|
+      recipe = entry.art_recipe.merge("write" => write && Llm.enabled?)
+      create!(world: entry.art_world, entry: entry, recipe: recipe).tap do |b|
         seeds.each_with_index { |seed, i| b.candidates.create!(position: i, seed: seed) }
       end
     end
@@ -41,13 +43,28 @@ class ArtBatch < ApplicationRecord
     candidates.count { |c| !c.finished? }
   end
 
-  # Queue every candidate with ComfyUI. ComfyUI runs them one after another.
+  # Before anything is queued: the language model's go at the subject, when
+  # asked for. Every candidate then shares one prompt, so an image model
+  # that caches its text encodings only encodes it once.
+  def write_prompt!(llm)
+    return unless recipe["write"] && !recipe.dig("parts", "written") && !recipe["writer_error"]
+
+    update!(recipe: PromptWriter.rewrite(recipe, client: llm))
+  end
+
+  # Queue every candidate with ComfyUI, each graph built against what this
+  # ComfyUI has installed. ComfyUI runs them one after another, keeping the
+  # loaded model and encoded prompt between them.
   def submit!(client)
+    capabilities = client.capabilities
+    raise Comfy::Error, "ComfyUI isn't answering" unless capabilities.reachable?
+
     candidates.each do |candidate|
       next if candidate.comfy_prompt_id
 
       prefix = "polychrome/#{entry.art_filename(candidate.seed).delete_suffix('.png')}"
-      graph = Comfy::Graph.build(recipe, seed: candidate.seed, prefix: prefix, settings: graph_settings)
+      graph = Comfy::Workflow.build(recipe, seed: candidate.seed, prefix: prefix, capabilities: capabilities)
+      update!(recipe: recipe.merge("workflow" => Comfy::Workflow.outline(graph))) unless recipe["workflow"]
       candidate.update!(comfy_prompt_id: client.submit(graph), status: "running")
     end
     update!(status: "running")
@@ -80,11 +97,5 @@ class ArtBatch < ApplicationRecord
   def refresh_watchers
     stream = entry&.art_stream
     Turbo::StreamsChannel.broadcast_action_to(stream, :art, action: :reload_frame, target: "art_panel") if stream
-  end
-
-  private
-
-  def graph_settings
-    Comfy.config.to_h.stringify_keys.slice("sampler", "scheduler", "steps", "cfg", "rembg_node", "rembg_input")
   end
 end

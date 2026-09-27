@@ -3,7 +3,8 @@
 # Anything with an image slot that can be generated (docs/HANDOFF.md §8):
 # book entries and speaker portraits. The recipe is composed in layers: the
 # world's style, the content type's framing, the subject's specifics, and for
-# a portrait its expression. The world, type and subject layers can add LoRAs.
+# a portrait its expression. The world, type and subject layers can each
+# name a model (the lowest one that does wins) and stack LoRAs.
 #
 # Book entries use the defaults below; Portrait overrides the hooks.
 module Artwork
@@ -25,6 +26,7 @@ module Artwork
   def art_subject_label = name
   def art_subject = ArtDirection.join_prompt(name, art_notes.presence || description)
   def art_subject_loras = art_loras
+  def art_subject_model = art_model
   # A layer after the subject, if any (a portrait's expression).
   def art_detail = nil
   # A seed to try first, for a consistent look (a portrait's neutral seed).
@@ -45,26 +47,42 @@ module Artwork
     world = art_world
     type = art_type
     layers = [
-      { "label" => world.name, "role" => "World", "prompt" => world.art_style, "loras" => world.art_loras },
-      { "label" => type.label, "role" => "Type", "prompt" => type.prompt, "loras" => type.loras },
-      { "label" => art_subject_label, "role" => "Subject", "prompt" => art_subject, "loras" => art_subject_loras }
+      { "label" => world.name, "role" => "World", "prompt" => world.art_style, "model" => world.art_model, "loras" => world.art_loras },
+      { "label" => type.label, "role" => "Type", "prompt" => type.prompt, "model" => type.model, "loras" => type.loras },
+      { "label" => art_subject_label, "role" => "Subject", "prompt" => art_subject, "model" => art_subject_model, "loras" => art_subject_loras }
     ]
     layers << { "label" => art_detail[:label], "role" => "Detail", "prompt" => art_detail[:prompt], "loras" => [] } if art_detail
     layers
   end
 
-  # Everything ComfyUI needs apart from the seed.
+  def art_model_name
+    type = art_type
+    ArtDirection.pick_model(art_subject_model, type.model, art_world.art_model, Comfy.config[:model])
+  end
+
+  # Everything ComfyUI needs apart from the seed. The family of the model
+  # decides the quality words that lead the prompt, whether there is a
+  # negative prompt at all, and the size (scaled into its trained range).
+  # The parts are kept so the subject can be rewritten (PromptWriter) and
+  # the prompt put back together.
   def art_recipe
     world = art_world
     type = art_type
+    model = art_model_name
+    family = Comfy::Family.for(model, capabilities: -> { Comfy.capabilities })
+    parts = { "prefix" => family.prefix, "style" => world.art_style.to_s, "framing" => type.prompt.to_s,
+              "subject" => art_subject.to_s, "detail" => art_detail&.dig(:prompt).to_s }
+    width, height = family.size(type.width, type.height)
     {
-      "checkpoint" => world.art_checkpoint.presence || Comfy.config[:checkpoint],
-      "loras" => ArtDirection.merge_loras(world.art_loras, type.loras, art_subject_loras),
-      "positive" => ArtDirection.join_prompt(world.art_style, type.prompt, art_subject, art_detail&.dig(:prompt)),
-      "negative" => ArtDirection.join_prompt(world.art_negative, type.negative),
-      "width" => type.width,
-      "height" => type.height,
-      "transparent" => type.transparent
+      "model" => model,
+      "family" => family.slug,
+      "loras" => ArtDirection.stack_loras(world.art_loras, type.loras, art_subject_loras),
+      "positive" => ArtDirection.compose(parts),
+      "negative" => family.negative? ? ArtDirection.join_prompt(family.negative_prefix, world.art_negative, type.negative) : "",
+      "width" => width,
+      "height" => height,
+      "transparent" => type.transparent,
+      "parts" => parts
     }
   end
 

@@ -23,6 +23,7 @@ class Portrait < ApplicationRecord
   def art_subject_label = owner.name
   def art_subject = owner.art_subject
   def art_subject_loras = owner.art_loras
+  def art_subject_model = owner.art_model
 
   def art_detail
     { label: expression.humanize, prompt: Comfy.config.fetch(:expressions, {})[expression.to_sym] || expression }

@@ -43,5 +43,7 @@ module Polychrome
 
     # The asset pipeline's ComfyUI settings (config/comfy.yml).
     config.x.comfy = config_for(:comfy)
+    # An optional language model for writing prompts (config/llm.yml).
+    config.x.llm = config_for(:llm)
   end
 end

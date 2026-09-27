@@ -9,10 +9,13 @@ class ArtBatchJob < ApplicationJob
 
   discard_on ActiveJob::DeserializationError # the batch was discarded or replaced
 
-  def perform(batch, client: Comfy::Client.new)
+  def perform(batch, client: Comfy.client, llm: Llm.enabled? ? Llm.client : nil)
     return if batch.finished?
 
-    batch.submit!(client) if batch.status == "queued"
+    if batch.status == "queued"
+      batch.write_prompt!(llm) if llm
+      batch.submit!(client)
+    end
     return if batch.collect!(client)
 
     if batch.timed_out?

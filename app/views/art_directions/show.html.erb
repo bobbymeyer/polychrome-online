@@ -4,9 +4,11 @@
   <h1>Art direction</h1>
 </header>
 <p class="prose">
-  Every image prompt is built in three layers: this world's house style, then the framing for the kind
-  of entry, then the entry's own specifics (set on its page). Each layer can add LoRAs. When the same
-  LoRA appears twice, the later layer's strength wins, and 0 turns it off.
+  Every image is made in three layers: this world's house style, then the framing for the kind of
+  entry, then the entry's own specifics (set on its page). Any layer can name a model, and the lowest
+  one that does wins. LoRAs stack in layer order; a later layer that names the same LoRA changes its
+  strength or switches it off. The ComfyUI workflow is built for each image from the model's family
+  and what ComfyUI has installed.
 </p>
 
 <%= form_with url: world_art_direction_path(@world), method: :patch, class: "book-form" do |f| %>
@@ -22,11 +24,7 @@
       <%= label_tag "world_art_negative", "Negative" %>
       <%= text_area_tag "world[art_negative]", @world.art_negative, rows: 2, id: "world_art_negative", placeholder: "photo, 3d render, blurry, watermark" %>
     </div>
-    <div class="field">
-      <%= label_tag "world_art_checkpoint", "Checkpoint" %>
-      <%= text_field_tag "world[art_checkpoint]", @world.art_checkpoint, id: "world_art_checkpoint", list: "comfy-checkpoints", placeholder: Comfy.config[:checkpoint] %>
-      <p class="hint">Blank uses <code><%= Comfy.config[:checkpoint] %></code>.</p>
-    </div>
+    <%= render "art_directions/model_field", name: "world[art_model]", id: "world_art_model", value: @world.art_model, inherited: Comfy.config[:model] %>
     <%= render "art_directions/loras", name: "world[art_loras]", loras: @world.art_loras %>
   </fieldset>
 
@@ -42,6 +40,7 @@
         <%= label_tag "types_#{type.kind}_negative", "Negative" %>
         <%= text_area_tag "#{prefix}[negative]", type.negative, rows: 1, id: "types_#{type.kind}_negative" %>
       </div>
+      <p class="hint">Sizes are scaled into the model's trained range, keeping their shape.</p>
       <div class="field-row">
         <div class="field"><%= label_tag "types_#{type.kind}_width", "Width" %><%= number_field_tag "#{prefix}[width]", type.width, min: 256, max: 2048, step: 64, id: "types_#{type.kind}_width" %></div>
         <div class="field"><%= label_tag "types_#{type.kind}_height", "Height" %><%= number_field_tag "#{prefix}[height]", type.height, min: 256, max: 2048, step: 64, id: "types_#{type.kind}_height" %></div>
@@ -51,12 +50,15 @@
           <%= label_tag "types_#{type.kind}_transparent", "Remove the background" %>
         </div>
       </div>
-      <%= render "art_directions/loras", name: "#{prefix}[loras]", loras: type.loras %>
+      <%= render "art_directions/model_field", name: "#{prefix}[model]", id: "types_#{type.kind}_model", value: type.model, inherited: @world.art_model.presence || Comfy.config[:model] %>
+      <%= render "art_directions/loras", name: "#{prefix}[loras]", loras: type.loras, above: ArtDirection.stack_loras(@world.art_loras) %>
     </fieldset>
   <% end %>
 
   <% if Comfy.config[:rembg_node].blank? %>
     <p class="hint">No background-removal node is set (<code>COMFY_REMBG_NODE</code>), so backgrounds are kept for now.</p>
+  <% elsif Comfy.capabilities.reachable? && !Comfy.capabilities.node?(Comfy.config[:rembg_node]) %>
+    <p class="hint">ComfyUI has no <code><%= Comfy.config[:rembg_node] %></code> node installed, so backgrounds are kept for now.</p>
   <% end %>
   <div class="actions"><%= f.submit "Save art direction", class: "button" %></div>
 <% end %>

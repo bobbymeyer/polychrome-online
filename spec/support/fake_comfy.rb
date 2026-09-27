@@ -4,10 +4,12 @@ require "zlib"
 
 # Stands in for Comfy::Client in specs: records the graphs it is sent and
 # answers from a script. `finish!` marks prompts done; `fail!` makes one error.
+# It has Anima installed (and whatever else `capabilities` is given).
 class FakeComfy
-  attr_reader :submitted
+  attr_reader :submitted, :capabilities
 
-  def initialize
+  def initialize(capabilities: FakeComfy.capabilities)
+    @capabilities = capabilities
     @submitted = []
     @done = []
     @failed = {}
@@ -30,6 +32,27 @@ class FakeComfy
 
   def fetch(_image) = FakeComfy.png
 
+  # A ComfyUI's /object_info, reduced to what the builder reads.
+  def self.capabilities(checkpoints: [], diffusion_models: [ "anima-preview.safetensors" ],
+                        text_encoders: [ "qwen_3_06b_base.safetensors" ], clip_types: %w[stable_diffusion sdxl anima],
+                        vaes: [ "qwen_image_vae.safetensors" ], loras: [ "goblin.safetensors", "house.safetensors" ],
+                        samplers: %w[euler euler_ancestral er_sde dpmpp_2m], schedulers: %w[normal karras simple sgm_uniform],
+                        nodes: Comfy::Capabilities::NODES)
+    combo = ->(choices) { [ choices ] }
+    info = nodes.index_with { { "input" => { "required" => {} } } }
+    set = ->(node, input, choices) { info[node]["input"]["required"][input] = combo.(choices) if info[node] }
+    set.("CheckpointLoaderSimple", "ckpt_name", checkpoints)
+    set.("UNETLoader", "unet_name", diffusion_models)
+    set.("CLIPLoader", "clip_name", text_encoders)
+    set.("CLIPLoader", "type", clip_types)
+    set.("VAELoader", "vae_name", vaes)
+    set.("LoraLoader", "lora_name", loras)
+    set.("LoraLoaderModelOnly", "lora_name", loras)
+    set.("KSampler", "sampler_name", samplers)
+    set.("KSampler", "scheduler", schedulers)
+    Comfy::Capabilities.new(info)
+  end
+
   # A 1×1 PNG, built by hand so specs need no image library.
   def self.png
     chunk = ->(type, data) { [ data.bytesize ].pack("N") + type + data + [ Zlib.crc32(type + data) ].pack("N") }
@@ -38,4 +61,10 @@ class FakeComfy
       chunk.("IDAT", Zlib::Deflate.deflate("\x00\x11\x11\x11\xFF".b)) +
       chunk.("IEND", "")
   end
+end
+
+# Pages ask what ComfyUI has installed; in specs they get FakeComfy's
+# answer instead of reaching for the network.
+RSpec.configure do |config|
+  config.before { allow(Comfy).to receive(:capabilities).and_return(FakeComfy.capabilities) }
 end

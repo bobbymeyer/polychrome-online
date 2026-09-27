@@ -5,8 +5,11 @@
       <span class="label"><%= layer["role"] %></span>
       <strong><%= layer["label"] %></strong>
       <p><%= layer["prompt"].presence || tag.span("nothing yet", class: "muted") %></p>
+      <% if layer["model"].present? %>
+        <p class="art-layers__loras">Model: <code><%= layer["model"] %></code></p>
+      <% end %>
       <% if layer["loras"].any? %>
-        <p class="art-layers__loras"><%= layer["loras"].map { |l| "#{l['name']} #{l['strength']}" }.join(" · ") %></p>
+        <p class="art-layers__loras"><%= lora_stack(layer["loras"]) %></p>
       <% end %>
     </li>
   <% end %>
