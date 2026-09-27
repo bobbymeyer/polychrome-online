@@ -25,6 +25,7 @@ class Ability < ApplicationRecord
   validates :field_difficulty, inclusion: { in: Stats::Check::DIFFICULTIES.keys }
   validates :field_power, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :field_skill_is_the_worlds, if: :field?
+  validate :summons_are_in_the_bestiary
   validates :mp_cost, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :hp_cost, numericality: { only_integer: true, in: 0..Battle::MAX_HP_COST }
   validates :charge, numericality: { only_integer: true, in: 0..Battle::MAX_CHARGE }
@@ -82,6 +83,12 @@ class Ability < ApplicationRecord
   end
 
   private
+
+  def summons_are_in_the_bestiary
+    creatures = Array(effects).filter_map { |e| e["creature"] if e["primitive"] == "summon" }
+    missing = creatures - Array(world&.monsters&.where(slug: creatures)&.pluck(:slug))
+    errors.add(:effects, "summon #{missing.join(', ')}, who aren't in the Bestiary") if missing.any?
+  end
 
   def field_skill_is_the_worlds
     errors.add(:field_skill, "must be one of #{world&.name}'s skills") unless world&.skill(field_skill)

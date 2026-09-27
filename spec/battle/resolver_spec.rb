@@ -760,6 +760,37 @@ RSpec.describe Battle::Resolver do
         expect(brink["amount"]).to be > full["amount"] * 2
       end
 
+      it "summons a creature that acts at once and leaves when its turns are up" do
+        state, events = cast("call_eagle", "mage")
+        expect(of_type(events, :summoned).sole).to include("actor" => "mage", "unit" => "eagle_1", "name" => "Eagle", "side" => "party")
+        expect(of_type(events, :cast).map { |e| e["actor"] }).to include("eagle_1")
+        expect(of_type(events, :damage).find { |e| e["actor"] == "eagle_1" }).to include("damage_type" => "flying") if of_type(events, :damage).any? { |e| e["actor"] == "eagle_1" }
+        expect(of_type(events, :unit_left)).to include(a_hash_including("unit" => "eagle_1", "summoned" => true))
+        expect(unit(state, "eagle_1")).to include("gone" => true, "guest" => true, "rewards" => {})
+      end
+
+      it "keeps a longer summon for its turns, stronger with power, and never asks for its input" do
+        state, events = cast("call_wisp", "mage")
+        wisp = unit(state, "wisp_1")
+        expect(wisp["stats"]["mag"]).to eq(14 * 150 / 100)
+        expect(wisp).not_to have_key("gone")
+        expect(Battle::State.awaiting_input(state)).to eq([ "mage" ])
+        expect(of_type(events, :cast).map { |e| e["actor"] }).to include("wisp_1")
+        _, events = round(state, "mage" => { kind: "defend" })
+        expect(of_type(events, :unit_left)).to include(a_hash_including("unit" => "wisp_1"))
+      end
+
+      it "lets an enemy call help to its own side, which the party must deal with" do
+        caller = brute.first.merge(abilities: %w[call_eagle], ai: [ { use: "call_eagle" } ], stats: brute.first[:stats].merge("agi" => 99, "max_mp" => 20))
+        state = build_battle(seed: 3, party: [ caster ], enemies: [ caller ])
+        _, events = round(state, "mage" => { kind: "defend" })
+        expect(of_type(events, :summoned).first).to include("actor" => "brute", "side" => "enemy")
+      end
+
+      it "only summons what the battle knows" do
+        expect { build_battle(summons: {}) }.to raise_error(ArgumentError, /summons eagle, which isn't in the battle's summons/)
+      end
+
       it "turns healing on the undead into harm, and drains them backwards" do
         undead = [ brute.first.merge(undead: true) ]
         _, events = cast("cure", "brute", enemies: undead)
@@ -851,12 +882,12 @@ RSpec.describe Battle::Resolver do
     let(:blob) { [ { id: "blob", name: "Blob", stats: stats(max_hp: 900, agi: 1), types: %w[plain] } ] }
 
     def world_battle(**options)
-      build_battle(party: mage, enemies: blob, abilities: scorch, types: types, **options)
+      build_battle(party: mage, enemies: blob, abilities: scorch, types: types, summons: {}, **options)
     end
 
     def damage_to(enemy_types)
       enemies = [ { id: "blob", name: "Blob", stats: stats(max_hp: 900, agi: 1), types: enemy_types } ]
-      state = build_battle(seed: 1, party: mage, enemies: enemies, abilities: scorch, types: types)
+      state = build_battle(seed: 1, party: mage, enemies: enemies, abilities: scorch, types: types, summons: {})
       _, events = apply(state, command("mage", "scorch", "blob"))
       of_type(events, :damage).find { |e| e["actor"] == "mage" }
     end
@@ -880,7 +911,7 @@ RSpec.describe Battle::Resolver do
       one = { "chart" => { "normal" => {} } }
       state = build_battle(seed: 2, party: [ mage.first.merge(abilities: %w[zap]) ], enemies: [ blob.first.merge(types: %w[normal]) ],
                            abilities: { zap: { name: "Zap", kind: "magic", target: "single_enemy", cost: { mp: 0 },
-                                               effects: [ { primitive: "elemental", type: "normal", power: 20 } ] } }, types: one)
+                                               effects: [ { primitive: "elemental", type: "normal", power: 20 } ] } }, types: one, summons: {})
       _, events = apply(state, command("mage", "zap", "blob"))
       expect(of_type(events, :damage).find { |e| e["actor"] == "mage" }).to include("effectiveness" => 100)
     end

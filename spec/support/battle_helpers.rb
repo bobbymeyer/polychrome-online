@@ -83,8 +83,20 @@ module BattleFixtures
       doom: { name: "Doom", kind: "magic", target: "single_enemy", cost: { mp: 8 }, effects: [ { primitive: "status", kind: "doom", chance: 50, duration: 2 } ] },
       reckless: { name: "Reckless Strike", kind: "skill", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "physical", power: 200, recoil: 25 } ] },
       revenge: { name: "Revenge", kind: "skill", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "physical", power: 100, grudge: 200 } ] },
+      call_eagle: { name: "Call Eagle", kind: "magic", target: "self", cost: { mp: 4 }, effects: [ { primitive: "summon", creature: "eagle" } ] },
+      call_wisp: { name: "Call Wisp", kind: "magic", target: "self", cost: { mp: 6 }, effects: [ { primitive: "summon", creature: "wisp", duration: 2, power: 150 } ] },
+      talon: { name: "Talon Dive", kind: "skill", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "physical", type: "flying", power: 160 } ] },
+      chill: { name: "Chill", kind: "magic", target: "all_enemies", cost: { mp: 0 }, effects: [ { primitive: "elemental", type: "ghost", power: 10 } ] },
       sneak_attack: { name: "Sneak Attack", kind: "skill", target: "single_enemy", cost: { mp: 0 },
                       effects: [ { primitive: "physical", power: 100, against: "sleep", bonus: 200 } ] }
+    }
+  end
+
+  # Creatures abilities can call (the summon primitive).
+  def summons
+    {
+      eagle: { name: "Eagle", stats: stats(max_hp: 40, str: 12, atk: 10, agi: 30), types: %w[flying], ai: [ { use: "talon" } ], abilities: %w[talon] },
+      wisp: { name: "Wisp", stats: stats(max_hp: 30, mag: 14, agi: 20), types: %w[ghost], ai: [ { use: "chill" } ], abilities: %w[chill] }
     }
   end
 
@@ -140,9 +152,9 @@ module BattleHelpers
   def stats(**overrides) = BattleFixtures.stats(**overrides)
 
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
-                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil)
+                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil, summons: BattleFixtures.summons)
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items, terrain: terrain,
-                        types: types)
+                        types: types, summons: summons)
   end
 
   def apply(state, action)

@@ -21,13 +21,14 @@ class RandomTable
                              u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser),
                                      passives: Battle::PASSIVES.sample(@chooser.rand(0..2), random: @chooser),
                                      abilities: u[:abilities] + %w[cover jump gaia hide banish high_jump barrier taunt stop rage confuse focus flame_blade gravity osmose
-                                                                            blood_strike holy comet sneak_attack doom reckless revenge]
+                                                                            blood_strike holy comet sneak_attack doom reckless revenge call_eagle call_wisp]
                                                                          .sample(5, random: @chooser))
                               .merge(job_parts(u))
                            },
       terrain: Battle::TYPES.sample(random: @chooser),
       enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre, BattleFixtures.skeletons(@chooser.rand(1..3)) ].sample(random: @chooser),
       abilities: BattleFixtures.abilities,
+      summons: BattleFixtures.summons,
       escapable: @chooser.rand(4) != 0,
       items: BattleFixtures.items(potion: @chooser.rand(0..3), phoenix_down: @chooser.rand(0..2),
                                   antidote: @chooser.rand(0..2), remedy: @chooser.rand(0..1))

@@ -501,6 +501,7 @@ module Battle
 
       Effects.upkeep(ctx, unit) if ctx.alive?(unit) && !ctx.over?
       ctx.emit(:turn_end, unit: unit["id"])
+      count_down_summon(unit) unless ctx.over?
     end
 
     # Confused: an Attack at anyone in reach but itself, friend or foe.
@@ -532,7 +533,7 @@ module Battle
     # the job's own command strike with the job's type, and mastery and the
     # active job scale its power (Stats::Mastery). A mastered move used
     # outside its job brings that job's stats with it.
-    POWERED = %w[physical elemental heal drain jump away shield sap].freeze
+    POWERED = %w[physical elemental heal drain jump away shield sap summon].freeze
     # What an effect's power is when it doesn't say.
     DEFAULT_POWER = { "jump" => 200, "away" => 0 }.freeze
 
@@ -675,6 +676,32 @@ module Battle
       apply_effects(unit, ability, targets)
     end
 
+    # Summoned creatures act as soon as the move that called them is done.
+    def arrive
+      while (creature = ctx.arrivals.shift)
+        break if ctx.over?
+
+        ability, target = AI.choose(ctx, creature)
+        use_ability(creature, own(creature, ability), target)
+        ctx.check_end
+        count_down_summon(creature)
+      end
+    end
+
+    # A summoned creature leaves once its turns are up (or it's down).
+    def count_down_summon(unit)
+      return unless unit["summoned"] && !unit["gone"]
+
+      unit["summoned"]["left"] -= 1
+      return if unit["summoned"]["left"].positive? && ctx.alive?(unit)
+
+      unit["gone"] = true
+      unit["statuses"] = []
+      unit["buffs"] = []
+      ctx.emit(:unit_left, unit: unit["id"], name: unit["name"], summoned: true)
+      ctx.check_end
+    end
+
     def apply_effects(unit, ability, targets)
       targets.each do |target|
         ability["effects"].each do |effect|
@@ -686,6 +713,7 @@ module Battle
           end
         end
       end
+      arrive
     end
 
     def announce(unit, ability, targets, cost)
@@ -706,6 +734,7 @@ module Battle
           Effects.apply(ctx, unit, target, effect)
         end
       end
+      arrive
     end
 
     def hits(effect)

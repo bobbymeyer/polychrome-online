@@ -114,7 +114,8 @@ module BattlesHelper
     when "round_start" then "— Round #{event['round']} —"
     when "attack" then "#{name.('actor')} attacks."
     when "unit_joined" then event["guest"] ? "#{event['name']} joins the party!" : "#{event['name']} joins the fight!"
-    when "unit_left" then "#{event['name']} leaves the field."
+    when "unit_left" then event["summoned"] ? "#{event['name']} goes on its way." : "#{event['name']} leaves the field."
+    when "summoned" then "#{name.('actor')} calls #{event['name']}!"
     when "custom_action" then "#{name.('actor')} tries: “#{event['text']}”#{" at #{unit_name(state, event['target'])}" if event['target']}"
     when "custom_roll" then "#{event['success'] ? 'It works!' : 'No luck.'} #{event['line'].presence}".strip + dice_note(event).to_s
     when "custom_unruled" then "No ruling in time: #{name.('actor')} attacks instead."
