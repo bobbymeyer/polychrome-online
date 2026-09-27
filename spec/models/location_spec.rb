@@ -201,6 +201,43 @@ RSpec.describe Location do
       expect(campaign.messages.last.body).to eq("Found 150 gil in Strongbox.")
     end
 
+    it "is locked until the party finds the key, which then opens the way for good" do
+      lock = dungeon.view["paths"].find { |p| p["lock"] }["lock"]
+      key_room = dungeon.view["rooms"].find { |r| r["decision"]["kind"] == "key" }
+      expect(key_room["decision"]).to include("lock" => lock["id"], "name" => lock["key_name"])
+
+      # Walk the rooms, never through a shut lock, until every reachable room is visited.
+      dungeon.enter!
+      walk = lambda do
+        loop do
+          here = dungeon.reload.progress["current"]
+          step = dungeon.neighbours(here).find { |n| !dungeon.visited.include?(n) && !dungeon.locked?(dungeon.path_between(here, n)) }
+          step ||= dungeon.neighbours(here).find { |n| !dungeon.locked?(dungeon.path_between(here, n)) && dungeon.neighbours(n).any? { |m| !dungeon.visited.include?(m) && !dungeon.locked?(dungeon.path_between(n, m)) } }
+          break unless step
+
+          dungeon.move_to!(step)
+          campaign.update!(pending_encounter: nil)
+        end
+      end
+      walk.()
+      expect(dungeon.keys_found).to eq([ lock["id"] ])
+      expect(campaign.messages.pluck(:body)).to include(a_string_matching(/Found #{Regexp.escape(lock['key_name'])}.*#{Regexp.escape(lock['name'])}/))
+      expect(dungeon.visited).not_to include(dungeon.view["boss"])
+
+      # Beside the lock: without the key it would refuse; with it, it opens.
+      locked = dungeon.view["paths"].find { |p| p["lock"] && (dungeon.visited.include?(p["from"]) || dungeon.visited.include?(p["to"])) }
+      near, far = dungeon.visited.include?(locked["from"]) ? [ locked["from"], locked["to"] ] : [ locked["to"], locked["from"] ]
+      dungeon.update!(progress: dungeon.progress.merge("current" => near))
+      without = dungeon.progress.merge("keys" => [])
+      dungeon.update!(progress: without)
+      expect { dungeon.move_to!(far) }.to raise_error(ArgumentError, /#{Regexp.escape(lock['name'])} bars the way/)
+      dungeon.update!(progress: without.merge("keys" => [ lock["id"] ]))
+      dungeon.move_to!(far)
+      expect(dungeon.unlocked?(lock)).to be(true)
+      expect(dungeon.keys_in_hand).to be_empty
+      expect(campaign.messages.pluck(:body)).to include(a_string_including("opens #{lock["name"]}. The way is clear."))
+    end
+
     it "shows players only the rooms they've been in and the exits out of them" do
       dungeon.enter!
       seen = dungeon.view["rooms"].map { |r| r["key"] }.select { |k| dungeon.seen_by_players?(k) }

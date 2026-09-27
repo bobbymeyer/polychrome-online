@@ -23,6 +23,61 @@ RSpec.describe Generators::Dungeon do
     expect(dungeon(9)).not_to eq(dungeon(10))
   end
 
+  describe "locks and keys" do
+    let(:flavours) { [ { "text" => "Altar", "key" => "Goat's skull" }, { "text" => "Portal", "key" => "Blue crystal" } ] }
+
+    def locked(seed, locks: 2)
+      dungeon(seed, template: dungeon_template.merge("locks" => locks), tables: dungeon_tables.merge("locks" => flavours))
+    end
+
+    # Rooms reachable from the entrance through every path not still locked.
+    def reach(d, closed)
+      g = Hash.new { |h, k| h[k] = [] }
+      d["paths"].each do |p|
+        next if p["lock"] && closed.include?(p["lock"]["id"])
+
+        g[p["from"]] << p["to"]
+        g[p["to"]] << p["from"]
+      end
+      seen = [ d["entrance"] ]
+      queue = [ d["entrance"] ]
+      while (room = queue.shift)
+        (g[room] - seen).each { |n| seen << n; queue << n }
+      end
+      seen
+    end
+
+    it "can always be solved: each key is reachable before its lock, and the boss only after all of them" do
+      (1..300).each do |seed|
+        d = locked(seed)
+        locks = d["paths"].filter_map { |p| p["lock"] }.uniq.sort_by { |l| l["id"] }
+        closed = locks.map { |l| l["id"] }
+        expect(reach(d, closed)).not_to include(d["boss"]) if locks.any?
+        locks.each do |lock|
+          key_room = d["rooms"].find { |r| r["decision"] == { "kind" => "key", "lock" => lock["id"], "name" => lock["key_name"] } }
+          expect(key_room).not_to be_nil
+          expect(reach(d, closed)).to include(key_room["key"]), "seed #{seed}: #{lock['id']}'s key is locked away"
+          expect([ d["entrance"], d["boss"] ]).not_to include(key_room["key"])
+          closed.delete(lock["id"])
+        end
+        expect(reach(d, closed)).to include(d["boss"])
+      end
+    end
+
+    it "takes its flavour from the locks table, and usually places the locks asked for" do
+      placed = (1..100).map { |seed| locked(seed).fetch("paths").filter_map { |p| p.dig("lock", "id") }.uniq.size }
+      expect(placed.max).to eq(2)
+      expect(placed.min).to eq(1) # some dungeons only have room for one
+      expect(placed.sum / 100.0).to be > 1
+      lock = (1..100).lazy.map { |seed| locked(seed, locks: 1)["paths"].find { |p| p["lock"] } }.find(&:itself)["lock"]
+      expect([ [ "Altar", "Goat's skull" ], [ "Portal", "Blue crystal" ] ]).to include([ lock["name"], lock["key_name"] ])
+    end
+
+    it "rolls a dungeon without locks exactly as before" do
+      expect(dungeon(5, template: dungeon_template.merge("locks" => 0))).to eq(dungeon(5))
+    end
+  end
+
   it "doesn't repeat an event until its table runs out" do
     dungeons.each do |d|
       texts = d["rooms"].filter_map { |room| room["decision"]["text"] if room["decision"]["kind"] == "event" }

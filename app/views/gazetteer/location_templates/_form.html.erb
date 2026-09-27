@@ -33,6 +33,7 @@
       <div class="field"><label for="config_rooms_min">Rooms min</label><%= number_field_tag field.("rooms_min"), range[0], min: 2, max: 30, id: "config_rooms_min" %></div>
       <div class="field"><label for="config_rooms_max">Rooms max</label><%= number_field_tag field.("rooms_max"), range[1], min: 2, max: 30, id: "config_rooms_max" %></div>
       <div class="field"><label for="config_loops">Loops</label><%= number_field_tag field.("loops"), s["loops"] || 1, min: 0, max: 5, id: "config_loops" %></div>
+      <div class="field"><label for="config_locks">Locks</label><%= number_field_tag field.("locks"), s["locks"] || 0, min: 0, max: 3, id: "config_locks" %></div>
       <% %w[encounter event treasure fork].each do |decision| %>
         <div class="field">
           <label for="config_decisions_<%= decision %>"><%= decision.humanize %> weight</label>

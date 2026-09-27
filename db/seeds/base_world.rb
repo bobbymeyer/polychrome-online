@@ -397,6 +397,12 @@ module Seeds
                               "Thorns: whoever leads takes a wound that won't heal until you rest.",
                               "A long climb: the party arrives too tired to run from the next fight.",
                               "A silent hall: speak, and it answers with something worse.") },
+      locks: { name: "Locks and keys", kind: "locks",
+               entries: [ { text: "Crystal portal", key: "Blue crystal" }, { text: "Bone altar", key: "Goat's skull" },
+                          { text: "Iron door", key: "Rusty key" }, { text: "Sealed coffin", key: "Grave-warden's ring" },
+                          { text: "Rune wall", key: "Moon rune" }, { text: "Drawbridge winch", key: "Crank handle" },
+                          { text: "Goblin gate", key: "Chief's tooth" }, { text: "Weeping statue", key: "Silver tear" },
+                          { text: "Bell-rope portcullis", key: "Brass bell" }, { text: "Flooded sluice", key: "Valve wheel" } ] },
       treasure: { name: "Dungeon treasure", kind: "treasure",
                   entries: [ { item: "potion", weight: 4 }, { item: "hi_potion", weight: 2 }, { item: "phoenix_down", weight: 2 },
                              { item: "antidote", weight: 2 }, { item: "remedy" }, { item: "power_ring" }, { item: "bronze_armor" },
@@ -412,12 +418,12 @@ module Seeds
                              tables: %w[town_names given_names town_hooks service_names buildings shop_stock] } },
       goblin_cave: { name: "Goblin cave", kind: "dungeon", encounter_table: "goblin_cave",
                      description: "A short, twisting cave. A good first dungeon.",
-                     config: { rooms: [ 5, 7 ], loops: 1, decisions: { encounter: 4, event: 2, treasure: 2, fork: 1 }, boss: { goblin_chief: 1 },
-                               tables: %w[cave_names rooms room_events forks treasure] } },
+                     config: { rooms: [ 5, 7 ], loops: 1, locks: 1, decisions: { encounter: 4, event: 2, treasure: 2, fork: 1 }, boss: { goblin_chief: 1 },
+                               tables: %w[cave_names rooms room_events forks treasure locks] } },
       barrow: { name: "Barrow", kind: "dungeon", encounter_table: "barrow",
                 description: "Old graves dug deep into the hill, and something that won't stay buried.",
-                config: { rooms: [ 8, 11 ], loops: 2, decisions: { encounter: 5, event: 3, treasure: 2, fork: 2 }, boss: { dark_mage: 1, zombie: 2 },
-                          tables: %w[dungeon_names rooms room_events forks treasure] } }
+                config: { rooms: [ 8, 11 ], loops: 2, locks: 2, decisions: { encounter: 5, event: 3, treasure: 2, fork: 2 }, boss: { dark_mage: 1, zombie: 2 },
+                          tables: %w[dungeon_names rooms room_events forks treasure locks] } }
     }.freeze
   end
 end

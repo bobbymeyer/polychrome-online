@@ -10,7 +10,7 @@
         <dt>Buildings</dt><dd><%= s["buildings"].join("–") %></dd>
         <dt>Shop stock</dt><dd><%= s["stock"].join("–") %> items</dd>
       <% else %>
-        <dt>Rooms</dt><dd><%= s["rooms"].join("–") %>, <%= pluralize(s["loops"], "loop") %></dd>
+        <dt>Rooms</dt><dd><%= s["rooms"].join("–") %>, <%= pluralize(s["loops"], "loop") %><%= ", #{pluralize(s['locks'], 'lock')}" if s["locks"].to_i.positive? %></dd>
         <dt>Encounters</dt>
         <dd><%= entry.encounter_table ? link_to(entry.encounter_table.name, world_encounters_encounter_table_path(@world, entry.encounter_table)) : "None" %></dd>
         <% if s["boss"] %>
@@ -44,7 +44,8 @@
   </ul>
 </section>
 
-<% missing = (entry.town? ? GeneratorTable::TOWN_KINDS : GeneratorTable::DUNGEON_KINDS) - entry.table_entries.keys %>
+<% needed = entry.town? ? GeneratorTable::TOWN_KINDS : GeneratorTable::DUNGEON_KINDS + (s["locks"].to_i.positive? ? [ "locks" ] : []) %>
+<% missing = needed - entry.table_entries.keys %>
 <% if missing.any? %>
   <p class="flash flash--alert" role="status">
     No <%= missing.map { |k| k.humanize.downcase }.to_sentence %> <%= missing.one? ? "table" : "tables" %> to draw from, so
@@ -94,6 +95,9 @@
           <%= case d["kind"]
               when "encounter", "boss" then d["monsters"].map { |slug, n| "#{n} × #{monster_names[slug] || slug}" }.to_sentence
               when "treasure" then d["gil"] ? "#{d['gil']} gil" : item_names[d["item"]] || d["item"]
+              when "key"
+                lock = example["paths"].find { |p| p.dig("lock", "id") == d["lock"] }&.dig("lock")
+                "#{d['name']}, which opens #{lock ? lock['name'] : 'a lock'}"
               else d["text"]
               end %></li>
       <% end %>

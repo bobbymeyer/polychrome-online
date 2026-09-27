@@ -236,6 +236,32 @@ class Location < ApplicationRecord
     progress.fetch("resolved", []).include?(key)
   end
 
+  # --- locks and keys ----------------------------------------------------------
+
+  # Lock ids whose keys the party has found here.
+  def keys_found
+    progress.fetch("keys", [])
+  end
+
+  def unlocked?(lock)
+    progress.fetch("unlocked", []).include?(lock["id"])
+  end
+
+  # A path that's locked and still shut.
+  def locked?(path)
+    path&.dig("lock") && !unlocked?(path["lock"])
+  end
+
+  def has_key?(lock)
+    keys_found.include?(lock["id"])
+  end
+
+  # What the party carries: the keys found and not yet used.
+  def keys_in_hand
+    view.fetch("paths", []).filter_map { |p| p["lock"] }.uniq { |l| l["id"] }
+        .select { |lock| has_key?(lock) && !unlocked?(lock) }
+  end
+
   def neighbours(key)
     view.fetch("paths", []).filter_map do |path|
       (path["to"] if path["from"] == key) || (path["from"] if path["to"] == key)
@@ -276,7 +302,14 @@ class Location < ApplicationRecord
     raise ArgumentError, "That room isn't next to this one" if from && !neighbours(from).include?(key)
 
     path = from && path_between(from, key)
+    lock = path && locked?(path) ? path["lock"] : nil
+    raise ArgumentError, "#{lock['name']} bars the way. It needs #{lock['key_name']}." if lock && !has_key?(lock)
+
     transaction do
+      if lock
+        update!(progress: progress.merge("unlocked" => progress.fetch("unlocked", []) | [ lock["id"] ]))
+        campaign.messages.create!(kind: "system", body: "#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.")
+      end
       update!(progress: progress.merge("current" => key, "visited" => (visited | [ key ])))
       campaign.messages.create!(kind: "system", body: "#{name}: the party enters #{target['name']}.")
       campaign.messages.create!(kind: "system", body: "The cost of that way: #{path['cost']}") if path&.dig("cost")
@@ -331,6 +364,11 @@ class Location < ApplicationRecord
       campaign.messages.create!(kind: "system", body: "There is treasure in #{target['name']}.")
     when "fork"
       campaign.messages.create!(kind: "system", body: "The way splits. One path has a cost: #{decision['text']}")
+      resolve!(target["key"])
+    when "key"
+      update!(progress: progress.merge("keys" => keys_found | [ decision["lock"] ]))
+      lock = view.fetch("paths", []).find { |p| p.dig("lock", "id") == decision["lock"] }&.dig("lock")
+      campaign.messages.create!(kind: "system", body: "Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}")
       resolve!(target["key"])
     end
   end

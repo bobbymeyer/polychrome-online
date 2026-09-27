@@ -366,6 +366,18 @@ svg .floorplan__marker--boss { fill: var(--wine-red); }
 svg .floorplan__marker--treasure { fill: var(--sun-yellow); }
 svg .floorplan__marker--event { fill: var(--blue); }
 svg .floorplan__marker--fork { stroke: var(--orange); }
+svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-width: 3; stroke-linecap: square; }
+.floorplan__room.is-resolved .floorplan__marker--key { stroke: var(--grey); fill: none; }
+.floorplan__room.is-current .floorplan__marker--key { stroke: var(--paper); fill: none; }
+/* Locks: a Wine Red padlock on the path; hollow once the party has opened it. */
+.floorplan__lock-body { fill: var(--wine-red); stroke: var(--ink); stroke-width: 2; }
+.floorplan__lock-shackle { fill: none; stroke: var(--ink); stroke-width: 3; }
+.floorplan__lock.is-open .floorplan__lock-body { fill: var(--paper); }
+.map-legend svg .floorplan__lock-body { fill: var(--wine-red); }
+.map-legend svg .floorplan__lock-shackle, .map-legend svg .floorplan__marker--key { fill: none; }
+.map-legend svg .floorplan__marker--key { stroke: var(--lake-green); stroke-width: 3; }
+.keys-in-hand { font-style: italic; font-weight: 700; }
+.keys-in-hand .label { font-style: normal; margin-right: 6px; }
 .map-legend svg .floorplan__marker--fork { fill: none; stroke: var(--orange); stroke-width: 3; }
 .floorplan__room.is-current rect { fill: var(--dark-blue); }
 .floorplan__room.is-resolved .floorplan__marker { fill: var(--paper); }

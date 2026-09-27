@@ -3,19 +3,24 @@
 module Generators
   # The dungeon generator (docs/HANDOFF.md §7): a room graph that branches and
   # loops, laid out as a floorplan. A dungeon is a nested pointcrawl, and
-  # every room carries a decision: an encounter, an event, treasure, or a
-  # fork with a visible cost. The deepest room holds the boss. "The
+  # every room carries a decision: an encounter, an event, treasure, a fork
+  # with a visible cost, or a key. The deepest room holds the boss. "The
   # generator's job is generating decisions, not rooms."
+  #
+  # Locks and keys come in pairs from the "locks" table, in any flavour: a
+  # portal and its crystal, an altar and a goat's skull. A lock sits on a
+  # path; its key is a room's decision.
   #
   # template: { "rooms" => [min, max], "loops" => n,
   #             "decisions" => { "encounter" => 4, "event" => 2, "treasure" => 2, "fork" => 1 },
-  #             "boss" => { "goblin_chief" => 1 } }            optional
+  #             "boss" => { "goblin_chief" => 1 },             optional
+  #             "locks" => n }                                   optional, 0–3
   # encounters: encounter-table entries ([{ "weight", "monsters" }])
-  # tables:   { "dungeon_names" | "rooms" | "room_events" | "forks" | "treasure" => [entries] }
+  # tables:   { "dungeon_names" | "rooms" | "room_events" | "forks" | "treasure" | "locks" => [entries] }
   #
   # Pure: same seed, same dungeon.
   module Dungeon
-    DECISIONS = %w[encounter event treasure fork boss].freeze
+    DECISIONS = %w[encounter event treasure fork boss key].freeze
     WIDTH = 1000
     HEIGHT = 700
     MAX_EXITS = 3
@@ -50,14 +55,94 @@ module Generators
         end
       end
 
+      name = pool.pick(tables.fetch("dungeon_names", []))&.fetch("text") || "Nameless Depths"
+      add_locks(pool, template.fetch("locks", 0).to_i, tables.fetch("locks", []), rooms, edges, edge_list, boss)
       {
         "kind" => "dungeon",
-        "name" => pool.pick(tables.fetch("dungeon_names", []))&.fetch("text") || "Nameless Depths",
+        "name" => name,
         "rooms" => rooms,
         "paths" => edge_list,
         "entrance" => "room-0",
         "boss" => "room-#{boss}"
       }
+    end
+
+    # Each lock guards a way the party can't get around on the way to the
+    # boss: a single path on the route (when loops don't bypass it), or every
+    # door into the boss's room, which always works. Its key lies in a room
+    # they can reach before it: behind the earlier locks, if there are
+    # several. Drawn after everything else, so a template without locks rolls
+    # exactly as it did before locks existed.
+    def add_locks(pool, count, flavours, rooms, edges, edge_list, boss)
+      return if count <= 0 || boss.zero?
+
+      route = route(edges, boss)
+      cuts = route.reject { |edge| reachable(edges, [ edge ]).include?(boss) }.map { |edge| [ edge ] }
+      doors = edges.each_index.select { |i| edges[i].include?(boss) }
+      cuts << doors unless cuts.include?(doors)
+      order = ->(cut) { cut.map { |edge| route.index(edge) || route.size }.min }
+      chosen = pool.sample(cuts.map { |cut| { "cut" => cut } }, count).map { |c| c["cut"] }.sort_by(&order)
+      taken = [ 0, boss ]
+      i = 0
+      while i < chosen.size
+        cut = chosen[i]
+        open = reachable(edges, chosen[i..].flatten)
+        earlier = i.zero? ? [] : reachable(edges, chosen[(i - 1)..].flatten)
+        usable = (open - taken).reject { |room| rooms[room]["decision"]["kind"] == "fork" }.sort
+        # Best between the previous lock and this one; anywhere reachable will do.
+        between = usable - earlier
+        region = between.empty? ? usable : between
+        # Nowhere to hide its key (a lock right by the entrance): leave it out.
+        next chosen.delete_at(i) if region.empty?
+
+        room = region[pool.int(region.size)]
+        flavour = pool.pick_fresh(flavours) || { "text" => "A locked door", "key" => "An old key" }
+        lock = { "id" => "lock-#{i + 1}", "name" => flavour["text"], "key_name" => flavour["key"] }
+        cut.each { |edge| edge_list[edge]["lock"] = lock }
+        rooms[room]["decision"] = { "kind" => "key", "lock" => lock["id"], "name" => flavour["key"] }
+        taken << room
+        i += 1
+      end
+    end
+
+    # The edges (by index) of a shortest way from the entrance to `to`.
+    def route(edges, to)
+      came_by = { 0 => nil }
+      queue = [ 0 ]
+      while (room = queue.shift)
+        edges.each_with_index do |(a, b), i|
+          other = (b if a == room) || (a if b == room)
+          next if other.nil? || came_by.key?(other)
+
+          came_by[other] = [ room, i ]
+          queue << other
+        end
+      end
+      path = []
+      room = to
+      while (step = came_by[room])
+        room, edge = step
+        path.unshift(edge)
+      end
+      path
+    end
+
+    # Rooms reachable from the entrance without crossing the given edges.
+    def reachable(edges, blocked)
+      seen = [ 0 ]
+      queue = [ 0 ]
+      while (room = queue.shift)
+        edges.each_with_index do |(a, b), i|
+          next if blocked.include?(i)
+
+          other = (b if a == room) || (a if b == room)
+          next if other.nil? || seen.include?(other)
+
+          seen << other
+          queue << other
+        end
+      end
+      seen
     end
 
     # A random tree: each room joins an earlier room with a free exit.

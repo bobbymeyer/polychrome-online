@@ -8,10 +8,11 @@
     </div>
   </div>
   <% show_for = ->(field) { GeneratorTable::KINDS.select { |_, fields| field == "weight" || fields.include?(field) }.keys.join(" ") } %>
-  <% columns = { "text" => "Text", "item" => "Item", "gil" => "Gil", "service" => "Service", "width" => "Width", "height" => "Height", "roof" => "Roof", "weight" => "Weight" } %>
+  <% columns = { "text" => "Text", "key" => "Key", "item" => "Item", "gil" => "Gil", "service" => "Service", "width" => "Width", "height" => "Height", "roof" => "Roof", "weight" => "Weight" } %>
   <fieldset class="panel">
     <legend>Rows</legend>
     <p class="hint" data-show-for="treasure">Each row is an item or an amount of gil.</p>
+    <p class="hint" data-show-for="locks">Each row is a lock and the key that opens it, in any flavour: Portal and Blue crystal, Altar and Goat's skull.</p>
     <p class="hint"><strong>Worlds are live:</strong> towns and dungeons already rolled from this table change with it, except the people and rooms a GM has pinned.</p>
     <p class="hint">Weight defaults to 1: a row with weight 3 comes up three times as often. Clear a row to remove it.</p>
     <% items = @world.items.order(:name).map { |i| [ i.name, i.slug ] } %>
@@ -22,6 +23,7 @@
           <% name = ->(key) { json_field_name(f, :entries, i, key) } %>
           <tr>
             <td data-show-for="<%= show_for.("text") %>"><%= text_field_tag name.(:text), row["text"], "aria-label": "Text #{i + 1}" %></td>
+            <td data-show-for="<%= show_for.("key") %>"><%= text_field_tag name.(:key), row["key"], "aria-label": "Key #{i + 1}" %></td>
             <td data-show-for="<%= show_for.("item") %>"><%= select_tag name.(:item), options_for_select(items, row["item"]), include_blank: true, "aria-label": "Item #{i + 1}" %></td>
             <td data-show-for="<%= show_for.("gil") %>"><%= number_field_tag name.(:gil), row["gil"], min: 1, "aria-label": "Gil #{i + 1}" %></td>
             <td data-show-for="<%= show_for.("service") %>"><%= select_tag name.(:service), options_for_select(Generators::Town::SERVICES.map { |s| [ s.humanize, s ] }, row["service"]), include_blank: true, "aria-label": "Service #{i + 1}" %></td>
