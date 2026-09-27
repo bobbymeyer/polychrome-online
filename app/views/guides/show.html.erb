@@ -1,0 +1,60 @@
+<% content_for :title, "How to play" %>
+<article class="how-to-play prose">
+  <h1>How to play</h1>
+  <p>
+    Polychrome is a tabletop game in the style of the old console RPGs: a GM runs the story, you play one character,
+    and fights are menus, like Final Fantasy. If you know D&amp;D, most of it will feel familiar. The words are a bit
+    different, and they're all explained at the bottom (and wherever they're dotted like <%= gloss(:abp) %>).
+  </p>
+
+  <h2>The table</h2>
+  <p>
+    The table is where the story happens. The GM speaks as the narrator or as the people you meet, and their lines
+    appear in the dialogue box. Sometimes the GM puts a <strong>choice</strong> to the party: everyone picks, and the
+    GM settles it. Sometimes the GM calls for a <%= gloss(:check) %>: your stat against a difficulty. At Normal,
+    someone ordinary for their level has an even chance, and nothing is ever certain.
+  </p>
+  <p>
+    Playing around one TV, or on a call with a shared screen? That's <strong>local co-op</strong>: the GM opens the
+    shared screen, you scan its QR code with your phone and pick your character. Your phone becomes your controller.
+  </p>
+
+  <h2>Fights</h2>
+  <ul>
+    <li><strong>Everyone picks a command, then the round plays out</strong>, fastest first (<%= stat_term("agi") %>).
+      There's no waiting for your turn: you choose while everyone else does.</li>
+    <li><strong>Attack</strong> hits with your weapon. <strong>Abilities</strong> are your spells and skills and may cost
+      <%= gloss(:max_mp) %>. <strong>Item</strong> uses something from the party's bag. <strong>Defend</strong> halves the
+      damage you take this round. <strong>Flee</strong> tries to get the whole party away.</li>
+    <li>There's usually a timer. If it runs out, you repeat your last command. Want to chat instead?
+      Go on <%= gloss(:auto) %>.</li>
+    <li>Every move and monster may have a <%= gloss(:type) %>. Fire burns grass, water puts out fire, ghosts ignore
+      normal moves. The <%= link_to "type chart", types_path %> has the lot. Your basic Attack has no type, so it always lands.</li>
+    <li>At the end of your rope you might find a <%= gloss(:desperation) %>.</li>
+    <li>At 0 HP you're down, not dead. A Phoenix Down, a Raise or a temple brings you back.</li>
+  </ul>
+
+  <h2>Your character</h2>
+  <ul>
+    <li>Winning fights gives <%= gloss(:exp) %> (your level) and <%= gloss(:abp) %> (your job). Levels come often, and
+      every stat grows on its own, so there's no paperwork.</li>
+    <li>Your <%= gloss(:job) %> is your class, and you can change it between fights. Each job keeps its own
+      <%= gloss(:job_level) %>, and each job level teaches one of its abilities.</li>
+    <li>Take abilities you learned in one job into another with <%= gloss(:ability_slots) %>. A Knight who once studied
+      as a White Mage can still cast Cure.</li>
+    <li>Gear comes out of the party's bag and goes back into it. The party shares one purse of <%= gloss(:gil) %>.</li>
+  </ul>
+
+  <h2>Towns and the road</h2>
+  <p>
+    The GM moves the party on the map. In a town, each building's services open under it: an inn to rest, a temple
+    to raise the fallen, a shop, a guild for rumours. They're paid from the party's purse.
+  </p>
+
+  <h2>The words</h2>
+  <dl class="glossary">
+    <% GlossaryHelper::GLOSSARY.each do |key, (label, definition)| %>
+      <dt id="term-<%= key %>"><%= label %></dt><dd><%= definition %></dd>
+    <% end %>
+  </dl>
+</article>

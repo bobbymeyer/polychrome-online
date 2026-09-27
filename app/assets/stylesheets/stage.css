@@ -724,6 +724,19 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .auto-toggle.is-on { padding: 4px calc(12px + var(--slant)) 4px 10px; background: var(--sun-yellow); color: var(--ink); text-decoration: none; font-weight: 800;
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
 
+/* The game's words, explained (GlossaryHelper): dotted, and a black card on hover or tap. */
+.gloss { position: relative; cursor: help; text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.gloss:hover::after, .gloss:focus::after, .gloss:focus-visible::after {
+  content: attr(data-gloss); position: absolute; left: 0; top: 100%; z-index: 70; width: max-content; max-width: min(280px, 80vw);
+  margin-top: 6px; padding: 8px 10px; background: var(--ink); color: var(--paper); box-shadow: 4px 4px 0 var(--accent);
+  font: normal 400 13px/18px var(--font); letter-spacing: 0; text-transform: none; white-space: normal; text-align: left;
+}
+.gloss:focus { outline: none; }
+.how-to-play h2 { margin-top: 32px; }
+.how-to-play dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
+.how-to-play dl.glossary dt { font-weight: 900; font-style: italic; }
+.how-to-play dl.glossary dd { margin: 0; }
+
 /* Taking a line back: quiet, and only on hover or focus once shown. */
 .chat-line__retract-form { display: inline; margin: 0; }
 .chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }

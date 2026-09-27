@@ -29,6 +29,7 @@
       <% end %>
       <% if current_user %>
         <nav class="topbar__account" aria-label="Account">
+          <%= link_to "How to play", how_to_play_path %>
           <button type="button" class="link-button" data-controller="mute" data-action="mute#toggle" aria-pressed="false"
                   title="Sound on this device">Sound on</button>
           <span><%= current_user.name %><%= tag.span(" · admin", class: "muted") if admin? %></span>

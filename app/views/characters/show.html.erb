@@ -13,16 +13,16 @@
       <h1><%= @character.name %></h1>
       <% if @character.motive %><p class="motive"><%= @character.motive %></p><% end %>
       <dl class="facts">
-        <dt>Level</dt>
+        <dt><%= gloss(:exp, "Level") %></dt>
         <dd><%= @character.level %> <span class="muted">(<%= @character.exp %> EXP<%= ", #{@character.exp_to_next} to next" if @character.exp_to_next %>)</span></dd>
-        <dt>Job</dt>
+        <dt><%= gloss(:job) %></dt>
         <dd>
           <%= link_to @character.job.name, world_compendium_job_path(@world, @character.job) %>
           Lv <%= cj.level %>
-          <span class="muted">(<%= cj.abp %> ABP<%= cj.mastered? ? ", mastered" : ", #{cj.abp_to_next} to next" %>)</span>
+          <span class="muted">(<%= cj.abp %> <%= gloss(:abp) %><%= cj.mastered? ? ", mastered" : ", #{cj.abp_to_next} to next" %>)</span>
         </dd>
-        <dt>HP</dt><dd><%= @character.current_hp %> / <%= @character.stats["max_hp"] %><%= " · down" unless @character.conscious? %></dd>
-        <dt>MP</dt><dd><%= @character.current_mp %> / <%= @character.stats["max_mp"] %></dd>
+        <dt><%= gloss(:max_hp) %></dt><dd><%= @character.current_hp %> / <%= @character.stats["max_hp"] %><%= " · down" unless @character.conscious? %></dd>
+        <dt><%= gloss(:max_mp) %></dt><dd><%= @character.current_mp %> / <%= @character.stats["max_mp"] %></dd>
       </dl>
     </div>
   </header>
@@ -37,7 +37,7 @@
       <tbody>
         <% Stats::NAMES.each do |stat| %>
           <tr>
-            <td><%= stat_label(stat) %></td>
+            <td><%= stat_term(stat) %></td>
             <td class="num"><%= stages[:base][stat] %></td>
             <td class="num"><%= stages[:job][stat] %></td>
             <td class="num"><%= stages[:equipment][stat] %></td>

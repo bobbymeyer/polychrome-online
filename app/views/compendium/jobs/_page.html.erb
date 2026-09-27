@@ -24,7 +24,7 @@
     <% Stats::NAMES.each do |stat| %>
       <% pct = entry.stat_multipliers.fetch(stat, 100) %>
       <div class="<%= 'is-up' if pct > 100 %> <%= 'is-down' if pct < 100 %>">
-        <dt><%= stat_label(stat) %></dt><dd>×<%= format("%.2f", pct / 100.0) %></dd>
+        <dt><%= stat_term(stat) %></dt><dd>×<%= format("%.2f", pct / 100.0) %></dd>
       </div>
     <% end %>
   </dl>

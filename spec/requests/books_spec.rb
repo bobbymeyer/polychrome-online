@@ -61,6 +61,15 @@ RSpec.describe "Books", type: :request do
     expect(response.body).to include("Type chart", "Fighting, Bug, Fire").or include("Fire, Fighting, Bug")
   end
 
+  it "explains the game's words where they're used, and all together on How to play" do
+    get how_to_play_path
+    expect(response.body).to include("How to play", "Ability points", "(D&amp;D: Dex)", 'class="gloss"')
+
+    monster = create_monster(world)
+    get world_bestiary_monster_path(world, monster)
+    expect(response.body).to include('data-gloss="Agility. Who acts first')
+  end
+
   describe "Grimoire" do
     let(:form) do
       { name: "Bio", kind: "magic", target: "single_enemy", mp_cost: "6", gesture: "tint", description: "Rot.",

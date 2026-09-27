@@ -80,6 +80,9 @@ deliberate divergence from much of what follows, and where the two disagree the 
   join card (a QR code in a white frame and the code in heavy display type) and the party's HP
   down the side. The controller is one column of big targets: your name as the title, your HP
   bar, options and commands at least 52px tall.
+- **The game's words** keep their JRPG names and explain themselves. A dotted underline marks
+  one; hovering or tapping it shows a black card with the definition (and the nearest D&D idea).
+  "How to play" in the top bar has the rules in plain words and every term together.
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide

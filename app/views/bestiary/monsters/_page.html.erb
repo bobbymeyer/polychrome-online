@@ -22,7 +22,7 @@
   <h2>Stat block</h2>
   <dl class="stat-block">
     <% Stats::NAMES.each do |stat| %>
-      <div><dt><%= stat_label(stat) %></dt><dd><%= number_with_delimiter(entry.stats[stat]) %></dd></div>
+      <div><dt><%= stat_term(stat) %></dt><dd><%= number_with_delimiter(entry.stats[stat]) %></dd></div>
     <% end %>
   </dl>
   <% profile = type_profile([ entry.base_type ], entry.affinities) %>

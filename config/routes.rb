@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   root "worlds#index"
 
   resource :types, only: :show # the type chart
+  get "how-to-play", to: "guides#show", as: :how_to_play
   # Local co-op: the QR code on the shared screen leads here.
   get "join/:code", to: "joins#show", as: :join
   post "join/:code", to: "joins#create"

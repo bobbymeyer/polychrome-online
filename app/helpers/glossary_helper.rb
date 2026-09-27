@@ -1,0 +1,40 @@
+# frozen_string_literal: true
+
+# The game's words, explained where they're used (and all together on the
+# How to play page). They're JRPG words, kept on purpose; the definition says
+# what they do, with the nearest D&D idea where that helps.
+module GlossaryHelper
+  GLOSSARY = {
+    "max_hp" => [ "HP", "Hit points. At 0 you're down (knocked out, not dead) until someone revives you." ],
+    "max_mp" => [ "MP", "Magic points: one pool that pays for spells and some skills. Like spell slots, but you spend points." ],
+    "str" => [ "Str", "Strength. How hard your weapon, fists and physical skills hit. (D&D: Str)" ],
+    "mag" => [ "Mag", "Magic. How hard your spells hit and how much your healing heals. (D&D: your casting stat)" ],
+    "vit" => [ "Vit", "Vitality. Toughness: more HP as you level. (D&D: Con)" ],
+    "spr" => [ "Spr", "Spirit. Shrugging off magic and statuses like sleep or poison. (D&D: Wis saves)" ],
+    "agi" => [ "Agi", "Agility. Who acts first, dodging, stealing and running away. (D&D: Dex)" ],
+    "atk" => [ "Atk", "Attack: the power your weapon adds to your Str." ],
+    "def" => [ "Def", "Defense: armour that softens physical hits. (D&D: AC, roughly)" ],
+    "mdef" => [ "MDef", "Magic defense: what softens spells." ],
+    "exp" => [ "EXP", "Experience. Winning fights gives it; enough of it is a new level, and every stat grows." ],
+    "abp" => [ "ABP", "Ability points: experience for your job. Each win gives some; they level the job, and each job level teaches an ability." ],
+    "job" => [ "Job", "Your class, and you can change it between fights. Each job keeps its own level, so nothing is lost by trying another." ],
+    "job_level" => [ "Job level", "How far you've got in your current job. Each level teaches that job's next ability." ],
+    "ability_slots" => [ "Ability slots", "Room to bring abilities you learned in other jobs into this one." ],
+    "gil" => [ "Gil", "Money. The party shares one purse." ],
+    "type" => [ "Type", "Fire, water, ghost and the rest. A move's type against a monster's type can do double damage, half, or nothing. See the type chart." ],
+    "desperation" => [ "Desperation move", "At a quarter HP or less, your Attack sometimes becomes your job's big move. Once a battle." ],
+    "auto" => [ "Auto", "Your character repeats their last command (or attacks) every round, so you can talk. Pick a command to take over again." ],
+    "check" => [ "Check", "The GM asks you to try something: your stat against a difficulty, rolled from the campaign's dice." ]
+  }.freeze
+
+  # The word, with its definition on hover, or on tap on a phone.
+  def gloss(key, text = nil)
+    label, definition = GLOSSARY.fetch(key.to_s) { return text || key.to_s.humanize }
+    tag.span(text || label, class: "gloss", tabindex: 0, data: { gloss: definition }, aria: { label: "#{text || label}: #{definition}" })
+  end
+
+  # A stat's short name, explained.
+  def stat_term(name)
+    gloss(name, stat_label(name))
+  end
+end

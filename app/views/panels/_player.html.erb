@@ -4,8 +4,8 @@
 <div class="command-panel__head">
   <h2><%= unit["name"] %></h2>
   <span class="command-panel__vitals">
-    <span class="label">HP</span> <strong class="<%= 'is-low' if hp_band(unit) == 'danger' %>"><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
-    <span class="label">MP</span> <strong><%= unit["mp"] %></strong><span class="muted">/<%= unit["stats"]["max_mp"] %></span>
+    <span class="label"><%= gloss(:max_hp) %></span> <strong class="<%= 'is-low' if hp_band(unit) == 'danger' %>"><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
+    <span class="label"><%= gloss(:max_mp) %></span> <strong><%= unit["mp"] %></strong><span class="muted">/<%= unit["stats"]["max_mp"] %></span>
   </span>
   <%= render "panels/countdown" %>
 </div>
