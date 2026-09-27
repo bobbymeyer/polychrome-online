@@ -7,6 +7,12 @@
       <%= f.number_field :ability_slots, min: 0, max: 4 %>
       <p class="hint">How many abilities learned in other jobs a character can bring into this one.</p>
     </div>
+    <div class="field">
+      <%= f.label :desperation, "Desperation move" %>
+      <%= f.select :desperation, @world.abilities.where(target: %w[single_enemy all_enemies random_enemy]).order(:name).map { |a| [ a.name, a.slug ] },
+                   include_blank: "(none)" %>
+      <p class="hint">At a quarter HP or less, a character's attack sometimes becomes this instead: once a battle, for free. It doesn't need to be learned.</p>
+    </div>
   </div>
 
   <fieldset class="panel">

@@ -536,6 +536,25 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .table-scenes[open] summary { margin-bottom: 8px; }
 .script-field { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 15px; line-height: 24px; }
 
+/* A desperation move's cut-in: the stage stops for the character. */
+.cut-in {
+  position: absolute; left: -6%; right: -6%; top: 22%; z-index: 6; rotate: -3deg;
+  display: flex; align-items: center; gap: 24px; padding: 14px 10% 16px;
+  background: var(--plate, var(--sun-yellow)); color: var(--plate-ink, var(--ink));
+  box-shadow: 0 -8px 0 var(--ink), 0 10px 0 var(--ink), 0 20px 0 var(--bright-red);
+}
+.cut-in__figure { flex: none; }
+.cut-in__figure .sprite { scale: 1.6; }
+.cut-in__words { min-width: 0; }
+.cut-in__cry { margin: 0 0 4px; font-style: italic; font-weight: 700; font-size: clamp(16px, 2.4vw, 24px); line-height: 1.25; }
+.cut-in__cry::before { content: "\201C"; } .cut-in__cry::after { content: "\201D"; }
+.cut-in__move { margin: 0; font: var(--display); font-size: clamp(36px, 7vw, 84px); letter-spacing: -0.05em; text-shadow: 4px 4px 0 var(--ink); color: var(--paper); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
+
+/* Why a character is here: their line, on the sheet and their card. */
+.motive { margin: 4px 0 8px; font-style: italic; font-weight: 700; font-size: 18px; line-height: 26px; max-width: 52ch; }
+.motive::before { content: "\201C"; } .motive::after { content: "\201D"; }
+.motive--card { font-size: 14px; line-height: 20px; margin: 6px 0 0; color: var(--grey); }
+
 /* ---------------------------------------------------------------------------
  * Everything that moves holds still for people who asked for stillness.
  * ------------------------------------------------------------------------- */

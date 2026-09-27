@@ -308,8 +308,25 @@ module Battle
       when "defend" then ctx.emit(:defend, actor: unit["id"])
       when "flee" then Effects.attempt_flee(ctx, unit)
       when "item" then use_item(unit, ctx.item(cmd["item"]), cmd["target"])
-      else use_ability(unit, ctx.ability(cmd["ability"]), cmd["target"])
+      else use_ability(unit, desperate(unit, ctx.ability(cmd["ability"])), cmd["target"])
       end
+    end
+
+    # At the end of their rope, a character sometimes finds something more:
+    # at a quarter of their HP or less, an attack has a chance to become
+    # their desperation move instead. Once per battle, and free.
+    DESPERATION_HP_PERCENT = 25
+    DESPERATION_CHANCE = 30
+
+    def desperate(unit, ability)
+      move = unit["desperation"]
+      return ability unless move && ability["id"] == "attack" && !unit["desperation_used"]
+      return ability unless ctx.hp_percent(unit) <= DESPERATION_HP_PERCENT && ctx.rng.percent?(DESPERATION_CHANCE)
+
+      unit["desperation_used"] = true
+      special = ctx.ability(move)
+      ctx.emit(:desperation, actor: unit["id"], ability: special["id"], name: special["name"])
+      special.merge("cost" => {})
     end
 
     # An item works like an ability with no cost, and silence doesn't stop

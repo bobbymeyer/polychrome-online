@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -201,6 +201,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_000000) do
     t.json "art_loras", default: [], null: false
     t.integer "user_id"
     t.string "colour"
+    t.string "motive"
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
     t.index ["user_id"], name: "index_characters_on_user_id"
@@ -331,6 +332,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_000000) do
     t.json "art_loras", default: [], null: false
     t.json "image_recipe"
     t.string "colour"
+    t.string "desperation"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end

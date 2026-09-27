@@ -11,6 +11,7 @@
     <div>
       <p class="eyebrow">Character<% if (player = @character.user&.name.presence || @character.player_name.presence) %> · played by <%= player %><% end %></p>
       <h1><%= @character.name %></h1>
+      <% if @character.motive %><p class="motive"><%= @character.motive %></p><% end %>
       <dl class="facts">
         <dt>Level</dt>
         <dd><%= @character.level %> <span class="muted">(<%= @character.exp %> EXP<%= ", #{@character.exp_to_next} to next" if @character.exp_to_next %>)</span></dd>

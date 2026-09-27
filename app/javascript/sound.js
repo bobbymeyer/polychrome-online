@@ -145,6 +145,13 @@ const JINGLES = {
   treasure(t) {
     phrase(t, 0.07, [ [ "G5", 0, 1 ], [ "C6", 1, 1 ], [ "E6", 2, 1 ], [ "G6", 3, 3 ] ], { gain: 0.2 })
   },
+  // Something breaks loose: a rising slide into a held power chord.
+  desperation(t) {
+    tone(t, "E3", 0.3, { wave: "sawtooth", gain: 0.14, slide: "E4" })
+    ;[ "E4", "B4", "E5" ].forEach((n) => tone(t + 0.28, n, 0.9, { wave: "square", gain: 0.12, decay: 0.8 }))
+    tone(t + 0.28, "E2", 0.9, { wave: "triangle", gain: 0.7, decay: 0.8 })
+    noise(t + 0.28, 0.25, { gain: 0.35, filter: 2500 })
+  },
   // The menu's soft confirm.
   blip(t) {
     tone(t, "A5", 0.05, { gain: 0.12, decay: 0.5 })

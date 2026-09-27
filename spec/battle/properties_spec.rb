@@ -18,9 +18,29 @@ RSpec.describe "Battle resolver properties" do
     seen = all_events.map { |e| e["type"] }.uniq
     expect(seen).to include(*%w[attack cast damage miss crit heal status_applied status_expired ko revive
                                   turn_start turn_end flee victory defeat gm_override buff_applied
-                                  buff_expired turn_skipped timeout])
+                                  buff_expired turn_skipped timeout desperation])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
+  end
+
+  it "lets each character's desperation move out at most once a battle, only from an attack at a quarter HP or less, at no cost" do
+    tables.each do |table|
+      moves = table.steps.flat_map { |_, _, _, events| events.select { |e| e["type"] == "desperation" } }
+      expect(moves.map { |e| e["actor"] }).to eq(moves.map { |e| e["actor"] }.uniq)
+    end
+    each_step do |_, before, action, after, events|
+      events.each_with_index do |event, i|
+        next unless event["type"] == "desperation"
+
+        unit = after["units"].find { |u| u["id"] == event["actor"] }
+        expect(unit["desperation_used"]).to be(true)
+        expect(event["ability"]).to eq(unit["desperation"])
+        announced = events[(i + 1)..].find { |e| %w[attack cast action_failed].include?(e["type"]) && e["actor"] == event["actor"] }
+        expect(announced).to include("ability" => event["ability"]) if announced
+        expect(announced["mp_cost"]).to eq(0) if announced&.key?("mp_cost")
+        expect(before["inputs"].dig(event["actor"], "ability") || "attack").to eq("attack")
+      end
+    end
   end
 
   it "only uses up items by using them, one at a time, never below zero" do

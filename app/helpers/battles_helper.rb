@@ -107,6 +107,7 @@ module BattlesHelper
     case event["type"]
     when "round_start" then "— Round #{event['round']} —"
     when "attack" then "#{name.('actor')} attacks."
+    when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
     when "cast"
       verb = state["abilities"].dig(event["ability"], "kind") == "magic" ? "casts" : "uses"
       "#{name.('actor')} #{verb} #{ability_name(state, event['ability'])}."

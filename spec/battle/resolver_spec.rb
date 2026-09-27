@@ -415,4 +415,42 @@ RSpec.describe Battle::Resolver do
       expect(of_type(ogre_turn(events), :attack)).not_to be_empty
     end
   end
+
+  describe "desperation moves" do
+    let(:party) { [ BattleFixtures.party.first.merge(desperation: "goblin_punch", stats: stats(max_hp: 400, str: 14, atk: 14, agi: 30, def: 200)) ] }
+    let(:enemies) { [ { id: "slime", name: "Slime", stats: stats(max_hp: 5000, def: 200, str: 1, atk: 0), ai: [ { use: "attack" } ] } ] }
+
+    def rounds(state, count)
+      count.times.reduce([ state, [] ]) do |(s, log), _|
+        s, events = apply(s, command("bartz"))
+        [ s, log + events ]
+      end
+    end
+
+    it "can turn an attack into the job's move at a quarter HP or less, once, for free" do
+      state = with_unit(build_battle(seed: 3, party: party, enemies: enemies), "bartz", hp: 60)
+      state, events = rounds(state, 30)
+      moves = of_type(events, :desperation)
+      expect(moves.size).to eq(1)
+      expect(moves.first).to include("actor" => "bartz", "ability" => "goblin_punch", "name" => "Goblin Punch")
+      after = events.drop_while { |e| e["type"] != "desperation" }
+      expect(after[1]).to include("type" => "attack").or include("type" => "cast")
+      expect(after[1]).to include("ability" => "goblin_punch", "mp_cost" => 0)
+      expect(unit(state, "bartz")["desperation_used"]).to be(true)
+    end
+
+    it "never happens above a quarter HP, or to someone without one" do
+      _, events = rounds(build_battle(seed: 3, party: party, enemies: enemies), 30)
+      expect(of_type(events, :desperation)).to be_empty
+
+      plain = [ party.first.except(:desperation) ]
+      _, events = rounds(with_unit(build_battle(seed: 3, party: plain, enemies: enemies), "bartz", hp: 60), 30)
+      expect(of_type(events, :desperation)).to be_empty
+    end
+
+    it "must be an ability the battle knows" do
+      expect { build_battle(party: [ party.first.merge(desperation: "ultima") ], enemies: enemies) }
+        .to raise_error(ArgumentError, /unknown desperation move: ultima/)
+    end
+  end
 end

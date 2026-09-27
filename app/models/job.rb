@@ -17,6 +17,15 @@ class Job < ApplicationRecord
   validate :multipliers_are_percentages
   validate :equip_categories_exist
   validate :innates_are_passives
+  validate :desperation_is_an_attack
+
+  normalizes :desperation, with: ->(slug) { slug.presence }
+
+  # The move an attack can become at the end of a character's rope, once a
+  # battle (Battle::Resolver#desperate). Any offensive Grimoire entry.
+  def desperation_ability
+    desperation && world.abilities.find_by(slug: desperation)
+  end
 
   # Percent per stat (120 = x1.2). Blank or 100 means unmodified.
   def stat_multipliers=(values)
@@ -66,6 +75,17 @@ class Job < ApplicationRecord
   def equip_categories_exist
     unknown = equip_categories - Item::EQUIPMENT_CATEGORIES
     errors.add(:equip_categories, "has unknown categories: #{unknown.join(', ')}") if unknown.any?
+  end
+
+  def desperation_is_an_attack
+    return unless desperation
+
+    ability = world&.abilities&.find_by(slug: desperation)
+    if ability.nil?
+      errors.add(:desperation, "must be an ability in the Grimoire")
+    elsif !%w[single_enemy all_enemies random_enemy].include?(ability.target)
+      errors.add(:desperation, "must be aimed at enemies")
+    end
   end
 
   def innates_are_passives

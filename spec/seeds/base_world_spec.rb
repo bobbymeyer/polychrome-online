@@ -70,4 +70,13 @@ RSpec.describe Seeds::BaseWorld do
     expect(world.monsters.find_by!(slug: "goblin").name).to eq("Goblin")
     expect(world.jobs.find_by!(slug: "knight").job_levels.count).to eq(3)
   end
+
+  it "gives every job a desperation move aimed at enemies, found rather than learned" do
+    world.jobs.each do |job|
+      move = job.desperation_ability
+      expect(move).to be_present, job.slug
+      expect(move.target).to match(/enemy|enemies/)
+      expect(world.jobs.flat_map { |j| j.abilities.map(&:slug) }).not_to include(move.slug)
+    end
+  end
 end

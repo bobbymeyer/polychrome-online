@@ -26,7 +26,7 @@ const FAST_KEY = "polychrome.fastBattles"
 
 export default class extends Controller {
   static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "fast"]
-  static values = { panelUrl: String, next: Number }
+  static values = { panelUrl: String, next: Number, cries: Object }
 
   connect() {
     this.queue = []
@@ -162,6 +162,8 @@ export default class extends Controller {
       case "command_accepted":
         tl.call(() => this.setReady(e.actor, true), at)
         return 0
+      case "desperation":
+        return this.cutIn(tl, e, at)
       case "attack":
         return gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
       case "item_used":
@@ -383,6 +385,42 @@ export default class extends Controller {
     } else {
       tl.add(el, { opacity: [0, 1, 1, 0], translateX: [-24, 0, 0, 8], duration: kind === "round" ? 400 : 1200, ease: "outQuad" }, at)
     }
+  }
+
+  // A desperation move: the stage stops for the character. A slab in their
+  // colour cuts across it, with their sprite, their line and the move.
+  cutIn(tl, e, at) {
+    const sprite = this.sprite(e.actor)
+    const el = document.createElement("div")
+    el.className = "cut-in"
+    const plate = sprite?.querySelector(".sprite__plate")
+    if (plate) el.style.cssText = plate.getAttribute("style") || ""
+
+    const figure = document.createElement("div")
+    figure.className = "cut-in__figure"
+    if (sprite) figure.append(sprite.cloneNode(true))
+    const words = document.createElement("div")
+    words.className = "cut-in__words"
+    const cry = this.criesValue[e.actor]
+    if (cry) {
+      const line = document.createElement("p")
+      line.className = "cut-in__cry"
+      line.textContent = cry
+      words.append(line)
+    }
+    const move = document.createElement("p")
+    move.className = "cut-in__move"
+    move.textContent = e.name
+    words.append(move)
+    el.append(figure, words)
+    this.fxTarget.append(el)
+
+    const hold = cry ? 1500 + Math.min(cry.length * 18, 900) : 1100
+    tl.call(() => play("desperation"), at)
+    tl.add(el, { opacity: [0, 1, 1, 0], translateX: ["-40%", "0%", "0%", "30%"], duration: hold, ease: "outExpo" }, at)
+    tl.add(figure, { translateX: [-60, 0], scale: [1.4, 1], duration: 380, ease: "outBack" }, at + 80)
+    tl.call(() => el.remove(), at + hold)
+    return hold
   }
 
   caption(tl, text, at, kind = null) {

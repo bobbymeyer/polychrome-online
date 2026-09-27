@@ -188,6 +188,15 @@ are now (see "Campaign flags and GM changes").
   of the replay. The result panel reports level-ups and newly learned abilities.
 - **GM tools:** add items to the bag, adjust gil, grant EXP/ABP, and rest the
   party at an inn.
+- **Why they're here:** a character has one line in their own words
+  (`characters.motive`), on their card and sheet. It is also their battle cry.
+- **Desperation moves** (FF6-style): a job can name any offensive Grimoire
+  entry as its desperation move (`jobs.desperation`; each Base World job has
+  one, found rather than learned). At a quarter HP or less, a character's
+  Attack has a 30% chance to become that move instead, once a battle and for
+  no MP. The resolver emits `desperation` before the move, from the battle's
+  own RNG, so it replays exactly. The battle player stops for a cut-in in
+  the character's colour, with their line and the move's name.
 
 ## The table (chat)
 
@@ -488,7 +497,8 @@ still usable, otherwise to Attack.
 **Events** include the handoff's list (`attack damage miss crit cast heal
 status_applied status_expired ko turn_start turn_end flee victory defeat
 gm_override`) plus: `command_accepted round_start turn_order round_end revive
-defend buff_applied buff_expired turn_skipped action_failed timeout`.
+defend buff_applied buff_expired turn_skipped action_failed timeout
+desperation`.
 Each event is a hash like `{"type" => "damage", "target" => "goblin_a",
 "amount" => 24, "hp" => 21, ...}`. Every event that changes HP carries the
 resulting `hp`, so the view never computes an outcome.

@@ -25,6 +25,23 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(response.body).to include("Second Run")
     end
 
+    it "carries each character's reason for being here: on their card and sheet, and into battle as their cry" do
+      post campaign_characters_path(campaign), params: { character: { name: "Faris", motive: "My sister is out there.", job_id: knight.id, starting_level: 5 } }
+      faris = campaign.characters.find_by!(name: "Faris")
+      expect(faris.motive).to eq("My sister is out there.")
+
+      get campaign_path(campaign)
+      expect(response.body).to include("motive--card", "My sister is out there.")
+      get character_path(faris)
+      expect(response.body).to include('class="motive"', "My sister is out there.")
+      get world_compendium_job_path(world, knight)
+      expect(response.body).to include("Desperation", "Unbroken Line")
+
+      battle = BattleRecord.start!(campaign: campaign, characters: [ faris ], name: "Test", encounter: { "goblin" => 1 })
+      get battle_path(battle)
+      expect(response.body).to include("data-battle-player-cries-value=\"{&quot;#{faris.battle_unit_id}&quot;:&quot;My sister is out there.&quot;}\"")
+    end
+
     it "lets the GM stock the bag and adjust gil" do
       post campaign_inventories_path(campaign), params: { inventory: { item_id: item.("potion").id, quantity: "4" } }
       expect(campaign.quantity_of(item.("potion"))).to eq(4)

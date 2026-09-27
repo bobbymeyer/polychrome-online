@@ -42,4 +42,17 @@ RSpec.describe Job do
     expect(stats).to include("str" => 15, "agi" => 15, "atk" => 12)
     expect(job.equips?(sword)).to be(true)
   end
+
+  it "takes a desperation move aimed at enemies, from its own Grimoire" do
+    create_ability(world, slug: "cure", kind: "magic", target: "single_ally", effects: [ { primitive: "heal", power: 20 } ])
+    create_ability(world, slug: "big_hit", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 200 } ])
+    job = create_job(world)
+    expect(job.update(desperation: "cure")).to be(false)
+    expect(job.errors[:desperation]).to include("must be aimed at enemies")
+    expect(job.update(desperation: "nothing")).to be(false)
+    expect(job.update(desperation: "big_hit")).to be(true)
+    expect(job.desperation_ability.slug).to eq("big_hit")
+    expect(job.update(desperation: "")).to be(true)
+    expect(job.reload.desperation).to be_nil
+  end
 end

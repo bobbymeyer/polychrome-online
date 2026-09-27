@@ -51,6 +51,11 @@ deliberate divergence from much of what follows, and where the two disagree the 
   BOSS, then it has the first word in the dialogue box (its line from the Bestiary). This plays
   once per viewer, and only in the first round. On victory a second slab follows "Victory!":
   "Goblin Chief falls!".
+- **Desperation.** When a character's desperation move comes, the stage stops for them: a slab
+  in their colour cuts across the field with their sprite held large, their line in quotes and
+  the move's name in heavy italic, white with a black outline. A power chord plays under it.
+- **Why they're here.** A character's line sits under their name on the sheet, in bold
+  italic quotes, and on their party card in grey.
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide
