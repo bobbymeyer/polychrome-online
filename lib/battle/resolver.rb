@@ -374,7 +374,7 @@ module Battle
       ruling = cmd["ruling"]
       unless ruling
         ctx.emit(:custom_unruled, actor: unit["id"])
-        return use_ability(unit, ctx.ability("attack"), cmd["target"])
+        return use_ability(unit, own(unit, ctx.ability("attack")), cmd["target"])
       end
 
       needed = Stats::Check.chance(stat_value: ctx.stat(unit, ruling["stat"]), stat: ruling["stat"],
@@ -434,7 +434,8 @@ module Battle
       target = nil unless target && target["side"] != unit["side"] && ctx.alive?(target) && !ctx.status?(target, "airborne")
       target ||= ctx.rng.pick(ctx.opponents(unit))
       ctx.emit(:land, actor: unit["id"], target: target&.dig("id"))
-      Effects.apply(ctx, unit, target, { "primitive" => "physical", "power" => status.fetch("power", 200) }) if target
+      blow = { "primitive" => "physical", "power" => status.fetch("power", 200) }.merge(status.slice("type", "basis"))
+      Effects.apply(ctx, unit, target, blow) if target
     end
 
     def take_turn(unit, cmd)
@@ -448,7 +449,7 @@ module Battle
         ctx.emit(:turn_skipped, unit: unit["id"], reason: blocking)
       elsif unit["side"] == "enemy" || unit["guest"]
         ability, target = AI.choose(ctx, unit)
-        use_ability(unit, ability, target)
+        use_ability(unit, own(unit, ability), target)
       elsif cmd.nil?
         ctx.emit(:turn_skipped, unit: unit["id"], reason: "no_command")
       else
@@ -466,10 +467,34 @@ module Battle
       when "item" then use_item(unit, ctx.item(cmd["item"]), cmd["target"])
       when "custom" then try_something(unit, cmd)
       else
-        ability = desperate(unit, ctx.ability(cmd["ability"]))
+        ability = own(unit, desperate(unit, ctx.ability(cmd["ability"])))
         ability = perfect(ability) if cmd["timing"] == "perfect"
         use_ability(unit, ability, cmd["target"])
       end
+    end
+
+    # What a character's jobs make of a move (State.job_parts): Attack and
+    # the job's own command strike with the job's type, and mastery and the
+    # active job scale its power (Stats::Mastery). A mastered move used
+    # outside its job brings that job's stats with it.
+    POWERED = %w[physical elemental heal drain jump].freeze
+
+    def own(unit, ability)
+      typed = unit["attack_type"] && (ability["id"] == "attack" || ability["id"] == unit["signature"])
+      mastery = unit.dig("mastery", ability["id"])
+      return ability unless typed || mastery
+
+      effects = ability["effects"].map do |effect|
+        effect = effect.dup
+        effect["type"] ||= unit["attack_type"] if typed && %w[physical jump].include?(effect["primitive"])
+        if mastery && POWERED.include?(effect["primitive"])
+          default = effect["primitive"] == "jump" ? 200 : 100
+          effect["power"] = effect.fetch("power", default) * mastery["power"] / 100
+          effect["basis"] = mastery["stats"] if mastery["stats"]
+        end
+        effect
+      end
+      ability.merge("effects" => effects)
     end
 
     # A Perfect on the timing meter: every power in the move up by a quarter,

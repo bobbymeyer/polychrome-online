@@ -53,6 +53,9 @@ module Battle
       return 0 if affinity == "immune"
 
       percent = target.fetch("types", []).reduce(100) { |p, defending| p * CHART.fetch(type).fetch(defending, 100) / 100 }
+      # A character's job type never makes them untouchable: what the
+      # chart calls no effect is a resistance.
+      percent = 50 if percent.zero? && target["immune_as_resist"]
       percent *= 2 if affinity == "weak"
       percent /= 2 if affinity == "resist"
       percent

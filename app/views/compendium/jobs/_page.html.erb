@@ -4,8 +4,8 @@
     <p class="eyebrow">Job Compendium</p>
     <h1><%= entry.name %></h1>
     <dl class="facts">
-      <dt>Job levels</dt><dd><%= entry.job_levels.size %></dd>
-      <dt>ABP to master</dt><dd><%= entry.total_abp %></dd>
+      <dt>Type</dt><dd><%= type_tag(entry.base_type) %></dd>
+      <dt>ABP to master</dt><dd><%= Stats::Growth.abp_for_job_level(Stats::Growth::MAX_JOB_LEVEL) %></dd>
       <dt>Ability slots</dt><dd><%= entry.ability_slots %></dd>
       <% if (own = entry.signature_ability) %>
         <dt><%= gloss(:signature, "Signature") %></dt><dd><%= link_to own.name, world_grimoire_ability_path(entry.world, own) %></dd>
@@ -23,6 +23,25 @@
 <% if entry.description.present? %>
   <div class="prose"><%= simple_format(entry.description) %></div>
 <% end %>
+
+<section class="window">
+  <h2>Type</h2>
+  <% profile = type_profile([ entry.base_type ], {}, character: true) %>
+  <dl class="facts facts--wide type-facts">
+    <dt>Type</dt><dd><%= type_tag(entry.base_type) %> <%= link_to "the chart", types_path, class: "muted" %></dd>
+    <% { "weak" => "Weak to", "resist" => "Resists" }.each do |band, label| %>
+      <% if profile[band].any? %><dt><%= label %></dt><dd><%= safe_join(profile[band].map { |t| type_tag(t) }, " ") %></dd><% end %>
+    <% end %>
+  </dl>
+  <p class="hint">
+    <% if entry.base_type == "normal" %>
+      Attack and the signature command are plain blows.
+    <% else %>
+      Attack and the signature command strike as <%= term(entry.base_type).downcase %>.
+    <% end %>
+    A character is never immune through a job's type: what the chart calls no effect, they resist.
+  </p>
+</section>
 
 <section class="window">
   <h2>Stat modifiers</h2>
@@ -53,14 +72,13 @@
     <p class="empty"><%= entry.name %> teaches nothing. It has no limits either.</p>
   <% else %>
     <table class="book-table book-table--plain">
-      <thead><tr><th class="num">Level</th><th class="num">ABP</th><th class="num">Total</th><th>Ability</th><th>Kind</th></tr></thead>
+      <thead><tr><th class="num">Job level</th><th class="num">ABP</th><th class="num">Mastered at</th><th>Ability</th><th>Kind</th></tr></thead>
       <tbody>
-        <% total = 0 %>
         <% entry.job_levels.includes(:ability).each do |level| %>
           <tr>
             <td class="num"><%= level.level %></td>
-            <td class="num"><%= level.abp %></td>
-            <td class="num"><%= total += level.abp %></td>
+            <td class="num"><%= Stats::Growth.abp_for_job_level(level.level) %></td>
+            <td class="num"><%= level.mastered_at %></td>
             <td><%= link_to level.ability.name, world_grimoire_ability_path(@world, level.ability) %></td>
             <td><%= term(level.ability.kind) %></td>
           </tr>

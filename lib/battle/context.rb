@@ -64,12 +64,15 @@ module Battle
       DISABLING_STATUSES.any? { |kind| status?(u, kind) }
     end
 
-    def stat(u, name)
-      effective_stats(u).fetch(name)
+    # basis: stats to use in place of the unit's own, before buffs (a
+    # mastered ability cast outside its job keeps its job's stats).
+    def stat(u, name, basis: nil)
+      effective_stats(u, basis: basis).fetch(name)
     end
 
-    def effective_stats(u)
-      Stats::Derivation.effective(u["stats"], buffs: u["buffs"], statuses: u["statuses"].map { |s| s["kind"] })
+    def effective_stats(u, basis: nil)
+      stats = basis ? u["stats"].merge(basis) : u["stats"]
+      Stats::Derivation.effective(stats, buffs: u["buffs"], statuses: u["statuses"].map { |s| s["kind"] })
     end
 
     def allies(u, alive: true)

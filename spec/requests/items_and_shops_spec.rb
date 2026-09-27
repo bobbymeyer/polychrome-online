@@ -19,7 +19,7 @@ RSpec.describe "Items and shops", type: :request do
     end
 
     it "brings the bag's usable items, offers them as a command, and takes used ones out of the bag after" do
-      battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 1 }, seed: 3)
+      battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 3 }, seed: 3)
       expect(battle.state["items"].keys).to eq([ "potion" ])
 
       post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }

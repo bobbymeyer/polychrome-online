@@ -70,7 +70,7 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(response).to have_http_status(:ok)
 
       post campaign_characters_path(campaign), params: { character: {
-        name: "Galuf", player_name: "Alex", job_id: knight.id, starting_level: "8", starting_job_level: "3"
+        name: "Galuf", player_name: "Alex", job_id: knight.id, starting_level: "8", starting_job_level: "30"
       } }
       galuf = campaign.characters.find_by!(name: "Galuf")
       expect(response).to redirect_to(character_path(galuf))
@@ -88,7 +88,7 @@ RSpec.describe "Campaigns and characters", type: :request do
   describe "the character sheet" do
     it "shows level, job progress, the stat derivation, equipment and abilities" do
       get character_path(bartz)
-      expect(response.body).to include("Bartz", "played by Sam", "Knight", "Lv 1", "Base", "Gear", "Total",
+      expect(response.body).to include("Bartz", "played by Sam", "Knight", "Lv</span> 1", "Base", "Gear", "Total",
                                        "War Cry", "Change job", "Free slots (1)")
 
       bartz.update!(user: make_user("Jo")) # an account beats the old player-name note

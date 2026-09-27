@@ -23,9 +23,10 @@
       </li>
     <% end %>
   </ul>
-  <%# The moments worth a card of their own: a new ability, a job mastered. %>
+  <%# The moments worth a card of their own: a new ability, an ability or a job mastered. %>
   <% cards = settlement["members"].flat_map do |member|
        Array(member["abilities"]).map { |a| [ "New ability", member["name"], a["name"], a["description"] ] } +
+         Array(member["mastered_abilities"]).map { |name| [ "Mastered", member["name"], name, "At full strength, in any job." ] } +
          (member["mastered"] ? [ [ "Mastered", member["name"], member["mastered"]["job"],
                                    (member["mastered"]["passive"] ? "#{GlossaryHelper::PASSIVES.dig(member['mastered']['passive'], 0)} is yours in every job now." : "Every level learned.") ] ] : [])
      end %>

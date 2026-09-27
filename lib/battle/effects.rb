@@ -87,7 +87,8 @@ module Battle
 
       crit_needed = crit_chance(ctx, actor, target)
       crit, crit_roll = ctx.rng.d100(crit_needed)
-      base = (ctx.stat(actor, "atk") + ctx.stat(actor, "str")) * effect.fetch("power", 100) / 100
+      basis = effect["basis"]
+      base = (ctx.stat(actor, "atk", basis: basis) + ctx.stat(actor, "str", basis: basis)) * effect.fetch("power", 100) / 100
       amount = mitigate(vary(ctx, base), ctx.stat(target, "def"))
       amount *= 2 if crit
       amount /= 2 if target["defending"]
@@ -117,18 +118,20 @@ module Battle
 
       ctx.emit(:counter, actor: target["id"], target: actor["id"], roll: roll, needed: COUNTER_CHANCE)
       ctx.countering = true
-      physical(ctx, target, actor, { "primitive" => "physical", "power" => 100 })
+      physical(ctx, target, actor, { "primitive" => "physical", "power" => 100, "type" => target["attack_type"] }.compact)
     ensure
       ctx.countering = false if struck
     end
 
-    # jump(power): the actor leaves the field, out of reach, and lands on the
-    # target on its next turn (Battle::Resolver#land) for power% of a blow.
+    # jump(power, type): the actor leaves the field, out of reach, and lands
+    # on the target on its next turn (Battle::Resolver#land) for power% of a
+    # blow of that type.
     def jump(ctx, actor, target, effect)
       ctx.add_status(actor, "airborne", 2)
       status = actor["statuses"].find { |st| st["kind"] == "airborne" }
       status["target"] = target["id"]
       status["power"] = effect.fetch("power", 200)
+      status.merge!(effect.slice("type", "basis"))
       ctx.emit(:jump, actor: actor["id"], target: target["id"])
     end
 
@@ -182,7 +185,7 @@ module Battle
 
     # heal(power): power scaled by the caster's mag.
     def heal(ctx, actor, target, effect)
-      amount = [ vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"))), 1 ].max
+      amount = [ vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"), effect["basis"])), 1 ].max
       ctx.restore_hp(target, amount, actor: actor["id"])
     end
 
@@ -288,11 +291,11 @@ module Battle
     end
 
     def magic_amount(ctx, actor, target, effect)
-      mitigate(vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"))), ctx.stat(target, "mdef"))
+      mitigate(vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"), effect["basis"])), ctx.stat(target, "mdef"))
     end
 
-    def scale_by_mag(ctx, actor, power)
-      power * (ctx.stat(actor, "mag") + 16) / 16
+    def scale_by_mag(ctx, actor, power, basis = nil)
+      power * (ctx.stat(actor, "mag", basis: basis) + 16) / 16
     end
 
     # Variance in [224/256, 255/256].

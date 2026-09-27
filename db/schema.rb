@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_070000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_080000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -319,11 +319,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_070000) do
     t.integer "job_id", null: false
     t.integer "ability_id", null: false
     t.integer "level", null: false
-    t.integer "abp", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["ability_id"], name: "index_job_levels_on_ability_id"
-    t.index ["job_id", "level"], name: "index_job_levels_on_job_id_and_level", unique: true
+    t.index ["job_id", "ability_id"], name: "index_job_levels_on_job_id_and_ability_id", unique: true
     t.index ["job_id"], name: "index_job_levels_on_job_id"
   end
 
@@ -348,6 +347,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_070000) do
     t.string "desperation"
     t.string "signature"
     t.string "passive"
+    t.string "base_type", default: "normal", null: false
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end

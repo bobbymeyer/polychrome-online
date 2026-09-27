@@ -20,9 +20,10 @@ module BooksHelper
 
   # How a type (or pair) takes every type, from the chart and the unit's own
   # exceptions: { "weak" => [...], "resist" => [...], "immune" => [...],
-  # "absorb" => [...] }, each in chart order.
-  def type_profile(types, affinities = {})
-    target = { "types" => Array(types), "affinities" => affinities || {} }
+  # "absorb" => [...] }, each in chart order. A character (character: true)
+  # resists what the chart says they're immune to.
+  def type_profile(types, affinities = {}, character: false)
+    target = { "types" => Array(types), "affinities" => affinities || {}, "immune_as_resist" => character }
     Battle::TYPES.each_with_object(Hash.new { |h, k| h[k] = [] }) do |attacking, profile|
       percent = Battle::Types.effectiveness(attacking, target)
       band = if percent == :absorb then "absorb"

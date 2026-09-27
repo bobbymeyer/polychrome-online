@@ -70,7 +70,7 @@ Every table that belongs to a world carries `world_id`. This is the only second-
 - `named_places` — fixed, hand-authored locations
 - `monsters` — stat block, image slot, variant recipe, AI script (condition/action list), drop table
 - `encounter_tables` — weighted monster groups by terrain/tier
-- `jobs`, `job_learn_tables` — FF5-style: job levels, ABP thresholds, learned abilities, equip permissions, innates
+- `jobs`, `job_learn_tables` — FF5-style: a type, job levels 1–100 on one ABP curve, the job level each ability comes at, equip permissions, innates. Each ability grows to mastery over the 40 job levels after it's learned (+50% power), gets +25% in the job that teaches it, and keeps its job's Str/Mag once mastered; job level 100 masters the job (`Stats::Mastery`)
 - `abilities` — primitive + params + targeting + cost
 - `items`, `equipment`
 - `generator_tables` — name lists, NPC hooks, room templates, shop archetypes, building archetypes

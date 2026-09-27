@@ -35,7 +35,7 @@ RSpec.describe "The player's way through", type: :request do
     sign_in_as(krile)
     post campaign_characters_path(campaign), params: { character: { name: "Krile", job_id: white_mage.id } }
     character = campaign.characters.find_by!(name: "Krile")
-    expect(character.character_job.level).to eq(1)
+    expect(character.character_job.level).to eq(2) # two job levels per level
     expect(character.battle_abilities.map(&:slug)).to include("cure")
   end
 

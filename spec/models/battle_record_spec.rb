@@ -158,11 +158,11 @@ RSpec.describe BattleRecord do
 
       bartz_character.reload
       expect(bartz_character.exp).to eq(exp_before + 20) # 2 goblins x 10 EXP, one standing
-      expect(bartz_character.character_job.abp).to eq(10 + 4) # started at job level 1, +2 ABP per goblin
+      expect(bartz_character.character_job.abp).to eq(1 + 4) # started at job level 1, +2 ABP per goblin
       expect(characters[faris].reload.exp).to eq(Stats::Growth.exp_for_level(5))
       expect(campaign.reload.gil).to eq(10)
       expect(battle.reload.settlement).to include("result" => "victory", "gil" => 10,
-                                                  "members" => [ { "name" => "Bartz", "exp" => 20, "abp" => 4, "learned" => [], "to_next" => 80 } ])
+                                                  "members" => [ { "name" => "Bartz", "exp" => 20, "abp" => 4, "job_level" => [ 1, 4 ], "learned" => [], "to_next" => 80 } ])
     end
 
     it "writes HP and MP back to the characters" do
@@ -187,7 +187,7 @@ RSpec.describe BattleRecord do
       wyrm_world = campaign.world
       wyrm_world.monsters.find_by!(slug: "goblin").update!(exp: 500, abp: 30)
       heal = create_ability(wyrm_world, slug: "shield_bash", kind: "skill", effects: [ { primitive: "physical", power: 90 } ])
-      wyrm_world.jobs.find_by!(slug: "knight").job_levels.create!(level: 2, abp: 20, ability: heal)
+      wyrm_world.jobs.find_by!(slug: "knight").job_levels.create!(level: 2, ability: heal)
       battle = start_battle(campaign: campaign)
       win!(battle)
       member = battle.reload.settlement["members"].find { |m| m["name"] == "Bartz" }

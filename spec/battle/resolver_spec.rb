@@ -604,5 +604,53 @@ RSpec.describe Battle::Resolver do
       expect(of_type(events, :damage).first).to include("damage_type" => "grass")
       expect(build_battle["terrain"]).to eq("normal")
     end
+
+    describe "what jobs bring" do
+      let(:ghost) { [ { id: "wisp", name: "Wisp", stats: stats(max_hp: 3000, agi: 1), types: %w[ghost], ai: [ { use: "attack" } ] } ] }
+      let(:healer) { mage.merge(abilities: %w[cure], hp: 100, stats: mage[:stats].merge("mag" => 10)) }
+
+      def cure_amount(unit, seed: 3)
+        state = build_battle(seed: seed, party: [ unit ], enemies: brute)
+        _, events = round(state, "mage" => { kind: "ability", ability: "cure", target: "mage" })
+        of_type(events, :heal).find { |e| e["actor"] == "mage" }.fetch("amount")
+      end
+
+      it "gives Attack and the job's own command the job's type" do
+        fighter = knight.merge(attack_type: "fighting", signature: "jump")
+        _, events = round(build_battle(seed: 1, party: [ fighter ], enemies: brute), "knight" => { kind: "ability", ability: "attack" })
+        expect(of_type(events, :damage).find { |e| e["actor"] == "knight" }).to include("damage_type" => "fighting")
+
+        state, = round(build_battle(seed: 1, party: [ fighter ], enemies: brute), "knight" => { kind: "ability", ability: "jump", target: "brute" })
+        _, events = apply(state, { type: "timeout" })
+        expect(of_type(events, :damage).find { |e| e["actor"] == "knight" }).to include("damage_type" => "fighting")
+
+        _, events = round(build_battle(seed: 1, party: [ knight ], enemies: brute), "knight" => { kind: "ability", ability: "attack" })
+        expect(of_type(events, :damage).find { |e| e["actor"] == "knight" }).not_to have_key("damage_type")
+      end
+
+      it "scales a move by its mastery, and a mastered one brings its job's stats" do
+        plain = cure_amount(healer)
+        expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 150 } }))).to be_within(1).of(plain * 150 / 100)
+        expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 100, "stats" => { "mag" => 26 } } }))).to be_within(1).of(plain * 42 / 26)
+        expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 100, "stats" => { "mag" => 26 } } }))).to be > plain
+      end
+
+      it "never lets a character's type make them untouchable" do
+        spirit = knight.merge(types: %w[normal], immune_as_resist: true)
+        state = build_battle(seed: 2, party: [ spirit ], enemies: ghost)
+        state = with_unit(state, "wisp", attack_type: "ghost") # a monster with a typed attack, for the test
+        _, events = round(state, "knight" => { kind: "defend" })
+        blow = of_type(events, :damage).find { |e| e["actor"] == "wisp" }
+        expect(blow).to include("damage_type" => "ghost", "effectiveness" => 50)
+        expect(Battle::Types.effectiveness("ghost", unit(state, "knight").except("immune_as_resist"))).to eq(0)
+      end
+
+      it "rejects mastery it can't use" do
+        expect { build_battle(party: [ healer.merge(mastery: { "cure" => { "power" => 0 } }) ]) }.to raise_error(ArgumentError, /mastery power/)
+        expect { build_battle(party: [ healer.merge(mastery: { "cure" => { "power" => 150, "stats" => { "luck" => 3 } } }) ]) }
+          .to raise_error(ArgumentError, /mastery stats/)
+        expect { build_battle(party: [ healer.merge(attack_type: "fairy") ]) }.to raise_error(ArgumentError, /attack type/)
+      end
+    end
   end
 end

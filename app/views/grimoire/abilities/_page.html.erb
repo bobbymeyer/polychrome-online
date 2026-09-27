@@ -35,7 +35,7 @@
     <h3>Taught by</h3>
     <ul class="refs">
       <% levels.each do |level| %>
-        <li><%= link_to level.job.name, world_compendium_job_path(@world, level.job) %> at job level <%= level.level %> (<%= level.abp %> ABP)</li>
+        <li><%= link_to level.job.name, world_compendium_job_path(@world, level.job) %> at job level <%= level.level %>, mastered at <%= level.mastered_at %></li>
       <% end %>
     </ul>
   <% end %>

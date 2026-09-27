@@ -32,7 +32,7 @@ module Battle
     # Shows the target's affinities, status immunities and HP.
     "scan" => { required: [], optional: [] },
     # Leaves the field (airborne) and lands on the target on the next turn.
-    "jump" => { required: [], optional: %w[power] }
+    "jump" => { required: [], optional: %w[power type] }
   }.freeze
   PRIMITIVE_STRING_PARAMS = %w[type kind stat].freeze
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
@@ -86,6 +86,12 @@ module Battle
     # Build an initial battle state.
     #
     # party:     [{ id:, name:, stats:, abilities: [...], types: [], affinities: {}, status_immune: [] , hp:, mp:, desperation: }]
+    #            A character also brings what their jobs gave them:
+    #              signature:        the job's own command
+    #              attack_type:      the type Attack and the signature strike with
+    #              immune_as_resist: the type chart's "no effect" is a resistance
+    #              mastery:          { ability => { power: percent, stats: { "mag" => n } } },
+    #                                what mastery and the active job make of it
     # enemies:   same shape plus ai: [rules], rewards: {}, and optional count: n
     # abilities: { "fire" => { name:, kind:, target:, cost: { mp: }, effects: [...] } }
     # items:     the party's usable items, shared by everyone in it:
@@ -187,6 +193,30 @@ module Battle
       }.merge(spec["desperation"] ? { "desperation" => spec["desperation"].to_s } : {})
        .merge(spec["level"] ? { "level" => Integer(spec["level"]) } : {})
        .merge(passives(id, spec))
+       .merge(job_parts(id, spec))
+    end
+
+    # What a character's jobs bring (see #build). Only present keys are kept,
+    # so monsters' units are unchanged.
+    def job_parts(id, spec)
+      parts = {}
+      if spec["attack_type"]
+        raise ArgumentError, "#{id} has unknown attack type #{spec['attack_type']}" unless TYPES.include?(spec["attack_type"])
+
+        parts["attack_type"] = spec["attack_type"]
+      end
+      parts["signature"] = spec["signature"].to_s if spec["signature"]
+      parts["immune_as_resist"] = true if spec["immune_as_resist"]
+      mastery = spec.fetch("mastery", {})
+      mastery.each do |ability, entry|
+        power = entry["power"]
+        raise ArgumentError, "#{id}: mastery power for #{ability} must be a whole percent from 1 to 500" unless power.is_a?(Integer) && power.between?(1, 500)
+
+        bad = entry.fetch("stats", {}).reject { |stat, value| Stats::NAMES.include?(stat) && value.is_a?(Integer) }
+        raise ArgumentError, "#{id}: mastery stats for #{ability} are invalid: #{bad}" if bad.any?
+      end
+      parts["mastery"] = mastery if mastery.any?
+      parts
     end
 
     # { id: "goblin", name: "Goblin", count: 3 } -> Goblin A, Goblin B, Goblin C
@@ -286,7 +316,7 @@ module Battle
         end
 
         case primitive
-        when "elemental", "physical"
+        when "elemental", "physical", "jump"
           # "terrain": the type of where the fight is (a Geomancer's arts).
           known = TYPES.include?(effect["type"]) || effect["type"] == "terrain"
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !known

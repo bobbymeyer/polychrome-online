@@ -87,7 +87,7 @@ RSpec.describe Ability do
   it "cannot be deleted while a job teaches it" do
     ability = create_ability(world)
     job = create_job(world)
-    job.job_levels.create!(level: 1, abp: 10, ability: ability)
+    job.job_levels.create!(level: 1, ability: ability)
     expect(ability.destroy).to be(false)
     expect(ability.errors.full_messages.to_sentence).to match(/job levels/i)
   end

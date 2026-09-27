@@ -39,7 +39,7 @@ module BattleFactory
     world = create_world
     cure = create_ability(world, slug: "cure", kind: "magic", target: "single_ally", effects: [ { primitive: "heal", power: 20 } ])
     create_item(world)
-    create_job(world).job_levels.create!(level: 1, abp: 10, ability: cure)
+    create_job(world).job_levels.create!(level: 1, ability: cure)
     create_monster(world, exp: 10, gil: 5, abp: 2)
     world
   end

@@ -799,3 +799,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open], .choice:not([hidden]), .reward-card { animation: none !important; }
   * { transition-duration: 0s !important; }
 }
+
+/* Mastery: a thin bar per ability; black once it's mastered (DESIGN.md: mastery is red and black). */
+.mastery-bar { display: inline-block; width: 96px; height: 6px; vertical-align: middle; margin-right: 8px; }
+.bar .bar__fill--mastered { background: var(--ink); }

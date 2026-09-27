@@ -41,7 +41,7 @@ class Character < ApplicationRecord
   validates :name, presence: true
   validates :exp, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :starting_level, numericality: { in: 1..Stats::Growth::MAX_LEVEL }, allow_nil: true, on: :create
-  validates :starting_job_level, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true, on: :create
+  validates :starting_job_level, numericality: { in: 0..Stats::Growth::MAX_JOB_LEVEL }, allow_nil: true, on: :create
   validate :job_from_the_campaign_world
 
   delegate :world, to: :campaign
@@ -76,8 +76,48 @@ class Character < ApplicationRecord
 
   # The current job's passive, and every mastered job's: mastery keeps it.
   def passives
-    mastered = character_jobs.includes(job: :job_levels).select(&:mastered?).map { |cj| cj.job.passive }
+    mastered = character_jobs.includes(:job).select(&:mastered?).map { |cj| cj.job.passive }
     ([ job.passive ] + mastered).compact.uniq
+  end
+
+  # --- mastery -------------------------------------------------------------
+
+  # Each learned ability's mastery, the best any job has given it (ties go
+  # to the current job): { ability => { percent:, job: } }.
+  def masteries
+    @masteries ||= character_jobs.includes(job: { job_levels: :ability }).flat_map do |cj|
+      cj.learned_levels.map { |row| { ability: row.ability, percent: cj.mastery(row), job: cj.job } }
+    end.group_by { |m| m[:ability] }.transform_values do |list|
+      list.max_by { |m| [ m[:percent], m[:job] == job ? 1 : 0 ] }
+    end
+  end
+
+  # Does the current job teach it? Then it's used in its own job, and gets
+  # the active-job bonus (Stats::Mastery::ACTIVE_BONUS).
+  def active?(ability)
+    job.job_levels.any? { |row| row.ability_id == ability.id }
+  end
+
+  # What mastery and the active job make of each move the character brings
+  # to battle (Battle::State.job_parts). The job's own command grows with
+  # the job level, as if learned at level 1. A mastered move used outside
+  # its job keeps that job's str and mag where they're higher.
+  def battle_mastery
+    entries = battle_abilities.filter_map do |ability|
+      mastery = masteries[ability] or next
+      active = active?(ability)
+      entry = { "power" => Stats::Mastery.power(mastery[:percent], active: active) }
+      if mastery[:percent] == Stats::Mastery::FULL && !active && mastery[:job] != job
+        basis = home_stats(mastery[:job]).select { |stat, value| value > stats[stat] }
+        entry["stats"] = basis if basis.any?
+      end
+      [ ability.slug, entry ]
+    end.to_h
+    if job.signature
+      percent = Stats::Mastery.percent(character_job.level, 1).to_i
+      entries[job.signature] = { "power" => Stats::Mastery.power(percent, active: true) }
+    end
+    entries.reject { |_, entry| entry == { "power" => 100 } }
   end
 
   # Award EXP and ABP (to the current job). Returns what changed, for the
@@ -86,19 +126,26 @@ class Character < ApplicationRecord
     cj = character_job
     before_level = level
     before_learned = cj.learned_abilities
+    before_mastered = cj.mastered_abilities
+    before_job_level = cj.level
     was_mastered = cj.mastered?
     transaction do
       cj.update!(abp: cj.abp + abp)
       update!(exp: self.exp + exp)
     end
+    @masteries = nil
     learned = cj.learned_abilities - before_learned
+    mastered = cj.mastered_abilities - before_mastered
     {
       "exp" => exp, "abp" => abp,
       "level" => (level > before_level ? [ before_level, level ] : nil),
+      "job_level" => (cj.level > before_job_level ? [ before_job_level, cj.level ] : nil),
       "learned" => learned.map(&:name),
-      # For the result panel's cards: what each new ability does.
+      # For the result panel's cards: what each new ability does, and what's
+      # been mastered.
       "abilities" => learned.map { |a| { "name" => a.name, "description" => a.description.to_s } }.presence,
-      "mastered" => (cj.reload.mastered? && !was_mastered ? { "job" => job.name, "passive" => job.passive } : nil),
+      "mastered_abilities" => mastered.map(&:name).presence,
+      "mastered" => (cj.mastered? && !was_mastered ? { "job" => job.name, "passive" => job.passive } : nil),
       "to_next" => (Stats::Growth.exp_for_level(level + 1) - self.exp if level < Stats::Growth::MAX_LEVEL)
     }.compact
   end
@@ -204,7 +251,16 @@ class Character < ApplicationRecord
 
   def reload(*)
     @stat_stages = nil
+    @masteries = nil
     super
+  end
+
+  # A job's stats for this character, in their gear: what a mastered move
+  # from that job brings to another.
+  def home_stats(home)
+    base = Stats::Growth.base_stats(level)
+    Stats::Derivation.derive(base: base, job: home.to_derivation, equipment: equipped_items.map(&:to_equipment), passives: home.passives)
+                     .slice("str", "mag")
   end
 
   # Without a portrait of their own, a character is drawn as their job.
@@ -231,11 +287,13 @@ class Character < ApplicationRecord
       "hp" => current_hp,
       "mp" => current_mp,
       "abilities" => (battle_abilities.map(&:slug) + [ job.signature ].compact).uniq,
+      "signature" => job.signature,
+      "mastery" => battle_mastery.presence,
       "passives" => passives,
       "image" => { "book" => "jobs", "slug" => job.slug },
       "desperation" => job.desperation_ability&.slug,
       "level" => level
-    }.compact
+    }.merge(job.battle_type).compact
   end
 
   private
@@ -245,15 +303,14 @@ class Character < ApplicationRecord
   end
 
   # Without a job level given, a character has spent some of their life in
-  # their job: about one job level per two character levels.
+  # their job: about two job levels per character level.
   def self.job_level_for(level)
-    [ (level.to_i + 1) / 2, 1 ].max
+    (level.to_i * 2).clamp(1, Stats::Growth::MAX_JOB_LEVEL)
   end
 
   def start_in_job
-    costs = job.job_levels.map(&:abp)
     job_level = starting_job_level.nil? ? Character.job_level_for(level) : starting_job_level.to_i
-    character_jobs.create!(job: job, abp: Stats::Growth.abp_for_job_level(job_level, costs))
+    character_jobs.create!(job: job, abp: Stats::Growth.abp_for_job_level(job_level))
   end
 
   # A new character arrives dressed for their job, as in the games: the

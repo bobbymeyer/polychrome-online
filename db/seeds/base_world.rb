@@ -38,8 +38,8 @@ module Seeds
         next unless fresh || overwrite
 
         job.job_levels.destroy_all
-        levels.each_with_index do |(ability, abp), i|
-          job.job_levels.create!(level: i + 1, abp: abp, ability: world.abilities.find_by!(slug: ability))
+        levels.each do |ability, level|
+          job.job_levels.create!(level: level, ability: world.abilities.find_by!(slug: ability))
         end
       end
       world
@@ -280,58 +280,58 @@ module Seeds
     }.freeze
 
     JOBS = {
-      freelancer: { name: "Freelancer", signature: "rally", desperation: "last_stand", description: "No talents, no limits. Every hero starts here.",
+      freelancer: { name: "Freelancer", base_type: "normal", signature: "rally", desperation: "last_stand", description: "No talents, no limits. Every hero starts here.",
                     stat_multipliers: {}, ability_slots: 2, equip_categories: Item::EQUIPMENT_CATEGORIES,
-                    innates: [], levels: [ [ "libra", 10 ] ] },
-      knight: { name: "Knight", signature: "cover", passive: "second_wind", desperation: "unbroken_line", description: "Heavy armor, a long sword and the resolve to stand in front.",
+                    innates: [], levels: [ [ "libra", 5 ] ] },
+      knight: { name: "Knight", base_type: "steel", signature: "cover", passive: "second_wind", desperation: "unbroken_line", description: "Heavy armor, a long sword and the resolve to stand in front.",
                 stat_multipliers: { max_hp: 130, str: 120, vit: 120, agi: 90, mag: 60 },
                 equip_categories: %w[sword axe spear shield helmet heavy_armor accessory],
                 innates: [ { stat: "def", percent: 10 } ],
-                levels: [ [ "war_cry", 10 ], [ "armor_break", 20 ], [ "double_cut", 40 ] ] },
-      thief: { name: "Thief", signature: "mug", passive: "first_strike", desperation: "vanishing_cut", description: "Fast hands, faster feet.",
+                levels: [ [ "war_cry", 1 ], [ "armor_break", 12 ], [ "double_cut", 30 ] ] },
+      thief: { name: "Thief", base_type: "dark", signature: "mug", passive: "first_strike", desperation: "vanishing_cut", description: "Fast hands, faster feet.",
                stat_multipliers: { agi: 140, str: 90, max_hp: 90 },
                equip_categories: %w[knife hat light_armor accessory],
                innates: [ { stat: "agi", add: 5 } ],
-               levels: [ [ "steal", 10 ], [ "smoke_bomb", 20 ], [ "double_cut", 30 ] ] },
-      monk: { name: "Monk", signature: "focus", passive: "counter", desperation: "hundred_fists", description: "Fists instead of steel.",
+               levels: [ [ "steal", 1 ], [ "smoke_bomb", 12 ], [ "double_cut", 25 ] ] },
+      monk: { name: "Monk", base_type: "fighting", signature: "focus", passive: "counter", desperation: "hundred_fists", description: "Fists instead of steel.",
               stat_multipliers: { max_hp: 140, str: 130, vit: 110, mag: 50 },
               equip_categories: %w[light_armor accessory],
               innates: [ { stat: "atk", add: 12 } ],
-              levels: [ [ "kick", 15 ], [ "war_cry", 25 ] ] },
-      black_mage: { name: "Black Mage", signature: "channel", passive: "mp_regen", desperation: "starfall", description: "Destruction, studied carefully.",
+              levels: [ [ "kick", 1 ], [ "war_cry", 15 ] ] },
+      black_mage: { name: "Black Mage", base_type: "fire", signature: "channel", passive: "mp_regen", desperation: "starfall", description: "Destruction, studied carefully.",
                     stat_multipliers: { max_hp: 70, max_mp: 150, mag: 140, str: 60 },
                     equip_categories: %w[knife rod robe hat accessory],
                     innates: [],
-                    levels: [ [ "fire", 10 ], [ "blizzard", 10 ], [ "thunder", 10 ], [ "sleep", 20 ], [ "fira", 40 ], [ "bio", 60 ], [ "drain", 80 ] ] },
-      white_mage: { name: "White Mage", signature: "pray", passive: "regen", desperation: "judgement", description: "Keeps everyone else alive.",
+                    levels: [ [ "fire", 1 ], [ "blizzard", 5 ], [ "thunder", 8 ], [ "sleep", 15 ], [ "fira", 30 ], [ "bio", 45 ], [ "drain", 60 ] ] },
+      white_mage: { name: "White Mage", base_type: "psychic", signature: "pray", passive: "regen", desperation: "judgement", description: "Keeps everyone else alive.",
                     stat_multipliers: { max_hp: 80, max_mp: 140, mag: 120, spr: 130, str: 60 },
                     equip_categories: %w[staff robe hat accessory],
                     innates: [ { stat: "mdef", percent: 20 } ],
-                    levels: [ [ "cure", 10 ], [ "silence", 20 ], [ "esuna", 30 ], [ "cura", 40 ], [ "haste", 50 ], [ "raise", 80 ] ] },
-      red_mage: { name: "Red Mage", signature: "flame_blade", passive: "regen", desperation: "crimson_flurry",
+                    levels: [ [ "cure", 1 ], [ "silence", 10 ], [ "esuna", 20 ], [ "cura", 30 ], [ "haste", 40 ], [ "raise", 60 ] ] },
+      red_mage: { name: "Red Mage", base_type: "normal", signature: "flame_blade", passive: "regen", desperation: "crimson_flurry",
                   description: "A little of everything, and a sword to put it through.",
                   stat_multipliers: { max_hp: 95, max_mp: 115, str: 105, mag: 110 },
                   equip_categories: %w[sword knife rod light_armor robe hat accessory],
                   innates: [],
-                  levels: [ [ "fire", 10 ], [ "cure", 10 ], [ "blizzard", 15 ], [ "thunder", 15 ], [ "sleep", 25 ], [ "haste", 50 ] ] },
-      summoner: { name: "Summoner", signature: "carbuncle", passive: "mp_regen", desperation: "megaflare",
+                  levels: [ [ "fire", 1 ], [ "cure", 1 ], [ "blizzard", 8 ], [ "thunder", 8 ], [ "sleep", 20 ], [ "haste", 40 ] ] },
+      summoner: { name: "Summoner", base_type: "ghost", signature: "carbuncle", passive: "mp_regen", desperation: "megaflare",
                   description: "Calls things that should not come when called.",
                   stat_multipliers: { max_hp: 75, max_mp: 160, mag: 135, str: 55 },
                   equip_categories: %w[staff rod robe hat accessory],
                   innates: [],
-                  levels: [ [ "ifrit", 15 ], [ "shiva", 15 ], [ "ramuh", 15 ], [ "titan", 40 ], [ "leviathan", 80 ] ] },
-      geomancer: { name: "Geomancer", signature: "gaia", passive: "regen", desperation: "cataclysm",
+                  levels: [ [ "ifrit", 1 ], [ "shiva", 5 ], [ "ramuh", 8 ], [ "titan", 30 ], [ "leviathan", 60 ] ] },
+      geomancer: { name: "Geomancer", base_type: "ground", signature: "gaia", passive: "regen", desperation: "cataclysm",
                    description: "Reads the land and borrows its temper.",
                    stat_multipliers: { max_hp: 100, mag: 115, spr: 115, str: 90 },
                    equip_categories: %w[staff axe light_armor hat accessory],
                    innates: [ { stat: "mdef", percent: 10 } ],
-                   levels: [ [ "sinkhole", 10 ], [ "whirlwind", 20 ], [ "riptide", 35 ] ] },
-      dragoon: { name: "Dragoon", signature: "jump", passive: "first_strike", desperation: "dragon_dive",
+                   levels: [ [ "sinkhole", 1 ], [ "whirlwind", 15 ], [ "riptide", 30 ] ] },
+      dragoon: { name: "Dragoon", base_type: "flying", signature: "jump", passive: "first_strike", desperation: "dragon_dive",
                  description: "Fights from above. Mostly from above.",
                  stat_multipliers: { max_hp: 120, str: 125, agi: 105, mag: 50 },
                  equip_categories: %w[spear shield helmet heavy_armor accessory],
                  innates: [ { stat: "atk", add: 4 } ],
-                 levels: [ [ "lance", 10 ], [ "dragon_crest", 20 ], [ "high_jump", 40 ] ] }
+                 levels: [ [ "lance", 1 ], [ "dragon_crest", 15 ], [ "high_jump", 35 ] ] }
     }.freeze
 
     MONSTERS = {

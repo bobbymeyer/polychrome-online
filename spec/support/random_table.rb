@@ -21,6 +21,7 @@ class RandomTable
                              u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser),
                                      passives: Battle::PASSIVES.sample(@chooser.rand(0..2), random: @chooser),
                                      abilities: u[:abilities] + %w[cover jump gaia].sample(2, random: @chooser))
+                              .merge(job_parts(u))
                            },
       terrain: Battle::TYPES.sample(random: @chooser),
       enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre ].sample(random: @chooser),
@@ -48,6 +49,21 @@ class RandomTable
   end
 
   private
+
+  # What a character's jobs bring: a type for Attack, a signature, and
+  # mastery on some of what they know.
+  def job_parts(unit)
+    return {} if @chooser.rand(3).zero?
+
+    known = unit[:abilities] + %w[attack]
+    mastery = known.sample(@chooser.rand(0..3), random: @chooser).to_h do |id|
+      entry = { "power" => [ 100, 125, 150, 175 ].sample(random: @chooser) }
+      entry["stats"] = { "mag" => @chooser.rand(5..40), "str" => @chooser.rand(5..40) } if @chooser.rand(2).zero?
+      [ id, entry ]
+    end
+    { attack_type: Battle::TYPES.sample(random: @chooser), signature: unit[:abilities].sample(random: @chooser),
+      immune_as_resist: true, mastery: mastery }
+  end
 
   def next_action(state)
     # A GM at the table rules on an idea soon after it's made.

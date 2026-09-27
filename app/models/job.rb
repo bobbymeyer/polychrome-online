@@ -20,6 +20,9 @@ class Job < ApplicationRecord
   validate :desperation_is_an_attack
   validate :signature_is_an_ability
   validates :passive, inclusion: { in: Battle::PASSIVES }, allow_nil: true
+  # A character in the job has its type: hit as the chart says, and hitting
+  # with it through Attack and the job's own command.
+  validates :base_type, inclusion: { in: Battle::TYPES }
 
   normalizes :desperation, :signature, :passive, with: ->(slug) { slug.presence }
 
@@ -66,8 +69,10 @@ class Job < ApplicationRecord
     innates
   end
 
-  def total_abp
-    job_levels.sum(&:abp)
+  # What a job's type gives a character in it, in battle (Battle::State):
+  # a normal job's Attack stays plain.
+  def battle_type
+    { "types" => [ base_type ], "attack_type" => (base_type unless base_type == "normal"), "immune_as_resist" => true }.compact
   end
 
   private

@@ -78,7 +78,7 @@ class World < ApplicationRecord
           tables[entry.id] = copy.id if book == :encounter_tables
           abilities[entry.id] = copy.id if book == :abilities
           if book == :jobs
-            entry.job_levels.each { |level| copy.job_levels.create!(level: level.level, abp: level.abp, ability_id: abilities.fetch(level.ability_id)) }
+            entry.job_levels.each { |level| copy.job_levels.create!(level: level.level, ability_id: abilities.fetch(level.ability_id)) }
           end
         end
       end

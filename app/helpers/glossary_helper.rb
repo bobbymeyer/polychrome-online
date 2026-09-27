@@ -16,18 +16,19 @@ module GlossaryHelper
     "def" => [ "Def", "Defense: armour that softens physical hits. (D&D: AC, roughly)" ],
     "mdef" => [ "MDef", "Magic defense: what softens spells." ],
     "exp" => [ "EXP", "Experience. Winning fights gives it; enough of it is a new level, and every stat grows." ],
-    "abp" => [ "ABP", "Ability points: experience for your job. Each win gives some; they level the job, and each job level teaches an ability." ],
+    "abp" => [ "ABP", "Ability points: experience for your job. Each win gives some; they level the job, from 1 to 100." ],
     "job" => [ "Job", "Your class, and you can change it between fights. Each job keeps its own level, so nothing is lost by trying another." ],
-    "job_level" => [ "Job level", "How far you've got in your current job. Each level teaches that job's next ability." ],
+    "job_level" => [ "Job level", "How far you've got in a job, 1 to 100. Its abilities come at set levels; the climb after them is mastery." ],
     "ability_slots" => [ "Ability slots", "Room to bring abilities you learned in other jobs into this one." ],
     "gil" => [ "Gil", "Money. The party shares one purse." ],
-    "type" => [ "Type", "Fire, water, ghost and the rest. A move's type against a monster's type can do double damage, half, or nothing. See the type chart." ],
+    "type" => [ "Type", "Fire, water, ghost and the rest. A move's type against a monster's type can do double damage, half, or nothing. Your job has a type too: you take hits as it, and your Attack strikes with it. See the type chart." ],
     "desperation" => [ "Desperation move", "At a quarter HP or less, your Attack sometimes becomes your job's big move. Once a battle." ],
     "auto" => [ "Auto", "Your character repeats their last command (or attacks) every round, so you can talk. Pick a command to take over again." ],
     "check" => [ "Check", "The GM asks you to try something: your stat against a difficulty, rolled from the campaign's dice." ],
     "signature" => [ "Signature command", "Each job's own command, always on its menu: a Knight's Cover, a Thief's Mug, a Dragoon's Jump." ],
     "passive" => [ "Passive", "Something a job does on its own, like Counter or Regen. Master the job and you keep it in every job." ],
-    "mastered" => [ "Mastered", "Every level of a job learned. Its passive is yours for good, whatever job you're in." ],
+    "mastery" => [ "Mastery", "Each ability grows stronger for 40 job levels after you learn it, up to half again. Used in its own job, it's a quarter stronger still." ],
+    "mastered" => [ "Mastered", "An ability at full strength, or a job at level 100 with all of them. A mastered job's passive is yours for good, whatever job you're in." ],
     "terrain" => [ "Terrain", "Where the fight is. A forest is grass, a crypt is ghost, the sea is water: a Geomancer's arts take its type." ]
   }.freeze
 
