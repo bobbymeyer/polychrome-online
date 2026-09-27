@@ -231,4 +231,26 @@ RSpec.describe "The table", type: :request do
       expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Refuse")
     end
   end
+
+  describe "checks" do
+    it "are called by the GM: each character rolls from the campaign's RNG, and the table sees it land" do
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(response.body).to include("Call for a check")
+
+      rng = campaign.rng
+      post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id, lenna.id ], stat: "agi", difficulty: "hard", reason: "scale the wall" } }
+      lines = campaign.messages.where(cue: "check").chronological
+      expect(lines.map(&:body)).to all(match(/Agi check \(hard\) to scale the wall\. \d+% · rolled \d+ · (Success!|Failure\.)/))
+      expect(lines.first.data).to include("name" => "Bartz", "stat" => "agi", "difficulty" => "hard")
+      expect(campaign.reload.rng).not_to eq(rng)
+
+      get campaign_table_path(campaign)
+      expect(response.body).to include("check-roll", "data-check-roll-result-value")
+
+      sit(bartz.id)
+      expect { post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id ], stat: "agi", difficulty: "easy" } } }
+        .not_to(change { campaign.messages.count })
+    end
+  end
 end

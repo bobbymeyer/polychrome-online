@@ -602,6 +602,23 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .table[data-seat="player"] .choice__settle-label, .table:not([data-seat="gm"]) .choice__settle-form,
 .table:not([data-seat="gm"]) .choice__hint--gm { display: none; }
 
+/* A check landing: the number spins in the middle of everyone's screen, then the verdict. */
+.check-moment {
+  position: fixed; left: 50%; top: 40%; z-index: 80; translate: -50% -50%; min-width: min(360px, calc(100vw - 32px));
+  padding: 16px 24px 20px; text-align: center; background: var(--paper); border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--accent), 16px 16px 0 var(--ink); pointer-events: none;
+}
+.check-moment p { margin: 0; }
+.check-moment__who { font-style: italic; font-weight: 900; }
+.check-moment__odds { color: var(--grey); font-size: 14px; }
+.check-moment__roll { font: var(--display); font-size: 96px; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.check-moment__verdict { font: var(--display); font-size: 32px; min-height: 36px; }
+.check-moment.is-success { box-shadow: 8px 8px 0 var(--green), 16px 16px 0 var(--ink); }
+.check-moment.is-success .check-moment__verdict { color: var(--forest-green); }
+.check-moment.is-failure { box-shadow: 8px 8px 0 var(--signal), 16px 16px 0 var(--ink); }
+.check-moment.is-failure .check-moment__verdict { color: var(--signal); }
+.check-form fieldset { border: 0; padding: 0; margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+
 /* Taking a line back: quiet, and only on hover or focus once shown. */
 .chat-line__retract-form { display: inline; margin: 0; }
 .chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }

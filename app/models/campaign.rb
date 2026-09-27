@@ -268,6 +268,28 @@ class Campaign < ApplicationRecord
                                               attributes: { follow: music.nil?, url: world.music_path(music).to_s })
   end
 
+  # The GM calls for a check (Stats::Check): each character rolls against
+  # their own stat, from the campaign's RNG, and the table sees it land.
+  def check!(characters:, stat:, difficulty:, reason: nil)
+    raise ArgumentError, "Pick who's trying" if characters.empty?
+    raise ArgumentError, "Pick a stat" unless Stats::Check::STATS.include?(stat)
+    raise ArgumentError, "Pick a difficulty" unless Stats::Check::DIFFICULTIES.key?(difficulty)
+
+    transaction do
+      rolling = Battle::Rng.new(rng)
+      lines = characters.map do |character|
+        result = Stats::Check.roll(stat_value: character.stats.fetch(stat), stat: stat, level: character.level,
+                                   difficulty: difficulty, rng: rolling)
+        label = "#{stat.capitalize} check (#{difficulty})"
+        body = "#{character.name}: #{label}#{" to #{reason.strip.sub(/\.\z/, '')}" if reason.present?}. " \
+               "#{result['chance']}% · rolled #{result['roll']} · #{result['success'] ? 'Success!' : 'Failure.'}"
+        [ body, result.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty) ]
+      end
+      update!(rng: rolling.state)
+      lines.map { |body, data| messages.create!(kind: "system", cue: "check", body: body, data: data) }
+    end
+  end
+
   # The choice the table is deciding, if any (Message#settle!).
   def open_choice
     messages.where(kind: "choice", settled: nil).order(:id).last

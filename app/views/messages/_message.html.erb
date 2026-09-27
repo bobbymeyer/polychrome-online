@@ -4,11 +4,12 @@
 <% live = local_assigns.fetch(:live, false) %>
 <li id="<%= dom_id(message) %>"
     class="chat-line chat-line--<%= message.system? || message.choice? ? 'system' : message.whisper? ? 'whisper' : message.dialogue? ? 'dialogue' : 'player' %> <%= 'is-pending' if live && message.dialogue? %>"
-    data-controller="chat-line"
+    data-controller="chat-line<%= ' check-roll' if message.cue == 'check' %>"
     data-chat-line-live-value="<%= live %>"
     data-chat-line-id-value="<%= message.id %>"
     data-chat-line-dialogue-value="<%= message.dialogue? %>"
     data-chat-line-cue-value="<%= message.cue %>"
+    <%= tag.attributes(data: { check_roll_result_value: message.data.to_json }) if message.cue == "check" %>
     data-chat-line-speaker-value="<%= message.speaker_name %>"
     data-chat-line-speaker-key-value="<%= speaker_key(message) %>"
     data-chat-line-expression-value="<%= message.expression || 'neutral' %>"

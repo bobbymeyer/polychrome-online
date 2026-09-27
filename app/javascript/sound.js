@@ -152,6 +152,15 @@ const JINGLES = {
     tone(t + 0.28, "E2", 0.9, { wave: "triangle", gain: 0.7, decay: 0.8 })
     noise(t + 0.28, 0.25, { gain: 0.35, filter: 2500 })
   },
+  // A check lands: up a fourth and a bright top, or a flat fall.
+  check_pass(t) {
+    phrase(t, 0.08, [ [ "G5", 0, 1 ], [ "C6", 1, 1 ], [ "E6", 2, 3 ] ], { gain: 0.22 })
+    tone(t + 0.16, "C4", 0.4, { wave: "triangle", gain: 0.5 })
+  },
+  check_fail(t) {
+    phrase(t, 0.12, [ [ "E4", 0, 1 ], [ "Eb4", 1, 3 ] ], { wave: "triangle", gain: 0.5 })
+    noise(t, 0.12, { gain: 0.2, filter: 600 })
+  },
   // The menu's soft confirm.
   blip(t) {
     tone(t, "A5", 0.05, { gain: 0.12, decay: 0.5 })
