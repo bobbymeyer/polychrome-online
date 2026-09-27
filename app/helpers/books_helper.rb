@@ -65,7 +65,9 @@ module BooksHelper
     when "revive" then "Revive at #{e.fetch('fraction', 25)}% HP"
     when "escape" then "Escape from battle"
     when "cleanse" then e["kind"] ? "Cure #{term(e['kind']).downcase}" : "Cure every harmful status"
-    else e.to_s
+    when "steal" then "Steal one of its drops (#{e.fetch('chance', 50)}% + speed)"
+    when "scan" then "Reveal HP, weaknesses and immunities"
+    else e["primitive"].to_s.humanize
     end
   end
 

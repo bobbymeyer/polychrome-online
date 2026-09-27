@@ -29,6 +29,7 @@ export default class extends Controller {
     this.bindTargets()
 
     const items = this.items
+    items.forEach((item, i) => item.style.setProperty("--i", i)) // the stage staggers their entrance
     if (!items.length) return
     const start = items.find((i) => this.label(i) === remembered) || items.find((i) => !this.disabled(i)) || items[0]
     const take = this.autofocusValue && this.mayTakeFocus()

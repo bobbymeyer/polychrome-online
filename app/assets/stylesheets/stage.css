@@ -1,0 +1,303 @@
+/*
+ * The stage: Polychrome's attitude, on top of the Swiss base in
+ * application.css (docs/DESIGN.md, "The stage").
+ *
+ * The base stays: white paper, black grotesk, the grid, red for game moves
+ * and grey for everything else. This layer adds what a game UI needs and a
+ * poster doesn't: angles (parallelograms, cut corners), black tabs, heavy
+ * italic display type, hard offset shadows, a halftone ground, and motion
+ * that answers every press. It loads after application.css and only
+ * overrides.
+ */
+
+:root {
+  --slant: 10px;                                   /* how far a parallelogram leans */
+  --shadow: 5px 5px 0 var(--ink);                  /* hard, offset, never blurred */
+  --echo: #e3e3e3;                                 /* the grey ghost behind display type */
+  --halftone: #d6d6d6;
+  --heal: #1f9d55;
+  --snap: cubic-bezier(.2, .9, .3, 1.25);          /* quick, with a little overshoot */
+  --quick: 120ms;
+  --display: italic 900 1em/1 var(--font);
+}
+
+/* Parallelograms and cut corners: the two shapes of the stage. */
+.button, input[type=submit], button:not(.link-button):not(.dialogue__more), .menu__item, .pin {
+  clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+  padding-left: calc(12px + var(--slant) / 2); padding-right: calc(12px + var(--slant));
+}
+
+/* ---------------------------------------------------------------------------
+ * Ground: a halftone falling from the top right, behind everything.
+ * ------------------------------------------------------------------------- */
+
+body { background: transparent; }
+body::before {
+  content: ""; position: fixed; top: 0; right: 0; width: 60vw; height: 80vh; z-index: -1; pointer-events: none;
+  background: radial-gradient(circle, var(--halftone) 1.3px, transparent 1.7px) 0 0 / 11px 11px;
+  -webkit-mask-image: linear-gradient(215deg, #000 0%, transparent 55%);
+  mask-image: linear-gradient(215deg, #000 0%, transparent 55%);
+}
+
+.page { animation: page-in .24s ease-out both; }
+@keyframes page-in { from { opacity: 0; translate: 0 8px; } }
+
+/* ---------------------------------------------------------------------------
+ * The masthead: a black band, full bleed.
+ * ------------------------------------------------------------------------- */
+
+.topbar {
+  background: var(--ink); color: var(--paper); border-bottom: 0;
+  box-shadow: 0 0 0 100vmax var(--ink); clip-path: inset(0 -100vmax);
+  padding-top: 18px; padding-bottom: 14px;
+}
+.topbar__brand { justify-self: start; color: var(--paper); font: var(--display); font-size: 26px; letter-spacing: -0.04em; position: relative; }
+.topbar__brand::after { content: ""; position: absolute; left: 2px; right: -6px; bottom: -5px; height: 4px; background: var(--signal); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.topbar a, .topbar .link-button { color: #bdbdbd; }
+.topbar a:hover, .topbar .link-button:hover { color: var(--paper); text-decoration: none; }
+.topbar__world { color: var(--paper) !important; font-style: italic; font-weight: 800; }
+.topbar__book { transition: color var(--quick); }
+.topbar__book.is-current { color: var(--ink) !important; background: var(--paper); padding: 0 12px 0 10px;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+.topbar__book.is-current::before { display: none; }
+.topbar .muted { color: #8a8a8a; }
+
+/* ---------------------------------------------------------------------------
+ * Type: display headings in heavy italic with a grey echo; section
+ * headings as black tabs hanging from the rule.
+ * ------------------------------------------------------------------------- */
+
+h1 { font-weight: 900; font-style: italic; letter-spacing: -0.045em; text-shadow: 4px 4px 0 var(--echo); }
+.eyebrow, .crumbs { font-style: italic; }
+
+.window, .panel { border-top-width: 3px; }
+.window > h2:first-child, .panel > h2:first-child,
+.window > .book-header:first-child h2, .book-header > h2, .command-panel__head h2 {
+  display: inline-block; margin: -16px 0 12px; padding: 2px calc(18px + var(--slant)) 3px 14px;
+  background: var(--ink); color: var(--paper); font-style: italic; font-weight: 800;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+.window > .book-header:first-child { margin-top: 0; }
+.book-header > h2 { margin: 0; }
+.window > .book-header:first-child > h2 { margin-top: -16px; }
+.command-panel__head h2 { margin-top: 0; animation: tab-in .26s var(--snap) both; }
+@keyframes tab-in { from { translate: -24px 0; opacity: 0; } }
+
+.book-table thead th { border-bottom-width: 3px; }
+
+/* Links underline a little louder as you reach for them. */
+a { transition: color var(--quick), text-decoration-color var(--quick); }
+a:hover { text-decoration-thickness: 2px; }
+
+/* ---------------------------------------------------------------------------
+ * Controls: grey parallelograms that move when pressed.
+ * ------------------------------------------------------------------------- */
+
+.button, input[type=submit], button, .menu__item, .pin {
+  transition: background-color var(--quick), color var(--quick), translate var(--quick) var(--snap), scale var(--quick);
+}
+.button:hover, input[type=submit]:hover, button:not(:disabled):hover, a.menu__item:hover { translate: 2px 0; }
+.button:active, input[type=submit]:active, button:not(:disabled):active, .menu__item:active { scale: .96; }
+.button--quiet, .button--danger { background: var(--wash); border-color: var(--wash); }
+.button--quiet:hover, .button--danger:hover { background: var(--control-fill-hover); border-color: var(--control-fill-hover); }
+.button.play, input[type=submit].play { font-style: italic; font-weight: 800; }
+.link-button, .link-button:hover { translate: none; scale: none; }
+
+/* Unavailable things are hatched, not just greyed. */
+button:disabled, input[type=submit]:disabled, .menu__item:disabled, .menu__item[aria-disabled="true"] {
+  background: repeating-linear-gradient(-45deg, var(--control-fill) 0 4px, var(--paper) 4px 9px); border-color: transparent;
+}
+.menu__item[aria-disabled="true"].is-cursor { background: repeating-linear-gradient(-45deg, var(--control-fill) 0 5px, var(--paper) 5px 10px); border-style: solid; border-color: transparent; }
+
+/* Forms: a hard shadow says where you're typing. */
+input, select, textarea { border-width: 2px; transition: box-shadow var(--quick), translate var(--quick); }
+input:focus, select:focus, textarea:focus { outline: none; box-shadow: var(--shadow); translate: -2px -2px; }
+input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !important; translate: none !important; }
+
+.flash, .form-errors {
+  border-left: 0; background: var(--ink); color: var(--paper); padding: 10px 28px 10px 18px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); width: fit-content; max-width: 100%;
+  animation: slash-in .3s var(--snap) both;
+}
+.form-errors { background: var(--signal); }
+.form-errors a { color: inherit; }
+@keyframes slash-in { from { clip-path: polygon(0 0, 0 0, 0 100%, 0 100%); } }
+
+/* Cards lift toward you. */
+.character-card { transition: translate var(--quick) var(--snap); }
+.character-card:hover { translate: 3px -3px; }
+.portrait--empty, .speaker-portrait--plate, .sprite__plate {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+}
+.unit--party .sprite__plate { clip-path: none; }
+.portrait__initial, .speaker-portrait--plate, .sprite__plate { font-style: italic; font-weight: 900; }
+
+/* ---------------------------------------------------------------------------
+ * Menus: the game's voice. Items slide in one after another; the cursor
+ * is a red slab thrown forward over a black shadow.
+ * ------------------------------------------------------------------------- */
+
+.menu__item { border: 0; background: var(--control-fill); padding-top: 8px; padding-bottom: 8px; }
+.menu__item.is-cursor { background: var(--ink); color: var(--paper); translate: 6px 0; }
+.play .menu__item, .menu__item--accent {
+  background: var(--paper); color: var(--ink); font-style: italic; font-weight: 800; font-size: 16px;
+  box-shadow: inset 0 -3px 0 var(--signal), inset 3px 0 0 var(--signal);
+}
+.play .menu__item { animation: menu-in .3s var(--snap) both; animation-delay: calc(var(--i, 0) * 40ms); }
+@keyframes menu-in { from { opacity: 0; translate: -28px 0; } }
+/* The cursor: thrown forward, with a black edge where it left from. */
+.play .menu__item.is-cursor, .play a.menu__item:hover, .play button.menu__item:hover:not(:disabled) {
+  background: var(--signal); color: var(--paper); box-shadow: inset calc(var(--slant) + 6px) 0 0 var(--ink); translate: 8px 0;
+}
+.menu__item--accent { background: var(--signal); color: var(--paper); box-shadow: inset calc(var(--slant) + 6px) 0 0 var(--ink); }
+.play .menu__item[aria-disabled="true"], .play .menu__item:disabled { box-shadow: none; font-style: italic; }
+.menu__cost { font-style: normal; }
+
+.menu-help { border-top: 3px solid var(--ink); font-weight: 500; }
+
+/* ---------------------------------------------------------------------------
+ * Battle
+ * ------------------------------------------------------------------------- */
+
+.battle .battle__header h1 { font-size: 40px; line-height: 44px; }
+
+/* The field: halftone on the enemies' side, a slanted wash on the party's. */
+.battlefield {
+  border-top-width: 3px; border-bottom: 3px solid var(--ink); position: relative;
+  background:
+    linear-gradient(100deg, transparent 0 68%, var(--wash) 68% 100%),
+    radial-gradient(circle, var(--halftone) 1.2px, transparent 1.6px) 0 0 / 10px 10px;
+}
+.battlefield__side--party { border-left: 0; }
+
+/* Whoever is acting stands on a red slash. */
+.unit.is-active::after {
+  content: ""; position: absolute; left: -10%; right: -10%; bottom: -6px; height: 6px; background: var(--signal);
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); animation: slash-in .18s ease-out both;
+}
+.unit--party.is-active::after { left: auto; width: 64px; right: -4px; }
+.unit.is-active .unit__label { border-bottom-color: transparent; }
+.unit--party.is-active .sprite__plate { box-shadow: 0 0 0 3px var(--paper), 0 0 0 6px var(--signal); }
+
+/* The target: a red reticle turning around it. */
+.unit.is-targeted .sprite { outline: none; position: relative; }
+.unit.is-targeted .sprite::after {
+  content: ""; position: absolute; inset: -10px; border: 3px solid var(--signal); pointer-events: none;
+  clip-path: polygon(0 0, 30% 0, 30% 3px, 3px 3px, 3px 30%, 0 30%, 0 70%, 3px 70%, 3px calc(100% - 3px), 30% calc(100% - 3px), 30% 100%, 70% 100%, 70% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 70%, 100% 70%, 100% 30%, calc(100% - 3px) 30%, calc(100% - 3px) 3px, 70% 3px, 70% 0, 100% 0, 100% 100%, 0 100%);
+  animation: reticle 2.4s linear infinite;
+}
+.unit--party.is-targeted .sprite::after { border-radius: 50%; clip-path: none; border-style: dashed; }
+@keyframes reticle { from { rotate: 0deg; } to { rotate: 360deg; } }
+
+/* Numbers: heavy italic, white with a black outline and shadow, tilted. */
+.popup {
+  transform: none; translate: -50% 0; /* anime owns transform */
+  font: var(--display); font-size: 44px; letter-spacing: -0.03em; background: none; padding: 0;
+  color: var(--paper); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink);
+}
+.popup--heal { color: var(--heal); }
+.popup--poison { color: var(--poison); }
+.popup--crit, .popup--miss, .popup--status {
+  -webkit-text-stroke: 0; text-shadow: none; font-size: 14px; line-height: 20px; font-weight: 900; letter-spacing: .04em;
+  padding: 1px 12px 1px 8px; clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+.popup--crit { background: var(--signal); color: var(--paper); margin-top: -40px; font-size: 16px; }
+.popup--miss, .popup--status { background: var(--ink); color: var(--paper); }
+.popup.status-poison, .popup.status-sleep, .popup.status-paralyze, .popup.status-silence,
+.popup.status-blind, .popup.status-haste, .popup.status-slow { color: var(--paper); }
+.popup.status-poison { background: var(--poison); } .popup.status-sleep { background: var(--sleep); }
+.popup.status-paralyze { background: var(--paralyze); color: var(--ink); } .popup.status-silence { background: var(--silence); }
+.popup.status-haste { background: var(--haste); } .popup.status-slow { background: var(--slow); }
+
+/* Banners. Routine ones are small tags; the ones that end a fight are a
+   black slab thrown across the whole stage. */
+.banner { font: var(--display); letter-spacing: -0.05em; }
+.banner--round, .banner--gm {
+  font-size: 18px; line-height: 26px; letter-spacing: 0; padding: 2px calc(16px + var(--slant)) 2px 12px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+.banner--victory, .banner--defeat, .banner--escape {
+  left: -4%; right: -4%; padding: 12px 8%; rotate: -4deg;
+  background: var(--ink); color: var(--paper); font-size: clamp(56px, 12vw, 144px);
+  box-shadow: 0 10px 0 var(--signal);
+}
+.banner--defeat { background: var(--paper); color: var(--ink); -webkit-text-stroke: 0; box-shadow: 0 0 0 4px var(--ink), 0 14px 0 var(--ink); }
+.caption.window, .caption {
+  font-style: italic; font-weight: 900; font-size: 18px; padding: 4px calc(20px + var(--slant)) 4px 14px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); border-bottom: 4px solid var(--signal);
+}
+
+/* The roster: fat bars, and trouble you can feel. */
+.roster { border-top-width: 3px; }
+.roster__name { font-style: italic; font-weight: 800; }
+.roster__hp [data-hp] { font-weight: 900; font-style: italic; }
+.bar { height: 7px; clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); }
+.roster__row:has(.bar__fill--danger) [data-hp], .command-panel__vitals .is-low { animation: danger 1s steps(2, jump-none) infinite; }
+@keyframes danger { 50% { color: var(--ink); } }
+.roster__ready.is-ready { background: var(--signal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.command-panel__vitals strong { font-style: italic; font-weight: 900; }
+.countdown { font-style: italic; font-weight: 900; }
+.countdown.is-urgent { background: var(--signal); animation: danger-bg .5s steps(2, jump-none) infinite;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%); padding-right: 14px; }
+@keyframes danger-bg { 50% { background: var(--ink); } }
+.command-panel__prompt { font-style: italic; }
+
+/* Victory: the result lines land one after another. */
+.command-panel > h2:first-child { font: var(--display); font-size: 40px; letter-spacing: -0.04em; text-shadow: none; padding-top: 6px; padding-bottom: 8px; }
+.command-panel > .refs li { animation: menu-in .3s var(--snap) both; }
+.command-panel > .refs li:nth-child(2) { animation-delay: 80ms; } .command-panel > .refs li:nth-child(3) { animation-delay: 160ms; }
+.command-panel > .refs li:nth-child(4) { animation-delay: 240ms; } .command-panel > .refs li:nth-child(n+5) { animation-delay: 320ms; }
+.level-up { color: var(--signal); font-style: italic; }
+.level-up::before { background: var(--signal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+.battle-log li { transition: background-color .6s; }
+.battle-log li:last-child { background: var(--wash); font-weight: 600; }
+
+/* ---------------------------------------------------------------------------
+ * The table: a speech box with a name tag, and a slanted portrait.
+ * ------------------------------------------------------------------------- */
+
+.dialogue { border-top: 0; padding-top: 24px; }
+.dialogue__text {
+  position: relative; border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); background: var(--paper);
+  padding: 22px 24px 20px; min-height: 144px;
+}
+.dialogue__name {
+  position: absolute; top: -15px; left: -10px; margin: 0; padding: 3px calc(16px + var(--slant)) 3px 12px;
+  background: var(--ink); color: var(--paper); font-style: italic; font-weight: 900; font-size: 14px; letter-spacing: .02em;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+.dialogue__name:empty { display: none; }
+.dialogue__more { right: 10px; bottom: 10px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.speaker-portrait--large { clip-path: polygon(0 0, 100% 0, 100% 100%, 18px 100%, 0 calc(100% - 18px)); }
+
+.chat-line--system .chat-line__body { border-left: 0; padding: 2px 18px 2px 10px; background: var(--wash); font-style: italic;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); width: fit-content; max-width: 100%; }
+.chat-line__tag { font-style: italic; }
+.chat-log li:last-child { animation: menu-in .3s var(--snap) both; }
+
+/* ---------------------------------------------------------------------------
+ * Map and places
+ * ------------------------------------------------------------------------- */
+
+.map-party__flag { animation: bob 1.2s ease-in-out infinite; }
+@keyframes bob { 50% { translate: 0 -5px; } }
+.map-node__label { font-style: italic; font-weight: 800; }
+.encounter-call { border-left: 0; padding: 12px 16px; background: var(--ink); color: var(--paper);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); animation: slash-in .3s var(--snap) both; }
+.encounter-call h3 { font: var(--display); font-size: 28px; color: var(--paper); }
+.encounter-call .muted, .encounter-call label { color: #bdbdbd; }
+.encounter-call .menu__item:not(.menu__item--accent) { background: var(--paper); color: var(--ink); }
+.floorplan__name { font-style: italic; }
+.skyline__sign { font-style: italic; font-weight: 900; }
+
+/* ---------------------------------------------------------------------------
+ * Everything that moves holds still for people who asked for stillness.
+ * ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .page, .play .menu__item, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
+  .unit.is-targeted .sprite::after, .roster__row [data-hp], .command-panel__vitals .is-low, .countdown.is-urgent,
+  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call { animation: none !important; }
+  * { transition-duration: 0s !important; }
+}

@@ -234,7 +234,7 @@ export default class extends Controller {
           return 600
         }
         this.party().forEach((el) => gesture(tl, el, "slide", at, 1))
-        this.banner(tl, "Escaped!", at)
+        this.banner(tl, "Escaped!", at, "escape")
         return 900
       case "timeout":
         if (e.defaulted.length) this.banner(tl, "Time's up!", at)
@@ -357,8 +357,10 @@ export default class extends Controller {
     el.textContent = text
     el.style.left = `${box.left - stage.left + box.width / 2}px`
     el.style.top = `${box.top - stage.top + box.height * 0.3}px`
+    // Numbers land at a slight tilt, never the same twice (decoration, not outcome).
+    if (["damage", "heal", "poison"].includes(kind)) el.style.rotate = `${(Math.random() * 12 - 6).toFixed(1)}deg`
     this.fxTarget.append(el)
-    tl.add(el, { opacity: [0, 1, 1, 0], translateY: [0, -26, -30, -40], duration: 900, ease: "outQuad" }, at)
+    tl.add(el, { opacity: [0, 1, 1, 0], translateY: [8, -30, -34, -44], scale: [1.6, 1, 1, 0.9], duration: 900, ease: "outQuad" }, at)
     tl.call(() => el.remove(), at + 900)
   }
 
@@ -367,7 +369,12 @@ export default class extends Controller {
     el.className = `banner banner--${kind}`
     el.textContent = text
     this.fxTarget.append(el)
-    tl.add(el, { opacity: [0, 1, 1, 0], scale: [0.8, 1, 1, 1], duration: kind === "round" ? 400 : 1200, ease: "outQuad" }, at)
+    if (["victory", "defeat", "escape"].includes(kind)) {
+      // Thrown across the stage from the left, held, then gone.
+      tl.add(el, { opacity: [0, 1, 1, 1, 0], translateX: ["-60%", "0%", "0%", "0%", "4%"], duration: 1300, ease: "outExpo" }, at)
+    } else {
+      tl.add(el, { opacity: [0, 1, 1, 0], translateX: [-24, 0, 0, 8], duration: kind === "round" ? 400 : 1200, ease: "outQuad" }, at)
+    }
   }
 
   caption(tl, text, at) {
@@ -375,7 +382,7 @@ export default class extends Controller {
     el.className = "caption window"
     el.textContent = text
     this.fxTarget.append(el)
-    tl.add(el, { opacity: [0, 1, 1, 0], duration: 700, ease: "linear" }, at)
+    tl.add(el, { opacity: [0, 1, 1, 0], translateX: [-32, 0, 0, 0], duration: 700, ease: "outQuad" }, at)
   }
 
   humanize(token) {

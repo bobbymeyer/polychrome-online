@@ -6,11 +6,45 @@ starting point, not a rulebook, and the game's needs come first. When play needs
 Swiss defaults don't give (more colour for state, an ornament that reads faster, a box around
 something), make the change on purpose and record it under "Divergences" at the end.
 
-The stylesheet is `app/assets/stylesheets/application.css`.
+The stylesheet is `app/assets/stylesheets/application.css`, with the stage on top of it in
+`stage.css` (see "The stage").
+
+## The stage
+
+The Swiss base was right but too still: clean enough to read, not alive enough to play. The
+stage is a second layer, in the spirit of Persona's menus, that keeps the base (white paper,
+black grotesk, the grid, red for game moves, grey for the rest) and adds attitude. It is a
+deliberate divergence from much of what follows, and where the two disagree the stage wins.
+
+- **Shapes.** Buttons, menu items, tabs, tags and banners are parallelograms (a 10px lean).
+  Portrait plates and sprites get one cut corner. Rounded corners are still out.
+- **Type.** Display type (h1, banners, damage numbers, names in the roster) is Inter at 900,
+  italic, tracked tight. A page title carries a grey echo, offset 4px.
+- **Tabs.** A section's heading is a black tab hanging from its 3px rule, white italic type.
+- **The masthead** is a black band, full bleed, with a red rule under the name.
+- **Ground.** A halftone falls from the top right of every page and fills the enemies' side of the
+  battlefield; the party's side is a slanted grey wash.
+- **Shadows.** Only hard ones, offset, never blurred: a focused field, the dialogue box.
+- **Menus.** Game menus (`.play`) are white slabs underlined in red. They slide in one after
+  another when a panel opens. The cursor is a red slab thrown 8px forward with a black edge.
+  Grey menus behave the same in grey and black.
+- **Unavailable** things are hatched, not just greyed.
+- **Battle.** The acting unit stands on a red slash. A target gets a red reticle that turns.
+  Damage numbers are heavy italic, white with a black outline and shadow, landing big and
+  settling at a slight tilt; heals are green. Status and crit popups are tags. Round numbers are
+  small tags; Victory, Defeat and Escaped are a black slab thrown across the whole stage with a red
+  (or black) underline. Ability names arrive as black tags from the left. Low HP blinks; an
+  urgent timer blinks red.
+- **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
+  speaker's name as a black tag on its corner. System lines are grey slanted slips.
+- **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide
+  in, results land one after another. It is quick (about 120ms) with a little overshoot. All of it
+  stops for `prefers-reduced-motion`.
 
 ## Paper and type
 
-- White paper with black type. There is no dark theme, and no shadows, gradients or rounded corners.
+- White paper with black type. There is no dark theme, and no rounded corners. (The stage adds hard
+  shadows and a halftone.)
 - One typeface: Inter, a grotesk. It is vendored as a variable font in `app/assets/fonts/` under
   the SIL OFL. Hierarchy comes from size and weight, never from colour.
 - Everything sits on an 8px baseline. Body text is 16/24, h2 is 24/32 and h1 is 48/56 with tight
