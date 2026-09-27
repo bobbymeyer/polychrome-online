@@ -60,6 +60,14 @@ deliberate divergence from much of what follows, and where the two disagree the 
   display type, then the last session in short sections (the road as names joined by red
   arrows, battles, finds, what the party learned) and the last line said, in a speech box.
   "Carry on" closes it.
+- **Choices** come up as a window with a red top edge under the dialogue: big italic options
+  underlined in red that fill red when pressed, and who picked what in grey beside them. The GM
+  sees "Settle on this" instead.
+- **A check** takes the middle of every screen: the character, the stat and the odds, then a
+  heavy number spinning to a stop and the verdict stamped in green or red, with a jingle.
+  Several go one after another.
+- **The forecast** on the battle form is a tinted band with a heavy verdict word, coloured from
+  green (Easy) to wine (Deadly).
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide

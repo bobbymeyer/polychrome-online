@@ -36,6 +36,20 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include("battle-composer", campaign_composer_path(battle.campaign), 'data-retract="all"')
   end
 
+  it "tells the GM how a fight is likely to go, as they set it up" do
+    campaign = create_campaign
+    create_character(campaign, name: "Bartz")
+    get new_campaign_battle_path(campaign)
+    expect(response.body).to include('data-controller="forecast"', 'id="forecast"')
+
+    get campaign_forecast_path(campaign), params: { battle: { encounter: { "0" => { monster: "goblin", count: "1" } } } }
+    expect(response.body).to match(/forecast--(easy|fair|hard|deadly)/)
+    expect(response.body).to include("Played out 20 times")
+
+    get campaign_forecast_path(campaign), params: { battle: { encounter: { "0" => { monster: "", count: "1" } } } }
+    expect(response.body).to include("Pick who fights")
+  end
+
   describe "setting up" do
     let!(:world) { Seeds::BaseWorld.run }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road") }

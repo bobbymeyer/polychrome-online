@@ -63,6 +63,7 @@ Rails.application.routes.draw do
     resource :table, only: :show
     resource :music, only: :update, controller: "music"
     resources :checks, only: :create
+    resource :forecast, only: :show
     resource :table_seat, only: %i[create destroy]
     resource :composer, only: :show
     resources :messages, only: :create

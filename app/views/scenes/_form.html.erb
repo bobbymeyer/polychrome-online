@@ -1,4 +1,5 @@
-<%= form_with model: scene, url: scene.persisted? ? scene_path(scene) : campaign_scenes_path(@campaign), class: "book-form" do |f| %>
+<%= form_with model: scene, url: scene.persisted? ? scene_path(scene) : campaign_scenes_path(@campaign), class: "book-form",
+              data: { controller: "forecast", forecast_url_value: campaign_forecast_path(@campaign), action: "change->forecast#changed" } do |f| %>
   <%= render "book_entries/errors", entry: scene %>
   <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, placeholder: "The airship falls" %></div>
   <div class="field">
@@ -36,6 +37,7 @@
         </tbody>
       </table>
       <p class="hint">It starts when the last line has been said; everyone at the table is taken to it.</p>
+      <%= turbo_frame_tag "forecast", data: { forecast_target: "frame" } %>
     </div>
 
     <div class="field" data-show-for="reveal">

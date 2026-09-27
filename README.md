@@ -228,6 +228,32 @@ everything outside battle.
   table seat carries into the battle, so players land on their own character.
 - NPCs belong to the campaign (the "Cast" section of the campaign page). The
   town generator in step 7 will create them too.
+- **Taking a line back.** The GM can take back any line said at the table,
+  and a player their own ("Take back" on the line, in the log). It goes from
+  every viewer's log, and from their dialogue box if it's waiting or showing.
+  What the game logged (system lines) stays.
+- **Speaking in battle.** The battle page has the same composer, open for the
+  GM, so a monster's taunt doesn't mean leaving the fight.
+- **Choices.** `? Trust Cid | Refuse -> trusted_cid`, from the GM's composer
+  or as the last line of a scene, puts a choice to the table. It comes up
+  under the dialogue once the lines before it have been read. Each player
+  picks for their character and can change their mind, and everyone sees who
+  picked what. The GM settles it: "The party chose: …" is said, and the flag
+  is set to the outcome and shown to players, for the next scene to follow.
+  One choice is open at a time.
+- **Checks.** The GM calls for one from the table: who tries, a stat (Str,
+  Mag, Vit, Spr, Agi), a difficulty (Easy, Normal, Hard, Heroic) and what
+  for. `Stats::Check` (pure) turns the character's stat into a chance: at
+  Normal, a stat typical for their level is an even chance, each point
+  counts for less at higher levels, and it's always 5–95%. The roll comes
+  from the campaign's RNG. Everyone at the table watches the number spin
+  and land; the log keeps the chance and the roll.
+- **How a fight will go.** The battle form and a scene's battle ending show
+  a forecast as the GM picks who fights and what they face:
+  `Battle::Forecast` (pure) plays the fight out 20 times with everyone
+  repeating their default command, and reports wins, HP left, how many go
+  down and how long it takes, as Easy, Fair, Hard or Deadly. Real players
+  do better than always attacking, so it is a floor.
 
 ## Scenes
 
