@@ -54,6 +54,8 @@ Damage types and skills are **not** in the closed set: they are the world's noun
 
 The effect library (`Battle::PRIMITIVES`) is meant to be broad, and flavoured by the world: damage (physical or typed, with bonuses against a status, type, the undead or bosses, recoil and grudge), heal (which hurts the undead), drain, status (including aggro, stop, berserk, confuse, charged, doom), buff and debuff, revive, cleanse, steal, scan, **away** (the user or the target leaves the field for some turns; Jump is one), shield, imbue, percent-of-HP damage and MP sap. An ability can cost HP and take turns to charge. The Grimoire writes tiered families (Fire, Fira, Firaga, Firaja) from one form. Outside battle, a job's **field ability** is a skill check the player asks for and the GM approves, with one of a closed set of outcomes (story, reveal, sneak, find, restore, learn, safe road), once per rest (`FieldUse`).
 
+Story tools kept small and pulp: a campaign can open with only some jobs and the GM grants the rest as rewards (`Campaign#grant_jobs!`); summons are small creatures from the Bestiary that come, act and go (the `summon` primitive), not epic set pieces; an NPC can be a recurring antagonist who fights as a Bestiary entry, gets away stronger, and is finished when knocked out; and a place can turn (the city burns) with shut services, its own music and trouble on arrival, while the world stays as it is (`Location#turn_to!`).
+
 ### 3.2 Motion gestures
 
 `bounce`, `shake`, `flash`, `fade`, `spin`, `lunge`, `pop`, `float`, `tint`, `slide`. Whole-sprite transforms only. Implemented as anime.js presets. Used for battle and for UI chrome (dialogue box, map reveals, cursors) so the whole app moves the same way.

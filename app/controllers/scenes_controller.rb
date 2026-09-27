@@ -55,11 +55,18 @@ class ScenesController < ApplicationController
   end
 
   def scene_params
-    raw = params.expect(scene: [ :name, :script, :ending, :map_node_id, { encounter: [ %i[monster count] ] } ])
+    raw = params.expect(scene: [ :name, :script, :ending, :map_node_id, :turn_choice, { encounter: [ %i[monster count] ] } ])
     encounter = JsonCasting.rows(raw.delete(:encounter)).each_with_object({}) do |row, counts|
       next if row["monster"].blank?
 
       counts[row["monster"]] = counts.fetch(row["monster"], 0) + row["count"].to_i.clamp(1, 9)
+    end
+    # A turn ending names a place and one of its turns ("12|burning"), or the
+    # place going back to how it was ("12|").
+    choice = raw.delete(:turn_choice)
+    if raw[:ending] == "turn"
+      node_id, key = choice.to_s.split("|", 2)
+      raw = raw.merge(map_node_id: node_id, turn_key: key.to_s)
     end
     raw.merge(encounter: encounter)
   end

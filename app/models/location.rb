@@ -16,6 +16,7 @@ class Location < ApplicationRecord
 
   validates :seed, numericality: { only_integer: true }
   validate :template_from_this_world
+  validate :turns_are_turns
 
   before_validation(on: :create) { self.seed ||= Location.new_seed }
 
@@ -53,6 +54,69 @@ class Location < ApplicationRecord
   def reload(*)
     @generated = @view = nil
     super
+  end
+
+  # --- turns: the place's other states --------------------------------------
+  #
+  # A turn is prepared by the GM and set off at the table: the city burns,
+  # the mine floods, the festival starts. While it lasts, some services are
+  # shut, the music changes, there can be trouble on arrival (an encounter
+  # table), and players read a line about it. The world doesn't change.
+  #
+  #   { "key" => "burning", "name" => "Burning", "line" => "Smoke over the rooftops: Tule is burning.",
+  #     "description" => "Half the market is ash.", "closed" => ["shop"], "music" => "battle",
+  #     "encounters" => "town_riot" }
+
+  def current_turn
+    turns.find { |t| t["key"] == turn } if turn
+  end
+
+  def service_closed?(kind)
+    Array(current_turn&.dig("closed")).include?(kind.to_s)
+  end
+
+  def encounter_table_for_turn
+    slug = current_turn&.dig("encounters")
+    slug && campaign.world.encounter_tables.find_by(slug: slug)
+  end
+
+  def add_turn!(attrs)
+    name = attrs["name"].to_s.strip
+    raise ArgumentError, "A turn needs a name" if name.empty?
+
+    key = name.parameterize(separator: "_")
+    raise ArgumentError, "#{view['name']} already has a turn called #{name}" if turns.any? { |t| t["key"] == key }
+
+    turn = { "key" => key, "name" => name, "line" => attrs["line"].to_s.strip.presence, "description" => attrs["description"].to_s.strip.presence,
+             "closed" => Array(attrs["closed"]).compact_blank, "music" => attrs["music"].presence,
+             "encounters" => attrs["encounters"].presence }.compact
+    update!(turns: turns + [ turn ])
+  end
+
+  def remove_turn!(key)
+    update!(turns: turns.reject { |t| t["key"] == key }, turn: (turn unless turn == key))
+  end
+
+  # Sets the turn off, and tells the table.
+  def turn_to!(key)
+    chosen = turns.find { |t| t["key"] == key } or raise ArgumentError, "#{view['name']} has no turn called #{key}"
+    transaction do
+      update!(turn: key)
+      campaign.messages.create!(kind: "system", body: chosen["line"] || "#{view['name']}: #{chosen['name']}.")
+    end
+    campaign.broadcast_map
+    campaign.broadcast_music
+  end
+
+  # Back to how it was.
+  def settle_turn!(line = nil)
+    was = current_turn or raise ArgumentError, "#{view['name']} is as it always was"
+    transaction do
+      update!(turn: nil)
+      campaign.messages.create!(kind: "system", body: line.to_s.strip.presence || "#{view['name']} is itself again: #{was['name'].downcase} no more.")
+    end
+    campaign.broadcast_map
+    campaign.broadcast_music
   end
 
   # --- GM controls (§7): reroll, pin, add, place boss, override stock ----------
@@ -372,6 +436,15 @@ class Location < ApplicationRecord
       campaign.messages.create!(kind: "system", cue: "key", body: "Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}")
       resolve!(target["key"])
     end
+  end
+
+  def turns_are_turns
+    world = campaign&.world or return
+    Array(turns).each do |t|
+      errors.add(:turns, "#{t['name']}: music must be one of #{Campaign::MUSIC_CHOICES.join(', ')}") if t["music"] && !Campaign::MUSIC_CHOICES.include?(t["music"])
+      errors.add(:turns, "#{t['name']}: #{t['encounters']} isn't an encounter table") if t["encounters"] && !world.encounter_tables.exists?(slug: t["encounters"])
+    end
+    errors.add(:turn, "isn't one of this place's turns") if turn && Array(turns).none? { |t| t["key"] == turn }
   end
 
   def template_from_this_world

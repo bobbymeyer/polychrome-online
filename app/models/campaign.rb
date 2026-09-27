@@ -55,6 +55,7 @@ class Campaign < ApplicationRecord
   # reason the table can read.
   def buy!(item, quantity, at:, by:)
     quantity = quantity.to_i.clamp(1, 99)
+    raise ArgumentError, "The shop is shut: #{at.current_turn['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
     raise ArgumentError, "#{at.name} doesn't sell #{item.name}" unless at.stock_items.include?(item)
 
     cost = item.price * quantity
@@ -71,6 +72,7 @@ class Campaign < ApplicationRecord
   # Sell from the bag, for half the price.
   def sell!(item, quantity, at:, by:)
     quantity = quantity.to_i.clamp(1, 99)
+    raise ArgumentError, "The shop is shut: #{at.current_turn['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
     transaction do
       row = inventories.find_by(item: item)
       raise ArgumentError, "The bag has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
@@ -111,6 +113,7 @@ class Campaign < ApplicationRecord
     raise ArgumentError, "Not while a battle is on" if battle_on?
     raise ArgumentError, "#{character.name} isn't in this party" unless character.campaign_id == id
     service = at.view.fetch("services", []).find { |s| s["kind"] == kind } or raise ArgumentError, "#{at.name} has no #{kind}"
+    raise ArgumentError, "The #{service['name']} is shut: #{at.current_turn['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?(kind)
     case kind
     when "inn"
       raise ArgumentError, "#{character.name} is down: an inn can't help the fallen. A temple can." unless character.conscious?
@@ -233,6 +236,12 @@ class Campaign < ApplicationRecord
       origin.location&.leave!
       self.current_node = destination
       self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled, "terrain" => edge.encounter_table.terrain_type }
+      # A place in the middle of a turn can have trouble waiting.
+      if !rolled && (trouble = destination.location&.encounter_table_for_turn)
+        self.rng, rolled = Pointcrawl::Encounters.roll(rng, trouble.entries, "dangerous")
+        self.pending_encounter = rolled && { "table" => "#{destination.name}: #{destination.location.current_turn['name']}", "monsters" => rolled,
+                                             "terrain" => trouble.terrain_type }
+      end
       save!
 
       messages.create!(kind: "system", body: "The party travels from #{origin.name} to #{destination.name}.")
@@ -324,6 +333,10 @@ class Campaign < ApplicationRecord
   # explored, a town, or the open road.
   def scene
     return "dungeon" if dungeon_in_progress
+
+    # A place in the middle of a turn has its own music (Location#turn_to!).
+    turned = current_node&.location&.current_turn&.dig("music")
+    return turned if turned
 
     current_node&.location&.town? ? "town" : "field"
   end

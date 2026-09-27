@@ -25,7 +25,18 @@
   </div>
 </div>
 
+<% if (turned = @location.current_turn) %>
+  <section class="window location-turn" aria-label="What's happening here">
+    <p class="location-turn__name"><%= turned["name"] %></p>
+    <% if turned["description"] %><p><%= turned["description"] %></p><% end %>
+    <% if turned["closed"].present? %>
+      <p class="muted">Shut: <%= turned["closed"].map(&:humanize).to_sentence %>.</p>
+    <% end %>
+  </section>
+<% end %>
+
 <% if @gm %>
+  <%= render "locations/turns", location: @location, view: view %>
   <details class="window gm-tools">
     <summary>GM: rename</summary>
     <%= form_with model: @location, url: location_path(@location), class: "book-form inline-form" do |f| %>
