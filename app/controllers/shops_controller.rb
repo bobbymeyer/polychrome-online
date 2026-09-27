@@ -22,6 +22,15 @@ class ShopsController < ApplicationController
     redirect_to location_path(@location, anchor: "shop"), notice: "Sold.", status: :see_other
   end
 
+  # Something a party member is wearing: only their player or the GM sells it.
+  def sell_worn
+    character = @campaign.characters.find(params.expect(:character_id))
+    return forbid unless can_manage?(character)
+
+    @campaign.sell_worn!(character, params.expect(:slot), at: @location, by: shopper_name)
+    redirect_to location_path(@location, anchor: "shop"), notice: "Sold.", status: :see_other
+  end
+
   private
 
   def set_location

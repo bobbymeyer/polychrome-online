@@ -29,8 +29,39 @@ module Battle
       when "revive" then revive(ctx, target, effect)
       when "escape" then escape(ctx, actor)
       when "cleanse" then cleanse(ctx, actor, target, effect)
+      when "steal" then steal(ctx, actor, target, effect)
+      when "scan" then scan(ctx, target)
       else raise Error, "unknown primitive #{effect['primitive']}"
       end
+    end
+
+    # steal(chance): take one of the target's drops, weighted by its drop
+    # chances. Faster thieves steal more often. Each target can be robbed
+    # once; the item is the party's whatever the battle's outcome. Draws the
+    # success roll and the pick every time, so the stream doesn't depend on
+    # whether it worked.
+    def steal(ctx, actor, target, effect)
+      drops = target.fetch("drops", [])
+      if drops.empty? || target["stolen"]
+        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "nothing_to_steal")
+      end
+
+      chance = (effect.fetch("chance", 50) + (ctx.stat(actor, "agi") - ctx.stat(target, "agi"))).clamp(5, 95)
+      success = ctx.rng.percent?(chance)
+      pick = ctx.rng.int(drops.sum { |d| d["chance"] })
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "steal_failed") unless success
+
+      drop = drops.find { |d| (pick -= d["chance"]).negative? }
+      target["stolen"] = true
+      (ctx.state["stolen"] ||= []) << drop["item"]
+      ctx.emit(:steal, actor: actor["id"], target: target["id"], item: drop["item"], name: drop.fetch("name", drop["item"]))
+    end
+
+    # scan: what the target is weak to, resists and shrugs off, and its HP.
+    # No RNG: knowledge always works.
+    def scan(ctx, target)
+      ctx.emit(:scan, target: target["id"], elements: target.fetch("elements", {}),
+                      status_immune: target.fetch("status_immune", []), hp: target["hp"], max_hp: target["stats"]["max_hp"])
     end
 
     # cleanse(kind): cure one status, or every harmful one. No RNG: a cure

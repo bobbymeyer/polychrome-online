@@ -9,7 +9,8 @@ class EncountersController < ApplicationController
   before_action :set_campaign, :require_gm
 
   def create
-    battle = @campaign.start_pending_encounter!
+    seconds = params[:input_seconds].presence&.to_i
+    battle = @campaign.start_pending_encounter!(input_seconds: (seconds if BattleRecord::INPUT_TIMERS.include?(seconds)))
     redirect_to battle_path(battle), status: :see_other
   rescue ArgumentError => e
     panel alert: e.message

@@ -11,7 +11,7 @@ RSpec.describe Character do
   let(:ability) { ->(slug) { world.abilities.find_by!(slug: slug) } }
 
   def create(name: "Bartz", job_slug: "knight", level: 5, job_level: 1)
-    campaign.characters.create!(name: name, job: job.(job_slug), starting_level: level, starting_job_level: job_level)
+    campaign.characters.create!(name: name, job: job.(job_slug), starting_level: level, starting_job_level: job_level, starting_gear: false)
   end
 
   describe "creation" do
@@ -21,6 +21,20 @@ RSpec.describe Character do
       expect(bartz.exp).to eq(Stats::Growth.exp_for_level(7))
       expect(bartz.character_job).to have_attributes(level: 2, abp: 30) # knight rows: 10 + 20
       expect(bartz.native_abilities.map(&:slug)).to eq(%w[war_cry armor_break])
+    end
+
+    it "starts about one job level per two levels when no job level is given" do
+      lenna = campaign.characters.create!(name: "Lenna", job: job.("white_mage"), starting_level: 5)
+      expect(lenna.character_job.level).to eq(3)
+      expect(lenna.native_abilities.map(&:slug)).to eq(%w[cure silence esuna])
+      expect(campaign.characters.create!(name: "Krile", job: job.("black_mage")).character_job.level).to eq(1) # level 1
+    end
+
+    it "arrives in the cheapest gear their job can use, but no accessory" do
+      lenna = campaign.characters.create!(name: "Lenna", job: job.("white_mage"), starting_level: 5)
+      expect(lenna.equipped.transform_values { |slot| slot.item.slug }).to eq("weapon" => "staff", "body" => "cotton_robe", "head" => "leather_cap")
+      expect(lenna.stats["atk"]).to be_positive
+      expect(campaign.inventories.sum(:quantity)).to eq(0) # issued, not taken from the bag
     end
 
     it "can start with nothing learned" do
@@ -69,7 +83,7 @@ RSpec.describe Character do
     it "levels up and learns abilities, and reports what changed" do
       bartz = create(job_level: 0)
       changes = bartz.gain!(exp: 1000, abp: 30)
-      expect(changes).to eq("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break" ])
+      expect(changes).to eq("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break" ], "to_next" => 120)
       expect(bartz.reload.level).to eq(11) # 200 + 1000 EXP
     end
 

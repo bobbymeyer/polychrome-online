@@ -98,6 +98,7 @@ Rails.application.routes.draw do
     resource :shop, only: [] do
       post :buy
       post :sell
+      post :sell_worn
     end
   end
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"
@@ -109,14 +110,17 @@ Rails.application.routes.draw do
     resource :equipment, only: :update
     resource :ability_slots, only: :update
     resource :grant, only: :create
+    resource :item_use, only: :create
   end
 
   # The battle screen (§6): one long-lived page fed by Turbo Streams. The
   # command panel is a Turbo Frame reloaded after each beat plays.
   resources :battles, only: :show do
+    post :call_off, on: :member
     resource :seat, only: %i[create destroy]
     resource :panel, only: :show
     resources :actions, only: :create, controller: "battle_actions"
     resource :playback, only: :update
+    resource :auto, only: :update, controller: "battle_autos"
   end
 end

@@ -74,7 +74,7 @@ class Location < ApplicationRecord
   # Pin a service or room as it is now, so rerolls keep it. For a town NPC,
   # pinning makes them a real NPC of the campaign.
   def pin!(key)
-    if (npc = view.fetch("npcs", []).find { |n| n["key"] == key })
+    if (npc = townsfolk.find { |n| n["key"] == key })
       campaign.npcs.create!(name: npc["name"], title: npc["title"], description: npc["hook"], location: self, location_key: key)
       touch
     else
@@ -106,7 +106,9 @@ class Location < ApplicationRecord
     world = campaign.world
     unknown = Array(decision["monsters"]&.keys) - world.monsters.pluck(:slug)
     raise ArgumentError, "Pick a monster from the Bestiary" if decision["kind"] == "encounter" && (unknown.any? || decision["monsters"].empty?)
-    raise ArgumentError, "Pick an item from the Armory" if decision["kind"] == "treasure" && !world.items.exists?(slug: decision["item"])
+    if decision["kind"] == "treasure" && !decision["gil"].to_i.positive? && !world.items.exists?(slug: decision["item"])
+      raise ArgumentError, "Pick an item from the Armory, or an amount of gil"
+    end
 
     added = overrides.fetch("added_rooms", [])
     key = "added-#{added.size + 1}"
@@ -183,10 +185,31 @@ class Location < ApplicationRecord
   # NPCs the GM wrote in. Returns [{ "npc" => Npc or nil, "generated" => hash or nil }].
   def roster
     real = npcs.order(:id).to_a
-    slots = view.fetch("npcs", []).map do |generated|
+    slots = townsfolk.map do |generated|
       { "npc" => real.find { |n| n.location_key == generated["key"] }, "generated" => generated }
     end
     slots + real.select { |n| n.location_key.nil? }.map { |npc| { "npc" => npc, "generated" => nil } }
+  end
+
+  # The generated townsfolk as the table meets them. Someone the campaign's
+  # cast already has a name for (a pinned or written-in NPC, here or
+  # anywhere) isn't rolled twice: an unpinned townsperson who'd share their
+  # name takes the next free name from the names table instead. Only the
+  # clashing one changes, so the rest of the town stays as rolled.
+  def townsfolk
+    rolled = view.fetch("npcs", [])
+    cast = campaign.npcs.to_a
+    pinned_here = cast.select { |npc| npc.location_id == id && npc.location_key }.map(&:location_key)
+    taken = cast.map(&:name) + rolled.select { |n| pinned_here.include?(n["key"]) }.map { |n| n["name"] }
+    names = location_template.table_entries.fetch("names", []).map { |e| e["text"] }
+    rolled.each_with_index.map do |npc, i|
+      if pinned_here.exclude?(npc["key"]) && taken.include?(npc["name"])
+        free = names.rotate((seed + i) % [ names.size, 1 ].max).find { |name| taken.exclude?(name) && rolled.none? { |n| n["name"] == name } }
+        npc = npc.merge("name" => free || "#{npc['name']} the Younger")
+      end
+      taken << npc["name"]
+      npc
+    end
   end
 
   def stock_items
@@ -228,6 +251,16 @@ class Location < ApplicationRecord
     visited.include?(key) || visited.any? { |v| neighbours(v).include?(key) }
   end
 
+  # Only the place the party stands on the map can be explored.
+  def party_here?
+    map_node&.party_here? || false
+  end
+
+  # The party went back out onto the map: next time, they come in at the entrance.
+  def leave!
+    update!(progress: progress.except("current")) if progress["current"]
+  end
+
   def enter!
     move_to!(view["entrance"], from: nil)
   end
@@ -237,6 +270,8 @@ class Location < ApplicationRecord
   # waits for the GM to fight or wave off (like on the map); treasure waits
   # to be handed over; a fork shows its visible cost.
   def move_to!(key, from: progress["current"])
+    raise ArgumentError, "The party isn't at #{name}. Take them there on the map first." unless party_here?
+
     target = room(key) or raise ArgumentError, "No such room"
     raise ArgumentError, "That room isn't next to this one" if from && !neighbours(from).include?(key)
 
@@ -254,12 +289,21 @@ class Location < ApplicationRecord
     target = room(key)
     raise ArgumentError, "No treasure there" unless target && target["decision"]["kind"] == "treasure" && !resolved?(key)
 
-    item = campaign.world.items.find_by(slug: target["decision"]["item"])
+    decision = target["decision"]
+    item = campaign.world.items.find_by(slug: decision["item"]) if decision["item"]
     transaction do
       campaign.add_item!(item) if item
+      campaign.increment!(:gil, decision["gil"].to_i) if decision["gil"]
       resolve!(key)
-      campaign.messages.create!(kind: "system", body: "Found #{item&.name || target['decision']['item']} in #{target['name']}.")
+      campaign.messages.create!(kind: "system", body: "Found #{describe_treasure(decision)} in #{target['name']}.")
     end
+  end
+
+  # "Potion", "150 gil".
+  def describe_treasure(decision)
+    return "#{decision['gil']} gil" if decision["gil"]
+
+    campaign.world.items.find_by(slug: decision["item"])&.name || decision["item"]
   end
 
   def resolve!(key)

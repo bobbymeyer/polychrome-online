@@ -10,8 +10,8 @@ RSpec.describe "Items and shops", type: :request do
   let(:antidote) { world.items.find_by!(slug: "antidote") }
 
   describe "in battle" do
-    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5) }
-    let!(:faris) { campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "monk"), starting_level: 5) }
+    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5, starting_gear: false) }
+    let!(:faris) { campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "monk"), starting_level: 5, starting_gear: false) }
 
     before do
       campaign.add_item!(potion, 2)
@@ -65,7 +65,7 @@ RSpec.describe "Items and shops", type: :request do
     let!(:lenna) { make_user("Lenna") }
 
     before do
-      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), user: lenna)
+      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), user: lenna, starting_gear: false)
       campaign.update!(current_node: node)
       town
       sign_in_as(lenna)
@@ -106,6 +106,88 @@ RSpec.describe "Items and shops", type: :request do
       sign_in_as(@admin)
       post buy_location_shop_path(town), params: { item: "potion" }
       expect(campaign.reload.quantity_of(potion)).to eq(1)
+    end
+  end
+
+  describe "outside battle" do
+    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5, starting_gear: false) }
+    let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5, starting_gear: false) }
+
+    before do
+      campaign.add_item!(potion, 2)
+      campaign.add_item!(antidote)
+      bartz.update!(hp: 20)
+    end
+
+    it "uses a healing item from the bag on a party member, through the engine's formula" do
+      get character_path(lenna)
+      expect(response.body).to include('id="items"', "Potion", "Bartz (HP 20/")
+      expect(response.body).not_to include("Antidote <span") # cures only work in battle
+
+      rng = campaign.rng
+      post character_item_use_path(lenna), params: { item: "potion", target_id: bartz.id }
+      expect(bartz.reload.hp).to be > 20
+      expect(campaign.reload.quantity_of(potion)).to eq(1)
+      expect(campaign.rng).not_to eq(rng)
+      expect(campaign.messages.last.body).to eq("Lenna uses Potion on Bartz: HP 20 → #{bartz.hp}.")
+    end
+
+    it "refuses what would do nothing, and anything while a battle is on" do
+      post character_item_use_path(lenna), params: { item: "potion", target_id: lenna.id }
+      expect(flash[:alert]).to eq("Lenna is already at full HP")
+      post character_item_use_path(lenna), params: { item: "antidote", target_id: bartz.id }
+      expect(flash[:alert]).to eq("Antidote can only be used in battle")
+
+      BattleRecord.start!(campaign: campaign, characters: [ bartz, lenna ], name: "Road", encounter: { "goblin" => 1 }, seed: 3)
+      post character_item_use_path(lenna), params: { item: "potion", target_id: bartz.id }
+      expect(flash[:alert]).to include("Not while a battle is on")
+      expect(campaign.reload.quantity_of(potion)).to eq(2)
+    end
+
+    it "is only for someone who plays that character (or the GM)" do
+      bartz.update!(user: make_user("Someone"))
+      sign_in_as(make_user("Stranger"))
+      post character_item_use_path(bartz), params: { item: "potion" }
+      expect(bartz.reload.hp).to eq(20)
+    end
+  end
+
+  describe "selling worn gear" do
+    let(:node) { campaign.map_nodes.create!(name: "Port", kind: "town", x: 100, y: 100, visible: true) }
+    let(:town) do
+      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      post map_node_location_path(node), params: { location_template_id: world.location_templates.find_by!(slug: "port_town").id }
+      node.reload.location
+    end
+    let(:broadsword) { world.items.find_by!(slug: "broadsword") }
+    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_gear: false) }
+
+    before do
+      campaign.update!(current_node: node)
+      campaign.add_item!(broadsword)
+      bartz.equip!(broadsword)
+    end
+
+    it "takes it off and sells it for half" do
+      get location_path(town)
+      expect(response.body).to include("Sell what the party is wearing", "Broadsword")
+
+      post sell_worn_location_shop_path(town), params: { character_id: bartz.id, slot: "weapon" }
+      expect(bartz.reload.equipped["weapon"]).to be_nil
+      expect(campaign.reload.gil).to eq(200 + broadsword.resale_price)
+      expect(campaign.quantity_of(broadsword)).to eq(0)
+    end
+
+    it "only for the character's player or the GM" do
+      town
+      bartz.update!(user: make_user("Someone"))
+      lenna = make_user("Lenna")
+      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), user: lenna, starting_gear: false)
+      sign_in_as(lenna)
+      get location_path(town)
+      expect(response.body).not_to include("Sell what the party is wearing")
+      post sell_worn_location_shop_path(town), params: { character_id: bartz.id, slot: "weapon" }
+      expect(bartz.reload.equipped["weapon"]).to be_present
     end
   end
 end

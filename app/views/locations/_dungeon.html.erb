@@ -6,7 +6,7 @@
      case d["kind"]
      when "encounter", "boss" then "#{glyph_names[d['kind']]}: #{@campaign.describe_encounter(d['monsters'])}"
      when "treasure"
-       "Treasure: #{@world.items.find_by(slug: d['item'])&.name || d['item']}#{' (taken)' if location.resolved?(room['key'])}"
+       "Treasure: #{location.describe_treasure(d)}#{' (taken)' if location.resolved?(room['key'])}"
      else "#{glyph_names[d['kind']]}: #{d['text']}"
      end
    end %>
@@ -32,17 +32,13 @@
 
     <% if gm %>
       <% if (encounter = @campaign.pending_encounter) %>
-        <section class="encounter-call">
-          <h3>Encounter!</h3>
-          <p><%= @campaign.describe_encounter(encounter["monsters"]) %> <span class="muted">(<%= encounter["table"] %>)</span></p>
-          <div class="menu menu--row">
-            <%= button_to "Fight", campaign_encounter_path(@campaign), class: "menu__item menu__item--accent" %>
-            <%= button_to "Wave it off", campaign_encounter_path(@campaign), method: :delete, params: { return_to: location_path(location) }, class: "menu__item" %>
-          </div>
-        </section>
+        <%= render "encounters/call", encounter: encounter, return_to: location_path(location) %>
       <% end %>
 
-      <% if here.nil? %>
+      <% if !location.party_here? %>
+        <% at = @campaign.current_node %>
+        <p class="hint">The party is <%= at ? "at #{at.name}" : "not on the map" %>. Take them to <%= location.name %> on the <%= link_to "map", campaign_map_path(@campaign) %> to go in.</p>
+      <% elsif here.nil? %>
         <%= button_to "Lead the party in", enter_location_path(location), class: "button play" %>
       <% else %>
         <% if here["decision"]["kind"] == "treasure" && !location.resolved?(here["key"]) %>
@@ -97,6 +93,7 @@
             <div class="field"><%= f.label :monster %><%= f.select :monster, @world.monsters.order(:level, :name).map { |m| [ m.name, m.slug ] }, include_blank: true %></div>
             <div class="field"><%= f.label :count %><%= f.number_field :count, value: 1, min: 1, max: 8 %></div>
             <div class="field"><%= f.label :item %><%= f.select :item, @world.items.order(:name).map { |i| [ i.name, i.slug ] }, include_blank: true %></div>
+            <div class="field"><%= f.label :gil, "Or gil" %><%= f.number_field :gil, min: 1 %></div>
           </div>
           <div class="field"><%= f.label :text, "Event text" %><%= f.text_field :text %></div>
           <%= f.submit "Add room", class: "button" %>

@@ -8,6 +8,16 @@ module BooksHelper
     "spr" => "Spr", "agi" => "Agi", "atk" => "Atk", "def" => "Def", "mdef" => "MDef"
   }.freeze
 
+  # Encounter tables for a select, with the levels of what's in them, so the
+  # GM can match a road or dungeon to the party: "Grasslands (Lv 1–2)".
+  def encounter_table_options(world)
+    levels = world.monsters.to_h { |m| [ m.slug, m.level ] }
+    world.encounter_tables.order(:tier, :name).map do |table|
+      found = table.entries.flat_map { |e| e["monsters"].keys }.filter_map { |slug| levels[slug] }.minmax.compact.uniq
+      [ found.any? ? "#{table.name} (Lv #{found.join('–')})" : table.name, table.id ]
+    end
+  end
+
   def stat_label(name)
     STAT_LABELS.fetch(name.to_s, name.to_s.humanize)
   end
@@ -23,7 +33,7 @@ module BooksHelper
         image_tag(url_for(entry.image), alt: entry.name, style: variant_style(entry.variant))
       end
     else
-      tag.figure(class: classes + [ "portrait--empty" ], aria: { label: "No image yet" }) do
+      tag.figure(class: classes + [ "portrait--empty" ], aria: { label: "No image yet" }, style: plate_style(entry.try(:slug) || entry.name)) do
         tag.span(entry.name.to_s.first, style: variant_style(entry.variant), class: "portrait__initial")
       end
     end
@@ -55,7 +65,9 @@ module BooksHelper
     when "revive" then "Revive at #{e.fetch('fraction', 25)}% HP"
     when "escape" then "Escape from battle"
     when "cleanse" then e["kind"] ? "Cure #{term(e['kind']).downcase}" : "Cure every harmful status"
-    else e.to_s
+    when "steal" then "Steal one of its drops (#{e.fetch('chance', 50)}% + speed)"
+    when "scan" then "Reveal HP, weaknesses and immunities"
+    else e["primitive"].to_s.humanize
     end
   end
 

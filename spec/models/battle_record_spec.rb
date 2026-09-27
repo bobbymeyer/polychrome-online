@@ -127,7 +127,7 @@ RSpec.describe BattleRecord do
       expect(characters[faris].reload.exp).to eq(Stats::Growth.exp_for_level(5))
       expect(campaign.reload.gil).to eq(10)
       expect(battle.reload.settlement).to include("result" => "victory", "gil" => 10,
-                                                  "members" => [ { "name" => "Bartz", "exp" => 20, "abp" => 4, "learned" => [] } ])
+                                                  "members" => [ { "name" => "Bartz", "exp" => 20, "abp" => 4, "learned" => [], "to_next" => 80 } ])
     end
 
     it "writes HP and MP back to the characters" do
@@ -160,9 +160,52 @@ RSpec.describe BattleRecord do
       expect(member["learned"]).to eq([ "Shield bash" ])
     end
 
+    it "knocks out whoever is still standing when the GM calls a defeat" do
+      battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "defeat" }, actor: "gm")
+      expect(characters.values.map { |c| c.reload.current_hp }).to eq([ 0, 0 ])
+      expect(battle.reload.settlement).to include("result" => "defeat")
+    end
+
     it "happens once" do
       win!(battle)
       expect { battle.send(:settle!, []) }.not_to(change { campaign.reload.gil })
+    end
+  end
+
+  describe "auto" do
+    let(:campaign) { create_campaign }
+    let(:battle) do
+      create_character(campaign, name: "Bartz").update!(user: User.create!(name: "Jo", email_address: "jo@example.com", password: "a long password"))
+      create_character(campaign, name: "Faris")
+      start_battle(campaign: campaign)
+    end
+
+    it "plays unclaimed characters on auto as each round opens, logged as the GM's call" do
+      expect(battle.auto_units).to eq([ faris ])
+      expect(battle.awaiting_input).to eq([ bartz ])
+      expect(battle.battle_actions.last).to have_attributes(actor: "gm", payload: include("op" => "auto", "units" => [ faris ]))
+
+      battle.apply!(command(bartz), actor: bartz)
+      expect(battle.round).to eq(2)
+      expect(battle.awaiting_input).to eq([ bartz ])
+    end
+
+    it "waits for the GM or the timer when everyone standing is on auto" do
+      battle.set_auto!(bartz, true)
+      expect(battle.round).to eq(1) # nobody was left to play, so nothing was filled
+      battle.apply!({ "type" => "gm_override", "op" => "execute_round" }, actor: "gm")
+      expect(battle.round).to eq(2)
+      expect(battle.awaiting_input).to contain_exactly(bartz, faris)
+    end
+
+    it "fills in at once when the GM switches it on mid-round, and stops when switched off" do
+      battle.set_auto!(faris, false)
+      battle.apply!(command(bartz), actor: bartz)
+      expect(battle.round).to eq(2)
+      expect(battle.awaiting_input).to contain_exactly(bartz, faris)
+
+      battle.set_auto!(faris, true)
+      expect(battle.awaiting_input).to eq([ bartz ])
     end
   end
 

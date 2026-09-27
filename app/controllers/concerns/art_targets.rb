@@ -7,7 +7,7 @@ module ArtTargets
   extend ActiveSupport::Concern
 
   BOOK_CLASSES = { "monster" => Monster, "job" => Job, "item" => Item, "ability" => Ability, "location_template" => LocationTemplate,
-                   "encounter_table" => EncounterTable, "generator_table" => GeneratorTable }.freeze
+                   "encounter_table" => EncounterTable }.freeze
   SPEAKER_CLASSES = { "npc" => Npc, "character" => Character }.freeze
 
   private

@@ -7,7 +7,7 @@ RSpec.describe "Campaigns and characters", type: :request do
   let!(:world) { Seeds::BaseWorld.run }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let(:knight) { world.jobs.find_by!(slug: "knight") }
-  let(:bartz) { campaign.characters.create!(name: "Bartz", player_name: "Sam", job: knight, starting_level: 5, starting_job_level: 1) }
+  let(:bartz) { campaign.characters.create!(name: "Bartz", player_name: "Sam", job: knight, starting_level: 5, starting_job_level: 1, starting_gear: false) }
   let(:item) { ->(slug) { world.items.find_by!(slug: slug) } }
 
   describe "campaigns" do
@@ -33,10 +33,17 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(campaign.reload.gil).to eq(250)
     end
 
-    it "rests the party" do
+    it "rests the party, and says so at the table, but not mid-battle" do
       bartz.update!(hp: 0, mp: 0)
       post campaign_rest_path(campaign)
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
+      expect(campaign.messages.last.body).to include("The party rests")
+
+      bartz.update!(hp: 5)
+      BattleRecord.start!(campaign: campaign, characters: [ bartz ], name: "Road", encounter: { "goblin" => 1 }, seed: 1)
+      post campaign_rest_path(campaign)
+      expect(flash[:alert]).to include("Not while a battle is on")
+      expect(bartz.reload.hp).to eq(5)
     end
   end
 
@@ -66,6 +73,11 @@ RSpec.describe "Campaigns and characters", type: :request do
       get character_path(bartz)
       expect(response.body).to include("Bartz", "played by Sam", "Knight", "Lv 1", "Base", "Gear", "Total",
                                        "War Cry", "Change job", "Free slots (1)")
+
+      bartz.update!(user: make_user("Jo")) # an account beats the old player-name note
+      get character_path(bartz)
+      expect(response.body).to include("played by Jo")
+      expect(response.body).not_to include("played by Sam")
     end
 
     it "equips from the bag, all slots in one form" do
@@ -143,8 +155,8 @@ RSpec.describe "Campaigns and characters", type: :request do
       post battle_seat_path(battle), params: { seat: "gm" }
       post battle_actions_path(battle), params: { gm: { op: "end_battle", result: "victory" } }
       get battle_panel_path(battle)
-      expect(response.body).to include("Victory!", "Bartz</strong>: 6 EXP, 1 ABP", "Back to Crystal Road")
-      expect(bartz.reload.exp).to eq(Stats::Growth.exp_for_level(5) + 6)
+      expect(response.body).to include("Victory!", "Bartz</strong>: 20 EXP, 2 ABP", "Back to the table")
+      expect(bartz.reload.exp).to eq(Stats::Growth.exp_for_level(5) + 20)
     end
   end
 end

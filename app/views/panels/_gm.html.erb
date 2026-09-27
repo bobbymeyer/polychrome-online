@@ -13,12 +13,24 @@
     <div class="menu menu--row">
       <% awaiting.each do |id| %>
         <%= button_to "Auto #{unit_name(state, id)}", battle_actions_path(@battle), class: "menu__item",
-                      params: { gm: { op: "auto", unit: id } } %>
+                      params: { gm: { op: "auto", unit: id } }, title: "Their default command, this round only" %>
       <% end %>
       <%= button_to "Run the round now", battle_actions_path(@battle), class: "menu__item menu__item--accent",
                     params: { gm: { op: "execute_round" } } %>
     </div>
   <% end %>
+</section>
+
+<section>
+  <h3>On auto every round</h3>
+  <div class="menu menu--row">
+    <% state["units"].select { |u| u["side"] == "party" }.each do |u| %>
+      <% on = @battle.auto?(u["id"]) %>
+      <%= button_to unit_name(state, u["id"]), battle_auto_path(@battle), method: :patch, params: { unit: u["id"], on: on ? "0" : "1" },
+                    class: [ "menu__item", ("is-current" if on) ], aria: { pressed: on } %>
+    <% end %>
+  </div>
+  <p class="hint">For characters nobody is playing: they take their default command as each round opens. Unclaimed characters start on auto; a player who sits down and chooses takes theirs back.</p>
 </section>
 
 <section>
@@ -79,5 +91,8 @@
       <%= button_to label, battle_actions_path(@battle), class: "menu__item", params: { gm: { op: "end_battle", result: result } },
                     form: { data: { turbo_confirm: "End the battle: #{label}? Everyone will see this." } } %>
     <% end %>
+    <%= button_to "Call it off", call_off_battle_path(@battle), class: "menu__item",
+                  form: { data: { turbo_frame: "_top", turbo_confirm: "Call off #{@battle.name}? Nothing that happened in it counts: no rewards, and HP and items go back to how they were." } } %>
   </div>
+  <p class="hint">Calling it off is for a battle nobody will finish. It stops the table pointing at it.</p>
 </section>

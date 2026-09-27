@@ -1,7 +1,10 @@
-<% result = { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." } %>
+<% result = { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away.", "abandoned" => "Called off. Nothing came of it." } %>
 <% settlement = @battle.settlement || {} %>
 <h2><%= result.fetch(@battle.status, @battle.status.humanize) %></h2>
 
+<% if settlement["stolen"].present? %>
+  <p>Stolen: <%= settlement["stolen"].to_sentence %>.</p>
+<% end %>
 <% if settlement["used"].present? %>
   <p>Used <%= settlement["used"].map { |name, n| "#{n} × #{name}" }.to_sentence %>.</p>
 <% end %>
@@ -13,6 +16,7 @@
     <% settlement["members"].each do |member| %>
       <li>
         <strong><%= member["name"] %></strong>: <%= member["exp"] %> EXP, <%= member["abp"] %> ABP.
+        <% if member["to_next"] %><span class="muted"><%= member["to_next"] %> to the next level.</span><% end %>
         <% if member["level"] %><span class="level-up">Level <%= member["level"].last %>!</span><% end %>
         <% if member["learned"].present? %><span class="level-up">Learned <%= member["learned"].to_sentence %>!</span><% end %>
       </li>
@@ -20,13 +24,22 @@
   </ul>
 <% end %>
 
-<p class="hint">
-  Round <%= @battle.round %> · <%= pluralize(@battle.battle_actions.count, "action") %> ·
-  replays exactly from seed <%= @battle.seed %>.
-</p>
+<% if battle_gm? %>
+  <p class="hint">
+    Round <%= @battle.round %> · <%= pluralize(@battle.battle_actions.count, "action") %> ·
+    replays exactly from seed <%= @battle.seed %>.
+  </p>
+<% end %>
 <% if @battle.campaign %>
   <div class="actions">
-    <%= link_to "Back to #{@battle.campaign.name}", campaign_path(@battle.campaign), class: "button", data: { turbo_frame: "_top" } %>
-    <%= link_to "Another battle", new_campaign_battle_path(@battle.campaign), class: "button button--quiet", data: { turbo_frame: "_top" } %>
+    <% if (inside = @battle.campaign.dungeon_in_progress) %>
+      <%= link_to "Back to #{inside.name}", location_path(inside), class: "button", data: { turbo_frame: "_top" } %>
+      <%= link_to "Back to the table", campaign_table_path(@battle.campaign), class: "button button--quiet", data: { turbo_frame: "_top" } %>
+    <% else %>
+      <%= link_to "Back to the table", campaign_table_path(@battle.campaign), class: "button", data: { turbo_frame: "_top" } %>
+    <% end %>
+    <% if battle_gm? %>
+      <%= link_to "Another battle", new_campaign_battle_path(@battle.campaign), class: "button button--quiet", data: { turbo_frame: "_top" } %>
+    <% end %>
   </div>
 <% end %>

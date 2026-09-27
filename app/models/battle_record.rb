@@ -15,6 +15,7 @@ class BattleRecord < ApplicationRecord
 
   SPEEDS = [ 1, 2, 4 ].freeze
   INPUT_TIMERS = [ nil, 30, 60, 120 ].freeze
+  DEFAULT_TIMER = 60
   # Added to the input timer when a round opens, to cover the previous
   # round's animation before players can act.
   ANIMATION_GRACE = 8.seconds
@@ -40,12 +41,17 @@ class BattleRecord < ApplicationRecord
     party = characters.map(&:battle_spec)
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items)
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
-                     input_seconds: input_seconds)
+                     input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id))
     battle.open_round!
     battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against " \
                      "#{encounter.map { |slug, count| "#{count} × #{campaign.world.monsters.find_by(slug: slug)&.name || slug}" }.to_sentence}.")
+    battle.auto_fill!
     battle
   end
+
+  # One callback: after_create_commit and after_update_commit naming the same
+  # method would keep only the last.
+  after_commit :refresh_table_header, on: %i[create update], if: -> { previously_new_record? || saved_change_to_status? }
 
   # A system line at the campaign's table, linking back to this battle.
   def announce!(body)
@@ -54,6 +60,23 @@ class BattleRecord < ApplicationRecord
 
   def over?
     status != "input"
+  end
+
+  # Plain words for the status, for players.
+  STATUS_LABELS = { "input" => "Under way", "victory" => "Won", "defeat" => "Lost", "fled" => "Fled", "abandoned" => "Called off" }.freeze
+
+  def status_label
+    STATUS_LABELS.fetch(status) { status.humanize }
+  end
+
+  # The GM gives up on a battle that nobody will finish. It didn't happen:
+  # no settlement, nobody's HP or items change, and the table stops
+  # pointing at it. (Not a resolver action: the fight itself isn't resolved.)
+  def call_off!
+    return if over?
+
+    update!(status: "abandoned", deadline_at: nil)
+    announce!("#{name} was called off.")
   end
 
   def units
@@ -77,7 +100,7 @@ class BattleRecord < ApplicationRecord
   # `if_round` makes the action a no-op (returns nil) if the battle has
   # moved on, which is how a stale input timer is ignored.
   def apply!(action, actor:, if_round: nil)
-    before = events = nil
+    before = events = record = nil
     with_lock do
       return nil if if_round && (round != if_round || over?)
 
@@ -93,10 +116,41 @@ class BattleRecord < ApplicationRecord
       save!
       settle!(events) if over?
     end
-    open_round! if !over? && round != before["round"]
-    broadcast_beat(before, events)
+    campaign&.learn_from!(events, state)
+    new_round = !over? && round != before["round"]
+    open_round! if new_round
+    broadcast_beat(before, events, record.position)
+    auto_fill! if new_round
     [ before, events ]
   end
+
+  # Units the GM has put on auto: nobody is there to play them, so each
+  # round they take their default command as it opens (§5, "GM auto for an
+  # absent player"). The GM's call, so each one is an override in the log.
+  # If everyone still standing is on auto, nothing is filled: the round
+  # waits for the GM or the timer, so a battle never plays itself out.
+  def auto_fill!
+    return if over?
+
+    standing = party.select { |u| u["hp"].positive? }.map { |u| u["id"] }
+    return if (standing - auto_units).empty?
+
+    units = awaiting_input & auto_units
+    return if units.empty?
+
+    apply!({ "type" => "gm_override", "op" => "auto", "units" => units }, actor: "gm", if_round: round)
+  rescue Battle::InvalidAction
+    nil # someone sat down and chose for one of them first; the timer or the GM covers the rest
+  end
+
+  def set_auto!(unit_id, on)
+    return unless party.any? { |u| u["id"] == unit_id }
+
+    update!(auto_units: on ? (auto_units | [ unit_id ]) : (auto_units - [ unit_id ]))
+    auto_fill! if on
+  end
+
+  def auto?(unit_id) = auto_units.include?(unit_id)
 
   # Start the input timer for the current round, if this battle has one.
   def open_round!
@@ -127,6 +181,17 @@ class BattleRecord < ApplicationRecord
   # HP/MP always; on victory, EXP split among the standing, ABP to each
   # standing character's current job, gil, and the dropped items. Runs
   # once, inside the transaction of the action that ended the battle.
+  # Stolen items are the party's however the battle ends.
+  def take_stolen_items!
+    items = world.items.where(slug: state.fetch("stolen", [])).index_by(&:slug)
+    state.fetch("stolen", []).filter_map do |slug|
+      next unless (item = items[slug])
+
+      campaign.add_item!(item)
+      item.name
+    end
+  end
+
   def settle!(events)
     return if settlement
 
@@ -135,7 +200,8 @@ class BattleRecord < ApplicationRecord
       characters[unit["id"]]&.update!(hp: unit["hp"], mp: unit["mp"])
     end
 
-    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items! }
+    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items!,
+                "stolen" => take_stolen_items! }
     victory = events.find { |e| e["type"] == "victory" }
     if victory
       rewards = victory["rewards"]
@@ -176,6 +242,7 @@ class BattleRecord < ApplicationRecord
 
   def settlement_line(summary)
     parts = [ { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." }.fetch(summary["result"], "It's over.") ]
+    parts << "Stole #{summary['stolen'].to_sentence}." if summary["stolen"].present?
     parts << "Used #{summary['used'].map { |name, n| "#{n} × #{name}" }.to_sentence}." if summary["used"].present?
     parts << "#{summary['gil']} gil." if summary["gil"].positive?
     parts << "Found #{summary['drops'].to_sentence}." if summary["drops"].any?
@@ -184,6 +251,14 @@ class BattleRecord < ApplicationRecord
       parts << "#{member['name']} learned #{member['learned'].to_sentence}." if member["learned"].any?
     end
     "#{name}: #{parts.join(' ')}"
+  end
+
+  # The table's "… is on" button follows the current battle for everyone.
+  def refresh_table_header
+    return unless campaign
+
+    Turbo::StreamsChannel.broadcast_replace_to(campaign, :table, target: "table_battle",
+                                               partial: "tables/current_battle", locals: { campaign: campaign })
   end
 
   def next_position(association)
@@ -203,8 +278,10 @@ class BattleRecord < ApplicationRecord
 
   # §6: every viewer gets the events plus the state before them, and holds
   # the state after them back until the animation finishes.
-  def broadcast_beat(before, events)
+  # `position` orders beats: broadcasts can arrive out of order, and the
+  # player waits for the one it's missing.
+  def broadcast_beat(before, events, position)
     broadcast_append_to self, target: "battle_beats", partial: "battles/beat",
-                              locals: { battle: self, before: before, events: events }
+                              locals: { battle: self, before: before, events: events, position: position }
   end
 end

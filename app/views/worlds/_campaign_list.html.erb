@@ -1,0 +1,16 @@
+<%# Campaigns on the home page, each with what you are in it. %>
+<ul class="location-list campaign-list">
+  <% campaigns.each do |campaign| %>
+    <% mine = campaign.characters.select { |c| c.user_id == current_user.id } %>
+    <li>
+      <span>
+        <strong><%= link_to campaign.name, campaign_path(campaign) %></strong>
+        <span class="muted">· <%= campaign.world.name %> · GM <%= campaign.gm&.name || "not set" %></span>
+        <% if mine.any? || campaign.gm_id == current_user.id %>
+          <br><span class="hint"><%= [ ("You GM it" if campaign.gm_id == current_user.id), (mine.any? ? "You play #{mine.map(&:name).to_sentence}" : nil) ].compact.join(". ") %>.</span>
+        <% end %>
+      </span>
+      <%= link_to "Table →", campaign_table_path(campaign), class: "button play" if mine.any? || campaign.gm_id == current_user.id %>
+    </li>
+  <% end %>
+</ul>

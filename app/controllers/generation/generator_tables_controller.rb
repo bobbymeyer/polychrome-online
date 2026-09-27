@@ -13,8 +13,8 @@ module Generation
     end
 
     def entry_params
-      params.expect(generator_table: [ :name, :slug, :kind, :description, *art_params,
-                                       { entries: [ %i[text weight service item width height roof] ] } ])
+      params.expect(generator_table: [ :name, :slug, :kind, :description, :paste,
+                                       { entries: [ %i[text weight service item gil width height roof] ] } ])
     end
   end
 end

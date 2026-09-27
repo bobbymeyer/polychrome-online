@@ -6,7 +6,7 @@
   <%= render "book_entries/errors", entry: @character %>
   <div class="field-row">
     <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
-    <div class="field"><%= f.label :player_name, "Player" %><%= f.text_field :player_name %></div>
+    <div class="field"><%= f.label :player_name, "Player without an account" %><%= f.text_field :player_name, placeholder: "Optional" %></div>
     <% if can_gm?(@campaign) %>
       <div class="field">
         <%= f.label :user_id, "Player's account" %>

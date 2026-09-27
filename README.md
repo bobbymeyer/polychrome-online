@@ -103,6 +103,17 @@ other browsers and have each player take a seat.
   Two players can't both queue the last one. An absent player never
   defaults to an item. When the battle ends, whatever was used comes out of
   the bag. Gear never comes into battle.
+- **Items outside battle.** From a character's sheet, that character can use
+  a healing or reviving item from the bag on anyone in the party.
+  `Battle::Field` runs the same effect formulas, using the campaign's seeded
+  RNG, so a Potion heals the same as in battle. Cures only work in battle,
+  where statuses exist. Using items outside battle is blocked while a battle
+  is on, because its settlement writes HP back.
+- **The current battle.** The table's "… is on →" button follows the newest
+  battle still being fought, for everyone, as battles start and end. Only
+  that battle's log line says "Join the battle". The GM can **call off** a
+  battle nobody will finish, from the campaign page or the battle. It then
+  counts for nothing: no settlement, and HP and items stay as they were.
 - **Input timer.** It is a `BattleTimeoutJob` scheduled for the round's
   deadline. When it fires, missing commands default to each unit's last one,
   or Attack.
@@ -213,8 +224,10 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
 
 - **Shops.** A town with a shop sells its stock for party gil and buys items
   back from the bag at half price (`ShopsController`, `Campaign#buy!` and
-  `#sell!`). Players can only shop in the town where the party is; the GM
-  can shop anywhere. Every purchase and sale is announced at the table.
+  `#sell!`). Gear someone is wearing can be sold too: it comes off, then
+  sells. Only that character's player or the GM can do that. Players can
+  only shop in the town where the party is; the GM can shop anywhere. Every
+  purchase and sale is announced at the table.
 
 - **Stored:** only template + seed + GM overrides. What the location contains
   is generated from those on every view, by the pure `Generators::Town` and
@@ -282,6 +295,12 @@ generator (email and password, with `bcrypt`), plus a sign-up page.
 
 - **Admin rules.** Anyone can be made an admin. The last admin can't be
   demoted or removed.
+- **Seats pick themselves.** At a table or battle you haven't sat at, you're
+  seated as your only character, or as the GM of your own campaign when you
+  play nobody in it. Standing up ("Change seat") sticks. Seats belong to
+  the account, so two people on one browser never share one.
+- **The home page** lists your campaigns (ones you play in or GM), then the
+  rest to join, then the worlds.
 - **Claiming.** A character with no owner, such as one made before
   accounts existed, becomes yours when you sit as them. Campaigns made
   before accounts have no GM until an admin picks one; admins run them
@@ -429,6 +448,4 @@ resulting `hp`, so the view never computes an outcome.
 
 ## Not in yet (deliberately)
 
-Using items outside battle (from the character sheet), and selling gear
-someone is wearing. All the numbers are first guesses (§9.2) and will change
-in playtesting.
+All the numbers are first guesses (§9.2) and will change in playtesting.

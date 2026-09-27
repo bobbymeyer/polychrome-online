@@ -1,3 +1,4 @@
+<% item_names = @world.items.to_h { |i| [ i.slug, i.name ] } %>
 <table class="book-table">
   <thead><tr><th>Name</th><th>Kind</th><th class="num">Rows</th><th>For example</th></tr></thead>
   <tbody>
@@ -6,7 +7,7 @@
         <td><%= link_to table.name, entry_path(table) %></td>
         <td><%= table.kind.humanize %></td>
         <td class="num"><%= table.entries.size %></td>
-        <td class="muted"><%= table.entries.first(3).map { |e| e["text"] || e["item"] }.join(" · ").truncate(80) %></td>
+        <td class="muted"><%= table.entries.first(3).map { |e| e["text"] || (e["gil"] && "#{e['gil']} gil") || item_names[e["item"]] || e["item"] }.join(" · ").truncate(80) %></td>
       </tr>
     <% end %>
   </tbody>

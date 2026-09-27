@@ -27,7 +27,7 @@
         </ul>
       <% end %>
       <%= render "maps/legend" %>
-      <p class="hint">The GM moves the party. Sit at the table as GM to edit the map.</p>
+      <p class="hint"><%= can_gm?(@campaign) ? "Sit at the table as GM to edit the map and move the party." : "The GM moves the party." %></p>
     </aside>
   <% end %>
 </div>

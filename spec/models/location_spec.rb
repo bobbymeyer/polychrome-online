@@ -9,19 +9,38 @@ RSpec.describe Location do
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:cave) { world.location_templates.find_by!(slug: "goblin_cave") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
-  let(:dungeon) { campaign.locations.create!(location_template: cave, seed: 11) }
+  let(:dungeon) do
+    campaign.locations.create!(location_template: cave, seed: 11).tap do |d|
+      campaign.update!(current_node: campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 1, y: 1, location: d))
+    end
+  end
 
   describe "the books" do
     it "validates generator-table rows against their kind" do
       table = world.generator_tables.new(name: "Bad", kind: "stock", entries: [ { item: "excalibur" }, { text: "Loose text" } ])
       expect(table).not_to be_valid
-      expect(table.errors[:entries]).to include(/excalibur is not in the Armory/, /doesn't use: text/)
+      expect(table.errors[:entries]).to include(/excalibur is not in the Armory/)
+      expect(table.entries).to eq([ { "item" => "excalibur" } ]) # a stock table has no text: that row went
 
       table = world.generator_tables.new(name: "Buildings", kind: "buildings",
                                          entries: { "0" => { "text" => "Hut", "width" => "40", "height" => "", "roof" => "spire" } })
       expect(table.entries).to eq([ { "text" => "Hut", "width" => 40, "roof" => "spire" } ])
       expect(table).not_to be_valid
       expect(table.errors[:entries]).to include(/unknown roof spire/)
+    end
+
+    it "adds pasted lines as rows, by the kind's format, or none if a line doesn't read" do
+      names = world.generator_tables.create!(name: "Names", kind: "names", entries: [ { text: "Mira" } ], paste: "Oskar\n\n  Lenne | 3 \n")
+      expect(names.entries).to eq([ { "text" => "Mira" }, { "text" => "Oskar" }, { "text" => "Lenne", "weight" => 3 } ])
+      expect(names.paste).to be_nil
+
+      loot = world.generator_tables.create!(name: "Loot", kind: "treasure", paste: "Potion\n150 gil | 2")
+      expect(loot.entries).to eq([ { "item" => "potion" }, { "gil" => 150, "weight" => 2 } ])
+
+      bad = world.generator_tables.new(name: "Stock", kind: "stock", paste: "potion\nExcalibur")
+      expect(bad).not_to be_valid
+      expect(bad.errors[:paste]).to include(/line 2: nothing in the Armory is called Excalibur/)
+      expect(bad.entries).to be_empty
     end
 
     it "turns flat template fields into generator settings, with defaults" do
@@ -41,8 +60,8 @@ RSpec.describe Location do
     end
 
     it "draws only from the template's chosen tables" do
-      expect(village.table_entries.keys).to match_array(%w[place_names names hooks service_names buildings stock])
-      names = village.table_entries["place_names"].map { |e| e["text"] }
+      expect(village.table_entries.keys).to match_array(%w[town_names names hooks service_names buildings stock])
+      names = village.table_entries["town_names"].map { |e| e["text"] }
       expect(names).to include("Tule")
       expect(names).not_to include("Wind Shrine")
     end
@@ -74,6 +93,17 @@ RSpec.describe Location do
       expect(town.seed).not_to eq(11)
       expect(town.view["services"].find { |s| s["kind"] == "inn" }["name"]).to eq(inn["name"])
       expect(town.roster.first["npc"]).to eq(real)
+    end
+
+    it "never rolls a second person with a name the cast already has" do
+      first, second = town.view["npcs"].first(2)
+      campaign.npcs.create!(name: second["name"]) # someone the party already knows, elsewhere
+      town.pin!(first["key"])
+      shown = town.townsfolk
+      expect(shown.first["name"]).to eq(first["name"])
+      expect(shown.map { |n| n["name"] }).to eq(shown.map { |n| n["name"] }.uniq)
+      expect(shown.second["name"]).not_to eq(second["name"])
+      expect(shown.drop(2)).to eq(town.view["npcs"].drop(2)) # nobody else changes
     end
 
     it "unpins, letting the reroll replace them" do
@@ -115,6 +145,15 @@ RSpec.describe Location do
         .to raise_error(ArgumentError, /Bestiary/)
     end
 
+    it "can only be explored while the party is there, and is left when they travel on" do
+      dungeon.enter!
+      road = campaign.map_nodes.create!(name: "Road", kind: "field", x: 2, y: 2)
+      campaign.travel!(campaign.map_edges.create!(from_node: campaign.current_node, to_node: road))
+      expect(dungeon.reload.progress["current"]).to be_nil
+      expect(dungeon.visited).to include(entrance)
+      expect { dungeon.enter! }.to raise_error(ArgumentError, /isn't at/)
+    end
+
     it "is explored room by room, each room playing its decision at the table" do
       dungeon.enter!
       expect(dungeon.progress["current"]).to eq(entrance)
@@ -152,6 +191,14 @@ RSpec.describe Location do
         end
       end
       expect(rooms).to be_present
+    end
+
+    it "hands over gil treasure to the party's purse" do
+      dungeon.enter!
+      key = dungeon.add_room!(name: "Strongbox", connect: entrance, decision: { "kind" => "treasure", "gil" => 150 })
+      dungeon.move_to!(key)
+      expect { dungeon.take_treasure!(key) }.to change { campaign.reload.gil }.by(150)
+      expect(campaign.messages.last.body).to eq("Found 150 gil in Strongbox.")
     end
 
     it "shows players only the rooms they've been in and the exits out of them" do

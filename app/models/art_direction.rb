@@ -5,7 +5,7 @@
 module ArtDirection
   # The book (route namespace) each kind of book entry lives in.
   BOOKS = { "monster" => :bestiary, "job" => :compendium, "item" => :armory, "ability" => :grimoire,
-            "location_template" => :gazetteer, "encounter_table" => :encounters, "generator_table" => :generation }.freeze
+            "location_template" => :gazetteer, "encounter_table" => :encounters }.freeze
 
   # Every kind of image slot: the books, and speaker portraits.
   KINDS = (BOOKS.keys + %w[portrait]).freeze

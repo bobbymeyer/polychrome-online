@@ -49,7 +49,11 @@ module BattleFixtures
       goblin_punch: { name: "Goblin Punch", kind: "skill", target: "single_enemy", cost: { mp: 0 },
                       effects: [ { primitive: "physical", power: 150, hits: 1 } ] },
       esuna: { name: "Esuna", kind: "magic", target: "single_ally", cost: { mp: 5 },
-               effects: [ { primitive: "cleanse" } ] }
+               effects: [ { primitive: "cleanse" } ] },
+      steal: { name: "Steal", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+               effects: [ { primitive: "steal", chance: 50 } ] },
+      libra: { name: "Libra", kind: "magic", target: "single_enemy", cost: { mp: 1 },
+               effects: [ { primitive: "scan" } ] }
     }
   end
 
@@ -70,16 +74,16 @@ module BattleFixtures
       { id: "vivi", name: "Vivi", stats: stats(max_hp: 70, max_mp: 40, mag: 18, str: 6, atk: 4, agi: 9),
         abilities: %w[fire firaga_all blizzard bio sleep silence drain meteor] },
       { id: "rosa", name: "Rosa", stats: stats(max_hp: 80, max_mp: 40, mag: 16, spr: 16, atk: 5, agi: 10),
-        abilities: %w[cure cura raise haste] },
+        abilities: %w[cure cura raise haste libra] },
       { id: "locke", name: "Locke", stats: stats(max_hp: 90, str: 11, atk: 12, agi: 18),
-        abilities: %w[double_cut smoke_bomb] }
+        abilities: %w[double_cut smoke_bomb steal] }
     ]
   end
 
   def goblins(count = 3)
     [ { id: "goblin", name: "Goblin", count: count,
        stats: stats(max_hp: 45, max_mp: 0, str: 9, atk: 8, agi: 8, def: 3, mdef: 2),
-       elements: { fire: "weak" }, rewards: { exp: 6, gil: 12 },
+       elements: { fire: "weak" }, rewards: { exp: 6, gil: 12 }, drops: [ { item: "potion", chance: 30 } ],
        abilities: %w[goblin_punch],
        ai: [ { if: { chance: 25 }, use: "goblin_punch" }, { use: "attack" } ] } ]
   end

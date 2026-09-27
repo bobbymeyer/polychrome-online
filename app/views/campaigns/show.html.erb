@@ -31,7 +31,15 @@
           <%= entry_portrait(character.job, size: :small) %>
           <div>
             <h3><%= character.name %></h3>
-            <p class="muted"><%= character.player_name.presence || "No player" %></p>
+            <p class="muted">
+              <% if character.user_id == current_user.id %>
+                <strong>You</strong>
+              <% elsif character.user %>
+                Played by <%= character.user.name %>
+              <% else %>
+                Unclaimed: sit as them at the table to play them
+              <% end %>
+            </p>
             <p>Lv <%= character.level %> <%= character.job.name %> <span class="muted">(job Lv <%= character.character_job.level %>)</span></p>
             <p>HP <%= character.current_hp %>/<%= character.stats["max_hp"] %> · MP <%= character.current_mp %>/<%= character.stats["max_mp"] %></p>
           </div>
@@ -155,7 +163,12 @@
     <% else %>
       <ul class="refs">
         <% @battles.each do |battle| %>
-          <li><%= link_to battle.name, battle_path(battle) %> <span class="muted">· <%= battle.status.humanize %> · <%= time_ago_in_words(battle.updated_at) %> ago</span></li>
+          <li>
+            <%= link_to battle.name, battle_path(battle) %> <span class="muted">· <%= battle.status_label %> · <%= time_ago_in_words(battle.updated_at) %> ago</span>
+            <% if !battle.over? && can_gm?(@campaign) %>
+              <%= button_to "Call off", call_off_battle_path(battle), class: "link-button", form: { class: "inline", data: { turbo_confirm: "Call off #{battle.name}? Nothing that happened in it counts." } } %>
+            <% end %>
+          </li>
         <% end %>
       </ul>
     <% end %>

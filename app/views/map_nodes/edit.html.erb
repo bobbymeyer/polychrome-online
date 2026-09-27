@@ -16,8 +16,9 @@
         <%= form_with url: map_node_location_path(@node), class: "book-form inline-form", data: { turbo_frame: "_top" } do |f| %>
           <div class="field">
             <%= label_tag :location_template_id, "Roll from" %>
-            <%= select_tag :location_template_id, options_for_select(templates.map { |t| [ "#{t.name} (#{t.kind})", t.id ] },
-                                                                     templates.find { |t| t.kind == (@node.kind == "dungeon" ? "dungeon" : "town") }&.id) %>
+            <% same_kind = templates.find { |t| t.kind == @node.kind } %>
+            <%= select_tag :location_template_id, options_for_select(templates.map { |t| [ "#{t.name} (#{t.kind})", t.id ] }, same_kind&.id),
+                           include_blank: ("Choose a template" unless same_kind), required: true %>
           </div>
           <%= f.submit "Generate", class: "button" %>
         <% end %>
@@ -42,7 +43,7 @@
         </div>
         <div class="field">
           <%= f.label :encounter_table_id, "Encounters" %>
-          <%= f.select :encounter_table_id, @world.encounter_tables.order(:tier, :name).map { |t| [ "#{t.name} (tier #{t.tier})", t.id ] }, include_blank: "None" %>
+          <%= f.select :encounter_table_id, encounter_table_options(@world), include_blank: "None (a safe path)" %>
         </div>
         <%= f.submit "Connect", class: "button" %>
       <% end %>

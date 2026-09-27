@@ -72,6 +72,53 @@ class Campaign < ApplicationRecord
     end
   end
 
+  # Sell something a party member is wearing: it comes off, then sells.
+  def sell_worn!(character, slot, at:, by:)
+    item = character.equipment_slots.find_by(slot: slot)&.item or raise ArgumentError, "#{character.name} isn't wearing anything there"
+    transaction do
+      character.unequip!(slot)
+      sell!(item, 1, at: at, by: by)
+    end
+  end
+
+  # --- using items outside battle ---------------------------------------------
+
+  def battle_on?
+    battles.where(status: "input").exists?
+  end
+
+  # The battle the table points at: the newest one still being fought.
+  def current_battle
+    battles.where(status: "input").order(created_at: :desc, id: :desc).first
+  end
+
+  # Items from the bag that do something outside battle (healing, revival).
+  def field_items
+    bag.select { |row| row.item.consumable? && Battle::Field.usable?(row.item.to_engine(row.quantity)) }
+  end
+
+  # One party member uses an item from the bag on another (or themselves),
+  # through the engine's own formulas (Battle::Field) and the campaign's RNG.
+  def use_item!(item, user:, target:)
+    raise ArgumentError, "Not while a battle is on: use it from the battle's Item menu" if battle_on?
+    raise ArgumentError, "#{target.name} isn't in this party" unless target.campaign_id == id
+
+    transaction do
+      reload
+      raise ArgumentError, "There's no #{item.name} in the bag" unless quantity_of(item).positive?
+
+      before = target.current_hp
+      hp, _events, next_rng = Battle::Field.use_item(item.to_engine(1), user: user.battle_spec, target: target.battle_spec, rng: rng)
+      take_item!(item)
+      target.update!(hp: hp)
+      update!(rng: next_rng)
+      on = target == user ? "" : " on #{target.name}"
+      messages.create!(kind: "system", body: "#{user.name} uses #{item.name}#{on}: HP #{before} → #{hp}.")
+    end
+  rescue Battle::InvalidAction => e
+    raise ArgumentError, e.message
+  end
+
   # The consumables a battle can use, as the engine wants them.
   def battle_items
     bag.select { |row| row.item.consumable? && row.item.effects.any? }
@@ -113,6 +160,7 @@ class Campaign < ApplicationRecord
         self.rng, rolled = Pointcrawl::Encounters.roll(rng, edge.encounter_table.entries, edge.state)
       end
       destination.update!(visible: true)
+      origin.location&.leave!
       self.current_node = destination
       self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled }
       save!
@@ -129,19 +177,20 @@ class Campaign < ApplicationRecord
   def place_party!(node)
     transaction do
       node.update!(visible: true)
+      current_node&.location&.leave! unless current_node == node
       update!(current_node: node)
       messages.create!(kind: "system", body: "The party is at #{node.name}.")
     end
     broadcast_map
   end
 
-  def start_pending_encounter!
+  def start_pending_encounter!(input_seconds: nil)
     encounter = pending_encounter or raise ArgumentError, "No encounter is waiting"
     standing = characters.order(:created_at).select(&:conscious?)
     raise ArgumentError, "Nobody is standing to fight" if standing.empty?
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
-                                 encounter: encounter["monsters"])
+                                 encounter: encounter["monsters"], input_seconds: input_seconds)
     update!(pending_encounter: nil)
     battle
   end
@@ -168,7 +217,46 @@ class Campaign < ApplicationRecord
   end
 
   # An inn: everyone back to full HP and MP, the fallen included.
+  # What the party learns about monsters by fighting them (§ Play: weaknesses
+  # are found, not given). An element that lands shows how the monster takes
+  # it; a status it shrugs off shows it's immune, one that sticks that it
+  # isn't; a scan shows everything. Kept per monster, across battles.
+  def learn_from!(events, state)
+    units = state["units"].index_by { |u| u["id"] }
+    learned = known_affinities.deep_dup
+    events.each do |event|
+      target = units[event["target"]]
+      slug = target && target["side"] == "enemy" && target.dig("image", "slug")
+      next unless slug
+
+      notes = (learned[slug] ||= {})
+      if event["type"] == "scan"
+        Battle::ELEMENTS.each { |element| notes[element] = target["elements"].fetch(element, "none") }
+        Battle::STATUSES.each { |kind| notes[kind] = target["status_immune"].include?(kind) ? "immune" : "none" }
+      elsif event["element"]
+        notes[event["element"]] = target["elements"].fetch(event["element"], "none")
+      elsif event["type"] == "miss" && event["reason"] == "immune" && event["status"]
+        notes[event["status"]] = "immune"
+      elsif event["type"] == "status_applied"
+        notes[event["status"]] = "none"
+      end
+    end
+    update!(known_affinities: learned) if learned != known_affinities
+  end
+
+  # The dungeon the party is inside right now, if any.
+  def dungeon_in_progress
+    location = current_node&.location
+    location if location&.dungeon? && location.progress["current"]
+  end
+
+  # Everyone back to full, told at the table. Not in the middle of a fight.
   def rest!
-    characters.update_all(hp: nil, mp: nil)
+    raise ArgumentError, "Not while a battle is on" if battle_on?
+
+    transaction do
+      characters.update_all(hp: nil, mp: nil)
+      messages.create!(kind: "system", body: "The party rests. Everyone is back to full HP and MP.")
+    end
   end
 end

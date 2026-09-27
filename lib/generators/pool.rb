@@ -32,6 +32,16 @@ module Generators
       entries.find { |entry| (target -= weight(entry)).negative? }
     end
 
+    # Like #pick, but prefers rows this pool hasn't handed out yet, so one
+    # place doesn't repeat itself until its table runs out. Same number of
+    # draws either way.
+    def pick_fresh(entries)
+      fresh = entries.reject { |entry| used.include?(entry.except("weight")) }
+      chosen = pick(fresh.any? { |entry| weight(entry).positive? } ? fresh : entries)
+      used << chosen.except("weight") if chosen
+      chosen
+    end
+
     # Up to n distinct entries, weighted, without replacement.
     def sample(entries, n)
       remaining = entries.select { |entry| weight(entry).positive? }
@@ -44,6 +54,10 @@ module Generators
     end
 
     private
+
+    def used
+      @used ||= Set.new
+    end
 
     def weight(entry)
       [ entry.fetch("weight", 1).to_i, 0 ].max

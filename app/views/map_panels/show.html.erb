@@ -5,15 +5,7 @@
     <h2><%= here ? "The party is at #{here.name}" : "The party isn't on the map" %></h2>
 
     <% if (encounter = @campaign.pending_encounter) %>
-      <section class="encounter-call">
-        <h3>Encounter!</h3>
-        <p><%= @campaign.describe_encounter(encounter["monsters"]) %> <span class="muted">(<%= encounter["table"] %>)</span></p>
-        <div class="menu menu--row">
-          <%= button_to "Fight", campaign_encounter_path(@campaign), class: "menu__item menu__item--accent", form: { data: { turbo_frame: "_top" } } %>
-          <%= button_to "Wave it off", campaign_encounter_path(@campaign), method: :delete, class: "menu__item",
-                        form: { data: { turbo_confirm: "Wave off the encounter? The table will see that you did." } } %>
-        </div>
-      </section>
+      <%= render "encounters/call", encounter: encounter %>
     <% end %>
 
     <% if here %>
@@ -25,7 +17,8 @@
         <div class="menu play">
           <% paths.each do |edge| %>
             <% there = edge.other_end(here) %>
-            <% label = safe_join([ "To #{there.name}", tag.span(edge.state, class: "menu__cost") ], " ") %>
+            <% risk = edge.encounter_table ? "#{edge.state} · #{edge.encounter_table.name}" : "#{edge.state} · safe" %>
+            <% label = safe_join([ "To #{there.name}", tag.span(edge.blocked? ? edge.state : risk, class: "menu__cost") ], " ") %>
             <% if edge.blocked? %>
               <button class="menu__item" disabled><%= label %></button>
             <% else %>
@@ -33,7 +26,7 @@
             <% end %>
           <% end %>
         </div>
-        <p class="hint">Open paths with an encounter table meet something <%= Pointcrawl::Encounters::CHANCE["open"] %>% of the time; dangerous paths, always. The roll uses the campaign's seeded RNG.</p>
+        <p class="hint">A path with an encounter table meets something <%= Pointcrawl::Encounters::CHANCE["open"] %>% of the time if it's open, every time if it's dangerous. A path with no table is safe: give it one to make it bite.</p>
       <% end %>
     <% else %>
       <p class="hint">Select a place, then "Put the party here".</p>

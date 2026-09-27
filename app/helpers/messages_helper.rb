@@ -9,7 +9,8 @@ module MessagesHelper
     if image
       image_tag(url_for(image), alt: "", class: "speaker-portrait speaker-portrait--#{size}")
     else
-      tag.span(name.first, class: "speaker-portrait speaker-portrait--#{size} speaker-portrait--plate #{'speaker-portrait--narrator' unless speaker}")
+      tag.span(name.first, class: "speaker-portrait speaker-portrait--#{size} speaker-portrait--plate #{'speaker-portrait--narrator' unless speaker}",
+                           style: (plate_style(name) if speaker))
     end
   end
 

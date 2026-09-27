@@ -7,7 +7,7 @@
   <header class="book-page__header">
     <%= entry_portrait(@character.job) %>
     <div>
-      <p class="eyebrow">Character<%= " · played by #{@character.player_name}" if @character.player_name.present? %></p>
+      <p class="eyebrow">Character<% if (player = @character.user&.name.presence || @character.player_name.presence) %> · played by <%= player %><% end %></p>
       <h1><%= @character.name %></h1>
       <dl class="facts">
         <dt>Level</dt>
@@ -26,7 +26,7 @@
 
   <section class="window">
     <h2>Stats</h2>
-    <p class="hint">Derived, never stored: level base × job, plus equipment, plus the job's innates.</p>
+    <p class="hint">What their level gives, shaped by their job, then their gear, then the job's innate abilities.</p>
     <table class="book-table book-table--plain stat-table">
       <thead>
         <tr><th>Stat</th><th class="num">Base</th><th class="num">Job</th><th class="num">Gear</th><th class="num">Total</th></tr>
@@ -44,6 +44,45 @@
       </tbody>
     </table>
   </section>
+
+  <% if can_manage?(@character) %>
+    <section class="window" id="items">
+      <h2>Items</h2>
+      <% usable = @campaign.field_items %>
+      <% if @campaign.battle_on? %>
+        <% open_battle = @campaign.battles.where(status: "input").order(:id).last %>
+        <p class="hint">A battle is on (<%= link_to open_battle.name, battle_path(open_battle) %>): use items from its Item menu. The GM can end it from the battle if it's been abandoned.</p>
+      <% elsif usable.empty? %>
+        <p class="empty">Nothing in the bag that works outside battle. Potions and Phoenix Downs do.</p>
+      <% else %>
+        <% party = @campaign.characters.order(:created_at) %>
+        <table class="book-table book-table--plain shop-table">
+          <tbody>
+            <% usable.each do |row| %>
+              <% revive = Battle::State.revives?(row.item.to_engine(1)) %>
+              <tr>
+                <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span><br><span class="hint"><%= row.item.effects.map { |e| describe_effect(e) }.join(" · ") %></span></td>
+                <td class="shop-table__buy">
+                  <%= form_with url: character_item_use_path(@character), class: "inline-form shop-form" do |f| %>
+                    <%= hidden_field_tag :item, row.item.slug, id: nil %>
+                    <% if row.item.target == "self" %>
+                      <span class="muted"><%= @character.name %></span>
+                    <% else %>
+                      <%= select_tag :target_id, options_for_select(party.map { |c| [ "#{c.name} (HP #{c.current_hp}/#{c.stats['max_hp']})", c.id ] },
+                                                                   (revive ? party.find { |c| !c.conscious? } : party.min_by { |c| c.current_hp.fdiv(c.stats["max_hp"]) })&.id),
+                                     id: "use_#{row.item.slug}_target", "aria-label": "Use #{row.item.name} on" %>
+                    <% end %>
+                    <%= f.submit "Use", class: "button play" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p class="hint"><%= @character.name %> uses it. Items that cure statuses only work in battle, where statuses are.</p>
+      <% end %>
+    </section>
+  <% end %>
 
   <section class="window">
     <h2>Equipment</h2>

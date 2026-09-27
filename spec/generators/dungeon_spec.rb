@@ -23,6 +23,13 @@ RSpec.describe Generators::Dungeon do
     expect(dungeon(9)).not_to eq(dungeon(10))
   end
 
+  it "doesn't repeat an event until its table runs out" do
+    dungeons.each do |d|
+      texts = d["rooms"].filter_map { |room| room["decision"]["text"] if room["decision"]["kind"] == "event" }
+      expect(texts.uniq.size).to eq([ texts.size, dungeon_tables["room_events"].size ].min)
+    end
+  end
+
   # §7: "Every room must carry a decision."
   it "gives every room a decision, and every decision what it needs" do
     dungeons.each do |d|

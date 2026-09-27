@@ -11,7 +11,7 @@ module Generators
   #             "decisions" => { "encounter" => 4, "event" => 2, "treasure" => 2, "fork" => 1 },
   #             "boss" => { "goblin_chief" => 1 } }            optional
   # encounters: encounter-table entries ([{ "weight", "monsters" }])
-  # tables:   { "place_names" | "rooms" | "room_events" | "forks" | "treasure" => [entries] }
+  # tables:   { "dungeon_names" | "rooms" | "room_events" | "forks" | "treasure" => [entries] }
   #
   # Pure: same seed, same dungeon.
   module Dungeon
@@ -52,7 +52,7 @@ module Generators
 
       {
         "kind" => "dungeon",
-        "name" => pool.pick(tables.fetch("place_names", []))&.fetch("text") || "Nameless Depths",
+        "name" => pool.pick(tables.fetch("dungeon_names", []))&.fetch("text") || "Nameless Depths",
         "rooms" => rooms,
         "paths" => edge_list,
         "entrance" => "room-0",
@@ -145,15 +145,15 @@ module Generators
       when "encounter"
         { "kind" => "encounter", "monsters" => pool.pick(encounters)["monsters"] }
       when "treasure"
-        { "kind" => "treasure", "item" => pool.pick(tables["treasure"])["item"] }
+        { "kind" => "treasure" }.merge(pool.pick_fresh(tables["treasure"]).slice("item", "gil"))
       when "fork"
         costly = onward[pool.int(onward.size)]
         path = edge_list.find { |e| [ e["from"], e["to"] ].sort == [ room["key"], "room-#{costly}" ].sort }
-        cost = pool.pick(tables.fetch("forks", []))&.fetch("text") || "The way is hard."
+        cost = pool.pick_fresh(tables.fetch("forks", []))&.fetch("text") || "The way is hard."
         path["cost"] = cost
         { "kind" => "fork", "text" => cost, "costly_path" => path["key"] }
       else
-        { "kind" => "event", "text" => pool.pick(tables.fetch("room_events", []))&.fetch("text") || "Something stirs in the dark." }
+        { "kind" => "event", "text" => pool.pick_fresh(tables.fetch("room_events", []))&.fetch("text") || "Something stirs in the dark." }
       end
     end
 

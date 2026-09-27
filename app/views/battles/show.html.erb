@@ -6,6 +6,7 @@
 
 <div class="battle" data-controller="battle-player"
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
+     data-battle-player-next-value="<%= @battle.battle_actions.count %>"
      data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key">
   <%= turbo_stream_from @battle %>
 
@@ -18,6 +19,8 @@
     </div>
     <div class="battle__controls">
       <%= render "battles/playback", battle: @battle %>
+      <button type="button" class="button button--quiet" data-battle-player-target="fast"
+              data-action="battle-player#toggleFast" aria-pressed="false" title="Play battles twice as fast on this device">Fast</button>
       <button type="button" class="button button--quiet" data-battle-player-target="skip"
               data-action="battle-player#skip" title="Or press Enter, Space or Esc" hidden>Skip</button>
     </div>
