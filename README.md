@@ -588,6 +588,14 @@ gm_override`) plus: `command_accepted round_start turn_order round_end revive
 defend buff_applied buff_expired turn_skipped action_failed timeout
 desperation unit_joined unit_left`.
 
+**Dice.** Every chance the engine rolls is a d100 (`Rng#d100`, the same
+single draw as before, so the stream and the replays are unchanged). The
+rolls that decide something are recorded in their events as `roll` and
+`needed`: hits that miss, crits, statuses landing or resisted, steals and
+getaways. The board shows each one as a die beside the unit (green when it
+came in, wine when it didn't), and the log says "(rolled 98, needed 90 or
+under)". The property specs check the dice are honest.
+
 **The timing meter.** An ability command can carry `"timing" => "perfect"`,
 from the meter a player stops when confirming a move (Mario RPG's timed
 hits). A Perfect raises every power in the move by a quarter and every

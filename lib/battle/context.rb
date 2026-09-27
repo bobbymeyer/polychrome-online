@@ -126,14 +126,14 @@ module Battle
       emit(:revive, target: target["id"], hp: target["hp"])
     end
 
-    def add_status(target, kind, turns)
+    def add_status(target, kind, turns, **extra)
       existing = target["statuses"].find { |s| s["kind"] == kind }
       if existing
         existing["turns"] = [ existing["turns"], turns ].max
       else
         target["statuses"] << { "kind" => kind, "turns" => turns }
       end
-      emit(:status_applied, target: target["id"], status: kind, turns: turns)
+      emit(:status_applied, target: target["id"], status: kind, turns: turns, **extra)
     end
 
     def remove_status(target, kind, reason:)

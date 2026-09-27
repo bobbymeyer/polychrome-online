@@ -753,6 +753,15 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .timing-meter.is-perfect .timing-meter__result { color: var(--sun-yellow); }
 .popup--perfect { color: var(--sun-yellow); -webkit-text-stroke: 1px var(--ink); font-size: 18px; line-height: 22px; margin-top: -48px; }
 
+/* The dice: a d100 that decided something, beside the unit it decided for. */
+.popup--die {
+  min-width: 34px; padding: 3px 6px; margin-left: 30px; margin-top: -8px; text-align: center;
+  font: var(--display); font-size: 18px; line-height: 22px; letter-spacing: 0; color: var(--paper);
+  background: var(--ink); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+.popup--die.is-in { background: var(--forest-green); }
+.popup--die.is-out { background: var(--wine-red); }
+
 /* Taking a line back: quiet, and only on hover or focus once shown. */
 .chat-line__retract-form { display: inline; margin: 0; }
 .chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }

@@ -119,11 +119,11 @@ module BattlesHelper
       verb = state["abilities"].dig(event["ability"], "kind") == "magic" ? "casts" : "uses"
       "#{name.('actor')} #{verb} #{ability_name(state, event['ability'])}."
     when "item_used" then "#{name.('actor')} uses #{item_phrase(event['name'])}."
-    when "crit" then "Critical hit!"
+    when "crit" then "Critical hit!#{dice_note(event)}"
     when "damage" then damage_line(event, name.("target"))
     when "heal" then event["absorbed"] ? "#{name.('target')} absorbs #{event['amount']} HP." : "#{name.('target')} recovers #{event['amount']} HP."
     when "miss" then miss_line(event, name.("target"), state)
-    when "status_applied" then "#{name.('target')}: #{event['status'].humanize}."
+    when "status_applied" then "#{name.('target')}: #{event['status'].humanize}.#{dice_note(event)}"
     when "status_expired" then status_expired_line(event, name.("target"))
     when "buff_applied"
       "#{name.('target')}'s #{stat_label(event['stat'])} #{event['amount'].positive? ? 'rises' : 'falls'}."
@@ -131,9 +131,9 @@ module BattlesHelper
     when "ko" then state["units"].find { |u| u["id"] == event["target"] }&.dig("side") == "party" ? "#{name.('target')} is down!" : "#{name.('target')} is defeated."
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
-    when "steal" then "#{name.('actor')} stole #{event['name']} from #{name.('target')}!"
+    when "steal" then "#{name.('actor')} stole #{event['name']} from #{name.('target')}!#{dice_note(event)}"
     when "scan" then scan_line(event, name.("target"))
-    when "flee" then flee_line(event)
+    when "flee" then "#{flee_line(event)}#{dice_note(event)}"
     when "turn_skipped" then skipped_line(event, name.("unit"))
     when "action_failed" then action_failed_line(event, name.("actor"), state)
     when "timeout" then "Time's up! #{event['defaulted'].map { |id| unit_name(state, id) }.to_sentence} act on reflex." if event["defaulted"].any?
@@ -162,13 +162,13 @@ module BattlesHelper
 
   def miss_line(event, target, state)
     case event["reason"]
-    when "evaded" then "#{target} dodges."
+    when "evaded" then "#{target} dodges.#{dice_note(event)}"
     when "immune" then event["damage_type"] ? "It doesn't affect #{target}…" : "#{target} is unaffected."
-    when "resisted" then "#{target} resists #{event['status'].to_s.humanize}."
+    when "resisted" then "#{target} resists #{event['status'].to_s.humanize}.#{dice_note(event)}"
     when "not_ko" then "#{target} is already standing."
     when "nothing_to_cure" then "#{target} has nothing to cure."
     when "nothing_to_steal" then "#{target} has nothing to steal."
-    when "steal_failed" then "Couldn't steal from #{target}."
+    when "steal_failed" then "Couldn't steal from #{target}.#{dice_note(event)}"
     else "#{event['item'] ? item_name(state, event['item']) : ability_name(state, event['ability'])} has no target."
     end
   end
@@ -205,6 +205,11 @@ module BattlesHelper
   # "a Potion", "an Antidote", "an Echo Screen".
   def item_phrase(name)
     "#{name.to_s.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{name}"
+  end
+
+  # The d100 behind an outcome, for the log: " (rolled 98, needed 90 or under)".
+  def dice_note(event)
+    " (rolled #{event['roll']}, needed #{event['needed']} or under)" if event["roll"]
   end
 
   def flee_line(event)

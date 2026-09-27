@@ -47,14 +47,14 @@ module Battle
       end
 
       chance = (effect.fetch("chance", 50) + (ctx.stat(actor, "agi") - ctx.stat(target, "agi"))).clamp(5, 95)
-      success = ctx.rng.percent?(chance)
+      success, roll = ctx.rng.d100(chance)
       pick = ctx.rng.int(drops.sum { |d| d["chance"] })
-      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "steal_failed") unless success
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "steal_failed", roll: roll, needed: chance) unless success
 
       drop = drops.find { |d| (pick -= d["chance"]).negative? }
       target["stolen"] = true
       (ctx.state["stolen"] ||= []) << drop["item"]
-      ctx.emit(:steal, actor: actor["id"], target: target["id"], item: drop["item"], name: drop.fetch("name", drop["item"]))
+      ctx.emit(:steal, actor: actor["id"], target: target["id"], item: drop["item"], name: drop.fetch("name", drop["item"]), roll: roll, needed: chance)
     end
 
     # scan: the target's types, its own affinities, what it shrugs off, and
@@ -78,17 +78,20 @@ module Battle
     # physical(power, hits): (atk + str) * power%, softened by def.
     def physical(ctx, actor, target, effect)
       # Non-short-circuit `|`: the hit roll is drawn even on an auto-hit.
-      unless auto_hit?(ctx, target) | ctx.rng.percent?(hit_chance(ctx, actor, target))
-        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "evaded")
+      needed = hit_chance(ctx, actor, target)
+      hit, roll = ctx.rng.d100(needed)
+      unless auto_hit?(ctx, target) || hit
+        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "evaded", roll: roll, needed: needed)
       end
 
-      crit = ctx.rng.percent?(crit_chance(ctx, actor, target))
+      crit_needed = crit_chance(ctx, actor, target)
+      crit, crit_roll = ctx.rng.d100(crit_needed)
       base = (ctx.stat(actor, "atk") + ctx.stat(actor, "str")) * effect.fetch("power", 100) / 100
       amount = mitigate(vary(ctx, base), ctx.stat(target, "def"))
       amount *= 2 if crit
       amount /= 2 if target["defending"]
       # Typed after every draw, so the stream doesn't depend on the chart.
-      return if typed(ctx, actor, target, effect["type"], amount, crit: crit)
+      return if typed(ctx, actor, target, effect["type"], amount, crit: crit, roll: crit_roll, needed: crit_needed)
 
       ctx.remove_status(target, "sleep", reason: "woke") if ctx.alive?(target)
     end
@@ -102,7 +105,7 @@ module Battle
     # Deal damage of a type (nil: typeless) through the chart and the
     # target's affinities. Returns true when it didn't land as damage
     # (no effect, or absorbed).
-    def typed(ctx, actor, target, type, amount, crit: false)
+    def typed(ctx, actor, target, type, amount, crit: false, roll: nil, needed: nil)
       percent = Types.effectiveness(type, target)
       if percent == 0 # rubocop:disable Style/NumericPredicate -- may be :absorb
         ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", damage_type: type)
@@ -115,7 +118,7 @@ module Battle
         return true
       end
 
-      ctx.emit(:crit, actor: actor["id"], target: target["id"]) if crit
+      ctx.emit(:crit, actor: actor["id"], target: target["id"], roll: roll, needed: needed) if crit
       extra = type ? { damage_type: type, effectiveness: percent } : {}
       ctx.deal_damage(target, amount, actor: actor["id"], crit: crit, **extra)
       false
@@ -128,14 +131,16 @@ module Battle
       kind = effect["kind"]
       chance = effect.fetch("chance", 100)
       chance = chance * 100 / (100 + ctx.stat(target, "spr")) if chance < 100 && target["side"] != actor["side"]
-      landed = ctx.rng.percent?(chance) || chance >= 100
+      came_in, roll = ctx.rng.d100(chance)
+      landed = came_in || chance >= 100
+      dice = chance < 100 ? { roll: roll, needed: chance } : {}
 
       if target["status_immune"].include?(kind) || Types.status_immune?(target, kind)
         ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", status: kind)
       elsif !landed
-        ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "resisted", status: kind)
+        ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "resisted", status: kind, **dice)
       else
-        ctx.add_status(target, kind, effect.fetch("duration", 3))
+        ctx.add_status(target, kind, effect.fetch("duration", 3), **dice)
       end
     end
 
@@ -192,11 +197,12 @@ module Battle
       mine = average_agi(ctx, ctx.allies(actor))
       theirs = average_agi(ctx, ctx.opponents(actor))
       chance = (50 + (mine - theirs) * 2).clamp(10, 95)
-      if ctx.rng.percent?(chance)
-        ctx.emit(:flee, actor: actor["id"], success: true)
+      escaped, roll = ctx.rng.d100(chance)
+      if escaped
+        ctx.emit(:flee, actor: actor["id"], success: true, roll: roll, needed: chance)
         ctx.end_by_flight
       else
-        ctx.emit(:flee, actor: actor["id"], success: false, reason: "blocked")
+        ctx.emit(:flee, actor: actor["id"], success: false, reason: "blocked", roll: roll, needed: chance)
       end
     end
 

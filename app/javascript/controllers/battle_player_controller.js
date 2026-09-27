@@ -206,13 +206,16 @@ export default class extends Controller {
         gesture(tl, this.sprite(e.target), "float", at)
         return 380
       case "crit":
+        this.die(tl, e.actor, e, at)
         this.popup(tl, e.target, "CRIT!", "crit", at)
         gesture(tl, this.stageTarget, "flash", at)
         return 260
       case "miss":
+        this.die(tl, e.reason === "resisted" ? e.target : e.actor, e, at)
         this.popup(tl, e.target || e.actor, { immune: e.damage_type ? "NO EFFECT" : "IMMUNE", nothing_to_cure: "NO EFFECT", nothing_to_steal: "NOTHING", steal_failed: "MISSED" }[e.reason] || "MISS", "miss", at)
         return 380
       case "status_applied":
+        this.die(tl, e.target, e, at)
         tl.call(() => this.setStatus(e.target, e.status, true), at)
         this.popup(tl, e.target, this.humanize(e.status), "status", at, `status-${e.status}`)
         gesture(tl, this.sprite(e.target), "tint", at)
@@ -236,6 +239,7 @@ export default class extends Controller {
         tl.call(() => { this.setKo(e.target, false); this.setHp(e.target, e.hp) }, at)
         return gesture(tl, this.sprite(e.target), "pop", at)
       case "steal":
+        this.die(tl, e.actor, e, at)
         this.popup(tl, e.target, `Stole ${e.name}!`, "status", at)
         gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
         return 600
@@ -252,6 +256,7 @@ export default class extends Controller {
         this.popup(tl, e.actor, e.reason === "silenced" ? "SILENCED" : "NO MP", "miss", at)
         return 420
       case "flee":
+        this.die(tl, e.actor, e, at)
         if (!e.success) {
           this.caption(tl, "Couldn't escape!", at)
           return 600
@@ -376,6 +381,14 @@ export default class extends Controller {
   }
 
   // --- transient effects in the fx layer (text nodes created and removed) ---
+
+  // A d100 beside a unit, for the rolls that decide something: a crit, a
+  // miss, a status, a steal, a getaway. Green when it came in.
+  die(tl, id, e, at) {
+    if (!e.roll) return
+    const cameIn = e.roll <= e.needed
+    this.popup(tl, id, String(e.roll), "die", at, cameIn ? "is-in" : "is-out")
+  }
 
   popup(tl, id, text, kind, at, extra = "") {
     const anchor = this.sprite(id)

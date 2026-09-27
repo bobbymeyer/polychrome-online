@@ -65,6 +65,23 @@ RSpec.describe "Battle resolver properties" do
     end
   end
 
+  it "shows honest dice: every roll is 1–100, and came in exactly when it's at or under what was needed" do
+    seen = 0
+    each_step do |_, _, _, _, events|
+      events.select { |e| e.key?("roll") }.each do |e|
+        seen += 1
+        expect(e["roll"]).to be_between(1, 100)
+        came_in = e["roll"] <= e["needed"]
+        case e["type"]
+        when "crit", "steal", "status_applied" then expect(came_in).to be(true)
+        when "miss" then expect(came_in).to be(false)
+        when "flee" then expect(came_in).to eq(e["success"])
+        end
+      end
+    end
+    expect(seen).to be_positive
+  end
+
   it "only uses up items by using them, one at a time, never below zero" do
     each_step do |_, before, _, after, events|
       before["items"].each do |id, item|

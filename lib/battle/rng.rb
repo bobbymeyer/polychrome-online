@@ -37,6 +37,14 @@ module Battle
 
     # True with the given percent chance. Always draws, so RNG consumption
     # does not depend on the chance value.
+    # A d100 (1–100) against a chance: [whether it came in, the roll]. The
+    # same single draw as #percent?, so the stream is identical; the roll is
+    # for showing (the dice on the board).
+    def d100(chance)
+      roll = int(100) + 1
+      [ roll <= chance, roll ]
+    end
+
     def percent?(chance)
       int(100) < chance
     end
