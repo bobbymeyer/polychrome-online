@@ -16,7 +16,7 @@ class Message < ApplicationRecord
   CHOICE = /\A\?\s*(?<options>[^>]+?)(?:\s*->\s*(?<flag>[\w ]+))?\s*\z/
   MAX_OPTIONS = 6
   # The jingle a line plays as it arrives (sound.js).
-  CUES = %w[key door treasure check].freeze
+  CUES = %w[key door treasure check jobs].freeze
   SCOPES = %w[table whisper].freeze
   SPEAKER_TYPES = %w[Character Npc].freeze
 

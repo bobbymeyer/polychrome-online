@@ -74,6 +74,7 @@ Rails.application.routes.draw do
     resource :music, only: :update, controller: "music"
     resources :checks, only: :create
     resources :field_uses, only: %i[create update]
+    resources :job_grants, only: :create
     resource :join_code, only: :create
     resource :forecast, only: :show
     resource :table_seat, only: %i[create destroy]

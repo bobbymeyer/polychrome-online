@@ -238,7 +238,7 @@
     <%= form_with url: character_job_path(@character), method: :patch, class: "book-form inline-form" do |f| %>
       <div class="field">
         <%= f.label :job_id, "Change job" %>
-        <%= f.select :job_id, @world.jobs.order(:name).map { |j| [ j.name, j.id ] }, selected: @character.job_id %>
+        <%= f.select :job_id, (@campaign.available_jobs.to_a | [ @character.job ]).map { |j| [ j.name, j.id ] }, selected: @character.job_id %>
       </div>
       <%= f.submit "Change job", class: "button" %>
     <% end %>

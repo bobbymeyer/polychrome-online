@@ -26,6 +26,7 @@ class Campaign < ApplicationRecord
   # scene, so a town sounds like a town and a dungeon like a dungeon.
   MUSIC_CHOICES = (World::MUSIC + %w[silence]).freeze
   normalizes :music, with: ->(value) { value.presence }
+  validate :open_jobs_are_the_worlds
   validates :music, inclusion: { in: MUSIC_CHOICES }, allow_nil: true
   after_update_commit :broadcast_music, if: :saved_change_to_music?
 
@@ -392,6 +393,37 @@ class Campaign < ApplicationRecord
     end
   end
 
+  # --- jobs as story rewards --------------------------------------------------
+
+  # The jobs characters can take in this campaign: every job, unless the GM
+  # opened only some (open_jobs) and grants the rest as the story goes.
+  def available_jobs
+    jobs = world.jobs.alphabetical
+    open_jobs.nil? ? jobs : jobs.where(slug: open_jobs)
+  end
+
+  def job_open?(job)
+    open_jobs.nil? || open_jobs.include?(job.slug)
+  end
+
+  def locked_jobs
+    open_jobs.nil? ? world.jobs.none : world.jobs.alphabetical.where.not(slug: open_jobs)
+  end
+
+  # The GM grants jobs, with a line for the moment ("The Wind Crystal
+  # shatters"). The table sees a card for each.
+  def grant_jobs!(jobs, line = nil)
+    jobs = jobs.reject { |job| job_open?(job) }
+    raise ArgumentError, "Pick a job that isn't open yet" if jobs.empty?
+
+    transaction do
+      update!(open_jobs: (open_jobs || []) + jobs.map(&:slug))
+      body = [ line.to_s.strip.presence, "New #{'job'.pluralize(jobs.size)}: #{jobs.map(&:name).to_sentence}." ].compact.join(" ")
+      messages.create!(kind: "system", cue: "jobs", body: body,
+                       data: { "jobs" => jobs.map { |j| { "name" => j.name, "slug" => j.slug, "description" => j.description.to_s } } })
+    end
+  end
+
   def rest!
     raise ArgumentError, "Not while a battle is on" if battle_on?
 
@@ -399,5 +431,20 @@ class Campaign < ApplicationRecord
       characters.update_all(hp: nil, mp: nil, field_used: false)
       messages.create!(kind: "system", body: "The party rests. Everyone is back to full HP and MP.")
     end
+  end
+
+  # Jobs picked at the start, or on edit: a list of slugs, all the world's,
+  # or nil for every one (the form's "every job" box).
+  def open_jobs=(slugs)
+    super(slugs.nil? ? nil : Array(slugs).map(&:to_s).compact_blank.uniq)
+  end
+
+  private
+
+  def open_jobs_are_the_worlds
+    return if open_jobs.nil?
+
+    unknown = open_jobs - world.jobs.pluck(:slug)
+    errors.add(:open_jobs, "aren't #{world.name}'s: #{unknown.join(', ')}") if unknown.any?
   end
 end

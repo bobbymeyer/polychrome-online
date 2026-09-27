@@ -15,7 +15,7 @@
   <div class="field-row">
     <div class="field">
       <%= f.label :job_id, "Starting job" %>
-      <%= f.select :job_id, @world.jobs.order(:name).map { |j| [ j.name, j.id ] } %>
+      <%= f.select :job_id, @campaign.available_jobs.map { |j| [ j.name, j.id ] } %>
     </div>
     <% if can_gm?(@campaign) %>
     <div class="field">

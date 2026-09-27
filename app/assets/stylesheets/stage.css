@@ -813,3 +813,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .field-requests .inline-form { display: flex; gap: 8px; align-items: center; margin: 0; }
 .field-requests .inline-form select { width: auto; }
 .field-requests .inline-form input[type=text] { width: 220px; }
+
+/* Jobs granted at the table: cards in the log, like the battle's rewards. */
+.reward-cards--jobs { display: grid; margin: 8px 0 0; }
+.reward-cards--jobs .reward-card { display: block; padding: 8px 10px 10px; }
+.reward-card__name { display: block; margin: 4px 0 0; font: var(--display); font-size: 20px; }
+.reward-cards--jobs .reward-card__detail { display: block; }

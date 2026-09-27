@@ -142,6 +142,11 @@ const JINGLES = {
     tone(t, 70, 0.3, { wave: "triangle", gain: 0.7, slide: 45 })
     phrase(t + 0.28, 0.12, [ [ "G3", 0, 1 ], [ "D4", 1, 1 ], [ "G4", 2, 3 ] ], { wave: "triangle", gain: 0.5 })
   },
+  // New jobs: a crystal's chime, then the level-up run.
+  jobs(t) {
+    ;[ "E6", "B6", "E7" ].forEach((n, i) => tone(t + i * 0.12, n, 0.9, { wave: "triangle", gain: 0.25, decay: 0.7 }))
+    JINGLES.level_up(t + 0.45)
+  },
   treasure(t) {
     phrase(t, 0.07, [ [ "G5", 0, 1 ], [ "C6", 1, 1 ], [ "E6", 2, 1 ], [ "G6", 3, 3 ] ], { gain: 0.2 })
   },

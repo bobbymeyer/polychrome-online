@@ -22,6 +22,17 @@
   <% elsif message.system? %>
     <p class="chat-line__body">
       <%= message.body %>
+      <% if message.cue == "jobs" %>
+        <span class="reward-cards reward-cards--jobs">
+          <% Array(message.data["jobs"]).each do |job| %>
+            <span class="reward-card reward-card--new-job">
+              <span class="reward-card__kind">New job!</span>
+              <strong class="reward-card__name"><%= job["name"] %></strong>
+              <% if job["description"].present? %><span class="reward-card__detail"><%= job["description"] %></span><% end %>
+            </span>
+          <% end %>
+        </span>
+      <% end %>
       <% if message.battle %>
         <% joinable = message.battle == message.campaign.current_battle %>
         <%= link_to(joinable ? "Join the battle →" : "See the battle", battle_path(message.battle), class: ("play" if joinable), data: { turbo_frame: "_top" }) %>

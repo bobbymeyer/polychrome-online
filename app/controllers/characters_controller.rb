@@ -10,7 +10,7 @@ class CharactersController < ApplicationController
 
   def new
     @character = @campaign.characters.new(starting_level: 5,
-                                          job: @world.jobs.order(:name).first)
+                                          job: @campaign.available_jobs.first)
   end
 
   def create
