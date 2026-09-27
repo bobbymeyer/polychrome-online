@@ -5,7 +5,7 @@
   <div class="battlefield">
     <% %w[enemy party].each do |side| %>
       <div class="battlefield__side battlefield__side--<%= side %>">
-        <% state["units"].select { |u| u["side"] == side }.each do |unit| %>
+        <% state["units"].select { |u| u["side"] == side && !u["gone"] }.each do |unit| %>
           <div class="unit unit--<%= side %> <%= 'is-ko' if unit['hp'].zero? %>" data-unit="<%= unit['id'] %>">
             <div class="sprite" data-sprite><%= unit_sprite(battle, unit) %></div>
             <div class="unit__label"><%= unit["name"] %></div>
@@ -21,10 +21,10 @@
   </div>
 
   <ol class="roster window" aria-label="Party">
-    <% state["units"].select { |u| u["side"] == "party" }.each do |unit| %>
+    <% state["units"].select { |u| u["side"] == "party" && !u["gone"] }.each do |unit| %>
       <li class="roster__row <%= 'is-ko' if unit['hp'].zero? %>" data-roster="<%= unit['id'] %>" data-max-hp="<%= unit['stats']['max_hp'] %>">
         <span class="roster__ready <%= 'is-ready' if inputs.key?(unit["id"]) %>" data-ready title="Ready"></span>
-        <span class="roster__name"><%= unit["name"] %></span>
+        <span class="roster__name"><%= unit["name"] %><%= tag.span("Guest", class: "roster__guest") if unit["guest"] %></span>
         <span class="roster__hp">
           <span class="label">HP</span>
           <span data-hp><%= unit["hp"] %></span><span class="muted">/<%= unit["stats"]["max_hp"] %></span>

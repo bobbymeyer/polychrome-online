@@ -173,7 +173,7 @@ module Battle
     # Party members who can act this round (alive, not asleep or paralysed).
     def able_to_act(state)
       state["units"].select do |u|
-        u["side"] == "party" && u["hp"].positive? &&
+        u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] &&
           u["statuses"].none? { |s| DISABLING_STATUSES.include?(s["kind"]) }
       end.map { |u| u["id"] }
     end

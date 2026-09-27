@@ -21,7 +21,7 @@ module Battle
   # usable (never an item: nobody spends the party's items by default),
   # otherwise Attack on a random target.
   class Resolver
-    GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle].freeze
+    GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle add_unit dismiss].freeze
     END_RESULTS = %w[victory defeat fled].freeze
 
     def self.apply(state, action)
@@ -250,6 +250,64 @@ module Battle
       end
     end
 
+    # A unit joins mid-fight: reinforcements for the enemy, or a guest who
+    # fights beside the party under its own script. The spec is an engine
+    # unit spec (a Bestiary entry's); "abilities" adds any the battle's
+    # library doesn't have yet. A name already on the field gets the next
+    # letter, like the rest of its kind.
+    def gm_add_unit(action)
+      side = action["side"] == "party" ? "party" : "enemy"
+      spec = State.normalize(action.fetch("unit") { raise InvalidAction, "add_unit needs a unit" })
+      Hash(action["abilities"]).each do |id, ability|
+        next if state["abilities"].key?(id)
+
+        ability = State.normalize(ability).merge("id" => id)
+        begin
+          State.validate_ability!(ability)
+        rescue ArgumentError => e
+          raise InvalidAction, e.message
+        end
+        state["abilities"][id] = ability
+      end
+
+      base_id = spec.fetch("id") { raise InvalidAction, "the unit needs an id" }.to_s
+      base_name = spec.fetch("name", base_id).to_s
+      taken = ctx.units.map { |u| u["id"] }
+      kin = taken.any? { |t| t == base_id || t.match?(/\A#{Regexp.escape(base_id)}_[a-z]\z/) }
+      lettered = ("a".."z").map { |l| [ "#{base_id}_#{l}", "#{base_name} #{l.upcase}" ] }
+      id, name = (kin ? lettered : [ [ base_id, base_name ] ]).find { |candidate, _| !taken.include?(candidate) }
+      raise InvalidAction, "too many #{base_name}s on the field" unless id
+
+      begin
+        unit = State.unit(spec.merge("id" => id, "name" => name), side)
+      rescue ArgumentError => e
+        raise InvalidAction, e.message
+      end
+      missing = unit["abilities"] - state["abilities"].keys
+      raise InvalidAction, "#{name} knows unknown abilities: #{missing.join(', ')}" if missing.any?
+
+      unit["guest"] = true if side == "party"
+      ctx.units << unit
+      gm_event(action, unit: id, side: side)
+      ctx.emit(:unit_joined, unit: id, name: name, side: side, guest: side == "party")
+    end
+
+    # A unit leaves the field: an enemy runs or surrenders, a guest goes
+    # their own way. It counts for nothing: no EXP, no drops. If it was the
+    # last enemy standing, the party has won.
+    def gm_dismiss(action)
+      unit = ctx.unit(action["unit"])
+      raise InvalidAction, "#{unit['name']} is a party member" if unit["side"] == "party" && !unit["guest"]
+      raise InvalidAction, "#{unit['name']} has already gone" if unit["gone"]
+
+      gm_event(action, unit: unit["id"])
+      unit["gone"] = true
+      unit["statuses"] = []
+      unit["buffs"] = []
+      ctx.emit(:unit_left, unit: unit["id"], name: unit["name"])
+      ctx.check_end
+    end
+
     # --- round execution ---------------------------------------------------
 
     def run_round
@@ -290,7 +348,7 @@ module Battle
       blocking = DISABLING_STATUSES.find { |kind| ctx.status?(unit, kind) }
       if blocking
         ctx.emit(:turn_skipped, unit: unit["id"], reason: blocking)
-      elsif unit["side"] == "enemy"
+      elsif unit["side"] == "enemy" || unit["guest"]
         ability, target = AI.choose(ctx, unit)
         use_ability(unit, ability, target)
       elsif cmd.nil?

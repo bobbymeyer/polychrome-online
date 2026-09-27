@@ -18,7 +18,7 @@ RSpec.describe "Battle resolver properties" do
     seen = all_events.map { |e| e["type"] }.uniq
     expect(seen).to include(*%w[attack cast damage miss crit heal status_applied status_expired ko revive
                                   turn_start turn_end flee victory defeat gm_override buff_applied
-                                  buff_expired turn_skipped timeout desperation])
+                                  buff_expired turn_skipped timeout desperation unit_joined unit_left])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end
@@ -40,6 +40,28 @@ RSpec.describe "Battle resolver properties" do
         expect(announced["mp_cost"]).to eq(0) if announced&.key?("mp_cost")
         expect(before["inputs"].dig(event["actor"], "ability") || "attack").to eq("attack")
       end
+    end
+  end
+
+  it "keeps units that left out of play, guests off the input list, and new arrivals uniquely named" do
+    each_step do |_, before, _, after, events|
+      gone = before["units"].select { |u| u["gone"] }.map { |u| u["id"] }
+      events.each do |e|
+        expect(gone).not_to include(e["actor"], e["target"], e["unit"]) unless e["type"] == "gm_override"
+      end
+      expect(Battle::State.awaiting_input(after) & after["units"].select { |u| u["guest"] || u["gone"] }.map { |u| u["id"] }).to be_empty
+      expect(after["units"].map { |u| u["id"] }).to eq(after["units"].map { |u| u["id"] }.uniq)
+      expect(gone - after["units"].select { |u| u["gone"] }.map { |u| u["id"] }).to be_empty
+    end
+  end
+
+  it "never pays out for an enemy that left" do
+    each_step do |_, _, _, after, events|
+      victory = events.find { |e| e["type"] == "victory" }
+      next unless victory
+
+      earned = after["units"].select { |u| u["side"] == "enemy" && !u["gone"] }.sum { |u| u.dig("rewards", "exp").to_i }
+      expect(victory.dig("rewards", "exp").to_i).to eq(earned)
     end
   end
 

@@ -164,6 +164,14 @@ export default class extends Controller {
         return 0
       case "desperation":
         return this.cutIn(tl, e, at)
+      case "unit_joined":
+        // The board after the beat has them; here, the entrance.
+        this.banner(tl, e.guest ? `${e.name} joins the party!` : `${e.name} appears!`, at, "gm")
+        return 900
+      case "unit_left":
+        gesture(tl, this.sprite(e.unit), "fade", at)
+        this.banner(tl, `${e.name} leaves`, at, "gm")
+        return 900
       case "attack":
         return gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
       case "item_used":

@@ -502,7 +502,8 @@ doesn't depend on later Bestiary edits (§9.8).
 { type: "command", actor: "bartz", command: { kind: "defend" } }   # or kind: "flee"
 { type: "timeout" }                                                # input timer expired
 { type: "gm_override", op: "auto", unit: "locke", note: "..." }
-# other GM ops: execute_round, set_hp, set_mp, add_status, remove_status, end_battle
+# other GM ops: execute_round, set_hp, set_mp, add_status, remove_status, end_battle,
+# add_unit (side: "enemy" | "party", unit: {engine spec}, abilities: {...}) and dismiss (unit:)
 ```
 
 An illegal action raises `Battle::InvalidAction` and leaves the state alone.
@@ -515,7 +516,15 @@ still usable, otherwise to Attack.
 status_applied status_expired ko turn_start turn_end flee victory defeat
 gm_override`) plus: `command_accepted round_start turn_order round_end revive
 defend buff_applied buff_expired turn_skipped action_failed timeout
-desperation`.
+desperation unit_joined unit_left`.
+
+**Joining and leaving.** `add_unit` brings a unit in mid-fight: enemy
+reinforcements (named with the next free letter), or a guest on the party's
+side who acts on its own AI script, takes no input and shares no rewards
+(`"guest" => true`; the party is defeated when every character is down,
+whatever the guests do). `dismiss` takes an enemy or guest off the field
+(`"gone" => true`): it is out of play for good, never targeted or revived,
+and gives no EXP or drops. If it was the last enemy standing, the party wins.
 Each event is a hash like `{"type" => "damage", "target" => "goblin_a",
 "amount" => 24, "hp" => 21, ...}`. Every event that changes HP carries the
 resulting `hp`, so the view never computes an outcome.

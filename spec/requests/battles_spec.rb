@@ -200,6 +200,25 @@ RSpec.describe "Battle screen", type: :request do
   end
 
   describe "the GM" do
+    it "brings in reinforcements and a guest from the Bestiary, and sends an enemy off" do
+      post battle_seat_path(battle), params: { seat: "gm" }
+      gm!(op: "add_unit", side: "enemy", monster: "goblin", note: "More!")
+      expect(battle.reload.enemies.map { |u| u["id"] }).to include("goblin_c")
+
+      gm!(op: "add_unit", side: "party", monster: "goblin", name: "Cid")
+      cid = battle.reload.unit("cid")
+      expect(cid).to include("guest" => true, "name" => "Cid", "rewards" => {}, "drops" => [])
+      expect(battle.party.map { |u| u["id"] }).not_to include("cid")
+
+      get battle_path(battle)
+      expect(response.body).to include("roster__guest", "Cid")
+
+      gm!(op: "dismiss", unit: "goblin_c")
+      expect(battle.reload.unit("goblin_c")["gone"]).to be(true)
+      get battle_path(battle)
+      expect(response.body).not_to include('data-unit="goblin_c"')
+      expect(response.body).to include("Goblin C leaves the field.", "GM sends Goblin C off.")
+    end
     before { sit("gm") }
 
     it "sees every unit's HP and who the round is waiting on" do

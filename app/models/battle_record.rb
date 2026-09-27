@@ -99,8 +99,10 @@ class BattleRecord < ApplicationRecord
     units.find { |u| u["id"] == id }
   end
 
+  # The party's own: the characters. Guests fight beside them (Battle
+  # "add_unit") but take no seat and share no rewards.
   def party
-    units.select { |u| u["side"] == "party" }
+    units.select { |u| u["side"] == "party" && !u["guest"] }
   end
 
   def enemies

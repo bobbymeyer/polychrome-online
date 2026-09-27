@@ -576,6 +576,9 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .recap .actions { margin-top: 16px; justify-content: flex-end; }
 .recap-link { margin-top: 4px; font-style: italic; }
 
+/* A guest on the party's side: a small tag by their name. */
+.roster__guest { margin-left: 6px; padding: 0 6px; background: var(--ink); color: var(--paper); font-size: 11px; font-style: normal; letter-spacing: .08em; text-transform: uppercase; vertical-align: 2px; }
+
 /* Speaking from the battle page. */
 .battle-composer { margin-top: 12px; }
 .battle-composer summary { cursor: pointer; font-style: italic; font-weight: 900; }

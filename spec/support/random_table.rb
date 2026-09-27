@@ -50,7 +50,7 @@ class RandomTable
     return gm_action(state) if roll < 14
 
     awaiting = state["units"].select do |u|
-      u["side"] == "party" && u["hp"].positive? && !state["inputs"].key?(u["id"]) &&
+      u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] && !state["inputs"].key?(u["id"]) &&
         u["statuses"].none? { |s| Battle::DISABLING_STATUSES.include?(s["kind"]) }
     end
     return { "type" => "timeout" } if awaiting.empty?
@@ -76,6 +76,7 @@ class RandomTable
   end
 
   def target_for(state, u, ability)
+    state = state.merge("units" => state["units"].reject { |o| o["gone"] })
     revive = ability["effects"].any? { |e| e["primitive"] == "revive" }
     if ability["effects"].any? { |e| e["primitive"] == "cleanse" } # a player cures whoever needs it
       sick = state["units"].select { |o| o["side"] == u["side"] && o["hp"].positive? && o["statuses"].any? }
@@ -97,9 +98,9 @@ class RandomTable
   end
 
   def gm_action(state)
-    target = state["units"].sample(random: @chooser)
-    alive = state["units"].select { |u| u["hp"].positive? }
-    case @chooser.rand(6)
+    target = state["units"].reject { |u| u["gone"] }.sample(random: @chooser)
+    alive = state["units"].select { |u| u["hp"].positive? && !u["gone"] }
+    case @chooser.rand(8)
     when 0 then { "type" => "gm_override", "op" => "execute_round" }
     when 1 then { "type" => "gm_override", "op" => "set_hp", "unit" => target["id"],
                   "value" => @chooser.rand(-10..(target["stats"]["max_hp"] + 10)) }
@@ -110,9 +111,18 @@ class RandomTable
         "status" => Battle::STATUSES.sample(random: @chooser), "turns" => @chooser.rand(1..4) }
     when 4 then { "type" => "gm_override", "op" => "remove_status", "unit" => target["id"],
                   "status" => Battle::STATUSES.sample(random: @chooser) }
+    when 5
+      side = @chooser.rand(3).zero? ? "party" : "enemy"
+      spec = side == "party" ? BattleFixtures.party.sample(random: @chooser).merge(ai: [ { use: "attack" } ]) : BattleFixtures.goblins(1).first.except(:count)
+      { "type" => "gm_override", "op" => "add_unit", "side" => side, "unit" => Battle::State.normalize(spec) }
+    when 6
+      leaving = state["units"].select { |u| (u["side"] == "enemy" || u["guest"]) && !u["gone"] }.sample(random: @chooser)
+      return { "type" => "gm_override", "op" => "execute_round" } unless leaving
+
+      { "type" => "gm_override", "op" => "dismiss", "unit" => leaving["id"] }
     else
       missing = state["units"].select do |u|
-        u["side"] == "party" && u["hp"].positive? && !state["inputs"].key?(u["id"]) &&
+        u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] && !state["inputs"].key?(u["id"]) &&
           u["statuses"].none? { |s| Battle::DISABLING_STATUSES.include?(s["kind"]) }
       end
       return { "type" => "timeout" } if missing.empty?

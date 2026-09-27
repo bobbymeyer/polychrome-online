@@ -49,8 +49,10 @@ module Battle
       state["status"] != "input"
     end
 
+    # A unit that has left the field (GM "dismiss") is out of play for good:
+    # not alive, not fallen, not a target, never counted.
     def alive?(u)
-      u["hp"].positive?
+      u["hp"].positive? && !u["gone"]
     end
 
     def status?(u, kind)
@@ -70,7 +72,7 @@ module Battle
     end
 
     def allies(u, alive: true)
-      units.select { |o| o["side"] == u["side"] && (!alive || alive?(o)) }
+      units.select { |o| o["side"] == u["side"] && !o["gone"] && (!alive || alive?(o)) }
     end
 
     def opponents(u)
@@ -78,7 +80,7 @@ module Battle
     end
 
     def side(name)
-      units.select { |u| u["side"] == name }
+      units.select { |u| u["side"] == name && !u["gone"] }
     end
 
     def hp_percent(u)
@@ -146,7 +148,7 @@ module Battle
     def check_end
       return if over?
 
-      if side("party").none? { |u| alive?(u) }
+      if side("party").reject { |u| u["guest"] }.none? { |u| alive?(u) }
         state["status"] = "defeat"
         emit(:defeat)
       elsif side("enemy").none? { |u| alive?(u) }

@@ -107,6 +107,8 @@ module BattlesHelper
     case event["type"]
     when "round_start" then "— Round #{event['round']} —"
     when "attack" then "#{name.('actor')} attacks."
+    when "unit_joined" then event["guest"] ? "#{event['name']} joins the party!" : "#{event['name']} joins the fight!"
+    when "unit_left" then "#{event['name']} leaves the field."
     when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
     when "cast"
       verb = state["abilities"].dig(event["ability"], "kind") == "magic" ? "casts" : "uses"
@@ -224,6 +226,8 @@ module BattlesHelper
     when "add_status" then "inflicts #{event['status'].to_s.humanize} on #{who}."
     when "remove_status" then "cures #{who}'s #{event['status'].to_s.humanize}."
     when "end_battle" then "ends the battle: #{event['result']}."
+    when "add_unit" then event["side"] == "party" ? "brings in #{who} to fight beside the party." : "brings in #{who}."
+    when "dismiss" then "sends #{who} off."
     else event["op"].to_s.humanize
     end
     [ "GM #{text}", (%("#{event['note']}") if event["note"].present?) ].compact.join(" ")

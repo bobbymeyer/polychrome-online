@@ -453,4 +453,40 @@ RSpec.describe Battle::Resolver do
         .to raise_error(ArgumentError, /unknown desperation move: ultima/)
     end
   end
+
+  describe "GM: units joining and leaving" do
+    let(:goblin) { Battle::State.normalize(BattleFixtures.goblins(1).first.except(:count)) }
+
+    it "brings in reinforcements with the next free letter, and a guest who fights on their own" do
+      state = build_battle(enemies: BattleFixtures.goblins(2))
+      state, events = apply(state, gm("add_unit", side: "enemy", unit: goblin, note: "More of them!"))
+      expect(of_type(events, :unit_joined).first).to include("unit" => "goblin_c", "name" => "Goblin C", "side" => "enemy")
+
+      cid = { "id" => "cid", "name" => "Cid", "stats" => stats(max_hp: 200, str: 20, atk: 20), "ai" => [ { "use" => "attack" } ] }
+      state, = apply(state, gm("add_unit", side: "party", unit: cid))
+      expect(unit(state, "cid")).to include("guest" => true, "side" => "party")
+      expect(Battle::State.awaiting_input(state)).not_to include("cid")
+
+      _, events = full_round(state)
+      expect(of_type(events, :turn_order).first["order"]).to include("cid", "goblin_c")
+      expect(of_type(events, :attack).map { |e| e["actor"] }).to include("cid")
+    end
+
+    it "lets an enemy leave, paying nothing for it, and wins if it was the last" do
+      state = build_battle(enemies: BattleFixtures.goblins(2))
+      state, = apply(state, gm("set_hp", unit: "goblin_a", value: 0))
+      state, events = apply(state, gm("dismiss", unit: "goblin_b", note: "It runs!"))
+      expect(types(events)).to include("unit_left", "victory")
+      expect(of_type(events, :victory).first["rewards"]).to eq(unit(state, "goblin_a")["rewards"])
+      expect(state["status"]).to eq("victory")
+    end
+
+    it "never dismisses a party member, and needs a unit the engine can build" do
+      state = build_battle
+      expect { apply(state, gm("dismiss", unit: "bartz")) }.to raise_error(Battle::InvalidAction, /party member/)
+      expect { apply(state, gm("add_unit", side: "enemy", unit: { "id" => "blob" })) }.to raise_error(Battle::InvalidAction, /stats/)
+      expect { apply(state, gm("add_unit", side: "enemy", unit: goblin.merge("abilities" => [ "ultima" ]))) }
+        .to raise_error(Battle::InvalidAction, /unknown abilities: ultima/)
+    end
+  end
 end
