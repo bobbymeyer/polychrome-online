@@ -10,6 +10,9 @@ import { GESTURES } from "motion/gestures"
 // Click the box to finish typing, or to move on to the next line. Waiting
 // lines also move on by themselves, so a busy GM doesn't strand anyone.
 // Nothing here is shared: each viewer reads at their own pace.
+//
+// In battle (autoHide) the box only appears while someone is speaking, and
+// leaves once everything said has been read.
 const TYPE_MS = 22
 const BATCH_MS = 60
 const HOLD_MS = 1600
@@ -20,6 +23,7 @@ const EXPRESSION_GESTURES = { happy: "bounce", angry: "shake", surprised: "pop",
 
 export default class extends Controller {
   static targets = ["box", "portrait", "name", "text", "more", "log", "live"]
+  static values = { autoHide: Boolean }
 
   connect() {
     this.queue = []
@@ -30,6 +34,7 @@ export default class extends Controller {
 
   disconnect() {
     clearTimeout(this.startTimer)
+    clearTimeout(this.hideTimer)
     this.stopTyping()
     clearTimeout(this.holdTimer)
   }
@@ -78,6 +83,7 @@ export default class extends Controller {
     }
 
     this.current = line
+    clearTimeout(this.hideTimer)
     this.boxTarget.hidden = false
     this.moreTarget.hidden = true
     this.nameTarget.textContent = line.speakerValue
@@ -92,6 +98,12 @@ export default class extends Controller {
     if (this.queue.length) {
       this.moreTarget.hidden = false
       this.scheduleNext()
+    } else if (this.autoHideValue) {
+      this.hideTimer = setTimeout(() => {
+        if (this.queue.length) return
+        this.boxTarget.hidden = true
+        this.current = null
+      }, HOLD_MS + line.text.length * HOLD_PER_CHAR_MS)
     }
   }
 
@@ -161,6 +173,7 @@ export default class extends Controller {
   }
 
   scrollLog() {
+    if (!this.hasLogTarget) return
     const scroller = this.logTarget.parentElement
     scroller.scrollTop = scroller.scrollHeight
   }

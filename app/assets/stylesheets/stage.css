@@ -66,7 +66,9 @@ body::before {
   mask-image: linear-gradient(215deg, #000 0%, transparent 55%);
 }
 
-.page { animation: page-in .24s ease-out both; }
+/* "backwards", not "both": a translate left on .page after the slide would make it the
+   containing block for everything fixed inside it (the log drawer). */
+.page { animation: page-in .24s ease-out backwards; }
 @keyframes page-in { from { opacity: 0; translate: 0 8px; } }
 
 /* ---------------------------------------------------------------------------
@@ -203,6 +205,16 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
     linear-gradient(170deg, var(--dark-blue) 0 60%, #34458a 60% 100%);
 }
 .battlefield__side--party { border-left: 0; }
+/* Stacked on a phone, the party's yellow slab cuts across the bottom instead. */
+@media (max-width: 640px) {
+  .battlefield {
+    background:
+      linear-gradient(174deg, transparent 0 54%, var(--sun-yellow) 54% 100%),
+      radial-gradient(circle, rgba(255, 255, 255, .2) 1.2px, transparent 1.6px) 0 0 / 10px 10px,
+      var(--dark-blue);
+  }
+  .battlefield__side--party { border-top: 0; }
+}
 .unit--enemy .unit__label { color: var(--paper); }
 .unit--enemy.is-ko .unit__label { color: rgba(255, 255, 255, .45); }
 /* A white outline, so any colour of creature reads on the blue (on the
@@ -392,12 +404,54 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .skyline__sky { fill: var(--tint); }
 
 /* ---------------------------------------------------------------------------
+ * The game log: a drawer on the right edge, closed by default. A tab in the
+ * page's colour opens it; while closed, the tab counts what arrives.
+ * ------------------------------------------------------------------------- */
+
+.log-drawer__tab {
+  position: fixed; right: 0; bottom: 14vh; z-index: 40; /* low on the edge, clear of the play area */
+  writing-mode: vertical-rl; padding: 18px 8px 22px; min-height: 0;
+  background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 900; letter-spacing: .08em; text-transform: uppercase;
+  clip-path: polygon(0 8px, 100% 0, 100% 100%, 0 calc(100% - 8px)); box-shadow: inset 4px 0 0 var(--ink);
+}
+.log-drawer__tab:hover { background: var(--accent); color: var(--accent-ink); translate: -3px 0; }
+.log-drawer__count {
+  display: inline-block; writing-mode: horizontal-tb; margin-top: 8px; min-width: 22px; padding: 1px 4px;
+  background: var(--sun-yellow); color: var(--ink); font-size: 12px; line-height: 18px; text-align: center; letter-spacing: 0;
+}
+.log-drawer__tab.is-pulsing { animation: tab-pulse .5s var(--snap); }
+@keyframes tab-pulse { 40% { translate: -10px 0; } }
+.log-drawer.is-open .log-drawer__tab { visibility: hidden; }
+
+.log-drawer__panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 50; width: min(440px, 100vw);
+  display: flex; flex-direction: column; gap: 16px; padding: 20px 20px 24px 24px;
+  background: var(--paper); border-left: 4px solid var(--ink); box-shadow: -10px 0 0 var(--accent);
+  translate: calc(100% + 16px) 0; visibility: hidden;
+  transition: translate .28s var(--snap), visibility 0s linear .28s; /* hidden only once it has slid away */
+}
+.log-drawer.is-open .log-drawer__panel { translate: 0 0; visibility: visible; transition: translate .28s var(--snap), visibility 0s; }
+.log-drawer__head { display: flex; justify-content: space-between; align-items: center; }
+.log-drawer__head h2 { margin: 0; font: var(--display); font-size: 32px; text-shadow: 3px 3px 0 var(--echo); }
+.log-drawer__section { flex: 1 1 0; min-height: 0; overflow-y: auto; max-height: none; border-top: 3px solid var(--ink); padding-top: 8px; }
+.log-drawer__section h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 2px 0; }
+@media (max-width: 640px) { .log-drawer__tab { padding: 12px 6px 16px; font-size: 13px; } }
+
+/* In battle the dialogue box stands beside the commands, and only while someone speaks. */
+.dialogue--battle { grid-column: span 5; min-height: 0; padding-top: 20px; grid-template-columns: auto 1fr; }
+.dialogue--battle .speaker-portrait--large { width: 88px; height: 88px; }
+.dialogue--battle .speaker-portrait--large.speaker-portrait--plate { font-size: 64px; }
+.dialogue--battle .dialogue__body { font-size: 18px; line-height: 26px; }
+.dialogue--battle:not([hidden]) { animation: slash-in .3s var(--snap) both; }
+@media (max-width: 800px) { .dialogue--battle { grid-column: 1 / -1; } }
+
+/* ---------------------------------------------------------------------------
  * Everything that moves holds still for people who asked for stillness.
  * ------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
   .page, .play .menu__item, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
   .unit.is-targeted .sprite::after, .roster__row [data-hp], .command-panel__vitals .is-low, .countdown.is-urgent,
-  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call { animation: none !important; }
+  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle { animation: none !important; }
   * { transition-duration: 0s !important; }
 }

@@ -4,11 +4,21 @@
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
-<div class="battle" data-controller="battle-player"
+<div class="battle" data-controller="battle-player dialogue"
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
      data-battle-player-next-value="<%= @battle.battle_actions.count %>"
-     data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key">
+     data-dialogue-auto-hide-value="true"
+     data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key chat-line:arrived->dialogue#arrive">
   <%= turbo_stream_from @battle %>
+  <%# What's said at the table reaches the battle too (the same signed streams as the table). %>
+  <% if @battle.campaign %>
+    <%= turbo_stream_from @battle.campaign, :table %>
+    <% if @chat_seat == "gm" %>
+      <%= turbo_stream_from @battle.campaign, :gm %>
+    <% elsif @chat_seat %>
+      <%= turbo_stream_from @chat_seat, :whispers %>
+    <% end %>
+  <% end %>
 
   <header class="battle__header">
     <div>
@@ -39,15 +49,21 @@
       <div class="window"><p class="muted">Loading…</p></div>
     <% end %>
 
-    <section class="window battle-log" aria-label="Battle log">
-      <ol data-battle-player-target="log" aria-live="polite">
+    <%= render "tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign %>
+  </div>
+
+  <%= render layout: "shared/log_drawer" do %>
+    <section class="battle-log log-drawer__section" aria-label="Battle">
+      <h3>Battle</h3>
+      <ol data-battle-player-target="log" data-log-drawer-target="list" aria-live="polite">
         <% @log.each do |event| %>
           <% line = battle_log_line(event.payload, @battle.state) %>
           <% if line %><li><%= line %></li><% end %>
         <% end %>
       </ol>
     </section>
-  </div>
+    <%= render "tables/chat_log", messages: @messages if @battle.campaign %>
+  <% end %>
 
   <div id="battle_beats" hidden></div>
 </div>

@@ -102,6 +102,13 @@ RSpec.describe "The table", type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "keeps the log in a drawer, closed until it's opened" do
+    campaign.messages.create!(body: "The road is long.", speaker: cid)
+    get campaign_table_path(campaign)
+    drawer = response.body[/<div class="log-drawer".*?<\/aside>/m]
+    expect(drawer).to include('id="chat_log"', "The road is long.", "inert", 'aria-expanded="false"')
+  end
+
   it "shows the last GM line in the dialogue box on arrival, without replaying anything" do
     campaign.messages.create!(body: "Old news.", speaker: cid)
     campaign.messages.create!(body: "Player chatter.", speaker: bartz)

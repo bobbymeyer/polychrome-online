@@ -267,6 +267,14 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   - The GM hands treasure over to the party bag. Taking a costly way posts its
     cost.
   - Players see only the rooms they've been in, plus the exits out of them.
+- **Locks and keys.** A dungeon template asks for up to three locks. Each lock
+  guards a way the party can't get around on the way to the boss: a path on
+  the route, or every door into the boss's room. Its key is in a room they can
+  reach first (behind the earlier locks, if there are several), so every locked
+  dungeon can be solved; a spec checks this over hundreds of seeds. Locks and
+  keys come in flavoured pairs from a "locks" generator table (Crystal portal
+  and Blue crystal, Bone altar and Goat's skull). Walking into the key's room
+  finds it, and crossing the lock with it opens the way for good.
 - **Live updates** use Rails 8 page refreshes (morphing): each viewer re-fetches
   their own page, so what only the GM may see is never sent to a player.
 

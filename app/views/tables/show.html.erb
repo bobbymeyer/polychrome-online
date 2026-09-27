@@ -33,18 +33,7 @@
         <% end %>
       </p>
     </section>
-    <section class="dialogue window" data-dialogue-target="box" data-action="click->dialogue#advance"
-             aria-label="Dialogue" <%= "hidden" unless @last_dialogue %>>
-      <div class="dialogue__portrait" data-dialogue-target="portrait">
-        <%= speaker_portrait(@last_dialogue&.speaker, @last_dialogue&.expression, size: :large) if @last_dialogue %>
-      </div>
-      <div class="dialogue__text">
-        <p class="dialogue__name" data-dialogue-target="name"><%= @last_dialogue&.speaker_name %></p>
-        <p class="dialogue__body" data-dialogue-target="text"><%= @last_dialogue&.body %></p>
-        <span class="dialogue__more" data-dialogue-target="more" hidden></span>
-      </div>
-      <p class="visually-hidden" aria-live="polite" data-dialogue-target="live"></p>
-    </section>
+    <%= render "tables/dialogue_box", last_dialogue: @last_dialogue %>
     </div>
 
     <div class="table__side">
@@ -57,15 +46,12 @@
         </dl>
       </section>
     <% end %>
-    <section class="window chat-log" aria-label="Log">
-      <ol id="chat_log" data-dialogue-target="log">
-        <% @messages.each do |message| %>
-          <%= render "messages/message", message: message %>
-        <% end %>
-      </ol>
-    </section>
     </div>
   </div>
+
+  <%= render layout: "shared/log_drawer" do %>
+    <%= render "tables/chat_log", messages: @messages %>
+  <% end %>
 
   <% if @seat %>
     <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>

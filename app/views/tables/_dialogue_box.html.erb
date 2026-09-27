@@ -1,0 +1,15 @@
+<%# The dialogue box (§7): GM and NPC lines, typed out beside the speaker's portrait. At the table
+    it shows the last line said; in battle it starts empty and appears when someone speaks. %>
+<% last = local_assigns[:last_dialogue] %>
+<section class="<%= [ "dialogue window", local_assigns[:extra] ].compact.join(" ") %>" data-dialogue-target="box" data-action="click->dialogue#advance"
+         aria-label="Dialogue" <%= "hidden" unless last %>>
+  <div class="dialogue__portrait" data-dialogue-target="portrait">
+    <%= speaker_portrait(last.speaker, last.expression, size: :large) if last %>
+  </div>
+  <div class="dialogue__text">
+    <p class="dialogue__name" data-dialogue-target="name"><%= last&.speaker_name %></p>
+    <p class="dialogue__body" data-dialogue-target="text"><%= last&.body %></p>
+    <span class="dialogue__more" data-dialogue-target="more" hidden></span>
+  </div>
+  <p class="visually-hidden" aria-live="polite" data-dialogue-target="live"></p>
+</section>

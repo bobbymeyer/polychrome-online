@@ -1,0 +1,9 @@
+<%# The table's log: every line said and everything that happened, as the seat may see it. %>
+<section class="chat-log log-drawer__section" aria-label="Table">
+  <h3>Table</h3>
+  <ol id="chat_log" data-dialogue-target="log" data-log-drawer-target="list">
+    <% messages.each do |message| %>
+      <%= render "messages/message", message: message %>
+    <% end %>
+  </ol>
+</section>

@@ -45,6 +45,12 @@ class BattlesController < ApplicationController
 
   def show
     @log = @battle.battle_events.last(40)
+    return unless @battle.campaign
+
+    # The table's log and dialogue come along, as this seat may see them.
+    seat = current_seat
+    @chat_seat = seat == "gm" ? "gm" : (seat && seat_character(seat))
+    @messages = Message.visible_to(@battle.campaign, @chat_seat).last(TablesController::LOG_LENGTH)
   end
 
   private
