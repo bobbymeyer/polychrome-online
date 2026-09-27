@@ -172,6 +172,8 @@ module BattlesHelper
 
   def damage_line(event, target)
     return "#{target} takes #{event['amount']} poison damage." if event["status"] == "poison"
+    return "Doom comes for #{target}." if event["status"] == "doom"
+    return "#{target} takes #{event['amount']} in recoil." if event["recoil"]
 
     line = "#{target} takes #{event['amount']} damage."
     return "#{line} Healing burns the undead!" if event["undead"]

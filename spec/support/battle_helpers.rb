@@ -80,6 +80,9 @@ module BattleFixtures
               effects: [ { primitive: "elemental", type: "psychic", power: 18, against: "undead", bonus: 300 } ] },
       comet: { name: "Comet", kind: "magic", target: "all_enemies", cost: { mp: 8 }, charge: 1,
                effects: [ { primitive: "elemental", type: "rock", power: 30 } ] },
+      doom: { name: "Doom", kind: "magic", target: "single_enemy", cost: { mp: 8 }, effects: [ { primitive: "status", kind: "doom", chance: 50, duration: 2 } ] },
+      reckless: { name: "Reckless Strike", kind: "skill", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "physical", power: 200, recoil: 25 } ] },
+      revenge: { name: "Revenge", kind: "skill", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "physical", power: 100, grudge: 200 } ] },
       sneak_attack: { name: "Sneak Attack", kind: "skill", target: "single_enemy", cost: { mp: 0 },
                       effects: [ { primitive: "physical", power: 100, against: "sleep", bonus: 200 } ] }
     }

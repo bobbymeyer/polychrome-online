@@ -379,7 +379,7 @@ RSpec.describe Battle::Resolver do
 
     it "rejects unknown ops and bad arguments" do
       expect { apply(state, gm("smite")) }.to raise_error(Battle::InvalidAction, /unknown GM op/)
-      expect { apply(state, gm("add_status", unit: "bartz", status: "doom")) }.to raise_error(Battle::InvalidAction)
+      expect { apply(state, gm("add_status", unit: "bartz", status: "petrify")) }.to raise_error(Battle::InvalidAction)
       expect { apply(state, gm("end_battle", result: "draw")) }.to raise_error(Battle::InvalidAction)
     end
   end
@@ -740,6 +740,24 @@ RSpec.describe Battle::Resolver do
         state, events = apply(state, { type: "timeout" })
         expect(of_type(events, :damage).find { |e| e["actor"] == "mage" }).to include("damage_type" => "rock")
         expect(unit(state, "mage")["mp"]).to eq(99 - 8 + 0)
+      end
+
+      it "dooms a unit: when the count runs out, it's down" do
+        state = build_battle(seed: 3, party: [ caster ], enemies: brute)
+        state = with_unit(state, "brute", statuses: [ { "kind" => "doom", "turns" => 1 } ])
+        _, events = round(state, "mage" => { kind: "defend" })
+        expect(of_type(events, :ko)).to include(a_hash_including("target" => "brute"))
+        expect(of_type(events, :damage)).to include(a_hash_including("target" => "brute", "status" => "doom"))
+      end
+
+      it "hurts the user for a reckless blow, and hits harder the closer the user is to down" do
+        _, events = cast("reckless", "brute", seed: 6, hp: 900)
+        dealt = of_type(events, :damage).find { |e| e["actor"] == "mage" }
+        expect(of_type(events, :damage)).to include(a_hash_including("target" => "mage", "recoil" => true, "amount" => [ dealt["amount"] / 4, 1 ].max))
+
+        full = of_type(cast("revenge", "brute", seed: 6).last, :damage).find { |e| e["actor"] == "mage" }
+        brink = of_type(cast("revenge", "brute", seed: 6, hp: 90).last, :damage).find { |e| e["actor"] == "mage" }
+        expect(brink["amount"]).to be > full["amount"] * 2
       end
 
       it "turns healing on the undead into harm, and drains them backwards" do

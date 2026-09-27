@@ -19,8 +19,10 @@ module Battle
   PRIMITIVE_PARAMS = {
     # against/bonus: bonus% of the damage against a target with that status
     # or type, or that's undead or a boss (×2 against the sleeping).
-    "physical" => { required: [], optional: %w[power hits type against bonus] },
-    "elemental" => { required: %w[type power], optional: %w[hits against bonus] },
+    # recoil: the user takes recoil% of the damage it deals (Reckless Strike).
+    # grudge: up to grudge% more power the closer the user is to down (Revenge).
+    "physical" => { required: [], optional: %w[power hits type against bonus recoil grudge] },
+    "elemental" => { required: %w[type power], optional: %w[hits against bonus recoil grudge] },
     "status" => { required: %w[kind], optional: %w[chance duration] },
     "heal" => { required: %w[power], optional: [] },
     "drain" => { required: %w[power], optional: [] },
@@ -79,8 +81,9 @@ module Battle
   # imbued:  Attack strikes with the status's type (the imbue primitive).
   # shield:  takes damage out of the status's amount first (the shield primitive).
   # charging: winding up a move that takes turns to go off.
+  # doom:    a countdown; when it runs out, the unit is knocked out.
   STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away
-                aggro stop berserk confuse charged imbued shield charging].freeze
+                aggro stop berserk confuse charged imbued shield charging doom].freeze
   # Off the field: nobody can reach them, and they can't be commanded.
   OUT_OF_REACH_STATUSES = %w[airborne away].freeze
   # Draw the other side's single-target moves.
@@ -399,6 +402,8 @@ module Battle
             raise ArgumentError, "#{id}: a bonus can't be against #{effect['against']}" unless against_ok
           end
           raise ArgumentError, "#{id}: bonus must be 0 to #{MAX_BONUS}" if effect["bonus"] && !effect["bonus"].between?(0, MAX_BONUS)
+          raise ArgumentError, "#{id}: recoil must be 0 to 100" if effect["recoil"] && !effect["recoil"].between?(0, 100)
+          raise ArgumentError, "#{id}: grudge must be 0 to #{MAX_BONUS}" if effect["grudge"] && !effect["grudge"].between?(0, MAX_BONUS)
           # "terrain": the type of where the fight is (a Geomancer's arts).
           typed = known.include?(effect["type"]) || effect["type"] == "terrain"
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !typed

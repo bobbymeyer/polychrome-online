@@ -21,7 +21,7 @@ class RandomTable
                              u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser),
                                      passives: Battle::PASSIVES.sample(@chooser.rand(0..2), random: @chooser),
                                      abilities: u[:abilities] + %w[cover jump gaia hide banish high_jump barrier taunt stop rage confuse focus flame_blade gravity osmose
-                                                                            blood_strike holy comet sneak_attack]
+                                                                            blood_strike holy comet sneak_attack doom reckless revenge]
                                                                          .sample(5, random: @chooser))
                               .merge(job_parts(u))
                            },

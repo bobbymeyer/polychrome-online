@@ -101,8 +101,8 @@ module BooksHelper
   def describe_effect(effect)
     e = effect
     case e["primitive"]
-    when "physical" then "#{"#{effect_type(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}#{describe_against(e)}"
-    when "elemental" then "#{effect_type(e['type'])} damage, power #{e['power']}#{hits(e)}#{describe_against(e)}"
+    when "physical" then "#{"#{effect_type(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}#{describe_against(e)}#{describe_extras(e)}"
+    when "elemental" then "#{effect_type(e['type'])} damage, power #{e['power']}#{hits(e)}#{describe_against(e)}#{describe_extras(e)}"
     when "status" then "#{term(e['kind'])} (#{e.fetch('chance', 100)}%, #{e.fetch('duration', 3)} turns)"
     when "heal" then "Restore HP, power #{e['power']}"
     when "drain" then "Drain HP, power #{e['power']}"
@@ -128,6 +128,11 @@ module BooksHelper
 
     what = Battle::STATUSES.include?(e["against"]) || Battle::AGAINST_TRAITS.include?(e["against"]) ? term(e["against"]).downcase : type_name(e["against"])
     ", ×#{format('%g', e.fetch('bonus', 200) / 100.0)} against #{what}"
+  end
+
+  def describe_extras(e)
+    [ (", the user takes #{e['recoil']}% of it" if e["recoil"].to_i.positive?),
+      (", up to +#{e['grudge']}% power at the brink" if e["grudge"].to_i.positive?) ].compact.join
   end
 
   def describe_away(e)

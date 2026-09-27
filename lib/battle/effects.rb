@@ -18,6 +18,7 @@ module Battle
     module_function
 
     def apply(ctx, actor, target, effect)
+      effect = grudging(actor, effect)
       case effect["primitive"]
       when "physical" then physical(ctx, actor, target, effect)
       when "elemental" then elemental(ctx, actor, target, effect)
@@ -98,7 +99,7 @@ module Battle
       amount *= 2 if crit
       amount /= 2 if target["defending"]
       # Typed after every draw, so the stream doesn't depend on the chart.
-      return if typed(ctx, actor, target, type_of(ctx, effect), amount, crit: crit, roll: crit_roll, needed: crit_needed)
+      return if typed(ctx, actor, target, type_of(ctx, effect), amount, crit: crit, roll: crit_roll, needed: crit_needed, recoil: effect["recoil"])
 
       if ctx.alive?(target)
         ctx.remove_status(target, "sleep", reason: "woke")
@@ -170,7 +171,16 @@ module Battle
     # elemental(type, power, hits): power scaled by mag, softened by mdef,
     # then by the type chart. Magic never misses.
     def elemental(ctx, actor, target, effect)
-      typed(ctx, actor, target, type_of(ctx, effect), against(ctx, target, effect, magic_amount(ctx, actor, target, effect)))
+      typed(ctx, actor, target, type_of(ctx, effect), against(ctx, target, effect, magic_amount(ctx, actor, target, effect)), recoil: effect["recoil"])
+    end
+
+    # grudge: power grows with the user's missing HP, up to grudge% more
+    # at the brink.
+    def grudging(actor, effect)
+      return effect unless effect["grudge"]
+
+      missing = actor["stats"]["max_hp"] - actor["hp"]
+      effect.merge("power" => effect.fetch("power", 100) * (100 + (effect["grudge"] * missing / actor["stats"]["max_hp"])) / 100)
     end
 
     # against/bonus: bonus% (default ×2) when the target has the status or
@@ -186,7 +196,7 @@ module Battle
     # Deal damage of a type (nil: typeless) through the chart and the
     # target's affinities. Returns true when it didn't land as damage
     # (no effect, or absorbed).
-    def typed(ctx, actor, target, type, amount, crit: false, roll: nil, needed: nil)
+    def typed(ctx, actor, target, type, amount, crit: false, roll: nil, needed: nil, recoil: nil)
       percent = Types.effectiveness(type, target, ctx.types)
       if percent == 0 # rubocop:disable Style/NumericPredicate -- may be :absorb
         ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", damage_type: type)
@@ -202,6 +212,9 @@ module Battle
       ctx.emit(:crit, actor: actor["id"], target: target["id"], roll: roll, needed: needed) if crit
       extra = type ? { damage_type: type, effectiveness: percent } : {}
       ctx.deal_damage(target, amount, actor: actor["id"], crit: crit, **extra)
+      if recoil.to_i.positive? && ctx.alive?(actor) && actor != target
+        ctx.deal_damage(actor, [ amount * recoil / 100, 1 ].max, recoil: true)
+      end
       false
     end
 
@@ -362,6 +375,8 @@ module Battle
       unit["statuses"].each { |s| s["turns"] -= 1 unless %w[away charging].include?(s["kind"]) }
       unit["statuses"].select { |s| s["turns"] <= 0 }.map { |s| s["kind"] }.each do |kind|
         ctx.remove_status(unit, kind, reason: "wore_off")
+        # Doom's count runs out: down they go, shield or no.
+        ctx.deal_damage(unit, unit["hp"], status: "doom") if kind == "doom" && ctx.alive?(unit)
       end
 
       unit["buffs"].each { |b| b["turns"] -= 1 }

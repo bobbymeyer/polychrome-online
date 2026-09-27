@@ -107,8 +107,8 @@ RSpec.describe "Items and curing in battle" do
 
     it "validates the status it names" do
       expect { build_battle(abilities: BattleFixtures.abilities.merge(bad: { name: "Bad", kind: "magic", target: "self", cost: { mp: 0 },
-                                                                             effects: [ { primitive: "cleanse", kind: "doom" } ] })) }
-        .to raise_error(ArgumentError, /unknown status doom/)
+                                                                             effects: [ { primitive: "cleanse", kind: "petrify" } ] })) }
+        .to raise_error(ArgumentError, /unknown status petrify/)
     end
   end
 end
