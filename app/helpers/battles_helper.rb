@@ -117,6 +117,12 @@ module BattlesHelper
     when "custom_action" then "#{name.('actor')} tries: “#{event['text']}”#{" at #{unit_name(state, event['target'])}" if event['target']}"
     when "custom_roll" then "#{event['success'] ? 'It works!' : 'No luck.'} #{event['line'].presence}".strip + dice_note(event).to_s
     when "custom_unruled" then "No ruling in time: #{name.('actor')} attacks instead."
+    when "jump" then "#{name.('actor')} leaps out of reach!"
+    when "land" then event["target"] ? "#{name.('actor')} comes down on #{name.('target')}!" : "#{name.('actor')} lands, with nobody to hit."
+    when "covered" then "#{name.('unit')} steps in front of #{unit_name(state, event['for'])}!"
+    when "counter" then "#{name.('actor')} strikes back!#{dice_note(event)}"
+    when "second_wind" then "#{name.('target')} gets back up! (Second Wind)"
+    when "mp_restored" then "#{name.('target')} recovers #{event['amount']} MP."
     when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
     when "cast"
       verb = state["abilities"].dig(event["ability"], "kind") == "magic" ? "casts" : "uses"
@@ -124,7 +130,11 @@ module BattlesHelper
     when "item_used" then "#{name.('actor')} uses #{item_phrase(event['name'])}."
     when "crit" then "Critical hit!#{dice_note(event)}"
     when "damage" then damage_line(event, name.("target"))
-    when "heal" then event["absorbed"] ? "#{name.('target')} absorbs #{event['amount']} HP." : "#{name.('target')} recovers #{event['amount']} HP."
+    when "heal"
+      if event["absorbed"] then "#{name.('target')} absorbs #{event['amount']} HP."
+      elsif event["regen"] then "#{name.('target')} regenerates #{event['amount']} HP."
+      else "#{name.('target')} recovers #{event['amount']} HP."
+      end
     when "miss" then miss_line(event, name.("target"), state)
     when "status_applied" then "#{name.('target')}: #{event['status'].humanize}.#{dice_note(event)}"
     when "status_expired" then status_expired_line(event, name.("target"))

@@ -18,7 +18,8 @@ RSpec.describe "Battle resolver properties" do
     seen = all_events.map { |e| e["type"] }.uniq
     expect(seen).to include(*%w[attack cast damage miss crit heal status_applied status_expired ko revive
                                   turn_start turn_end flee victory defeat gm_override buff_applied
-                                  buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll])
+                                  buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll
+                                  jump land covered counter second_wind mp_restored])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end
@@ -76,6 +77,7 @@ RSpec.describe "Battle resolver properties" do
         when "crit", "steal", "status_applied" then expect(came_in).to be(true)
         when "miss" then expect(came_in).to be(false)
         when "flee", "custom_roll" then expect(came_in).to eq(e["success"])
+        when "counter" then expect(came_in).to be(true)
         end
       end
     end
@@ -90,6 +92,31 @@ RSpec.describe "Battle resolver properties" do
       pending = before["inputs"].select { |_, c| c["kind"] == "custom" && !c["ruling"] }.keys
       pending -= [ action["unit"] ] if action["op"] == "rule"
       expect(pending).to be_empty
+    end
+  end
+
+  it "keeps a unit in the air out of reach, and has it land on its next turn" do
+    each_step do |_, before, _, after, events|
+      airborne = before["units"].select { |u| u["statuses"].any? { |s| s["kind"] == "airborne" } }.map { |u| u["id"] }
+      side = (before["units"] + after["units"]).to_h { |u| [ u["id"], u["side"] ] }
+      events.each do |e|
+        case e["type"]
+        when "jump" then airborne << e["actor"]
+        when "land" then airborne.delete(e["actor"])
+        when "damage", "miss"
+          # Out of the enemy's reach (an ally can still hand them a potion).
+          expect(airborne).not_to include(e["target"]) if e["actor"] && side[e["actor"]] != side[e["target"]]
+        end
+      end
+      in_air = after["units"].select { |u| u["statuses"].any? { |s| s["kind"] == "airborne" } }.map { |u| u["id"] }
+      expect(Battle::State.awaiting_input(after) & in_air).to be_empty
+    end
+  end
+
+  it "lets a Second Wind happen once a battle" do
+    tables.each do |table|
+      winds = table.steps.flat_map { |_, _, _, events| events.select { |e| e["type"] == "second_wind" }.map { |e| e["target"] } }
+      expect(winds).to eq(winds.uniq)
     end
   end
 
@@ -127,7 +154,7 @@ RSpec.describe "Battle resolver properties" do
       events.each do |e|
         case e["type"]
         when "ko" then down << e["target"]
-        when "revive" then down.delete(e["target"])
+        when "revive", "second_wind" then down.delete(e["target"])
         when "turn_start" then expect(down).not_to include(e["unit"])
         when "attack", "cast", "defend" then expect(down).not_to include(e["actor"])
         when "damage", "heal", "status_applied", "buff_applied" then expect(down).not_to include(e["target"])

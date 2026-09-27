@@ -7,6 +7,7 @@ module Battle
   # path (abilities, statuses, GM overrides) reports changes the same way.
   class Context
     attr_reader :state, :rng, :events
+    attr_accessor :countering
 
     def initialize(state, rng: Rng.new(state["rng"]))
       @state = state
@@ -75,8 +76,9 @@ module Battle
       units.select { |o| o["side"] == u["side"] && !o["gone"] && (!alive || alive?(o)) }
     end
 
+    # Who u can aim at: the other side's living units, less any in the air.
     def opponents(u)
-      units.select { |o| o["side"] != u["side"] && alive?(o) }
+      units.select { |o| o["side"] != u["side"] && alive?(o) && !status?(o, "airborne") }
     end
 
     def side(name)
@@ -105,7 +107,25 @@ module Battle
     def deal_damage(target, amount, **extra)
       target["hp"] = [ target["hp"] - amount, 0 ].max
       emit(:damage, target: target["id"], amount: amount, hp: target["hp"], **extra)
-      knock_out(target) if target["hp"].zero?
+      return unless target["hp"].zero?
+
+      knock_out(target)
+      second_wind(target)
+    end
+
+    # Once a battle, a unit with Second Wind gets back up at a quarter HP
+    # when knocked down (never once the fight is over).
+    def second_wind(target)
+      return if over? || target["second_wind_used"] || !Array(target["passives"]).include?("second_wind")
+
+      target["second_wind_used"] = true
+      target["hp"] = [ target["stats"]["max_hp"] / 4, 1 ].max
+      emit(:second_wind, target: target["id"], hp: target["hp"])
+    end
+
+    def restore_mp(target, amount, **extra)
+      target["mp"] = [ target["mp"] + amount, target["stats"]["max_mp"] ].min
+      emit(:mp_restored, target: target["id"], amount: amount, mp: target["mp"], **extra)
     end
 
     def restore_hp(target, amount, **extra)

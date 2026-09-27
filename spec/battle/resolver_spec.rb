@@ -545,4 +545,64 @@ RSpec.describe Battle::Resolver do
         .to raise_error(Battle::InvalidAction, /unknown primitive/)
     end
   end
+
+  describe "job mechanics" do
+    let(:tough) { stats(max_hp: 900, str: 30, atk: 30, agi: 10, def: 100) }
+    let(:knight) { { id: "knight", name: "Knight", stats: tough, abilities: %w[cover jump] } }
+    let(:mage) { { id: "mage", name: "Mage", stats: stats(max_hp: 900, agi: 5, def: 100) } }
+    let(:brute) { [ { id: "brute", name: "Brute", stats: stats(max_hp: 3000, str: 20, atk: 20, agi: 1), ai: [ { use: "attack" } ] } ] }
+
+    def round(state, commands)
+      commands.reduce([ state, [] ]) do |(s, log), (actor, cmd)|
+        s, events = apply(s, { type: "command", actor: actor, command: cmd })
+        [ s, log + events ]
+      end
+    end
+
+    it "lets a Knight's Cover take the enemy's blows meant for an ally" do
+      state = build_battle(seed: 2, party: [ knight, mage ], enemies: brute)
+      _, events = round(state, "knight" => { kind: "ability", ability: "cover" }, "mage" => { kind: "defend" })
+      hits = of_type(events, :damage).select { |e| e["actor"] == "brute" }
+      expect(hits.map { |e| e["target"] }).to all(eq("knight"))
+      expect(of_type(events, :covered).map { |e| e["for"] }.uniq).to include("mage") if of_type(events, :covered).any?
+    end
+
+    it "takes a Dragoon out of reach for a round, then lands the blow" do
+      state = build_battle(seed: 2, party: [ knight.merge(agi: 50, stats: tough.merge("agi" => 50)) ], enemies: brute)
+      state, events = round(state, "knight" => { kind: "ability", ability: "jump", target: "brute" })
+      expect(types(events)).to include("jump")
+      expect(of_type(events, :damage).map { |e| e["target"] }).not_to include("knight")
+      expect(Battle::State.awaiting_input(state)).to be_empty
+
+      _, events = apply(state, { type: "timeout" })
+      land = of_type(events, :land).sole
+      expect(land).to include("actor" => "knight", "target" => "brute")
+      expect(of_type(events, :damage).first).to include("actor" => "knight", "target" => "brute")
+    end
+
+    it "gives passives their moments: first strike, regen, clear mind, counter, second wind" do
+      fast = knight.merge(passives: %w[first_strike regen mp_regen counter second_wind], hp: 100, mp: 0,
+                          stats: tough.merge("agi" => 1, "max_mp" => 40))
+      state = build_battle(seed: 4, party: [ fast ], enemies: brute)
+      state, events = round(state, "knight" => { kind: "defend" })
+      expect(of_type(events, :turn_order).first["order"].first).to eq("knight")
+      expect(of_type(events, :heal)).to include(a_hash_including("target" => "knight", "regen" => true))
+      expect(of_type(events, :mp_restored)).to include(a_hash_including("target" => "knight"))
+
+      knocked = with_unit(state, "knight", hp: 1, passives: %w[second_wind])
+      _, events = round(knocked, "knight" => { kind: "defend" })
+      wind = of_type(events, :second_wind).sole
+      expect(wind).to include("target" => "knight", "hp" => 225)
+
+      counters = (1..30).flat_map { |seed| round(build_battle(seed: seed, party: [ fast ], enemies: brute), "knight" => { kind: "defend" }).last }
+      expect(of_type(counters, :counter)).not_to be_empty
+    end
+
+    it "gives terrain moves the type of where the fight is" do
+      state = build_battle(seed: 1, party: [ knight.merge(abilities: %w[gaia]) ], enemies: brute, terrain: "grass")
+      _, events = round(state, "knight" => { kind: "ability", ability: "gaia" })
+      expect(of_type(events, :damage).first).to include("damage_type" => "grass")
+      expect(build_battle["terrain"]).to eq("normal")
+    end
+  end
 end

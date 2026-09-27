@@ -17,7 +17,12 @@ class RandomTable
     @initial = Battle::State.build(
       seed: seed,
       party: BattleFixtures.party.sample(@chooser.rand(1..4), random: @chooser)
-                           .map { |u| u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser)) },
+                           .map { |u|
+                             u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser),
+                                     passives: Battle::PASSIVES.sample(@chooser.rand(0..2), random: @chooser),
+                                     abilities: u[:abilities] + %w[cover jump gaia].sample(2, random: @chooser))
+                           },
+      terrain: Battle::TYPES.sample(random: @chooser),
       enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre ].sample(random: @chooser),
       abilities: BattleFixtures.abilities,
       escapable: @chooser.rand(4) != 0,
@@ -45,13 +50,18 @@ class RandomTable
   private
 
   def next_action(state)
+    # A GM at the table rules on an idea soon after it's made.
+    if state["inputs"].any? { |_, c| c["kind"] == "custom" && !c["ruling"] } && @chooser.rand(2).zero?
+      return rule(state)
+    end
+
     roll = @chooser.rand(100)
     return { "type" => "timeout" } if roll < 8
     return gm_action(state) if roll < 14
 
     awaiting = state["units"].select do |u|
       u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] && !state["inputs"].key?(u["id"]) &&
-        u["statuses"].none? { |s| Battle::DISABLING_STATUSES.include?(s["kind"]) }
+        u["statuses"].none? { |s| Battle::NO_INPUT_STATUSES.include?(s["kind"]) }
     end
     return { "type" => "timeout" } if awaiting.empty?
 
@@ -118,14 +128,7 @@ class RandomTable
       side = @chooser.rand(3).zero? ? "party" : "enemy"
       spec = side == "party" ? BattleFixtures.party.sample(random: @chooser).merge(ai: [ { use: "attack" } ]) : BattleFixtures.goblins(1).first.except(:count)
       { "type" => "gm_override", "op" => "add_unit", "side" => side, "unit" => Battle::State.normalize(spec) }
-    when 7
-      pending = state["inputs"].find { |_, c| c["kind"] == "custom" && !c["ruling"] }
-      return { "type" => "gm_override", "op" => "execute_round" } unless pending
-
-      effects = [ [ { "primitive" => "physical", "power" => 150 } ], [ { "primitive" => "status", "kind" => "sleep", "chance" => 60 } ], [] ].sample(random: @chooser)
-      { "type" => "gm_override", "op" => "rule", "unit" => pending.first, "stat" => Stats::Check::STATS.sample(random: @chooser),
-        "difficulty" => Stats::Check::DIFFICULTIES.keys.sample(random: @chooser), "aim" => %w[single_enemy all_enemies].sample(random: @chooser),
-        "effects" => effects, "success" => "It works!", "failure" => "It doesn't." }
+    when 7 then rule(state)
     when 6
       leaving = state["units"].select { |u| (u["side"] == "enemy" || u["guest"]) && !u["gone"] }.sample(random: @chooser)
       return { "type" => "gm_override", "op" => "execute_round" } unless leaving
@@ -134,11 +137,21 @@ class RandomTable
     else
       missing = state["units"].select do |u|
         u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] && !state["inputs"].key?(u["id"]) &&
-          u["statuses"].none? { |s| Battle::DISABLING_STATUSES.include?(s["kind"]) }
+          u["statuses"].none? { |s| Battle::NO_INPUT_STATUSES.include?(s["kind"]) }
       end
       return { "type" => "timeout" } if missing.empty?
 
       { "type" => "gm_override", "op" => "auto", "unit" => missing.sample(random: @chooser)["id"] }
     end
+  end
+
+  def rule(state)
+    pending = state["inputs"].find { |_, c| c["kind"] == "custom" && !c["ruling"] }
+    return { "type" => "gm_override", "op" => "execute_round" } unless pending
+
+    effects = [ [ { "primitive" => "physical", "power" => 150 } ], [ { "primitive" => "status", "kind" => "sleep", "chance" => 60 } ], [] ].sample(random: @chooser)
+    { "type" => "gm_override", "op" => "rule", "unit" => pending.first, "stat" => Stats::Check::STATS.sample(random: @chooser),
+      "difficulty" => Stats::Check::DIFFICULTIES.keys.sample(random: @chooser), "aim" => %w[single_enemy all_enemies].sample(random: @chooser),
+      "effects" => effects, "success" => "It works!", "failure" => "It doesn't." }
   end
 end

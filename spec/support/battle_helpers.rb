@@ -53,7 +53,13 @@ module BattleFixtures
       steal: { name: "Steal", kind: "skill", target: "single_enemy", cost: { mp: 0 },
                effects: [ { primitive: "steal", chance: 50 } ] },
       libra: { name: "Libra", kind: "magic", target: "single_enemy", cost: { mp: 1 },
-               effects: [ { primitive: "scan" } ] }
+               effects: [ { primitive: "scan" } ] },
+      cover: { name: "Cover", kind: "skill", target: "self", cost: { mp: 0 },
+               effects: [ { primitive: "status", kind: "cover", chance: 100, duration: 2 } ] },
+      jump: { name: "Jump", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+              effects: [ { primitive: "jump", power: 200 } ] },
+      gaia: { name: "Gaia", kind: "skill", target: "all_enemies", cost: { mp: 0 },
+              effects: [ { primitive: "elemental", type: "terrain", power: 12 } ] }
     }
   end
 
@@ -103,8 +109,8 @@ module BattleHelpers
   def stats(**overrides) = BattleFixtures.stats(**overrides)
 
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
-                   abilities: BattleFixtures.abilities, escapable: true, items: {})
-    Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items)
+                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil)
+    Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items, terrain: terrain)
   end
 
   def apply(state, action)
@@ -148,7 +154,7 @@ module BattleHelpers
   def full_round(state, ability = "attack")
     awaiting = state["units"].select do |u|
       u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] &&
-        u["statuses"].none? { |s| Battle::DISABLING_STATUSES.include?(s["kind"]) }
+        u["statuses"].none? { |s| Battle::NO_INPUT_STATUSES.include?(s["kind"]) }
     end
     awaiting.reduce([ state, [] ]) do |(s, log), u|
       action = %w[defend flee].include?(ability) ? command(u["id"], kind: ability) : command(u["id"], ability)

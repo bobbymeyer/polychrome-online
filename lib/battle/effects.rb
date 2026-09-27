@@ -31,6 +31,7 @@ module Battle
       when "cleanse" then cleanse(ctx, actor, target, effect)
       when "steal" then steal(ctx, actor, target, effect)
       when "scan" then scan(ctx, target)
+      when "jump" then jump(ctx, actor, target, effect)
       else raise Error, "unknown primitive #{effect['primitive']}"
       end
     end
@@ -91,15 +92,50 @@ module Battle
       amount *= 2 if crit
       amount /= 2 if target["defending"]
       # Typed after every draw, so the stream doesn't depend on the chart.
-      return if typed(ctx, actor, target, effect["type"], amount, crit: crit, roll: crit_roll, needed: crit_needed)
+      return if typed(ctx, actor, target, type_of(ctx, effect), amount, crit: crit, roll: crit_roll, needed: crit_needed)
 
       ctx.remove_status(target, "sleep", reason: "woke") if ctx.alive?(target)
+      counter(ctx, actor, target)
+    end
+
+    # "terrain" is the type of where the fight is.
+    def type_of(ctx, effect)
+      effect["type"] == "terrain" ? ctx.state.fetch("terrain", "normal") : effect["type"]
+    end
+
+    # Counter (a passive): hit by an enemy's blow and still standing, a unit
+    # sometimes strikes straight back. A counter never sets off another.
+    COUNTER_CHANCE = 30
+
+    def counter(ctx, actor, target)
+      return if ctx.countering || ctx.over?
+      return unless Array(target["passives"]).include?("counter") && target["side"] != actor["side"]
+      return unless ctx.alive?(target) && ctx.alive?(actor) && !ctx.disabled?(target)
+
+      struck, roll = ctx.rng.d100(COUNTER_CHANCE)
+      return unless struck
+
+      ctx.emit(:counter, actor: target["id"], target: actor["id"], roll: roll, needed: COUNTER_CHANCE)
+      ctx.countering = true
+      physical(ctx, target, actor, { "primitive" => "physical", "power" => 100 })
+    ensure
+      ctx.countering = false if struck
+    end
+
+    # jump(power): the actor leaves the field, out of reach, and lands on the
+    # target on its next turn (Battle::Resolver#land) for power% of a blow.
+    def jump(ctx, actor, target, effect)
+      ctx.add_status(actor, "airborne", 2)
+      status = actor["statuses"].find { |st| st["kind"] == "airborne" }
+      status["target"] = target["id"]
+      status["power"] = effect.fetch("power", 200)
+      ctx.emit(:jump, actor: actor["id"], target: target["id"])
     end
 
     # elemental(type, power, hits): power scaled by mag, softened by mdef,
     # then by the type chart. Magic never misses.
     def elemental(ctx, actor, target, effect)
-      typed(ctx, actor, target, effect["type"], magic_amount(ctx, actor, target, effect))
+      typed(ctx, actor, target, type_of(ctx, effect), magic_amount(ctx, actor, target, effect))
     end
 
     # Deal damage of a type (nil: typeless) through the chart and the
@@ -207,10 +243,19 @@ module Battle
     end
 
     # End-of-turn upkeep for a unit: poison, then duration ticks.
+    REGEN_DIVISOR = 16
+
     def upkeep(ctx, unit)
       if ctx.status?(unit, "poison")
         ctx.deal_damage(unit, [ unit["stats"]["max_hp"] / POISON_DIVISOR, 1 ].max, status: "poison")
         return unless ctx.alive?(unit)
+      end
+      passives = Array(unit["passives"])
+      if passives.include?("regen") && unit["hp"] < unit["stats"]["max_hp"]
+        ctx.restore_hp(unit, [ unit["stats"]["max_hp"] / REGEN_DIVISOR, 1 ].max, regen: true)
+      end
+      if passives.include?("mp_regen") && unit["mp"] < unit["stats"]["max_mp"]
+        ctx.restore_mp(unit, [ unit["stats"]["max_mp"] / REGEN_DIVISOR, 1 ].max, regen: true)
       end
 
       unit["statuses"].each { |s| s["turns"] -= 1 }

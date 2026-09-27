@@ -10,7 +10,7 @@ module Battle
 
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
-  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan].freeze
+  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan jump].freeze
 
   # Parameters each primitive takes, split into required and optional
   # (optional ones have defaults in Battle::Effects). String-valued params
@@ -30,15 +30,20 @@ module Battle
     # Takes one of the target's drops, once per target.
     "steal" => { required: [], optional: %w[chance] },
     # Shows the target's affinities, status immunities and HP.
-    "scan" => { required: [], optional: [] }
+    "scan" => { required: [], optional: [] },
+    # Leaves the field (airborne) and lands on the target on the next turn.
+    "jump" => { required: [], optional: %w[power] }
   }.freeze
   PRIMITIVE_STRING_PARAMS = %w[type kind stat].freeze
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
   TYPES = Types::ALL
   AFFINITIES = Types::AFFINITIES
-  STATUSES = %w[poison sleep paralyze silence blind haste slow].freeze
+  # cover: this unit takes the enemies' single-target moves meant for its
+  # allies (a Knight's Cover). airborne: off the field after a Jump, out of
+  # reach, landing on its next turn.
+  STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne].freeze
   # What a cleanse with no kind cures: everything but the good ones.
-  HARMFUL_STATUSES = (STATUSES - %w[haste]).freeze
+  HARMFUL_STATUSES = (STATUSES - %w[haste cover airborne]).freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
   COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
@@ -46,6 +51,15 @@ module Battle
   # Statuses that stop a unit from taking its turn (and from being asked
   # for input).
   DISABLING_STATUSES = %w[sleep paralyze].freeze
+  # No command while these last: the unit's turn is already spoken for.
+  NO_INPUT_STATUSES = (DISABLING_STATUSES + %w[airborne]).freeze
+  # What a job gives beyond numbers (Battle::Effects, #take_turn):
+  #   counter      — sometimes strikes back when hit by an enemy's blow
+  #   regen        — a little HP back at the end of each of its turns
+  #   mp_regen     — a little MP back at the end of each of its turns
+  #   first_strike — goes before everyone in the first round
+  #   second_wind  — once a battle, gets back up when knocked down
+  PASSIVES = %w[counter regen mp_regen first_strike second_wind].freeze
 
   ATTACK = {
     "id" => "attack",
@@ -76,7 +90,7 @@ module Battle
     # abilities: { "fire" => { name:, kind:, target:, cost: { mp: }, effects: [...] } }
     # items:     the party's usable items, shared by everyone in it:
     #            { "potion" => { name:, target:, effects: [...], count: 3 } }
-    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {})
+    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil)
       library = normalize(abilities)
       library["attack"] ||= normalize(ATTACK)
       library.each do |id, ability|
@@ -114,11 +128,27 @@ module Battle
         "round" => 1,
         "status" => "input",
         "escapable" => escapable ? true : false,
+        "terrain" => terrain_type(terrain),
         "abilities" => library,
         "items" => bag,
         "units" => units,
         "inputs" => {}
       }
+    end
+
+    def terrain_type(terrain)
+      return "normal" if terrain.nil?
+      raise ArgumentError, "unknown terrain type #{terrain}" unless TYPES.include?(terrain.to_s)
+
+      terrain.to_s
+    end
+
+    def passives(id, spec)
+      list = Array(spec["passives"]).map(&:to_s).uniq
+      unknown = list - PASSIVES
+      raise ArgumentError, "#{id} has unknown passives: #{unknown.join(', ')}" if unknown.any?
+
+      list.any? ? { "passives" => list } : {}
     end
 
     def unit(spec, side)
@@ -156,6 +186,7 @@ module Battle
         "last_command" => nil
       }.merge(spec["desperation"] ? { "desperation" => spec["desperation"].to_s } : {})
        .merge(spec["level"] ? { "level" => Integer(spec["level"]) } : {})
+       .merge(passives(id, spec))
     end
 
     # { id: "goblin", name: "Goblin", count: 3 } -> Goblin A, Goblin B, Goblin C
@@ -180,7 +211,7 @@ module Battle
     def able_to_act(state)
       state["units"].select do |u|
         u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] &&
-          u["statuses"].none? { |s| DISABLING_STATUSES.include?(s["kind"]) }
+          u["statuses"].none? { |s| NO_INPUT_STATUSES.include?(s["kind"]) }
       end.map { |u| u["id"] }
     end
 
@@ -256,7 +287,9 @@ module Battle
 
         case primitive
         when "elemental", "physical"
-          raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !TYPES.include?(effect["type"])
+          # "terrain": the type of where the fight is (a Geomancer's arts).
+          known = TYPES.include?(effect["type"]) || effect["type"] == "terrain"
+          raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !known
         when "status"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" unless STATUSES.include?(effect["kind"])
         when "cleanse"

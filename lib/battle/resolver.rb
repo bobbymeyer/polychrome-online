@@ -413,14 +413,28 @@ module Battle
     end
 
     # Speed order: agi plus up to a quarter of agi at random. Ties go to
-    # the unit listed first.
+    # the unit listed first. In the first round, First Strike goes before
+    # everyone (the roll is still drawn, so the stream doesn't change).
     def turn_order
       ctx.units.each_with_index.filter_map do |u, index|
         next unless ctx.alive?(u)
 
         agi = ctx.stat(u, "agi")
-        [ -(agi + ctx.rng.int(agi / 4 + 1)), index, u["id"] ]
+        early = state["round"] == 1 && Array(u["passives"]).include?("first_strike") ? 0 : 1
+        [ early, -(agi + ctx.rng.int(agi / 4 + 1)), index, u["id"] ]
       end.sort.map(&:last)
+    end
+
+    # A Jump comes down: a blow at the target it left for (or, if that one's
+    # gone, anyone in reach), whatever else was going on.
+    def land(unit)
+      status = unit["statuses"].find { |s| s["kind"] == "airborne" }
+      ctx.remove_status(unit, "airborne", reason: "landed")
+      target = ctx.find_unit(status["target"].to_s)
+      target = nil unless target && target["side"] != unit["side"] && ctx.alive?(target) && !ctx.status?(target, "airborne")
+      target ||= ctx.rng.pick(ctx.opponents(unit))
+      ctx.emit(:land, actor: unit["id"], target: target&.dig("id"))
+      Effects.apply(ctx, unit, target, { "primitive" => "physical", "power" => status.fetch("power", 200) }) if target
     end
 
     def take_turn(unit, cmd)
@@ -428,7 +442,9 @@ module Battle
 
       ctx.emit(:turn_start, unit: unit["id"])
       blocking = DISABLING_STATUSES.find { |kind| ctx.status?(unit, kind) }
-      if blocking
+      if ctx.status?(unit, "airborne")
+        land(unit)
+      elsif blocking
         ctx.emit(:turn_skipped, unit: unit["id"], reason: blocking)
       elsif unit["side"] == "enemy" || unit["guest"]
         ability, target = AI.choose(ctx, unit)
@@ -574,8 +590,8 @@ module Battle
       case ability["target"]
       when "self" then [ unit ]
       when "single_enemy"
-        chosen = nil unless chosen && chosen["side"] != unit["side"] && ctx.alive?(chosen)
-        [ chosen || ctx.rng.pick(ctx.opponents(unit)) ].compact
+        chosen = nil unless chosen && ctx.opponents(unit).include?(chosen)
+        [ covered(chosen || ctx.rng.pick(ctx.opponents(unit))) ].compact
       when "single_ally"
         fallen = ctx.allies(unit, alive: false).reject { |a| ctx.alive?(a) }
         valid = chosen && chosen["side"] == unit["side"] && (revive ? !ctx.alive?(chosen) : ctx.alive?(chosen))
@@ -586,6 +602,17 @@ module Battle
       when "all_enemies" then ctx.opponents(unit)
       when "all_allies" then ctx.allies(unit, alive: !revive)
       end
+    end
+
+    # Cover: a unit meant for this blow has an ally standing in front of it.
+    def covered(target)
+      return target unless target
+
+      guard = ctx.allies(target).find { |a| a != target && ctx.status?(a, "cover") && !ctx.status?(a, "airborne") }
+      return target unless guard
+
+      ctx.emit(:covered, unit: guard["id"], for: target["id"])
+      guard
     end
 
     def close_round(inputs)

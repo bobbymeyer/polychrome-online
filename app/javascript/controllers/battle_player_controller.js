@@ -162,6 +162,32 @@ export default class extends Controller {
       case "command_accepted":
         tl.call(() => this.setReady(e.actor, true), at)
         return 0
+      case "jump":
+        // Up and out of the frame, and out of reach, until its next turn.
+        tl.add(this.sprite(e.actor), { translateY: [0, -220], opacity: [1, 0], duration: 420, ease: "inQuad" }, at)
+        this.caption(tl, "Jump!", at, "skill")
+        return 500
+      case "land":
+        tl.add(this.sprite(e.actor), { translateY: [-220, 0], opacity: [0, 1], duration: 260, ease: "inExpo" }, at)
+        if (e.target) gesture(tl, this.stageTarget, "shake", at + 240)
+        return 320
+      case "covered":
+        this.popup(tl, e.unit, "COVER!", "status", at)
+        gesture(tl, this.sprite(e.unit), "lunge", at, this.facing(e.unit))
+        return 380
+      case "counter":
+        this.die(tl, e.actor, e, at)
+        this.popup(tl, e.actor, "COUNTER!", "crit", at)
+        return 300
+      case "second_wind":
+        tl.call(() => { this.setKo(e.target, false); this.setHp(e.target, e.hp) }, at)
+        this.popup(tl, e.target, "SECOND WIND!", "perfect", at)
+        gesture(tl, this.sprite(e.target), "bounce", at)
+        return 700
+      case "mp_restored":
+        tl.call(() => this.addMp(e.target, e.amount), at)
+        this.popup(tl, e.target, `+${e.amount} MP`, "status", at)
+        return 250
       case "custom_action":
         // A player's own idea, in their words.
         this.caption(tl, `“${e.text}”`, at, "custom")
