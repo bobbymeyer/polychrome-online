@@ -601,7 +601,15 @@ Every image slot can be uploaded or generated with
   | `LLM_TOKEN`, `LLM_HEADERS` | blank | As for ComfyUI |
   | `LLM_TIMEOUT` | `120` | Seconds, room for the server to load the model |
 
-  Model and LoRA fields suggest whatever ComfyUI reports as installed.
+  Models and LoRAs are picked from what ComfyUI reports as installed.
+  - **Models** are grouped by the family each would run as (Anima, Krea 2
+    Turbo, Pony, SDXL, and so on).
+  - **LoRAs** are grouped by the subfolder they sit in, so keeping them in
+    folders per family (`loras/SDXL/…`) keeps the list tidy.
+  - **A saved name ComfyUI no longer has** stays selected under "Not on
+    ComfyUI", so saving doesn't lose it.
+  - **While ComfyUI isn't answering,** both are plain text fields.
+  - **New files** appear within a minute.
 - **Anima** needs three files, from Comfy Org's repackaged release:
   - `anima-preview.safetensors` in `models/diffusion_models`;
   - `qwen_3_06b_base.safetensors` in `models/text_encoders`;
