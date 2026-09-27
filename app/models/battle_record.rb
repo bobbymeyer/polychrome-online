@@ -100,7 +100,7 @@ class BattleRecord < ApplicationRecord
   # `if_round` makes the action a no-op (returns nil) if the battle has
   # moved on, which is how a stale input timer is ignored.
   def apply!(action, actor:, if_round: nil)
-    before = events = nil
+    before = events = record = nil
     with_lock do
       return nil if if_round && (round != if_round || over?)
 
@@ -118,7 +118,7 @@ class BattleRecord < ApplicationRecord
     end
     new_round = !over? && round != before["round"]
     open_round! if new_round
-    broadcast_beat(before, events)
+    broadcast_beat(before, events, record.position)
     auto_fill! if new_round
     [ before, events ]
   end
@@ -134,15 +134,12 @@ class BattleRecord < ApplicationRecord
     standing = party.select { |u| u["hp"].positive? }.map { |u| u["id"] }
     return if (standing - auto_units).empty?
 
-    this_round = round
-    (awaiting_input & auto_units).each do |id|
-      break if round != this_round || over? # the last one ran the round
-      next unless awaiting_input.include?(id)
+    units = awaiting_input & auto_units
+    return if units.empty?
 
-      apply!({ "type" => "gm_override", "op" => "auto", "unit" => id }, actor: "gm", if_round: this_round)
-    rescue Battle::InvalidAction
-      next # someone sat down and chose for them first
-    end
+    apply!({ "type" => "gm_override", "op" => "auto", "units" => units }, actor: "gm", if_round: round)
+  rescue Battle::InvalidAction
+    nil # someone sat down and chose for one of them first; the timer or the GM covers the rest
   end
 
   def set_auto!(unit_id, on)
@@ -267,8 +264,10 @@ class BattleRecord < ApplicationRecord
 
   # §6: every viewer gets the events plus the state before them, and holds
   # the state after them back until the animation finishes.
-  def broadcast_beat(before, events)
+  # `position` orders beats: broadcasts can arrive out of order, and the
+  # player waits for the one it's missing.
+  def broadcast_beat(before, events, position)
     broadcast_append_to self, target: "battle_beats", partial: "battles/beat",
-                              locals: { battle: self, before: before, events: events }
+                              locals: { battle: self, before: before, events: events, position: position }
   end
 end

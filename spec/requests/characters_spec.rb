@@ -7,7 +7,7 @@ RSpec.describe "Campaigns and characters", type: :request do
   let!(:world) { Seeds::BaseWorld.run }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let(:knight) { world.jobs.find_by!(slug: "knight") }
-  let(:bartz) { campaign.characters.create!(name: "Bartz", player_name: "Sam", job: knight, starting_level: 5, starting_job_level: 1) }
+  let(:bartz) { campaign.characters.create!(name: "Bartz", player_name: "Sam", job: knight, starting_level: 5, starting_job_level: 1, starting_gear: false) }
   let(:item) { ->(slug) { world.items.find_by!(slug: slug) } }
 
   describe "campaigns" do
@@ -73,6 +73,11 @@ RSpec.describe "Campaigns and characters", type: :request do
       get character_path(bartz)
       expect(response.body).to include("Bartz", "played by Sam", "Knight", "Lv 1", "Base", "Gear", "Total",
                                        "War Cry", "Change job", "Free slots (1)")
+
+      bartz.update!(user: make_user("Jo")) # an account beats the old player-name note
+      get character_path(bartz)
+      expect(response.body).to include("played by Jo")
+      expect(response.body).not_to include("played by Sam")
     end
 
     it "equips from the bag, all slots in one form" do

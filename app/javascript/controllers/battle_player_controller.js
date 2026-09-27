@@ -16,11 +16,14 @@ import { gesture } from "motion/gestures"
 // Skip = timeline.complete(); GM fast-forward = timeline.speed. A reload
 // or late join renders the current state server-side and never replays events.
 const BACKLOG_SPEEDUP = 4
+// How long to wait for a beat that's missing from the sequence before
+// playing the ones after it anyway.
+const GAP_WAIT = 1500
 const REDUCED_MOTION_SPEED = 4
 
 export default class extends Controller {
   static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip"]
-  static values = { panelUrl: String }
+  static values = { panelUrl: String, next: Number }
 
   connect() {
     this.queue = []
@@ -34,8 +37,12 @@ export default class extends Controller {
     this.current = null
   }
 
+  // Beats play in the order they happened, whatever order they arrive in.
   enqueue(event) {
-    this.queue.push(event.detail.beat)
+    const beat = event.detail.beat
+    if (beat.positionValue < this.nextValue) return beat.element.remove() // already shown on load
+    this.queue.push(beat)
+    this.queue.sort((a, b) => a.positionValue - b.positionValue)
     if (!this.current) this.playNext()
   }
 
@@ -66,7 +73,17 @@ export default class extends Controller {
   }
 
   playNext() {
+    clearTimeout(this.gapTimer)
+    const head = this.queue[0]
+    if (head && head.positionValue > this.nextValue && !this.waited) {
+      // A beat before this one hasn't arrived yet: give it a moment.
+      this.waited = true
+      this.gapTimer = setTimeout(() => this.playNext(), GAP_WAIT)
+      return
+    }
+    this.waited = false
     const beat = this.queue.shift()
+    if (beat) this.nextValue = beat.positionValue + 1
     if (!beat) {
       this.current = null
       this.skipTarget.hidden = true

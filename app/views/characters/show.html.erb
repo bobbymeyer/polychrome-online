@@ -7,7 +7,7 @@
   <header class="book-page__header">
     <%= entry_portrait(@character.job) %>
     <div>
-      <p class="eyebrow">Character<%= " · played by #{@character.player_name}" if @character.player_name.present? %></p>
+      <p class="eyebrow">Character<% if (player = @character.user&.name.presence || @character.player_name.presence) %> · played by <%= player %><% end %></p>
       <h1><%= @character.name %></h1>
       <dl class="facts">
         <dt>Level</dt>
@@ -26,7 +26,7 @@
 
   <section class="window">
     <h2>Stats</h2>
-    <p class="hint">Derived, never stored: level base × job, plus equipment, plus the job's innates.</p>
+    <p class="hint">What their level gives, shaped by their job, then their gear, then the job's innate abilities.</p>
     <table class="book-table book-table--plain stat-table">
       <thead>
         <tr><th>Stat</th><th class="num">Base</th><th class="num">Job</th><th class="num">Gear</th><th class="num">Total</th></tr>

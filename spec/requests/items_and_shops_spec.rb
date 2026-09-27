@@ -10,8 +10,8 @@ RSpec.describe "Items and shops", type: :request do
   let(:antidote) { world.items.find_by!(slug: "antidote") }
 
   describe "in battle" do
-    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5) }
-    let!(:faris) { campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "monk"), starting_level: 5) }
+    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5, starting_gear: false) }
+    let!(:faris) { campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "monk"), starting_level: 5, starting_gear: false) }
 
     before do
       campaign.add_item!(potion, 2)
@@ -65,7 +65,7 @@ RSpec.describe "Items and shops", type: :request do
     let!(:lenna) { make_user("Lenna") }
 
     before do
-      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), user: lenna)
+      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), user: lenna, starting_gear: false)
       campaign.update!(current_node: node)
       town
       sign_in_as(lenna)
@@ -110,8 +110,8 @@ RSpec.describe "Items and shops", type: :request do
   end
 
   describe "outside battle" do
-    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5) }
-    let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5) }
+    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5, starting_gear: false) }
+    let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5, starting_gear: false) }
 
     before do
       campaign.add_item!(potion, 2)
@@ -160,7 +160,7 @@ RSpec.describe "Items and shops", type: :request do
       node.reload.location
     end
     let(:broadsword) { world.items.find_by!(slug: "broadsword") }
-    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight")) }
+    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_gear: false) }
 
     before do
       campaign.update!(current_node: node)
@@ -182,7 +182,7 @@ RSpec.describe "Items and shops", type: :request do
       town
       bartz.update!(user: make_user("Someone"))
       lenna = make_user("Lenna")
-      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), user: lenna)
+      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), user: lenna, starting_gear: false)
       sign_in_as(lenna)
       get location_path(town)
       expect(response.body).not_to include("Sell what the party is wearing")

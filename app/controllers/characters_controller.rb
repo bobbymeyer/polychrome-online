@@ -9,7 +9,7 @@ class CharactersController < ApplicationController
   before_action :require_character_manager, only: %i[edit update destroy]
 
   def new
-    @character = @campaign.characters.new(starting_level: 5, starting_job_level: 1,
+    @character = @campaign.characters.new(starting_level: 5,
                                           job: @world.jobs.order(:name).first)
   end
 
@@ -20,7 +20,7 @@ class CharactersController < ApplicationController
     @character = @campaign.characters.new(params.expect(character: fields).merge(user: (current_user unless can_gm?(@campaign))))
     unless can_gm?(@campaign)
       @character.starting_level ||= @campaign.characters.minimum(:level)
-      @character.starting_job_level = 1 # the job's first ability, like the GM's default
+      @character.starting_job_level = nil # follows their level
     end
     if @character.save
       redirect_to character_path(@character), notice: "#{@character.name} joins the party."

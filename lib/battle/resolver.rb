@@ -150,6 +150,7 @@ module Battle
     # --- GM overrides ------------------------------------------------------
     #
     #   { op: "auto", unit: id }                      default command for an absent player
+    #   { op: "auto", units: [id, ...] }              the same for several at once (one log line)
     #   { op: "execute_round" }                       run now; missing inputs get defaults
     #   { op: "set_hp", unit: id, value: n }
     #   { op: "set_mp", unit: id, value: n }
@@ -171,11 +172,22 @@ module Battle
     end
 
     def gm_auto(action)
-      unit = ctx.unit(action["unit"])
-      raise InvalidAction, "#{unit['id']} is not awaiting input" unless missing_inputs.include?(unit["id"])
+      if action["units"]
+        units = Array(action["units"]).map { |id| ctx.unit(id) }
+        raise InvalidAction, "auto needs at least one unit" if units.empty?
+      else
+        units = [ ctx.unit(action["unit"]) ]
+      end
+      units.each do |unit|
+        raise InvalidAction, "#{unit['id']} is not awaiting input" unless missing_inputs.include?(unit["id"])
 
-      state["inputs"][unit["id"]] = default_command(unit)
-      gm_event(action, unit: unit["id"], command: state["inputs"][unit["id"]])
+        state["inputs"][unit["id"]] = default_command(unit)
+      end
+      if action["units"]
+        gm_event(action, units: units.map { |u| u["id"] }, commands: units.map { |u| state["inputs"][u["id"]] })
+      else
+        gm_event(action, unit: units.first["id"], command: state["inputs"][units.first["id"]])
+      end
       run_round if missing_inputs.empty?
     end
 

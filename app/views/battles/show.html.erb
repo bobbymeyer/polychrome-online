@@ -6,6 +6,7 @@
 
 <div class="battle" data-controller="battle-player"
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
+     data-battle-player-next-value="<%= @battle.battle_actions.count %>"
      data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key">
   <%= turbo_stream_from @battle %>
 

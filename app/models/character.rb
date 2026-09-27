@@ -25,10 +25,11 @@ class Character < ApplicationRecord
   # Creation-only inputs: the level and current-job level to start at.
   attribute :starting_level, :integer
   attribute :starting_job_level, :integer
+  attribute :starting_gear, :boolean, default: true
 
   before_validation :apply_starting_level, on: :create
   before_validation { self.level = Stats::Growth.level_for_exp(exp.to_i) }
-  after_create :start_in_job
+  after_create :start_in_job, :outfit
 
   validates :name, presence: true
   validates :exp, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
@@ -222,9 +223,29 @@ class Character < ApplicationRecord
     self.exp = Stats::Growth.exp_for_level(starting_level) if starting_level
   end
 
+  # Without a job level given, a character has spent some of their life in
+  # their job: about one job level per two character levels.
+  def self.job_level_for(level)
+    [ (level.to_i + 1) / 2, 1 ].max
+  end
+
   def start_in_job
     costs = job.job_levels.map(&:abp)
-    character_jobs.create!(job: job, abp: Stats::Growth.abp_for_job_level(starting_job_level.to_i, costs))
+    job_level = starting_job_level.nil? ? Character.job_level_for(level) : starting_job_level.to_i
+    character_jobs.create!(job: job, abp: Stats::Growth.abp_for_job_level(job_level, costs))
+  end
+
+  # A new character arrives dressed for their job, as in the games: the
+  # cheapest thing in the Armory for each slot the job can use. Accessories
+  # are earned, not issued.
+  def outfit
+    return unless starting_gear
+
+    wearable = world.items.where(category: job.equip_categories - [ "accessory" ]).where("price > 0").order(:price, :id)
+    wearable.group_by(&:slot).each_value do |choices|
+      campaign.add_item!(choices.first)
+      equip!(choices.first)
+    end
   end
 
   def job_from_the_campaign_world

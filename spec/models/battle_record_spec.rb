@@ -183,7 +183,7 @@ RSpec.describe BattleRecord do
     it "plays unclaimed characters on auto as each round opens, logged as the GM's call" do
       expect(battle.auto_units).to eq([ faris ])
       expect(battle.awaiting_input).to eq([ bartz ])
-      expect(battle.battle_actions.last).to have_attributes(actor: "gm", payload: include("op" => "auto", "unit" => faris))
+      expect(battle.battle_actions.last).to have_attributes(actor: "gm", payload: include("op" => "auto", "units" => [ faris ]))
 
       battle.apply!(command(bartz), actor: bartz)
       expect(battle.round).to eq(2)

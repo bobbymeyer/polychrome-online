@@ -314,6 +314,14 @@ RSpec.describe Battle::Resolver do
       expect { apply(s, gm("auto", unit: "bartz")) }.to raise_error(Battle::InvalidAction)
     end
 
+    it "plays several absent players on auto in one override, with one event" do
+      s = state
+      _, events = apply(s, gm("auto", units: %w[vivi locke]))
+      expect(events.first).to include("type" => "gm_override", "op" => "auto", "units" => %w[vivi locke])
+      expect(events.count { |e| e["type"] == "gm_override" }).to eq(1)
+      expect { apply(s, gm("auto", units: [])) }.to raise_error(Battle::InvalidAction)
+    end
+
     it "execute_round runs immediately with defaults" do
       _, events = apply(state, gm("execute_round"))
       expect(events.first).to include("type" => "gm_override", "op" => "execute_round",
