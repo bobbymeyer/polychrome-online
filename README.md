@@ -246,6 +246,18 @@ out one after another. The scene can then end:
 
 A played scene stays in the list, greyed, and can be played again.
 
+## Previously on…
+
+Coming back to the table after a break (this device hasn't had it open for
+three hours, or ever), a title card opens: the last session in brief
+(`Recap`). A session is a run of log lines with no gap over three hours; the
+recap is of the last one that has ended, so it still recaps last week once
+tonight has started. It covers the road the party took (read from the travel
+and dungeon lines), the battles and level-ups, keys and treasure found, the
+flags the party knows that changed, and the last line said to the table.
+Whispers are never in it. "Previously on …" under the table's title opens it
+again at any time.
+
 ## The pointcrawl map
 
 Each campaign has a map (`/campaigns/:id/map`), and the table shows it too.

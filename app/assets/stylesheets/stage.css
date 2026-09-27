@@ -555,6 +555,27 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .motive::before { content: "\201C"; } .motive::after { content: "\201D"; }
 .motive--card { font-size: 14px; line-height: 20px; margin: 6px 0 0; color: var(--grey); }
 
+/* "Previously on…": a title card, then the last session in brief. */
+.recap {
+  width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto;
+  padding: 24px 28px 20px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink);
+  box-shadow: 10px 10px 0 var(--accent), 20px 20px 0 var(--ink);
+}
+.recap::backdrop { background: rgb(0 0 0 / .6); }
+.recap[open] { animation: slash-in .35s var(--snap) both; }
+.recap h2 { margin: 0 0 16px; font: var(--display); font-size: clamp(32px, 6vw, 48px); letter-spacing: -0.04em; text-shadow: 4px 4px 0 var(--echo); }
+.recap h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; font-size: 16px; }
+.recap__body { display: grid; gap: 16px; }
+.recap__body section { border-top: 3px solid var(--ink); padding-top: 6px; }
+.recap__road { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0; font-weight: 700; }
+.recap__arrow { color: var(--signal); }
+.recap__last { display: flex; gap: 14px; align-items: flex-start; margin: 20px 0 8px; }
+.recap__last blockquote { margin: 0; padding: 10px 14px; border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--accent); flex: 1; }
+.recap__last blockquote p { margin: 0; font-size: 18px; line-height: 26px; }
+.recap__speaker { font-style: italic; font-weight: 900; font-size: 14px !important; }
+.recap .actions { margin-top: 16px; justify-content: flex-end; }
+.recap-link { margin-top: 4px; font-style: italic; }
+
 /* ---------------------------------------------------------------------------
  * Everything that moves holds still for people who asked for stillness.
  * ------------------------------------------------------------------------- */
@@ -562,6 +583,6 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 @media (prefers-reduced-motion: reduce) {
   .page, .play .menu__item, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
   .unit.is-targeted .sprite::after, .roster__row [data-hp], .command-panel__vitals .is-low, .countdown.is-urgent,
-  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle { animation: none !important; }
+  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open] { animation: none !important; }
   * { transition-duration: 0s !important; }
 }

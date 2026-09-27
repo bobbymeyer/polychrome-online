@@ -14,5 +14,7 @@ class TablesController < ApplicationController
     @seat = table_seat
     @messages = Message.visible_to(@campaign, @seat).last(LOG_LENGTH)
     @last_dialogue = @messages.reverse.find(&:dialogue?)
+    @recap = Recap.for(@campaign)
+    @recap = nil if @recap&.empty?
   end
 end

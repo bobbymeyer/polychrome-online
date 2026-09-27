@@ -56,6 +56,10 @@ deliberate divergence from much of what follows, and where the two disagree the 
   the move's name in heavy italic, white with a black outline. A power chord plays under it.
 - **Why they're here.** A character's line sits under their name on the sheet, in bold
   italic quotes, and on their party card in grey.
+- **Previously on…** A returning player gets a title card over the table: the campaign's name in
+  display type, then the last session in short sections (the road as names joined by red
+  arrows, battles, finds, what the party learned) and the last line said, in a speech box.
+  "Carry on" closes it.
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide

@@ -166,4 +166,13 @@ RSpec.describe "The table", type: :request do
       expect(bartz.portraits.pluck(:expression)).to eq([ "determined" ])
     end
   end
+
+  it "offers a recap of the last session, once there is one" do
+    get campaign_table_path(campaign)
+    expect(response.body).not_to include("Previously on")
+
+    campaign.messages.create!(speaker: cid, body: "The crystal is cracking.", created_at: 2.days.ago)
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap"', "The crystal is cracking.")
+  end
 end

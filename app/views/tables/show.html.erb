@@ -4,7 +4,9 @@
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
-<div class="table" data-controller="dialogue" data-action="chat-line:arrived->dialogue#arrive keydown@window->dialogue#key">
+<div class="table" data-controller="dialogue recap" data-action="chat-line:arrived->dialogue#arrive keydown@window->dialogue#key"
+     data-recap-campaign-value="<%= @campaign.id %>">
+  <%= render "tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= turbo_stream_from @campaign, :table %>
   <%= render "shared/stage_stream", campaign: @campaign %>
@@ -19,6 +21,9 @@
     <div>
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · Table</p>
       <h1><%= @campaign.name %></h1>
+      <% if @recap %>
+        <button type="button" class="link-button recap-link" data-action="recap#open">Previously on <%= @campaign.name %>…</button>
+      <% end %>
     </div>
     <%= render "tables/current_battle", campaign: @campaign %>
   </header>
