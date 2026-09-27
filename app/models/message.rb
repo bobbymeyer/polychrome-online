@@ -11,6 +11,8 @@
 # to the one character involved, never to the whole table.
 class Message < ApplicationRecord
   KINDS = %w[say system].freeze
+  # The jingle a line plays as it arrives (sound.js).
+  CUES = %w[key door treasure].freeze
   SCOPES = %w[table whisper].freeze
   SPEAKER_TYPES = %w[Character Npc].freeze
 
@@ -24,6 +26,7 @@ class Message < ApplicationRecord
 
   validates :body, presence: true, length: { maximum: 2000 }
   validates :kind, inclusion: { in: KINDS }
+  validates :cue, inclusion: { in: CUES }, allow_nil: true
   validates :scope, inclusion: { in: SCOPES }
   validates :speaker_type, inclusion: { in: SPEAKER_TYPES }, allow_nil: true
   validates :expression, inclusion: { in: Portrait::EXPRESSIONS }, allow_nil: true

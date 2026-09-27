@@ -3,17 +3,24 @@
 # The base world's first book entries (docs/HANDOFF.md §2: "The base world
 # is seed data: the first World and its children").
 #
-# Idempotent: entries are matched by slug and updated in place, so this can
-# be re-run after editing. Numbers are first-pass tuning (§9.2).
+# Worlds are live: a GM develops theirs as they play, editing entries in the
+# books. So an ordinary run only adds what's missing (a new monster, a new
+# table) and never touches an entry that's already there, edited or not.
+# `bin/rails base_world:update` (overwrite: true) puts every entry back to
+# what's written here, for when the seed data itself has been retuned.
+# Numbers are first-pass tuning (§9.2).
 module Seeds
   module BaseWorld
     module_function
 
-    def run
+    def run(overwrite: false)
+      @overwrite = overwrite
       world = World.find_or_initialize_by(slug: "base")
-      world.update!(name: "Base World",
-                    description: "The opinionated default setting: crystals, jobs, and a world map of towns, " \
-                                 "dungeons and the roads between them.")
+      if world.new_record? || overwrite
+        world.update!(name: "Base World",
+                      description: "The opinionated default setting: crystals, jobs, and a world map of towns, " \
+                                   "dungeons and the roads between them.")
+      end
 
       ABILITIES.each { |slug, attrs| upsert(world.abilities, slug, attrs) }
       ITEMS.each { |slug, attrs| upsert(world.items, slug, attrs) }
@@ -26,7 +33,10 @@ module Seeds
       end
       JOBS.each do |slug, attrs|
         levels = attrs.fetch(:levels)
+        fresh = !world.jobs.exists?(slug: slug.to_s)
         job = upsert(world.jobs, slug, attrs.except(:levels))
+        next unless fresh || overwrite
+
         job.job_levels.destroy_all
         levels.each_with_index do |(ability, abp), i|
           job.job_levels.create!(level: i + 1, abp: abp, ability: world.abilities.find_by!(slug: ability))
@@ -35,9 +45,11 @@ module Seeds
       world
     end
 
+    # Create the entry if it's missing; only rewrite an existing one when
+    # overwriting.
     def upsert(scope, slug, attrs)
       record = scope.find_or_initialize_by(slug: slug.to_s)
-      record.update!(attrs)
+      record.update!(attrs) if record.new_record? || @overwrite
       record
     end
 
@@ -123,7 +135,28 @@ module Seeds
                         description: "Fire, focused through the crystal. Everyone burns." },
       esuna: { name: "Esuna", kind: "magic", target: "single_ally", mp_cost: 5, gesture: "float",
                effects: [ { primitive: "cleanse" } ],
-               description: "Lifts every affliction from one ally." }
+               description: "Lifts every affliction from one ally." },
+      # Desperation moves: never learned, found. At a quarter HP or less an
+      # attack sometimes becomes the job's move, once a battle.
+      last_stand: { name: "Last Stand", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
+                    effects: [ { primitive: "physical", power: 220 } ],
+                    description: "Everything, in one swing. A Freelancer's desperation move." },
+      unbroken_line: { name: "Unbroken Line", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "spin",
+                       effects: [ { primitive: "physical", power: 130 } ],
+                       description: "The Knight plants their feet and cuts through the whole line. A desperation move." },
+      vanishing_cut: { name: "Vanishing Cut", kind: "skill", target: "random_enemy", mp_cost: 0, gesture: "fade",
+                       effects: [ { primitive: "physical", power: 75, hits: 4 } ],
+                       description: "Four cuts from nowhere. A Thief's desperation move." },
+      hundred_fists: { name: "Hundred Fists", kind: "skill", target: "random_enemy", mp_cost: 0, gesture: "shake",
+                       effects: [ { primitive: "physical", power: 50, hits: 6 } ],
+                       description: "Not quite a hundred. A Monk's desperation move." },
+      starfall: { name: "Starfall", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash",
+                  effects: [ { primitive: "elemental", element: "earth", power: 34 } ],
+                  description: "The sky answers, once. A Black Mage's desperation move." },
+      judgement: { name: "Judgement", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash",
+                   effects: [ { primitive: "elemental", element: "holy", power: 26 },
+                             { primitive: "status", kind: "blind", chance: 50, duration: 3 } ],
+                   description: "Light too bright to look at. A White Mage's desperation move." }
     }.freeze
 
     ITEMS = {
@@ -164,30 +197,30 @@ module Seeds
     }.freeze
 
     JOBS = {
-      freelancer: { name: "Freelancer", description: "No talents, no limits. Every hero starts here.",
+      freelancer: { name: "Freelancer", desperation: "last_stand", description: "No talents, no limits. Every hero starts here.",
                     stat_multipliers: {}, ability_slots: 2, equip_categories: Item::EQUIPMENT_CATEGORIES,
                     innates: [], levels: [ [ "libra", 10 ] ] },
-      knight: { name: "Knight", description: "Heavy armor, a long sword and the resolve to stand in front.",
+      knight: { name: "Knight", desperation: "unbroken_line", description: "Heavy armor, a long sword and the resolve to stand in front.",
                 stat_multipliers: { max_hp: 130, str: 120, vit: 120, agi: 90, mag: 60 },
                 equip_categories: %w[sword axe spear shield helmet heavy_armor accessory],
                 innates: [ { stat: "def", percent: 10 } ],
                 levels: [ [ "war_cry", 10 ], [ "armor_break", 20 ], [ "double_cut", 40 ] ] },
-      thief: { name: "Thief", description: "Fast hands, faster feet.",
+      thief: { name: "Thief", desperation: "vanishing_cut", description: "Fast hands, faster feet.",
                stat_multipliers: { agi: 140, str: 90, max_hp: 90 },
                equip_categories: %w[knife hat light_armor accessory],
                innates: [ { stat: "agi", add: 5 } ],
                levels: [ [ "steal", 10 ], [ "smoke_bomb", 20 ], [ "double_cut", 30 ] ] },
-      monk: { name: "Monk", description: "Fists instead of steel.",
+      monk: { name: "Monk", desperation: "hundred_fists", description: "Fists instead of steel.",
               stat_multipliers: { max_hp: 140, str: 130, vit: 110, mag: 50 },
               equip_categories: %w[light_armor accessory],
               innates: [ { stat: "atk", add: 12 } ],
               levels: [ [ "kick", 15 ], [ "war_cry", 25 ] ] },
-      black_mage: { name: "Black Mage", description: "Destruction, studied carefully.",
+      black_mage: { name: "Black Mage", desperation: "starfall", description: "Destruction, studied carefully.",
                     stat_multipliers: { max_hp: 70, max_mp: 150, mag: 140, str: 60 },
                     equip_categories: %w[knife rod robe hat accessory],
                     innates: [],
                     levels: [ [ "fire", 10 ], [ "blizzard", 10 ], [ "thunder", 10 ], [ "sleep", 20 ], [ "fira", 40 ], [ "bio", 60 ], [ "drain", 80 ] ] },
-      white_mage: { name: "White Mage", description: "Keeps everyone else alive.",
+      white_mage: { name: "White Mage", desperation: "judgement", description: "Keeps everyone else alive.",
                     stat_multipliers: { max_hp: 80, max_mp: 140, mag: 120, spr: 130, str: 60 },
                     equip_categories: %w[staff robe hat accessory],
                     innates: [ { stat: "mdef", percent: 20 } ],
@@ -224,7 +257,7 @@ module Seeds
                    ai_script: [ { if: { chance: 35 }, use: "venom_bite" }, { use: "attack", target: "highest_hp" } ],
                    drops: [ { item: "phoenix_down", chance: 10 } ],
                    description: "Rises from the dunes when something walks over it." },
-      goblin_chief: { name: "Goblin Chief", level: 4,
+      goblin_chief: { boss: true, boss_line: "Mine. The cave, the shinies, the hat. All mine.", name: "Goblin Chief", level: 4,
                       stats: stats(max_hp: 140, max_mp: 12, str: 14, atk: 13, agi: 10, def: 5, mdef: 3, mag: 10),
                       elements: { fire: "weak" }, exp: 85, gil: 150, abp: 4,
                       ai_script: [ { if: { self_hp_below: 30 }, use: "cure", target: "self" },
@@ -232,14 +265,14 @@ module Seeds
                       drops: [ { item: "broadsword", chance: 15 } ],
                       variant: { hue: 40, scale: 125 },
                       description: "A goblin in a slightly bigger hat. Palette-swapped from the Goblin." },
-      dark_mage: { name: "Dark Mage", level: 5,
+      dark_mage: { boss: true, boss_line: "The crystals were never meant for your kind. Kneel, and I'll make it quick.", name: "Dark Mage", level: 5,
                    stats: stats(max_hp: 120, max_mp: 60, str: 6, mag: 20, spr: 16, atk: 4, agi: 12, def: 3, mdef: 12),
                    elements: { holy: "weak", dark: "absorb" }, exp: 100, gil: 200, abp: 4,
                    ai_script: [ { if: { ally_hp_below: 40 }, use: "drain" }, { if: { chance: 30 }, use: "sleep" },
                                { if: { chance: 60 }, use: "fire" }, { use: "bio" } ],
                    drops: [ { item: "rod", chance: 20 } ],
                    description: "Studied at the same academy as the party's black mage. Graduated differently." },
-      ogre: { name: "Ogre", level: 6,
+      ogre: { boss: true, boss_line: "You came for the crystal. So did the last ones. They're under the pass.", name: "Ogre", level: 6,
               stats: stats(max_hp: 340, max_mp: 30, str: 24, mag: 8, atk: 22, agi: 7, def: 12, mdef: 6),
               elements: { ice: "absorb", fire: "resist" }, status_immune: %w[sleep], exp: 280, gil: 400, abp: 8,
               ai_script: [ { if: { self_hp_below: 30 }, use: "cure", target: "self" },
@@ -247,7 +280,7 @@ module Seeds
                           { if: { round_multiple: 4 }, use: "war_cry" }, { use: "attack", target: "lowest_hp" } ],
               drops: [ { item: "bronze_armor", chance: 50 }, { item: "power_ring", chance: 5 } ],
               description: "Guards the pass. A boss for a party of four at job level 2 or so." },
-      crystal_wyrm: { name: "Crystal Wyrm", level: 10,
+      crystal_wyrm: { boss: true, boss_line: "I have slept on this fire for a thousand years. You will not take it from me.", name: "Crystal Wyrm", level: 10,
                       stats: stats(max_hp: 1200, max_mp: 200, str: 26, mag: 24, spr: 20, atk: 24, agi: 14, def: 16, mdef: 16),
                       elements: { bolt: "weak", fire: "resist", ice: "resist", earth: "immune" },
                       status_immune: %w[sleep paralyze silence poison], exp: 1400, gil: 2500, abp: 16,
@@ -385,6 +418,12 @@ module Seeds
                               "Thorns: whoever leads takes a wound that won't heal until you rest.",
                               "A long climb: the party arrives too tired to run from the next fight.",
                               "A silent hall: speak, and it answers with something worse.") },
+      locks: { name: "Locks and keys", kind: "locks",
+               entries: [ { text: "Crystal portal", key: "Blue crystal" }, { text: "Bone altar", key: "Goat's skull" },
+                          { text: "Iron door", key: "Rusty key" }, { text: "Sealed coffin", key: "Grave-warden's ring" },
+                          { text: "Rune wall", key: "Moon rune" }, { text: "Drawbridge winch", key: "Crank handle" },
+                          { text: "Goblin gate", key: "Chief's tooth" }, { text: "Weeping statue", key: "Silver tear" },
+                          { text: "Bell-rope portcullis", key: "Brass bell" }, { text: "Flooded sluice", key: "Valve wheel" } ] },
       treasure: { name: "Dungeon treasure", kind: "treasure",
                   entries: [ { item: "potion", weight: 4 }, { item: "hi_potion", weight: 2 }, { item: "phoenix_down", weight: 2 },
                              { item: "antidote", weight: 2 }, { item: "remedy" }, { item: "power_ring" }, { item: "bronze_armor" },
@@ -400,12 +439,12 @@ module Seeds
                              tables: %w[town_names given_names town_hooks service_names buildings shop_stock] } },
       goblin_cave: { name: "Goblin cave", kind: "dungeon", encounter_table: "goblin_cave",
                      description: "A short, twisting cave. A good first dungeon.",
-                     config: { rooms: [ 5, 7 ], loops: 1, decisions: { encounter: 4, event: 2, treasure: 2, fork: 1 }, boss: { goblin_chief: 1 },
-                               tables: %w[cave_names rooms room_events forks treasure] } },
+                     config: { rooms: [ 5, 7 ], loops: 1, locks: 1, decisions: { encounter: 4, event: 2, treasure: 2, fork: 1 }, boss: { goblin_chief: 1 },
+                               tables: %w[cave_names rooms room_events forks treasure locks] } },
       barrow: { name: "Barrow", kind: "dungeon", encounter_table: "barrow",
                 description: "Old graves dug deep into the hill, and something that won't stay buried.",
-                config: { rooms: [ 8, 11 ], loops: 2, decisions: { encounter: 5, event: 3, treasure: 2, fork: 2 }, boss: { dark_mage: 1, zombie: 2 },
-                          tables: %w[dungeon_names rooms room_events forks treasure] } }
+                config: { rooms: [ 8, 11 ], loops: 2, locks: 2, decisions: { encounter: 5, event: 3, treasure: 2, fork: 2 }, boss: { dark_mage: 1, zombie: 2 },
+                          tables: %w[dungeon_names rooms room_events forks treasure locks] } }
     }.freeze
   end
 end

@@ -1,0 +1,16 @@
+<%# The game log (docs/DESIGN.md, "The stage"): kept out of the way in a drawer on the right edge,
+    closed by default. A tab (or L) slides it open; while it's closed the tab counts new lines. %>
+<div class="log-drawer" data-controller="log-drawer"
+     data-action="keydown@window->log-drawer#key:capture">
+  <button type="button" class="log-drawer__tab" data-log-drawer-target="tab" data-action="log-drawer#toggle"
+          aria-expanded="false" aria-controls="log_drawer" title="The log (L)">
+    Log <span class="log-drawer__count" data-log-drawer-target="count" hidden></span>
+  </button>
+  <aside class="log-drawer__panel" id="log_drawer" data-log-drawer-target="panel" aria-label="Log" inert>
+    <header class="log-drawer__head">
+      <h2>Log</h2>
+      <button type="button" class="button button--quiet" data-action="log-drawer#close" title="Close (L or Esc)">Close</button>
+    </header>
+    <%= yield %>
+  </aside>
+</div>

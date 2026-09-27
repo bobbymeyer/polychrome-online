@@ -11,7 +11,7 @@ class LocationTemplate < ApplicationRecord
   DEFAULTS = {
     "town" => { "services" => { "inn" => 100, "shop" => 80, "guild" => 40, "temple" => 40 },
                 "npcs" => [ 3, 5 ], "stock" => [ 4, 6 ], "buildings" => [ 8, 12 ] },
-    "dungeon" => { "rooms" => [ 6, 9 ], "loops" => 1,
+    "dungeon" => { "rooms" => [ 6, 9 ], "loops" => 1, "locks" => 0,
                    "decisions" => { "encounter" => 4, "event" => 2, "treasure" => 2, "fork" => 1 } }
   }.freeze
 
@@ -43,6 +43,7 @@ class LocationTemplate < ApplicationRecord
       config[key] = Array(range).map(&int) if range
     end
     config["loops"] = int.(values["loops"]) if values.key?("loops")
+    config["locks"] = int.(values["locks"]) if values.key?("locks")
     boss = values["boss"].to_h.transform_values(&int)
     boss = { values["boss_monster"] => int.(values["boss_count"]) || 1 } if values.key?("boss_monster")
     boss = boss.reject { |slug, count| slug.blank? || count.nil? }
@@ -79,6 +80,7 @@ class LocationTemplate < ApplicationRecord
     end
     errors.add(:config, "dungeons need at least 2 rooms") if dungeon? && settings["rooms"]&.first.to_i < 2
     errors.add(:config, "loops must be 0–5") if dungeon? && !settings["loops"].to_i.between?(0, 5)
+    errors.add(:config, "locks must be 0–3") if dungeon? && !settings["locks"].to_i.between?(0, 3)
     unknown = Array(config["boss"]&.keys) - (world ? world.monsters.pluck(:slug) : [])
     errors.add(:config, "boss #{unknown.join(', ')} is not in the Bestiary") if unknown.any?
   end

@@ -1,7 +1,7 @@
 <header class="book-page__header">
   <%= entry_portrait(entry) %>
   <div>
-    <p class="eyebrow">Bestiary · Level <%= entry.level %></p>
+    <p class="eyebrow">Bestiary · Level <%= entry.level %><%= " · Boss" if entry.boss? %></p>
     <h1><%= entry.name %></h1>
     <dl class="facts">
       <dt>EXP</dt><dd><%= entry.exp %></dd>
@@ -13,6 +13,9 @@
 
 <% if entry.description.present? %>
   <div class="prose"><%= simple_format(entry.description) %></div>
+<% end %>
+<% if entry.boss_line.present? %>
+  <blockquote class="boss-line"><%= entry.boss_line %></blockquote>
 <% end %>
 
 <section class="window">

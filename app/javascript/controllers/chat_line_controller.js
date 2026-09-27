@@ -1,11 +1,13 @@
 import { Controller } from "@hotwired/stimulus"
+import { play } from "sound"
 
 // One line in the table log (app/views/messages/_message.html.erb). A line
 // that arrives live announces itself; the dialogue controller decides what
-// to do with it. Lines rendered with the page just sit in the log.
+// to do with it, and a line with a cue (a key found, a door opened) plays
+// its jingle. Lines rendered with the page just sit in the log.
 export default class extends Controller {
   static targets = ["body"]
-  static values = { id: Number, live: Boolean, dialogue: Boolean, speaker: String, speakerKey: String, expression: String, portrait: String }
+  static values = { id: Number, live: Boolean, dialogue: Boolean, speaker: String, speakerKey: String, expression: String, portrait: String, cue: String }
 
   // Moving the element (placeInOrder) makes Stimulus reconnect it, so a
   // line announces itself only the first time.
@@ -14,6 +16,7 @@ export default class extends Controller {
 
     this.element.dataset.arrived = "true"
     this.placeInOrder()
+    if (this.cueValue) play(this.cueValue)
     this.dispatch("arrived", { detail: { line: this } })
   }
 

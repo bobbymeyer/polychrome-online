@@ -1,0 +1,51 @@
+<%# "Previously on…" (Recap): shown by itself when someone comes back to the table after a
+    break, and any time from the link under the title. %>
+<dialog class="recap" data-recap-target="dialog" aria-labelledby="recap_title">
+  <p class="eyebrow">Last session · <time datetime="<%= recap.ended_at.iso8601 %>"><%= recap.ended_at.strftime("%-d %B") %></time></p>
+  <h2 id="recap_title">Previously on <%= recap.campaign.name %>…</h2>
+
+  <div class="recap__body">
+    <% if recap.places.any? %>
+      <section>
+        <h3>The road</h3>
+        <p class="recap__road"><%= safe_join(recap.places.map { |p| tag.span(p) }, tag.span("→", class: "recap__arrow", aria: { hidden: true })) %></p>
+      </section>
+    <% end %>
+    <% if recap.battle_lines.any? || recap.level_ups.any? %>
+      <section>
+        <h3>Battles</h3>
+        <ul class="refs">
+          <% recap.battle_lines.each do |line| %><li><%= line %></li><% end %>
+          <% recap.level_ups.each do |line| %><li class="level-up"><%= line %></li><% end %>
+        </ul>
+      </section>
+    <% end %>
+    <% if recap.found.any? %>
+      <section>
+        <h3>Found</h3>
+        <ul class="refs"><% recap.found.each do |line| %><li><%= line %></li><% end %></ul>
+      </section>
+    <% end %>
+    <% if recap.learned.any? %>
+      <section>
+        <h3>The party learned</h3>
+        <ul class="refs"><% recap.learned.each do |line| %><li><%= line %></li><% end %></ul>
+      </section>
+    <% end %>
+  </div>
+
+  <% if (line = recap.last_line) %>
+    <figure class="recap__last">
+      <%= speaker_portrait(line.speaker, line.expression, size: :medium) %>
+      <blockquote>
+        <p class="recap__speaker"><%= line.speaker_name %></p>
+        <p><%= line.body %></p>
+      </blockquote>
+    </figure>
+  <% end %>
+  <% if recap.here %><p class="hint">The party is at <strong><%= recap.here %></strong>.</p><% end %>
+
+  <form method="dialog" class="actions">
+    <button class="button play" autofocus>Carry on</button>
+  </form>
+</dialog>

@@ -183,14 +183,24 @@ RSpec.describe Location do
           expect(campaign.messages.last).to have_attributes(body: "The floor tilts.", speaker: nil)
           expect(campaign.messages.last).to be_dialogue
         when "encounter"
-          expect(campaign.reload.pending_encounter).to eq("table" => "#{dungeon.name}: Test 1", "monsters" => { "goblin" => 2 })
+          expect(campaign.reload.pending_encounter).to eq("table" => "#{dungeon.name}: Test 1", "monsters" => { "goblin" => 2 }, "boss" => false)
         when "treasure"
           dungeon.take_treasure!(key)
           expect(campaign.quantity_of(world.items.find_by!(slug: "potion"))).to eq(1)
+          expect(campaign.messages.last.cue).to eq("treasure")
           expect { dungeon.take_treasure!(key) }.to raise_error(ArgumentError)
         end
       end
       expect(rooms).to be_present
+    end
+
+    it "makes the boss room's fight a boss fight" do
+      dungeon.enter!
+      key = dungeon.add_room!(name: "Throne", connect: entrance, decision: { "kind" => "boss", "monsters" => { "goblin" => 1 } })
+      dungeon.move_to!(key)
+      expect(campaign.reload.pending_encounter).to include("boss" => true)
+      create_character(campaign, name: "Bartz") if campaign.characters.none?
+      expect(campaign.start_pending_encounter!).to be_boss
     end
 
     it "hands over gil treasure to the party's purse" do
@@ -199,6 +209,45 @@ RSpec.describe Location do
       dungeon.move_to!(key)
       expect { dungeon.take_treasure!(key) }.to change { campaign.reload.gil }.by(150)
       expect(campaign.messages.last.body).to eq("Found 150 gil in Strongbox.")
+    end
+
+    it "is locked until the party finds the key, which then opens the way for good" do
+      lock = dungeon.view["paths"].find { |p| p["lock"] }["lock"]
+      key_room = dungeon.view["rooms"].find { |r| r["decision"]["kind"] == "key" }
+      expect(key_room["decision"]).to include("lock" => lock["id"], "name" => lock["key_name"])
+
+      # Walk the rooms, never through a shut lock, until every reachable room is visited.
+      dungeon.enter!
+      walk = lambda do
+        loop do
+          here = dungeon.reload.progress["current"]
+          step = dungeon.neighbours(here).find { |n| !dungeon.visited.include?(n) && !dungeon.locked?(dungeon.path_between(here, n)) }
+          step ||= dungeon.neighbours(here).find { |n| !dungeon.locked?(dungeon.path_between(here, n)) && dungeon.neighbours(n).any? { |m| !dungeon.visited.include?(m) && !dungeon.locked?(dungeon.path_between(n, m)) } }
+          break unless step
+
+          dungeon.move_to!(step)
+          campaign.update!(pending_encounter: nil)
+        end
+      end
+      walk.()
+      expect(dungeon.keys_found).to eq([ lock["id"] ])
+      expect(campaign.messages.pluck(:body)).to include(a_string_matching(/Found #{Regexp.escape(lock['key_name'])}.*#{Regexp.escape(lock['name'])}/))
+      expect(dungeon.visited).not_to include(dungeon.view["boss"])
+
+      # Beside the lock: without the key it would refuse; with it, it opens.
+      locked = dungeon.view["paths"].find { |p| p["lock"] && (dungeon.visited.include?(p["from"]) || dungeon.visited.include?(p["to"])) }
+      near, far = dungeon.visited.include?(locked["from"]) ? [ locked["from"], locked["to"] ] : [ locked["to"], locked["from"] ]
+      dungeon.update!(progress: dungeon.progress.merge("current" => near))
+      without = dungeon.progress.merge("keys" => [])
+      dungeon.update!(progress: without)
+      expect { dungeon.move_to!(far) }.to raise_error(ArgumentError, /#{Regexp.escape(lock['name'])} bars the way/)
+      dungeon.update!(progress: without.merge("keys" => [ lock["id"] ]))
+      dungeon.move_to!(far)
+      expect(dungeon.unlocked?(lock)).to be(true)
+      expect(dungeon.keys_in_hand).to be_empty
+      expect(campaign.messages.pluck(:body)).to include(a_string_including("opens #{lock["name"]}. The way is clear."))
+      # Each has its jingle.
+      expect(campaign.messages.where.not(cue: nil).pluck(:cue).uniq).to include("key", "door")
     end
 
     it "shows players only the rooms they've been in and the exits out of them" do

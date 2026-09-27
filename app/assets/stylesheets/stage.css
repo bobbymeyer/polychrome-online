@@ -66,7 +66,9 @@ body::before {
   mask-image: linear-gradient(215deg, #000 0%, transparent 55%);
 }
 
-.page { animation: page-in .24s ease-out both; }
+/* "backwards", not "both": a translate left on .page after the slide would make it the
+   containing block for everything fixed inside it (the log drawer). */
+.page { animation: page-in .24s ease-out backwards; }
 @keyframes page-in { from { opacity: 0; translate: 0 8px; } }
 
 /* ---------------------------------------------------------------------------
@@ -103,6 +105,14 @@ h1 { font-weight: 900; font-style: italic; letter-spacing: -0.045em; text-shadow
   display: inline-block; margin: -16px 0 12px; padding: 2px calc(18px + var(--slant)) 3px 14px;
   background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 800;
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+/* A link in a tab takes the tab's ink, underlined in it, so it reads on any colour. */
+.window > h2:first-child a, .panel > h2:first-child a, .book-header > h2 a, .command-panel__head h2 a,
+.flash a, .log-drawer__tab, .topbar__book.is-current {
+  color: var(--accent-ink); text-decoration-color: color-mix(in srgb, var(--accent-ink) 55%, transparent);
+}
+.window > h2:first-child a:hover, .panel > h2:first-child a:hover, .book-header > h2 a:hover, .flash a:hover {
+  color: var(--accent-ink); text-decoration-color: var(--accent-ink);
 }
 .window > .book-header:first-child { margin-top: 0; }
 .book-header > h2 { margin: 0; }
@@ -203,6 +213,26 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
     linear-gradient(170deg, var(--dark-blue) 0 60%, #34458a 60% 100%);
 }
 .battlefield__side--party { border-left: 0; }
+/* A boss fight: the enemies' side goes wine-dark. */
+.battle--boss .battlefield {
+  background:
+    linear-gradient(100deg, transparent 0 66%, var(--sun-yellow) 66% 100%),
+    radial-gradient(circle, rgba(255, 255, 255, .16) 1.2px, transparent 1.6px) 0 0 / 10px 10px,
+    linear-gradient(170deg, #5a1630 0 60%, #3d0f22 60% 100%);
+}
+/* Stacked on a phone, the party's yellow slab cuts across the bottom instead. */
+@media (max-width: 640px) {
+  .battlefield {
+    background:
+      linear-gradient(174deg, transparent 0 54%, var(--sun-yellow) 54% 100%),
+      radial-gradient(circle, rgba(255, 255, 255, .2) 1.2px, transparent 1.6px) 0 0 / 10px 10px,
+      var(--dark-blue);
+  }
+  .battle--boss .battlefield { background-color: #4a1228; background-image:
+      linear-gradient(174deg, transparent 0 54%, var(--sun-yellow) 54% 100%),
+      radial-gradient(circle, rgba(255, 255, 255, .16) 1.2px, transparent 1.6px); background-size: auto, 10px 10px; }
+  .battlefield__side--party { border-top: 0; }
+}
 .unit--enemy .unit__label { color: var(--paper); }
 .unit--enemy.is-ko .unit__label { color: rgba(255, 255, 255, .45); }
 /* A white outline, so any colour of creature reads on the blue (on the
@@ -366,6 +396,18 @@ svg .floorplan__marker--boss { fill: var(--wine-red); }
 svg .floorplan__marker--treasure { fill: var(--sun-yellow); }
 svg .floorplan__marker--event { fill: var(--blue); }
 svg .floorplan__marker--fork { stroke: var(--orange); }
+svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-width: 3; stroke-linecap: square; }
+.floorplan__room.is-resolved .floorplan__marker--key { stroke: var(--grey); fill: none; }
+.floorplan__room.is-current .floorplan__marker--key { stroke: var(--paper); fill: none; }
+/* Locks: a Wine Red padlock on the path; hollow once the party has opened it. */
+.floorplan__lock-body { fill: var(--wine-red); stroke: var(--ink); stroke-width: 2; }
+.floorplan__lock-shackle { fill: none; stroke: var(--ink); stroke-width: 3; }
+.floorplan__lock.is-open .floorplan__lock-body { fill: var(--paper); }
+.map-legend svg .floorplan__lock-body { fill: var(--wine-red); }
+.map-legend svg .floorplan__lock-shackle, .map-legend svg .floorplan__marker--key { fill: none; }
+.map-legend svg .floorplan__marker--key { stroke: var(--lake-green); stroke-width: 3; }
+.keys-in-hand { font-style: italic; font-weight: 700; }
+.keys-in-hand .label { font-style: normal; margin-right: 6px; }
 .map-legend svg .floorplan__marker--fork { fill: none; stroke: var(--orange); stroke-width: 3; }
 .floorplan__room.is-current rect { fill: var(--dark-blue); }
 .floorplan__room.is-resolved .floorplan__marker { fill: var(--paper); }
@@ -380,12 +422,167 @@ svg .floorplan__marker--fork { stroke: var(--orange); }
 .skyline__sky { fill: var(--tint); }
 
 /* ---------------------------------------------------------------------------
+ * Into battle: slabs of the palette sweep across every screen at the table,
+ * the page follows, and they sweep away on the other side (stage.js).
+ * ------------------------------------------------------------------------- */
+
+.stage-wipe { position: fixed; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; }
+.stage-wipe span {
+  position: absolute; top: -20%; bottom: -20%; left: calc(var(--i) * 15vw - 12vw); width: 26vw;
+  transform: skewX(-14deg); background: var(--c, var(--ink));
+}
+.stage-wipe span:nth-child(7n + 1) { --c: var(--dark-blue); } .stage-wipe span:nth-child(7n + 2) { --c: var(--sun-yellow); }
+.stage-wipe span:nth-child(7n + 3) { --c: var(--bright-red); } .stage-wipe span:nth-child(7n + 4) { --c: var(--turquoise); }
+.stage-wipe span:nth-child(7n + 5) { --c: var(--ink); } .stage-wipe span:nth-child(7n + 6) { --c: var(--orange); }
+.stage-wipe span:nth-child(7n + 7) { --c: var(--forest-green); }
+.stage-wipe--boss span:nth-child(odd) { --c: var(--ink); } .stage-wipe--boss span:nth-child(even) { --c: var(--wine-red); }
+.stage-wipe--in span { animation: slab-in .5s var(--snap) both; animation-delay: calc(var(--i) * 45ms); }
+.stage-wipe--out span { animation: slab-out .55s cubic-bezier(.6, 0, .8, .4) both; animation-delay: calc(var(--i) * 45ms); }
+@keyframes slab-in { from { translate: -140vw 0; } }
+@keyframes slab-out { to { translate: 140vw 0; } }
+
+/* ---------------------------------------------------------------------------
+ * The game log: a drawer on the right edge, closed by default. A tab in the
+ * page's colour opens it; while closed, the tab counts what arrives.
+ * ------------------------------------------------------------------------- */
+
+.log-drawer__tab {
+  position: fixed; right: 0; bottom: 14vh; z-index: 40; /* low on the edge, clear of the play area */
+  writing-mode: vertical-rl; padding: 18px 8px 22px; min-height: 0;
+  background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 900; letter-spacing: .08em; text-transform: uppercase;
+  clip-path: polygon(0 8px, 100% 0, 100% 100%, 0 calc(100% - 8px)); box-shadow: inset 4px 0 0 var(--ink);
+}
+.log-drawer__tab:hover { background: var(--accent); color: var(--accent-ink); translate: -3px 0; }
+.log-drawer__count {
+  display: inline-block; writing-mode: horizontal-tb; margin-top: 8px; min-width: 22px; padding: 1px 4px;
+  background: var(--sun-yellow); color: var(--ink); font-size: 12px; line-height: 18px; text-align: center; letter-spacing: 0;
+}
+.log-drawer__tab.is-pulsing { animation: tab-pulse .5s var(--snap); }
+@keyframes tab-pulse { 40% { translate: -10px 0; } }
+.log-drawer.is-open .log-drawer__tab { visibility: hidden; }
+
+.log-drawer__panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 50; width: min(440px, 100vw);
+  display: flex; flex-direction: column; gap: 16px; padding: 20px 20px 24px 24px;
+  background: var(--paper); border-left: 4px solid var(--ink); box-shadow: -10px 0 0 var(--accent);
+  translate: calc(100% + 16px) 0; visibility: hidden;
+  transition: translate .28s var(--snap), visibility 0s linear .28s; /* hidden only once it has slid away */
+}
+.log-drawer.is-open .log-drawer__panel { translate: 0 0; visibility: visible; transition: translate .28s var(--snap), visibility 0s; }
+.log-drawer__head { display: flex; justify-content: space-between; align-items: center; }
+.log-drawer__head h2 { margin: 0; font: var(--display); font-size: 32px; text-shadow: 3px 3px 0 var(--echo); }
+.log-drawer__section { flex: 1 1 0; min-height: 0; overflow-y: auto; max-height: none; border-top: 3px solid var(--ink); padding-top: 8px; }
+.log-drawer__section h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 2px 0; }
+@media (max-width: 640px) { .log-drawer__tab { padding: 12px 6px 16px; font-size: 13px; } }
+
+/* In battle the dialogue box stands beside the commands, and only while someone speaks. */
+.dialogue--battle { grid-column: span 5; min-height: 0; padding-top: 20px; grid-template-columns: auto 1fr; }
+.dialogue--battle .speaker-portrait--large { width: 88px; height: 88px; }
+.dialogue--battle .speaker-portrait--large.speaker-portrait--plate { font-size: 64px; }
+.dialogue--battle .dialogue__body { font-size: 18px; line-height: 26px; }
+.dialogue--battle:not([hidden]) { animation: slash-in .3s var(--snap) both; }
+@media (max-width: 800px) { .dialogue--battle { grid-column: 1 / -1; } }
+
+/* ---------------------------------------------------------------------------
+ * Bosses. The field goes wine-dark, the name is slammed across the stage
+ * (boss_intro_controller), and the victory says what fell.
+ * ------------------------------------------------------------------------- */
+
+.boss-intro { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; overflow: hidden; background: rgb(0 0 0 / .55); cursor: pointer; }
+.boss-intro[hidden] { display: none; }
+.boss-card {
+  width: 120vw; padding: 28px 12vw 34px; transform: skewX(-8deg); rotate: -5deg;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--plate, var(--wine-red)); color: var(--plate-ink, #fff);
+  box-shadow: 0 -10px 0 var(--ink), 0 14px 0 var(--ink), 0 28px 0 var(--wine-red);
+}
+.boss-card__tag {
+  padding: 2px 14px; background: var(--ink); color: var(--sun-yellow);
+  font-style: italic; font-weight: 900; letter-spacing: .3em; text-transform: uppercase;
+}
+.boss-card__name { font: var(--display); font-size: clamp(48px, 11vw, 136px); letter-spacing: -0.05em; text-align: center; text-shadow: 6px 6px 0 var(--ink); }
+
+.banner--boss-down {
+  left: -4%; right: -4%; padding: 10px 8%; rotate: 3deg; top: 62%;
+  background: var(--wine-red); color: var(--paper); font-size: clamp(32px, 7vw, 84px);
+  box-shadow: 0 -6px 0 var(--ink), 0 10px 0 var(--ink);
+}
+
+/* On the bestiary page: what it says when it arrives. */
+.boss-line {
+  margin: 16px 0; padding: 12px 18px 12px 22px; max-width: 48ch;
+  background: var(--ink); color: var(--paper); font-style: italic; font-weight: 700; font-size: 18px; line-height: 26px;
+  border-left: 8px solid var(--wine-red); box-shadow: 6px 6px 0 var(--wine-red);
+}
+.boss-line::before { content: "\201C"; } .boss-line::after { content: "\201D"; }
+
+/* Sound: the GM's music switch at the table, and the world's tracks. */
+.music-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
+.music-switch label { font-style: italic; font-weight: 900; }
+.music-switch select { width: auto; }
+.music-fields { border: 0; border-top: 3px solid var(--ink); padding: 8px 0 0; margin: 16px 0; }
+.music-fields legend { padding: 2px calc(12px + var(--slant)) 2px 10px; background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 900; clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
+.music-fields__current { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0; }
+.music-fields__current audio { height: 32px; max-width: 100%; }
+
+/* The GM's scenes: a running order, played from the table. */
+.scene-list { list-style: none; margin: 0; padding: 0; border-top: 3px solid var(--ink); }
+.scene-list__item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding: 10px 0; border-bottom: 1px solid var(--light-grey); }
+.scene-list__item strong { font-style: italic; font-weight: 900; font-size: 18px; margin-right: 8px; }
+.scene-list__item.is-played strong { color: var(--grey); }
+.scene-list__actions { display: flex; gap: 8px; align-items: center; }
+.table-scenes { margin-top: 12px; }
+.table-scenes summary { cursor: pointer; font-style: italic; font-weight: 900; font-size: 18px; }
+.table-scenes[open] summary { margin-bottom: 8px; }
+.script-field { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 15px; line-height: 24px; }
+
+/* A desperation move's cut-in: the stage stops for the character. */
+.cut-in {
+  position: absolute; left: -6%; right: -6%; top: 22%; z-index: 6; rotate: -3deg;
+  display: flex; align-items: center; gap: 24px; padding: 14px 10% 16px;
+  background: var(--plate, var(--sun-yellow)); color: var(--plate-ink, var(--ink));
+  box-shadow: 0 -8px 0 var(--ink), 0 10px 0 var(--ink), 0 20px 0 var(--bright-red);
+}
+.cut-in__figure { flex: none; }
+.cut-in__figure .sprite { scale: 1.6; }
+.cut-in__words { min-width: 0; }
+.cut-in__cry { margin: 0 0 4px; font-style: italic; font-weight: 700; font-size: clamp(16px, 2.4vw, 24px); line-height: 1.25; }
+.cut-in__cry::before { content: "\201C"; } .cut-in__cry::after { content: "\201D"; }
+.cut-in__move { margin: 0; font: var(--display); font-size: clamp(36px, 7vw, 84px); letter-spacing: -0.05em; text-shadow: 4px 4px 0 var(--ink); color: var(--paper); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
+
+/* Why a character is here: their line, on the sheet and their card. */
+.motive { margin: 4px 0 8px; font-style: italic; font-weight: 700; font-size: 18px; line-height: 26px; max-width: 52ch; }
+.motive::before { content: "\201C"; } .motive::after { content: "\201D"; }
+.motive--card { font-size: 14px; line-height: 20px; margin: 6px 0 0; color: var(--grey); }
+
+/* "Previously on…": a title card, then the last session in brief. */
+.recap {
+  width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto;
+  padding: 24px 28px 20px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink);
+  box-shadow: 10px 10px 0 var(--accent), 20px 20px 0 var(--ink);
+}
+.recap::backdrop { background: rgb(0 0 0 / .6); }
+.recap[open] { animation: slash-in .35s var(--snap) both; }
+.recap h2 { margin: 0 0 16px; font: var(--display); font-size: clamp(32px, 6vw, 48px); letter-spacing: -0.04em; text-shadow: 4px 4px 0 var(--echo); }
+.recap h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; font-size: 16px; }
+.recap__body { display: grid; gap: 16px; }
+.recap__body section { border-top: 3px solid var(--ink); padding-top: 6px; }
+.recap__road { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0; font-weight: 700; }
+.recap__arrow { color: var(--signal); }
+.recap__last { display: flex; gap: 14px; align-items: flex-start; margin: 20px 0 8px; }
+.recap__last blockquote { margin: 0; padding: 10px 14px; border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--accent); flex: 1; }
+.recap__last blockquote p { margin: 0; font-size: 18px; line-height: 26px; }
+.recap__speaker { font-style: italic; font-weight: 900; font-size: 14px !important; }
+.recap .actions { margin-top: 16px; justify-content: flex-end; }
+.recap-link { margin-top: 4px; font-style: italic; }
+
+/* ---------------------------------------------------------------------------
  * Everything that moves holds still for people who asked for stillness.
  * ------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
   .page, .play .menu__item, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
   .unit.is-targeted .sprite::after, .roster__row [data-hp], .command-panel__vitals .is-low, .countdown.is-urgent,
-  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call { animation: none !important; }
+  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open] { animation: none !important; }
   * { transition-duration: 0s !important; }
 }

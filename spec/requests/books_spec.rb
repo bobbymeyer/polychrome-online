@@ -114,6 +114,22 @@ RSpec.describe "Books", type: :request do
                          effects: [ { primitive: "heal", power: 30 } ])
     end
 
+    it "takes a chosen plate colour, or picks one from the name" do
+      goblin = create_monster(world)
+      get world_bestiary_monster_path(world, goblin)
+      expect(response.body).to include(ApplicationController.helpers.plate_style("goblin"))
+
+      patch world_bestiary_monster_path(world, goblin), params: { monster: { colour: "pink" } }
+      expect(goblin.reload.colour).to eq("pink")
+      get world_bestiary_monster_path(world, goblin)
+      expect(response.body).to include("--plate: #F6BCD0;")
+
+      patch world_bestiary_monster_path(world, goblin), params: { monster: { colour: "mauve" } }
+      expect(response).to have_http_status(:unprocessable_content)
+      patch world_bestiary_monster_path(world, goblin), params: { monster: { colour: "" } }
+      expect(goblin.reload.colour).to be_nil
+    end
+
     let(:form) do
       {
         name: "Goblin", level: "2", exp: "6", gil: "12", abp: "1",

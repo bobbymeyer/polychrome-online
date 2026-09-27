@@ -71,7 +71,7 @@ module Battle
 
     # Build an initial battle state.
     #
-    # party:     [{ id:, name:, stats:, abilities: [...], elements: {}, status_immune: [] , hp:, mp: }]
+    # party:     [{ id:, name:, stats:, abilities: [...], elements: {}, status_immune: [] , hp:, mp:, desperation: }]
     # enemies:   same shape plus ai: [rules], rewards: {}, and optional count: n
     # abilities: { "fire" => { name:, kind:, target:, cost: { mp: }, effects: [...] } }
     # items:     the party's usable items, shared by everyone in it:
@@ -102,6 +102,9 @@ module Battle
       units.each do |u|
         missing = u["abilities"] - library.keys
         raise ArgumentError, "#{u['id']} knows unknown abilities: #{missing.join(', ')}" if missing.any?
+        if u["desperation"] && !library.key?(u["desperation"])
+          raise ArgumentError, "#{u['id']} has an unknown desperation move: #{u['desperation']}"
+        end
       end
 
       {
@@ -146,7 +149,7 @@ module Battle
         "image" => spec["image"],
         "defending" => false,
         "last_command" => nil
-      }
+      }.merge(spec["desperation"] ? { "desperation" => spec["desperation"].to_s } : {})
     end
 
     # { id: "goblin", name: "Goblin", count: 3 } -> Goblin A, Goblin B, Goblin C

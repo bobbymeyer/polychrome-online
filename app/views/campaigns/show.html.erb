@@ -1,4 +1,6 @@
 <% content_for :title, @campaign.name %>
+<% content_for :head, music_meta(@campaign, @campaign.scene) %>
+<%= render "shared/stage_stream", campaign: @campaign %>
 <div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Campaign</div>
 <div class="book-header">
   <div>
@@ -42,6 +44,7 @@
             </p>
             <p>Lv <%= character.level %> <%= character.job.name %> <span class="muted">(job Lv <%= character.character_job.level %>)</span></p>
             <p>HP <%= character.current_hp %>/<%= character.stats["max_hp"] %> · MP <%= character.current_mp %>/<%= character.stats["max_mp"] %></p>
+            <% if character.motive %><p class="motive motive--card"><%= character.motive %></p><% end %>
           </div>
         <% end %>
       <% end %>
@@ -72,6 +75,16 @@
     </div>
   <% end %>
 </section>
+
+<% if can_gm?(@campaign) %>
+  <section id="scenes">
+    <div class="book-header">
+      <h2>Scenes</h2>
+      <%= link_to "New scene", new_campaign_scene_path(@campaign), class: "button button--quiet" %>
+    </div>
+    <%= render "scenes/list", campaign: @campaign %>
+  </section>
+<% end %>
 
 <% if table_gm? %>
   <section class="window" id="flags">

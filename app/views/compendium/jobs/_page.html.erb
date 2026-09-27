@@ -7,6 +7,9 @@
       <dt>Job levels</dt><dd><%= entry.job_levels.size %></dd>
       <dt>ABP to master</dt><dd><%= entry.total_abp %></dd>
       <dt>Ability slots</dt><dd><%= entry.ability_slots %></dd>
+      <% if (move = entry.desperation_ability) %>
+        <dt>Desperation</dt><dd><%= link_to move.name, world_grimoire_ability_path(entry.world, move) %></dd>
+      <% end %>
     </dl>
   </div>
 </header>

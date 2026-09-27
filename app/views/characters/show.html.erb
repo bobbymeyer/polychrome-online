@@ -1,4 +1,6 @@
 <% content_for :title, @character.name %>
+<% content_for :head, music_meta(@character.campaign, @character.campaign&.scene) %>
+<%= render "shared/stage_stream", campaign: @character.campaign %>
 <% stages = @character.stat_stages %>
 <% cj = @character.character_job %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @character.name %></div>
@@ -9,6 +11,7 @@
     <div>
       <p class="eyebrow">Character<% if (player = @character.user&.name.presence || @character.player_name.presence) %> · played by <%= player %><% end %></p>
       <h1><%= @character.name %></h1>
+      <% if @character.motive %><p class="motive"><%= @character.motive %></p><% end %>
       <dl class="facts">
         <dt>Level</dt>
         <dd><%= @character.level %> <span class="muted">(<%= @character.exp %> EXP<%= ", #{@character.exp_to_next} to next" if @character.exp_to_next %>)</span></dd>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -152,6 +152,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.integer "campaign_id"
     t.json "settlement"
     t.json "auto_units", default: [], null: false
+    t.boolean "boss", default: false, null: false
     t.index ["campaign_id"], name: "index_battles_on_campaign_id"
     t.index ["world_id"], name: "index_battles_on_world_id"
   end
@@ -160,7 +161,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.integer "world_id", null: false
     t.string "name", null: false
     t.integer "gil", default: 0, null: false
-    t.integer "world_version"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "current_node_id"
@@ -168,6 +168,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.json "pending_encounter"
     t.integer "gm_id"
     t.json "known_affinities", default: {}, null: false
+    t.string "music"
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["world_id"], name: "index_campaigns_on_world_id"
@@ -199,6 +200,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
     t.integer "user_id"
+    t.string "colour"
+    t.string "motive"
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
     t.index ["user_id"], name: "index_characters_on_user_id"
@@ -328,6 +331,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
     t.json "image_recipe"
+    t.string "colour"
+    t.string "desperation"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -407,6 +412,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.text "body", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "cue"
     t.index ["battle_id"], name: "index_messages_on_battle_id"
     t.index ["campaign_id", "created_at"], name: "index_messages_on_campaign_id_and_created_at"
     t.index ["campaign_id"], name: "index_messages_on_campaign_id"
@@ -436,6 +442,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
     t.json "image_recipe"
+    t.string "colour"
+    t.boolean "boss", default: false, null: false
+    t.text "boss_line"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end
@@ -451,6 +460,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.string "location_key"
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
+    t.string "colour"
     t.index ["campaign_id"], name: "index_npcs_on_campaign_id"
     t.index ["location_id"], name: "index_npcs_on_location_id"
   end
@@ -466,6 +476,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.json "image_recipe"
     t.index ["owner_type", "owner_id", "expression"], name: "index_portraits_on_owner_type_and_owner_id_and_expression", unique: true
     t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
+  end
+
+  create_table "scenes", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.string "name", null: false
+    t.text "script"
+    t.string "ending", default: "none", null: false
+    t.json "encounter", default: {}, null: false
+    t.integer "map_node_id"
+    t.datetime "played_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_scenes_on_campaign_id"
+    t.index ["map_node_id"], name: "index_scenes_on_map_node_id"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -548,5 +572,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
   add_foreign_key "monsters", "worlds"
   add_foreign_key "npcs", "campaigns"
   add_foreign_key "npcs", "locations"
+  add_foreign_key "scenes", "campaigns"
+  add_foreign_key "scenes", "map_nodes", on_delete: :nullify
   add_foreign_key "sessions", "users"
 end

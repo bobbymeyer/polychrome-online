@@ -187,4 +187,17 @@ RSpec.describe Character do
     state = world.battle(seed: 1, party: [ spec ], monsters: { "goblin" => 1 })
     expect(state["units"].first).to include("hp" => 40, "stats" => bartz.stats)
   end
+
+  it "brings their job's desperation move into battle, and says why they're here" do
+    bartz = create
+    bartz.update!(motive: "  “I owe the Crystal a life.”  ")
+    expect(bartz.motive).to eq("I owe the Crystal a life.")
+    expect(bartz.battle_spec).to include("desperation" => "unbroken_line")
+    state = world.battle(seed: 1, party: [ bartz.battle_spec ], monsters: { "goblin" => 1 })
+    expect(state["units"].first["desperation"]).to eq("unbroken_line")
+
+    job.("knight").update!(desperation: nil)
+    expect(bartz.reload.battle_spec).not_to have_key("desperation")
+    expect(bartz.update(motive: "x" * 141)).to be(false)
+  end
 end

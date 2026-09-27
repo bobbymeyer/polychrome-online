@@ -35,11 +35,59 @@ deliberate divergence from much of what follows, and where the two disagree the 
   small tags; Victory, Defeat and Escaped are a black slab thrown across the whole stage with a red
   (or black) underline. Ability names arrive as black tags from the left. Low HP blinks; an
   urgent timer blinks red.
+- **The log** lives in a drawer on the right edge, closed by default, so the play area stays
+  the play area. A tab in the page's colour (or L) slides it open over the page; Esc or L
+  closes it. While it's closed the tab counts new lines and gives a pulse. At the table it
+  holds the table's log; in battle, the battle's log with the table's beneath it.
+- **Dialogue in battle.** What's said at the table reaches the battle: a GM or NPC line appears
+  as the same speech box beside the commands, typed out, and leaves once it's been read.
+- **Into battle.** When a battle starts, everyone at the table goes: on any game page of the
+  campaign (table, map, a town or dungeon, the campaign page, a sheet), slabs of the palette
+  sweep across the screen, the battle page loads under them, and they sweep off the other side.
+  Nobody is pulled away mid-sentence: the wipe waits for the dialogue box to finish. Where you
+  came from is remembered, and the battle's end offers the way back to it.
+- **Bosses.** A boss fight's wipe is black and wine. The enemies' side of the field goes
+  wine-dark. The boss's name is slammed across the stage on a slab in its own colour, tagged
+  BOSS, then it has the first word in the dialogue box (its line from the Bestiary). This plays
+  once per viewer, and only in the first round. On victory a second slab follows "Victory!":
+  "Goblin Chief falls!".
+- **Desperation.** When a character's desperation move comes, the stage stops for them: a slab
+  in their colour cuts across the field with their sprite held large, their line in quotes and
+  the move's name in heavy italic, white with a black outline. A power chord plays under it.
+- **Why they're here.** A character's line sits under their name on the sheet, in bold
+  italic quotes, and on their party card in grey.
+- **Previously on…** A returning player gets a title card over the table: the campaign's name in
+  display type, then the last session in short sections (the road as names joined by red
+  arrows, battles, finds, what the party learned) and the last line said, in a speech box.
+  "Carry on" closes it.
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide
   in, results land one after another. It is quick (about 120ms) with a little overshoot. All of it
   stops for `prefers-reduced-motion`.
+
+## Sound
+
+Sound marks the moments, not every click. The jingles are synthesised in the browser
+(`sound.js`) from square, triangle and noise voices, in the spirit of the consoles the game
+remembers. The melodies are our own:
+
+- **Encounter:** a climbing figure over a pulsing bass, then a stab. **Boss:** slow steps down,
+  a tritone. **Boss entrance:** one deep hit as the name lands, then silence.
+- **Victory:** a leap up, a turn and a held top note. **Defeat:** down and down. **Level up:**
+  a run up two octaves and a sparkle.
+- **Key found:** a small bell. **Door opened:** a thud and a rising fifth. **Treasure:** four
+  quick notes.
+- **Confirm:** a soft blip on game menus and play buttons, and nowhere else.
+
+Music is the world's own: a track for each kind of scene (field, town, dungeon, battle,
+boss), uploaded on the world's edit page. Each page plays its scene's track, crossfading as
+you move, and a scene without a track is quiet. At the table the GM can switch everyone to
+another scene's track, or to silence; battles keep their own. A boss's entrance stops the
+music for its moment, then the boss track starts.
+
+Nothing sounds until the viewer has clicked or pressed a key (browsers insist), and "Sound
+on/off" in the top bar mutes this device.
 
 ## Paper and type
 
@@ -86,7 +134,8 @@ its own colours, so they never argue.
    and tints mixed from it.
 3. **Who.** Every creature, job and character without art gets a plate in a palette colour,
    picked from its name (`plate_style`), so the Goblin is the same green in the Bestiary, on the
-   battlefield and at the table. The palette decides whether its letter is white or ink.
+   battlefield and at the table. An author can choose the colour instead (the entry's Colour
+   field). The palette decides whether its letter is white or ink.
 4. **What happened.** State has fixed colours: HP bars are Green, then Sun Yellow at half, then
    Bright Red at a quarter; statuses are Poison Forest Green, Sleep Blue, Paralyze Sun Yellow,
    Silence Wine Red, Blind Steel Grey, Haste Lake Green, Slow Dark Green; heals are Green; a
@@ -123,6 +172,8 @@ Simple shapes carry meaning, and each one is explained in a legend next to the m
 | Party on a map | Bright Red triangle pointing down at them |
 | Open, dangerous and blocked paths | Solid line, dashed line, and grey dotted line with an × |
 | Encounter, boss, treasure, event and fork rooms | Small square, large square, diamond, circle, and a branching line |
+| Key room | A key, Lake Green |
+| Lock on a path | A Wine Red padlock; hollow once opened |
 | Costly way in a dungeon | Dashed path with a black diamond at its middle |
 | Current room | The room filled Dark Blue |
 | Resolved room | Its marker shown in outline |

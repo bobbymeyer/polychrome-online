@@ -36,17 +36,29 @@ class BattleRecord < ApplicationRecord
 
   # Start a battle for some of a campaign's characters.
   #   encounter: { "goblin" => 3, "wolf" => 1 }
-  def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil)
+  def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false)
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items)
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
-                     input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id))
+                     input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id),
+                     boss: boss || campaign.world.monsters.where(slug: encounter.keys, boss: true).exists?)
     battle.open_round!
     battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against " \
                      "#{encounter.map { |slug, count| "#{count} × #{campaign.world.monsters.find_by(slug: slug)&.name || slug}" }.to_sentence}.")
     battle.auto_fill!
+    battle.call_to_arms
     battle
+  end
+
+  # Everyone at the table goes to the battle (docs/DESIGN.md, "The stage"):
+  # every game page of the campaign listens on its stage stream, plays the
+  # transition and follows.
+  def call_to_arms
+    return unless campaign
+
+    Turbo::StreamsChannel.broadcast_action_to(campaign, :stage, action: :battle_start, target: "stage",
+                                              attributes: { url: Rails.application.routes.url_helpers.battle_path(self), boss: boss? })
   end
 
   # One callback: after_create_commit and after_update_commit naming the same
@@ -89,6 +101,10 @@ class BattleRecord < ApplicationRecord
 
   def party
     units.select { |u| u["side"] == "party" }
+  end
+
+  def enemies
+    units.select { |u| u["side"] == "enemy" }
   end
 
   def awaiting_input
@@ -158,6 +174,16 @@ class BattleRecord < ApplicationRecord
 
     update!(deadline_at: Time.current + input_seconds.seconds + (round > 1 ? ANIMATION_GRACE : 0))
     BattleTimeoutJob.set(wait_until: deadline_at).perform_later(self, round)
+  end
+
+  # The bosses in this fight, for their entrance: the monsters marked as
+  # bosses, or, in a dungeon's boss room, the strongest there.
+  def boss_monsters
+    return Monster.none unless boss?
+
+    slugs = enemies.map { |u| u.dig("image", "slug") }.uniq
+    marked = world.monsters.where(slug: slugs, boss: true)
+    marked.exists? ? marked : world.monsters.where(slug: slugs).order(level: :desc).limit(1)
   end
 
   def replay
@@ -242,6 +268,7 @@ class BattleRecord < ApplicationRecord
 
   def settlement_line(summary)
     parts = [ { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." }.fetch(summary["result"], "It's over.") ]
+    parts << "#{boss_monsters.map(&:name).to_sentence} #{boss_monsters.size > 1 ? 'have' : 'has'} fallen!" if boss? && summary["result"] == "victory"
     parts << "Stole #{summary['stolen'].to_sentence}." if summary["stolen"].present?
     parts << "Used #{summary['used'].map { |name, n| "#{n} × #{name}" }.to_sentence}." if summary["used"].present?
     parts << "#{summary['gil']} gil." if summary["gil"].positive?

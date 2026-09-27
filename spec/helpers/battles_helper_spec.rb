@@ -31,6 +31,8 @@ RSpec.describe BattlesHelper, type: :helper do
     state = build_battle
     expect(helper.battle_log_line({ "type" => "cast", "actor" => "vivi", "ability" => "fire" }, state)).to eq("Vivi casts Fire.")
     expect(helper.battle_log_line({ "type" => "cast", "actor" => "bartz", "ability" => "double_cut" }, state)).to eq("Bartz uses Double Cut.")
+    expect(helper.battle_log_line({ "type" => "desperation", "actor" => "bartz", "ability" => "goblin_punch", "name" => "Goblin Punch" }, state))
+      .to eq("Bartz, at the end of their rope: Goblin Punch!")
     expect(helper.battle_log_line({ "type" => "damage", "target" => "goblin_a", "amount" => 9, "weak" => true }, state))
       .to eq("Goblin A takes 9 damage. It's super effective!")
     expect(helper.battle_log_line({ "type" => "victory", "rewards" => { "exp" => 18, "gil" => 36 } }, state)).to eq("Victory! 18 EXP and 36 gil.")

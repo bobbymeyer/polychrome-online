@@ -77,7 +77,7 @@ Every table that belongs to a world carries `world_id`. This is the only second-
 
 ### Campaign
 
-- `campaigns` (belongs to world; pins a world version — see §9)
+- `campaigns` (belongs to world; reads its books live — see §9.8)
 - `map_nodes` — type (town/dungeon/field/event), visible?, position, location ref
 - `map_edges` — state (open/blocked/dangerous), encounter table ref, travel event
 - `locations` — instantiated from a template with a seed; GM diffs stored as overrides on top of the seed
@@ -156,7 +156,7 @@ GM controls: reroll, pin, add hand-authored NPC/room, place boss, override stock
 5. Dialogue box vs group chat — pick a model (see §7).
 6. Animation/DOM race — see §6.
 7. Stat derivation bugs — pure module, heavy tests.
-8. Editions — a world-builder editing the Bestiary changes live campaigns. Campaigns pin a world version; explicit upgrade. Design the pin column now, build the tooling later.
+8. Editions — decided: **worlds are live.** A GM develops their world as they play it, so editing the Bestiary changes live campaigns, on purpose. There are no world versions and no pins. What stays stable: a battle in progress (it copies what it needs when it starts) and anything a GM has pinned in a location. Forking is copying: a new world can start from another world's books. The seed never overwrites an existing entry; `bin/rails base_world:update` does, explicitly.
 9. Turbo Drive vs persistent game screen — game is one long-lived page fed by streams; books use ordinary Turbo Drive navigation.
 
 ## 10. Stack

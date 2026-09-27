@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { createTimeline } from "animejs"
 import { gesture } from "motion/gestures"
+import { play } from "sound"
 
 // The event player (docs/HANDOFF.md §6).
 //
@@ -25,7 +26,7 @@ const FAST_KEY = "polychrome.fastBattles"
 
 export default class extends Controller {
   static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "fast"]
-  static values = { panelUrl: String, next: Number }
+  static values = { panelUrl: String, next: Number, cries: Object }
 
   connect() {
     this.queue = []
@@ -161,6 +162,8 @@ export default class extends Controller {
       case "command_accepted":
         tl.call(() => this.setReady(e.actor, true), at)
         return 0
+      case "desperation":
+        return this.cutIn(tl, e, at)
       case "attack":
         return gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
       case "item_used":
@@ -241,11 +244,18 @@ export default class extends Controller {
         return e.defaulted.length ? 700 : 0
       case "victory":
         this.banner(tl, "Victory!", at, "victory")
+        tl.call(() => play("victory"), at)
         // The party's victory hop, as in the games.
         this.party().forEach((el, i) => { gesture(tl, el, "bounce", at + 200 + i * 80); gesture(tl, el, "bounce", at + 700 + i * 80) })
+        // A boss gets its epitaph: the victory says what it beat.
+        if (this.element.dataset.bossDown) {
+          this.banner(tl, this.element.dataset.bossDown, at + 1300, "boss-down")
+          return 2800
+        }
         return 1500
       case "defeat":
         this.banner(tl, "Defeat", at, "defeat")
+        tl.call(() => play("defeat"), at)
         return 1300
       case "gm_override":
         // GM power is never hidden (§12): every override is in the log, and
@@ -369,12 +379,48 @@ export default class extends Controller {
     el.className = `banner banner--${kind}`
     el.textContent = text
     this.fxTarget.append(el)
-    if (["victory", "defeat", "escape"].includes(kind)) {
+    if (["victory", "defeat", "escape", "boss-down"].includes(kind)) {
       // Thrown across the stage from the left, held, then gone.
       tl.add(el, { opacity: [0, 1, 1, 1, 0], translateX: ["-60%", "0%", "0%", "0%", "4%"], duration: 1300, ease: "outExpo" }, at)
     } else {
       tl.add(el, { opacity: [0, 1, 1, 0], translateX: [-24, 0, 0, 8], duration: kind === "round" ? 400 : 1200, ease: "outQuad" }, at)
     }
+  }
+
+  // A desperation move: the stage stops for the character. A slab in their
+  // colour cuts across it, with their sprite, their line and the move.
+  cutIn(tl, e, at) {
+    const sprite = this.sprite(e.actor)
+    const el = document.createElement("div")
+    el.className = "cut-in"
+    const plate = sprite?.querySelector(".sprite__plate")
+    if (plate) el.style.cssText = plate.getAttribute("style") || ""
+
+    const figure = document.createElement("div")
+    figure.className = "cut-in__figure"
+    if (sprite) figure.append(sprite.cloneNode(true))
+    const words = document.createElement("div")
+    words.className = "cut-in__words"
+    const cry = this.criesValue[e.actor]
+    if (cry) {
+      const line = document.createElement("p")
+      line.className = "cut-in__cry"
+      line.textContent = cry
+      words.append(line)
+    }
+    const move = document.createElement("p")
+    move.className = "cut-in__move"
+    move.textContent = e.name
+    words.append(move)
+    el.append(figure, words)
+    this.fxTarget.append(el)
+
+    const hold = cry ? 1500 + Math.min(cry.length * 18, 900) : 1100
+    tl.call(() => play("desperation"), at)
+    tl.add(el, { opacity: [0, 1, 1, 0], translateX: ["-40%", "0%", "0%", "30%"], duration: hold, ease: "outExpo" }, at)
+    tl.add(figure, { translateX: [-60, 0], scale: [1.4, 1], duration: 380, ease: "outBack" }, at + 80)
+    tl.call(() => el.remove(), at + hold)
+    return hold
   }
 
   caption(tl, text, at, kind = null) {

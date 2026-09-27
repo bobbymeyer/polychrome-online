@@ -16,7 +16,8 @@ class RandomTable
     @chooser = Random.new(seed)
     @initial = Battle::State.build(
       seed: seed,
-      party: BattleFixtures.party.sample(@chooser.rand(1..4), random: @chooser),
+      party: BattleFixtures.party.sample(@chooser.rand(1..4), random: @chooser)
+                           .map { |u| u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser)) },
       enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre ].sample(random: @chooser),
       abilities: BattleFixtures.abilities,
       escapable: @chooser.rand(4) != 0,

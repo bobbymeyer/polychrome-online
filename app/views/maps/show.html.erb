@@ -1,4 +1,5 @@
 <% content_for :title, "#{@campaign.name} · Map" %>
+<% content_for :head, music_meta(@campaign, @campaign.scene) %>
 <% content_for :head do %><meta name="turbo-cache-control" content="no-cache"><% end %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / Map</div>
 <div class="book-header">
@@ -7,6 +8,7 @@
 </div>
 
 <%= turbo_stream_from @campaign, (@gm ? :map_gm : :map) %>
+<%= render "shared/stage_stream", campaign: @campaign %>
 <div class="map-layout" <% if @gm %>data-controller="map-editor" data-map-editor-new-url-value="<%= new_campaign_map_node_path(@campaign) %>"<% end %>>
   <div class="window map-window">
     <%= render "maps/canvas", campaign: @campaign, gm: @gm %>

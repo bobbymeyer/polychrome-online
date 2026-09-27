@@ -47,6 +47,11 @@ bin/rspec               # all specs; bin/ci also runs RuboCop, Brakeman and audi
 
 No database server needed: it's SQLite, with databases stored in `storage/`.
 
+After a deploy, `bin/rails db:seed` adds any Base World entries that are new in
+`db/seeds/base_world.rb` and leaves existing ones alone, so a GM's edits
+survive. To put every Base World entry back to the seed data (after a
+rebalance, say), run `bin/rails base_world:update`. It overwrites edits.
+
 ## Books
 
 Every book is a resource namespace inside a world, e.g.
@@ -114,6 +119,17 @@ other browsers and have each player take a seat.
   that battle's log line says "Join the battle". The GM can **call off** a
   battle nobody will finish, from the campaign page or the battle. It then
   counts for nothing: no settlement, and HP and items stay as they were.
+- **Everyone goes.** `BattleRecord.start!` broadcasts a `battle_start` stream
+  action on the campaign's `:stage` stream, which every game page of the
+  campaign subscribes to (`shared/_stage_stream`). `stage.js` waits for the
+  dialogue to finish, plays the wipe and follows. The page you left is kept
+  in `sessionStorage` for the "Back to …" link on the result panel.
+- **Bosses.** A monster can be marked a boss in the Bestiary, with a line it
+  says when it arrives. A battle is a boss fight when a marked boss is in it,
+  or when it comes from a dungeon's boss room (`battles.boss`); its boss is
+  the marked one, or else the strongest monster there. The battle page plays
+  the entrance (`boss_intro_controller`), and the settlement line names what
+  fell.
 - **Input timer.** It is a `BattleTimeoutJob` scheduled for the round's
   deadline. When it fires, missing commands default to each unit's last one,
   or Attack.
@@ -129,11 +145,29 @@ other browsers and have each player take a seat.
   and derived stats in. When the battle ends, `BattleRecord#settle!` writes
   results back in the same transaction as the ending action (see below).
 
+## Sound
+
+- **Jingles** are synthesised in `app/javascript/sound.js` (WebAudio), so
+  there are no sound files in the repo. `play(name)` plays one: the battle
+  player plays victory and defeat, `stage.js` the encounter and boss calls,
+  and a log line with a `cue` (`key`, `door`, `treasure`, set where
+  `Location` writes the line) plays its jingle as it arrives live.
+- **Music** comes from the world's uploaded tracks (`World::MUSIC`, one
+  Active Storage attachment per scene, audio only, 25 MB each; removed
+  tracks are purged in the background). Every game page names its track in
+  `<meta name="polychrome-music">` (`ApplicationHelper#music_meta`), and one
+  `Audio` element, which lives as long as the tab does, crossfades between
+  tracks across Turbo visits.
+- **The GM's choice** (`campaigns.music`: a scene or `silence`, nil to
+  follow the scene) is set from the table and broadcast as a `music` stream
+  action on the campaign's `:stage` stream. Battle pages ignore it.
+- Muting is per device (`localStorage`).
+
 ## Characters and jobs
 
 A world has campaigns (§4): a party, a shared bag, gil, flags, a map and its
-locations. The `world_version` column is the §9.8 pin, designed but not used
-(see "Campaign flags and GM changes").
+locations. Worlds are live (§9.8): a campaign reads its world's books as they
+are now (see "Campaign flags and GM changes").
 
 - **Level:** comes from EXP (`Stats::Growth`, pure, like `Stats::Derivation`).
 - **Stats are never stored.** The sheet shows each derivation stage: level
@@ -154,6 +188,15 @@ locations. The `world_version` column is the §9.8 pin, designed but not used
   of the replay. The result panel reports level-ups and newly learned abilities.
 - **GM tools:** add items to the bag, adjust gil, grant EXP/ABP, and rest the
   party at an inn.
+- **Why they're here:** a character has one line in their own words
+  (`characters.motive`), on their card and sheet. It is also their battle cry.
+- **Desperation moves** (FF6-style): a job can name any offensive Grimoire
+  entry as its desperation move (`jobs.desperation`; each Base World job has
+  one, found rather than learned). At a quarter HP or less, a character's
+  Attack has a 30% chance to become that move instead, once a battle and for
+  no MP. The resolver emits `desperation` before the move, from the battle's
+  own RNG, so it replays exactly. The battle player stops for a cut-in in
+  the character's colour, with their line and the move's name.
 
 ## The table (chat)
 
@@ -185,6 +228,35 @@ everything outside battle.
   table seat carries into the battle, so players land on their own character.
 - NPCs belong to the campaign (the "Cast" section of the campaign page). The
   town generator in step 7 will create them too.
+
+## Scenes
+
+The GM writes scenes before the session, on the campaign page, and plays
+them from the table with one press (`Scene#play!`). A script reads like a
+play, one line each: `Cid (worried): The airship won't hold.` speaks as
+the NPC with that expression, and anything else is narration (a name that
+isn't in the cast is an error, unless it's clearly a sentence). The lines
+become table messages in order, so every viewer's dialogue box types them
+out one after another. The scene can then end:
+
+- **In a battle** against the monsters chosen for it. The battle starts
+  straight away, and each viewer is taken to it once their dialogue box has
+  finished the scene (`stage.js` waits for it).
+- **With a place revealed** on the map.
+
+A played scene stays in the list, greyed, and can be played again.
+
+## Previously on…
+
+Coming back to the table after a break (this device hasn't had it open for
+three hours, or ever), a title card opens: the last session in brief
+(`Recap`). A session is a run of log lines with no gap over three hours; the
+recap is of the last one that has ended, so it still recaps last week once
+tonight has started. It covers the road the party took (read from the travel
+and dungeon lines), the battles and level-ups, keys and treasure found, the
+flags the party knows that changed, and the last line said to the table.
+Whispers are never in it. "Previously on …" under the table's title opens it
+again at any time.
 
 ## The pointcrawl map
 
@@ -262,6 +334,14 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   - The GM hands treasure over to the party bag. Taking a costly way posts its
     cost.
   - Players see only the rooms they've been in, plus the exits out of them.
+- **Locks and keys.** A dungeon template asks for up to three locks. Each lock
+  guards a way the party can't get around on the way to the boss: a path on
+  the route, or every door into the boss's room. Its key is in a room they can
+  reach first (behind the earlier locks, if there are several), so every locked
+  dungeon can be solved; a spec checks this over hundreds of seeds. Locks and
+  keys come in flavoured pairs from a "locks" generator table (Crystal portal
+  and Blue crystal, Bone altar and Goat's skull). Walking into the key's room
+  finds it, and crossing the lock with it opens the way for good.
 - **Live updates** use Rails 8 page refreshes (morphing): each viewer re-fetches
   their own page, so what only the GM may see is never sent to a player.
 
@@ -276,10 +356,12 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   That covers renames, pins, pinned or written-in NPCs, shop stock, placed
   bosses and added rooms. Each one reverts on its own; revert them all and
   the location is exactly what was rolled.
-- **World-version pins (§9.8) are not built**, by decision. Campaigns read the
-  books live, so editing the Bestiary changes live campaigns, as §9.8 warns.
-  The unused `campaigns.world_version` column is the seam for when a second
-  author makes that matter (§1: no edition tooling until then).
+- **Worlds are live (§9.8, decided).** Campaigns read the books as they are
+  now, so a GM can develop their world while playing it: retune the Knight and
+  every Knight follows. A battle in progress is unaffected (it copies what it
+  needs when it starts). Towns and dungeons are rebuilt from their seed and the
+  current tables, so editing a table changes places already rolled, except
+  what's pinned. To fork a world instead, start a new one from its books.
 
 ## Accounts
 
@@ -427,7 +509,8 @@ still usable, otherwise to Attack.
 **Events** include the handoff's list (`attack damage miss crit cast heal
 status_applied status_expired ko turn_start turn_end flee victory defeat
 gm_override`) plus: `command_accepted round_start turn_order round_end revive
-defend buff_applied buff_expired turn_skipped action_failed timeout`.
+defend buff_applied buff_expired turn_skipped action_failed timeout
+desperation`.
 Each event is a hash like `{"type" => "damage", "target" => "goblin_a",
 "amount" => 24, "hp" => 21, ...}`. Every event that changes HP carries the
 resulting `hp`, so the view never computes an outcome.

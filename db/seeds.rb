@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-# Seeds the base world. Safe to re-run: entries are matched by slug.
+# Seeds the base world. Safe to re-run: it only adds entries that are missing,
+# and never overwrites one a GM may have edited (bin/rails base_world:update does).
 require_relative "seeds/base_world"
 
 world = Seeds::BaseWorld.run

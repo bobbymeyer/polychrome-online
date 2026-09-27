@@ -10,7 +10,7 @@
           <% if template.town? %>
             <%= s["npcs"].join("–") %> townsfolk, <%= s["services"].select { |_, c| c.to_i.positive? }.keys.map(&:humanize).join(", ") %>
           <% else %>
-            <%= s["rooms"].join("–") %> rooms, <%= pluralize(s["loops"], "loop") %>
+            <%= s["rooms"].join("–") %> rooms, <%= pluralize(s["loops"], "loop") %><%= ", #{pluralize(s['locks'], 'lock')}" if s["locks"].to_i.positive? %>
           <% end %>
         </td>
         <td><%= template.encounter_table&.name || "—" %></td>

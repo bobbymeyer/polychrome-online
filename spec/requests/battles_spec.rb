@@ -20,6 +20,16 @@ RSpec.describe "Battle screen", type: :request do
     post battle_actions_path(battle), params: { gm: params }
   end
 
+  it "brings the table along: its log in the drawer, and a dialogue box for whatever is said" do
+    cid = battle.campaign.npcs.create!(name: "Cid", title: "Engineer")
+    battle.campaign.messages.create!(body: "Hold the line!", speaker: cid)
+    get battle_path(battle)
+    drawer = response.body[/<div class="log-drawer".*?<\/aside>/m]
+    expect(drawer).to include("Battle", 'id="chat_log"', "Hold the line!")
+    expect(response.body).to match(/<section class="dialogue window dialogue--battle".*?aria-label="Dialogue"\s+hidden>/m) # nothing said yet in this battle
+    expect(response.body).to include(Turbo::StreamsChannel.signed_stream_name([ battle.campaign, :table ]))
+  end
+
   describe "setting up" do
     let!(:world) { Seeds::BaseWorld.run }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
@@ -70,7 +80,7 @@ RSpec.describe "Battle screen", type: :request do
     it "renders the board from the current state, with a lazily loaded command panel" do
       get battle_path(battle)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('data-controller="battle-player"', "turbo-cable-stream-source",
+      expect(response.body).to include('data-controller="battle-player dialogue"', "turbo-cable-stream-source",
                                         'data-unit="goblin_a"', %(data-roster="#{bartz}"), 'id="command_panel"')
     end
 
@@ -78,6 +88,19 @@ RSpec.describe "Battle screen", type: :request do
       battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => "goblin_a", "value" => 5, "note" => "wounded" }, actor: "gm")
       get battle_path(battle)
       expect(response.body).to include("GM sets Goblin A&#39;s HP to 5. &quot;wounded&quot;")
+    end
+
+    it "gives a boss its entrance: the name card and its line, until the fight is under way" do
+      campaign = create_campaign
+      plain = start_battle(campaign: campaign)
+      campaign.world.monsters.find_by!(slug: "goblin").update!(boss: true, boss_line: "You dare?")
+      boss_battle = start_battle(campaign: campaign)
+      get battle_path(boss_battle)
+      expect(response.body).to include("battle--boss", 'data-boss-down="Goblin falls!"', 'data-controller="boss-intro"',
+                                        'data-boss-intro-line-value="You dare?"', 'data-boss-intro-fresh-value="true"')
+
+      get battle_path(plain)
+      expect(response.body).not_to include("boss-intro", "battle--boss")
     end
 
     it "never shows enemy HP on the shared board" do

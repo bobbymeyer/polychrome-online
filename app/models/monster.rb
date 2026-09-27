@@ -7,6 +7,7 @@
 class Monster < ApplicationRecord
   include BookEntry
   include Artwork
+  include Colourable
 
   validates :level, numericality: { only_integer: true, greater_than: 0 }
   validates :exp, :gil, :abp, numericality: { only_integer: true, greater_than_or_equal_to: 0 }

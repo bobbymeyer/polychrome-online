@@ -1,11 +1,15 @@
 <% content_for :title, "#{@campaign.name} · Table" %>
+<% content_for :head, music_meta(@campaign, @campaign.scene) %>
 <% content_for :head do %>
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
-<div class="table" data-controller="dialogue" data-action="chat-line:arrived->dialogue#arrive keydown@window->dialogue#key">
+<div class="table" data-controller="dialogue recap" data-action="chat-line:arrived->dialogue#arrive keydown@window->dialogue#key"
+     data-recap-campaign-value="<%= @campaign.id %>">
+  <%= render "tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= turbo_stream_from @campaign, :table %>
+  <%= render "shared/stage_stream", campaign: @campaign %>
   <%= turbo_stream_from @campaign, (@seat == "gm" ? :map_gm : :map) %>
   <% if @seat == "gm" %>
     <%= turbo_stream_from @campaign, :gm %>
@@ -17,6 +21,9 @@
     <div>
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · Table</p>
       <h1><%= @campaign.name %></h1>
+      <% if @recap %>
+        <button type="button" class="link-button recap-link" data-action="recap#open">Previously on <%= @campaign.name %>…</button>
+      <% end %>
     </div>
     <%= render "tables/current_battle", campaign: @campaign %>
   </header>
@@ -33,18 +40,7 @@
         <% end %>
       </p>
     </section>
-    <section class="dialogue window" data-dialogue-target="box" data-action="click->dialogue#advance"
-             aria-label="Dialogue" <%= "hidden" unless @last_dialogue %>>
-      <div class="dialogue__portrait" data-dialogue-target="portrait">
-        <%= speaker_portrait(@last_dialogue&.speaker, @last_dialogue&.expression, size: :large) if @last_dialogue %>
-      </div>
-      <div class="dialogue__text">
-        <p class="dialogue__name" data-dialogue-target="name"><%= @last_dialogue&.speaker_name %></p>
-        <p class="dialogue__body" data-dialogue-target="text"><%= @last_dialogue&.body %></p>
-        <span class="dialogue__more" data-dialogue-target="more" hidden></span>
-      </div>
-      <p class="visually-hidden" aria-live="polite" data-dialogue-target="live"></p>
-    </section>
+    <%= render "tables/dialogue_box", last_dialogue: @last_dialogue %>
     </div>
 
     <div class="table__side">
@@ -57,15 +53,12 @@
         </dl>
       </section>
     <% end %>
-    <section class="window chat-log" aria-label="Log">
-      <ol id="chat_log" data-dialogue-target="log">
-        <% @messages.each do |message| %>
-          <%= render "messages/message", message: message %>
-        <% end %>
-      </ol>
-    </section>
     </div>
   </div>
+
+  <%= render layout: "shared/log_drawer" do %>
+    <%= render "tables/chat_log", messages: @messages %>
+  <% end %>
 
   <% if @seat %>
     <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
@@ -75,6 +68,20 @@
       At the table as <strong><%= @seat == "gm" ? "GM" : @seat.name %></strong>.
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
+    <% if @seat == "gm" %>
+      <details class="window table-scenes" <%= "open" if @campaign.scenes.where(played_at: nil).exists? %>>
+        <summary>Scenes</summary>
+        <%= render "scenes/list", campaign: @campaign, play: true %>
+        <%= link_to "New scene", new_campaign_scene_path(@campaign), class: "button button--quiet" %>
+      </details>
+      <%= form_with url: campaign_music_path(@campaign), method: :patch, class: "music-switch", data: { controller: "autosubmit" } do %>
+        <%= label_tag :music, "Music for the table" %>
+        <%= select_tag :music, options_for_select([ [ "Follow the scene (#{@campaign.scene})", "" ] ] +
+                                 Campaign::MUSIC_CHOICES.map { |c| [ c.capitalize + (c == "silence" || @campaign.world.music_track(c) ? "" : " (no track)"), c ] }, @campaign.music),
+                       data: { action: "autosubmit#submit" } %>
+        <noscript><%= submit_tag "Play", class: "button button--quiet" %></noscript>
+      <% end %>
+    <% end %>
   <% else %>
     <section class="window">
       <h2>Take a seat</h2>

@@ -10,6 +10,9 @@ import { GESTURES } from "motion/gestures"
 // Click the box to finish typing, or to move on to the next line. Waiting
 // lines also move on by themselves, so a busy GM doesn't strand anyone.
 // Nothing here is shared: each viewer reads at their own pace.
+//
+// In battle (autoHide) the box only appears while someone is speaking, and
+// leaves once everything said has been read.
 const TYPE_MS = 22
 const BATCH_MS = 60
 const HOLD_MS = 1600
@@ -20,6 +23,7 @@ const EXPRESSION_GESTURES = { happy: "bounce", angry: "shake", surprised: "pop",
 
 export default class extends Controller {
   static targets = ["box", "portrait", "name", "text", "more", "log", "live"]
+  static values = { autoHide: Boolean }
 
   connect() {
     this.queue = []
@@ -28,8 +32,17 @@ export default class extends Controller {
     this.scrollLog()
   }
 
+  // While lines are being said, the page is "busy": a battle starting waits
+  // for them (stage.js), so nobody is pulled away mid-scene.
+  set busy(value) {
+    if (value) document.documentElement.dataset.dialogueBusy = "true"
+    else delete document.documentElement.dataset.dialogueBusy
+  }
+
   disconnect() {
+    this.busy = false
     clearTimeout(this.startTimer)
+    clearTimeout(this.hideTimer)
     this.stopTyping()
     clearTimeout(this.holdTimer)
   }
@@ -40,6 +53,7 @@ export default class extends Controller {
 
     this.queue.push(line)
     this.queue.sort((a, b) => a.idValue - b.idValue)
+    this.busy = true
     if (!this.current) {
       // Lines sent together can arrive in any order: let the batch land and
       // sort before starting.
@@ -50,6 +64,22 @@ export default class extends Controller {
 
     this.moreTarget.hidden = false
     if (!this.typing) this.scheduleNext()
+  }
+
+  // A line that isn't a message: a boss's opening words (boss_intro).
+  // It goes to the front of the queue and never to the log.
+  say(event) {
+    if (!this.hasBoxTarget) return
+    const { speaker, text, plate, expression } = event.detail
+    const line = {
+      speakerValue: speaker, text, plate, expressionValue: expression || "",
+      speakerKeyValue: `said:${speaker}`, portraitValue: "", dialogueValue: true,
+      element: document.createElement("li")
+    }
+    this.queue.unshift(line)
+    this.busy = true
+    if (this.current && !this.typing) this.moreTarget.hidden = false
+    if (!this.current) this.next()
   }
 
   advance() {
@@ -74,10 +104,12 @@ export default class extends Controller {
     const line = this.queue.shift()
     if (!line) {
       this.current = null
+      this.busy = false
       return
     }
 
     this.current = line
+    clearTimeout(this.hideTimer)
     this.boxTarget.hidden = false
     this.moreTarget.hidden = true
     this.nameTarget.textContent = line.speakerValue
@@ -92,6 +124,16 @@ export default class extends Controller {
     if (this.queue.length) {
       this.moreTarget.hidden = false
       this.scheduleNext()
+    } else {
+      // The last line stays up long enough to be read, then the page is free.
+      this.hideTimer = setTimeout(() => {
+        if (this.queue.length) return
+        if (this.autoHideValue) {
+          this.boxTarget.hidden = true
+          this.current = null
+        }
+        this.busy = false
+      }, HOLD_MS + line.text.length * HOLD_PER_CHAR_MS)
     }
   }
 
@@ -115,6 +157,7 @@ export default class extends Controller {
       portrait = document.createElement("span")
       portrait.className = `speaker-portrait speaker-portrait--large speaker-portrait--plate${line.speakerKeyValue === "narrator" ? " speaker-portrait--narrator" : ""}`
       portrait.textContent = line.speakerValue.charAt(0)
+      if (line.plate) portrait.style.cssText = line.plate
     }
     this.portraitTarget.replaceChildren(portrait)
 
@@ -161,6 +204,7 @@ export default class extends Controller {
   }
 
   scrollLog() {
+    if (!this.hasLogTarget) return
     const scroller = this.logTarget.parentElement
     scroller.scrollTop = scroller.scrollHeight
   }

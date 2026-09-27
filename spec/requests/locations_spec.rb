@@ -84,7 +84,8 @@ RSpec.describe "Locations", type: :request do
       post enter_location_path(cave)
       expect(cave.reload.progress["current"]).to eq(cave.view["entrance"])
 
-      next_room = cave.neighbours(cave.view["entrance"]).first
+      entrance = cave.view["entrance"]
+      next_room = cave.neighbours(entrance).find { |key| !cave.locked?(cave.path_between(entrance, key)) } # not behind a lock
       post move_location_path(cave), params: { room: next_room }
       expect(cave.reload.visited).to include(next_room)
 

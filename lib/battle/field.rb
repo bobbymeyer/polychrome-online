@@ -31,7 +31,7 @@ module Battle
       raise InvalidAction, "#{target['name']} isn't down" if revives && !down
       raise InvalidAction, "#{target['name']} is already at full HP" if !revives && target["hp"] >= target["stats"]["max_hp"]
 
-      units = [ user, target ].uniq { |u| u["id"] }.map { |u| u.merge("abilities" => []) }
+      units = [ user, target ].uniq { |u| u["id"] }.map { |u| u.merge("abilities" => []).except("desperation") }
       state = State.build(seed: 0, party: units, enemies: [])
       state["rng"] = rng
       ctx = Context.new(state)

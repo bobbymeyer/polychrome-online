@@ -10,6 +10,7 @@
 class Character < ApplicationRecord
   include Portrayed
   include ArtSubject
+  include Colourable
 
   SLOTS = %w[weapon shield head body accessory].freeze
 
@@ -30,6 +31,12 @@ class Character < ApplicationRecord
   before_validation :apply_starting_level, on: :create
   before_validation { self.level = Stats::Growth.level_for_exp(exp.to_i) }
   after_create :start_in_job, :outfit
+
+  # Why they're here, in their own words: one line, on their card, and
+  # their battle cry when a desperation move comes (Battle::Resolver).
+  MOTIVE_LENGTH = 140
+  normalizes :motive, with: ->(line) { line.to_s.strip.delete_prefix("“").delete_prefix('"').delete_suffix("”").delete_suffix('"').strip.presence }
+  validates :motive, length: { maximum: MOTIVE_LENGTH }
 
   validates :name, presence: true
   validates :exp, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
@@ -214,8 +221,9 @@ class Character < ApplicationRecord
       "hp" => current_hp,
       "mp" => current_mp,
       "abilities" => battle_abilities.map(&:slug),
-      "image" => { "book" => "jobs", "slug" => job.slug }
-    }
+      "image" => { "book" => "jobs", "slug" => job.slug },
+      "desperation" => job.desperation_ability&.slug
+    }.compact
   end
 
   private

@@ -27,7 +27,10 @@ class WorldsController < ApplicationController
     @world = World.new(params.expect(world: %i[name slug description]))
     source = World.find_by(slug: params[:copy_from]) if params[:copy_from].present?
     if @world.save
-      @world.copy_books_from!(source) if source
+      if source
+        @world.copy_books_from!(source)
+        @world.copy_music_from!(source)
+      end
       redirect_to @world, notice: source ? "#{@world.name} was created from #{source.name}'s books." : "#{@world.name} was created."
     else
       render :new, status: :unprocessable_content
@@ -35,7 +38,11 @@ class WorldsController < ApplicationController
   end
 
   def update
-    if @world.update(params.expect(world: %i[name description]))
+    attrs = params.expect(world: [ :name, :description, *World::MUSIC.map { |scene| :"music_#{scene}" }, { remove_music: [] } ])
+    # Removing a track and uploading its replacement in one go keeps the new one.
+    removals = (Array(attrs.delete(:remove_music)) & World::MUSIC).reject { |scene| attrs[:"music_#{scene}"].present? }
+    if @world.update(attrs)
+      removals.each { |scene| @world.public_send(:"music_#{scene}").purge_later }
       redirect_to @world, notice: "#{@world.name} was updated."
     else
       render :edit, status: :unprocessable_content

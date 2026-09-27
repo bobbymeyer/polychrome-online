@@ -18,6 +18,7 @@ class GeneratorTable < ApplicationRecord
     "rooms" => %w[text],
     "room_events" => %w[text],
     "forks" => %w[text],
+    "locks" => %w[text key],
     "treasure" => %w[item gil]
   }.freeze
   INTEGER_FIELDS = %w[weight width height gil].freeze
@@ -30,7 +31,8 @@ class GeneratorTable < ApplicationRecord
   PASTE_FORMATS = {
     "town_names" => "a town's name", "dungeon_names" => "a dungeon's name", "names" => "a name",
     "hooks" => "a hook", "rooms" => "a room's name", "room_events" => "what happens there",
-    "forks" => "what the costly way costs", "service_names" => "a name, then | and the service (inn, shop, guild or temple)",
+    "forks" => "what the costly way costs", "locks" => "the lock, then | and its key (Portal | Blue crystal)",
+    "service_names" => "a name, then | and the service (inn, shop, guild or temple)",
     "stock" => "an item's name", "treasure" => "an item's name, or an amount like 150 gil"
   }.freeze
 
@@ -49,7 +51,7 @@ class GeneratorTable < ApplicationRecord
   # Form rows or plain hashes; blank rows are dropped, numbers cast.
   def entries=(rows)
     super(JsonCasting.rows(rows).filter_map do |row|
-      entry = row.slice("text", "service", "item", "roof", *INTEGER_FIELDS).transform_values(&:presence).compact
+      entry = row.slice("text", "key", "service", "item", "roof", *INTEGER_FIELDS).transform_values(&:presence).compact
       next if entry.slice("text", "item", "gil").empty?
 
       INTEGER_FIELDS.each { |f| entry[f] = JsonCasting.integer(entry[f]) if entry.key?(f) }
@@ -80,6 +82,7 @@ class GeneratorTable < ApplicationRecord
           nil
         end
       when "service_names" then row.merge("text" => value, "service" => parts.second.to_s.downcase.presence).compact
+      when "locks" then row.merge("text" => value, "key" => parts.second.presence).compact
       else row.merge("text" => value)
       end
     end
@@ -107,6 +110,7 @@ class GeneratorTable < ApplicationRecord
       extra = entry.keys - fields - [ "weight" ]
       errors.add(:entries, "#{label} has fields a #{kind.to_s.humanize.downcase} table doesn't use: #{extra.join(', ')}") if extra.any?
       errors.add(:entries, "#{label} needs text") if fields.include?("text") && entry["text"].blank?
+      errors.add(:entries, "#{label} needs a key") if fields.include?("key") && entry["key"].blank?
       errors.add(:entries, "#{label}: #{entry['item']} is not in the Armory") if entry["item"] && !items.include?(entry["item"])
       errors.add(:entries, "#{label} needs an item#{' or gil' if fields.include?('gil')}") if fields.include?("item") && entry.slice("item", "gil").empty?
       errors.add(:entries, "#{label}: unknown service #{entry['service']}") if entry["service"] && !Generators::Town::SERVICES.include?(entry["service"])

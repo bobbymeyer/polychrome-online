@@ -23,11 +23,11 @@ RSpec.describe "The table", type: :request do
   it "offers seats, then subscribes each seat to its own streams only" do
     get campaign_table_path(campaign)
     expect(response.body).to include("Take a seat", "Game Master", "Bartz", "Lenna")
-    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(2) # table + players' map
+    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(3) # table + players' map + the stage
 
     sit(bartz.id)
     get campaign_table_path(campaign)
-    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(3) # + Bartz's whispers
+    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(4) # + Bartz's whispers
     expect(response.body).to include("At the table as <strong>Bartz</strong>")
   end
 
@@ -102,6 +102,13 @@ RSpec.describe "The table", type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "keeps the log in a drawer, closed until it's opened" do
+    campaign.messages.create!(body: "The road is long.", speaker: cid)
+    get campaign_table_path(campaign)
+    drawer = response.body[/<div class="log-drawer".*?<\/aside>/m]
+    expect(drawer).to include('id="chat_log"', "The road is long.", "inert", 'aria-expanded="false"')
+  end
+
   it "shows the last GM line in the dialogue box on arrival, without replaying anything" do
     campaign.messages.create!(body: "Old news.", speaker: cid)
     campaign.messages.create!(body: "Player chatter.", speaker: bartz)
@@ -158,5 +165,14 @@ RSpec.describe "The table", type: :request do
       patch character_path(bartz), params: { character: { name: "Bartz" }, portraits: { images: { "determined" => image } } }
       expect(bartz.portraits.pluck(:expression)).to eq([ "determined" ])
     end
+  end
+
+  it "offers a recap of the last session, once there is one" do
+    get campaign_table_path(campaign)
+    expect(response.body).not_to include("Previously on")
+
+    campaign.messages.create!(speaker: cid, body: "The crystal is cracking.", created_at: 2.days.ago)
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap"', "The crystal is cracking.")
   end
 end
