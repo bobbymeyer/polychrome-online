@@ -1,6 +1,6 @@
 <% state = @battle.state %>
 <% command = state["inputs"][unit["id"]] %>
-<div data-controller="menu" data-menu-primary-value="true" data-menu-autofocus-value="true" data-menu-you-value="<%= unit['id'] %>">
+<div data-controller="menu timing-meter" data-action="submit->timing-meter#intercept" data-menu-primary-value="true" data-menu-autofocus-value="true" data-menu-you-value="<%= unit['id'] %>">
 <div class="command-panel__head">
   <h2><%= unit["name"] %></h2>
   <span class="command-panel__vitals">
@@ -94,5 +94,7 @@
                 class: [ "link-button", "auto-toggle", ("is-on" if on) ], form: { class: "auto-toggle-form" },
                 aria: { pressed: on }, title: "Picking a command yourself takes you off auto" %>
 <% end %>
-<p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick</p>
+<p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick ·
+  <button type="button" class="link-button" data-timing-meter-target="toggle" data-action="timing-meter#toggle"
+          title="Stop the needle on the mark for a Perfect: the move lands a quarter harder">Timing meter</button></p>
 </div>

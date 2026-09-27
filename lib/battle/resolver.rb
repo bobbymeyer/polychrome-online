@@ -95,7 +95,9 @@ module Battle
 
       target = cmd["target"]
       validate_target(unit, ability, target) if target
-      { "kind" => "ability", "ability" => ability["id"], "target" => target }
+      command = { "kind" => "ability", "ability" => ability["id"], "target" => target }
+      # The timing meter: stopped on the mark, the move lands harder.
+      cmd["timing"] == "perfect" ? command.merge("timing" => "perfect") : command
     end
 
     def validate_item(unit, cmd)
@@ -120,7 +122,7 @@ module Battle
     end
 
     def default_command(unit)
-      last = unit["last_command"]
+      last = unit["last_command"]&.except("timing") # a Perfect is earned each round
       return last if last && still_valid?(unit, last)
 
       { "kind" => "ability", "ability" => "attack", "target" => nil }
@@ -366,8 +368,27 @@ module Battle
       when "defend" then ctx.emit(:defend, actor: unit["id"])
       when "flee" then Effects.attempt_flee(ctx, unit)
       when "item" then use_item(unit, ctx.item(cmd["item"]), cmd["target"])
-      else use_ability(unit, desperate(unit, ctx.ability(cmd["ability"])), cmd["target"])
+      else
+        ability = desperate(unit, ctx.ability(cmd["ability"]))
+        ability = perfect(ability) if cmd["timing"] == "perfect"
+        use_ability(unit, ability, cmd["target"])
       end
+    end
+
+    # A Perfect on the timing meter: every power in the move up by a quarter,
+    # every chance to inflict a status up by 20 points. Marked on the move,
+    # so the table sees it.
+    PERFECT_POWER = 125
+    PERFECT_CHANCE = 20
+
+    def perfect(ability)
+      effects = ability["effects"].map do |effect|
+        effect = effect.dup
+        effect["power"] = effect.fetch("power", 100) * PERFECT_POWER / 100 if %w[physical elemental heal drain].include?(effect["primitive"])
+        effect["chance"] = [ effect.fetch("chance", 100) + PERFECT_CHANCE, 100 ].min if effect["primitive"] == "status"
+        effect
+      end
+      ability.merge("effects" => effects, "perfect" => true)
     end
 
     # At the end of their rope, a character sometimes finds something more:
@@ -440,7 +461,8 @@ module Battle
 
     def announce(unit, ability, targets, cost)
       type = ability["kind"] == "attack" ? :attack : :cast
-      ctx.emit(type, actor: unit["id"], ability: ability["id"], targets: targets.map { |t| t["id"] }, mp_cost: cost)
+      extra = ability["perfect"] ? { perfect: true } : {}
+      ctx.emit(type, actor: unit["id"], ability: ability["id"], targets: targets.map { |t| t["id"] }, mp_cost: cost, **extra)
     end
 
     # random_enemy: every hit of every effect picks a fresh living opponent.

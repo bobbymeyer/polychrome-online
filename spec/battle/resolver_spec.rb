@@ -489,4 +489,22 @@ RSpec.describe Battle::Resolver do
         .to raise_error(Battle::InvalidAction, /unknown abilities: ultima/)
     end
   end
+
+  describe "the timing meter" do
+    it "lands a Perfect a quarter harder, and never carries it into a repeated command" do
+      normal, = apply(build_battle(seed: 5), command("bartz", "attack", "goblin_a"))
+      perfect, = apply(build_battle(seed: 5), command("bartz", "attack", "goblin_a").merge(command: { kind: "ability", ability: "attack", target: "goblin_a", timing: "perfect" }))
+      expect(perfect["inputs"]["bartz"]).to include("timing" => "perfect")
+      expect(normal["inputs"]["bartz"]).not_to have_key("timing")
+
+      state = build_battle(seed: 5, party: [ BattleFixtures.party.first ], enemies: [ { id: "slime", name: "Slime", stats: stats(max_hp: 5000) } ])
+      _, plain = apply(state, command("bartz", "attack", "slime"))
+      after, hard = apply(state, { type: "command", actor: "bartz", command: { kind: "ability", ability: "attack", target: "slime", timing: "perfect" } })
+      expect(of_type(hard, :attack).first).to include("perfect" => true)
+      expect(of_type(hard, :damage).first["amount"]).to be > of_type(plain, :damage).first["amount"]
+
+      _, events = apply(after, { type: "timeout" })
+      expect(of_type(events, :attack).first).not_to have_key("perfect")
+    end
+  end
 end

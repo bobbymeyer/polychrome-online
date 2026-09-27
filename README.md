@@ -588,6 +588,15 @@ gm_override`) plus: `command_accepted round_start turn_order round_end revive
 defend buff_applied buff_expired turn_skipped action_failed timeout
 desperation unit_joined unit_left`.
 
+**The timing meter.** An ability command can carry `"timing" => "perfect"`,
+from the meter a player stops when confirming a move (Mario RPG's timed
+hits). A Perfect raises every power in the move by a quarter and every
+status chance by 20 points, and the move's `attack`/`cast` event says
+`perfect`. It's part of the command, so replays stay exact. A repeated
+command (auto, a timeout) never carries one. Missing costs nothing. The
+meter can be switched off per device, and is off by default for reduced
+motion.
+
 **Joining and leaving.** `add_unit` brings a unit in mid-fight: enemy
 reinforcements (named with the next free letter), or a guest on the party's
 side who acts on its own AI script, takes no input and shares no rewards

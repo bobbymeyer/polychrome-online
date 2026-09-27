@@ -63,6 +63,14 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include("Auto is on")
   end
 
+  it "takes a Perfect from the timing meter with a player's move" do
+    sit(bartz)
+    get battle_panel_path(battle)
+    expect(response.body).to include("timing-meter", "Timing meter")
+    command!(kind: "ability", ability: "attack", target: "goblin_a", timing: "perfect")
+    expect(battle.reload.state["inputs"][bartz]).to include("timing" => "perfect")
+  end
+
   describe "setting up" do
     let!(:world) { Seeds::BaseWorld.run }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road") }

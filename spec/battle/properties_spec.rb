@@ -166,6 +166,7 @@ RSpec.describe "Battle resolver properties" do
   it "never touches RNG while collecting input" do
     each_step do |_, before, _, after, events|
       next if of_type(events, :round_start).any?
+      next if of_type(events, :victory).any? # a GM ending the fight still rolls the drops
 
       expect(after["rng"]).to eq(before["rng"])
     end

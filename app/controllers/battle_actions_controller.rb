@@ -48,7 +48,7 @@ class BattleActionsController < ApplicationController
       joining!(gm) if gm["op"] == "add_unit"
       [ { "type" => "gm_override", "actor" => "gm" }.merge(gm), "gm" ]
     elsif params[:command] && seat_unit
-      command = params.expect(command: %i[kind ability item target]).to_h.compact_blank
+      command = params.expect(command: %i[kind ability item target timing]).to_h.compact_blank
       [ { "type" => "command", "actor" => seat_unit["id"], "command" => command }, seat_unit["id"] ]
     end
   end

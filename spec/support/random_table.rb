@@ -72,7 +72,9 @@ class RandomTable
         !(a["kind"] == "magic" && u["statuses"].any? { |s| s["kind"] == "silence" })
     end
     ability = usable.sample(random: @chooser)
-    cmd(u, "kind" => "ability", "ability" => ability["id"], "target" => target_for(state, u, ability))
+    command = { "kind" => "ability", "ability" => ability["id"], "target" => target_for(state, u, ability) }
+    command["timing"] = "perfect" if @chooser.rand(4).zero?
+    cmd(u, command)
   end
 
   def target_for(state, u, ability)

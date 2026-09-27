@@ -173,6 +173,7 @@ export default class extends Controller {
         this.banner(tl, `${e.name} leaves`, at, "gm")
         return 900
       case "attack":
+        if (e.perfect) this.popup(tl, e.actor, "PERFECT!", "perfect", at)
         return gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
       case "item_used":
         this.caption(tl, e.name || e.item, at, "item")
@@ -180,6 +181,7 @@ export default class extends Controller {
       case "cast": {
         const ability = this.abilities[e.ability] || {}
         this.caption(tl, ability.name || e.ability, at, ability.kind)
+        if (e.perfect) this.popup(tl, e.actor, "PERFECT!", "perfect", at)
         if (e.mp_cost) tl.call(() => this.addMp(e.actor, -e.mp_cost), at)
         return Math.max(gesture(tl, this.sprite(e.actor), ability.gesture || "flash", at, this.facing(e.actor)), 450)
       }
