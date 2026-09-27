@@ -89,9 +89,13 @@ module Battle
       units.select { |o| o["side"] == u["side"] && !o["gone"] && (!alive || alive?(o)) }
     end
 
-    # Who u can aim at: the other side's living units, less any in the air.
+    # Who u can aim at: the other side's living units, less any off the field.
     def opponents(u)
-      units.select { |o| o["side"] != u["side"] && alive?(o) && !status?(o, "airborne") }
+      units.select { |o| o["side"] != u["side"] && alive?(o) && !out_of_reach?(o) }
+    end
+
+    def out_of_reach?(u)
+      OUT_OF_REACH_STATUSES.any? { |kind| status?(u, kind) }
     end
 
     def side(name)

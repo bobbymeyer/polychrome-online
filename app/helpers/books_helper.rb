@@ -101,8 +101,8 @@ module BooksHelper
   def describe_effect(effect)
     e = effect
     case e["primitive"]
-    when "physical" then "#{"#{term(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}"
-    when "elemental" then "#{term(e['type'])} damage, power #{e['power']}#{hits(e)}"
+    when "physical" then "#{"#{effect_type(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}"
+    when "elemental" then "#{effect_type(e['type'])} damage, power #{e['power']}#{hits(e)}"
     when "status" then "#{term(e['kind'])} (#{e.fetch('chance', 100)}%, #{e.fetch('duration', 3)} turns)"
     when "heal" then "Restore HP, power #{e['power']}"
     when "drain" then "Drain HP, power #{e['power']}"
@@ -113,8 +113,23 @@ module BooksHelper
     when "cleanse" then e["kind"] ? "Cure #{term(e['kind']).downcase}" : "Cure every harmful status"
     when "steal" then "Steal one of its drops (#{e.fetch('chance', 50)}% + speed)"
     when "scan" then "Reveal HP, weaknesses and immunities"
+    when "jump" then "Leap out of reach, then land a #{e.fetch('power', 200)}% blow next turn"
+    when "away" then describe_away(e)
     else e["primitive"].to_s.humanize
     end
+  end
+
+  def describe_away(e)
+    turns = pluralize(e.fetch("duration", 1), "turn")
+    if e["who"] == "self"
+      e.fetch("power", 0).positive? ? "Out of reach for #{turns}, then a #{e['power']}% blow" : "Off the field for #{turns}, then back to act"
+    else
+      "Sent off the field for #{turns} (#{e.fetch('chance', 100)}%)"
+    end
+  end
+
+  def effect_type(type)
+    type == "terrain" ? "Terrain" : type_name(type)
   end
 
   def describe_condition(name, value)

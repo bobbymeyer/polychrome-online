@@ -165,8 +165,15 @@ export default class extends Controller {
       case "jump":
         // Up and out of the frame, and out of reach, until its next turn.
         tl.add(this.sprite(e.actor), { translateY: [0, -220], opacity: [1, 0], duration: 420, ease: "inQuad" }, at)
-        this.caption(tl, "Jump!", at, "skill")
         return 500
+      case "away":
+        // Off the field (hiding, banished, knocked back) until it comes back.
+        tl.add(this.sprite(e.unit), { opacity: [1, 0], scale: [1, 0.8], duration: 360, ease: "inQuad" }, at)
+        this.popup(tl, e.unit, e.unit === e.actor ? "HIDDEN" : "SENT AWAY", "status", at)
+        return 420
+      case "back":
+        tl.add(this.sprite(e.unit), { opacity: [0, 1], scale: [0.8, 1], duration: 300, ease: "outQuad" }, at)
+        return 340
       case "land":
         tl.add(this.sprite(e.actor), { translateY: [-220, 0], opacity: [0, 1], duration: 260, ease: "inExpo" }, at)
         if (e.target) gesture(tl, this.stageTarget, "shake", at + 240)

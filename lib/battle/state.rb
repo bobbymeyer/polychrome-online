@@ -10,7 +10,7 @@ module Battle
 
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
-  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan jump].freeze
+  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan jump away].freeze
 
   # Parameters each primitive takes, split into required and optional
   # (optional ones have defaults in Battle::Effects). String-valued params
@@ -31,19 +31,29 @@ module Battle
     "steal" => { required: [], optional: %w[chance] },
     # Shows the target's affinities, status immunities and HP.
     "scan" => { required: [], optional: [] },
-    # Leaves the field (airborne) and lands on the target on the next turn.
-    "jump" => { required: [], optional: %w[power type] }
+    # Leaves the field and lands on the target on the next turn: an Away
+    # of the user with a blow on the way back.
+    "jump" => { required: [], optional: %w[power type] },
+    # Takes someone off the field for some of their turns (Battle::Effects#away):
+    # who "self" (Jump, Hide, Vanish) or "target" (Banish, Knockback).
+    # Power > 0: they come back striking.
+    "away" => { required: [], optional: %w[who duration power chance type] }
   }.freeze
-  PRIMITIVE_STRING_PARAMS = %w[type kind stat].freeze
+  PRIMITIVE_STRING_PARAMS = %w[type kind stat who].freeze
+  AWAY_WHO = %w[self target].freeze
+  MAX_AWAY_TURNS = 5
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
   TYPES = Types::ALL # the base world's; a battle's own are in its state
   AFFINITIES = Types::AFFINITIES
   # cover: this unit takes the enemies' single-target moves meant for its
-  # allies (a Knight's Cover). airborne: off the field after a Jump, out of
-  # reach, landing on its next turn.
-  STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne].freeze
+  # allies (a Knight's Cover). away: off the field, out of reach, for some
+  # of its turns (Battle::Effects#away); airborne is the same from battles
+  # before Away, landing on its next turn.
+  STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away].freeze
+  # Off the field: nobody can reach them, and they can't be commanded.
+  OUT_OF_REACH_STATUSES = %w[airborne away].freeze
   # What a cleanse with no kind cures: everything but the good ones.
-  HARMFUL_STATUSES = (STATUSES - %w[haste cover airborne]).freeze
+  HARMFUL_STATUSES = (STATUSES - %w[haste cover airborne away]).freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
   COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
@@ -52,7 +62,7 @@ module Battle
   # for input).
   DISABLING_STATUSES = %w[sleep paralyze].freeze
   # No command while these last: the unit's turn is already spoken for.
-  NO_INPUT_STATUSES = (DISABLING_STATUSES + %w[airborne]).freeze
+  NO_INPUT_STATUSES = (DISABLING_STATUSES + OUT_OF_REACH_STATUSES).freeze
   # What a job gives beyond numbers (Battle::Effects, #take_turn):
   #   counter      — sometimes strikes back when hit by an enemy's blow
   #   regen        — a little HP back at the end of each of its turns
@@ -322,6 +332,10 @@ module Battle
         end
 
         case primitive
+        when "away"
+          raise ArgumentError, "#{id}: away is who self or target" if effect["who"] && !AWAY_WHO.include?(effect["who"])
+          raise ArgumentError, "#{id}: away lasts 1 to #{MAX_AWAY_TURNS} turns" if effect["duration"] && !effect["duration"].between?(1, MAX_AWAY_TURNS)
+          raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !(known.include?(effect["type"]) || effect["type"] == "terrain")
         when "elemental", "physical", "jump"
           # "terrain": the type of where the fight is (a Geomancer's arts).
           typed = known.include?(effect["type"]) || effect["type"] == "terrain"

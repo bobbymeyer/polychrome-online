@@ -59,7 +59,13 @@ module BattleFixtures
       jump: { name: "Jump", kind: "skill", target: "single_enemy", cost: { mp: 0 },
               effects: [ { primitive: "jump", power: 200 } ] },
       gaia: { name: "Gaia", kind: "skill", target: "all_enemies", cost: { mp: 0 },
-              effects: [ { primitive: "elemental", type: "terrain", power: 12 } ] }
+              effects: [ { primitive: "elemental", type: "terrain", power: 12 } ] },
+      hide: { name: "Hide", kind: "skill", target: "self", cost: { mp: 0 },
+              effects: [ { primitive: "away", who: "self", duration: 1 } ] },
+      banish: { name: "Banish", kind: "magic", target: "single_enemy", cost: { mp: 2 },
+                effects: [ { primitive: "away", who: "target", duration: 2, chance: 80 } ] },
+      high_jump: { name: "High Jump", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+                   effects: [ { primitive: "away", who: "self", duration: 2, power: 250 } ] }
     }
   end
 

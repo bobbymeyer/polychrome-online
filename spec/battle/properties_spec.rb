@@ -19,7 +19,7 @@ RSpec.describe "Battle resolver properties" do
     expect(seen).to include(*%w[attack cast damage miss crit heal status_applied status_expired ko revive
                                   turn_start turn_end flee victory defeat gm_override buff_applied
                                   buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll
-                                  jump land covered counter second_wind mp_restored])
+                                  jump land away back covered counter second_wind mp_restored])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end
@@ -95,21 +95,24 @@ RSpec.describe "Battle resolver properties" do
     end
   end
 
-  it "keeps a unit in the air out of reach, and has it land on its next turn" do
+  it "keeps a unit that's away out of reach and out of the input, until it comes back" do
+    gone = ->(u) { u["statuses"].any? { |s| Battle::OUT_OF_REACH_STATUSES.include?(s["kind"]) } }
     each_step do |_, before, _, after, events|
-      airborne = before["units"].select { |u| u["statuses"].any? { |s| s["kind"] == "airborne" } }.map { |u| u["id"] }
+      away = before["units"].select(&gone).map { |u| u["id"] }
       side = (before["units"] + after["units"]).to_h { |u| [ u["id"], u["side"] ] }
       events.each do |e|
         case e["type"]
-        when "jump" then airborne << e["actor"]
-        when "land" then airborne.delete(e["actor"])
+        when "jump" then away << e["actor"]
+        when "away" then away << e["unit"]
+        when "land" then away.delete(e["actor"])
+        when "back" then away.delete(e["unit"])
+        when "ko" then away.delete(e["target"])
         when "damage", "miss"
           # Out of the enemy's reach (an ally can still hand them a potion).
-          expect(airborne).not_to include(e["target"]) if e["actor"] && side[e["actor"]] != side[e["target"]]
+          expect(away).not_to include(e["target"]) if e["actor"] && side[e["actor"]] != side[e["target"]] && e["reason"] != "no_target"
         end
       end
-      in_air = after["units"].select { |u| u["statuses"].any? { |s| s["kind"] == "airborne" } }.map { |u| u["id"] }
-      expect(Battle::State.awaiting_input(after) & in_air).to be_empty
+      expect(Battle::State.awaiting_input(after) & after["units"].select(&gone).map { |u| u["id"] }).to be_empty
     end
   end
 

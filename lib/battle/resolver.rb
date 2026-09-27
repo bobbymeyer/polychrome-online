@@ -431,16 +431,40 @@ module Battle
     end
 
     # A Jump comes down: a blow at the target it left for (or, if that one's
-    # gone, anyone in reach), whatever else was going on.
-    def land(unit)
-      status = unit["statuses"].find { |s| s["kind"] == "airborne" }
-      ctx.remove_status(unit, "airborne", reason: "landed")
+    # gone, anyone in reach), whatever else was going on. status: the away
+    # it's coming back from; battles from before Away were airborne.
+    def land(unit, status = nil)
+      unless status
+        status = unit["statuses"].find { |s| s["kind"] == "airborne" }
+        ctx.remove_status(unit, "airborne", reason: "landed")
+      end
       target = ctx.find_unit(status["target"].to_s)
-      target = nil unless target && target["side"] != unit["side"] && ctx.alive?(target) && !ctx.status?(target, "airborne")
+      target = nil unless target && target["side"] != unit["side"] && ctx.alive?(target) && !ctx.out_of_reach?(target)
       target ||= ctx.rng.pick(ctx.opponents(unit))
       ctx.emit(:land, actor: unit["id"], target: target&.dig("id"))
       blow = { "primitive" => "physical", "power" => status.fetch("power", 200) }.merge(status.slice("type", "basis"))
       Effects.apply(ctx, unit, target, blow) if target
+    end
+
+    # Someone away counts down their turns; on the last they come back. A
+    # blow on the way back (a Jump) is their turn, and so is being sent
+    # away; someone who left quietly of their own accord (Hide) acts.
+    # Returns true when the turn is spent.
+    def come_back(unit)
+      status = unit["statuses"].find { |s| s["kind"] == "away" }
+      status["left"] = status.fetch("left", status["turns"]) - 1 # a GM's or a status move's away counts its turns too
+      if status["left"].positive?
+        ctx.emit(:turn_skipped, unit: unit["id"], reason: "away")
+        return true
+      end
+
+      unit["statuses"].delete(status)
+      if status.fetch("power", 0).positive?
+        land(unit, status)
+        return true
+      end
+      ctx.emit(:back, unit: unit["id"])
+      !status["self"]
     end
 
     def take_turn(unit, cmd)
@@ -450,6 +474,8 @@ module Battle
       blocking = DISABLING_STATUSES.find { |kind| ctx.status?(unit, kind) }
       if ctx.status?(unit, "airborne")
         land(unit)
+      elsif ctx.status?(unit, "away") && come_back(unit)
+        nil
       elsif blocking
         ctx.emit(:turn_skipped, unit: unit["id"], reason: blocking)
       elsif unit["side"] == "enemy" || unit["guest"]
@@ -638,7 +664,7 @@ module Battle
     def covered(target)
       return target unless target
 
-      guard = ctx.allies(target).find { |a| a != target && ctx.status?(a, "cover") && !ctx.status?(a, "airborne") }
+      guard = ctx.allies(target).find { |a| a != target && ctx.status?(a, "cover") && !ctx.out_of_reach?(a) }
       return target unless guard
 
       ctx.emit(:covered, unit: guard["id"], for: target["id"])

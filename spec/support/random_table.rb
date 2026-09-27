@@ -20,7 +20,7 @@ class RandomTable
                            .map { |u|
                              u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser),
                                      passives: Battle::PASSIVES.sample(@chooser.rand(0..2), random: @chooser),
-                                     abilities: u[:abilities] + %w[cover jump gaia].sample(2, random: @chooser))
+                                     abilities: u[:abilities] + %w[cover jump gaia hide banish high_jump].sample(3, random: @chooser))
                               .merge(job_parts(u))
                            },
       terrain: Battle::TYPES.sample(random: @chooser),

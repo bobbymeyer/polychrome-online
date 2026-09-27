@@ -119,6 +119,8 @@ module BattlesHelper
     when "custom_roll" then "#{event['success'] ? 'It works!' : 'No luck.'} #{event['line'].presence}".strip + dice_note(event).to_s
     when "custom_unruled" then "No ruling in time: #{name.('actor')} attacks instead."
     when "jump" then "#{name.('actor')} leaps out of reach!"
+    when "away" then event["unit"] == event["actor"] ? "#{name.('actor')} slips off the field." : "#{name.('unit')} is sent off the field!"
+    when "back" then "#{name.('unit')} is back."
     when "land" then event["target"] ? "#{name.('actor')} comes down on #{name.('target')}!" : "#{name.('actor')} lands, with nobody to hit."
     when "covered" then "#{name.('unit')} steps in front of #{unit_name(state, event['for'])}!"
     when "counter" then "#{name.('actor')} strikes back!#{dice_note(event)}"
@@ -242,6 +244,7 @@ module BattlesHelper
     case event["reason"]
     when "sleep" then "#{unit} is asleep."
     when "paralyze" then "#{unit} can't move."
+    when "away" then "#{unit} is away."
     else "#{unit} has no orders."
     end
   end

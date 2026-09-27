@@ -591,6 +591,49 @@ RSpec.describe Battle::Resolver do
       expect(of_type(events, :damage).first).to include("actor" => "knight", "target" => "brute")
     end
 
+    describe "away" do
+      it "hides the user for a round, then lets them act" do
+        state = build_battle(seed: 2, party: [ knight.merge(abilities: %w[hide]) ], enemies: brute)
+        state, events = round(state, "knight" => { kind: "ability", ability: "hide" })
+        expect(of_type(events, :away).sole).to include("unit" => "knight", "turns" => 1)
+        expect(of_type(events, :damage).map { |e| e["target"] }).not_to include("knight")
+        expect(Battle::State.awaiting_input(state)).to be_empty
+
+        state, events = apply(state, { type: "timeout" })
+        expect(types(turn_of(events, "knight"))).to include("back")
+        expect(Battle::State.awaiting_input(state)).to eq([ "knight" ])
+      end
+
+      it "sends an enemy off the field, where it loses its turns, then brings it back" do
+        sure = BattleFixtures.abilities.merge(banish: BattleFixtures.abilities[:banish].merge(effects: [ { primitive: "away", who: "target", duration: 2 } ]))
+        state = build_battle(seed: 2, party: [ knight.merge(abilities: %w[banish], stats: tough.merge("agi" => 50)) ], enemies: brute, abilities: sure)
+        state, events = round(state, "knight" => { kind: "ability", ability: "banish", target: "brute" })
+
+        expect(of_type(events, :away).sole).to include("unit" => "brute", "turns" => 2)
+        expect(of_type(events, :turn_skipped).map { |e| [ e["unit"], e["reason"] ] }).to include([ "brute", "away" ])
+        _, events = round(state, "knight" => { kind: "ability", ability: "attack", target: "brute" })
+        expect(of_type(events, :miss)).to include(a_hash_including("actor" => "knight", "reason" => "no_target"))
+        expect(of_type(events, :back).sole).to include("unit" => "brute")
+        expect(of_type(events, :damage).select { |e| e["actor"] == "brute" }).to be_empty # coming back was its turn
+      end
+
+      it "keeps a High Jump in the air for two turns, then lands the blow" do
+        state = build_battle(seed: 2, party: [ knight.merge(abilities: %w[high_jump], stats: tough.merge("agi" => 50)) ], enemies: brute)
+        state, events = round(state, "knight" => { kind: "ability", ability: "high_jump", target: "brute" })
+        expect(of_type(events, :jump).sole).to include("turns" => 2)
+        state, events = apply(state, { type: "timeout" })
+        expect(of_type(events, :land)).to be_empty
+        _, events = apply(state, { type: "timeout" })
+        expect(of_type(events, :land).sole).to include("actor" => "knight", "target" => "brute")
+      end
+
+      it "respects a unit that can't be sent away" do
+        state = build_battle(seed: 2, party: [ knight.merge(abilities: %w[banish]) ], enemies: [ brute.first.merge(status_immune: %w[away]) ])
+        _, events = round(state, "knight" => { kind: "ability", ability: "banish", target: "brute" })
+        expect(of_type(events, :miss)).to include(a_hash_including("reason" => "immune", "status" => "away"))
+      end
+    end
+
     it "gives passives their moments: first strike, regen, clear mind, counter, second wind" do
       fast = knight.merge(passives: %w[first_strike regen mp_regen counter second_wind], hp: 100, mp: 0,
                           stats: tough.merge("agi" => 1, "max_mp" => 40))

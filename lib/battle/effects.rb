@@ -31,7 +31,8 @@ module Battle
       when "cleanse" then cleanse(ctx, actor, target, effect)
       when "steal" then steal(ctx, actor, target, effect)
       when "scan" then scan(ctx, target)
-      when "jump" then jump(ctx, actor, target, effect)
+      when "jump" then away(ctx, actor, target, effect.merge("who" => "self", "power" => effect.fetch("power", 200)))
+      when "away" then away(ctx, actor, target, effect)
       else raise Error, "unknown primitive #{effect['primitive']}"
       end
     end
@@ -123,16 +124,40 @@ module Battle
       ctx.countering = false if struck
     end
 
-    # jump(power, type): the actor leaves the field, out of reach, and lands
-    # on the target on its next turn (Battle::Resolver#land) for power% of a
-    # blow of that type.
-    def jump(ctx, actor, target, effect)
-      ctx.add_status(actor, "airborne", 2)
-      status = actor["statuses"].find { |st| st["kind"] == "airborne" }
-      status["target"] = target["id"]
-      status["power"] = effect.fetch("power", 200)
-      status.merge!(effect.slice("type", "basis"))
-      ctx.emit(:jump, actor: actor["id"], target: target["id"])
+    # away(who, duration, power, chance, type): someone leaves the field, out
+    # of reach and out of the fight, for `duration` of their own turns
+    # (Battle::Resolver#come_back).
+    #   who "self":   the user goes (Jump, Hide). With power, it comes back
+    #                 on the target for power% of a blow of that type: that
+    #                 is its turn. Without, it comes back and acts.
+    #   who "target": the target is sent away (Banish, Knockback) and loses
+    #                 the turns it's gone for. Against an opponent the chance
+    #                 is reduced by spr, like a status, and a unit can be
+    #                 immune ("away" in its status_immune).
+    def away(ctx, actor, target, effect)
+      who = effect.fetch("who", "target")
+      goer = who == "self" ? actor : target
+      power = effect.fetch("power", 0)
+      if who == "target" && target["side"] != actor["side"]
+        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", status: "away") if target["status_immune"].include?("away")
+
+        chance = effect.fetch("chance", 100)
+        chance = chance * 100 / (100 + ctx.stat(target, "spr")) if chance < 100
+        came_in, roll = ctx.rng.d100(chance)
+        unless came_in || chance >= 100
+          return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "resisted", status: "away", roll: roll, needed: chance)
+        end
+      end
+
+      turns = effect.fetch("duration", 1)
+      goer["statuses"].reject! { |s| OUT_OF_REACH_STATUSES.include?(s["kind"]) }
+      goer["statuses"] << { "kind" => "away", "turns" => turns, "left" => turns, "self" => who == "self",
+                            "power" => power, "target" => (target["id"] if power.positive?) }.merge(effect.slice("type", "basis")).compact
+      if who == "self" && power.positive?
+        ctx.emit(:jump, actor: actor["id"], target: target["id"], turns: turns)
+      else
+        ctx.emit(:away, actor: actor["id"], unit: goer["id"], turns: turns)
+      end
     end
 
     # elemental(type, power, hits): power scaled by mag, softened by mdef,
@@ -261,7 +286,8 @@ module Battle
         ctx.restore_mp(unit, [ unit["stats"]["max_mp"] / REGEN_DIVISOR, 1 ].max, regen: true)
       end
 
-      unit["statuses"].each { |s| s["turns"] -= 1 }
+      # Away counts its own turns (Battle::Resolver#come_back).
+      unit["statuses"].each { |s| s["turns"] -= 1 unless s["kind"] == "away" }
       unit["statuses"].select { |s| s["turns"] <= 0 }.map { |s| s["kind"] }.each do |kind|
         ctx.remove_status(unit, kind, reason: "wore_off")
       end

@@ -6,7 +6,7 @@
     <thead>
       <tr>
         <th>Primitive</th><th>Power</th><th>Hits</th><% if types_matter? %><th>Type</th><% end %><th>Status</th><th>Chance %</th>
-        <th>Duration</th><th>Stat</th><th>Amount %</th><th>Revive %</th>
+        <th>Duration</th><th>Stat</th><th>Amount %</th><th>Revive %</th><th>Who</th>
       </tr>
     </thead>
     <tbody>
@@ -27,6 +27,7 @@
           <td><%= select_tag name.(:stat), options_for_select(Stats::MODIFIABLE.map { |s| [stat_label(s), s] }, effect["stat"]), include_blank: true, "aria-label": "Stat #{i + 1}" %></td>
           <td><%= number_field_tag name.(:amount), effect["amount"], "aria-label": "Amount #{i + 1}" %></td>
           <td><%= number_field_tag name.(:fraction), effect["fraction"], min: 0, max: 100, "aria-label": "Revive fraction #{i + 1}" %></td>
+          <td><%= select_tag name.(:who), options_for_select([ [ "The user", "self" ], [ "The target", "target" ] ], effect["who"]), include_blank: true, "aria-label": "Who goes, #{i + 1}" %></td>
         </tr>
       <% end %>
     </tbody>
