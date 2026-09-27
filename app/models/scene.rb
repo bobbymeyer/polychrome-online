@@ -11,7 +11,8 @@
 #   Narrator: A shadow crosses the moon.
 #
 # A line starting with an NPC's name and a colon is theirs, with an optional
-# expression in brackets. Anything else is the narrator's.
+# expression in brackets. Anything else is the narrator's. The last line can
+# put a choice to the table: "? Trust Cid | Refuse -> trusted_cid".
 class Scene < ApplicationRecord
   ENDINGS = %w[none battle reveal].freeze
   LINE = /\A(?<name>[^:()]+?)\s*(?:\((?<expression>[^)]*)\))?\s*:\s*(?<text>.+)\z/
@@ -48,6 +49,8 @@ class Scene < ApplicationRecord
 
     transaction do
       lines.each do |line|
+        next Message.choice(campaign, **line["choice"]).save! if line["choice"]
+
         campaign.messages.create!(speaker: line["speaker"], expression: line["expression"], body: line["text"])
       end
       if ending == "reveal" && map_node && !map_node.visible?
@@ -63,7 +66,9 @@ class Scene < ApplicationRecord
   end
 
   def summary
-    parts = [ ActionController::Base.helpers.pluralize(lines.size, "line") ]
+    said = lines.reject { |l| l["choice"] }
+    parts = [ ActionController::Base.helpers.pluralize(said.size, "line") ]
+    parts << "then a choice: #{lines.last['choice'][:options].join(' / ')}" if lines.last&.dig("choice")
     parts << "then a battle: #{campaign.describe_encounter(encounter)}" if ending == "battle"
     parts << "then #{map_node&.name || 'a place'} appears on the map" if ending == "reveal"
     parts.join(", ")
@@ -72,6 +77,13 @@ class Scene < ApplicationRecord
   private
 
   def read(raw, npcs)
+    if raw.start_with?("?")
+      choice = Message.parse_choice(raw)
+      return { "choice" => choice } if choice
+
+      return { "text" => raw, "problem" => "A choice needs two options or more: “? Trust Cid | Refuse -> trusted_cid”." }
+    end
+
     match = LINE.match(raw)
     return { "speaker" => nil, "expression" => nil, "text" => raw } unless match
 
@@ -90,6 +102,9 @@ class Scene < ApplicationRecord
   def script_reads
     lines.each do |line|
       errors.add(:script, line["problem"]) if line["problem"]
+      if line["choice"] && (line != lines.last || ending != "none")
+        errors.add(:script, "can only end on a choice, with nothing after it: the next scene can follow what the party chose")
+      end
       if line["expression"] && !Portrait::EXPRESSIONS.include?(line["expression"])
         errors.add(:script, "“#{line['expression']}” isn't an expression. Use one of #{Portrait::EXPRESSIONS.to_sentence(last_word_connector: ' or ')}.")
       end

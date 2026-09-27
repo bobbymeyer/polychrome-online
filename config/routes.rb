@@ -107,6 +107,12 @@ Rails.application.routes.draw do
 
   resources :npcs, only: %i[edit update destroy]
   resources :messages, only: :destroy
+  resources :choices, only: [] do
+    member do
+      post :pick
+      post :settle
+    end
+  end
   resources :scenes, only: %i[edit update destroy] do
     post :play, on: :member
   end

@@ -16,6 +16,10 @@ class MessagesController < ApplicationController
     fields = params.expect(message: %i[body expression speaker whisper_to])
     @message = @campaign.messages.new(body: fields[:body], expression: fields[:expression])
     seat == "gm" ? as_gm(fields) : as_player(seat, fields)
+    # The GM can put a choice to the table: "? Trust Cid | Refuse -> trusted_cid".
+    if seat == "gm" && (choice = Message.parse_choice(fields[:body]))
+      @message = Message.choice(@campaign, **choice)
+    end
 
     if @message.save
       @refocus = true

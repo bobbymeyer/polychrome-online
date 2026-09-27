@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_030000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -205,6 +205,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_020000) do
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
     t.index ["user_id"], name: "index_characters_on_user_id"
+  end
+
+  create_table "choice_picks", force: :cascade do |t|
+    t.integer "message_id", null: false
+    t.integer "character_id", null: false
+    t.string "option", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_choice_picks_on_character_id"
+    t.index ["message_id", "character_id"], name: "index_choice_picks_on_message_id_and_character_id", unique: true
+    t.index ["message_id"], name: "index_choice_picks_on_message_id"
   end
 
   create_table "encounter_tables", force: :cascade do |t|
@@ -413,6 +424,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_020000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "cue"
+    t.json "options", default: [], null: false
+    t.string "flag_key"
+    t.string "settled"
     t.index ["battle_id"], name: "index_messages_on_battle_id"
     t.index ["campaign_id", "created_at"], name: "index_messages_on_campaign_id_and_created_at"
     t.index ["campaign_id"], name: "index_messages_on_campaign_id"
@@ -547,6 +561,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_020000) do
   add_foreign_key "characters", "campaigns"
   add_foreign_key "characters", "jobs"
   add_foreign_key "characters", "users", on_delete: :nullify
+  add_foreign_key "choice_picks", "characters", on_delete: :cascade
+  add_foreign_key "choice_picks", "messages", on_delete: :cascade
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"

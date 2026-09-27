@@ -4,7 +4,7 @@
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
-<div class="table" data-controller="dialogue recap" data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+<div class="table" data-controller="dialogue recap" <%= tag.attributes(data: { seat: (@seat == "gm" ? "gm" : ("player" if @seat)) }) %> data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>">
   <%= render "tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
@@ -41,6 +41,7 @@
       </p>
     </section>
     <%= render "tables/dialogue_box", last_dialogue: @last_dialogue %>
+    <%= render "choices/panel", choice: @campaign.open_choice %>
     </div>
 
     <div class="table__side">

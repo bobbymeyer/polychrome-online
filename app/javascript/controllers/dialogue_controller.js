@@ -96,7 +96,7 @@ export default class extends Controller {
     this.textTarget.textContent = ""
     this.nameTarget.textContent = ""
     this.portraitTarget.replaceChildren()
-    if (this.autoHideValue) this.boxTarget.hidden = true
+    this.boxTarget.hidden = true // nothing left to show, at the table too
     this.busy = false
   }
 

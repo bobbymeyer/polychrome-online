@@ -206,4 +206,29 @@ RSpec.describe "The table", type: :request do
       expect(Message.exists?(mine.id)).to be(false)
     end
   end
+
+  describe "choices" do
+    it "are put to the table by the GM, picked by players as themselves, and settled by the GM" do
+      sit("gm")
+      post campaign_messages_path(campaign), params: { message: { body: "? Trust Cid | Refuse -> trusted_cid", speaker: "narrator" } }
+      choice = campaign.open_choice
+      expect(choice.options).to eq([ "Trust Cid", "Refuse" ])
+      get campaign_table_path(campaign)
+      expect(response.body).to include('data-seat="gm"', "What will the party do?", "Settle on this")
+
+      post pick_choice_path(choice), params: { option: "Refuse" }
+      expect(choice.picks).to be_empty # the GM doesn't pick
+
+      sit(bartz.id)
+      post pick_choice_path(choice), params: { option: "Refuse" }
+      expect(choice.reload.tally["Refuse"]).to eq([ "Bartz" ])
+      post settle_choice_path(choice), params: { option: "Refuse" }
+      expect(choice.reload.settled).to be_nil # players don't settle
+
+      sit("gm")
+      post settle_choice_path(choice), params: { option: "Refuse" }
+      expect(choice.reload.settled).to eq("Refuse")
+      expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Refuse")
+    end
+  end
 end

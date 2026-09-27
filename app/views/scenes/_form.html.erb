@@ -8,6 +8,7 @@
     <p class="hint">
       One line each, like a play. Start with an NPC's name and a colon to speak as them, with an expression in brackets if you like
       (<%= Portrait::EXPRESSIONS.to_sentence(last_word_connector: " or ") %>). Anything else is narration.
+      End on <code>? Trust Cid | Refuse -&gt; trusted_cid</code> to put a choice to the table: players pick, you settle it, and the flag is set to what they chose.
       <% if (cast = @campaign.npcs.order(:name).pluck(:name)).any? %>The cast: <%= cast.to_sentence %>.<% else %>There's no cast yet: add NPCs on the campaign page.<% end %>
     </p>
   </div>

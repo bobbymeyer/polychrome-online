@@ -268,6 +268,11 @@ class Campaign < ApplicationRecord
                                               attributes: { follow: music.nil?, url: world.music_path(music).to_s })
   end
 
+  # The choice the table is deciding, if any (Message#settle!).
+  def open_choice
+    messages.where(kind: "choice", settled: nil).order(:id).last
+  end
+
   def dungeon_in_progress
     location = current_node&.location
     location if location&.dungeon? && location.progress["current"]

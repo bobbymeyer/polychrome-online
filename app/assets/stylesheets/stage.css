@@ -584,6 +584,24 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .battle-composer summary { cursor: pointer; font-style: italic; font-weight: 900; }
 .battle-composer[open] summary { margin-bottom: 8px; }
 
+/* A choice for the table: big red options, like a game's own prompt. Players see the picks,
+   the GM sees "Settle", everyone sees who picked what. */
+.choice { border-top: 4px solid var(--signal); }
+.choice[hidden] { display: none; }
+.choice:not([hidden]) { animation: slash-in .3s var(--snap) both; }
+.choice h2 { margin: 0 0 10px; font: var(--display); font-size: 28px; }
+.choice__options { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.choice__option { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.choice__pick-form { margin: 0; flex: 0 1 auto; }
+.choice__pick { min-width: 12em; background: var(--paper); border-bottom: 3px solid var(--signal); font-style: italic; font-weight: 900; font-size: 18px; }
+.choice__pick:hover, .choice__pick:focus-visible { background: var(--signal); color: var(--paper); }
+.choice__settle-label { font-weight: 900; font-style: italic; font-size: 18px; }
+.choice__who { color: var(--grey); font-size: 14px; }
+.choice__settle-form { margin: 0 0 0 auto; }
+.table:not([data-seat="player"]) .choice__pick-form, .table:not([data-seat="player"]) .choice__hint--player,
+.table[data-seat="player"] .choice__settle-label, .table:not([data-seat="gm"]) .choice__settle-form,
+.table:not([data-seat="gm"]) .choice__hint--gm { display: none; }
+
 /* Taking a line back: quiet, and only on hover or focus once shown. */
 .chat-line__retract-form { display: inline; margin: 0; }
 .chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }
@@ -597,6 +615,6 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 @media (prefers-reduced-motion: reduce) {
   .page, .play .menu__item, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
   .unit.is-targeted .sprite::after, .roster__row [data-hp], .command-panel__vitals .is-low, .countdown.is-urgent,
-  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open] { animation: none !important; }
+  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open], .choice:not([hidden]) { animation: none !important; }
   * { transition-duration: 0s !important; }
 }
