@@ -81,7 +81,12 @@ RSpec.describe Battle::Resolver do
       it("unknown command kinds") { rejects(command("bartz", kind: "summon"), /unknown command/) }
       it("targets that don't exist") { rejects(command("bartz", "attack", "nobody"), /no unit/) }
       it("attacking an ally") { rejects(command("bartz", "attack", "vivi"), /not an enemy/) }
-      it("healing an enemy") { rejects(command("rosa", "cure", "goblin_a"), /not an ally/) }
+      it("a support move at an enemy") { rejects(command("rosa", "haste", "goblin_a"), /not an ally/) }
+
+      it "but takes healing turned on an enemy, as in the games" do
+        s, = apply(state, command("rosa", "cure", "goblin_a"))
+        expect(s["inputs"]["rosa"]).to include("target" => "goblin_a")
+      end
       it("healing a fallen ally") { rejects(command("rosa", "cure", "bartz"), /down/, from: with_unit(state, "bartz", hp: 0)) }
       it("targeting a fallen enemy") { rejects(command("bartz", "attack", "goblin_a"), /down/, from: with_unit(state, "goblin_a", hp: 0)) }
       it("insufficient MP") { rejects(command("vivi", "meteor"), /lacks MP/, from: with_unit(state, "vivi", mp: 3)) }
@@ -374,7 +379,7 @@ RSpec.describe Battle::Resolver do
 
     it "rejects unknown ops and bad arguments" do
       expect { apply(state, gm("smite")) }.to raise_error(Battle::InvalidAction, /unknown GM op/)
-      expect { apply(state, gm("add_status", unit: "bartz", status: "doom")) }.to raise_error(Battle::InvalidAction)
+      expect { apply(state, gm("add_status", unit: "bartz", status: "petrify")) }.to raise_error(Battle::InvalidAction)
       expect { apply(state, gm("end_battle", result: "draw")) }.to raise_error(Battle::InvalidAction)
     end
   end
@@ -451,6 +456,438 @@ RSpec.describe Battle::Resolver do
     it "must be an ability the battle knows" do
       expect { build_battle(party: [ party.first.merge(desperation: "ultima") ], enemies: enemies) }
         .to raise_error(ArgumentError, /unknown desperation move: ultima/)
+    end
+  end
+
+  describe "GM: units joining and leaving" do
+    let(:goblin) { Battle::State.normalize(BattleFixtures.goblins(1).first.except(:count)) }
+
+    it "brings in reinforcements with the next free letter, and a guest who fights on their own" do
+      state = build_battle(enemies: BattleFixtures.goblins(2))
+      state, events = apply(state, gm("add_unit", side: "enemy", unit: goblin, note: "More of them!"))
+      expect(of_type(events, :unit_joined).first).to include("unit" => "goblin_c", "name" => "Goblin C", "side" => "enemy")
+
+      cid = { "id" => "cid", "name" => "Cid", "stats" => stats(max_hp: 200, str: 20, atk: 20), "ai" => [ { "use" => "attack" } ] }
+      state, = apply(state, gm("add_unit", side: "party", unit: cid))
+      expect(unit(state, "cid")).to include("guest" => true, "side" => "party")
+      expect(Battle::State.awaiting_input(state)).not_to include("cid")
+
+      _, events = full_round(state)
+      expect(of_type(events, :turn_order).first["order"]).to include("cid", "goblin_c")
+      expect(of_type(events, :attack).map { |e| e["actor"] }).to include("cid")
+    end
+
+    it "lets an enemy leave, paying nothing for it, and wins if it was the last" do
+      state = build_battle(enemies: BattleFixtures.goblins(2))
+      state, = apply(state, gm("set_hp", unit: "goblin_a", value: 0))
+      state, events = apply(state, gm("dismiss", unit: "goblin_b", note: "It runs!"))
+      expect(types(events)).to include("unit_left", "victory")
+      expect(of_type(events, :victory).first["rewards"]).to eq(unit(state, "goblin_a")["rewards"])
+      expect(state["status"]).to eq("victory")
+    end
+
+    it "never dismisses a party member, and needs a unit the engine can build" do
+      state = build_battle
+      expect { apply(state, gm("dismiss", unit: "bartz")) }.to raise_error(Battle::InvalidAction, /party member/)
+      expect { apply(state, gm("add_unit", side: "enemy", unit: { "id" => "blob" })) }.to raise_error(Battle::InvalidAction, /stats/)
+      expect { apply(state, gm("add_unit", side: "enemy", unit: goblin.merge("abilities" => [ "ultima" ]))) }
+        .to raise_error(Battle::InvalidAction, /unknown abilities: ultima/)
+    end
+  end
+
+  describe "the timing meter" do
+    it "lands a Perfect a quarter harder, and never carries it into a repeated command" do
+      normal, = apply(build_battle(seed: 5), command("bartz", "attack", "goblin_a"))
+      perfect, = apply(build_battle(seed: 5), command("bartz", "attack", "goblin_a").merge(command: { kind: "ability", ability: "attack", target: "goblin_a", timing: "perfect" }))
+      expect(perfect["inputs"]["bartz"]).to include("timing" => "perfect")
+      expect(normal["inputs"]["bartz"]).not_to have_key("timing")
+
+      state = build_battle(seed: 5, party: [ BattleFixtures.party.first ], enemies: [ { id: "slime", name: "Slime", stats: stats(max_hp: 5000) } ])
+      _, plain = apply(state, command("bartz", "attack", "slime"))
+      after, hard = apply(state, { type: "command", actor: "bartz", command: { kind: "ability", ability: "attack", target: "slime", timing: "perfect" } })
+      expect(of_type(hard, :attack).first).to include("perfect" => true)
+      expect(of_type(hard, :damage).first["amount"]).to be > of_type(plain, :damage).first["amount"]
+
+      _, events = apply(after, { type: "timeout" })
+      expect(of_type(events, :attack).first).not_to have_key("perfect")
+    end
+  end
+
+  describe "trying something" do
+    let(:party) { [ BattleFixtures.party.first.merge(level: 5) ] }
+    let(:state) { build_battle(seed: 9, party: party, enemies: BattleFixtures.goblins(2)) }
+    let(:idea) { { type: "command", actor: "bartz", command: { kind: "custom", text: "Kick the brazier onto them", target: "goblin_a" } } }
+
+    it "waits for the GM's ruling, then rolls for it on the unit's turn" do
+      waiting, events = apply(state, idea)
+      expect(waiting["inputs"]["bartz"]).to include("kind" => "custom", "text" => "Kick the brazier onto them")
+      expect(types(events)).not_to include("round_start")
+
+      ruling = gm("rule", unit: "bartz", stat: "agi", difficulty: "easy", aim: "all_enemies",
+                          effects: [ { primitive: "elemental", type: "fire", power: 30 } ], success: "Burning coals everywhere!", failure: "It won't budge.")
+      _, events = apply(waiting, ruling)
+      roll = of_type(events, :custom_roll).sole
+      expect(roll).to include("actor" => "bartz", "stat" => "agi", "difficulty" => "easy")
+      expect(roll["roll"] <= roll["needed"]).to eq(roll["success"])
+      expect(roll["line"]).to eq(roll["success"] ? "Burning coals everywhere!" : "It won't budge.")
+      fire = of_type(events, :damage).select { |e| e["damage_type"] == "fire" }
+      expect(fire.map { |e| e["target"] }.sort).to eq(roll["success"] ? %w[goblin_a goblin_b] : [])
+    end
+
+    it "is an Attack when time runs out before a ruling, and never repeats" do
+      waiting, = apply(state, idea)
+      after, events = apply(waiting, { type: "timeout" })
+      expect(types(events)).to include("custom_action", "custom_unruled", "attack")
+      _, events = apply(after, { type: "timeout" })
+      expect(types(events)).not_to include("custom_action")
+    end
+
+    it "only takes a ruling on a pending idea, from the closed vocabulary" do
+      expect { apply(state, gm("rule", unit: "bartz", stat: "agi", difficulty: "easy")) }.to raise_error(Battle::InvalidAction, /isn't trying/)
+      waiting, = apply(state, idea)
+      expect { apply(waiting, gm("rule", unit: "bartz", stat: "luck", difficulty: "easy")) }.to raise_error(Battle::InvalidAction, /stat/)
+      expect { apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "easy", effects: [ { primitive: "nuke" } ])) }
+        .to raise_error(Battle::InvalidAction, /unknown primitive/)
+      expect { apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "easy", skill: "Stealth", bonus: 99)) }
+        .to raise_error(Battle::InvalidAction, /bonus/)
+    end
+
+    it "adds a skill's bonus to the odds, and names the skill" do
+      waiting, = apply(state, idea)
+      plain = of_type(apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "hard")).last, :custom_roll).sole
+      skilled = of_type(apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "hard", skill: "Stealth", bonus: 15)).last, :custom_roll).sole
+      expect(skilled["needed"]).to eq([ plain["needed"] + 15, 95 ].min)
+      expect(skilled).to include("skill" => "Stealth")
+      expect(plain).not_to have_key("skill")
+    end
+  end
+
+  describe "job mechanics" do
+    let(:tough) { stats(max_hp: 900, str: 30, atk: 30, agi: 10, def: 100) }
+    let(:knight) { { id: "knight", name: "Knight", stats: tough, abilities: %w[cover jump] } }
+    let(:mage) { { id: "mage", name: "Mage", stats: stats(max_hp: 900, agi: 5, def: 100) } }
+    let(:brute) { [ { id: "brute", name: "Brute", stats: stats(max_hp: 3000, str: 20, atk: 20, agi: 1), ai: [ { use: "attack" } ] } ] }
+
+    def round(state, commands)
+      commands.reduce([ state, [] ]) do |(s, log), (actor, cmd)|
+        s, events = apply(s, { type: "command", actor: actor, command: cmd })
+        [ s, log + events ]
+      end
+    end
+
+    it "lets a Knight's Cover take the enemy's blows meant for an ally" do
+      state = build_battle(seed: 2, party: [ knight, mage ], enemies: brute)
+      _, events = round(state, "knight" => { kind: "ability", ability: "cover" }, "mage" => { kind: "defend" })
+      hits = of_type(events, :damage).select { |e| e["actor"] == "brute" }
+      expect(hits.map { |e| e["target"] }).to all(eq("knight"))
+      expect(of_type(events, :covered).map { |e| e["for"] }.uniq).to include("mage") if of_type(events, :covered).any?
+    end
+
+    it "takes a Dragoon out of reach for a round, then lands the blow" do
+      state = build_battle(seed: 2, party: [ knight.merge(agi: 50, stats: tough.merge("agi" => 50)) ], enemies: brute)
+      state, events = round(state, "knight" => { kind: "ability", ability: "jump", target: "brute" })
+      expect(types(events)).to include("jump")
+      expect(of_type(events, :damage).map { |e| e["target"] }).not_to include("knight")
+      expect(Battle::State.awaiting_input(state)).to be_empty
+
+      _, events = apply(state, { type: "timeout" })
+      land = of_type(events, :land).sole
+      expect(land).to include("actor" => "knight", "target" => "brute")
+      expect(of_type(events, :damage).first).to include("actor" => "knight", "target" => "brute")
+    end
+
+    describe "away" do
+      it "hides the user for a round, then lets them act" do
+        state = build_battle(seed: 2, party: [ knight.merge(abilities: %w[hide]) ], enemies: brute)
+        state, events = round(state, "knight" => { kind: "ability", ability: "hide" })
+        expect(of_type(events, :away).sole).to include("unit" => "knight", "turns" => 1)
+        expect(of_type(events, :damage).map { |e| e["target"] }).not_to include("knight")
+        expect(Battle::State.awaiting_input(state)).to be_empty
+
+        state, events = apply(state, { type: "timeout" })
+        expect(types(turn_of(events, "knight"))).to include("back")
+        expect(Battle::State.awaiting_input(state)).to eq([ "knight" ])
+      end
+
+      it "sends an enemy off the field, where it loses its turns, then brings it back" do
+        sure = BattleFixtures.abilities.merge(banish: BattleFixtures.abilities[:banish].merge(effects: [ { primitive: "away", who: "target", duration: 2 } ]))
+        state = build_battle(seed: 2, party: [ knight.merge(abilities: %w[banish], stats: tough.merge("agi" => 50)) ], enemies: brute, abilities: sure)
+        state, events = round(state, "knight" => { kind: "ability", ability: "banish", target: "brute" })
+
+        expect(of_type(events, :away).sole).to include("unit" => "brute", "turns" => 2)
+        expect(of_type(events, :turn_skipped).map { |e| [ e["unit"], e["reason"] ] }).to include([ "brute", "away" ])
+        _, events = round(state, "knight" => { kind: "ability", ability: "attack", target: "brute" })
+        expect(of_type(events, :miss)).to include(a_hash_including("actor" => "knight", "reason" => "no_target"))
+        expect(of_type(events, :back).sole).to include("unit" => "brute")
+        expect(of_type(events, :damage).select { |e| e["actor"] == "brute" }).to be_empty # coming back was its turn
+      end
+
+      it "keeps a High Jump in the air for two turns, then lands the blow" do
+        state = build_battle(seed: 2, party: [ knight.merge(abilities: %w[high_jump], stats: tough.merge("agi" => 50)) ], enemies: brute)
+        state, events = round(state, "knight" => { kind: "ability", ability: "high_jump", target: "brute" })
+        expect(of_type(events, :jump).sole).to include("turns" => 2)
+        state, events = apply(state, { type: "timeout" })
+        expect(of_type(events, :land)).to be_empty
+        _, events = apply(state, { type: "timeout" })
+        expect(of_type(events, :land).sole).to include("actor" => "knight", "target" => "brute")
+      end
+
+      it "respects a unit that can't be sent away" do
+        state = build_battle(seed: 2, party: [ knight.merge(abilities: %w[banish]) ], enemies: [ brute.first.merge(status_immune: %w[away]) ])
+        _, events = round(state, "knight" => { kind: "ability", ability: "banish", target: "brute" })
+        expect(of_type(events, :miss)).to include(a_hash_including("reason" => "immune", "status" => "away"))
+      end
+    end
+
+    describe "the effect library" do
+      let(:caster) { mage.merge(stats: mage[:stats].merge("agi" => 60, "max_mp" => 99, "mag" => 20), mp: 99) }
+
+      def cast(ability, target, enemies: brute, seed: 3, **unit)
+        state = build_battle(seed: seed, party: [ caster.merge(abilities: [ ability ], **unit) ], enemies: enemies)
+        round(state, "mage" => { kind: "ability", ability: ability, target: target })
+      end
+
+      it "shields: blows come out of the barrier first" do
+        _, events = cast("barrier", "mage")
+        shield = of_type(events, :status_applied).find { |e| e["status"] == "shield" }
+        expect(shield["amount"]).to eq(6 * (20 + 16) / 16)
+        expect(of_type(events, :shielded).first).to include("target" => "mage")
+      end
+
+      it "draws the enemy's blows to whoever has aggro" do
+        taunter = knight.merge(abilities: %w[taunt], stats: tough.merge("agi" => 60))
+        state = build_battle(seed: 5, party: [ taunter, mage ], enemies: brute)
+        _, events = round(state, "knight" => { kind: "ability", ability: "taunt" }, "mage" => { kind: "defend" })
+        expect(of_type(events, :damage).select { |e| e["actor"] == "brute" }.map { |e| e["target"] }).to all(eq("knight"))
+      end
+
+      it "stops a unit, and a blow doesn't start it again" do
+        state = build_battle(seed: 1, party: [ caster.merge(abilities: %w[stop]) ], enemies: brute)
+        state = with_unit(state, "brute", statuses: [ { "kind" => "stop", "turns" => 2 } ])
+        _, events = round(state, "mage" => { kind: "ability", ability: "attack", target: "brute" })
+        expect(of_type(events, :turn_skipped)).to include(a_hash_including("unit" => "brute", "reason" => "stop"))
+        expect(of_type(events, :status_expired).map { |e| e["status"] }).not_to include("stop")
+      end
+
+      it "has the berserk attack on their own, and the confused hit anyone until a blow brings them round" do
+        state = build_battle(seed: 1, party: [ caster, knight ], enemies: brute)
+        state = with_unit(state, "knight", statuses: [ { "kind" => "berserk", "turns" => 2 } ])
+        expect(Battle::State.awaiting_input(state)).to eq([ "mage" ])
+        _, events = round(state, "mage" => { kind: "defend" })
+        expect(turn_of(events, "knight").map { |e| e["type"] }).to include("attack")
+
+        state = with_unit(build_battle(seed: 4, party: [ caster, knight ], enemies: brute), "knight", statuses: [ { "kind" => "confuse", "turns" => 3 } ])
+        _, events = round(state, "mage" => { kind: "defend" })
+        expect(of_type(events, :confused).sole).to include("actor" => "knight")
+      end
+
+      it "charges the next move, twice as strong, and spends the charge" do
+        plain = cast("cure", "mage", hp: 100).last
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[cure], hp: 100) ], enemies: brute)
+        state = with_unit(state, "mage", statuses: [ { "kind" => "charged", "turns" => 3 } ])
+        _, events = round(state, "mage" => { kind: "ability", ability: "cure", target: "mage" })
+        heal = ->(log) { of_type(log, :heal).find { |e| e["actor"] == "mage" }["amount"] }
+        expect(heal.(events)).to be_within(2).of(heal.(plain) * 2)
+        expect(of_type(events, :status_expired)).to include(a_hash_including("status" => "charged", "reason" => "spent"))
+      end
+
+      it "imbues Attack with a type" do
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[flame_blade]) ], enemies: brute)
+        state, = round(state, "mage" => { kind: "ability", ability: "flame_blade", target: "mage" })
+        _, events = round(state, "mage" => { kind: "ability", ability: "attack", target: "brute" })
+        blow = of_type(events, :damage).find { |e| e["actor"] == "mage" } || of_type(events, :miss).find { |e| e["actor"] == "mage" }
+        expect(blow["damage_type"]).to eq("fire") if blow["type"] == "damage"
+      end
+
+      it "takes a share of current HP, never the last of it, and a quarter as much from a boss" do
+        sure = BattleFixtures.abilities.merge(gravity: BattleFixtures.abilities[:gravity].merge(effects: [ { primitive: "percent", power: 50 } ]))
+        hit = lambda do |enemy|
+          state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[gravity]) ], enemies: [ enemy ], abilities: sure)
+          of_type(round(state, "mage" => { kind: "ability", ability: "gravity", target: "brute" }).last, :damage).find { |e| e["actor"] == "mage" }
+        end
+        expect(hit.(brute.first)["amount"]).to eq(1500)
+        expect(hit.(brute.first.merge(boss: true))["amount"]).to eq(3000 * 12 / 100)
+        expect(hit.(brute.first.merge(hp: 1))).to be_nil
+      end
+
+      it "saps MP and keeps what it takes" do
+        drained = cast("osmose", "brute", enemies: [ brute.first.merge(stats: brute.first[:stats].merge("max_mp" => 50)) ], mp: 10).last
+        lost = of_type(drained, :mp_lost).sole
+        expect(lost).to include("target" => "brute")
+        expect(of_type(drained, :mp_restored)).to include(a_hash_including("target" => "mage", "amount" => lost["amount"]))
+      end
+
+      it "hits harder against what a move is good against" do
+        plain = cast("holy", "brute").last
+        against = cast("holy", "brute", enemies: [ brute.first.merge(undead: true) ]).last
+        amount = ->(log) { of_type(log, :damage).find { |e| e["actor"] == "mage" }["amount"] }
+        expect(amount.(against)).to be_within(3).of(amount.(plain) * 3)
+      end
+
+      it "costs HP for a blood move, and won't spend the last of it" do
+        _, events = cast("blood_strike", "brute", hp: 900)
+        expect(of_type(events, :hp_paid).sole).to include("actor" => "mage", "amount" => 90, "hp" => 810)
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[blood_strike], hp: 90) ], enemies: brute)
+        expect { round(state, "mage" => { kind: "ability", ability: "blood_strike", target: "brute" }) }.to raise_error(Battle::InvalidAction, /HP/)
+      end
+
+      it "winds up a charged move, then lets it go on the next turn, paid for then" do
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[comet]) ], enemies: brute)
+        state, events = round(state, "mage" => { kind: "ability", ability: "comet" })
+        expect(of_type(events, :charging).sole).to include("actor" => "mage", "turns" => 1)
+        expect(unit(state, "mage")["mp"]).to eq(99)
+        expect(Battle::State.awaiting_input(state)).to be_empty
+        state, events = apply(state, { type: "timeout" })
+        expect(of_type(events, :damage).find { |e| e["actor"] == "mage" }).to include("damage_type" => "rock")
+        expect(unit(state, "mage")["mp"]).to eq(99 - 8 + 0)
+      end
+
+      it "dooms a unit: when the count runs out, it's down" do
+        state = build_battle(seed: 3, party: [ caster ], enemies: brute)
+        state = with_unit(state, "brute", statuses: [ { "kind" => "doom", "turns" => 1 } ])
+        _, events = round(state, "mage" => { kind: "defend" })
+        expect(of_type(events, :ko)).to include(a_hash_including("target" => "brute"))
+        expect(of_type(events, :damage)).to include(a_hash_including("target" => "brute", "status" => "doom"))
+      end
+
+      it "hurts the user for a reckless blow, and hits harder the closer the user is to down" do
+        _, events = cast("reckless", "brute", seed: 6, hp: 900)
+        dealt = of_type(events, :damage).find { |e| e["actor"] == "mage" }
+        expect(of_type(events, :damage)).to include(a_hash_including("target" => "mage", "recoil" => true, "amount" => [ dealt["amount"] / 4, 1 ].max))
+
+        full = of_type(cast("revenge", "brute", seed: 6).last, :damage).find { |e| e["actor"] == "mage" }
+        brink = of_type(cast("revenge", "brute", seed: 6, hp: 90).last, :damage).find { |e| e["actor"] == "mage" }
+        expect(brink["amount"]).to be > full["amount"] * 2
+      end
+
+      it "turns healing on the undead into harm, and drains them backwards" do
+        undead = [ brute.first.merge(undead: true) ]
+        _, events = cast("cure", "brute", enemies: undead)
+        expect(of_type(events, :damage)).to include(a_hash_including("target" => "brute", "undead" => true))
+        _, events = cast("drain", "brute", enemies: undead, hp: 500)
+        expect(of_type(events, :damage)).to include(a_hash_including("target" => "mage", "drain" => true))
+        expect(of_type(events, :heal)).to include(a_hash_including("target" => "brute", "drain" => true))
+      end
+    end
+
+    it "gives passives their moments: first strike, regen, clear mind, counter, second wind" do
+      fast = knight.merge(passives: %w[first_strike regen mp_regen counter second_wind], hp: 100, mp: 0,
+                          stats: tough.merge("agi" => 1, "max_mp" => 40))
+      state = build_battle(seed: 4, party: [ fast ], enemies: brute)
+      state, events = round(state, "knight" => { kind: "defend" })
+      expect(of_type(events, :turn_order).first["order"].first).to eq("knight")
+      expect(of_type(events, :heal)).to include(a_hash_including("target" => "knight", "regen" => true))
+      expect(of_type(events, :mp_restored)).to include(a_hash_including("target" => "knight"))
+
+      knocked = with_unit(state, "knight", hp: 1, passives: %w[second_wind])
+      _, events = round(knocked, "knight" => { kind: "defend" })
+      wind = of_type(events, :second_wind).sole
+      expect(wind).to include("target" => "knight", "hp" => 225)
+
+      counters = (1..30).flat_map { |seed| round(build_battle(seed: seed, party: [ fast ], enemies: brute), "knight" => { kind: "defend" }).last }
+      expect(of_type(counters, :counter)).not_to be_empty
+    end
+
+    it "gives terrain moves the type of where the fight is" do
+      state = build_battle(seed: 1, party: [ knight.merge(abilities: %w[gaia]) ], enemies: brute, terrain: "grass")
+      _, events = round(state, "knight" => { kind: "ability", ability: "gaia" })
+      expect(of_type(events, :damage).first).to include("damage_type" => "grass")
+      expect(build_battle["terrain"]).to eq("normal")
+    end
+
+    describe "what jobs bring" do
+      let(:ghost) { [ { id: "wisp", name: "Wisp", stats: stats(max_hp: 3000, agi: 1), types: %w[ghost], ai: [ { use: "attack" } ] } ] }
+      let(:healer) { mage.merge(abilities: %w[cure], hp: 100, stats: mage[:stats].merge("mag" => 10)) }
+
+      def cure_amount(unit, seed: 3)
+        state = build_battle(seed: seed, party: [ unit ], enemies: brute)
+        _, events = round(state, "mage" => { kind: "ability", ability: "cure", target: "mage" })
+        of_type(events, :heal).find { |e| e["actor"] == "mage" }.fetch("amount")
+      end
+
+      it "gives Attack and the job's own command the job's type" do
+        fighter = knight.merge(attack_type: "fighting", signature: "jump")
+        _, events = round(build_battle(seed: 1, party: [ fighter ], enemies: brute), "knight" => { kind: "ability", ability: "attack" })
+        expect(of_type(events, :damage).find { |e| e["actor"] == "knight" }).to include("damage_type" => "fighting")
+
+        state, = round(build_battle(seed: 1, party: [ fighter ], enemies: brute), "knight" => { kind: "ability", ability: "jump", target: "brute" })
+        _, events = apply(state, { type: "timeout" })
+        expect(of_type(events, :damage).find { |e| e["actor"] == "knight" }).to include("damage_type" => "fighting")
+
+        _, events = round(build_battle(seed: 1, party: [ knight ], enemies: brute), "knight" => { kind: "ability", ability: "attack" })
+        expect(of_type(events, :damage).find { |e| e["actor"] == "knight" }).not_to have_key("damage_type")
+      end
+
+      it "scales a move by its mastery, and a mastered one brings its job's stats" do
+        plain = cure_amount(healer)
+        expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 150 } }))).to be_within(1).of(plain * 150 / 100)
+        expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 100, "stats" => { "mag" => 26 } } }))).to be_within(1).of(plain * 42 / 26)
+        expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 100, "stats" => { "mag" => 26 } } }))).to be > plain
+      end
+
+      it "never lets a character's type make them untouchable" do
+        spirit = knight.merge(types: %w[normal], immune_as_resist: true)
+        state = build_battle(seed: 2, party: [ spirit ], enemies: ghost)
+        state = with_unit(state, "wisp", attack_type: "ghost") # a monster with a typed attack, for the test
+        _, events = round(state, "knight" => { kind: "defend" })
+        blow = of_type(events, :damage).find { |e| e["actor"] == "wisp" }
+        expect(blow).to include("damage_type" => "ghost", "effectiveness" => 50)
+        expect(Battle::Types.effectiveness("ghost", unit(state, "knight").except("immune_as_resist"))).to eq(0)
+      end
+
+      it "rejects mastery it can't use" do
+        expect { build_battle(party: [ healer.merge(mastery: { "cure" => { "power" => 0 } }) ]) }.to raise_error(ArgumentError, /mastery power/)
+        expect { build_battle(party: [ healer.merge(mastery: { "cure" => { "power" => 150, "stats" => { "luck" => 3 } } }) ]) }
+          .to raise_error(ArgumentError, /mastery stats/)
+        expect { build_battle(party: [ healer.merge(attack_type: "fairy") ]) }.to raise_error(ArgumentError, /attack type/)
+      end
+    end
+  end
+
+  describe "a world's own types" do
+    let(:types) { { "chart" => { "plain" => {}, "hot" => { "cold" => 200, "hot" => 50 }, "cold" => {} }, "shrugs_off" => { "hot" => %w[sleep] } } }
+    let(:scorch) { { scorch: { name: "Scorch", kind: "magic", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "elemental", type: "hot", power: 20 } ] } } }
+    let(:mage) { [ { id: "mage", name: "Mage", stats: stats(mag: 20, agi: 50), abilities: %w[scorch] } ] }
+    let(:blob) { [ { id: "blob", name: "Blob", stats: stats(max_hp: 900, agi: 1), types: %w[plain] } ] }
+
+    def world_battle(**options)
+      build_battle(party: mage, enemies: blob, abilities: scorch, types: types, **options)
+    end
+
+    def damage_to(enemy_types)
+      enemies = [ { id: "blob", name: "Blob", stats: stats(max_hp: 900, agi: 1), types: enemy_types } ]
+      state = build_battle(seed: 1, party: mage, enemies: enemies, abilities: scorch, types: types)
+      _, events = apply(state, command("mage", "scorch", "blob"))
+      of_type(events, :damage).find { |e| e["actor"] == "mage" }
+    end
+
+    it "carries the world's chart in the state and hits by it" do
+      expect(world_battle).to include("types" => types, "terrain" => "plain")
+      expect(damage_to(%w[cold])).to include("damage_type" => "hot", "effectiveness" => 200)
+      expect(damage_to(%w[hot])).to include("effectiveness" => 50)
+      expect(damage_to(%w[plain])).to include("effectiveness" => 100)
+    end
+
+    it "only takes types the world has" do
+      expect { world_battle(abilities: scorch.merge(fire: BattleFixtures.abilities[:fire])) }.to raise_error(ArgumentError, /unknown type fire/)
+      expect { world_battle(terrain: "grass") }.to raise_error(ArgumentError, /unknown terrain/)
+      expect { world_battle(enemies: [ blob.first.merge(types: %w[grass]) ]) }.to raise_error(ArgumentError, /unknown types/)
+      expect { world_battle(types: { "chart" => {} }) }.to raise_error(ArgumentError, /at least one type/)
+      expect { world_battle(types: { "chart" => { "plain" => { "odd" => 200 } } }) }.to raise_error(ArgumentError, /unknown type odd/)
+    end
+
+    it "works with a single type, where everything lands as it is" do
+      one = { "chart" => { "normal" => {} } }
+      state = build_battle(seed: 2, party: [ mage.first.merge(abilities: %w[zap]) ], enemies: [ blob.first.merge(types: %w[normal]) ],
+                           abilities: { zap: { name: "Zap", kind: "magic", target: "single_enemy", cost: { mp: 0 },
+                                               effects: [ { primitive: "elemental", type: "normal", power: 20 } ] } }, types: one)
+      _, events = apply(state, command("mage", "zap", "blob"))
+      expect(of_type(events, :damage).find { |e| e["actor"] == "mage" }).to include("effectiveness" => 100)
+    end
+
+    it "plays battles stored before worlds had types on the base world's chart" do
+      old = build_battle.except("types")
+      expect { full_round(old) }.not_to raise_error
     end
   end
 end

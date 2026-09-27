@@ -7,6 +7,7 @@ module Battle
   # path (abilities, statuses, GM overrides) reports changes the same way.
   class Context
     attr_reader :state, :rng, :events
+    attr_accessor :countering
 
     def initialize(state, rng: Rng.new(state["rng"]))
       @state = state
@@ -37,6 +38,16 @@ module Battle
       units.find { |u| u["id"] == id }
     end
 
+    # The battle's types (Battle::Types); battles from before worlds had
+    # their own ran on the base world's.
+    def types
+      state["types"] || Types::DEFAULT
+    end
+
+    def type_list
+      Types.list(types)
+    end
+
     def ability(id)
       state["abilities"][id] or raise InvalidAction, "no ability #{id.inspect}"
     end
@@ -49,8 +60,10 @@ module Battle
       state["status"] != "input"
     end
 
+    # A unit that has left the field (GM "dismiss") is out of play for good:
+    # not alive, not fallen, not a target, never counted.
     def alive?(u)
-      u["hp"].positive?
+      u["hp"].positive? && !u["gone"]
     end
 
     def status?(u, kind)
@@ -61,24 +74,32 @@ module Battle
       DISABLING_STATUSES.any? { |kind| status?(u, kind) }
     end
 
-    def stat(u, name)
-      effective_stats(u).fetch(name)
+    # basis: stats to use in place of the unit's own, before buffs (a
+    # mastered ability cast outside its job keeps its job's stats).
+    def stat(u, name, basis: nil)
+      effective_stats(u, basis: basis).fetch(name)
     end
 
-    def effective_stats(u)
-      Stats::Derivation.effective(u["stats"], buffs: u["buffs"], statuses: u["statuses"].map { |s| s["kind"] })
+    def effective_stats(u, basis: nil)
+      stats = basis ? u["stats"].merge(basis) : u["stats"]
+      Stats::Derivation.effective(stats, buffs: u["buffs"], statuses: u["statuses"].map { |s| s["kind"] })
     end
 
     def allies(u, alive: true)
-      units.select { |o| o["side"] == u["side"] && (!alive || alive?(o)) }
+      units.select { |o| o["side"] == u["side"] && !o["gone"] && (!alive || alive?(o)) }
     end
 
+    # Who u can aim at: the other side's living units, less any off the field.
     def opponents(u)
-      units.select { |o| o["side"] != u["side"] && alive?(o) }
+      units.select { |o| o["side"] != u["side"] && alive?(o) && !out_of_reach?(o) }
+    end
+
+    def out_of_reach?(u)
+      OUT_OF_REACH_STATUSES.any? { |kind| status?(u, kind) }
     end
 
     def side(name)
-      units.select { |u| u["side"] == name }
+      units.select { |u| u["side"] == name && !u["gone"] }
     end
 
     def hp_percent(u)
@@ -100,10 +121,43 @@ module Battle
 
     # --- mutations that always emit --------------------------------------
 
+    # A shield takes blows out of its own amount first; poison goes round it.
     def deal_damage(target, amount, **extra)
+      amount = shielded(target, amount) unless extra[:status]
+      return if amount.zero?
+
       target["hp"] = [ target["hp"] - amount, 0 ].max
       emit(:damage, target: target["id"], amount: amount, hp: target["hp"], **extra)
-      knock_out(target) if target["hp"].zero?
+      return unless target["hp"].zero?
+
+      knock_out(target)
+      second_wind(target)
+    end
+
+    def shielded(target, amount)
+      shield = target["statuses"].find { |s| s["kind"] == "shield" }
+      return amount unless shield
+
+      absorbed = [ shield["amount"].to_i, amount ].min
+      shield["amount"] = shield["amount"].to_i - absorbed
+      emit(:shielded, target: target["id"], absorbed: absorbed, left: shield["amount"])
+      remove_status(target, "shield", reason: "broken") if shield["amount"].zero?
+      amount - absorbed
+    end
+
+    # Once a battle, a unit with Second Wind gets back up at a quarter HP
+    # when knocked down (never once the fight is over).
+    def second_wind(target)
+      return if over? || target["second_wind_used"] || !Array(target["passives"]).include?("second_wind")
+
+      target["second_wind_used"] = true
+      target["hp"] = [ target["stats"]["max_hp"] / 4, 1 ].max
+      emit(:second_wind, target: target["id"], hp: target["hp"])
+    end
+
+    def restore_mp(target, amount, **extra)
+      target["mp"] = [ target["mp"] + amount, target["stats"]["max_mp"] ].min
+      emit(:mp_restored, target: target["id"], amount: amount, mp: target["mp"], **extra)
     end
 
     def restore_hp(target, amount, **extra)
@@ -124,14 +178,14 @@ module Battle
       emit(:revive, target: target["id"], hp: target["hp"])
     end
 
-    def add_status(target, kind, turns)
+    def add_status(target, kind, turns, **extra)
       existing = target["statuses"].find { |s| s["kind"] == kind }
       if existing
         existing["turns"] = [ existing["turns"], turns ].max
       else
         target["statuses"] << { "kind" => kind, "turns" => turns }
       end
-      emit(:status_applied, target: target["id"], status: kind, turns: turns)
+      emit(:status_applied, target: target["id"], status: kind, turns: turns, **extra)
     end
 
     def remove_status(target, kind, reason:)
@@ -146,7 +200,7 @@ module Battle
     def check_end
       return if over?
 
-      if side("party").none? { |u| alive?(u) }
+      if side("party").reject { |u| u["guest"] }.none? { |u| alive?(u) }
         state["status"] = "defeat"
         emit(:defeat)
       elsif side("enemy").none? { |u| alive?(u) }

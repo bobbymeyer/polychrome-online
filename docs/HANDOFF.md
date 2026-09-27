@@ -39,7 +39,7 @@ Three places where the engine holds verbs and the books hold nouns and numbers. 
 Ability effects are a fixed set of named formulas with parameters. First set:
 
 - `physical(power, hits)`
-- `elemental(element, power, hits)`
+- `elemental(type, power, hits)`: the type is one of the world's
 - `status(kind, chance, duration)`
 - `heal(power)`
 - `drain(power)`
@@ -49,6 +49,10 @@ Ability effects are a fixed set of named formulas with parameters. First set:
 - `cleanse(kind)`: cure one status, or every harmful one when no kind is named. Added when the base world needed cures (Antidote, Remedy, Esuna).
 
 Plus targeting: `self`, `single_ally`, `single_enemy`, `all_allies`, `all_enemies`, `random_enemy`. Add primitives only when the base world needs one. No expression language.
+
+Damage types and skills are **not** in the closed set: they are the world's nouns, not the engine's verbs. Each world lists its own types (one or many; the first is the plain one), the chart between them, which statuses each shrugs off and the type of each terrain (`worlds.damage_types`, `worlds.terrain_types`). A battle copies its world's chart into its state, so replays stay exact when the chart changes. Removing a type sends its uses to another and drops monsters' affinities with it (`TypeChange`). Each world also lists its skills, each on a stat (`worlds.skills`); a job adds +15 to the ones it's good at (`jobs.skills`). The statuses, stats and passives stay closed: the engine has code behind each.
+
+The effect library (`Battle::PRIMITIVES`) is meant to be broad, and flavoured by the world: damage (physical or typed, with bonuses against a status, type, the undead or bosses, recoil and grudge), heal (which hurts the undead), drain, status (including aggro, stop, berserk, confuse, charged, doom), buff and debuff, revive, cleanse, steal, scan, **away** (the user or the target leaves the field for some turns; Jump is one), shield, imbue, percent-of-HP damage and MP sap. An ability can cost HP and take turns to charge. The Grimoire writes tiered families (Fire, Fira, Firaga, Firaja) from one form. Outside battle, a job's **field ability** is a skill check the player asks for and the GM approves, with one of a closed set of outcomes (story, reveal, sneak, find, restore, learn, safe road), once per rest (`FieldUse`).
 
 ### 3.2 Motion gestures
 
@@ -70,7 +74,7 @@ Every table that belongs to a world carries `world_id`. This is the only second-
 - `named_places` — fixed, hand-authored locations
 - `monsters` — stat block, image slot, variant recipe, AI script (condition/action list), drop table
 - `encounter_tables` — weighted monster groups by terrain/tier
-- `jobs`, `job_learn_tables` — FF5-style: job levels, ABP thresholds, learned abilities, equip permissions, innates
+- `jobs`, `job_learn_tables` — FF5-style: a type, job levels 1–100 on one ABP curve, the job level each ability comes at, equip permissions, innates. Each ability grows to mastery over the 40 job levels after it's learned (+50% power), gets +25% in the job that teaches it, and keeps its job's Str/Mag once mastered; job level 100 masters the job (`Stats::Mastery`)
 - `abilities` — primitive + params + targeting + cost
 - `items`, `equipment`
 - `generator_tables` — name lists, NPC hooks, room templates, shop archetypes, building archetypes

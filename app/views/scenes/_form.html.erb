@@ -1,4 +1,5 @@
-<%= form_with model: scene, url: scene.persisted? ? scene_path(scene) : campaign_scenes_path(@campaign), class: "book-form" do |f| %>
+<%= form_with model: scene, url: scene.persisted? ? scene_path(scene) : campaign_scenes_path(@campaign), class: "book-form",
+              data: { controller: "forecast", forecast_url_value: campaign_forecast_path(@campaign), action: "change->forecast#changed" } do |f| %>
   <%= render "book_entries/errors", entry: scene %>
   <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, placeholder: "The airship falls" %></div>
   <div class="field">
@@ -8,6 +9,7 @@
     <p class="hint">
       One line each, like a play. Start with an NPC's name and a colon to speak as them, with an expression in brackets if you like
       (<%= Portrait::EXPRESSIONS.to_sentence(last_word_connector: " or ") %>). Anything else is narration.
+      End on <code>? Trust Cid | Refuse -&gt; trusted_cid</code> to put a choice to the table: players pick, you settle it, and the flag is set to what they chose.
       <% if (cast = @campaign.npcs.order(:name).pluck(:name)).any? %>The cast: <%= cast.to_sentence %>.<% else %>There's no cast yet: add NPCs on the campaign page.<% end %>
     </p>
   </div>
@@ -35,6 +37,7 @@
         </tbody>
       </table>
       <p class="hint">It starts when the last line has been said; everyone at the table is taken to it.</p>
+      <%= turbo_frame_tag "forecast", data: { forecast_target: "frame" } %>
     </div>
 
     <div class="field" data-show-for="reveal">

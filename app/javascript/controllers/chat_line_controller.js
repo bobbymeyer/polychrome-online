@@ -6,12 +6,13 @@ import { play } from "sound"
 // to do with it, and a line with a cue (a key found, a door opened) plays
 // its jingle. Lines rendered with the page just sit in the log.
 export default class extends Controller {
-  static targets = ["body"]
+  static targets = ["body", "retract"]
   static values = { id: Number, live: Boolean, dialogue: Boolean, speaker: String, speakerKey: String, expression: String, portrait: String, cue: String }
 
   // Moving the element (placeInOrder) makes Stimulus reconnect it, so a
   // line announces itself only the first time.
   connect() {
+    this.offerRetract()
     if (!this.liveValue || this.element.dataset.arrived) return
 
     this.element.dataset.arrived = "true"
@@ -27,6 +28,13 @@ export default class extends Controller {
       (sibling) => sibling !== this.element && Number(sibling.dataset.chatLineIdValue) > this.idValue
     )
     if (later && this.element.nextElementSibling !== later) later.before(this.element)
+  }
+
+  // Who may take a line back is up to the seat reading it (tables/_chat_log).
+  offerRetract() {
+    if (!this.hasRetractTarget) return
+    const may = this.element.closest("[data-retract]")?.dataset.retract
+    this.retractTarget.hidden = !(may === "all" || (may && may === this.speakerKeyValue))
   }
 
   get text() {

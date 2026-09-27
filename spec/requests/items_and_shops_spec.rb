@@ -19,7 +19,7 @@ RSpec.describe "Items and shops", type: :request do
     end
 
     it "brings the bag's usable items, offers them as a command, and takes used ones out of the bag after" do
-      battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 1 }, seed: 3)
+      battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 3 }, seed: 3)
       expect(battle.state["items"].keys).to eq([ "potion" ])
 
       post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
@@ -95,10 +95,32 @@ RSpec.describe "Items and shops", type: :request do
       expect(campaign.reload.gil).to eq(200)
     end
 
+    it "puts each service under its building, and lets a character pay for a night at the inn" do
+      lenna_character = campaign.characters.find_by!(name: "Lenna")
+      lenna_character.update!(hp: 10, mp: 0)
+      get location_path(town)
+      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', ">Rest<")
+
+      post location_services_path(town), params: { kind: "inn", character_id: lenna_character.id }
+      expect(response).to redirect_to(location_path(town, anchor: "service-inn"))
+      price = campaign.service_price("inn", lenna_character)
+      expect(campaign.reload.gil).to eq(200 - price)
+      expect(lenna_character.reload.current_hp).to eq(lenna_character.stats["max_hp"])
+      expect(campaign.messages.last.body).to include("Lenna takes a room", "#{price} gil")
+
+      post location_services_path(town), params: { kind: "inn", character_id: lenna_character.id }
+      expect(flash[:alert]).to include("already rested")
+
+      other = campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "knight"), user: make_user("Faris"), starting_gear: false)
+      other.update!(hp: 1)
+      post location_services_path(town), params: { kind: "inn", character_id: other.id }
+      expect(flash[:alert]).to include("isn't yours to pay for")
+    end
+
     it "only opens where the party is, unless you're the GM" do
       campaign.update!(current_node: campaign.map_nodes.create!(name: "Elsewhere", kind: "field", x: 300, y: 300, visible: true))
       get location_path(town)
-      expect(response.body).to include("The party has to be here to shop.")
+      expect(response.body).to include("The party has to be here to use them.")
       expect(response.body).not_to include('value="Buy"')
       post buy_location_shop_path(town), params: { item: "potion" }
       expect(flash[:alert]).to eq("You can only shop in the town where the party is.")

@@ -32,6 +32,17 @@ module BookEntry
     slug_in_database || slug
   end
 
+  # The damage types this entry may name: its world's (World#type_chart).
+  def world_types
+    world ? world.type_chart.slugs : Battle::TYPES
+  end
+
+  # A new entry left on the column's default type, in a world without it,
+  # takes the world's plain type instead.
+  def default_to_plain_type
+    self.base_type = world.type_chart.plain if world && base_type == "normal" && !world.type_chart.include?("normal")
+  end
+
   # Variant recipe: hue shift in degrees, scale in percent, horizontal flip.
   # One image yields palette-swap variants.
   def variant=(recipe)

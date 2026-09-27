@@ -78,7 +78,7 @@ RSpec.describe "The pointcrawl map" do
       expected_state, expected = Pointcrawl::Encounters.roll(rng_before, grasslands.entries, "dangerous")
       expect(rolled).to eq(expected)
       expect(campaign.reload.rng).to eq(expected_state)
-      expect(campaign.pending_encounter).to eq("table" => "Grasslands", "monsters" => expected)
+      expect(campaign.pending_encounter).to eq("table" => "Grasslands", "monsters" => expected, "terrain" => "normal")
       expect(campaign.messages.last.body).to start_with("Encounter! ")
     end
 

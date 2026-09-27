@@ -26,11 +26,11 @@ RSpec.describe Job do
     cure = create_ability(world, slug: "cure", target: "single_ally", effects: [ { primitive: "heal", power: 10 } ])
     alien = create_ability(create_world(slug: "other"), slug: "cure")
 
-    job.update!(job_levels_attributes: [ { level: 1, abp: 10, ability_id: cure.id }, { level: "", abp: "", ability_id: "" } ])
+    job.update!(job_levels_attributes: [ { level: 1, ability_id: cure.id }, { level: "", ability_id: "" } ])
     expect(job.job_levels.map { |l| [ l.level, l.ability.slug ] }).to eq([ [ 1, "cure" ] ])
     expect(cure.jobs).to eq([ job ])
 
-    expect(job.update(job_levels_attributes: [ { level: 2, abp: 20, ability_id: alien.id } ])).to be(false)
+    expect(job.update(job_levels_attributes: [ { level: 2, ability_id: alien.id } ])).to be(false)
     expect(job.errors.full_messages.to_sentence).to match(/Grimoire/)
   end
 
@@ -54,5 +54,14 @@ RSpec.describe Job do
     expect(job.desperation_ability.slug).to eq("big_hit")
     expect(job.update(desperation: "")).to be(true)
     expect(job.reload.desperation).to be_nil
+  end
+
+  it "takes a signature command from its Grimoire and a passive from the engine's list" do
+    create_ability(world, slug: "cover", kind: "skill", target: "self", effects: [ { primitive: "status", kind: "cover", duration: 2 } ])
+    job = create_job(world)
+    expect(job.update(signature: "nothing")).to be(false)
+    expect(job.update(passive: "flying")).to be(false)
+    expect(job.update(signature: "cover", passive: "second_wind")).to be(true)
+    expect(job.signature_ability.slug).to eq("cover")
   end
 end

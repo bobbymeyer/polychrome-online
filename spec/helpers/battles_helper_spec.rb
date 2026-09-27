@@ -31,6 +31,8 @@ RSpec.describe BattlesHelper, type: :helper do
     state = build_battle
     expect(helper.battle_log_line({ "type" => "cast", "actor" => "vivi", "ability" => "fire" }, state)).to eq("Vivi casts Fire.")
     expect(helper.battle_log_line({ "type" => "cast", "actor" => "bartz", "ability" => "double_cut" }, state)).to eq("Bartz uses Double Cut.")
+    expect(helper.battle_log_line({ "type" => "miss", "target" => "goblin_a", "actor" => "bartz", "reason" => "evaded", "roll" => 98, "needed" => 90 }, state))
+      .to eq("Goblin A dodges. (rolled 98, needed 90 or under)")
     expect(helper.battle_log_line({ "type" => "desperation", "actor" => "bartz", "ability" => "goblin_punch", "name" => "Goblin Punch" }, state))
       .to eq("Bartz, at the end of their rope: Goblin Punch!")
     expect(helper.battle_log_line({ "type" => "damage", "target" => "goblin_a", "amount" => 9, "weak" => true }, state))
@@ -56,14 +58,14 @@ RSpec.describe BattlesHelper, type: :helper do
 
     it "shows an ally's HP and MP but never an enemy's" do
       expect(helper.target_help(nil, state, "vivi")).to start_with("HP #{vivi['hp']}/#{vivi['stats']['max_hp']} · MP #{vivi['mp']}")
-      expect(helper.target_help(nil, state, "goblin_a")).to eq("Enemy · Weak to Fire")
+      expect(helper.target_help(nil, state, "goblin_a")).to eq("Enemy · Normal type · Weak to Fire and Fighting · Immune to Ghost")
       expect(helper.target_help(nil, state, "goblin_a")).not_to include("HP")
     end
 
     it "tells what the Bestiary knows of an enemy: affinities and status immunities" do
       ogre = build_battle(enemies: BattleFixtures.ogre)
       target = ogre["units"].find { |u| u["side"] == "enemy" }
-      expect(helper.target_help(nil, ogre, target["id"])).to eq("Enemy · Resists Fire · Immune to Sleep · Absorbs Ice")
+      expect(helper.target_help(nil, ogre, target["id"])).to eq("Enemy · Normal type · Weak to Fighting · Resists Fire · Immune to Ghost and Sleep · Absorbs Ice")
     end
   end
 end

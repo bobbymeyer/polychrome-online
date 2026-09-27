@@ -4,9 +4,16 @@
     <p class="eyebrow">Grimoire · <%= term(entry.kind) %></p>
     <h1><%= entry.name %></h1>
     <dl class="facts">
+      <% if entry.field? %>
+        <dt><%= gloss(:skill, "Skill") %></dt><dd><%= @world.skill_name(entry.field_skill) %>, usually <%= entry.field_difficulty %></dd>
+        <dt>On a success</dt><dd><%= FieldUse.describe(entry) %></dd>
+        <dt>Uses</dt><dd>Once per rest, outside battle</dd>
+      <% else %>
       <dt>Target</dt><dd><%= term(entry.target) %></dd>
-      <dt>Cost</dt><dd><%= entry.mp_cost.zero? ? "Free" : "#{entry.mp_cost} MP" %></dd>
+      <dt>Cost</dt><dd><%= [ ("#{entry.mp_cost} MP" if entry.mp_cost.positive?), ("#{entry.hp_cost}% of max HP" if entry.hp_cost.positive?) ].compact.join(" and ").presence || "Free" %></dd>
+      <% if entry.charge.positive? %><dt>Charge</dt><dd><%= pluralize(entry.charge, "turn") %> to go off</dd><% end %>
       <% if entry.gesture.present? %><dt>Gesture</dt><dd><%= term(entry.gesture) %></dd><% end %>
+      <% end %>
     </dl>
   </div>
 </header>
@@ -15,6 +22,7 @@
   <div class="prose"><%= simple_format(entry.description) %></div>
 <% end %>
 
+<% unless entry.field? %>
 <section class="window">
   <h2>Effects</h2>
   <ol class="effects">
@@ -23,6 +31,7 @@
     <% end %>
   </ol>
 </section>
+<% end %>
 
 <section class="window">
   <h2>Cross-references</h2>
@@ -35,7 +44,7 @@
     <h3>Taught by</h3>
     <ul class="refs">
       <% levels.each do |level| %>
-        <li><%= link_to level.job.name, world_compendium_job_path(@world, level.job) %> at job level <%= level.level %> (<%= level.abp %> ABP)</li>
+        <li><%= link_to level.job.name, world_compendium_job_path(@world, level.job) %> at job level <%= level.level %>, mastered at <%= level.mastered_at %></li>
       <% end %>
     </ul>
   <% end %>

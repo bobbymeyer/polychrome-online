@@ -357,7 +357,8 @@ class Location < ApplicationRecord
       resolve!(target["key"])
     when "encounter", "boss"
       label = decision["kind"] == "boss" ? "The master of #{name}" : "#{name}: #{target['name']}"
-      campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => decision["kind"] == "boss" })
+      campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => decision["kind"] == "boss",
+                                            "terrain" => location_template.encounter_table&.terrain_type }.compact)
       campaign.messages.create!(kind: "system", body: "#{decision['kind'] == 'boss' ? 'Boss' : 'Encounter'}! #{campaign.describe_encounter(decision['monsters'])}.")
       resolve!(target["key"])
     when "treasure"

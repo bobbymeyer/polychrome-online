@@ -14,11 +14,11 @@ module BattleFixtures
   def abilities
     {
       fire: { name: "Fire", kind: "magic", target: "single_enemy", cost: { mp: 4 },
-              effects: [ { primitive: "elemental", element: "fire", power: 20, hits: 1 } ] },
+              effects: [ { primitive: "elemental", type: "fire", power: 20, hits: 1 } ] },
       firaga_all: { name: "Fira", kind: "magic", target: "all_enemies", cost: { mp: 10 },
-                    effects: [ { primitive: "elemental", element: "fire", power: 18 } ] },
+                    effects: [ { primitive: "elemental", type: "fire", power: 18 } ] },
       blizzard: { name: "Blizzard", kind: "magic", target: "single_enemy", cost: { mp: 4 },
-                  effects: [ { primitive: "elemental", element: "ice", power: 20 } ] },
+                  effects: [ { primitive: "elemental", type: "ice", power: 20 } ] },
       cure: { name: "Cure", kind: "magic", target: "single_ally", cost: { mp: 4 },
               effects: [ { primitive: "heal", power: 25 } ] },
       cura: { name: "Cura", kind: "magic", target: "all_allies", cost: { mp: 9 },
@@ -26,7 +26,7 @@ module BattleFixtures
       raise: { name: "Raise", kind: "magic", target: "single_ally", cost: { mp: 10 },
                effects: [ { primitive: "revive", fraction: 25 } ] },
       bio: { name: "Bio", kind: "magic", target: "single_enemy", cost: { mp: 6 },
-             effects: [ { primitive: "elemental", element: "dark", power: 12 },
+             effects: [ { primitive: "elemental", type: "dark", power: 12 },
                        { primitive: "status", kind: "poison", chance: 100, duration: 4 } ] },
       sleep: { name: "Sleep", kind: "magic", target: "single_enemy", cost: { mp: 3 },
                effects: [ { primitive: "status", kind: "sleep", chance: 70, duration: 3 } ] },
@@ -43,7 +43,7 @@ module BattleFixtures
       haste: { name: "Haste", kind: "magic", target: "single_ally", cost: { mp: 5 },
                effects: [ { primitive: "status", kind: "haste", chance: 100, duration: 3 } ] },
       meteor: { name: "Meteor", kind: "magic", target: "random_enemy", cost: { mp: 15 },
-                effects: [ { primitive: "elemental", element: "earth", power: 15, hits: 4 } ] },
+                effects: [ { primitive: "elemental", type: "ground", power: 15, hits: 4 } ] },
       smoke_bomb: { name: "Smoke Bomb", kind: "skill", target: "self", cost: { mp: 0 },
                     effects: [ { primitive: "escape" } ] },
       goblin_punch: { name: "Goblin Punch", kind: "skill", target: "single_enemy", cost: { mp: 0 },
@@ -53,7 +53,38 @@ module BattleFixtures
       steal: { name: "Steal", kind: "skill", target: "single_enemy", cost: { mp: 0 },
                effects: [ { primitive: "steal", chance: 50 } ] },
       libra: { name: "Libra", kind: "magic", target: "single_enemy", cost: { mp: 1 },
-               effects: [ { primitive: "scan" } ] }
+               effects: [ { primitive: "scan" } ] },
+      cover: { name: "Cover", kind: "skill", target: "self", cost: { mp: 0 },
+               effects: [ { primitive: "status", kind: "cover", chance: 100, duration: 2 } ] },
+      jump: { name: "Jump", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+              effects: [ { primitive: "jump", power: 200 } ] },
+      gaia: { name: "Gaia", kind: "skill", target: "all_enemies", cost: { mp: 0 },
+              effects: [ { primitive: "elemental", type: "terrain", power: 12 } ] },
+      hide: { name: "Hide", kind: "skill", target: "self", cost: { mp: 0 },
+              effects: [ { primitive: "away", who: "self", duration: 1 } ] },
+      banish: { name: "Banish", kind: "magic", target: "single_enemy", cost: { mp: 2 },
+                effects: [ { primitive: "away", who: "target", duration: 2, chance: 80 } ] },
+      high_jump: { name: "High Jump", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+                   effects: [ { primitive: "away", who: "self", duration: 2, power: 250 } ] },
+      barrier: { name: "Barrier", kind: "magic", target: "single_ally", cost: { mp: 4 }, effects: [ { primitive: "shield", power: 6 } ] },
+      taunt: { name: "Taunt", kind: "skill", target: "self", cost: { mp: 0 }, effects: [ { primitive: "status", kind: "aggro", duration: 2 } ] },
+      stop: { name: "Stop", kind: "magic", target: "single_enemy", cost: { mp: 5 }, effects: [ { primitive: "status", kind: "stop", chance: 60, duration: 2 } ] },
+      rage: { name: "Rage", kind: "skill", target: "single_enemy", cost: { mp: 2 }, effects: [ { primitive: "status", kind: "berserk", chance: 70, duration: 2 } ] },
+      confuse: { name: "Confuse", kind: "magic", target: "single_enemy", cost: { mp: 3 }, effects: [ { primitive: "status", kind: "confuse", chance: 70, duration: 3 } ] },
+      focus: { name: "Focus", kind: "skill", target: "self", cost: { mp: 0 }, effects: [ { primitive: "status", kind: "charged", duration: 3 } ] },
+      flame_blade: { name: "Flame Blade", kind: "magic", target: "self", cost: { mp: 3 }, effects: [ { primitive: "imbue", type: "fire", duration: 3 } ] },
+      gravity: { name: "Gravity", kind: "magic", target: "single_enemy", cost: { mp: 6 }, effects: [ { primitive: "percent", power: 25, chance: 80 } ] },
+      osmose: { name: "Osmose", kind: "magic", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "sap", power: 20, keep: 100 } ] },
+      blood_strike: { name: "Blood Strike", kind: "skill", target: "single_enemy", cost: { mp: 0, hp: 10 }, effects: [ { primitive: "physical", power: 180 } ] },
+      holy: { name: "Holy", kind: "magic", target: "single_enemy", cost: { mp: 6 },
+              effects: [ { primitive: "elemental", type: "psychic", power: 18, against: "undead", bonus: 300 } ] },
+      comet: { name: "Comet", kind: "magic", target: "all_enemies", cost: { mp: 8 }, charge: 1,
+               effects: [ { primitive: "elemental", type: "rock", power: 30 } ] },
+      doom: { name: "Doom", kind: "magic", target: "single_enemy", cost: { mp: 8 }, effects: [ { primitive: "status", kind: "doom", chance: 50, duration: 2 } ] },
+      reckless: { name: "Reckless Strike", kind: "skill", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "physical", power: 200, recoil: 25 } ] },
+      revenge: { name: "Revenge", kind: "skill", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "physical", power: 100, grudge: 200 } ] },
+      sneak_attack: { name: "Sneak Attack", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+                      effects: [ { primitive: "physical", power: 100, against: "sleep", bonus: 200 } ] }
     }
   end
 
@@ -83,15 +114,21 @@ module BattleFixtures
   def goblins(count = 3)
     [ { id: "goblin", name: "Goblin", count: count,
        stats: stats(max_hp: 45, max_mp: 0, str: 9, atk: 8, agi: 8, def: 3, mdef: 2),
-       elements: { fire: "weak" }, rewards: { exp: 6, gil: 12 }, drops: [ { item: "potion", chance: 30 } ],
+       types: %w[normal], affinities: { fire: "weak" }, rewards: { exp: 6, gil: 12 }, drops: [ { item: "potion", chance: 30 } ],
        abilities: %w[goblin_punch],
        ai: [ { if: { chance: 25 }, use: "goblin_punch" }, { use: "attack" } ] } ]
   end
 
+  # Bones that remember how to hold a sword: healing hurts them.
+  def skeletons(count = 2)
+    [ { id: "skeleton", name: "Skeleton", count: count, undead: true, stats: stats(max_hp: 60, max_mp: 10, str: 10, atk: 9, agi: 7, def: 4, mdef: 2),
+        types: %w[ghost], rewards: { exp: 8, gil: 10 }, abilities: %w[confuse], ai: [ { if: { chance: 20 }, use: "confuse" }, { use: "attack" } ] } ]
+  end
+
   def ogre
-    [ { id: "ogre", name: "Ogre",
+    [ { id: "ogre", name: "Ogre", boss: true,
        stats: stats(max_hp: 400, max_mp: 30, str: 20, atk: 18, agi: 7, def: 12, mdef: 6, mag: 8),
-       elements: { ice: "absorb", fire: "resist" }, status_immune: %w[sleep], rewards: { exp: 80, gil: 150 },
+       types: %w[normal], affinities: { ice: "absorb", fire: "resist" }, status_immune: %w[sleep], rewards: { exp: 80, gil: 150 },
        abilities: %w[cure war_cry],
        ai: [ { if: { self_hp_below: 30 }, use: "cure", target: "self" },
             { if: { round_multiple: 3 }, use: "war_cry" },
@@ -103,8 +140,9 @@ module BattleHelpers
   def stats(**overrides) = BattleFixtures.stats(**overrides)
 
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
-                   abilities: BattleFixtures.abilities, escapable: true, items: {})
-    Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items)
+                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil)
+    Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items, terrain: terrain,
+                        types: types)
   end
 
   def apply(state, action)
@@ -147,8 +185,8 @@ module BattleHelpers
   # Submit the same kind of command for every party member awaiting input.
   def full_round(state, ability = "attack")
     awaiting = state["units"].select do |u|
-      u["side"] == "party" && u["hp"].positive? &&
-        u["statuses"].none? { |s| Battle::DISABLING_STATUSES.include?(s["kind"]) }
+      u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] &&
+        u["statuses"].none? { |s| Battle::NO_INPUT_STATUSES.include?(s["kind"]) }
     end
     awaiting.reduce([ state, [] ]) do |(s, log), u|
       action = %w[defend flee].include?(ability) ? command(u["id"], kind: ability) : command(u["id"], ability)

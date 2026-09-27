@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_120000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -29,6 +29,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
     t.json "image_recipe"
+    t.integer "hp_cost", default: 0, null: false
+    t.integer "charge", default: 0, null: false
+    t.string "field_skill"
+    t.string "field_outcome"
+    t.string "field_difficulty", default: "normal", null: false
+    t.integer "field_power", default: 0, null: false
     t.index ["world_id", "slug"], name: "index_abilities_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_abilities_on_world_id"
   end
@@ -169,8 +175,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.integer "gm_id"
     t.json "known_affinities", default: {}, null: false
     t.string "music"
+    t.string "join_code"
+    t.boolean "safe_road", default: false, null: false
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
+    t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true
     t.index ["world_id"], name: "index_campaigns_on_world_id"
   end
 
@@ -202,9 +211,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.integer "user_id"
     t.string "colour"
     t.string "motive"
+    t.boolean "field_used", default: false, null: false
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
     t.index ["user_id"], name: "index_characters_on_user_id"
+  end
+
+  create_table "choice_picks", force: :cascade do |t|
+    t.integer "message_id", null: false
+    t.integer "character_id", null: false
+    t.string "option", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["character_id"], name: "index_choice_picks_on_character_id"
+    t.index ["message_id", "character_id"], name: "index_choice_picks_on_message_id_and_character_id", unique: true
+    t.index ["message_id"], name: "index_choice_picks_on_message_id"
   end
 
   create_table "encounter_tables", force: :cascade do |t|
@@ -236,6 +257,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.index ["character_id", "slot"], name: "index_equipment_slots_on_character_id_and_slot", unique: true
     t.index ["character_id"], name: "index_equipment_slots_on_character_id"
     t.index ["item_id"], name: "index_equipment_slots_on_item_id"
+  end
+
+  create_table "field_uses", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.integer "character_id", null: false
+    t.integer "ability_id", null: false
+    t.string "status", default: "pending", null: false
+    t.string "difficulty"
+    t.json "result", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ability_id"], name: "index_field_uses_on_ability_id"
+    t.index ["campaign_id"], name: "index_field_uses_on_campaign_id"
+    t.index ["character_id"], name: "index_field_uses_on_character_id"
   end
 
   create_table "flags", force: :cascade do |t|
@@ -306,11 +341,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.integer "job_id", null: false
     t.integer "ability_id", null: false
     t.integer "level", null: false
-    t.integer "abp", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["ability_id"], name: "index_job_levels_on_ability_id"
-    t.index ["job_id", "level"], name: "index_job_levels_on_job_id_and_level", unique: true
+    t.index ["job_id", "ability_id"], name: "index_job_levels_on_job_id_and_ability_id", unique: true
     t.index ["job_id"], name: "index_job_levels_on_job_id"
   end
 
@@ -333,6 +367,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.json "image_recipe"
     t.string "colour"
     t.string "desperation"
+    t.string "signature"
+    t.string "passive"
+    t.string "base_type", default: "normal", null: false
+    t.json "skills", default: [], null: false
+    t.string "field_ability"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -413,6 +452,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "cue"
+    t.json "options", default: [], null: false
+    t.string "flag_key"
+    t.string "settled"
+    t.json "data", default: {}, null: false
     t.index ["battle_id"], name: "index_messages_on_battle_id"
     t.index ["campaign_id", "created_at"], name: "index_messages_on_campaign_id_and_created_at"
     t.index ["campaign_id"], name: "index_messages_on_campaign_id"
@@ -426,7 +469,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.string "name", null: false
     t.integer "level", default: 1, null: false
     t.json "stats", default: {}, null: false
-    t.json "elements", default: {}, null: false
+    t.json "affinities", default: {}, null: false
     t.json "status_immune", default: [], null: false
     t.json "ai_script", default: [], null: false
     t.json "drops", default: [], null: false
@@ -445,6 +488,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.string "colour"
     t.boolean "boss", default: false, null: false
     t.text "boss_line"
+    t.string "base_type", default: "normal", null: false
+    t.boolean "undead", default: false, null: false
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end
@@ -508,6 +553,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.datetime "updated_at", null: false
     t.string "name"
     t.boolean "admin", default: false, null: false
+    t.boolean "guest", default: false, null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
@@ -521,6 +567,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
     t.text "art_negative"
     t.json "art_loras", default: [], null: false
     t.string "art_checkpoint"
+    t.integer "owner_id"
+    t.json "damage_types", default: [], null: false
+    t.json "terrain_types", default: {}, null: false
+    t.json "skills", default: [], null: false
+    t.index ["owner_id"], name: "index_worlds_on_owner_id"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end
 
@@ -545,9 +596,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
   add_foreign_key "characters", "campaigns"
   add_foreign_key "characters", "jobs"
   add_foreign_key "characters", "users", on_delete: :nullify
+  add_foreign_key "choice_picks", "characters", on_delete: :cascade
+  add_foreign_key "choice_picks", "messages", on_delete: :cascade
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"
+  add_foreign_key "field_uses", "abilities"
+  add_foreign_key "field_uses", "campaigns"
+  add_foreign_key "field_uses", "characters"
   add_foreign_key "flags", "campaigns"
   add_foreign_key "generator_tables", "worlds"
   add_foreign_key "inventories", "campaigns"
@@ -575,4 +631,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_010000) do
   add_foreign_key "scenes", "campaigns"
   add_foreign_key "scenes", "map_nodes", on_delete: :nullify
   add_foreign_key "sessions", "users"
+  add_foreign_key "worlds", "users", column: "owner_id", on_delete: :nullify
 end

@@ -69,11 +69,17 @@ module BattlesHelper
     facts = [ level ? "Level #{level}" : "Enemy" ]
     # In a campaign, players see only what the party has found out.
     known = battle&.campaign&.known_affinities&.fetch(target.dig("image", "slug").to_s, {})
+    types = target.fetch("types", [])
+    # Once the party knows what a monster is, the chart tells them the rest.
+    knows_type = types.any? && (known.nil? || known["types"].present?)
+    engine = battle&.state&.dig("types") || Battle::Types::DEFAULT
+    facts << "#{types.map { |t| type_name(t) }.join('/')} type" if knows_type && types_matter?
+    profile = type_profile(knows_type ? types : [], target.fetch("affinities", {}), engine: engine)
     AFFINITY_LABELS.each do |affinity, label|
-      names = target.fetch("elements", {}).select { |_, a| a == affinity }.keys
+      names = profile[affinity].dup
       names += target.fetch("status_immune", []) if affinity == "immune"
-      names &= known.keys if known
-      facts << "#{label} #{names.map { |n| term(n) }.to_sentence}" if names.any?
+      names &= (known.keys + (knows_type ? Battle::Types.list(engine) : [])) if known
+      facts << "#{label} #{names.map { |n| type_or_status(n) }.to_sentence}" if names.any?
     end
     facts << "Weaknesses unknown" if known && known.empty?
     facts
@@ -107,16 +113,38 @@ module BattlesHelper
     case event["type"]
     when "round_start" then "— Round #{event['round']} —"
     when "attack" then "#{name.('actor')} attacks."
+    when "unit_joined" then event["guest"] ? "#{event['name']} joins the party!" : "#{event['name']} joins the fight!"
+    when "unit_left" then "#{event['name']} leaves the field."
+    when "custom_action" then "#{name.('actor')} tries: “#{event['text']}”#{" at #{unit_name(state, event['target'])}" if event['target']}"
+    when "custom_roll" then "#{event['success'] ? 'It works!' : 'No luck.'} #{event['line'].presence}".strip + dice_note(event).to_s
+    when "custom_unruled" then "No ruling in time: #{name.('actor')} attacks instead."
+    when "jump" then "#{name.('actor')} leaps out of reach!"
+    when "away" then event["unit"] == event["actor"] ? "#{name.('actor')} slips off the field." : "#{name.('unit')} is sent off the field!"
+    when "back" then "#{name.('unit')} is back."
+    when "shielded" then "#{name.('target')}'s barrier takes #{event['absorbed']}#{event['left'].zero? ? ' and breaks' : ''}."
+    when "confused" then event["target"] ? "#{name.('actor')}, confused, turns on #{name.('target')}!" : "#{name.('actor')} stumbles about."
+    when "mp_lost" then "#{name.('target')} loses #{event['amount']} MP."
+    when "hp_paid" then "#{name.('actor')} pays #{event['amount']} HP."
+    when "charging" then "#{name.('actor')} gathers strength for #{ability_name(state, event['ability'])}…"
+    when "land" then event["target"] ? "#{name.('actor')} comes down on #{name.('target')}!" : "#{name.('actor')} lands, with nobody to hit."
+    when "covered" then "#{name.('unit')} steps in front of #{unit_name(state, event['for'])}!"
+    when "counter" then "#{name.('actor')} strikes back!#{dice_note(event)}"
+    when "second_wind" then "#{name.('target')} gets back up! (Second Wind)"
+    when "mp_restored" then "#{name.('target')} recovers #{event['amount']} MP."
     when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
     when "cast"
       verb = state["abilities"].dig(event["ability"], "kind") == "magic" ? "casts" : "uses"
       "#{name.('actor')} #{verb} #{ability_name(state, event['ability'])}."
     when "item_used" then "#{name.('actor')} uses #{item_phrase(event['name'])}."
-    when "crit" then "Critical hit!"
+    when "crit" then "Critical hit!#{dice_note(event)}"
     when "damage" then damage_line(event, name.("target"))
-    when "heal" then event["absorbed"] ? "#{name.('target')} absorbs #{event['amount']} HP." : "#{name.('target')} recovers #{event['amount']} HP."
+    when "heal"
+      if event["absorbed"] then "#{name.('target')} absorbs #{event['amount']} HP."
+      elsif event["regen"] then "#{name.('target')} regenerates #{event['amount']} HP."
+      else "#{name.('target')} recovers #{event['amount']} HP."
+      end
     when "miss" then miss_line(event, name.("target"), state)
-    when "status_applied" then "#{name.('target')}: #{event['status'].humanize}."
+    when "status_applied" then "#{name.('target')}: #{event['status'].humanize}.#{dice_note(event)}"
     when "status_expired" then status_expired_line(event, name.("target"))
     when "buff_applied"
       "#{name.('target')}'s #{stat_label(event['stat'])} #{event['amount'].positive? ? 'rises' : 'falls'}."
@@ -124,9 +152,9 @@ module BattlesHelper
     when "ko" then state["units"].find { |u| u["id"] == event["target"] }&.dig("side") == "party" ? "#{name.('target')} is down!" : "#{name.('target')} is defeated."
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
-    when "steal" then "#{name.('actor')} stole #{event['name']} from #{name.('target')}!"
-    when "scan" then scan_line(event, name.("target"))
-    when "flee" then flee_line(event)
+    when "steal" then "#{name.('actor')} stole #{event['name']} from #{name.('target')}!#{dice_note(event)}"
+    when "scan" then scan_line(event, name.("target"), state["types"] || Battle::Types::DEFAULT)
+    when "flee" then "#{flee_line(event)}#{dice_note(event)}"
     when "turn_skipped" then skipped_line(event, name.("unit"))
     when "action_failed" then action_failed_line(event, name.("actor"), state)
     when "timeout" then "Time's up! #{event['defaulted'].map { |id| unit_name(state, id) }.to_sentence} act on reflex." if event["defaulted"].any?
@@ -144,31 +172,50 @@ module BattlesHelper
 
   def damage_line(event, target)
     return "#{target} takes #{event['amount']} poison damage." if event["status"] == "poison"
+    return "Doom comes for #{target}." if event["status"] == "doom"
+    return "#{target} takes #{event['amount']} in recoil." if event["recoil"]
 
     line = "#{target} takes #{event['amount']} damage."
-    event["weak"] ? "#{line} It's super effective!" : line
+    return "#{line} Healing burns the undead!" if event["undead"]
+
+    effectiveness = event["effectiveness"] || (event["weak"] ? 200 : 100) # "weak": battles from before types
+    if effectiveness > 100 then "#{line} It's super effective!"
+    elsif effectiveness < 100 then "#{line} It's not very effective…"
+    else line
+    end
   end
 
   def miss_line(event, target, state)
     case event["reason"]
-    when "evaded" then "#{target} dodges."
-    when "immune" then "#{target} is unaffected."
-    when "resisted" then "#{target} resists #{event['status'].to_s.humanize}."
+    when "evaded" then "#{target} dodges.#{dice_note(event)}"
+    when "immune" then event["damage_type"] ? "It doesn't affect #{target}…" : "#{target} is unaffected."
+    when "resisted" then "#{target} resists #{event['status'].to_s.humanize}.#{dice_note(event)}"
     when "not_ko" then "#{target} is already standing."
     when "nothing_to_cure" then "#{target} has nothing to cure."
     when "nothing_to_steal" then "#{target} has nothing to steal."
-    when "steal_failed" then "Couldn't steal from #{target}."
+    when "steal_failed" then "Couldn't steal from #{target}.#{dice_note(event)}"
+    when "no_effect" then "#{target} barely feels it."
+    when "no_mp" then "#{target} has no MP to take."
     else "#{event['item'] ? item_name(state, event['item']) : ability_name(state, event['ability'])} has no target."
     end
   end
 
-  def scan_line(event, target)
+  # A name in an affinity list: a type's (the world's name for it), or a
+  # status's.
+  def type_or_status(token)
+    Battle::STATUSES.include?(token) ? term(token) : type_name(token)
+  end
+
+  def scan_line(event, target, engine = Battle::Types::DEFAULT)
+    types = Array(event["types"])
+    profile = type_profile(types, event["affinities"] || {}, engine: engine)
     facts = AFFINITY_LABELS.filter_map do |affinity, label|
-      names = event["elements"].select { |_, a| a == affinity }.keys
+      names = profile[affinity].dup
       names += event["status_immune"] if affinity == "immune"
-      "#{label.downcase} #{names.map { |n| term(n).downcase }.to_sentence}" if names.any?
+      "#{label.downcase} #{names.map { |n| type_or_status(n).downcase }.to_sentence}" if names.any?
     end
-    "#{target}: HP #{event['hp']}/#{event['max_hp']}#{facts.any? ? ", #{facts.join(', ')}" : ', no weaknesses'}."
+    kind = types.any? && types_matter? ? ", #{types.map { |t| type_name(t) }.join('/')} type" : ""
+    "#{target}: HP #{event['hp']}/#{event['max_hp']}#{kind}#{facts.any? ? ", #{facts.join(', ')}" : ', no weaknesses'}."
   end
 
   def status_expired_line(event, target)
@@ -184,6 +231,7 @@ module BattlesHelper
     case event["reason"]
     when "silenced" then "#{actor} is silenced!"
     when "no_item" then "There's no #{item_name(state, event['item'])} left."
+    when "no_hp" then "#{actor} doesn't have the HP to spare."
     else "#{actor} doesn't have the MP."
     end
   end
@@ -191,6 +239,11 @@ module BattlesHelper
   # "a Potion", "an Antidote", "an Echo Screen".
   def item_phrase(name)
     "#{name.to_s.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{name}"
+  end
+
+  # The d100 behind an outcome, for the log: " (rolled 98, needed 90 or under)".
+  def dice_note(event)
+    " (rolled #{event['roll']}, needed #{event['needed']} or under)" if event["roll"]
   end
 
   def flee_line(event)
@@ -203,6 +256,9 @@ module BattlesHelper
     case event["reason"]
     when "sleep" then "#{unit} is asleep."
     when "paralyze" then "#{unit} can't move."
+    when "away" then "#{unit} is away."
+    when "stop" then "#{unit} is stopped in time."
+    when "charging" then "#{unit} is still gathering strength."
     else "#{unit} has no orders."
     end
   end
@@ -224,6 +280,9 @@ module BattlesHelper
     when "add_status" then "inflicts #{event['status'].to_s.humanize} on #{who}."
     when "remove_status" then "cures #{who}'s #{event['status'].to_s.humanize}."
     when "end_battle" then "ends the battle: #{event['result']}."
+    when "add_unit" then event["side"] == "party" ? "brings in #{who} to fight beside the party." : "brings in #{who}."
+    when "dismiss" then "sends #{who} off."
+    when "rule" then "rules on #{who}'s idea: #{stat_label(event['stat'])}, #{event['difficulty']}."
     else event["op"].to_s.humanize
     end
     [ "GM #{text}", (%("#{event['note']}") if event["note"].present?) ].compact.join(" ")

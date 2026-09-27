@@ -4,7 +4,8 @@
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
-<div class="table" data-controller="dialogue recap" data-action="chat-line:arrived->dialogue#arrive keydown@window->dialogue#key"
+<% view = coop_view %>
+<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap" <%= tag.attributes(data: { seat: (@seat == "gm" ? "gm" : ("player" if @seat)) }) %> data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>">
   <%= render "tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
@@ -19,8 +20,11 @@
 
   <header class="battle__header">
     <div>
-      <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · Table</p>
-      <h1><%= @campaign.name %></h1>
+      <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= { "screen" => "Shared screen", "controller" => "Controller" }.fetch(view, "Table") %></p>
+      <h1><%= view == "controller" && @seat.is_a?(Character) ? @seat.name : @campaign.name %></h1>
+      <% if view == "controller" && @seat.is_a?(Character) %>
+        <%= render "tables/vitals", character: @seat %>
+      <% end %>
       <% if @recap %>
         <button type="button" class="link-button recap-link" data-action="recap#open">Previously on <%= @campaign.name %>…</button>
       <% end %>
@@ -30,6 +34,7 @@
 
   <div class="table__main">
     <div class="table__stage">
+    <% unless view == "controller" %>
     <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
     <section class="window table__map" aria-label="Map">
       <%= render "maps/canvas", campaign: @campaign, gm: @seat == "gm" %>
@@ -41,9 +46,15 @@
       </p>
     </section>
     <%= render "tables/dialogue_box", last_dialogue: @last_dialogue %>
+    <% end %>
+    <%= render "choices/panel", choice: @campaign.open_choice %>
     </div>
 
     <div class="table__side">
+    <% if view == "screen" %>
+      <%= render "tables/coop_join", campaign: @campaign %>
+      <%= render "tables/party", campaign: @campaign %>
+    <% end %>
     <% known = @campaign.flags.shown_to_players.order(:key) %>
     <% if known.any? %>
       <section class="window party-knows" aria-label="What the party knows">
@@ -57,18 +68,50 @@
   </div>
 
   <%= render layout: "shared/log_drawer" do %>
-    <%= render "tables/chat_log", messages: @messages %>
+    <%= render "tables/chat_log", messages: @messages, seat: @seat %>
   <% end %>
 
-  <% if @seat %>
-    <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
-      <div class="window"><p class="muted">Loading…</p></div>
+  <% if view == "screen" %>
+    <p class="hint coop-leave"><%= link_to "Leave the shared screen", campaign_table_path(@campaign, view: "off") %></p>
+  <% elsif @seat %>
+    <% if view == "controller" %>
+      <p class="coop-links">
+        <%= link_to "My sheet", character_path(@seat), class: "button button--quiet" if @seat.is_a?(Character) %>
+        <%= link_to "Leave controller view", campaign_table_path(@campaign, view: "off"), class: "link-button" %>
+      </p>
+    <% else %>
+      <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
+        <div class="window"><p class="muted">Loading…</p></div>
+      <% end %>
+    <% end %>
+    <% if @seat.is_a?(Character) %>
+      <%= render "field_uses/ability", character: @seat %>
     <% end %>
     <p class="hint">
       At the table as <strong><%= @seat == "gm" ? "GM" : @seat.name %></strong>.
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
     <% if @seat == "gm" %>
+      <%= render "field_uses/requests", campaign: @campaign %>
+      <%= render "tables/coop_setup", campaign: @campaign unless view %>
+      <details class="window table-scenes">
+        <summary>Call for a check</summary>
+        <%= form_with url: campaign_checks_path(@campaign), scope: :check, class: "book-form check-form" do |f| %>
+          <fieldset class="field">
+            <legend>Who tries</legend>
+            <% @campaign.characters.order(:created_at).select(&:conscious?).each do |character| %>
+              <label class="inline"><%= check_box_tag "check[characters][]", character.id, false, id: "check_character_#{character.id}" %> <%= character.name %></label>
+            <% end %>
+          </fieldset>
+          <div class="field-row">
+            <div class="field"><%= f.label :stat, "Roll" %><%= f.select :stat, check_options(@campaign.world) %></div>
+            <div class="field"><%= f.label :difficulty %><%= f.select :difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, selected: "normal" %></div>
+            <div class="field"><%= f.label :reason, "To…" %><%= f.text_field :reason, placeholder: "scale the wall" %></div>
+          </div>
+          <p class="hint">Each rolls against their own stat (a skill uses its stat, and a job good at it adds +<%= Job::SKILL_BONUS %>). At Normal, someone typical for their level has an even chance; nothing is ever certain.</p>
+          <%= f.submit "Roll", class: "button play" %>
+        <% end %>
+      </details>
       <details class="window table-scenes" <%= "open" if @campaign.scenes.where(played_at: nil).exists? %>>
         <summary>Scenes</summary>
         <%= render "scenes/list", campaign: @campaign, play: true %>

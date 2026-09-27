@@ -52,7 +52,7 @@ RSpec.describe "Items and curing in battle" do
 
   it "rejects items the party doesn't have, and bad targets" do
     expect { apply(state, use("rosa", "elixir", "vivi")) }.to raise_error(Battle::InvalidAction, /no "elixir"/)
-    expect { apply(state, use("rosa", "potion", "goblin_a")) }.to raise_error(Battle::InvalidAction, /not an ally/)
+    expect { apply(state, use("rosa", "antidote", "goblin_a")) }.to raise_error(Battle::InvalidAction, /not an ally/)
   end
 
   it "revives with a Phoenix Down, retargeting to a fallen ally" do
@@ -107,8 +107,8 @@ RSpec.describe "Items and curing in battle" do
 
     it "validates the status it names" do
       expect { build_battle(abilities: BattleFixtures.abilities.merge(bad: { name: "Bad", kind: "magic", target: "self", cost: { mp: 0 },
-                                                                             effects: [ { primitive: "cleanse", kind: "doom" } ] })) }
-        .to raise_error(ArgumentError, /unknown status doom/)
+                                                                             effects: [ { primitive: "cleanse", kind: "petrify" } ] })) }
+        .to raise_error(ArgumentError, /unknown status petrify/)
     end
   end
 end

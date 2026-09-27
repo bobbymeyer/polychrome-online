@@ -7,7 +7,7 @@ class MessagesController < ApplicationController
   include CampaignScoped
   include TableSeat
 
-  before_action :set_campaign
+  before_action :set_campaign, only: :create
 
   def create
     seat = table_seat
@@ -16,6 +16,10 @@ class MessagesController < ApplicationController
     fields = params.expect(message: %i[body expression speaker whisper_to])
     @message = @campaign.messages.new(body: fields[:body], expression: fields[:expression])
     seat == "gm" ? as_gm(fields) : as_player(seat, fields)
+    # The GM can put a choice to the table: "? Trust Cid | Refuse -> trusted_cid".
+    if seat == "gm" && (choice = Message.parse_choice(fields[:body]))
+      @message = Message.choice(@campaign, **choice)
+    end
 
     if @message.save
       @refocus = true
@@ -25,6 +29,22 @@ class MessagesController < ApplicationController
       render "composers/show", layout: false
     else
       render "composers/show", layout: false, status: :unprocessable_content
+    end
+  end
+
+  # Taking a line back: the GM any line said at the table, a player their
+  # own. What the game itself logged (system lines) stays.
+  def destroy
+    @message = Message.find(params[:id])
+    @campaign = @message.campaign
+    seat = table_seat
+    allowed = !@message.system? && (seat == "gm" || (seat.is_a?(Character) && @message.speaker == seat))
+    return forbid("That line isn't yours to take back.") unless allowed
+
+    @message.destroy!
+    respond_to do |format|
+      format.turbo_stream { head :no_content }
+      format.html { redirect_back_or_to campaign_table_path(@campaign), status: :see_other }
     end
   end
 

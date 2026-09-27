@@ -49,10 +49,31 @@ RSpec.describe "Books", type: :request do
     end
   end
 
+  it "shows the type chart, and each monster's type and what that makes it weak to" do
+    get world_types_path(world)
+    expect(response.body).to include("Types", ">Ghost</span>", "is-zero")
+    expect(response.body).not_to include("Fairy", "Dragon")
+
+    monster = create_monster(world, slug: "skeleton", base_type: "dark", affinities: { fire: "weak" })
+    get world_bestiary_monster_path(world, monster)
+    expect(response.body).to include(">Dark</span>", "Weak to", ">Fighting</span>", ">Bug</span>", "Breaks the chart: weak fire")
+    get world_bestiary_monsters_path(world)
+    expect(response.body).to include("Type chart", "Fighting, Bug, Fire").or include("Fire, Fighting, Bug")
+  end
+
+  it "explains the game's words where they're used, and all together on How to play" do
+    get how_to_play_path
+    expect(response.body).to include("How to play", "Ability points", "(D&amp;D: Dex)", 'class="gloss"')
+
+    monster = create_monster(world)
+    get world_bestiary_monster_path(world, monster)
+    expect(response.body).to include('data-gloss="Agility. Who acts first')
+  end
+
   describe "Grimoire" do
     let(:form) do
       { name: "Bio", kind: "magic", target: "single_enemy", mp_cost: "6", gesture: "tint", description: "Rot.",
-        effects: { "0" => { primitive: "elemental", element: "dark", power: "12", hits: "", chance: "" },
+        effects: { "0" => { primitive: "elemental", type: "dark", power: "12", hits: "", chance: "" },
                    "1" => { primitive: "status", kind: "poison", chance: "100", duration: "4" },
                    "2" => { primitive: "", power: "" } } }
     end
@@ -92,7 +113,7 @@ RSpec.describe "Books", type: :request do
 
     it "refuses to delete an ability a job still teaches" do
       ability = create_ability(world)
-      create_job(world).job_levels.create!(level: 1, abp: 5, ability: ability)
+      create_job(world).job_levels.create!(level: 1, ability: ability)
       delete world_grimoire_ability_path(world, ability)
       expect(response).to redirect_to(world_grimoire_ability_path(world, ability))
       expect(Ability.exists?(ability.id)).to be(true)
@@ -100,7 +121,7 @@ RSpec.describe "Books", type: :request do
 
     it "cross-references jobs and monsters" do
       ability = create_ability(world)
-      create_job(world, name: "Black Mage").job_levels.create!(level: 1, abp: 10, ability: ability)
+      create_job(world, name: "Black Mage").job_levels.create!(level: 1, ability: ability)
       create_monster(world, name: "Imp", ai_script: [ { use: "fire" } ])
       get world_grimoire_ability_path(world, ability)
       expect(response.body).to include("Taught by", "Black Mage", "job level 1", "Used by", "Imp")
@@ -179,8 +200,8 @@ RSpec.describe "Books", type: :request do
       post world_compendium_jobs_path(world), params: { job: {
         name: "White Mage", stat_multipliers: { mag: "120", str: "" }, equip_categories: [ "", "staff", "robe" ],
         innates: { "0" => { stat: "mdef", add: "", percent: "20" }, "1" => { stat: "", add: "", percent: "" } },
-        job_levels_attributes: { "0" => { level: "1", abp: "10", ability_id: cure.id },
-                                 "1" => { level: "", abp: "", ability_id: "" } }
+        job_levels_attributes: { "0" => { level: "1", ability_id: cure.id },
+                                 "1" => { level: "", ability_id: "" } }
       } }
       job = world.jobs.find_by!(slug: "white_mage")
       expect(job.equip_categories).to eq(%w[staff robe])
@@ -189,8 +210,8 @@ RSpec.describe "Books", type: :request do
       level = job.job_levels.sole
       patch world_compendium_job_path(world, job), params: { job: {
         name: "White Mage",
-        job_levels_attributes: { "0" => { id: level.id, level: "1", abp: "10", ability_id: cure.id, _destroy: "1" },
-                                 "1" => { level: "2", abp: "40", ability_id: raise_spell.id } }
+        job_levels_attributes: { "0" => { id: level.id, level: "1", ability_id: cure.id, _destroy: "1" },
+                                 "1" => { level: "2", ability_id: raise_spell.id } }
       } }
       expect(job.reload.job_levels.map { |l| l.ability.slug }).to eq([ "raise" ])
 

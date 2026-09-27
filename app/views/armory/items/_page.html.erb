@@ -23,7 +23,7 @@
     <% else %>
       <dl class="stat-block stat-block--compact">
         <% entry.stats.each do |stat, value| %>
-          <div><dt><%= stat_label(stat) %></dt><dd><%= signed(value) %></dd></div>
+          <div><dt><%= stat_term(stat) %></dt><dd><%= signed(value) %></dd></div>
         <% end %>
       </dl>
     <% end %>

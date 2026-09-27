@@ -1,0 +1,25 @@
+<%# The choice the table is deciding (Message kind "choice"). Broadcast the same to everyone:
+    the seat on .table decides who sees the picks and who sees "Settle" (stage.css). %>
+<div id="table_choice" data-controller="choice-panel">
+  <% if choice %>
+    <section class="window choice" aria-label="A choice for the party" data-choice-panel-target="panel" hidden>
+      <h2>What will the party do?</h2>
+      <ol class="choice__options">
+        <% choice.tally.each do |option, names| %>
+          <li class="choice__option">
+            <%= button_to option, pick_choice_path(choice), params: { option: option }, class: "menu__item choice__pick",
+                          form: { class: "choice__pick-form" } %>
+            <span class="choice__settle-label"><%= option %></span>
+            <span class="choice__who"><%= names.any? ? names.to_sentence : "" %></span>
+            <%= button_to "Settle on this", settle_choice_path(choice), params: { option: option }, class: "link-button choice__settle",
+                          form: { class: "choice__settle-form", data: { turbo_confirm: "The party chooses “#{option}”?" } } %>
+          </li>
+        <% end %>
+      </ol>
+      <p class="hint choice__hint choice__hint--player">Pick for your character. You can change your mind until the GM settles it.</p>
+      <p class="hint choice__hint choice__hint--gm">
+        Everyone at the table picks; you settle it<%= ", and #{choice.flag_key.humanize} is set to the outcome" if choice.flag_key %>.
+      </p>
+    </section>
+  <% end %>
+</div>

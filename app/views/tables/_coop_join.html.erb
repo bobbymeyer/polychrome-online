@@ -1,0 +1,8 @@
+<%# On the shared screen: how to join from a phone (JoinsController). %>
+<% url = join_url(campaign.join_code!) %>
+<section class="window coop-join" aria-label="Join from your phone">
+  <h2>Join</h2>
+  <div class="coop-join__qr"><%= qr_svg(url) %></div>
+  <p>Scan with your phone, or go to<br><strong class="coop-join__url"><%= url %></strong></p>
+  <p class="coop-join__code">Code <strong><%= campaign.join_code %></strong></p>
+</section>

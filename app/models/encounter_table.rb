@@ -8,6 +8,10 @@ class EncounterTable < ApplicationRecord
   include Artwork
 
   TERRAINS = %w[plains forest desert mountain cave crypt sea town].freeze
+  # The damage type of a fight here (World#terrain_type).
+  def terrain_type
+    world.terrain_type(terrain)
+  end
   MAX_GROUP = 8
 
   has_many :map_edges, dependent: :nullify

@@ -1,0 +1,22 @@
+<%# How the fight is likely to go (ForecastsController). %>
+<%= turbo_frame_tag "forecast" do %>
+  <% if forecast.nil? || forecast["runs"].to_i.zero? %>
+    <p class="forecast forecast--none hint">Pick who fights and what they face to see how it's likely to go.</p>
+  <% else %>
+    <% share = forecast["wins"] * 100 / forecast["runs"] %>
+    <% verdict = if share >= 95 && forecast["hp_left"] >= 60 then "easy"
+                 elsif share >= 80 then "fair"
+                 elsif share >= 50 then "hard"
+                 else "deadly"
+                 end %>
+    <div class="forecast forecast--<%= verdict %>">
+      <p class="forecast__verdict"><%= verdict.capitalize %></p>
+      <p>
+        Played out <%= forecast["runs"] %> times with everyone just attacking, the party won
+        <strong><%= forecast["wins"] %></strong>, ending with about <strong><%= forecast["hp_left"] %>%</strong> of its HP
+        and <%= forecast["downed"] %> down on average, in about <%= forecast["rounds"].round %> rounds.
+      </p>
+      <p class="hint">Real players heal, cast and use items, so they'll usually do better than this.</p>
+    </div>
+  <% end %>
+<% end %>

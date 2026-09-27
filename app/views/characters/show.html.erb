@@ -13,16 +13,17 @@
       <h1><%= @character.name %></h1>
       <% if @character.motive %><p class="motive"><%= @character.motive %></p><% end %>
       <dl class="facts">
-        <dt>Level</dt>
+        <dt><%= gloss(:exp, "Level") %></dt>
         <dd><%= @character.level %> <span class="muted">(<%= @character.exp %> EXP<%= ", #{@character.exp_to_next} to next" if @character.exp_to_next %>)</span></dd>
-        <dt>Job</dt>
+        <dt><%= gloss(:job) %></dt>
         <dd>
           <%= link_to @character.job.name, world_compendium_job_path(@world, @character.job) %>
-          Lv <%= cj.level %>
-          <span class="muted">(<%= cj.abp %> ABP<%= cj.mastered? ? ", mastered" : ", #{cj.abp_to_next} to next" %>)</span>
+          <%= gloss(:job_level, "Lv") %> <%= cj.level %>
+          <span class="muted">(<%= cj.abp %> <%= gloss(:abp) %><%= cj.mastered? ? ", mastered" : ", #{cj.abp_to_next} to next" %>)</span>
         </dd>
-        <dt>HP</dt><dd><%= @character.current_hp %> / <%= @character.stats["max_hp"] %><%= " · down" unless @character.conscious? %></dd>
-        <dt>MP</dt><dd><%= @character.current_mp %> / <%= @character.stats["max_mp"] %></dd>
+        <% if types_matter? %><dt><%= gloss(:type) %></dt><dd><%= type_tag(@character.job.base_type) %></dd><% end %>
+        <dt><%= gloss(:max_hp) %></dt><dd><%= @character.current_hp %> / <%= @character.stats["max_hp"] %><%= " · down" unless @character.conscious? %></dd>
+        <dt><%= gloss(:max_mp) %></dt><dd><%= @character.current_mp %> / <%= @character.stats["max_mp"] %></dd>
       </dl>
     </div>
   </header>
@@ -37,7 +38,7 @@
       <tbody>
         <% Stats::NAMES.each do |stat| %>
           <tr>
-            <td><%= stat_label(stat) %></td>
+            <td><%= stat_term(stat) %></td>
             <td class="num"><%= stages[:base][stat] %></td>
             <td class="num"><%= stages[:job][stat] %></td>
             <td class="num"><%= stages[:equipment][stat] %></td>
@@ -115,6 +116,14 @@
 
   <section class="window">
     <h2>Abilities</h2>
+    <% if (own = @character.job.signature_ability) %>
+      <p class="signature-line"><%= gloss(:signature, "Signature") %>: <%= link_to own.name, world_grimoire_ability_path(@world, own) %>
+        <span class="muted"><%= own.description %></span></p>
+    <% end %>
+    <% if (passives = @character.passives).any? %>
+      <p class="signature-line"><%= gloss(:passive, passives.size > 1 ? "Passives" : "Passive") %>:
+        <%= safe_join(passives.map { |p| passive_term(p) }, ", ") %></p>
+    <% end %>
     <h3>From <%= @character.job.name %></h3>
     <% native = @character.native_abilities %>
     <% if native.empty? %>
@@ -152,6 +161,64 @@
     <% end %>
   </section>
 
+  <section class="window" id="skills">
+    <h2><%= gloss(:skill, "Skills") %></h2>
+    <% if (field = @character.job.field_ability_entry) %>
+      <p>
+        <%= gloss(:field_ability) %>: <%= link_to field.name, world_grimoire_ability_path(@world, field) %>
+        <span class="muted">(<%= @world.skill_name(field.field_skill) %>; <%= @character.field_used? ? "used, back after a rest" : "ready" %>)</span>
+      </p>
+    <% end %>
+    <p class="hint">The chance of a Normal check with each of <%= @world.name %>'s skills. The GM can call it easier or harder.</p>
+    <table class="book-table book-table--plain">
+      <thead><tr><th>Skill</th><th>Stat</th><th class="num">Job</th><th class="num">Normal check</th></tr></thead>
+      <tbody>
+        <% Array(@world.skills).each do |skill| %>
+          <% bonus = @character.skill_bonus(skill["slug"]) %>
+          <tr class="<%= 'is-current' if bonus.positive? %>">
+            <td><%= tag.span(skill["name"], class: ("gloss" if skill["description"].present?), tabindex: (0 if skill["description"].present?), data: { gloss: skill["description"].presence }) %></td>
+            <td><%= stat_term(skill["stat"]) %></td>
+            <td class="num"><%= bonus.positive? ? "+#{bonus}" : "—" %></td>
+            <td class="num"><%= Stats::Check.chance(stat_value: @character.stats[skill["stat"]], stat: skill["stat"], level: @character.level, difficulty: "normal", bonus: bonus) %>%</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
+  <% masteries = @character.masteries %>
+  <% if masteries.any? %>
+  <section class="window" id="mastery">
+    <h2><%= gloss(:mastery) %></h2>
+    <p class="hint">
+      Each ability grows stronger for <%= Stats::Mastery::SPAN %> job levels after it's learned, up to +<%= Stats::Mastery::MASTERY_BONUS %>%.
+      Used in the job that teaches it, it gets another +<%= Stats::Mastery::ACTIVE_BONUS %>%. A mastered ability used in another job keeps its own job's STR and MAG.
+    </p>
+    <table class="book-table book-table--plain mastery-table">
+      <thead><tr><th>Ability</th><th>Job</th><th>Mastery</th><th class="num">Power now</th></tr></thead>
+      <tbody>
+        <% masteries.sort_by { |ability, m| [ @character.active?(ability) ? 0 : 1, -m[:percent], ability.name ] }.each do |ability, m| %>
+          <% active = @character.active?(ability) %>
+          <tr class="<%= 'is-current' if active %>">
+            <td><%= link_to ability.name, world_grimoire_ability_path(@world, ability) %></td>
+            <td><%= m[:job].name %></td>
+            <td>
+              <span class="bar mastery-bar"><span class="bar__fill bar__fill--<%= m[:percent] == Stats::Mastery::FULL ? 'mastered' : 'ok' %>" style="width: <%= m[:percent] %>%"></span></span>
+              <%= m[:percent] == Stats::Mastery::FULL ? tag.strong("Mastered") : "#{m[:percent]}%" %>
+            </td>
+            <td class="num">
+              <%= Stats::Mastery.power(m[:percent], active: active) %>%
+              <% if m[:percent] == Stats::Mastery::FULL && !active && m[:job] != @character.job %>
+                <br><span class="muted">with <%= m[:job].name %>'s <%= @character.home_stats(m[:job]).select { |stat, value| value > @character.stats[stat] }.keys.map { |stat| stat_label(stat) }.to_sentence.presence || "stats" %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+  <% end %>
+
   <section class="window">
     <h2>Jobs</h2>
     <table class="book-table book-table--plain">
@@ -160,7 +227,7 @@
         <% @character.character_jobs.includes(job: { job_levels: :ability }).sort_by { |j| j.job.name }.each do |job_progress| %>
           <tr class="<%= 'is-current' if job_progress.job_id == @character.job_id %>">
             <td><%= link_to job_progress.job.name, world_compendium_job_path(@world, job_progress.job) %><%= " (current)" if job_progress.job_id == @character.job_id %></td>
-            <td class="num"><%= job_progress.level %>/<%= job_progress.job.job_levels.size %></td>
+            <td class="num"><%= job_progress.level %>/<%= Stats::Growth::MAX_JOB_LEVEL %><%= tag.span(" ★", title: "Mastered", class: "mastered-star") if job_progress.mastered? %></td>
             <td class="num"><%= job_progress.abp %></td>
             <td><%= job_progress.learned_abilities.map(&:name).join(", ").presence || "—" %></td>
           </tr>
@@ -175,7 +242,7 @@
       </div>
       <%= f.submit "Change job", class: "button" %>
     <% end %>
-    <p class="hint">Changing job keeps each job's ABP. Gear the new job can't use goes back to the bag.</p>
+    <p class="hint">Changing job keeps each job's ABP and every ability's mastery. Gear the new job can't use goes back to the bag. Only the current job earns ABP.</p>
     <% end %>
   </section>
 

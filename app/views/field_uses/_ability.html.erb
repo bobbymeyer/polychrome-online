@@ -1,0 +1,20 @@
+<%# A character's field ability, on their own table view (FieldUse). Broadcast to the character's own stream. %>
+<% ability = character.job.field_ability_entry %>
+<div id="field_ability">
+  <% if ability %>
+    <% campaign = character.campaign %>
+    <% skill = campaign.world.skill(ability.field_skill) %>
+    <% pending = campaign.field_uses.pending.exists?(character: character) %>
+    <section class="window field-ability" aria-label="Field ability">
+      <h3><%= ability.name %> <span class="muted">· <%= skill ? skill["name"] : "a check" %><%= ", +#{Job::SKILL_BONUS}" if character.skill_bonus(ability.field_skill).positive? %></span></h3>
+      <p class="hint"><%= ability.description.presence || FieldUse.describe(ability) %> Once per rest.</p>
+      <% if character.field_used? %>
+        <p class="muted">Used. It's back after a rest.</p>
+      <% elsif pending %>
+        <p class="muted">Waiting on the GM…</p>
+      <% else %>
+        <%= button_to "Use #{ability.name}", campaign_field_uses_path(campaign), class: "button" %>
+      <% end %>
+    </section>
+  <% end %>
+</div>

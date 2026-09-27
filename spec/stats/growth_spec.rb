@@ -40,26 +40,17 @@ RSpec.describe Stats::Growth do
   end
 
   describe "job levels" do
-    let(:costs) { [ 10, 10, 20, 40 ] }
-
-    it "counts the learn-table rows the ABP covers" do
-      expect([ 0, 9, 10, 19, 20, 39, 40, 79, 80, 500 ].map { |abp| described_class.job_level(abp, costs) })
-        .to eq([ 0, 0, 1, 1, 2, 2, 3, 3, 4, 4 ])
+    it "runs one curve from 0 to 100, quick at first and slow at the top" do
+      expect([ 0, 1, 2, 16, 285, 725, 10_000 ].map { |abp| described_class.job_level(abp) }).to eq([ 0, 1, 2, 10, 60, 100, 100 ])
+      steps = (1..100).map { |level| described_class.abp_for_job_level(level) - described_class.abp_for_job_level(level - 1) }
+      expect(steps).to all(be_positive)
+      expect(steps.last).to be > steps.first * 10
     end
 
     it "round-trips with abp_for_job_level" do
-      (0..costs.size).each do |level|
-        expect(described_class.job_level(described_class.abp_for_job_level(level, costs), costs)).to eq(level)
+      (0..described_class::MAX_JOB_LEVEL).each do |level|
+        expect(described_class.job_level(described_class.abp_for_job_level(level))).to eq(level)
       end
-      expect(described_class.abp_for_job_level(9, costs)).to eq(80)
-    end
-
-    it "handles jobs with no learn table" do
-      expect(described_class.job_level(100, [])).to eq(0)
-    end
-
-    it "treats free rows as learned at once" do
-      expect(described_class.job_level(0, [ 0, 0, 5 ])).to eq(2)
     end
   end
 end

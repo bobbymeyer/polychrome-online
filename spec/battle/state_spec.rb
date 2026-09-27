@@ -51,9 +51,11 @@ RSpec.describe Battle::State do
       expect { build_battle(party: [ { id: "x", stats: { max_hp: 10 } } ]) }.to raise_error(ArgumentError, /missing stats/)
     end
 
-    it "rejects unknown elements and affinities" do
-      party = [ { id: "x", stats: stats, elements: { fire: "loves" } } ]
-      expect { build_battle(party: party) }.to raise_error(ArgumentError, /elements/)
+    it "rejects unknown types and affinities, and more than two types" do
+      expect { build_battle(party: [ { id: "x", stats: stats, affinities: { fire: "loves" } } ]) }.to raise_error(ArgumentError, /affinities/)
+      expect { build_battle(party: [ { id: "x", stats: stats, affinities: { holy: "weak" } } ]) }.to raise_error(ArgumentError, /affinities/)
+      expect { build_battle(party: [ { id: "x", stats: stats, types: %w[fairy] } ]) }.to raise_error(ArgumentError, /unknown types/)
+      expect { build_battle(party: [ { id: "x", stats: stats, types: %w[fire water ice] } ]) }.to raise_error(ArgumentError, /two types/)
     end
 
     describe "closed vocabularies" do
@@ -71,9 +73,11 @@ RSpec.describe Battle::State do
         expect { build_with(ability) }.to raise_error(ArgumentError, /targeting/)
       end
 
-      it "rejects unknown elements, statuses and buff stats" do
-        expect { build_with(kind: "magic", target: "self", effects: [ { primitive: "elemental", element: "poison", power: 1 } ]) }
-          .to raise_error(ArgumentError, /element/)
+      it "rejects unknown types, statuses and buff stats" do
+        expect { build_with(kind: "magic", target: "self", effects: [ { primitive: "elemental", type: "fairy", power: 1 } ]) }
+          .to raise_error(ArgumentError, /unknown type fairy/)
+        expect { build_with(kind: "skill", target: "self", effects: [ { primitive: "physical", type: "dragon" } ]) }
+          .to raise_error(ArgumentError, /unknown type dragon/)
         expect { build_with(kind: "magic", target: "self", effects: [ { primitive: "status", kind: "zombie" } ]) }
           .to raise_error(ArgumentError, /status/)
         expect { build_with(kind: "magic", target: "self", effects: [ { primitive: "buff", stat: "max_hp", amount: 1 } ]) }
@@ -83,8 +87,8 @@ RSpec.describe Battle::State do
       it "rejects missing, unknown and non-integer primitive params" do
         expect { build_with(kind: "magic", target: "self", effects: [ { primitive: "heal" } ]) }
           .to raise_error(ArgumentError, /heal needs power/)
-        expect { build_with(kind: "magic", target: "self", effects: [ { primitive: "heal", power: 5, element: "fire" } ]) }
-          .to raise_error(ArgumentError, /does not take element/)
+        expect { build_with(kind: "magic", target: "self", effects: [ { primitive: "heal", power: 5, type: "fire" } ]) }
+          .to raise_error(ArgumentError, /does not take type/)
         expect { build_with(kind: "magic", target: "self", effects: [ { primitive: "heal", power: "5" } ]) }
           .to raise_error(ArgumentError, /must be an integer/)
       end
@@ -110,7 +114,7 @@ RSpec.describe Battle::State do
     it "matches the resolver on what counts as a legal target" do
       unit(state, "bartz")["hp"] = 0
       rosa = unit(state, "rosa")
-      expect(described_class.target_options(state, rosa, state["abilities"]["cure"])).to eq(%w[vivi rosa locke])
+      expect(described_class.target_options(state, rosa, state["abilities"]["cure"])).to eq(%w[vivi rosa locke goblin_a goblin_b goblin_c])
       expect(described_class.target_options(state, rosa, state["abilities"]["raise"])).to eq(%w[bartz])
       expect(described_class.target_options(state, rosa, state["abilities"]["attack"])).to eq(%w[goblin_a goblin_b goblin_c])
       expect(described_class.target_options(state, rosa, state["abilities"]["cura"])).to be_nil

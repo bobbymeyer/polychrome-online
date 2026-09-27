@@ -1,12 +1,12 @@
 <%# Effect list in the closed primitive vocabulary (§3.1). Params a primitive doesn't take are ignored. %>
 <fieldset class="panel">
   <legend>Effects</legend>
-  <p class="hint">Applied in order to each target. Leave a row's primitive blank to remove it. Cleanse cures the status picked, or every harmful one when none is.</p>
+  <p class="hint">Applied in order to each target. Leave a row's primitive blank to remove it. Cleanse cures the status picked, or every harmful one when none is. Away takes "who" off the field for its duration; with power, they come back striking. Sap takes MP and the user keeps "Keep %" of it. Damage can do "Bonus %" (×2 when blank) against a status, a type, the undead or bosses; "Recoil %" of it hurts the user; "Grudge %" more power comes as the user nears the end of their HP. A Doom status knocks its target out when it runs out.</p>
   <table class="grid-form">
     <thead>
       <tr>
-        <th>Primitive</th><th>Power</th><th>Hits</th><th>Element</th><th>Status</th><th>Chance %</th>
-        <th>Duration</th><th>Stat</th><th>Amount %</th><th>Revive %</th>
+        <th>Primitive</th><th>Power</th><th>Hits</th><% if types_matter? %><th>Type</th><% end %><th>Status</th><th>Chance %</th>
+        <th>Duration</th><th>Stat</th><th>Amount %</th><th>Revive %</th><th>Who</th><th>Keep %</th><th>Against</th><th>Bonus %</th><th>Recoil %</th><th>Grudge %</th>
       </tr>
     </thead>
     <tbody>
@@ -16,13 +16,28 @@
           <td><%= select_tag name.(:primitive), options_for_select(Battle::PRIMITIVES.map { |p| [term(p), p] }, effect["primitive"]), include_blank: true, "aria-label": "Primitive #{i + 1}" %></td>
           <td><%= number_field_tag name.(:power), effect["power"], "aria-label": "Power #{i + 1}" %></td>
           <td><%= number_field_tag name.(:hits), effect["hits"], min: 1, "aria-label": "Hits #{i + 1}" %></td>
-          <td><%= select_tag name.(:element), options_for_select(Battle::ELEMENTS.map { |e| [term(e), e] }, effect["element"]), include_blank: true, "aria-label": "Element #{i + 1}" %></td>
+          <% if types_matter? %>
+            <td><%= select_tag name.(:type), options_for_select(type_options, effect["type"]), include_blank: true, "aria-label": "Type #{i + 1}" %></td>
+          <% elsif effect["type"] %>
+            <%= hidden_field_tag name.(:type), effect["type"], id: nil %>
+          <% end %>
           <td><%= select_tag name.(:kind), options_for_select(Battle::STATUSES.map { |s| [term(s), s] }, effect["kind"]), include_blank: true, "aria-label": "Status #{i + 1}" %></td>
           <td><%= number_field_tag name.(:chance), effect["chance"], min: 0, max: 100, "aria-label": "Chance #{i + 1}" %></td>
           <td><%= number_field_tag name.(:duration), effect["duration"], min: 1, "aria-label": "Duration #{i + 1}" %></td>
           <td><%= select_tag name.(:stat), options_for_select(Stats::MODIFIABLE.map { |s| [stat_label(s), s] }, effect["stat"]), include_blank: true, "aria-label": "Stat #{i + 1}" %></td>
           <td><%= number_field_tag name.(:amount), effect["amount"], "aria-label": "Amount #{i + 1}" %></td>
           <td><%= number_field_tag name.(:fraction), effect["fraction"], min: 0, max: 100, "aria-label": "Revive fraction #{i + 1}" %></td>
+          <td><%= select_tag name.(:who), options_for_select([ [ "The user", "self" ], [ "The target", "target" ] ], effect["who"]), include_blank: true, "aria-label": "Who goes, #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:keep), effect["keep"], min: 0, max: 100, "aria-label": "MP kept, #{i + 1}" %></td>
+          <td>
+            <%= select_tag name.(:against), grouped_options_for_select({ "Traits" => Battle::AGAINST_TRAITS.map { |t| [ t.capitalize, t ] },
+                                                                      "Statuses" => Battle::STATUSES.map { |st| [ term(st), st ] },
+                                                                      "Types" => (types_matter? ? type_options : []) }, effect["against"]),
+                           include_blank: true, "aria-label": "Bonus against, #{i + 1}" %>
+          </td>
+          <td><%= number_field_tag name.(:bonus), effect["bonus"], min: 0, max: Battle::MAX_BONUS, placeholder: 200, "aria-label": "Bonus, #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:recoil), effect["recoil"], min: 0, max: 100, "aria-label": "Recoil, #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:grudge), effect["grudge"], min: 0, max: Battle::MAX_BONUS, "aria-label": "Grudge, #{i + 1}" %></td>
         </tr>
       <% end %>
     </tbody>

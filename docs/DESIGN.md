@@ -60,6 +60,35 @@ deliberate divergence from much of what follows, and where the two disagree the 
   display type, then the last session in short sections (the road as names joined by red
   arrows, battles, finds, what the party learned) and the last line said, in a speech box.
   "Carry on" closes it.
+- **Choices** come up as a window with a red top edge under the dialogue: big italic options
+  underlined in red that fill red when pressed, and who picked what in grey beside them. The GM
+  sees "Settle on this" instead.
+- **A check** takes the middle of every screen: the character, the stat and the odds, then a
+  heavy number spinning to a stop and the verdict stamped in green or red, with a jingle.
+  Several go one after another.
+- **The forecast** on the battle form is a tinted band with a heavy verdict word, coloured from
+  green (Easy) to wine (Deadly).
+- **A town's services** are panels with a 3px frame, one per building: a white bar with the
+  building's name in heavy italic and a red marker, which turns black when open. The buildings
+  in the skyline that house them outline in red on hover and open their panel.
+- **Types** are slanted tags in their own colours (fire orange, water blue, ghost violet and so
+  on): this is the one place the palette steps outside Vasakronan, because a type's colour is
+  how players recognise it. "Super effective!" lands as a yellow outlined popup with a flash;
+  "not very effective" is small and pale. The type chart is a grid of ×2 (green), ½ (salmon)
+  and 0 (black).
+- **Local co-op.** The shared screen goes edge to edge with no menus: bigger dialogue type, the
+  join card (a QR code in a white frame and the code in heavy display type) and the party's HP
+  down the side. The controller is one column of big targets: your name as the title, your HP
+  bar, options and commands at least 52px tall.
+- **The game's words** keep their JRPG names and explain themselves. A dotted underline marks
+  one; hovering or tapping it shows a black card with the definition (and the nearest D&D idea).
+  "How to play" in the top bar has the rules in plain words and every term together.
+- **Rewards** get cards: "New ability!" and "Mastered!" tags over a heavy name, a hard yellow (or
+  red and black, for mastery) shadow, dealt in one after another.
+- **Job moments on the board:** a Jump leaves the top of the frame and slams back down, Cover and
+  Counter get tag popups, Second Wind a yellow one, and the dice sit beside whoever they decided for.
+- **The timing meter** is a black slab near the bottom: a striped bar, the mark in yellow, a red
+  needle. PERFECT! lands in heavy yellow italic.
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide

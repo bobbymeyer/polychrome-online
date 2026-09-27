@@ -1,7 +1,7 @@
 <header class="book-page__header">
   <%= entry_portrait(entry) %>
   <div>
-    <p class="eyebrow">Bestiary · Level <%= entry.level %><%= " · Boss" if entry.boss? %></p>
+    <p class="eyebrow">Bestiary · Level <%= entry.level %><%= " · Boss" if entry.boss? %><%= " · Undead" if entry.undead? %></p>
     <h1><%= entry.name %></h1>
     <dl class="facts">
       <dt>EXP</dt><dd><%= entry.exp %></dd>
@@ -22,18 +22,21 @@
   <h2>Stat block</h2>
   <dl class="stat-block">
     <% Stats::NAMES.each do |stat| %>
-      <div><dt><%= stat_label(stat) %></dt><dd><%= number_with_delimiter(entry.stats[stat]) %></dd></div>
+      <div><dt><%= stat_term(stat) %></dt><dd><%= number_with_delimiter(entry.stats[stat]) %></dd></div>
     <% end %>
   </dl>
-  <% if entry.elements.any? || entry.status_immune.any? %>
-    <dl class="facts facts--wide">
-      <% entry.elements.group_by { |_, a| a }.each do |affinity, pairs| %>
-        <dt><%= term(affinity) %></dt><dd><%= pairs.map { |element, _| term(element) }.join(", ") %></dd>
-      <% end %>
-      <% if entry.status_immune.any? %>
-        <dt>Immune to</dt><dd><%= entry.status_immune.map { |s| term(s) }.join(", ") %></dd>
-      <% end %>
-    </dl>
+  <% profile = type_profile([ entry.base_type ], entry.affinities) %>
+  <dl class="facts facts--wide type-facts">
+    <% if types_matter? %><dt>Type</dt><dd><%= type_tag(entry.base_type) %> <%= link_to "the chart", world_types_path(@world), class: "muted" %></dd><% end %>
+    <% { "weak" => "Weak to", "resist" => "Resists", "immune" => "Immune to", "absorb" => "Absorbs" }.each do |band, label| %>
+      <% if profile[band].any? %><dt><%= label %></dt><dd><%= safe_join(profile[band].map { |t| type_tag(t) }, " ") %></dd><% end %>
+    <% end %>
+    <% if entry.status_immune.any? %>
+      <dt>Shrugs off</dt><dd><%= entry.status_immune.map { |s| term(s) }.join(", ") %></dd>
+    <% end %>
+  </dl>
+  <% if entry.affinities.any? %>
+    <p class="hint">Breaks the chart: <%= entry.affinities.map { |type, a| "#{term(a).downcase} #{type_name(type).downcase}" }.to_sentence %>.</p>
   <% end %>
 </section>
 

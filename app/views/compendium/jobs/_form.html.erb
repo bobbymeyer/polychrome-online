@@ -2,10 +2,34 @@
   <%= render "book_entries/errors", entry: entry %>
   <%= render "book_entries/identity_fields", f: f %>
   <div class="field-row">
+    <% if types_matter? %>
+      <div class="field">
+        <%= f.label :base_type, "Type" %>
+        <%= f.select :base_type, type_options %>
+        <p class="hint">A character in the job takes hits as this type, and Attack and the signature command strike with it. <%= link_to "The chart", world_types_path(@world) %>.</p>
+      </div>
+    <% else %>
+      <%= f.hidden_field :base_type, value: type_chart.plain %>
+    <% end %>
     <div class="field">
       <%= f.label :ability_slots, "Free ability slots" %>
       <%= f.number_field :ability_slots, min: 0, max: 4 %>
       <p class="hint">How many abilities learned in other jobs a character can bring into this one.</p>
+    </div>
+    <div class="field">
+      <%= f.label :signature, "Signature command" %>
+      <%= f.select :signature, @world.abilities.order(:name).map { |a| [ a.name, a.slug ] }, include_blank: "(none)" %>
+      <p class="hint">The job's own command: always on its menu, learned or not.</p>
+    </div>
+    <div class="field">
+      <%= f.label :field_ability, "Field ability" %>
+      <%= f.select :field_ability, @world.abilities.field.order(:name).map { |a| [ a.name, a.slug ] }, include_blank: "(none)" %>
+      <p class="hint">Its move outside battle, once per rest: a Grimoire entry of kind Field.</p>
+    </div>
+    <div class="field">
+      <%= f.label :passive %>
+      <%= f.select :passive, Battle::PASSIVES.map { |p| [ GlossaryHelper::PASSIVES.fetch(p).first, p ] }, include_blank: "(none)" %>
+      <p class="hint">What the job gives beyond numbers. Master the job and a character keeps it in every job.</p>
     </div>
     <div class="field">
       <%= f.label :desperation, "Desperation move" %>
@@ -25,6 +49,20 @@
           <%= number_field_tag json_field_name(f, :stat_multipliers, stat), entry.stat_multipliers[stat],
                                id: "job_stat_multipliers_#{stat}", min: 0, max: 500, placeholder: 100 %>
         </div>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Good at</legend>
+    <p class="hint">Skills a character in this job adds +<%= Job::SKILL_BONUS %> to, on checks. The world's skills are on <%= link_to "its skills page", world_skills_path(@world) %>.</p>
+    <%= hidden_field_tag "job[skills][]", "", id: nil %>
+    <div class="checks">
+      <% Array(@world.skills).each do |skill| %>
+        <label>
+          <%= check_box_tag "job[skills][]", skill["slug"], entry.skills.include?(skill["slug"]), id: "job_skill_#{skill['slug']}" %>
+          <%= skill["name"] %> <span class="muted">(<%= stat_label(skill["stat"]) %>)</span>
+        </label>
       <% end %>
     </div>
   </fieldset>
@@ -61,17 +99,16 @@
 
   <fieldset class="panel">
     <legend>Learn table</legend>
-    <p class="hint">Each job level costs ABP and teaches one ability from the Grimoire.</p>
+    <p class="hint">The job level (1 to <%= Stats::Growth::MAX_JOB_LEVEL %>) at which each ability from the Grimoire comes. It's mastered <%= Stats::Mastery::SPAN %> job levels later, or at <%= Stats::Growth::MAX_JOB_LEVEL %>.</p>
     <% abilities = @world.abilities.order(:name).map { |a| [a.name, a.id] } %>
     <table class="grid-form">
-      <thead><tr><th>Level</th><th>ABP</th><th>Ability</th><th>Remove</th></tr></thead>
+      <thead><tr><th>Job level</th><th>Ability</th><th>Remove</th></tr></thead>
       <tbody>
         <% levels = entry.job_levels.to_a %>
         <% levels += Array.new(2) { entry.job_levels.build } unless levels.count(&:new_record?) >= 2 %>
         <%= f.fields_for :job_levels, levels do |lf| %>
           <tr>
-            <td><%= lf.number_field :level, min: 1, "aria-label": "Level" %></td>
-            <td><%= lf.number_field :abp, min: 0, "aria-label": "ABP" %></td>
+            <td><%= lf.number_field :level, min: 1, max: Stats::Growth::MAX_JOB_LEVEL, "aria-label": "Job level" %></td>
             <td><%= lf.select :ability_id, abilities, { include_blank: true }, "aria-label": "Ability" %></td>
             <td><% if lf.object.persisted? %><%= lf.check_box :_destroy, "aria-label": "Remove" %><% end %></td>
           </tr>

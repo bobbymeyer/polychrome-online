@@ -33,6 +33,12 @@ module ApplicationHelper
              data: { default: world.music_path(scene).to_s, fixed: fixed })
   end
 
+  # A QR code as inline SVG (local co-op: scan the shared screen to join).
+  def qr_svg(url)
+    RQRCode::QRCode.new(url).as_svg(module_size: 6, standalone: true, use_path: true, viewbox: true,
+                                    color: "000", shape_rendering: "crispEdges").sub(/\A<\?xml[^>]*\?>/, "").html_safe # rubocop:disable Rails/OutputSafety -- generated SVG, no user markup
+  end
+
   def plate_style(key, colour = nil)
     hex, ink = Palette.pick(key, colour)
     "--plate: #{hex}; --plate-ink: #{ink};"
@@ -51,6 +57,14 @@ module ApplicationHelper
   # Human label for a closed-vocabulary token: "single_enemy" -> "Single enemy".
   def term(token)
     token.to_s.humanize
+  end
+
+  # What a check can be made with: the world's skills first, then the bare
+  # stats. A skill is posted as "skill:<slug>" (Campaign#check!).
+  def check_options(world, selected = nil)
+    skills = Array(world.skills).map { |s| [ "#{s['name']} (#{stat_label(s['stat'])})", "skill:#{s['slug']}" ] }
+    stats = Stats::Check::STATS.map { |s| [ stat_label(s), s ] }
+    grouped_options_for_select({ "Skills" => skills, "Stats" => stats }, selected)
   end
 
   def signed(number)

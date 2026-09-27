@@ -576,6 +576,214 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .recap .actions { margin-top: 16px; justify-content: flex-end; }
 .recap-link { margin-top: 4px; font-style: italic; }
 
+/* A guest on the party's side: a small tag by their name. */
+.roster__guest { margin-left: 6px; padding: 0 6px; background: var(--ink); color: var(--paper); font-size: 11px; font-style: normal; letter-spacing: .08em; text-transform: uppercase; vertical-align: 2px; }
+
+/* Speaking from the battle page. */
+.battle-composer { margin-top: 12px; }
+.battle-composer summary { cursor: pointer; font-style: italic; font-weight: 900; }
+.battle-composer[open] summary { margin-bottom: 8px; }
+
+/* A choice for the table: big red options, like a game's own prompt. Players see the picks,
+   the GM sees "Settle", everyone sees who picked what. */
+.choice { border-top: 4px solid var(--signal); }
+.choice[hidden] { display: none; }
+.choice:not([hidden]) { animation: slash-in .3s var(--snap) both; }
+.choice h2 { margin: 0 0 10px; font: var(--display); font-size: 28px; }
+.choice__options { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.choice__option { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.choice__pick-form { margin: 0; flex: 0 1 auto; }
+.choice__pick { min-width: 12em; background: var(--paper); border-bottom: 3px solid var(--signal); font-style: italic; font-weight: 900; font-size: 18px; }
+.choice__pick:hover, .choice__pick:focus-visible { background: var(--signal); color: var(--paper); }
+.choice__settle-label { font-weight: 900; font-style: italic; font-size: 18px; }
+.choice__who { color: var(--grey); font-size: 14px; }
+.choice__settle-form { margin: 0 0 0 auto; }
+.table:not([data-seat="player"]) .choice__pick-form, .table:not([data-seat="player"]) .choice__hint--player,
+.table[data-seat="player"] .choice__settle-label, .table:not([data-seat="gm"]) .choice__settle-form,
+.table:not([data-seat="gm"]) .choice__hint--gm { display: none; }
+
+/* A check landing: the number spins in the middle of everyone's screen, then the verdict. */
+.check-moment {
+  position: fixed; left: 50%; top: 40%; z-index: 80; translate: -50% -50%; min-width: min(360px, calc(100vw - 32px));
+  padding: 16px 24px 20px; text-align: center; background: var(--paper); border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--accent), 16px 16px 0 var(--ink); pointer-events: none;
+}
+.check-moment p { margin: 0; }
+.check-moment__who { font-style: italic; font-weight: 900; }
+.check-moment__odds { color: var(--grey); font-size: 14px; }
+.check-moment__roll { font: var(--display); font-size: 96px; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.check-moment__verdict { font: var(--display); font-size: 32px; min-height: 36px; }
+.check-moment.is-success { box-shadow: 8px 8px 0 var(--green), 16px 16px 0 var(--ink); }
+.check-moment.is-success .check-moment__verdict { color: var(--forest-green); }
+.check-moment.is-failure { box-shadow: 8px 8px 0 var(--signal), 16px 16px 0 var(--ink); }
+.check-moment.is-failure .check-moment__verdict { color: var(--signal); }
+.check-form fieldset { border: 0; padding: 0; margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+
+/* How a fight is likely to go, on the battle and scene forms. */
+.forecast { margin: 12px 0; padding: 10px 14px 12px; border-left: 8px solid var(--c, var(--grey)); background: var(--tint); }
+.forecast p { margin: 0 0 4px; }
+.forecast__verdict { font: var(--display); font-size: 28px; color: var(--c, var(--ink)); }
+.forecast--easy { --c: var(--forest-green); } .forecast--fair { --c: var(--lake-green); }
+.forecast--hard { --c: var(--orange); } .forecast--deadly { --c: var(--wine-red); }
+.forecast--none { background: none; border: 0; padding: 0; }
+
+/* A town's services: a panel under each building, closed until you walk in. */
+.services { display: grid; gap: 8px; }
+.service { border: 3px solid var(--ink); background: var(--paper); }
+.service > summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 10px 14px; cursor: pointer; list-style: none;
+  background: var(--paper); transition: background var(--quick);
+}
+.service > summary::-webkit-details-marker { display: none; }
+.service > summary::before {
+  content: "▸"; width: auto; height: auto; margin: 0; border: 0; transform: none;
+  color: var(--signal); font-weight: 900; transition: rotate var(--quick);
+}
+.service[open] > summary::before { transform: none; rotate: 90deg; }
+.service[open] > summary { margin-bottom: 0; }
+.skyline__service { cursor: pointer; }
+.skyline__service:hover .skyline__wall, .skyline__service:focus-visible .skyline__wall { stroke: var(--signal); stroke-width: 4; }
+.service > summary:hover { background: var(--tint); }
+.service[open] > summary { background: var(--ink); color: var(--paper); }
+.service__name { font-style: italic; font-weight: 900; font-size: 18px; }
+.service__kind { color: var(--grey); font-size: 14px; }
+.service[open] .service__kind { color: var(--light-grey); }
+.service__body { padding: 12px 14px 14px; }
+.service__body > p:first-child { margin-top: 0; }
+.service__pin { margin: 8px 0 0; }
+
+/* Damage types (Battle::Types): a tag in each type's colour, the chart, and the popups. */
+.type-tag {
+  display: inline-block; padding: 1px 10px 1px 8px; margin: 1px 0; background: var(--t, var(--grey)); color: var(--t-ink, #fff);
+  font-size: 12px; font-weight: 900; font-style: italic; letter-spacing: .06em; text-transform: uppercase; line-height: 18px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+}
+.stat-inputs--types { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.popup--weak { color: var(--sun-yellow); -webkit-text-stroke: 1px var(--ink); font-size: 16px; line-height: 20px; margin-top: -36px; letter-spacing: .02em; }
+.popup--resist { color: var(--paper); font-size: 12px; line-height: 16px; margin-top: -32px; letter-spacing: .04em; opacity: .85; }
+.type-chart { border-collapse: collapse; font-size: 13px; }
+.type-chart th, .type-chart td { border: 1px solid var(--light-grey); padding: 0; text-align: center; min-width: 30px; height: 30px; }
+.type-chart thead th { vertical-align: bottom; padding: 4px 0; }
+.type-chart thead .type-tag { writing-mode: vertical-rl; clip-path: none; padding: 8px 1px; }
+.type-chart tbody th { text-align: left; padding-right: 6px; border: 0; }
+.type-chart .is-x2 { background: #7fce6b; font-weight: 900; } .type-chart .is-half { background: #f4a78f; }
+.type-chart .is-zero { background: var(--ink); color: var(--paper); font-weight: 900; }
+.type-chart-wrap { overflow-x: auto; }
+
+/* ---------------------------------------------------------------------------
+ * Local co-op (LocalCoop): the shared screen is the show, phones are
+ * controllers.
+ * ------------------------------------------------------------------------- */
+
+/* The screen: edge to edge, no menus, big enough to read across a room. */
+body[data-view="screen"] .topbar__books, body[data-view="screen"] .topbar__account { display: none; }
+body[data-view="screen"] .page { max-width: none; padding-left: 32px; padding-right: 32px; }
+.table--screen .table__stage { grid-column: span 8; }
+.table--screen .table__side { grid-column: span 4; }
+.table--screen .dialogue__body { font-size: 24px; line-height: 34px; }
+.battle--screen .battle__lower > :only-child, .battle--screen .dialogue--battle { grid-column: 1 / -1; }
+.battle--screen .dialogue--battle .dialogue__body { font-size: 24px; line-height: 34px; }
+.coop-join { text-align: center; }
+.coop-join__qr svg { display: block; width: min(220px, 100%); height: auto; margin: 0 auto 8px; padding: 10px; background: #fff; border: 3px solid var(--ink); }
+.coop-join__url { font-size: 14px; word-break: break-all; }
+.coop-join__code strong { font: var(--display); font-size: 32px; letter-spacing: .12em; }
+.coop-party__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.coop-party__list li { display: flex; gap: 10px; align-items: center; }
+.coop-party__list li > div { flex: 1; min-width: 0; }
+.coop-party__list li.is-ko { opacity: .55; }
+.coop-leave { margin-top: 24px; opacity: .6; }
+
+/* The controller: one column, big targets, no show. */
+body[data-view="controller"] .topbar__books { display: none; }
+body[data-view="controller"] .page { padding-top: 16px; }
+.table--controller .table__stage, .table--controller .table__side { grid-column: 1 / -1; }
+.table--controller .battle__header h1 { font-size: 36px; line-height: 40px; }
+.table--controller .choice__pick { width: 100%; min-height: 56px; font-size: 22px; }
+.table--controller .choice__pick-form { flex: 1 1 100%; }
+/* The board still plays, off screen, so commands wait for each beat as on the screen. */
+.battle--controller .stage { position: absolute; left: -10000px; top: 0; width: 960px; }
+.battle--controller .battle__controls { display: none; }
+.battle--controller .battle__lower { margin-top: 12px; }
+.battle--controller .battle__lower > :first-child { grid-column: 1 / -1; }
+.battle--controller .menu__item { min-height: 52px; font-size: 20px; }
+.coop-links { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 16px; }
+.vitals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin: 4px 0 0; }
+.vitals .bar { flex: 1 1 100%; order: 3; }
+.vitals .label { font-size: 12px; font-weight: 800; color: var(--grey); }
+.vitals .label + strong ~ .label { margin-left: 10px; }
+.coop-setup__steps { padding-left: 20px; display: grid; gap: 10px; }
+
+/* A player on auto: the toggle under their commands lights up. */
+.auto-toggle-form { margin: 12px 0 0; }
+.auto-toggle { font-size: 14px; }
+.auto-toggle.is-on { padding: 4px calc(12px + var(--slant)) 4px 10px; background: var(--sun-yellow); color: var(--ink); text-decoration: none; font-weight: 800;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
+
+/* The game's words, explained (GlossaryHelper): dotted, and a black card on hover or tap. */
+.gloss { position: relative; cursor: help; text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.gloss:hover::after, .gloss:focus::after, .gloss:focus-visible::after {
+  content: attr(data-gloss); position: absolute; left: 0; top: 100%; z-index: 70; width: max-content; max-width: min(280px, 80vw);
+  margin-top: 6px; padding: 8px 10px; background: var(--ink); color: var(--paper); box-shadow: 4px 4px 0 var(--accent);
+  font: normal 400 13px/18px var(--font); letter-spacing: 0; text-transform: none; white-space: normal; text-align: left;
+}
+.gloss:focus { outline: none; }
+.how-to-play h2 { margin-top: 32px; }
+.how-to-play dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
+.how-to-play dl.glossary dt { font-weight: 900; font-style: italic; }
+.how-to-play dl.glossary dd { margin: 0; }
+
+/* The timing meter: a needle sweeping a bar; the mark near the end. */
+.timing-meter {
+  position: fixed; left: 50%; bottom: 12vh; z-index: 95; translate: -50% 0; width: min(520px, calc(100vw - 32px));
+  padding: 14px 18px 12px; background: var(--ink); color: var(--paper); box-shadow: 8px 8px 0 var(--accent);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); touch-action: none; user-select: none; cursor: pointer;
+}
+.timing-meter p { margin: 0; }
+.timing-meter__prompt { font-style: italic; font-weight: 900; font-size: 18px; margin-bottom: 8px !important; }
+.timing-meter__bar { position: relative; height: 28px; background: repeating-linear-gradient(90deg, #333 0 12px, #2a2a2a 12px 24px); border: 2px solid var(--paper); }
+.timing-meter__zone { position: absolute; top: 0; bottom: 0; background: var(--sun-yellow); }
+.timing-meter__needle { position: absolute; top: -8px; bottom: -8px; width: 6px; margin-left: -3px; background: var(--bright-red); box-shadow: 0 0 0 2px var(--paper); }
+.timing-meter__result { min-height: 30px; margin-top: 8px !important; font: var(--display); font-size: 26px; }
+.timing-meter.is-perfect { box-shadow: 8px 8px 0 var(--sun-yellow), 16px 16px 0 var(--bright-red); }
+.timing-meter.is-perfect .timing-meter__result { color: var(--sun-yellow); }
+.popup--perfect { color: var(--sun-yellow); -webkit-text-stroke: 1px var(--ink); font-size: 18px; line-height: 22px; margin-top: -48px; }
+
+/* The dice: a d100 that decided something, beside the unit it decided for. */
+.popup--die {
+  min-width: 34px; padding: 3px 6px; margin-left: 30px; margin-top: -8px; text-align: center;
+  font: var(--display); font-size: 18px; line-height: 22px; letter-spacing: 0; color: var(--paper);
+  background: var(--ink); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+.popup--die.is-in { background: var(--forest-green); }
+.popup--die.is-out { background: var(--wine-red); }
+
+/* Trying something: the player's idea as a caption in their words, the GM's ruling form. */
+.caption--custom { background: var(--sun-yellow); color: var(--ink); font-style: italic; }
+.caption--narration { background: var(--paper); color: var(--ink); border: 3px solid var(--ink); font-weight: 700; }
+.rulings { border-top: 4px solid var(--signal); padding-top: 8px; }
+.ruling { padding: 10px 0 14px; border-bottom: 1px solid var(--light-grey); }
+.ruling__idea { font-size: 18px; margin: 0 0 8px; }
+.try-form textarea { font-size: 18px; }
+
+/* The end of a fight: a card for each new ability, and for a job mastered. */
+.reward-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+.reward-card { padding: 12px 14px 14px; background: var(--paper); border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--sun-yellow); animation: slash-in .35s var(--snap) both; }
+.reward-card:nth-child(2) { animation-delay: .1s; } .reward-card:nth-child(3) { animation-delay: .2s; } .reward-card:nth-child(4) { animation-delay: .3s; }
+.reward-card__kind { margin: 0; display: inline-block; padding: 1px calc(10px + var(--slant)) 1px 8px; background: var(--ink); color: var(--sun-yellow);
+  font-size: 12px; font-weight: 900; font-style: italic; letter-spacing: .08em; text-transform: uppercase; clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
+.reward-card h3 { margin: 6px 0 0; font: var(--display); font-size: 26px; }
+.reward-card__who { margin: 0; color: var(--grey); font-weight: 700; }
+.reward-card__detail { margin: 6px 0 0; font-size: 14px; line-height: 20px; }
+.reward-card--mastered { box-shadow: 6px 6px 0 var(--bright-red), 12px 12px 0 var(--ink); }
+.signature-line { margin: 4px 0; }
+.mastered-star { color: var(--orange); font-weight: 900; }
+
+/* Taking a line back: quiet, and only on hover or focus once shown. */
+.chat-line__retract-form { display: inline; margin: 0; }
+.chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }
+.chat-line:hover .chat-line__retract, .chat-line__retract:focus-visible { opacity: 1; }
+@media (hover: none) { .chat-line__retract { opacity: 1; } }
+
 /* ---------------------------------------------------------------------------
  * Everything that moves holds still for people who asked for stillness.
  * ------------------------------------------------------------------------- */
@@ -583,6 +791,25 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 @media (prefers-reduced-motion: reduce) {
   .page, .play .menu__item, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
   .unit.is-targeted .sprite::after, .roster__row [data-hp], .command-panel__vitals .is-low, .countdown.is-urgent,
-  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open] { animation: none !important; }
+  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open], .choice:not([hidden]), .reward-card { animation: none !important; }
   * { transition-duration: 0s !important; }
 }
+
+/* Mastery: a thin bar per ability; black once it's mastered (DESIGN.md: mastery is red and black). */
+.mastery-bar { display: inline-block; width: 96px; height: 6px; vertical-align: middle; margin-right: 8px; }
+.bar .bar__fill--mastered { background: var(--ink); }
+
+/* The types editor: a row per type, and the chart as a grid of small selects. */
+.type-editor .checks--tight { display: flex; flex-wrap: wrap; gap: 2px 8px; font-size: 12px; }
+.type-editor__uses { font-size: 12px; max-width: 220px; }
+.type-chart--edit select { width: 100%; min-width: 44px; border: 0; background: transparent; font-weight: 900; text-align: center; padding: 0; }
+
+/* Field abilities (FieldUse): the player's move outside battle, and the GM's list of requests. */
+.field-ability h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; }
+.field-ability .button_to { margin: 8px 0 0; }
+.field-requests .field-request { border-top: 1px solid var(--light-grey); padding: 8px 0; }
+.field-requests .field-request p { margin: 0 0 6px; }
+.field-requests .field-request__actions { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.field-requests .inline-form { display: flex; gap: 8px; align-items: center; margin: 0; }
+.field-requests .inline-form select { width: auto; }
+.field-requests .inline-form input[type=text] { width: 220px; }

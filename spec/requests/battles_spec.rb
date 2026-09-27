@@ -30,6 +30,86 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include(Turbo::StreamsChannel.signed_stream_name([ battle.campaign, :table ]))
   end
 
+  it "lets the seated speak from the battle, and takes back lines there too" do
+    post campaign_table_seat_path(battle.campaign), params: { seat: "gm" }
+    get battle_path(battle)
+    expect(response.body).to include("battle-composer", campaign_composer_path(battle.campaign), 'data-retract="all"')
+  end
+
+  it "tells the GM how a fight is likely to go, as they set it up" do
+    campaign = create_campaign
+    create_character(campaign, name: "Bartz")
+    get new_campaign_battle_path(campaign)
+    expect(response.body).to include('data-controller="forecast"', 'id="forecast"')
+
+    get campaign_forecast_path(campaign), params: { battle: { encounter: { "0" => { monster: "goblin", count: "1" } } } }
+    expect(response.body).to match(/forecast--(easy|fair|hard|deadly)/)
+    expect(response.body).to include("Played out 20 times")
+
+    get campaign_forecast_path(campaign), params: { battle: { encounter: { "0" => { monster: "", count: "1" } } } }
+    expect(response.body).to include("Pick who fights")
+  end
+
+  it "lets a player put themselves on auto, and only themselves" do
+    sit(bartz)
+    battle.set_auto!(bartz, false) # unclaimed characters start on auto
+    get battle_panel_path(battle)
+    expect(response.body).to include("Go on auto")
+    patch battle_auto_path(battle), params: { unit: faris, on: "1" }
+    expect(response).to have_http_status(:forbidden)
+    patch battle_auto_path(battle), params: { unit: bartz, on: "1" }
+    expect(battle.reload.auto?(bartz)).to be(true)
+    get battle_panel_path(battle)
+    expect(response.body).to include("Auto is on")
+  end
+
+  it "takes a Perfect from the timing meter with a player's move" do
+    sit(bartz)
+    get battle_panel_path(battle)
+    expect(response.body).to include("timing-meter", "Timing meter")
+    command!(kind: "ability", ability: "attack", target: "goblin_a", timing: "perfect")
+    expect(battle.reload.state["inputs"][bartz]).to include("timing" => "perfect")
+  end
+
+  it "lets a player try something off the menu, which the GM rules on and the dice decide" do
+    sit(bartz)
+    get battle_panel_path(battle)
+    expect(response.body).to include("Try something")
+    get battle_panel_path(battle, custom: 1)
+    expect(response.body).to include("What do you try?")
+    command!(kind: "custom", text: "Kick the brazier onto them", target: "goblin_a")
+    expect(battle.reload.state["inputs"][bartz]).to include("kind" => "custom", "text" => "Kick the brazier onto them")
+
+    sit("gm")
+    get battle_panel_path(battle)
+    expect(response.body).to include("Ideas to rule on", "Kick the brazier onto them")
+    battle.set_auto!(faris, true)
+    gm!(op: "rule", unit: bartz, stat: "agi", difficulty: "easy", effect: "damage", strength: "heavy", type: "fire", aim: "all_enemies",
+        success: "Coals everywhere!", failure: "It won't budge.")
+    events = battle.reload.battle_events.map(&:payload)
+    expect(events.map { |e| e["type"] }).to include("custom_action", "custom_roll")
+    get battle_path(battle)
+    expect(response.body).to include("tries: “Kick the brazier onto them”", "GM rules on Bartz&#39;s idea: Agi, easy.")
+  end
+
+  it "lets the GM rule an idea as a skill check, with the character's job bonus" do
+    battle.world.jobs.find_by!(slug: "knight").update!(skills: %w[athletics])
+    sit(bartz)
+    command!(kind: "custom", text: "Vault the barricade")
+    sit("gm")
+    get battle_panel_path(battle)
+    expect(response.body).to include('value="skill:athletics"')
+    gm!(op: "rule", unit: bartz, stat: "skill:athletics", difficulty: "normal", effect: "none", success: "Over!", failure: "Not quite.")
+    expect(battle.reload.state["inputs"][bartz]["ruling"]).to include("stat" => "str", "skill" => "Athletics", "bonus" => 15)
+  end
+
+  it "starts a battle on the terrain it's given, for the Geomancer's arts" do
+    campaign = battle.campaign
+    post campaign_battles_path(campaign), params: { battle: { name: "Wood", terrain: "grass", characters: [ campaign.characters.first.id ],
+                                                             encounter: { "0" => { monster: "goblin", count: "1" } } } }
+    expect(campaign.battles.order(:id).last.state["terrain"]).to eq("grass")
+  end
+
   describe "setting up" do
     let!(:world) { Seeds::BaseWorld.run }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
@@ -154,7 +234,7 @@ RSpec.describe "Battle screen", type: :request do
       battle.update!(state: state)
 
       get battle_panel_path(battle)
-      expect(response.body).to include(%(data-controller="menu"), %(data-menu-you-value="#{bartz}"), "Single enemy · Physical")
+      expect(response.body).to include(%(data-controller="menu timing-meter"), %(data-menu-you-value="#{bartz}"), "Single enemy · Physical")
       expect(response.body).to match(/aria-disabled="true" data-help="Not enough MP[^"]*"[^>]*>Cure/)
 
       get battle_panel_path(battle, ability: "attack")
@@ -194,6 +274,25 @@ RSpec.describe "Battle screen", type: :request do
   end
 
   describe "the GM" do
+    it "brings in reinforcements and a guest from the Bestiary, and sends an enemy off" do
+      post battle_seat_path(battle), params: { seat: "gm" }
+      gm!(op: "add_unit", side: "enemy", monster: "goblin", note: "More!")
+      expect(battle.reload.enemies.map { |u| u["id"] }).to include("goblin_c")
+
+      gm!(op: "add_unit", side: "party", monster: "goblin", name: "Cid")
+      cid = battle.reload.unit("cid")
+      expect(cid).to include("guest" => true, "name" => "Cid", "rewards" => {}, "drops" => [])
+      expect(battle.party.map { |u| u["id"] }).not_to include("cid")
+
+      get battle_path(battle)
+      expect(response.body).to include("roster__guest", "Cid")
+
+      gm!(op: "dismiss", unit: "goblin_c")
+      expect(battle.reload.unit("goblin_c")["gone"]).to be(true)
+      get battle_path(battle)
+      expect(response.body).not_to include('data-unit="goblin_c"')
+      expect(response.body).to include("Goblin C leaves the field.", "GM sends Goblin C off.")
+    end
     before { sit("gm") }
 
     it "sees every unit's HP and who the round is waiting on" do

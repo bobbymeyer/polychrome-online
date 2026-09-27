@@ -19,7 +19,8 @@ module Stats
   # with buffs before the combined modifier is clamped.
   STATUS_MODIFIERS = {
     "haste" => { "agi" => 50 },
-    "slow" => { "agi" => -50 }
+    "slow" => { "agi" => -50 },
+    "berserk" => { "str" => 50 }
   }.freeze
 
   MODIFIER_FLOOR = -90

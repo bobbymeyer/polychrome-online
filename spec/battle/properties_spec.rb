@@ -18,7 +18,9 @@ RSpec.describe "Battle resolver properties" do
     seen = all_events.map { |e| e["type"] }.uniq
     expect(seen).to include(*%w[attack cast damage miss crit heal status_applied status_expired ko revive
                                   turn_start turn_end flee victory defeat gm_override buff_applied
-                                  buff_expired turn_skipped timeout desperation])
+                                  buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll
+                                  jump land away back covered counter second_wind mp_restored
+                                  shielded confused mp_lost hp_paid charging])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end
@@ -40,6 +42,85 @@ RSpec.describe "Battle resolver properties" do
         expect(announced["mp_cost"]).to eq(0) if announced&.key?("mp_cost")
         expect(before["inputs"].dig(event["actor"], "ability") || "attack").to eq("attack")
       end
+    end
+  end
+
+  it "keeps units that left out of play, guests off the input list, and new arrivals uniquely named" do
+    each_step do |_, before, _, after, events|
+      gone = before["units"].select { |u| u["gone"] }.map { |u| u["id"] }
+      events.each do |e|
+        expect(gone).not_to include(e["actor"], e["target"], e["unit"]) unless e["type"] == "gm_override"
+      end
+      expect(Battle::State.awaiting_input(after) & after["units"].select { |u| u["guest"] || u["gone"] }.map { |u| u["id"] }).to be_empty
+      expect(after["units"].map { |u| u["id"] }).to eq(after["units"].map { |u| u["id"] }.uniq)
+      expect(gone - after["units"].select { |u| u["gone"] }.map { |u| u["id"] }).to be_empty
+    end
+  end
+
+  it "never pays out for an enemy that left" do
+    each_step do |_, _, _, after, events|
+      victory = events.find { |e| e["type"] == "victory" }
+      next unless victory
+
+      earned = after["units"].select { |u| u["side"] == "enemy" && !u["gone"] }.sum { |u| u.dig("rewards", "exp").to_i }
+      expect(victory.dig("rewards", "exp").to_i).to eq(earned)
+    end
+  end
+
+  it "shows honest dice: every roll is 1–100, and came in exactly when it's at or under what was needed" do
+    seen = 0
+    each_step do |_, _, _, _, events|
+      events.select { |e| e.key?("roll") }.each do |e|
+        seen += 1
+        expect(e["roll"]).to be_between(1, 100)
+        came_in = e["roll"] <= e["needed"]
+        case e["type"]
+        when "crit", "steal", "status_applied" then expect(came_in).to be(true)
+        when "miss" then expect(came_in).to be(false)
+        when "flee", "custom_roll" then expect(came_in).to eq(e["success"])
+        when "counter" then expect(came_in).to be(true)
+        end
+      end
+    end
+    expect(seen).to be_positive
+  end
+
+  it "never runs a round past an idea the GM hasn't ruled on, unless the timer or the GM forces it" do
+    each_step do |_, before, action, _, events|
+      next unless of_type(events, :round_start).any?
+      next if %w[timeout].include?(action["type"]) || action["op"] == "execute_round"
+
+      pending = before["inputs"].select { |_, c| c["kind"] == "custom" && !c["ruling"] }.keys
+      pending -= [ action["unit"] ] if action["op"] == "rule"
+      expect(pending).to be_empty
+    end
+  end
+
+  it "keeps a unit that's away out of reach and out of the input, until it comes back" do
+    gone = ->(u) { u["statuses"].any? { |s| Battle::OUT_OF_REACH_STATUSES.include?(s["kind"]) } }
+    each_step do |_, before, _, after, events|
+      away = before["units"].select(&gone).map { |u| u["id"] }
+      side = (before["units"] + after["units"]).to_h { |u| [ u["id"], u["side"] ] }
+      events.each do |e|
+        case e["type"]
+        when "jump" then away << e["actor"]
+        when "away" then away << e["unit"]
+        when "land" then away.delete(e["actor"])
+        when "back" then away.delete(e["unit"])
+        when "ko" then away.delete(e["target"])
+        when "damage", "miss"
+          # Out of the enemy's reach (an ally can still hand them a potion).
+          expect(away).not_to include(e["target"]) if e["actor"] && side[e["actor"]] != side[e["target"]] && e["reason"] != "no_target"
+        end
+      end
+      expect(Battle::State.awaiting_input(after) & after["units"].select(&gone).map { |u| u["id"] }).to be_empty
+    end
+  end
+
+  it "lets a Second Wind happen once a battle" do
+    tables.each do |table|
+      winds = table.steps.flat_map { |_, _, _, events| events.select { |e| e["type"] == "second_wind" }.map { |e| e["target"] } }
+      expect(winds).to eq(winds.uniq)
     end
   end
 
@@ -77,7 +158,7 @@ RSpec.describe "Battle resolver properties" do
       events.each do |e|
         case e["type"]
         when "ko" then down << e["target"]
-        when "revive" then down.delete(e["target"])
+        when "revive", "second_wind" then down.delete(e["target"])
         when "turn_start" then expect(down).not_to include(e["unit"])
         when "attack", "cast", "defend" then expect(down).not_to include(e["actor"])
         when "damage", "heal", "status_applied", "buff_applied" then expect(down).not_to include(e["target"])
@@ -144,6 +225,7 @@ RSpec.describe "Battle resolver properties" do
   it "never touches RNG while collecting input" do
     each_step do |_, before, _, after, events|
       next if of_type(events, :round_start).any?
+      next if of_type(events, :victory).any? # a GM ending the fight still rolls the drops
 
       expect(after["rng"]).to eq(before["rng"])
     end

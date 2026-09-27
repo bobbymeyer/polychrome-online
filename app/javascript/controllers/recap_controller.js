@@ -12,7 +12,8 @@ export default class extends Controller {
 
   connect() {
     const last = this.lastSeen
-    if (this.hasDialogTarget && (last === null || Date.now() - last > BREAK_MS)) {
+    const controller = document.body.dataset.view === "controller" // the shared screen shows it
+    if (this.hasDialogTarget && !controller && (last === null || Date.now() - last > BREAK_MS)) {
       // After the dialogue box has had its moment.
       this.timer = setTimeout(() => this.open(), 400)
     }

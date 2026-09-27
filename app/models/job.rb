@@ -13,13 +13,34 @@ class Job < ApplicationRecord
   accepts_nested_attributes_for :job_levels, allow_destroy: true,
                                              reject_if: ->(attrs) { attrs["id"].blank? && attrs["ability_id"].blank? }
 
+  # Points added to a check with a skill the job is good at (Stats::Check).
+  SKILL_BONUS = 15
+
   validates :ability_slots, numericality: { only_integer: true, in: 0..4 }
+  validate :skills_are_the_worlds
   validate :multipliers_are_percentages
   validate :equip_categories_exist
   validate :innates_are_passives
   validate :desperation_is_an_attack
+  validate :signature_is_an_ability
+  validate :field_ability_is_a_field_ability
+  validates :passive, inclusion: { in: Battle::PASSIVES }, allow_nil: true
+  # A character in the job has its type: hit as the chart says, and hitting
+  # with it through Attack and the job's own command.
+  before_validation :default_to_plain_type, on: :create
+  validates :base_type, inclusion: { in: ->(job) { job.world_types }, message: "isn't one of this world's types" }
 
-  normalizes :desperation, with: ->(slug) { slug.presence }
+  normalizes :desperation, :signature, :passive, :field_ability, with: ->(slug) { slug.presence }
+
+  # The job's move outside battle (FieldUse): a Grimoire entry of kind field.
+  def field_ability_entry
+    field_ability && world.abilities.field.find_by(slug: field_ability)
+  end
+
+  # The job's own command: always on the menu while in the job, learned or not.
+  def signature_ability
+    signature && world.abilities.find_by(slug: signature)
+  end
 
   # The move an attack can become at the end of a character's rope, once a
   # battle (Battle::Resolver#desperate). Any offensive Grimoire entry.
@@ -30,6 +51,15 @@ class Job < ApplicationRecord
   # Percent per stat (120 = x1.2). Blank or 100 means unmodified.
   def stat_multipliers=(values)
     super((values || {}).to_h.stringify_keys.transform_values { |v| JsonCasting.integer(v) }.compact.reject { |_, v| v == 100 })
+  end
+
+  # Slugs of the world's skills (World#skills) the job is good at.
+  def skills=(values)
+    super(Array(values).map(&:to_s).compact_blank.uniq)
+  end
+
+  def skill_names
+    skills.map { |slug| world.skill_name(slug) }
   end
 
   def equip_categories=(values)
@@ -59,8 +89,10 @@ class Job < ApplicationRecord
     innates
   end
 
-  def total_abp
-    job_levels.sum(&:abp)
+  # What a job's type gives a character in it, in battle (Battle::State):
+  # a job of the world's plain type (the first) keeps a plain Attack.
+  def battle_type
+    { "types" => [ base_type ], "attack_type" => (base_type unless base_type == world.type_chart.plain), "immune_as_resist" => true }.compact
   end
 
   private
@@ -72,9 +104,22 @@ class Job < ApplicationRecord
     errors.add(:stat_multipliers, "must be whole percents from 0 to 500 (#{bad.keys.join(', ')})") if bad.any?
   end
 
+  def skills_are_the_worlds
+    unknown = skills - Array(world&.skills).map { |s| s["slug"] }
+    errors.add(:skills, "aren't this world's: #{unknown.join(', ')}") if unknown.any?
+  end
+
   def equip_categories_exist
     unknown = equip_categories - Item::EQUIPMENT_CATEGORIES
     errors.add(:equip_categories, "has unknown categories: #{unknown.join(', ')}") if unknown.any?
+  end
+
+  def field_ability_is_a_field_ability
+    errors.add(:field_ability, "must be a field ability in the Grimoire") if field_ability && !world&.abilities&.field&.exists?(slug: field_ability)
+  end
+
+  def signature_is_an_ability
+    errors.add(:signature, "must be an ability in the Grimoire") if signature && !world&.abilities&.exists?(slug: signature)
   end
 
   def desperation_is_an_attack

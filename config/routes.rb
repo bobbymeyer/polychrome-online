@@ -8,6 +8,11 @@ Rails.application.routes.draw do
 
   root "worlds#index"
 
+  get "types", to: redirect("/worlds/base/types") # the base world's chart, where it used to live
+  get "how-to-play", to: "guides#show", as: :how_to_play
+  # Local co-op: the QR code on the shared screen leads here.
+  get "join/:code", to: "joins#show", as: :join
+  post "join/:code", to: "joins#create"
   resources :worlds, param: :slug, except: :destroy do
     # Each book is a resource namespace inside its world (docs/HANDOFF.md §7).
     namespace :bestiary do
@@ -18,6 +23,7 @@ Rails.application.routes.draw do
     end
     namespace :grimoire do
       resources :abilities, param: :slug
+      resources :families, only: %i[new create]
     end
     namespace :armory do
       resources :items, param: :slug
@@ -31,6 +37,10 @@ Rails.application.routes.draw do
     namespace :generation do
       resources :generator_tables, param: :slug, path: "tables"
     end
+
+    # The setting's damage types and chart, and the skills its checks use.
+    resource :types, only: %i[show edit update], controller: "world_types"
+    resource :skills, only: %i[show edit update], controller: "world_skills"
 
     # The asset pipeline (§8): the world's art direction, and generating
     # candidates for an entry's image with ComfyUI.
@@ -62,6 +72,10 @@ Rails.application.routes.draw do
 
     resource :table, only: :show
     resource :music, only: :update, controller: "music"
+    resources :checks, only: :create
+    resources :field_uses, only: %i[create update]
+    resource :join_code, only: :create
+    resource :forecast, only: :show
     resource :table_seat, only: %i[create destroy]
     resource :composer, only: :show
     resources :messages, only: :create
@@ -97,6 +111,7 @@ Rails.application.routes.draw do
       post :revert
     end
     # A town's shop: buy from its stock, sell from the bag.
+    resources :services, only: :create
     resource :shop, only: [] do
       post :buy
       post :sell
@@ -106,6 +121,13 @@ Rails.application.routes.draw do
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"
 
   resources :npcs, only: %i[edit update destroy]
+  resources :messages, only: :destroy
+  resources :choices, only: [] do
+    member do
+      post :pick
+      post :settle
+    end
+  end
   resources :scenes, only: %i[edit update destroy] do
     post :play, on: :member
   end

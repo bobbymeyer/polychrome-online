@@ -110,7 +110,7 @@ export default class extends Controller {
     if (!beat) {
       this.current = null
       this.skipTarget.hidden = true
-      this.panelTarget.classList.remove("is-resolving")
+      if (this.hasPanelTarget) this.panelTarget.classList.remove("is-resolving")
       return
     }
 
@@ -132,7 +132,7 @@ export default class extends Controller {
     this.current = { beat, timeline }
     const busy = events.some((e) => e.type !== "command_accepted")
     this.skipTarget.hidden = !busy
-    if (busy) this.panelTarget.classList.add("is-resolving")
+    if (busy && this.hasPanelTarget) this.panelTarget.classList.add("is-resolving")
     timeline.speed = this.speed
     timeline.play()
   }
@@ -162,9 +162,79 @@ export default class extends Controller {
       case "command_accepted":
         tl.call(() => this.setReady(e.actor, true), at)
         return 0
+      case "jump":
+        // Up and out of the frame, and out of reach, until its next turn.
+        tl.add(this.sprite(e.actor), { translateY: [0, -220], opacity: [1, 0], duration: 420, ease: "inQuad" }, at)
+        return 500
+      case "away":
+        // Off the field (hiding, banished, knocked back) until it comes back.
+        tl.add(this.sprite(e.unit), { opacity: [1, 0], scale: [1, 0.8], duration: 360, ease: "inQuad" }, at)
+        this.popup(tl, e.unit, e.unit === e.actor ? "HIDDEN" : "SENT AWAY", "status", at)
+        return 420
+      case "shielded":
+        this.popup(tl, e.target, e.left > 0 ? `BARRIER −${e.absorbed}` : "BARRIER BROKEN", "status", at)
+        return 260
+      case "confused":
+        if (e.target) this.popup(tl, e.actor, "CONFUSED", "status", at)
+        return 220
+      case "hp_paid":
+        this.popup(tl, e.actor, `−${e.amount} HP`, "status", at)
+        return 240
+      case "charging":
+        this.popup(tl, e.actor, "CHARGING", "status", at)
+        gesture(tl, this.sprite(e.actor), "shake", at)
+        return 360
+      case "mp_lost":
+        this.popup(tl, e.target, `−${e.amount} MP`, "status", at)
+        return 260
+      case "back":
+        tl.add(this.sprite(e.unit), { opacity: [0, 1], scale: [0.8, 1], duration: 300, ease: "outQuad" }, at)
+        return 340
+      case "land":
+        tl.add(this.sprite(e.actor), { translateY: [-220, 0], opacity: [0, 1], duration: 260, ease: "inExpo" }, at)
+        if (e.target) gesture(tl, this.stageTarget, "shake", at + 240)
+        return 320
+      case "covered":
+        this.popup(tl, e.unit, "COVER!", "status", at)
+        gesture(tl, this.sprite(e.unit), "lunge", at, this.facing(e.unit))
+        return 380
+      case "counter":
+        this.die(tl, e.actor, e, at)
+        this.popup(tl, e.actor, "COUNTER!", "crit", at)
+        return 300
+      case "second_wind":
+        tl.call(() => { this.setKo(e.target, false); this.setHp(e.target, e.hp) }, at)
+        this.popup(tl, e.target, "SECOND WIND!", "perfect", at)
+        gesture(tl, this.sprite(e.target), "bounce", at)
+        return 700
+      case "mp_restored":
+        tl.call(() => this.addMp(e.target, e.amount), at)
+        this.popup(tl, e.target, `+${e.amount} MP`, "status", at)
+        return 250
+      case "custom_action":
+        // A player's own idea, in their words.
+        this.caption(tl, `“${e.text}”`, at, "custom")
+        return Math.max(gesture(tl, this.sprite(e.actor), "bounce", at), 700)
+      case "custom_roll":
+        this.die(tl, e.actor, e, at)
+        this.banner(tl, e.success ? "It works!" : "No luck", at + 150, "gm")
+        if (e.line) this.caption(tl, e.line, at + 500, "narration")
+        return e.line ? 1400 : 900
+      case "custom_unruled":
+        this.caption(tl, "No ruling: attacks instead", at)
+        return 500
       case "desperation":
         return this.cutIn(tl, e, at)
+      case "unit_joined":
+        // The board after the beat has them; here, the entrance.
+        this.banner(tl, e.guest ? `${e.name} joins the party!` : `${e.name} appears!`, at, "gm")
+        return 900
+      case "unit_left":
+        gesture(tl, this.sprite(e.unit), "fade", at)
+        this.banner(tl, `${e.name} leaves`, at, "gm")
+        return 900
       case "attack":
+        if (e.perfect) this.popup(tl, e.actor, "PERFECT!", "perfect", at)
         return gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
       case "item_used":
         this.caption(tl, e.name || e.item, at, "item")
@@ -172,6 +242,7 @@ export default class extends Controller {
       case "cast": {
         const ability = this.abilities[e.ability] || {}
         this.caption(tl, ability.name || e.ability, at, ability.kind)
+        if (e.perfect) this.popup(tl, e.actor, "PERFECT!", "perfect", at)
         if (e.mp_cost) tl.call(() => this.addMp(e.actor, -e.mp_cost), at)
         return Math.max(gesture(tl, this.sprite(e.actor), ability.gesture || "flash", at, this.facing(e.actor)), 450)
       }
@@ -179,6 +250,16 @@ export default class extends Controller {
         tl.call(() => this.setHp(e.target, e.hp), at)
         this.popup(tl, e.target, String(e.amount), e.status === "poison" ? "poison" : "damage", at)
         gesture(tl, this.sprite(e.target), e.status === "poison" ? "tint" : "shake", at)
+        // The type chart, said out loud.
+        if (e.effectiveness > 100) {
+          this.popup(tl, e.target, "SUPER EFFECTIVE!", "weak", at + 120)
+          gesture(tl, this.stageTarget, "flash", at + 120)
+          return 560
+        }
+        if (e.effectiveness < 100) {
+          this.popup(tl, e.target, "NOT VERY EFFECTIVE", "resist", at + 120)
+          return 520
+        }
         return 380
       case "heal":
         tl.call(() => this.setHp(e.target, e.hp), at)
@@ -186,13 +267,16 @@ export default class extends Controller {
         gesture(tl, this.sprite(e.target), "float", at)
         return 380
       case "crit":
+        this.die(tl, e.actor, e, at)
         this.popup(tl, e.target, "CRIT!", "crit", at)
         gesture(tl, this.stageTarget, "flash", at)
         return 260
       case "miss":
-        this.popup(tl, e.target || e.actor, { immune: "IMMUNE", nothing_to_cure: "NO EFFECT", nothing_to_steal: "NOTHING", steal_failed: "MISSED" }[e.reason] || "MISS", "miss", at)
+        this.die(tl, e.reason === "resisted" ? e.target : e.actor, e, at)
+        this.popup(tl, e.target || e.actor, { immune: e.damage_type ? "NO EFFECT" : "IMMUNE", nothing_to_cure: "NO EFFECT", nothing_to_steal: "NOTHING", steal_failed: "MISSED" }[e.reason] || "MISS", "miss", at)
         return 380
       case "status_applied":
+        this.die(tl, e.target, e, at)
         tl.call(() => this.setStatus(e.target, e.status, true), at)
         this.popup(tl, e.target, this.humanize(e.status), "status", at, `status-${e.status}`)
         gesture(tl, this.sprite(e.target), "tint", at)
@@ -216,6 +300,7 @@ export default class extends Controller {
         tl.call(() => { this.setKo(e.target, false); this.setHp(e.target, e.hp) }, at)
         return gesture(tl, this.sprite(e.target), "pop", at)
       case "steal":
+        this.die(tl, e.actor, e, at)
         this.popup(tl, e.target, `Stole ${e.name}!`, "status", at)
         gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
         return 600
@@ -232,6 +317,7 @@ export default class extends Controller {
         this.popup(tl, e.actor, e.reason === "silenced" ? "SILENCED" : "NO MP", "miss", at)
         return 420
       case "flee":
+        this.die(tl, e.actor, e, at)
         if (!e.success) {
           this.caption(tl, "Couldn't escape!", at)
           return 600
@@ -357,6 +443,14 @@ export default class extends Controller {
 
   // --- transient effects in the fx layer (text nodes created and removed) ---
 
+  // A d100 beside a unit, for the rolls that decide something: a crit, a
+  // miss, a status, a steal, a getaway. Green when it came in.
+  die(tl, id, e, at) {
+    if (!e.roll) return
+    const cameIn = e.roll <= e.needed
+    this.popup(tl, id, String(e.roll), "die", at, cameIn ? "is-in" : "is-out")
+  }
+
   popup(tl, id, text, kind, at, extra = "") {
     const anchor = this.sprite(id)
     if (!anchor) return
@@ -441,6 +535,7 @@ export default class extends Controller {
   // After submitting, the panel shows a placeholder until the beat plays.
   // If that beat already finished before the response landed, reload now.
   panelLoaded() {
+    if (!this.hasPanelTarget) return
     if (this.panelTarget.querySelector("[data-resolving]") && !this.current && !this.queue.length) {
       this.refreshPanel()
     }
@@ -450,6 +545,7 @@ export default class extends Controller {
   // only records someone else's command doesn't interrupt a player who is
   // mid-choice or typing.
   refreshPanel(events = []) {
+    if (!this.hasPanelTarget) return // the shared screen has no commands
     const panel = this.panelTarget
     panel.classList.remove("is-resolving")
     const onlyInputs = events.every((e) => e.type === "command_accepted")

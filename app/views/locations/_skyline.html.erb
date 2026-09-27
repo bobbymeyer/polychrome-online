@@ -8,6 +8,10 @@
   <rect class="skyline__ground" x="0" y="<%= ground %>" width="<%= width %>" height="30" />
   <% buildings.each_with_index do |b, i| %>
     <% top = ground - b["height"] %>
+    <%# A building with a service leads to its panel under Services. %>
+    <% offered = b["service"] && view.fetch("services", []).any? { |s| s["kind"] == b["service"] } %>
+    <% if offered %><g class="skyline__service" role="button" tabindex="0" aria-label="<%= b['service'].capitalize %>: open its panel"
+                       data-panel="service-<%= b['service'] %>" data-action="click->panels#go keydown.enter->panels#go keydown.space->panels#go"><% end %>
     <g class="skyline__building skyline__building--<%= b['service'] || 'plain' %> skyline__building--tone<%= i % 3 %>">
       <% case b["roof"] %>
       <% when "peak" %>
@@ -28,6 +32,7 @@
         <text class="skyline__sign" x="<%= b['x'] + b['width'] / 2 %>" y="<%= ground + 22 %>" text-anchor="middle"><%= b["service"].upcase %></text>
       <% end %>
     </g>
+    <% if offered %></g><% end %>
   <% end %>
   <line class="skyline__horizon" x1="0" y1="<%= ground %>" x2="<%= width %>" y2="<%= ground %>" />
 </svg>

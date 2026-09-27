@@ -1,0 +1,26 @@
+<% content_for :title, "#{@world.name}: skills" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Skills</div>
+<div class="book-header">
+  <h1>Skills</h1>
+  <div class="actions">
+    <% if can_edit_world? %><%= link_to "Edit skills", edit_world_skills_path(@world), class: "button" %><% end %>
+  </div>
+</div>
+<p class="prose">
+  What checks in <%= @world.name %> are made with. Each skill rides on a stat, and a job that's good at it adds
+  +<%= Job::SKILL_BONUS %> to the chance.
+</p>
+<table class="book-table">
+  <thead><tr><th>Skill</th><th>Stat</th><th>What it covers</th><th>Jobs good at it</th></tr></thead>
+  <tbody>
+    <% jobs = @world.jobs.alphabetical.to_a %>
+    <% Array(@world.skills).each do |skill| %>
+      <tr>
+        <td><strong><%= skill["name"] %></strong></td>
+        <td><%= stat_term(skill["stat"]) %></td>
+        <td><%= skill["description"].presence || "—" %></td>
+        <td><%= safe_join(jobs.select { |j| j.skills.include?(skill["slug"]) }.map { |j| link_to(j.name, world_compendium_job_path(@world, j)) }, ", ").presence || "—" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

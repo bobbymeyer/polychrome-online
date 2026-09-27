@@ -6,7 +6,9 @@ class Ability < ApplicationRecord
   include BookEntry
   include Artwork
 
-  KINDS = %w[skill magic].freeze
+  # field: a move outside battle (FieldUse), a skill check with an outcome;
+  # never in battle.
+  KINDS = %w[skill magic field].freeze
   # Motion gestures (§3.2): the view's hint for how the caster moves.
   GESTURES = %w[bounce shake flash fade spin lunge pop float tint slide].freeze
 
@@ -14,13 +16,28 @@ class Ability < ApplicationRecord
   has_many :jobs, -> { distinct }, through: :job_levels
 
   normalizes :gesture, with: ->(value) { value.presence }
+  # A field ability aims at no one in battle; the column wants something.
+  before_validation { self.target = "self" if field? && target.blank? }
 
   validates :kind, inclusion: { in: KINDS }
-  validates :target, inclusion: { in: Battle::TARGETINGS }
+  validates :target, inclusion: { in: Battle::TARGETINGS }, unless: :field?
+  validates :field_outcome, inclusion: { in: FieldUse::OUTCOMES.keys }, if: :field?
+  validates :field_difficulty, inclusion: { in: Stats::Check::DIFFICULTIES.keys }
+  validates :field_power, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validate :field_skill_is_the_worlds, if: :field?
   validates :mp_cost, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :hp_cost, numericality: { only_integer: true, in: 0..Battle::MAX_HP_COST }
+  validates :charge, numericality: { only_integer: true, in: 0..Battle::MAX_CHARGE }
   validates :gesture, inclusion: { in: GESTURES }, allow_blank: true
   validates :slug, exclusion: { in: %w[attack], message: "is reserved for the built-in Attack" }
   validate :engine_accepts_effects
+
+  def field?
+    kind == "field"
+  end
+
+  scope :in_battle, -> { where.not(kind: "field") }
+  scope :field, -> { where(kind: "field") }
 
   def effects=(rows)
     super(self.class.normalize_effects(rows))
@@ -51,9 +68,10 @@ class Ability < ApplicationRecord
       "name" => name,
       "kind" => kind,
       "target" => target,
-      "cost" => { "mp" => mp_cost.to_i },
+      "cost" => { "mp" => mp_cost.to_i, "hp" => (hp_cost if hp_cost.to_i.positive?) }.compact,
       "effects" => effects,
-      "gesture" => gesture.presence
+      "gesture" => gesture.presence,
+      "charge" => (charge if charge.to_i.positive?)
     }.compact
   end
 
@@ -65,8 +83,14 @@ class Ability < ApplicationRecord
 
   private
 
+  def field_skill_is_the_worlds
+    errors.add(:field_skill, "must be one of #{world&.name}'s skills") unless world&.skill(field_skill)
+  end
+
   def engine_accepts_effects
-    Battle::State.validate_ability!(to_engine.merge("id" => slug))
+    return if field?
+
+    Battle::State.validate_ability!(to_engine.merge("id" => slug), world_types)
   rescue ArgumentError => e
     errors.add(:effects, e.message.delete_prefix("#{slug}: "))
   end

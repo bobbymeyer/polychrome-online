@@ -36,10 +36,11 @@ class BattleRecord < ApplicationRecord
 
   # Start a battle for some of a campaign's characters.
   #   encounter: { "goblin" => 3, "wolf" => 1 }
-  def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false)
+  def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false, terrain: nil)
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
-    state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items)
+    state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items,
+                                  terrain: terrain.presence)
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
                      input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id),
                      boss: boss || campaign.world.monsters.where(slug: encounter.keys, boss: true).exists?)
@@ -99,8 +100,10 @@ class BattleRecord < ApplicationRecord
     units.find { |u| u["id"] == id }
   end
 
+  # The party's own: the characters. Guests fight beside them (Battle
+  # "add_unit") but take no seat and share no rewards.
   def party
-    units.select { |u| u["side"] == "party" }
+    units.select { |u| u["side"] == "party" && !u["guest"] }
   end
 
   def enemies

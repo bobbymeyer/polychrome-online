@@ -1,11 +1,11 @@
 <% state = @battle.state %>
 <% command = state["inputs"][unit["id"]] %>
-<div data-controller="menu" data-menu-primary-value="true" data-menu-autofocus-value="true" data-menu-you-value="<%= unit['id'] %>">
+<div data-controller="menu timing-meter" data-action="submit->timing-meter#intercept" data-menu-primary-value="true" data-menu-autofocus-value="true" data-menu-you-value="<%= unit['id'] %>">
 <div class="command-panel__head">
   <h2><%= unit["name"] %></h2>
   <span class="command-panel__vitals">
-    <span class="label">HP</span> <strong class="<%= 'is-low' if hp_band(unit) == 'danger' %>"><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
-    <span class="label">MP</span> <strong><%= unit["mp"] %></strong><span class="muted">/<%= unit["stats"]["max_mp"] %></span>
+    <span class="label"><%= gloss(:max_hp) %></span> <strong class="<%= 'is-low' if hp_band(unit) == 'danger' %>"><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
+    <span class="label"><%= gloss(:max_mp) %></span> <strong><%= unit["mp"] %></strong><span class="muted">/<%= unit["stats"]["max_mp"] %></span>
   </span>
   <%= render "panels/countdown" %>
 </div>
@@ -49,10 +49,33 @@
     <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
     <%= link_to "Back", battle_panel_path(@battle), class: "link-button", data: { menu_back: true } %>
   </div>
+<% elsif @trying %>
+  <%# "Try something": the player's idea, in words, for the GM to rule on. %>
+  <div data-choosing>
+    <%= form_with url: battle_actions_path(@battle), scope: :command, class: "book-form try-form" do |f| %>
+      <%= f.hidden_field :kind, value: "custom" %>
+      <div class="field">
+        <%= f.label :text, "What do you try?" %>
+        <%= f.text_area :text, rows: 3, maxlength: 200, required: true, placeholder: "Kick the brazier over onto the goblins" %>
+      </div>
+      <div class="field">
+        <%= f.label :target, "At" %>
+        <%= f.select :target, state["units"].select { |u| u["hp"].positive? && !u["gone"] }.map { |u| [ u["name"], u["id"] ] }, include_blank: "Nobody in particular" %>
+      </div>
+      <p class="hint">The GM decides what it takes and what happens if it works; you roll for it on your turn.</p>
+      <%= f.submit "Try it", class: "button play" %>
+    <% end %>
+    <%= link_to "Back", battle_panel_path(@battle), class: "link-button", data: { menu_back: true } %>
+  </div>
 <% elsif command && !params[:change] %>
   <p>
-    Ready: <strong><%= case command["kind"] when "ability" then ability_name(state, command["ability"]) when "item" then item_name(state, command["item"]) else command["kind"].humanize end %></strong>
-    <% if command["target"] %>→ <%= unit_name(state, command["target"]) %><% end %>.
+    <% if command["kind"] == "custom" %>
+      Ready to try: <strong>“<%= command["text"] %>”</strong>.
+      <%= command["ruling"] ? "The GM has ruled: #{stat_label(command['ruling']['stat'])}, #{command['ruling']['difficulty']}." : "Waiting for the GM to rule on it." %>
+    <% else %>
+      Ready: <strong><%= case command["kind"] when "ability" then ability_name(state, command["ability"]) when "item" then item_name(state, command["item"]) else command["kind"].humanize end %></strong>
+      <% if command["target"] %>→ <%= unit_name(state, command["target"]) %><% end %>.
+    <% end %>
     Waiting for <%= (@battle.awaiting_input.map { |id| unit_name(state, id) }.to_sentence.presence || "the round to run") %>.
   </p>
   <%= link_to "Change command", battle_panel_path(@battle, change: 1), class: "link-button", data: { menu_back: true } %>
@@ -77,6 +100,8 @@
         Item <span class="menu__cost">×<%= state["items"].values.sum { |i| Battle::State.items_left(state, i["id"], except: unit["id"]) } %></span>
       <% end %>
     <% end %>
+    <%= link_to "Try something", battle_panel_path(@battle, custom: 1), class: "menu__item",
+                data: { help: "Anything that isn't on the menu. Say what you do; the GM rules on it, and you roll.", menu_key: "Try" } %>
     <%= button_to "Defend", battle_actions_path(@battle), class: "menu__item", data: { help: "Halve the damage you take this round." },
                   params: { command: { kind: "defend" } } %>
     <% if state["escapable"] %>
@@ -86,5 +111,15 @@
   </div>
   <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
 <% end %>
-<p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick</p>
+<% if unit["hp"].positive? %>
+  <%# Talk, and let the fight run: your default command every round until you pick one yourself. %>
+  <% on = @battle.auto?(unit["id"]) %>
+  <%= button_to on ? "Auto is on: every round, your last command (or Attack)" : "Go on auto (chat, and let the fight run)",
+                battle_auto_path(@battle), method: :patch, params: { unit: unit["id"], on: on ? "0" : "1" },
+                class: [ "link-button", "auto-toggle", ("is-on" if on) ], form: { class: "auto-toggle-form" },
+                aria: { pressed: on }, title: "Picking a command yourself takes you off auto" %>
+<% end %>
+<p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick ·
+  <button type="button" class="link-button" data-timing-meter-target="toggle" data-action="timing-meter#toggle"
+          title="Stop the needle on the mark for a Perfect: the move lands a quarter harder">Timing meter</button></p>
 </div>

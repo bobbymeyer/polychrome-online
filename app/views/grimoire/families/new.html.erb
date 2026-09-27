@@ -1,0 +1,57 @@
+<% content_for :title, "New ability family" %>
+<div class="crumbs"><%= link_to "Grimoire", world_grimoire_abilities_path(@world) %> / New family</div>
+<h1>New ability family</h1>
+<p class="prose">
+  Name a root and a shape, and this writes four tiers: one foe, one foe harder, every foe, every foe harder.
+  Leave a tier's fields blank for the shape's numbers. Each one is an ordinary Grimoire entry afterwards.
+</p>
+<%= form_with model: @family, scope: :family, url: world_grimoire_families_path(@world), class: "book-form" do |f| %>
+  <% if @family.errors.any? %>
+    <div class="flash flash--alert" role="alert"><%= @family.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <div class="field-row">
+    <div class="field"><%= f.label :root, "Root name" %><%= f.text_field :root, placeholder: "Fire", required: true %></div>
+    <div class="field"><%= f.label :shape %><%= f.select :shape, AbilityFamily::SHAPE_LABELS.map { |k, label| [ label, k ] } %></div>
+    <div class="field">
+      <%= f.label :type %>
+      <%= f.select :type, type_options, include_blank: "None (strikers only)" %>
+      <p class="hint">For casters and strikers.</p>
+    </div>
+    <div class="field">
+      <%= f.label :status %>
+      <%= f.select :status, (Battle::HARMFUL_STATUSES - Battle::PRIMITIVE_STATUSES).map { |s| [ term(s), s ] }, include_blank: true %>
+      <p class="hint">For hexers.</p>
+    </div>
+    <div class="field">
+      <%= f.label :job_id, "Into a job's learn table" %>
+      <%= f.select :job_id, @world.jobs.alphabetical.map { |j| [ j.name, j.id ] }, include_blank: "No" %>
+    </div>
+  </div>
+  <fieldset class="panel">
+    <legend>Tiers</legend>
+    <p class="hint">
+      Names default to the root: Fire, Fira, Firaga, Firaja. Power is the move's power, or a hexer's chance to land.
+      Caster presets: <%= AbilityFamily::SHAPES["caster"][2].map { |t| "#{t.power} for #{t.mp} MP" }.join(", ") %>.
+    </p>
+    <table class="grid-form">
+      <thead><tr><th>Tier</th><th>Name</th><th>Aims at</th><th>Power</th><th>MP</th><th>Job level</th></tr></thead>
+      <tbody>
+        <% AbilityFamily::SHAPES["caster"][2].each_with_index do |tier, i| %>
+          <% posted = Array(@family.tiers)[i].to_h %>
+          <tr>
+            <td><%= i + 1 %></td>
+            <td><%= text_field_tag "family[tiers][#{i}][name]", posted["name"], placeholder: "From the root", "aria-label": "Tier #{i + 1} name" %></td>
+            <td class="muted"><%= tier.target.start_with?("all") ? "Everyone" : "One" %></td>
+            <td><%= number_field_tag "family[tiers][#{i}][power]", posted["power"], min: 1, placeholder: "preset", "aria-label": "Tier #{i + 1} power" %></td>
+            <td><%= number_field_tag "family[tiers][#{i}][mp]", posted["mp"], min: 0, placeholder: tier.mp, "aria-label": "Tier #{i + 1} MP" %></td>
+            <td><%= number_field_tag "family[tiers][#{i}][level]", posted["level"], min: 1, max: Stats::Growth::MAX_JOB_LEVEL, placeholder: tier.level, "aria-label": "Tier #{i + 1} job level" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+  <div class="actions">
+    <%= f.submit "Write the family", class: "button" %>
+    <%= link_to "Cancel", world_grimoire_abilities_path(@world), class: "button button--quiet" %>
+  </div>
+<% end %>

@@ -4,12 +4,15 @@ module Stats
   # Pure progression math: character level from EXP, base stats from level,
   # and job level from ABP. Integer-only, no I/O (docs/HANDOFF.md §12).
   #
-  # Job levels follow the learn table (§4 `job_levels`): each row's ABP is
-  # the cost of reaching that level from the one before, so a job is at
-  # level N once its total ABP covers the first N rows. Level 0 means
-  # nothing learned yet.
+  # Job levels run from 0 (nothing yet) to MAX_JOB_LEVEL on one curve for
+  # every job: quick at first, slow at the top. A job's learn table says at
+  # which job level each ability comes; the long climb after the last one
+  # is mastery (Stats::Mastery). At about 8 ABP a battle, the last ability
+  # of a base-world job comes after some 30 battles and job level 100
+  # after some 90.
   module Growth
     MAX_LEVEL = 99
+    MAX_JOB_LEVEL = 100
 
     module_function
 
@@ -37,15 +40,17 @@ module Stats
       }
     end
 
-    # costs: ABP per learn-table row, in level order.
-    def job_level(abp, costs)
-      total = 0
-      costs.take_while { |cost| (total += cost) <= abp }.size
+    # Total ABP at which a job reaches `level`: level + level²/16, so level
+    # 10 at 16 ABP, 60 at 285 and 100 at 725.
+    def abp_for_job_level(level)
+      level = level.clamp(0, MAX_JOB_LEVEL)
+      level + (level * level / 16)
     end
 
-    # Total ABP at which a job reaches `level`.
-    def abp_for_job_level(level, costs)
-      costs.first(level.clamp(0, costs.size)).sum
+    def job_level(abp)
+      level = 0
+      level += 1 while level < MAX_JOB_LEVEL && abp_for_job_level(level + 1) <= abp
+      level
     end
   end
 end

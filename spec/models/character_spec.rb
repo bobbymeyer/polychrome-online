@@ -16,18 +16,18 @@ RSpec.describe Character do
 
   describe "creation" do
     it "starts at the chosen level and job level" do
-      bartz = create(level: 7, job_level: 2)
+      bartz = create(level: 7, job_level: 12)
       expect(bartz.level).to eq(7)
       expect(bartz.exp).to eq(Stats::Growth.exp_for_level(7))
-      expect(bartz.character_job).to have_attributes(level: 2, abp: 30) # knight rows: 10 + 20
+      expect(bartz.character_job).to have_attributes(level: 12, abp: 21) # 12 + 12²/16
       expect(bartz.native_abilities.map(&:slug)).to eq(%w[war_cry armor_break])
     end
 
-    it "starts about one job level per two levels when no job level is given" do
+    it "starts about two job levels per level when no job level is given" do
       lenna = campaign.characters.create!(name: "Lenna", job: job.("white_mage"), starting_level: 5)
-      expect(lenna.character_job.level).to eq(3)
-      expect(lenna.native_abilities.map(&:slug)).to eq(%w[cure silence esuna])
-      expect(campaign.characters.create!(name: "Krile", job: job.("black_mage")).character_job.level).to eq(1) # level 1
+      expect(lenna.character_job.level).to eq(10)
+      expect(lenna.native_abilities.map(&:slug)).to eq(%w[cure silence])
+      expect(campaign.characters.create!(name: "Krile", job: job.("black_mage")).character_job.level).to eq(2) # level 1
     end
 
     it "arrives in the cheapest gear their job can use, but no accessory" do
@@ -83,7 +83,8 @@ RSpec.describe Character do
     it "levels up and learns abilities, and reports what changed" do
       bartz = create(job_level: 0)
       changes = bartz.gain!(exp: 1000, abp: 30)
-      expect(changes).to eq("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break" ], "to_next" => 120)
+      expect(changes).to include("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break" ], "to_next" => 120)
+    expect(changes["abilities"].map { |a| a["name"] }).to eq([ "War Cry", "Armor Break" ])
       expect(bartz.reload.level).to eq(11) # 200 + 1000 EXP
     end
 
@@ -91,19 +92,19 @@ RSpec.describe Character do
       bartz = create
       bartz.change_job!(job.("thief"))
       bartz.gain!(abp: 10)
-      expect(bartz.character_job(job.("knight")).abp).to eq(10)
+      expect(bartz.character_job(job.("knight")).abp).to eq(1) # job level 1
       expect(bartz.character_job(job.("thief")).abp).to eq(10)
     end
   end
 
   describe "jobs" do
     it "remembers progress in every job" do
-      bartz = create(job_level: 2)
+      bartz = create(job_level: 12)
       bartz.change_job!(job.("black_mage"))
       expect(bartz.native_abilities).to be_empty
       expect(bartz.learned_abilities.map(&:slug)).to eq(%w[war_cry armor_break])
       bartz.change_job!(job.("knight"))
-      expect(bartz.character_job.level).to eq(2)
+      expect(bartz.character_job.level).to eq(12)
     end
 
     it "sends gear the new job can't use back to the bag" do
@@ -118,11 +119,58 @@ RSpec.describe Character do
     end
 
     it "clears ability slots the new job doesn't have" do
-      bartz = create(job_level: 2)
+      bartz = create(job_level: 12)
       bartz.change_job!(job.("freelancer"))
       bartz.set_ability_slots!([ ability.("war_cry"), ability.("armor_break") ])
       bartz.change_job!(job.("thief"))
       expect(bartz.slotted_abilities.map(&:slug)).to eq(%w[war_cry])
+    end
+  end
+
+  describe "mastery" do
+    # One Cure on a wounded ally, same seed, same level: only the job and
+    # mastery differ.
+    def cure_heals(character)
+      ally = { "id" => "ally", "name" => "Ally", "hp" => 1, "stats" => character.stats.merge("max_hp" => 5000, "agi" => 0) }
+      state = world.battle(seed: 5, party: [ character.battle_spec, ally ], monsters: { "goblin" => 1 })
+      state["units"].find { |u| u["id"] == "ally" }["abilities"] = []
+      state, = Battle::Resolver.apply(state, { type: "command", actor: character.battle_unit_id,
+                                               command: { kind: "ability", ability: "cure", target: "ally" } })
+      _, events = Battle::Resolver.apply(state, { type: "command", actor: "ally", command: { kind: "defend" } })
+      events.find { |e| e["type"] == "heal" && e["target"] == "ally" }.fetch("amount")
+    end
+
+    it "grows each ability with the job level, and gives the active job a bonus" do
+      rosa = create(job_slug: "white_mage", level: 30, job_level: 1)
+      expect(rosa.battle_spec["mastery"]).to include("cure" => { "power" => 125 })
+      rosa.gain!(abp: Stats::Growth.abp_for_job_level(21) - rosa.character_job.abp)
+      expect(rosa.reload.battle_spec["mastery"]["cure"]).to eq("power" => 150) # halfway: +25, and +25 in the job
+    end
+
+    it "keeps a master White Mage who turned Knight a better healer than a new White Mage" do
+      beginner = create(name: "Rosa", job_slug: "white_mage", level: 30, job_level: 1)
+      master = create(name: "Porom", job_slug: "white_mage", level: 30, job_level: 100)
+      master.change_job!(job.("knight"))
+      master.set_ability_slots!([ ability.("cure") ])
+      entry = master.reload.battle_spec["mastery"]["cure"]
+      expect(entry["power"]).to eq(150)
+      expect(entry["stats"]["mag"]).to be > master.stats["mag"] # a White Mage's MAG, not a Knight's
+      expect(cure_heals(master)).to be > cure_heals(beginner)
+    end
+
+    it "reports abilities as they're mastered, and the job at level 100" do
+      bartz = create(job_level: 40)
+      changes = bartz.gain!(abp: Stats::Growth.abp_for_job_level(41) - bartz.character_job.abp)
+      expect(changes).to include("mastered_abilities" => [ "War Cry" ], "job_level" => [ 40, 41 ])
+      changes = bartz.gain!(abp: 10_000)
+      expect(changes["mastered_abilities"]).to eq([ "Armor Break", "Double Cut", "Shield Bash" ])
+      expect(changes["mastered"]).to eq("job" => "Knight", "passive" => "second_wind")
+    end
+
+    it "brings the job's type into battle, and its Attack strikes with it" do
+      spec = create.battle_spec
+      expect(spec).to include("types" => %w[steel], "attack_type" => "steel", "immune_as_resist" => true, "signature" => "cover")
+      expect(create(name: "Butz", job_slug: "freelancer").battle_spec).not_to have_key("attack_type")
     end
   end
 
@@ -163,10 +211,10 @@ RSpec.describe Character do
 
   describe "ability slots" do
     it "hold learned abilities from other jobs, up to the job's slot count" do
-      bartz = create(job_level: 2)
+      bartz = create(job_level: 12)
       bartz.change_job!(job.("thief"))
       bartz.set_ability_slots!([ ability.("armor_break") ])
-      expect(bartz.battle_spec["abilities"]).to eq(%w[armor_break])
+      expect(bartz.battle_spec["abilities"]).to eq(%w[armor_break mug]) # and the Thief's own command
 
       expect { bartz.set_ability_slots!([ ability.("war_cry"), ability.("armor_break") ]) }
         .to raise_error(ActiveRecord::RecordInvalid, /1 ability slot/)
@@ -180,7 +228,7 @@ RSpec.describe Character do
     bartz = create
     bartz.update!(hp: 40)
     spec = bartz.battle_spec
-    expect(spec).to include("id" => "character_#{bartz.id}", "hp" => 40, "abilities" => %w[war_cry],
+    expect(spec).to include("id" => "character_#{bartz.id}", "hp" => 40, "abilities" => %w[war_cry cover], "passives" => %w[second_wind], "level" => 5,
                             "image" => { "book" => "jobs", "slug" => "knight" })
     expect(Character.from_battle_unit(spec["id"])).to eq(bartz.id)
     expect(Character.from_battle_unit("goblin_a")).to be_nil
@@ -199,5 +247,18 @@ RSpec.describe Character do
     job.("knight").update!(desperation: nil)
     expect(bartz.reload.battle_spec).not_to have_key("desperation")
     expect(bartz.update(motive: "x" * 141)).to be(false)
+  end
+
+  it "carries its job's signature and passive, and keeps a mastered job's passive in every job" do
+    bartz = create(job_slug: "knight")
+    expect(bartz.battle_spec).to include("passives" => %w[second_wind])
+    expect(bartz.battle_spec["abilities"]).to include("cover")
+
+    changes = bartz.gain!(abp: 10_000)
+    expect(changes["mastered"]).to eq("job" => "Knight", "passive" => "second_wind")
+    bartz.change_job!(job.("thief"))
+    expect(bartz.reload.passives).to eq(%w[first_strike second_wind])
+    expect(bartz.battle_spec["abilities"]).to include("mug")
+    expect(bartz.battle_spec["abilities"]).not_to include("cover")
   end
 end

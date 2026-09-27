@@ -175,4 +175,82 @@ RSpec.describe "The table", type: :request do
     get campaign_table_path(campaign)
     expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap"', "The crystal is cracking.")
   end
+
+  describe "taking a line back" do
+    def stream(*streamables)
+      Turbo::StreamsChannel.send(:stream_name_from, streamables)
+    end
+
+    it "lets the GM take back any line said, for everyone, but not what the game logged" do
+      sit("gm")
+      line = campaign.messages.create!(speaker: cid, body: "Typo'd lnie")
+      logged = campaign.messages.create!(kind: "system", body: "The party rests.")
+      get campaign_table_path(campaign)
+      expect(response.body).to include('data-retract="all"', "Take back")
+
+      expect { delete message_path(line) }.to have_broadcasted_to(stream(campaign, :table)).with(a_string_including('action="remove"', "message_#{line.id}"))
+      expect(Message.exists?(line.id)).to be(false)
+      delete message_path(logged)
+      expect(Message.exists?(logged.id)).to be(true)
+    end
+
+    it "lets a player take back only their own lines" do
+      sit(bartz.id)
+      mine = campaign.messages.create!(speaker: bartz, body: "Oops")
+      theirs = campaign.messages.create!(speaker: lenna, body: "Mine")
+      get campaign_table_path(campaign)
+      expect(response.body).to include("data-retract=\"Character:#{bartz.id}\"")
+      delete message_path(theirs)
+      expect(Message.exists?(theirs.id)).to be(true)
+      delete message_path(mine)
+      expect(Message.exists?(mine.id)).to be(false)
+    end
+  end
+
+  describe "choices" do
+    it "are put to the table by the GM, picked by players as themselves, and settled by the GM" do
+      sit("gm")
+      post campaign_messages_path(campaign), params: { message: { body: "? Trust Cid | Refuse -> trusted_cid", speaker: "narrator" } }
+      choice = campaign.open_choice
+      expect(choice.options).to eq([ "Trust Cid", "Refuse" ])
+      get campaign_table_path(campaign)
+      expect(response.body).to include('data-seat="gm"', "What will the party do?", "Settle on this")
+
+      post pick_choice_path(choice), params: { option: "Refuse" }
+      expect(choice.picks).to be_empty # the GM doesn't pick
+
+      sit(bartz.id)
+      post pick_choice_path(choice), params: { option: "Refuse" }
+      expect(choice.reload.tally["Refuse"]).to eq([ "Bartz" ])
+      post settle_choice_path(choice), params: { option: "Refuse" }
+      expect(choice.reload.settled).to be_nil # players don't settle
+
+      sit("gm")
+      post settle_choice_path(choice), params: { option: "Refuse" }
+      expect(choice.reload.settled).to eq("Refuse")
+      expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Refuse")
+    end
+  end
+
+  describe "checks" do
+    it "are called by the GM: each character rolls from the campaign's RNG, and the table sees it land" do
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(response.body).to include("Call for a check")
+
+      rng = campaign.rng
+      post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id, lenna.id ], stat: "agi", difficulty: "hard", reason: "scale the wall" } }
+      lines = campaign.messages.where(cue: "check").chronological
+      expect(lines.map(&:body)).to all(match(/Agi check \(hard\) to scale the wall\. \d+% · rolled \d+ · (Success!|Failure\.)/))
+      expect(lines.first.data).to include("name" => "Bartz", "stat" => "agi", "difficulty" => "hard")
+      expect(campaign.reload.rng).not_to eq(rng)
+
+      get campaign_table_path(campaign)
+      expect(response.body).to include("check-roll", "data-check-roll-result-value")
+
+      sit(bartz.id)
+      expect { post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id ], stat: "agi", difficulty: "easy" } } }
+        .not_to(change { campaign.messages.count })
+    end
+  end
 end

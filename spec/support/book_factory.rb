@@ -2,8 +2,9 @@
 
 # Minimal valid book entries for Rails specs. Plain methods, no factory gem.
 module BookFactory
-  def create_world(slug: "testland", name: "Testland")
-    World.create!(slug: slug, name: name)
+  # With the base world's types, unless given its own.
+  def create_world(slug: "testland", name: "Testland", damage_types: TypeChart.default_rows)
+    World.create!(slug: slug, name: name, damage_types: damage_types, terrain_types: TypeChart::DEFAULT_TERRAIN.select { |_, t| damage_types.any? { |r| r["slug"] == t } })
   end
 
   def monster_stats(**overrides)
@@ -13,7 +14,7 @@ module BookFactory
 
   def create_ability(world, slug: "fire", **attrs)
     world.abilities.create!({ slug: slug, name: slug.humanize, kind: "magic", target: "single_enemy", mp_cost: 4,
-                              effects: [ { primitive: "elemental", element: "fire", power: 20 } ] }.merge(attrs))
+                              effects: [ { primitive: "elemental", type: "fire", power: 20 } ] }.merge(attrs))
   end
 
   def create_item(world, slug: "sword", **attrs)
@@ -39,7 +40,7 @@ module BattleFactory
     world = create_world
     cure = create_ability(world, slug: "cure", kind: "magic", target: "single_ally", effects: [ { primitive: "heal", power: 20 } ])
     create_item(world)
-    create_job(world).job_levels.create!(level: 1, abp: 10, ability: cure)
+    create_job(world).job_levels.create!(level: 1, ability: cure)
     create_monster(world, exp: 10, gil: 5, abp: 2)
     world
   end

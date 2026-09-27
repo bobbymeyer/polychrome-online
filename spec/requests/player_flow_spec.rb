@@ -35,7 +35,7 @@ RSpec.describe "The player's way through", type: :request do
     sign_in_as(krile)
     post campaign_characters_path(campaign), params: { character: { name: "Krile", job_id: white_mage.id } }
     character = campaign.characters.find_by!(name: "Krile")
-    expect(character.character_job.level).to eq(1)
+    expect(character.character_job.level).to eq(2) # two job levels per level
     expect(character.battle_abilities.map(&:slug)).to include("cure")
   end
 
@@ -85,8 +85,9 @@ RSpec.describe "The player's way through", type: :request do
     post battle_actions_path(battle), params: { command: { kind: "ability", ability: "attack", target: "goblin" } }
     expect(battle.reload.auto?(bartz.battle_unit_id)).to be(false)
 
+    # ...and can put themselves back on it, to talk and let the fight run.
     patch battle_auto_path(battle), params: { unit: bartz.battle_unit_id, on: "1" }
-    expect(response).to have_http_status(:forbidden)
+    expect(battle.reload.auto?(bartz.battle_unit_id)).to be(true)
   end
 
   it "shows a monster's weaknesses only once the party has found them, and remembers" do
@@ -95,9 +96,10 @@ RSpec.describe "The player's way through", type: :request do
     help = -> { ApplicationController.helpers.target_help(battle.reload, battle.state, "goblin") }
     expect(help.()).to include("Weaknesses unknown").and(satisfy { |h| !h.include?("Weak to Fire") })
 
-    campaign.learn_from!([ { "type" => "damage", "target" => "goblin", "element" => "fire", "amount" => 9 } ], battle.state)
-    expect(help.()).to include("Weak to Fire")
-    expect(campaign.reload.known_affinities).to eq("goblin" => { "fire" => "weak" })
+    campaign.learn_from!([ { "type" => "damage", "target" => "goblin", "damage_type" => "fire", "amount" => 9 } ], battle.state)
+    # Seeing a typed hit land shows what the monster is, and the chart does the rest.
+    expect(help.()).to include("Normal type", "Weak to Fire and Fighting", "Immune to Ghost")
+    expect(campaign.reload.known_affinities).to eq("goblin" => { "types" => [ "normal" ], "fire" => "weak" })
 
     campaign.learn_from!([ { "type" => "scan", "target" => "goblin" } ], battle.state)
     expect(campaign.reload.known_affinities["goblin"]).to include("ice" => "none", "sleep" => "none")

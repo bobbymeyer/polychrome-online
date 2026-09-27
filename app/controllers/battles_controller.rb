@@ -26,7 +26,8 @@ class BattlesController < ApplicationController
 
     @battle = BattleRecord.start!(
       campaign: @campaign, characters: characters, name: @setup[:name].presence || "Battle", encounter: encounter,
-      seed: @setup[:seed], escapable: @setup[:escapable] != "0", input_seconds: @setup[:input_seconds].presence&.to_i
+      seed: @setup[:seed], escapable: @setup[:escapable] != "0", input_seconds: @setup[:input_seconds].presence&.to_i,
+      terrain: @setup[:terrain].presence_in(@campaign.world.type_chart.slugs)
     )
     take_seat("gm")
     redirect_to battle_path(@battle)
@@ -44,12 +45,14 @@ class BattlesController < ApplicationController
   end
 
   def show
+    remember_coop_view(@battle.campaign) if @battle.campaign
     @log = @battle.battle_events.last(40)
     return unless @battle.campaign
 
     # The table's log and dialogue come along, as this seat may see them.
     seat = current_seat
     @chat_seat = seat == "gm" ? "gm" : (seat && seat_character(seat))
+    @chat_seat = nil if coop_view(@battle.campaign) == "screen" # the shared screen sees what everyone sees
     @messages = Message.visible_to(@battle.campaign, @chat_seat).last(TablesController::LOG_LENGTH)
   end
 
@@ -58,14 +61,14 @@ class BattlesController < ApplicationController
   def default_setup
     monster = @world.monsters.order(:level).first&.slug
     {
-      name: "Battle", seed: nil, escapable: "1", input_seconds: BattleRecord::DEFAULT_TIMER.to_s,
+      name: "Battle", seed: nil, escapable: "1", input_seconds: BattleRecord::DEFAULT_TIMER.to_s, terrain: "",
       characters: @campaign.characters.select(&:conscious?).first(4).map(&:id),
       encounter: [ { monster: monster.to_s, count: "3" } ] + Array.new(ENCOUNTER_SLOTS - 1) { { monster: "", count: "1" } }
     }
   end
 
   def setup_params
-    raw = params.expect(battle: [ :name, :seed, :escapable, :input_seconds, { characters: [], encounter: [ %i[monster count] ] } ])
+    raw = params.expect(battle: [ :name, :seed, :escapable, :input_seconds, :terrain, { characters: [], encounter: [ %i[monster count] ] } ])
     raw.to_h.symbolize_keys.merge(
       characters: Array(raw[:characters]).compact_blank.map(&:to_i),
       encounter: JsonCasting.rows(raw[:encounter]).map(&:symbolize_keys)

@@ -16,6 +16,7 @@ class Campaign < ApplicationRecord
   has_many :locations, dependent: :destroy
   has_many :flags, dependent: :delete_all
   has_many :scenes, dependent: :destroy
+  has_many :field_uses, dependent: :destroy
   belongs_to :current_node, class_name: "MapNode", optional: true
 
   # Travel encounters use their own seeded RNG, stored here like a battle's.
@@ -89,6 +90,61 @@ class Campaign < ApplicationRecord
     end
   end
 
+  # --- town services -----------------------------------------------------------
+
+  # What a town's services charge, from the party's purse: gil per level of
+  # the character served, with a floor. A rumour costs the same for anyone.
+  SERVICE_PRICES = { "inn" => [ 5, 10 ], "temple" => [ 20, 50 ], "guild" => [ 0, 30 ] }.freeze
+  SERVICE_OFFERS = { "inn" => "a room for the night", "temple" => "a raising", "guild" => "a rumour" }.freeze
+
+  def service_price(kind, character)
+    per_level, floor = SERVICE_PRICES.fetch(kind)
+    [ per_level * character.level, floor ].max
+  end
+
+  # A character pays for a service in the town the party is in:
+  #   inn    — a night's rest: full HP and MP (the fallen need a temple)
+  #   temple — a fallen character raised, at full HP and MP
+  #   guild  — a rumour: the GM owes them one
+  def use_service!(kind, character, at:, by:)
+    raise ArgumentError, "Not while a battle is on" if battle_on?
+    raise ArgumentError, "#{character.name} isn't in this party" unless character.campaign_id == id
+    service = at.view.fetch("services", []).find { |s| s["kind"] == kind } or raise ArgumentError, "#{at.name} has no #{kind}"
+    case kind
+    when "inn"
+      raise ArgumentError, "#{character.name} is down: an inn can't help the fallen. A temple can." unless character.conscious?
+      raise ArgumentError, "#{character.name} is already rested" if rested?(character)
+    when "temple"
+      raise ArgumentError, "#{character.name} is still on their feet" if character.conscious?
+    end
+
+    cost = service_price(kind, character)
+    transaction do
+      reload
+      raise ArgumentError, "The party has #{gil} gil; #{SERVICE_OFFERS.fetch(kind)} for #{character.name} costs #{cost}" if cost > gil
+
+      update!(gil: gil - cost)
+      character.update!(hp: nil, mp: nil) if %w[inn temple].include?(kind)
+      character.update!(field_used: false) if kind == "inn" # a night's rest: field abilities are back
+      messages.create!(kind: "system", body: service_line(kind, character, service, by, cost))
+    end
+  end
+
+  # Everyone who needs it takes a room, in one payment.
+  def rest_at_inn!(at:, by:)
+    tired = characters.order(:created_at).select { |c| c.conscious? && !rested?(c) }
+    raise ArgumentError, "Everyone standing is already rested" if tired.empty?
+
+    cost = tired.sum { |c| service_price("inn", c) }
+    raise ArgumentError, "The party has #{gil} gil; rooms for everyone cost #{cost}" if cost > gil
+
+    transaction { tired.each { |c| use_service!("inn", c, at: at, by: by) } }
+  end
+
+  def rested?(character)
+    character.current_hp == character.stats["max_hp"] && character.current_mp == character.stats["max_mp"]
+  end
+
   # --- using items outside battle ---------------------------------------------
 
   def battle_on?
@@ -116,7 +172,8 @@ class Campaign < ApplicationRecord
       raise ArgumentError, "There's no #{item.name} in the bag" unless quantity_of(item).positive?
 
       before = target.current_hp
-      hp, _events, next_rng = Battle::Field.use_item(item.to_engine(1), user: user.battle_spec, target: target.battle_spec, rng: rng)
+      hp, _events, next_rng = Battle::Field.use_item(item.to_engine(1), user: user.battle_spec, target: target.battle_spec, rng: rng,
+                                                                                     types: world.type_chart.to_engine)
       take_item!(item)
       target.update!(hp: hp)
       update!(rng: next_rng)
@@ -164,17 +221,22 @@ class Campaign < ApplicationRecord
 
       origin = current_node
       destination = edge.other_end(origin)
-      if edge.encounter_table
+      # A field ability found a way through (FieldUse "safe_road"): the next
+      # dangerous path rolls nothing.
+      safe = edge.encounter_table && safe_road
+      if edge.encounter_table && !safe
         self.rng, rolled = Pointcrawl::Encounters.roll(rng, edge.encounter_table.entries, edge.state)
       end
+      self.safe_road = false if safe
       destination.update!(visible: true)
       origin.location&.leave!
       self.current_node = destination
-      self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled }
+      self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled, "terrain" => edge.encounter_table.terrain_type }
       save!
 
       messages.create!(kind: "system", body: "The party travels from #{origin.name} to #{destination.name}.")
       messages.create!(body: edge.travel_event) if edge.travel_event
+      messages.create!(kind: "system", body: "The way is safe: nothing troubles the party on the road.") if safe
       messages.create!(kind: "system", body: "Encounter! #{describe_encounter(rolled)}.") if rolled
     end
     broadcast_map
@@ -198,7 +260,8 @@ class Campaign < ApplicationRecord
     raise ArgumentError, "Nobody is standing to fight" if standing.empty?
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
-                                 encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false)
+                                 encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
+                                 terrain: encounter["terrain"])
     update!(pending_encounter: nil)
     battle
   end
@@ -239,10 +302,13 @@ class Campaign < ApplicationRecord
 
       notes = (learned[slug] ||= {})
       if event["type"] == "scan"
-        Battle::ELEMENTS.each { |element| notes[element] = target["elements"].fetch(element, "none") }
+        notes["types"] = target.fetch("types", [])
+        Battle::Types.list(state["types"] || Battle::Types::DEFAULT).each { |type| notes[type] = target.fetch("affinities", {}).fetch(type, "none") }
         Battle::STATUSES.each { |kind| notes[kind] = target["status_immune"].include?(kind) ? "immune" : "none" }
-      elsif event["element"]
-        notes[event["element"]] = target["elements"].fetch(event["element"], "none")
+      elsif event["damage_type"]
+        # Seeing a type land shows what the monster is: its types, and how it took this one.
+        notes["types"] = target.fetch("types", [])
+        notes[event["damage_type"]] = target.fetch("affinities", {}).fetch(event["damage_type"], "none")
       elsif event["type"] == "miss" && event["reason"] == "immune" && event["status"]
         notes[event["status"]] = "immune"
       elsif event["type"] == "status_applied"
@@ -268,17 +334,69 @@ class Campaign < ApplicationRecord
                                               attributes: { follow: music.nil?, url: world.music_path(music).to_s })
   end
 
+  # The GM calls for a check (Stats::Check): each character rolls against
+  # their own stat, from the campaign's RNG, and the table sees it land.
+  # stat: a stat, or "skill:<slug>" for one of the world's skills, rolled
+  # on its stat with each character's job bonus (Character#skill_bonus).
+  def check!(characters:, stat:, difficulty:, reason: nil)
+    skill = world.skill(stat.to_s.delete_prefix("skill:")) if stat.to_s.start_with?("skill:")
+    stat = skill["stat"] if skill
+    raise ArgumentError, "Pick who's trying" if characters.empty?
+    raise ArgumentError, "Pick a skill or a stat" unless Stats::Check::STATS.include?(stat)
+    raise ArgumentError, "Pick a difficulty" unless Stats::Check::DIFFICULTIES.key?(difficulty)
+
+    transaction do
+      rolling = Battle::Rng.new(rng)
+      lines = characters.map do |character|
+        bonus = skill ? character.skill_bonus(skill["slug"]) : 0
+        result = Stats::Check.roll(stat_value: character.stats.fetch(stat), stat: stat, level: character.level,
+                                   difficulty: difficulty, rng: rolling, bonus: bonus)
+        label = "#{skill ? skill['name'] : stat.capitalize} check (#{difficulty}#{", +#{bonus} #{character.job.name}" if bonus.positive?})"
+        body = "#{character.name}: #{label}#{" to #{reason.strip.sub(/\.\z/, '')}" if reason.present?}. " \
+               "#{result['chance']}% · rolled #{result['roll']} · #{result['success'] ? 'Success!' : 'Failure.'}"
+        [ body, result.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty, "skill" => skill&.fetch("name"), "bonus" => bonus).compact ]
+      end
+      update!(rng: rolling.state)
+      lines.map { |body, data| messages.create!(kind: "system", cue: "check", body: body, data: data) }
+    end
+  end
+
+  # The code behind the shared screen's QR code (local co-op): made when
+  # first asked for, and replaced when the GM wants to shut old links out.
+  def join_code!
+    join_code || new_join_code!
+  end
+
+  def new_join_code!
+    update!(join_code: SecureRandom.alphanumeric(6).upcase)
+    join_code
+  end
+
+  # The choice the table is deciding, if any (Message#settle!).
+  def open_choice
+    messages.where(kind: "choice", settled: nil).order(:id).last
+  end
+
   def dungeon_in_progress
     location = current_node&.location
     location if location&.dungeon? && location.progress["current"]
   end
 
   # Everyone back to full, told at the table. Not in the middle of a fight.
+  def service_line(kind, character, service, by, cost)
+    payer = by == character.name ? character.name : "#{by}, for #{character.name},"
+    case kind
+    when "inn" then "#{payer} takes a room at #{service['name']} (#{cost} gil). #{character.name} is rested: full HP and MP."
+    when "temple" then "#{payer} pays #{cost} gil at #{service['name']}. #{character.name} is raised, whole again."
+    when "guild" then "#{payer} buys a rumour at #{service['name']} (#{cost} gil). The GM owes #{character.name} something true."
+    end
+  end
+
   def rest!
     raise ArgumentError, "Not while a battle is on" if battle_on?
 
     transaction do
-      characters.update_all(hp: nil, mp: nil)
+      characters.update_all(hp: nil, mp: nil, field_used: false)
       messages.create!(kind: "system", body: "The party rests. Everyone is back to full HP and MP.")
     end
   end

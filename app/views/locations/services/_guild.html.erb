@@ -1,0 +1,5 @@
+<%# A guild's panel (locations/_town): a rumour, which the GM then tells. %>
+<p>Everyone here hears something. For a price, so can you: the GM owes you something true.</p>
+<%= render layout: "locations/services/customers", locals: { location: location, kind: "guild", action: "Buy a rumour", shopping: shopping } do |_character| %>
+  <%= nil %>
+<% end %>

@@ -188,6 +188,28 @@ are now (see "Campaign flags and GM changes").
   of the replay. The result panel reports level-ups and newly learned abilities.
 - **GM tools:** add items to the bag, adjust gil, grant EXP/ABP, and rest the
   party at an inn.
+- **Signature commands and passives.** A job has a signature command
+  (`jobs.signature`, any Grimoire ability), always on its menu while in the
+  job, learned or not, and a passive (`jobs.passive`, one of
+  `Battle::PASSIVES`). A character has the current job's passive plus every
+  mastered job's, so mastery keeps it for good. The Base World's:
+  - **Freelancer:** Rally
+  - **Knight:** Cover, Second Wind
+  - **Thief:** Mug, First Strike
+  - **Monk:** Focus, Counter
+  - **Black Mage:** Channel, Clear Mind
+  - **White Mage:** Pray, Regen
+  - **Red Mage:** Flame Blade, Regen
+  - **Summoner:** Carbuncle, Clear Mind (plus the summons)
+  - **Geomancer:** Gaia, Regen
+  - **Dragoon:** Jump, First Strike
+
+  Each new job has its own learn table and desperation move.
+- **Terrain.** A battle has a terrain type: from the encounter table's
+  terrain on the road or in a dungeon (forest is grass, crypt is ghost, sea
+  is water), or picked on the battle form. Moves typed `terrain` take it.
+- **The end of a fight** shows a card for each ability learned (with what it
+  does) and for each job mastered (with the passive now kept).
 - **Why they're here:** a character has one line in their own words
   (`characters.motive`), on their card and sheet. It is also their battle cry.
 - **Desperation moves** (FF6-style): a job can name any offensive Grimoire
@@ -228,6 +250,32 @@ everything outside battle.
   table seat carries into the battle, so players land on their own character.
 - NPCs belong to the campaign (the "Cast" section of the campaign page). The
   town generator in step 7 will create them too.
+- **Taking a line back.** The GM can take back any line said at the table,
+  and a player their own ("Take back" on the line, in the log). It goes from
+  every viewer's log, and from their dialogue box if it's waiting or showing.
+  What the game logged (system lines) stays.
+- **Speaking in battle.** The battle page has the same composer, open for the
+  GM, so a monster's taunt doesn't mean leaving the fight.
+- **Choices.** `? Trust Cid | Refuse -> trusted_cid`, from the GM's composer
+  or as the last line of a scene, puts a choice to the table. It comes up
+  under the dialogue once the lines before it have been read. Each player
+  picks for their character and can change their mind, and everyone sees who
+  picked what. The GM settles it: "The party chose: …" is said, and the flag
+  is set to the outcome and shown to players, for the next scene to follow.
+  One choice is open at a time.
+- **Checks.** The GM calls for one from the table: who tries, a stat (Str,
+  Mag, Vit, Spr, Agi), a difficulty (Easy, Normal, Hard, Heroic) and what
+  for. `Stats::Check` (pure) turns the character's stat into a chance: at
+  Normal, a stat typical for their level is an even chance, each point
+  counts for less at higher levels, and it's always 5–95%. The roll comes
+  from the campaign's RNG. Everyone at the table watches the number spin
+  and land; the log keeps the chance and the roll.
+- **How a fight will go.** The battle form and a scene's battle ending show
+  a forecast as the GM picks who fights and what they face:
+  `Battle::Forecast` (pure) plays the fight out 20 times with everyone
+  repeating their default command, and reports wins, HP left, how many go
+  down and how long it takes, as Easy, Fair, Hard or Deadly. Real players
+  do better than always attacking, so it is a floor.
 
 ## Scenes
 
@@ -257,6 +305,35 @@ and dungeon lines), the battles and level-ups, keys and treasure found, the
 flags the party knows that changed, and the last line said to the table.
 Whispers are never in it. "Previously on …" under the table's title opens it
 again at any time.
+
+## Local co-op
+
+For a table around a TV, or a call with one shared stream: one **shared
+screen** everyone watches, and phones as **controllers**. People talk out
+loud (or on voice chat), so the app doesn't need to carry the talking.
+
+- **The GM starts it** from the table ("Local co-op"): open the shared screen
+  on whatever drives the TV or the stream. It shows a QR code, a link and a
+  six-letter code.
+- **Players scan and pick a character.** No account needed: someone not
+  signed in gives a name and gets a guest account (`users.guest`), which
+  plays like any other. The code can be replaced ("New join code") to shut
+  old links out.
+- **Views, not new pages** (`LocalCoop`). The table and battle pages render
+  as `?view=screen` or `?view=controller` (`?view=off` to leave). The view is
+  kept per campaign in the browser session, so it survives being pulled into
+  a battle and back.
+  - **Screen:** map, dialogue, choices, checks, the party's HP and the join
+    code, big. No menus. It renders as a spectator whoever is signed in,
+    so the GM's hidden places, notes and whispers never reach the TV. In
+    battle: the board and the dialogue, no command panel. It has the sound.
+  - **Controller:** your character's HP and MP, your picks when the table has
+    a choice, your commands in battle. The map, dialogue box and check
+    moments stay on the screen. It's quiet. In battle the board still plays
+    off screen, so your commands wait for each beat just as the screen does.
+- **Auto.** A player can put their own character on auto from the command
+  panel ("Go on auto"), to talk and let the fight run. Picking a command
+  takes them off it. The timer stays.
 
 ## The pointcrawl map
 
@@ -300,6 +377,21 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   sells. Only that character's player or the GM can do that. Players can
   only shop in the town where the party is; the GM can shop anywhere. Every
   purchase and sale is announced at the table.
+- **Services.** Each of a town's services is a collapsible panel under
+  Services, named for its building and keeper. A building in the skyline
+  opens its panel too, and panels stay as you left them after paying.
+  A character pays from the party's purse (`Campaign#use_service!`): a player
+  for their own character, the GM for anyone, only in the town where the
+  party is, and never mid-battle. Prices are gil per level of the character
+  served, with a floor (`Campaign::SERVICE_PRICES`).
+  - **Inn:** a night's rest, full HP and MP. It can't help the fallen.
+    "Rooms for everyone" pays for all who need one at once.
+  - **Temple:** a fallen character is raised, whole again.
+  - **Guild:** a rumour. The table is told the GM owes that character
+    something true.
+
+  The GM's free "Rest" on the campaign page is still there, for when the
+  story says so.
 
 - **Stored:** only template + seed + GM overrides. What the location contains
   is generated from those on every view, by the pure `Generators::Town` and
@@ -371,10 +463,15 @@ generator (email and password, with `bcrypt`), plus a sign-up page.
 
 | Who | What they can do |
 | --- | --- |
-| **Admin** (the first account ever made) | Everything: the books, worlds, art direction and book art. Starts campaigns (and GMs them) and can GM any campaign. Manages accounts on the Accounts page. |
-| **A campaign's GM** (whoever an admin picks on the campaign's edit page) | Runs that campaign: the GM seat, map, flags, locations, battles, NPCs, the bag, rests, EXP grants, starting levels, and generating its speakers' portraits. |
-| **Player** (anyone else) | Makes characters, which start at the party's lowest level. Sits as, equips and levels their own characters. Reads the books. |
+| **Admin** (the first account ever made) | Everything: every world's books, art direction and book art. Can GM any campaign. Manages accounts on the Accounts page. |
+| **A campaign's GM** (whoever started it, or whoever an admin hands it to) | Runs that campaign: the GM seat, map, flags, locations, battles, scenes, NPCs, the bag, rests, EXP grants, starting levels, and generating its speakers' portraits. |
+| **A world's owner** (whoever made it, usually as a copy) | Changes its books as they play. So do the GMs of campaigns in that world. |
+| **Anyone** | Starts a campaign in any world and GMs it. Makes a world, usually by copying one. Makes characters, which start at the party's lowest level, and sits as, equips and levels their own. Reads every book. |
 
+- **The Base World is the admins'.** It has no owner, so only admins change
+  it: a GM who wants to change the books as they play copies it ("Copy this
+  world") and runs their campaign there. Worlds are live, so this is what
+  keeps one GM's retuned goblin out of another GM's game.
 - **Admin rules.** Anyone can be made an admin. The last admin can't be
   demoted or removed.
 - **Seats pick themselves.** At a table or battle you haven't sat at, you're
@@ -497,7 +594,8 @@ doesn't depend on later Bestiary edits (§9.8).
 { type: "command", actor: "bartz", command: { kind: "defend" } }   # or kind: "flee"
 { type: "timeout" }                                                # input timer expired
 { type: "gm_override", op: "auto", unit: "locke", note: "..." }
-# other GM ops: execute_round, set_hp, set_mp, add_status, remove_status, end_battle
+# other GM ops: execute_round, set_hp, set_mp, add_status, remove_status, end_battle,
+# add_unit (side: "enemy" | "party", unit: {engine spec}, abilities: {...}) and dismiss (unit:)
 ```
 
 An illegal action raises `Battle::InvalidAction` and leaves the state alone.
@@ -510,10 +608,77 @@ still usable, otherwise to Attack.
 status_applied status_expired ko turn_start turn_end flee victory defeat
 gm_override`) plus: `command_accepted round_start turn_order round_end revive
 defend buff_applied buff_expired turn_skipped action_failed timeout
-desperation`.
+desperation unit_joined unit_left`.
+
+**Dice.** Every chance the engine rolls is a d100 (`Rng#d100`, the same
+single draw as before, so the stream and the replays are unchanged). The
+rolls that decide something are recorded in their events as `roll` and
+`needed`: hits that miss, crits, statuses landing or resisted, steals and
+getaways. The board shows each one as a die beside the unit (green when it
+came in, wine when it didn't), and the log says "(rolled 98, needed 90 or
+under)". The property specs check the dice are honest.
+
+**Trying something.** A `custom` command carries the player's idea in
+words ("kick the brazier onto them") and an optional target. The round
+waits for the GM to rule on it (`rule`: a stat, a difficulty, where it's
+aimed, what success does as effects from the closed primitive set, and a
+line for success and one for failure). From the GM's panel that's quick
+choices: just the story, damage (light to heavy, with a type), a status or
+healing. On the character's turn a d100 is rolled against the same odds as
+a check at the table (characters bring their level into battle for it).
+Then the line is said and the effects land. A timer or "run the round
+now" doesn't wait: an idea nobody ruled on is an Attack. An idea is never
+repeated as a default.
+
+**The timing meter.** An ability command can carry `"timing" => "perfect"`,
+from the meter a player stops when confirming a move (Mario RPG's timed
+hits). A Perfect raises every power in the move by a quarter and every
+status chance by 20 points, and the move's `attack`/`cast` event says
+`perfect`. It's part of the command, so replays stay exact. A repeated
+command (auto, a timeout) never carries one. Missing costs nothing. The
+meter can be switched off per device, and is off by default for reduced
+motion.
+
+**Joining and leaving.** `add_unit` brings a unit in mid-fight: enemy
+reinforcements (named with the next free letter), or a guest on the party's
+side who acts on its own AI script, takes no input and shares no rewards
+(`"guest" => true`; the party is defeated when every character is down,
+whatever the guests do). `dismiss` takes an enemy or guest off the field
+(`"gone" => true`): it is out of play for good, never targeted or revived,
+and gives no EXP or drops. If it was the last enemy standing, the party wins.
 Each event is a hash like `{"type" => "damage", "target" => "goblin_a",
 "amount" => 24, "hp" => 21, ...}`. Every event that changes HP carries the
 resulting `hp`, so the view never computes an outcome.
+
+## Damage types
+
+`Battle::Types` (pure) holds 16 types (normal, fire, water, electric, grass,
+ice, fighting, poison, ground, flying, psychic, bug, rock, ghost, dark,
+steel) and Pokémon's chart between them. Fairy and dragon are left out.
+The chart is on `/types`, linked from the Bestiary and the Grimoire.
+
+- **Moves.** `elemental` takes a `type` (it used to take an element), and
+  `physical` can take one. The basic Attack has none, so it always lands as it
+  is: a party can always hit a ghost. Set a move's type in the effect rows.
+- **Monsters** have a base type (`monsters.base_type`, normal by default).
+  The engine takes one or two types per unit (`"types"`), and two multiply,
+  as in the games. Characters are typeless.
+- **Effectiveness.** A move does ×2 (super effective), ×½ (not very
+  effective) or nothing (no effect) against each of the target's types. A
+  monster's `affinities` (weak, resist, immune, absorb) are exceptions on
+  top of the chart, like a boss immune to fire or a slime that drinks water.
+  Damage events carry `damage_type` and `effectiveness` (a percent); a move
+  with no effect is a miss with reason `immune`.
+- **Statuses by type.** Poison and steel types can't be poisoned, and
+  electric types can't be paralysed.
+- **What the party learns.** Seeing a typed move land on a monster shows
+  its type, and the chart fills in the rest for the command help. A scan
+  shows everything.
+- **Moving over.** Migration `ElementsToTypes` maps the old elements (bolt
+  → electric, wind → flying, earth → ground, holy → psychic, the rest by
+  name) in abilities, items, monsters and stored battles, so a battle in
+  progress carries on. Re-run `bin/rails base_world:update` to get the Base
+  World's own types, the Skeleton (dark) and the Nymph (water).
 
 ## Departures from the handoff
 
@@ -522,8 +687,10 @@ resulting `hp`, so the view never computes an outcome.
   whose whole state is one integer (`state["rng"]`). A battle can resume
   exactly from any persisted state, which is what the handoff is asking for.
 - **Abilities take a list of effects** instead of one primitive, e.g. Bio is
-  `elemental(dark)` + `status(poison)`. The list only draws on the closed
+  `elemental(poison)` + `status(poison)`. The list only draws on the closed
   primitive set, so the vocabulary stays closed.
+- **Damage types, not elements.** The handoff's eight elements are replaced
+  by Pokémon's type chart, less fairy and dragon (see "Damage types").
 - **Buff/debuff `amount` is a percentage**, so it scales across levels.
 - **`haste`/`slow` are statuses** that modify agi through `Stats::Derivation`.
   `blind` halves physical hit chance. `sleep` and `paralyze` skip turns, and

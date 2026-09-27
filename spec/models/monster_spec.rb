@@ -17,11 +17,14 @@ RSpec.describe Monster do
 
   it "stores only non-neutral affinities and validates them" do
     monster = world.monsters.new(name: "Blob", stats: monster_stats,
-                                 elements: { "fire" => "weak", "ice" => "normal", "bolt" => "" })
-    expect(monster.elements).to eq("fire" => "weak")
-    monster.elements = { "plasma" => "weak", "fire" => "hates" }
+                                 affinities: { "fire" => "weak", "ice" => "normal", "electric" => "" })
+    expect(monster.affinities).to eq("fire" => "weak")
+    monster.affinities = { "plasma" => "weak", "fire" => "hates" }
     expect(monster).not_to be_valid
-    expect(monster.errors[:elements]).to include("plasma is not an element", "hates is not an affinity")
+    expect(monster.errors[:affinities]).to include("plasma is not one of this world's types", "hates is not an affinity")
+    monster.base_type = "fairy"
+    expect(monster).not_to be_valid
+    expect(monster.errors[:base_type]).to be_present
   end
 
   describe "AI script" do
@@ -76,7 +79,7 @@ RSpec.describe Monster do
 
   it "exports an enemy spec the engine accepts" do
     create_ability(world)
-    monster = create_monster(world, elements: { fire: "weak" }, status_immune: %w[sleep], exp: 5, gil: 7,
+    monster = create_monster(world, base_type: "ghost", affinities: { fire: "weak" }, status_immune: %w[sleep], exp: 5, gil: 7,
                                     ai_script: [ { if: { chance: 40 }, use: "fire" }, { use: "attack" } ])
     spec = monster.to_engine(count: 2)
     expect(spec).to include("id" => "goblin", "count" => 2, "abilities" => [ "fire" ],

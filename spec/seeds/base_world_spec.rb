@@ -57,7 +57,7 @@ RSpec.describe Seeds::BaseWorld do
 
     described_class.run
     expect(goblin.reload).to have_attributes(name: "Bog Goblin", exp: 99)
-    expect(knight.reload.job_levels.count).to eq(2)
+    expect(knight.reload.job_levels.count).to eq(3)
     expect(world.monsters.find_by(slug: "ogre")).to be_present # the missing one is back
   end
 
@@ -68,7 +68,7 @@ RSpec.describe Seeds::BaseWorld do
 
     described_class.run(overwrite: true)
     expect(world.monsters.find_by!(slug: "goblin").name).to eq("Goblin")
-    expect(world.jobs.find_by!(slug: "knight").job_levels.count).to eq(3)
+    expect(world.jobs.find_by!(slug: "knight").job_levels.count).to eq(4)
   end
 
   it "gives every job a desperation move aimed at enemies, found rather than learned" do
@@ -78,5 +78,12 @@ RSpec.describe Seeds::BaseWorld do
       expect(move.target).to match(/enemy|enemies/)
       expect(world.jobs.flat_map { |j| j.abilities.map(&:slug) }).not_to include(move.slug)
     end
+  end
+
+  it "gives every job a signature command, and has the new jobs with their own arts" do
+    world.jobs.each { |job| expect(job.signature_ability).to be_present, job.slug }
+    expect(world.jobs.pluck(:slug)).to include("red_mage", "summoner", "geomancer", "dragoon")
+    expect(world.jobs.where.not(passive: nil).count).to be >= 8
+    expect(world.abilities.find_by!(slug: "gaia").effects.first).to include("type" => "terrain")
   end
 end

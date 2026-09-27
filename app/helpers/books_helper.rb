@@ -18,6 +18,52 @@ module BooksHelper
     end
   end
 
+  # How a type (or pair) takes every type, from the chart and the unit's own
+  # exceptions: { "weak" => [...], "resist" => [...], "immune" => [...],
+  # "absorb" => [...] }, each in chart order. A character (character: true)
+  # resists what the chart says they're immune to. engine: the chart to
+  # read (a battle's own, Battle::Types); the world's when not given.
+  def type_profile(types, affinities = {}, character: false, engine: nil)
+    engine ||= type_chart.to_engine
+    target = { "types" => Array(types), "affinities" => affinities || {}, "immune_as_resist" => character }
+    Battle::Types.list(engine).each_with_object(Hash.new { |h, k| h[k] = [] }) do |attacking, profile|
+      percent = Battle::Types.effectiveness(attacking, target, engine)
+      band = if percent == :absorb then "absorb"
+      elsif percent.zero? then "immune"
+      elsif percent > 100 then "weak"
+      elsif percent < 100 then "resist"
+      end
+      profile[band] << attacking if band
+    end
+  end
+
+  # The world on the page's types (World#type_chart), once per request.
+  def type_chart(world = nil)
+    world ||= @world || @battle&.world || @campaign&.world || @character&.world
+    @type_charts ||= {}
+    @type_charts[world&.id] ||= world ? world.type_chart : TypeChart.new(TypeChart.default_rows)
+  end
+
+  # Is this a world where types come up at all? Not with only one.
+  def types_matter?(world = nil)
+    type_chart(world).matter?
+  end
+
+  def type_name(type)
+    type_chart.name(type)
+  end
+
+  # [name, slug] pairs for a select.
+  def type_options
+    type_chart.types.map { |t| [ t.name, t.slug ] }
+  end
+
+  # A type as a tag in its colour.
+  def type_tag(type)
+    chart = type_chart
+    tag.span(chart.name(type), class: "type-tag", style: "--t: #{chart.colour(type)}; --t-ink: var(--#{chart.ink(type)})")
+  end
+
   def stat_label(name)
     STAT_LABELS.fetch(name.to_s, name.to_s.humanize)
   end
@@ -55,8 +101,8 @@ module BooksHelper
   def describe_effect(effect)
     e = effect
     case e["primitive"]
-    when "physical" then "Physical #{e.fetch('power', 100)}%#{hits(e)}"
-    when "elemental" then "#{term(e['element'])} damage, power #{e['power']}#{hits(e)}"
+    when "physical" then "#{"#{effect_type(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}#{describe_against(e)}#{describe_extras(e)}"
+    when "elemental" then "#{effect_type(e['type'])} damage, power #{e['power']}#{hits(e)}#{describe_against(e)}#{describe_extras(e)}"
     when "status" then "#{term(e['kind'])} (#{e.fetch('chance', 100)}%, #{e.fetch('duration', 3)} turns)"
     when "heal" then "Restore HP, power #{e['power']}"
     when "drain" then "Drain HP, power #{e['power']}"
@@ -67,8 +113,39 @@ module BooksHelper
     when "cleanse" then e["kind"] ? "Cure #{term(e['kind']).downcase}" : "Cure every harmful status"
     when "steal" then "Steal one of its drops (#{e.fetch('chance', 50)}% + speed)"
     when "scan" then "Reveal HP, weaknesses and immunities"
+    when "jump" then "Leap out of reach, then land a #{e.fetch('power', 200)}% blow next turn"
+    when "away" then describe_away(e)
+    when "shield" then "A barrier against the next #{e['power']}-power worth of damage (#{e.fetch('duration', 3)} turns)"
+    when "imbue" then "Attack strikes as #{effect_type(e['type']).downcase} (#{e.fetch('duration', 3)} turns)"
+    when "percent" then "#{e['power']}% of current HP#{" (#{e['chance']}%)" if e['chance']}; never the last of it"
+    when "sap" then "Take MP, power #{e['power']}#{", keep #{e['keep']}%" if e['keep'].to_i.positive?}"
     else e["primitive"].to_s.humanize
     end
+  end
+
+  def describe_against(e)
+    return "" unless e["against"]
+
+    what = Battle::STATUSES.include?(e["against"]) || Battle::AGAINST_TRAITS.include?(e["against"]) ? term(e["against"]).downcase : type_name(e["against"])
+    ", ×#{format('%g', e.fetch('bonus', 200) / 100.0)} against #{what}"
+  end
+
+  def describe_extras(e)
+    [ (", the user takes #{e['recoil']}% of it" if e["recoil"].to_i.positive?),
+      (", up to +#{e['grudge']}% power at the brink" if e["grudge"].to_i.positive?) ].compact.join
+  end
+
+  def describe_away(e)
+    turns = pluralize(e.fetch("duration", 1), "turn")
+    if e["who"] == "self"
+      e.fetch("power", 0).positive? ? "Out of reach for #{turns}, then a #{e['power']}% blow" : "Off the field for #{turns}, then back to act"
+    else
+      "Sent off the field for #{turns} (#{e.fetch('chance', 100)}%)"
+    end
+  end
+
+  def effect_type(type)
+    type == "terrain" ? "Terrain" : type_name(type)
   end
 
   def describe_condition(name, value)
