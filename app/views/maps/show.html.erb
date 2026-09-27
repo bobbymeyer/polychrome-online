@@ -7,6 +7,7 @@
 </div>
 
 <%= turbo_stream_from @campaign, (@gm ? :map_gm : :map) %>
+<%= render "shared/stage_stream", campaign: @campaign %>
 <div class="map-layout" <% if @gm %>data-controller="map-editor" data-map-editor-new-url-value="<%= new_campaign_map_node_path(@campaign) %>"<% end %>>
   <div class="window map-window">
     <%= render "maps/canvas", campaign: @campaign, gm: @gm %>

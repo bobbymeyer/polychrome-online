@@ -6,6 +6,7 @@
 <div class="table" data-controller="dialogue" data-action="chat-line:arrived->dialogue#arrive keydown@window->dialogue#key">
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= turbo_stream_from @campaign, :table %>
+  <%= render "shared/stage_stream", campaign: @campaign %>
   <%= turbo_stream_from @campaign, (@seat == "gm" ? :map_gm : :map) %>
   <% if @seat == "gm" %>
     <%= turbo_stream_from @campaign, :gm %>

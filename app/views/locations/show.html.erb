@@ -3,6 +3,7 @@
   <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
 <% end %>
 <%= turbo_stream_from @location %>
+<%= render "shared/stage_stream", campaign: @campaign %>
 <% view = @location.view %>
 
 <div class="crumbs">

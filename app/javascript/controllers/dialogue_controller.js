@@ -32,7 +32,15 @@ export default class extends Controller {
     this.scrollLog()
   }
 
+  // While lines are being said, the page is "busy": a battle starting waits
+  // for them (stage.js), so nobody is pulled away mid-scene.
+  set busy(value) {
+    if (value) document.documentElement.dataset.dialogueBusy = "true"
+    else delete document.documentElement.dataset.dialogueBusy
+  }
+
   disconnect() {
+    this.busy = false
     clearTimeout(this.startTimer)
     clearTimeout(this.hideTimer)
     this.stopTyping()
@@ -45,6 +53,7 @@ export default class extends Controller {
 
     this.queue.push(line)
     this.queue.sort((a, b) => a.idValue - b.idValue)
+    this.busy = true
     if (!this.current) {
       // Lines sent together can arrive in any order: let the batch land and
       // sort before starting.
@@ -55,6 +64,22 @@ export default class extends Controller {
 
     this.moreTarget.hidden = false
     if (!this.typing) this.scheduleNext()
+  }
+
+  // A line that isn't a message: a boss's opening words (boss_intro).
+  // It goes to the front of the queue and never to the log.
+  say(event) {
+    if (!this.hasBoxTarget) return
+    const { speaker, text, plate, expression } = event.detail
+    const line = {
+      speakerValue: speaker, text, plate, expressionValue: expression || "",
+      speakerKeyValue: `said:${speaker}`, portraitValue: "", dialogueValue: true,
+      element: document.createElement("li")
+    }
+    this.queue.unshift(line)
+    this.busy = true
+    if (this.current && !this.typing) this.moreTarget.hidden = false
+    if (!this.current) this.next()
   }
 
   advance() {
@@ -79,6 +104,7 @@ export default class extends Controller {
     const line = this.queue.shift()
     if (!line) {
       this.current = null
+      this.busy = false
       return
     }
 
@@ -98,11 +124,15 @@ export default class extends Controller {
     if (this.queue.length) {
       this.moreTarget.hidden = false
       this.scheduleNext()
-    } else if (this.autoHideValue) {
+    } else {
+      // The last line stays up long enough to be read, then the page is free.
       this.hideTimer = setTimeout(() => {
         if (this.queue.length) return
-        this.boxTarget.hidden = true
-        this.current = null
+        if (this.autoHideValue) {
+          this.boxTarget.hidden = true
+          this.current = null
+        }
+        this.busy = false
       }, HOLD_MS + line.text.length * HOLD_PER_CHAR_MS)
     }
   }
@@ -127,6 +157,7 @@ export default class extends Controller {
       portrait = document.createElement("span")
       portrait.className = `speaker-portrait speaker-portrait--large speaker-portrait--plate${line.speakerKeyValue === "narrator" ? " speaker-portrait--narrator" : ""}`
       portrait.textContent = line.speakerValue.charAt(0)
+      if (line.plate) portrait.style.cssText = line.plate
     }
     this.portraitTarget.replaceChildren(portrait)
 

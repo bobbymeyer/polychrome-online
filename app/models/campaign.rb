@@ -190,7 +190,7 @@ class Campaign < ApplicationRecord
     raise ArgumentError, "Nobody is standing to fight" if standing.empty?
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
-                                 encounter: encounter["monsters"], input_seconds: input_seconds)
+                                 encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false)
     update!(pending_encounter: nil)
     battle
   end

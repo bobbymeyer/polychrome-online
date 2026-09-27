@@ -7,6 +7,13 @@
     <div class="field"><%= f.label :gil %><%= f.number_field :gil, min: 0 %></div>
     <div class="field"><%= f.label :abp, "ABP" %><%= f.number_field :abp, min: 0 %></div>
   </div>
+  <div class="field-row">
+    <div class="field field--check"><%= f.check_box :boss %><%= f.label :boss, "A boss: gets an entrance, its own music and a victory to match" %></div>
+  </div>
+  <div class="field">
+    <%= f.label :boss_line, "What it says before the fight" %>
+    <%= f.text_area :boss_line, rows: 2, placeholder: "You came for the crystal. So did the last ones." %>
+  </div>
 
   <fieldset class="panel">
     <legend>Stat block</legend>

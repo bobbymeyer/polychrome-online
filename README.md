@@ -119,6 +119,17 @@ other browsers and have each player take a seat.
   that battle's log line says "Join the battle". The GM can **call off** a
   battle nobody will finish, from the campaign page or the battle. It then
   counts for nothing: no settlement, and HP and items stay as they were.
+- **Everyone goes.** `BattleRecord.start!` broadcasts a `battle_start` stream
+  action on the campaign's `:stage` stream, which every game page of the
+  campaign subscribes to (`shared/_stage_stream`). `stage.js` waits for the
+  dialogue to finish, plays the wipe and follows. The page you left is kept
+  in `sessionStorage` for the "Back to …" link on the result panel.
+- **Bosses.** A monster can be marked a boss in the Bestiary, with a line it
+  says when it arrives. A battle is a boss fight when a marked boss is in it,
+  or when it comes from a dungeon's boss room (`battles.boss`); its boss is
+  the marked one, or else the strongest monster there. The battle page plays
+  the entrance (`boss_intro_controller`), and the settlement line names what
+  fell.
 - **Input timer.** It is a `BattleTimeoutJob` scheduled for the round's
   deadline. When it fires, missing commands default to each unit's last one,
   or Attack.

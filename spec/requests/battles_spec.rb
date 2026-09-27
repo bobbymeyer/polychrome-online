@@ -90,6 +90,19 @@ RSpec.describe "Battle screen", type: :request do
       expect(response.body).to include("GM sets Goblin A&#39;s HP to 5. &quot;wounded&quot;")
     end
 
+    it "gives a boss its entrance: the name card and its line, until the fight is under way" do
+      campaign = create_campaign
+      plain = start_battle(campaign: campaign)
+      campaign.world.monsters.find_by!(slug: "goblin").update!(boss: true, boss_line: "You dare?")
+      boss_battle = start_battle(campaign: campaign)
+      get battle_path(boss_battle)
+      expect(response.body).to include("battle--boss", 'data-boss-down="Goblin falls!"', 'data-controller="boss-intro"',
+                                        'data-boss-intro-line-value="You dare?"', 'data-boss-intro-fresh-value="true"')
+
+      get battle_path(plain)
+      expect(response.body).not_to include("boss-intro", "battle--boss")
+    end
+
     it "never shows enemy HP on the shared board" do
       get battle_path(battle)
       board = response.body[/<div class="board">.*?<ol class="roster/m]

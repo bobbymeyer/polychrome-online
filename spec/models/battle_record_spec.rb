@@ -107,6 +107,41 @@ RSpec.describe BattleRecord do
     end
   end
 
+  describe "bosses" do
+    def stream(*streamables)
+      Turbo::StreamsChannel.send(:stream_name_from, streamables)
+    end
+
+    it "calls everyone at the table into the battle when it starts" do
+      campaign = create_campaign
+      expect { start_battle(campaign: campaign) }
+        .to have_broadcasted_to(stream(campaign, :stage)).with(a_string_including("battle_start", "/battles/", 'boss="false"'))
+    end
+
+    it "is a boss fight when a marked boss is in it, and names it on victory" do
+      campaign = create_campaign
+      campaign.world.monsters.find_by!(slug: "goblin").update!(boss: true, boss_line: "Mine!")
+      boss_battle = nil
+      expect { boss_battle = start_battle(campaign: campaign) }
+        .to have_broadcasted_to(stream(campaign, :stage)).with(a_string_including('boss="true"'))
+      expect(boss_battle).to be_boss
+      expect(boss_battle.boss_monsters.map(&:slug)).to eq([ "goblin" ])
+
+      boss_battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+      expect(boss_battle.campaign.messages.last.body).to include("Victory!", "Goblin has fallen!")
+    end
+
+    it "is a boss fight when started from a boss room, with its strongest monster as the boss" do
+      campaign = create_campaign
+      boss_battle = start_battle(campaign: campaign, boss: true)
+      expect(boss_battle).to be_boss
+      expect(boss_battle.boss_monsters.map(&:slug)).to eq([ "goblin" ])
+      plain = start_battle(campaign: campaign)
+      expect(plain).not_to be_boss
+      expect(plain.boss_monsters).to be_empty
+    end
+  end
+
   describe "settlement" do
     let(:campaign) { battle.campaign }
     let(:characters) { battle.characters_by_unit }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_201100) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_201200) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -152,6 +152,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_201100) do
     t.integer "campaign_id"
     t.json "settlement"
     t.json "auto_units", default: [], null: false
+    t.boolean "boss", default: false, null: false
     t.index ["campaign_id"], name: "index_battles_on_campaign_id"
     t.index ["world_id"], name: "index_battles_on_world_id"
   end
@@ -438,6 +439,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_201100) do
     t.json "art_loras", default: [], null: false
     t.json "image_recipe"
     t.string "colour"
+    t.boolean "boss", default: false, null: false
+    t.text "boss_line"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end

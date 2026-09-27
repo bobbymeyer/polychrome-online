@@ -41,6 +41,16 @@ deliberate divergence from much of what follows, and where the two disagree the 
   holds the table's log; in battle, the battle's log with the table's beneath it.
 - **Dialogue in battle.** What's said at the table reaches the battle: a GM or NPC line appears
   as the same speech box beside the commands, typed out, and leaves once it's been read.
+- **Into battle.** When a battle starts, everyone at the table goes: on any game page of the
+  campaign (table, map, a town or dungeon, the campaign page, a sheet), slabs of the palette
+  sweep across the screen, the battle page loads under them, and they sweep off the other side.
+  Nobody is pulled away mid-sentence: the wipe waits for the dialogue box to finish. Where you
+  came from is remembered, and the battle's end offers the way back to it.
+- **Bosses.** A boss fight's wipe is black and wine. The enemies' side of the field goes
+  wine-dark. The boss's name is slammed across the stage on a slab in its own colour, tagged
+  BOSS, then it has the first word in the dialogue box (its line from the Bestiary). This plays
+  once per viewer, and only in the first round. On victory a second slab follows "Victory!":
+  "Goblin Chief falls!".
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide

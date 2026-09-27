@@ -213,6 +213,13 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
     linear-gradient(170deg, var(--dark-blue) 0 60%, #34458a 60% 100%);
 }
 .battlefield__side--party { border-left: 0; }
+/* A boss fight: the enemies' side goes wine-dark. */
+.battle--boss .battlefield {
+  background:
+    linear-gradient(100deg, transparent 0 66%, var(--sun-yellow) 66% 100%),
+    radial-gradient(circle, rgba(255, 255, 255, .16) 1.2px, transparent 1.6px) 0 0 / 10px 10px,
+    linear-gradient(170deg, #5a1630 0 60%, #3d0f22 60% 100%);
+}
 /* Stacked on a phone, the party's yellow slab cuts across the bottom instead. */
 @media (max-width: 640px) {
   .battlefield {
@@ -221,6 +228,9 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
       radial-gradient(circle, rgba(255, 255, 255, .2) 1.2px, transparent 1.6px) 0 0 / 10px 10px,
       var(--dark-blue);
   }
+  .battle--boss .battlefield { background-color: #4a1228; background-image:
+      linear-gradient(174deg, transparent 0 54%, var(--sun-yellow) 54% 100%),
+      radial-gradient(circle, rgba(255, 255, 255, .16) 1.2px, transparent 1.6px); background-size: auto, 10px 10px; }
   .battlefield__side--party { border-top: 0; }
 }
 .unit--enemy .unit__label { color: var(--paper); }
@@ -412,6 +422,26 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .skyline__sky { fill: var(--tint); }
 
 /* ---------------------------------------------------------------------------
+ * Into battle: slabs of the palette sweep across every screen at the table,
+ * the page follows, and they sweep away on the other side (stage.js).
+ * ------------------------------------------------------------------------- */
+
+.stage-wipe { position: fixed; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; }
+.stage-wipe span {
+  position: absolute; top: -20%; bottom: -20%; left: calc(var(--i) * 15vw - 12vw); width: 26vw;
+  transform: skewX(-14deg); background: var(--c, var(--ink));
+}
+.stage-wipe span:nth-child(7n + 1) { --c: var(--dark-blue); } .stage-wipe span:nth-child(7n + 2) { --c: var(--sun-yellow); }
+.stage-wipe span:nth-child(7n + 3) { --c: var(--bright-red); } .stage-wipe span:nth-child(7n + 4) { --c: var(--turquoise); }
+.stage-wipe span:nth-child(7n + 5) { --c: var(--ink); } .stage-wipe span:nth-child(7n + 6) { --c: var(--orange); }
+.stage-wipe span:nth-child(7n + 7) { --c: var(--forest-green); }
+.stage-wipe--boss span:nth-child(odd) { --c: var(--ink); } .stage-wipe--boss span:nth-child(even) { --c: var(--wine-red); }
+.stage-wipe--in span { animation: slab-in .5s var(--snap) both; animation-delay: calc(var(--i) * 45ms); }
+.stage-wipe--out span { animation: slab-out .55s cubic-bezier(.6, 0, .8, .4) both; animation-delay: calc(var(--i) * 45ms); }
+@keyframes slab-in { from { translate: -140vw 0; } }
+@keyframes slab-out { to { translate: 140vw 0; } }
+
+/* ---------------------------------------------------------------------------
  * The game log: a drawer on the right edge, closed by default. A tab in the
  * page's colour opens it; while closed, the tab counts what arrives.
  * ------------------------------------------------------------------------- */
@@ -452,6 +482,39 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .dialogue--battle .dialogue__body { font-size: 18px; line-height: 26px; }
 .dialogue--battle:not([hidden]) { animation: slash-in .3s var(--snap) both; }
 @media (max-width: 800px) { .dialogue--battle { grid-column: 1 / -1; } }
+
+/* ---------------------------------------------------------------------------
+ * Bosses. The field goes wine-dark, the name is slammed across the stage
+ * (boss_intro_controller), and the victory says what fell.
+ * ------------------------------------------------------------------------- */
+
+.boss-intro { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; overflow: hidden; background: rgb(0 0 0 / .55); cursor: pointer; }
+.boss-intro[hidden] { display: none; }
+.boss-card {
+  width: 120vw; padding: 28px 12vw 34px; transform: skewX(-8deg); rotate: -5deg;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--plate, var(--wine-red)); color: var(--plate-ink, #fff);
+  box-shadow: 0 -10px 0 var(--ink), 0 14px 0 var(--ink), 0 28px 0 var(--wine-red);
+}
+.boss-card__tag {
+  padding: 2px 14px; background: var(--ink); color: var(--sun-yellow);
+  font-style: italic; font-weight: 900; letter-spacing: .3em; text-transform: uppercase;
+}
+.boss-card__name { font: var(--display); font-size: clamp(48px, 11vw, 136px); letter-spacing: -0.05em; text-align: center; text-shadow: 6px 6px 0 var(--ink); }
+
+.banner--boss-down {
+  left: -4%; right: -4%; padding: 10px 8%; rotate: 3deg; top: 62%;
+  background: var(--wine-red); color: var(--paper); font-size: clamp(32px, 7vw, 84px);
+  box-shadow: 0 -6px 0 var(--ink), 0 10px 0 var(--ink);
+}
+
+/* On the bestiary page: what it says when it arrives. */
+.boss-line {
+  margin: 16px 0; padding: 12px 18px 12px 22px; max-width: 48ch;
+  background: var(--ink); color: var(--paper); font-style: italic; font-weight: 700; font-size: 18px; line-height: 26px;
+  border-left: 8px solid var(--wine-red); box-shadow: 6px 6px 0 var(--wine-red);
+}
+.boss-line::before { content: "\201C"; } .boss-line::after { content: "\201D"; }
 
 /* ---------------------------------------------------------------------------
  * Everything that moves holds still for people who asked for stillness.

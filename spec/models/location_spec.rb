@@ -183,7 +183,7 @@ RSpec.describe Location do
           expect(campaign.messages.last).to have_attributes(body: "The floor tilts.", speaker: nil)
           expect(campaign.messages.last).to be_dialogue
         when "encounter"
-          expect(campaign.reload.pending_encounter).to eq("table" => "#{dungeon.name}: Test 1", "monsters" => { "goblin" => 2 })
+          expect(campaign.reload.pending_encounter).to eq("table" => "#{dungeon.name}: Test 1", "monsters" => { "goblin" => 2 }, "boss" => false)
         when "treasure"
           dungeon.take_treasure!(key)
           expect(campaign.quantity_of(world.items.find_by!(slug: "potion"))).to eq(1)
@@ -191,6 +191,15 @@ RSpec.describe Location do
         end
       end
       expect(rooms).to be_present
+    end
+
+    it "makes the boss room's fight a boss fight" do
+      dungeon.enter!
+      key = dungeon.add_room!(name: "Throne", connect: entrance, decision: { "kind" => "boss", "monsters" => { "goblin" => 1 } })
+      dungeon.move_to!(key)
+      expect(campaign.reload.pending_encounter).to include("boss" => true)
+      create_character(campaign, name: "Bartz") if campaign.characters.none?
+      expect(campaign.start_pending_encounter!).to be_boss
     end
 
     it "hands over gil treasure to the party's purse" do

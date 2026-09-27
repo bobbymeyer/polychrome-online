@@ -243,6 +243,11 @@ export default class extends Controller {
         this.banner(tl, "Victory!", at, "victory")
         // The party's victory hop, as in the games.
         this.party().forEach((el, i) => { gesture(tl, el, "bounce", at + 200 + i * 80); gesture(tl, el, "bounce", at + 700 + i * 80) })
+        // A boss gets its epitaph: the victory says what it beat.
+        if (this.element.dataset.bossDown) {
+          this.banner(tl, this.element.dataset.bossDown, at + 1300, "boss-down")
+          return 2800
+        }
         return 1500
       case "defeat":
         this.banner(tl, "Defeat", at, "defeat")
@@ -369,7 +374,7 @@ export default class extends Controller {
     el.className = `banner banner--${kind}`
     el.textContent = text
     this.fxTarget.append(el)
-    if (["victory", "defeat", "escape"].includes(kind)) {
+    if (["victory", "defeat", "escape", "boss-down"].includes(kind)) {
       // Thrown across the stage from the left, held, then gone.
       tl.add(el, { opacity: [0, 1, 1, 1, 0], translateX: ["-60%", "0%", "0%", "0%", "4%"], duration: 1300, ease: "outExpo" }, at)
     } else {
