@@ -1,29 +1,138 @@
 # The asset pipeline's ComfyUI settings (docs/HANDOFF.md §8, README "Art").
 #
-# ComfyUI runs on the same machine as the app. From inside the app's container
-# that is usually http://host.docker.internal:8188 (with
-# --add-host=host.docker.internal:host-gateway on Linux), and ComfyUI itself
-# must be started with --listen so it accepts connections from the container.
+# ComfyUI can be anywhere the app can reach over HTTP: the same machine, a
+# box on the LAN or a tailnet, or behind a reverse proxy with auth. Nothing
+# here assumes a particular machine: the app asks ComfyUI what it has
+# installed (/object_info) and builds each workflow from that.
 #
-# Prompts and LoRAs are not set here: they are composed from the world, the
-# content type and the entry, and edited in the app ("Art direction"). The
-# `defaults` below only seed a world's content types the first time.
+# Prompts, models and LoRAs are not set here: they are composed from the
+# world, the content type and the entry, and edited in the app ("Art
+# direction"). The `defaults` below only seed a world's content types the
+# first time.
 shared: &shared
+  # Where ComfyUI answers. A path prefix works (https://host/comfy), and so
+  # does basic auth in the URL (https://user:pass@host). From inside a
+  # container, ComfyUI on the host is usually http://host.docker.internal:8188.
   url: <%= ENV.fetch("COMFY_URL", "http://127.0.0.1:8188") %>
-  # Used when a world names no checkpoint of its own.
-  checkpoint: <%= ENV.fetch("COMFY_CHECKPOINT", "sd_xl_base_1.0.safetensors") %>
+  # Sent as "Authorization: Bearer ..." when set, for a proxy that wants one.
+  token: <%= ENV.fetch("COMFY_TOKEN", "").to_json %>
+  # Any other headers a proxy wants, as a JSON object, for example
+  # {"CF-Access-Client-Id": "...", "CF-Access-Client-Secret": "..."}.
+  headers: <%= ENV.fetch("COMFY_HEADERS", "{}").to_json %>
+  # The model used when no world, content type or entry names one: a file
+  # name as ComfyUI lists it, from models/checkpoints or models/diffusion_models.
+  model: <%= ENV.fetch("COMFY_MODEL", "anima-preview.safetensors") %>
   # A background-removal node installed in your ComfyUI, for example
-  # "Image Remove Background (rembg)". Blank skips the step. It goes before
-  # SaveImage for content types marked transparent.
+  # "Image Remove Background (rembg)". Blank, or not installed, skips the
+  # step. It goes before SaveImage for content types marked transparent.
   rembg_node: <%= ENV.fetch("COMFY_REMBG_NODE", "") %>
   rembg_input: <%= ENV.fetch("COMFY_REMBG_INPUT", "image") %>
-  sampler: euler
-  scheduler: normal
-  steps: 25
-  cfg: 6.5
   candidates: 4
   # Give up on a batch that hasn't finished after this many seconds.
   timeout: 900
+
+  # How each family of model wants to be run (Comfy::Family). A model's file
+  # name picks its family: the first family with a `match` found in the name
+  # (any case). A name nothing matches goes by where the file is: a checkpoint
+  # is taken for `checkpoint_family`, a bare diffusion model for
+  # `default_family`. Add a `match` here for a model with an unusual name.
+  #
+  # The workflow is built from these and from what ComfyUI has installed:
+  #   text_encoder, vae  file-name fragments to look for, when the model is a
+  #                      bare diffusion model with its encoder and VAE apart
+  #   clip_type          CLIPLoader types to try, first one ComfyUI offers wins
+  #   vae_override       a VAE to use instead of a checkpoint's own, if installed
+  #   lora               "model" (LoraLoaderModelOnly) or "model_and_clip"
+  #   clip_skip          2 for anime SDXL lineages
+  #   sampler, scheduler preferences, first one ComfyUI offers wins
+  #   negative           false for models that ignore it; it is also skipped
+  #                      (no encode at all) whenever cfg is 1
+  #   prefix             words that go first in every prompt (quality tags)
+  #   prompt_style       "tags" or "prose": how the language model, when
+  #                      there is one (config/llm.yml), writes the subject
+  #   pixels, multiple   the trained size range, in pixels; sizes are scaled
+  #                      into it, keeping their shape, rounded to `multiple`
+  #   variants           overrides for names that also match these words
+  default_family: anima
+  checkpoint_family: sdxl
+  families:
+    anima:
+      label: Anima
+      match: [anima]
+      text_encoder: [qwen_3_06b, qwen3_06b, qwen3-0.6b, qwen_3_0.6b]
+      clip_type: [anima, stable_diffusion]
+      vae: [qwen_image_vae, wan_2.1_vae, wan2.1_vae]
+      lora: model
+      steps: 30
+      cfg: 4.5
+      sampler: [er_sde, euler_ancestral, euler]
+      scheduler: [simple, normal]
+      negative: true
+      prefix: "masterpiece, best quality"
+      negative_prefix: "worst quality, low quality, blurry, jpeg artifacts"
+      prompt_style: tags
+      pixels: [786432, 1310720]
+      multiple: 16
+    krea2:
+      label: Krea 2
+      match: [krea2, krea_2, krea-2]
+      text_encoder: [qwen3vl_4b, qwen3_vl_4b, qwen3-vl-4b]
+      clip_type: [krea2]
+      vae: [qwen_image_vae]
+      lora: model
+      steps: 52
+      cfg: 3.25
+      sampler: [euler]
+      scheduler: [simple]
+      negative: true
+      pixels: [1048576, 4194304]
+      multiple: 16
+      variants:
+        - match: [turbo]
+          label: Krea 2 Turbo
+          steps: 8
+          cfg: 1.0
+    sd15:
+      label: SD 1.5
+      match: [sd15, sd_15, v1-5, sd-1.5, sd1.5]
+      lora: model_and_clip
+      steps: 25
+      cfg: 7.0
+      sampler: [dpmpp_2m, euler_ancestral, euler]
+      scheduler: [karras, normal]
+      negative: true
+      pixels: [262144, 393216]
+      multiple: 64
+    sdxl:
+      label: SDXL
+      match: [sdxl, _xl, xl_, -xl, xl-, pony, illustrious, noob, juggernaut, realvis]
+      vae_override: [sdxl-vae-fp16-fix, sdxl_vae_fp16_fix]
+      lora: model_and_clip
+      steps: 25
+      cfg: 6.0
+      sampler: [dpmpp_2m, euler_ancestral, euler]
+      scheduler: [karras, normal]
+      negative: true
+      pixels: [786432, 1310720]
+      multiple: 64
+      variants:
+        - match: [pony]
+          label: Pony
+          prefix: "score_9, score_8_up, score_7_up"
+          negative_prefix: "score_4, score_5, score_6"
+          prompt_style: tags
+          clip_skip: 2
+        - match: [illustrious, noob]
+          label: Illustrious
+          prefix: "masterpiece, best quality"
+          negative_prefix: "worst quality, low quality"
+          prompt_style: tags
+          clip_skip: 2
+        - match: [lightning, turbo, lcm, hyper, dmd]
+          steps: 6
+          cfg: 1.5
+          sampler: [euler, euler_ancestral]
+          scheduler: [sgm_uniform, normal]
 
   defaults:
     monster:
@@ -85,5 +194,9 @@ development:
 test:
   <<: *shared
   url: http://comfy.test
+  token: ""
+  headers: "{}"
+  model: anima-preview.safetensors
+  rembg_node: ""
 production:
   <<: *shared

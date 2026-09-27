@@ -23,9 +23,13 @@ module Seeds
                       damage_types: TypeChart.default_rows, terrain_types: TypeChart::DEFAULT_TERRAIN, skills: World::DEFAULT_SKILLS)
       end
 
-      ABILITIES.each { |slug, attrs| upsert(world.abilities, slug, attrs) }
+      # Summons name their creatures, and creatures name what they do: the
+      # rest first, then the creatures, then the summons.
+      summons, others = ABILITIES.partition { |_, attrs| attrs[:effects].any? { |e| e[:primitive] == "summon" } }
+      others.each { |slug, attrs| upsert(world.abilities, slug, attrs) }
       ITEMS.each { |slug, attrs| upsert(world.items, slug, attrs) }
       MONSTERS.each { |slug, attrs| upsert(world.monsters, slug, attrs) }
+      summons.each { |slug, attrs| upsert(world.abilities, slug, attrs) }
       ENCOUNTER_TABLES.each { |slug, attrs| upsert(world.encounter_tables, slug, attrs) }
       GENERATOR_TABLES.each { |slug, attrs| upsert(world.generator_tables, slug, attrs) }
       LOCATION_TEMPLATES.each do |slug, attrs|
@@ -216,9 +220,9 @@ module Seeds
       flame_blade: { name: "Flame Blade", kind: "skill", target: "single_enemy", mp_cost: 3, gesture: "lunge",
                      effects: [ { primitive: "physical", type: "fire", power: 120 } ],
                      description: "A spell run down the length of a sword. The Red Mage's own command." },
-      carbuncle: { name: "Carbuncle", kind: "magic", target: "all_allies", mp_cost: 8, gesture: "pop",
-                   effects: [ { primitive: "status", kind: "haste", chance: 100, duration: 3 } ],
-                   description: "A small green friend who makes everyone quick. The Summoner's own command." },
+      call_sprite: { name: "Call Sprite", kind: "magic", target: "self", mp_cost: 8, gesture: "pop",
+                     effects: [ { primitive: "summon", creature: "sprite" } ],
+                     description: "A small bright friend who makes everyone quick, then flits off. The Summoner's own command." },
       gaia: { name: "Gaia", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash",
               effects: [ { primitive: "elemental", type: "terrain", power: 12 } ],
               description: "The ground itself answers: its type is the land you're fighting on. The Geomancer's own command." },
@@ -226,16 +230,34 @@ module Seeds
               effects: [ { primitive: "jump", power: 220 } ],
               description: "Leap out of reach for a round, then come down hard. The Dragoon's own command." },
       # Summons: big, typed, and dear.
-      ifrit: { name: "Ifrit", kind: "magic", target: "all_enemies", mp_cost: 12, gesture: "flash",
-               effects: [ { primitive: "elemental", type: "fire", power: 20 } ], description: "Hellfire, all of them." },
-      shiva: { name: "Shiva", kind: "magic", target: "all_enemies", mp_cost: 12, gesture: "flash",
-               effects: [ { primitive: "elemental", type: "ice", power: 20 } ], description: "Diamond dust, all of them." },
-      ramuh: { name: "Ramuh", kind: "magic", target: "all_enemies", mp_cost: 12, gesture: "flash",
-               effects: [ { primitive: "elemental", type: "electric", power: 20 } ], description: "Judgment bolt, all of them." },
-      titan: { name: "Titan", kind: "magic", target: "all_enemies", mp_cost: 16, gesture: "shake",
-               effects: [ { primitive: "elemental", type: "ground", power: 24 } ], description: "The earth heaves." },
-      leviathan: { name: "Leviathan", kind: "magic", target: "all_enemies", mp_cost: 20, gesture: "flash",
-                   effects: [ { primitive: "elemental", type: "water", power: 28 } ], description: "A tidal wave where there was no sea." },
+      # Small summons: a creature comes, does one thing well, and goes (the
+      # summon primitive). The creatures are in the Bestiary.
+      call_eagle: { name: "Call Eagle", kind: "magic", target: "self", mp_cost: 5, gesture: "pop",
+                    effects: [ { primitive: "summon", creature: "eagle" } ], description: "A hunting eagle stoops on one foe and is gone." },
+      call_wisp: { name: "Call Wisp", kind: "magic", target: "self", mp_cost: 7, gesture: "pop",
+                   effects: [ { primitive: "summon", creature: "wisp" } ], description: "A cold light drifts through the enemy line." },
+      call_salamander: { name: "Call Salamander", kind: "magic", target: "self", mp_cost: 9, gesture: "pop",
+                         effects: [ { primitive: "summon", creature: "salamander" } ], description: "A lizard the size of a dog, breathing fire at whatever you point at." },
+      call_turtle: { name: "Call Turtle", kind: "magic", target: "self", mp_cost: 14, gesture: "pop",
+                     effects: [ { primitive: "summon", creature: "stone_turtle", duration: 3 } ],
+                     description: "An old stone turtle stays a while and wards the party each turn." },
+      call_serpent: { name: "Call Serpent", kind: "magic", target: "self", mp_cost: 20, gesture: "pop",
+                      effects: [ { primitive: "summon", creature: "river_serpent", duration: 2 } ],
+                      description: "A river serpent coils round the fight for two turns, crushing everything in reach." },
+      # What the creatures do.
+      talon_dive: { name: "Talon Dive", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
+                    effects: [ { primitive: "physical", type: "flying", power: 180 } ], description: "Out of the sun, talons first." },
+      chill_touch: { name: "Chill Touch", kind: "magic", target: "all_enemies", mp_cost: 0, gesture: "tint",
+                     effects: [ { primitive: "elemental", type: "ghost", power: 12 }, { primitive: "status", kind: "slow", chance: 30, duration: 2 } ],
+                     description: "The cold of somewhere else." },
+      fire_breath: { name: "Fire Breath", kind: "magic", target: "single_enemy", mp_cost: 0, gesture: "flash",
+                     effects: [ { primitive: "elemental", type: "fire", power: 30 } ], description: "A long, hot breath." },
+      shell_ward: { name: "Shell Ward", kind: "magic", target: "all_allies", mp_cost: 0, gesture: "float",
+                    effects: [ { primitive: "shield", power: 5, duration: 2 } ], description: "The turtle's patience, spread thin over everyone." },
+      tidal_coil: { name: "Tidal Coil", kind: "magic", target: "all_enemies", mp_cost: 0, gesture: "shake",
+                    effects: [ { primitive: "elemental", type: "water", power: 18 } ], description: "River water, and the weight of the serpent in it." },
+      quicken: { name: "Quicken", kind: "magic", target: "all_allies", mp_cost: 0, gesture: "pop",
+                 effects: [ { primitive: "status", kind: "haste", chance: 100, duration: 3 } ], description: "Everyone a little quicker." },
       # Geomancy: the land's arts.
       sinkhole: { name: "Sinkhole", kind: "magic", target: "single_enemy", mp_cost: 4, gesture: "shake",
                   effects: [ { primitive: "elemental", type: "ground", power: 16 } ], description: "The floor opens under one foe." },
@@ -366,12 +388,12 @@ module Seeds
                   equip_categories: %w[sword knife rod light_armor robe hat accessory],
                   innates: [],
                   levels: [ [ "fire", 1 ], [ "cure", 1 ], [ "blizzard", 8 ], [ "thunder", 8 ], [ "enfire", 15 ], [ "sleep", 20 ], [ "stop", 30 ], [ "haste", 40 ] ] },
-      summoner: { name: "Summoner", base_type: "ghost", skills: %w[lore survival], field_ability: "familiar", signature: "carbuncle", passive: "mp_regen", desperation: "megaflare",
+      summoner: { name: "Summoner", base_type: "ghost", skills: %w[lore survival], field_ability: "familiar", signature: "call_sprite", passive: "mp_regen", desperation: "megaflare",
                   description: "Calls things that should not come when called.",
                   stat_multipliers: { max_hp: 75, max_mp: 160, mag: 135, str: 55 },
                   equip_categories: %w[staff rod robe hat accessory],
                   innates: [],
-                  levels: [ [ "ifrit", 1 ], [ "shiva", 5 ], [ "ramuh", 8 ], [ "titan", 30 ], [ "leviathan", 60 ] ] },
+                  levels: [ [ "call_eagle", 1 ], [ "call_wisp", 5 ], [ "call_salamander", 8 ], [ "call_turtle", 30 ], [ "call_serpent", 60 ] ] },
       geomancer: { name: "Geomancer", base_type: "ground", skills: %w[survival endurance], field_ability: "read_the_land", signature: "gaia", passive: "regen", desperation: "cataclysm",
                    description: "Reads the land and borrows its temper.",
                    stat_multipliers: { max_hp: 100, mag: 115, spr: 115, str: 90 },
@@ -387,6 +409,19 @@ module Seeds
     }.freeze
 
     MONSTERS = {
+      # Summoned, not met in the wild (the summon primitive).
+      eagle: { name: "Eagle", level: 3, stats: stats(max_hp: 40, str: 14, atk: 10, agi: 30, def: 2, mdef: 2), base_type: "flying",
+               exp: 0, gil: 0, abp: 0, ai_script: [ { use: "talon_dive" } ], description: "Comes when called, from a long way up." },
+      wisp: { name: "Wisp", level: 3, stats: stats(max_hp: 30, mag: 16, agi: 20, mdef: 8), base_type: "ghost",
+              exp: 0, gil: 0, abp: 0, ai_script: [ { use: "chill_touch" } ], description: "A light that shouldn't be there." },
+      salamander: { name: "Salamander", level: 5, stats: stats(max_hp: 60, mag: 20, agi: 12, def: 4, mdef: 6), base_type: "fire",
+                    exp: 0, gil: 0, abp: 0, ai_script: [ { use: "fire_breath" } ], description: "Warm to hold. Don't." },
+      stone_turtle: { name: "Stone Turtle", level: 10, stats: stats(max_hp: 200, mag: 18, agi: 4, def: 30, mdef: 20), base_type: "rock",
+                      exp: 0, gil: 0, abp: 0, ai_script: [ { use: "shell_ward" } ], description: "Older than the road. In no hurry." },
+      river_serpent: { name: "River Serpent", level: 15, stats: stats(max_hp: 160, mag: 26, agi: 14, def: 8, mdef: 10), base_type: "water",
+                       exp: 0, gil: 0, abp: 0, ai_script: [ { use: "tidal_coil" } ], description: "Lives where the river bends. Owes the Summoner a favour." },
+      sprite: { name: "Sprite", level: 1, stats: stats(max_hp: 20, mag: 10, agi: 40), base_type: "psychic",
+                exp: 0, gil: 0, abp: 0, ai_script: [ { use: "quicken" } ], description: "Small, bright and quick, and makes you quick too." },
       goblin: { name: "Goblin", level: 1, stats: stats(max_hp: 45, str: 9, atk: 8, agi: 8, def: 3, mdef: 2),
                 base_type: "normal", affinities: { fire: "weak" }, exp: 20, gil: 30, abp: 2,
                 ai_script: [ { if: { chance: 25 }, use: "goblin_punch" }, { use: "attack" } ],

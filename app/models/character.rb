@@ -43,6 +43,7 @@ class Character < ApplicationRecord
   validates :starting_level, numericality: { in: 1..Stats::Growth::MAX_LEVEL }, allow_nil: true, on: :create
   validates :starting_job_level, numericality: { in: 0..Stats::Growth::MAX_JOB_LEVEL }, allow_nil: true, on: :create
   validate :job_from_the_campaign_world
+  validate :job_open_in_the_campaign, on: :create
 
   delegate :world, to: :campaign
 
@@ -165,6 +166,10 @@ class Character < ApplicationRecord
   def change_job!(new_job)
     unless new_job.world_id == world.id
       errors.add(:job, "must come from #{world.name}")
+      raise ActiveRecord::RecordInvalid, self
+    end
+    unless campaign.job_open?(new_job)
+      errors.add(:job, "#{new_job.name} isn't open in #{campaign.name} yet")
       raise ActiveRecord::RecordInvalid, self
     end
 
@@ -332,6 +337,10 @@ class Character < ApplicationRecord
       campaign.add_item!(choices.first)
       equip!(choices.first)
     end
+  end
+
+  def job_open_in_the_campaign
+    errors.add(:job, "#{job.name} isn't open in #{campaign.name} yet") if job && campaign && !campaign.job_open?(job)
   end
 
   def job_from_the_campaign_world

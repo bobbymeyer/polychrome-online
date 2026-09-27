@@ -36,17 +36,21 @@ class BattleRecord < ApplicationRecord
 
   # Start a battle for some of a campaign's characters.
   #   encounter: { "goblin" => 3, "wolf" => 1 }
-  def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false, terrain: nil)
+  # antagonists: the campaign's NPCs who fight in it (Npc#battle_spec).
+  def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false, terrain: nil,
+                  antagonists: [])
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
+    raise ArgumentError, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
+
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items,
-                                  terrain: terrain.presence)
+                                  terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec))
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
                      input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id),
-                     boss: boss || campaign.world.monsters.where(slug: encounter.keys, boss: true).exists?)
+                     boss: boss || antagonists.any? || campaign.world.monsters.where(slug: encounter.keys, boss: true).exists?)
     battle.open_round!
     battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against " \
-                     "#{encounter.map { |slug, count| "#{count} × #{campaign.world.monsters.find_by(slug: slug)&.name || slug}" }.to_sentence}.")
+                     "#{(antagonists.map(&:name) + encounter.map { |slug, count| "#{count} × #{campaign.world.monsters.find_by(slug: slug)&.name || slug}" }).to_sentence}.")
     battle.auto_fill!
     battle.call_to_arms
     battle
@@ -230,7 +234,7 @@ class BattleRecord < ApplicationRecord
     end
 
     summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items!,
-                "stolen" => take_stolen_items! }
+                "stolen" => take_stolen_items!, "antagonists" => settle_antagonists! }.compact
     victory = events.find { |e| e["type"] == "victory" }
     if victory
       rewards = victory["rewards"]
@@ -254,6 +258,24 @@ class BattleRecord < ApplicationRecord
     announce!(settlement_line(summary))
   end
 
+  # Antagonists who got away come back stronger; the fallen are finished.
+  # Returns [{ "name", "fate" }] for the settlement, or nil if none fought.
+  def settle_antagonists!
+    fates = state["units"].filter_map do |unit|
+      npc = (id = Npc.from_battle_unit(unit["id"])) && campaign.npcs.find_by(id: id)
+      next unless npc
+
+      fate = if unit["gone"] then "escaped"
+      elsif unit["hp"].zero? then "defeated"
+      else "remains"
+      end
+      npc.increment!(:escapes) if fate == "escaped"
+      npc.update!(defeated_at: Time.current) if fate == "defeated"
+      { "name" => npc.name, "fate" => fate }
+    end
+    fates.presence
+  end
+
   # Items used in battle come out of the bag. Returns { "Potion" => 2 }.
   def use_up_items!
     carried = initial_state.fetch("items", {})
@@ -271,7 +293,15 @@ class BattleRecord < ApplicationRecord
 
   def settlement_line(summary)
     parts = [ { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." }.fetch(summary["result"], "It's over.") ]
-    parts << "#{boss_monsters.map(&:name).to_sentence} #{boss_monsters.size > 1 ? 'have' : 'has'} fallen!" if boss? && summary["result"] == "victory"
+    if boss? && summary["result"] == "victory" && summary["antagonists"].blank?
+      parts << "#{boss_monsters.map(&:name).to_sentence} #{boss_monsters.size > 1 ? 'have' : 'has'} fallen!"
+    end
+    Array(summary["antagonists"]).each do |antagonist|
+      case antagonist["fate"]
+      when "escaped" then parts << "#{antagonist['name']} got away, and will be back stronger."
+      when "defeated" then parts << "#{antagonist['name']} is finished."
+      end
+    end
     parts << "Stole #{summary['stolen'].to_sentence}." if summary["stolen"].present?
     parts << "Used #{summary['used'].map { |name, n| "#{n} × #{name}" }.to_sentence}." if summary["used"].present?
     parts << "#{summary['gil']} gil." if summary["gil"].positive?

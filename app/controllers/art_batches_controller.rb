@@ -2,7 +2,7 @@
 
 # Generating an image (docs/HANDOFF.md §8) for a book entry, or for one of a
 # speaker's portraits. Starting a batch first saves the subject's own layer
-# (its specifics and LoRAs), then queues the candidates with ComfyUI; the art
+# (its specifics, model and LoRAs), then queues the candidates with ComfyUI; the art
 # section fills in as they land.
 class ArtBatchesController < ApplicationController
   include ArtTargets
@@ -13,10 +13,10 @@ class ArtBatchesController < ApplicationController
     entry, subject = target
     return forbid unless can_generate?(entry)
 
-    subject.update!(params.fetch(:entry, {}).permit(:art_notes, art_loras: {}))
+    subject.update!(params.fetch(:entry, {}).permit(:art_notes, :art_model, art_loras: {}))
     # A speaker shows one strip at a time, whichever expression it is for.
     ArtBatch.where(entry: subject.portraits).destroy_all if entry.is_a?(Portrait)
-    ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates])
+    ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0")
     redirect_to entry_page(entry, anchor: "art")
   end
 

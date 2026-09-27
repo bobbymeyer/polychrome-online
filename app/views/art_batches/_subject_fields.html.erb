@@ -1,9 +1,21 @@
 <%# The subject's own layer, edited where it is generated. subject: a book entry or a speaker. %>
+<% speaker = subject.is_a?(ArtSubject) %>
+<% art = speaker ? Portrait.new(owner: subject, expression: "neutral") : subject %>
+<% type = art.art_type %>
+<% world = art.art_world %>
 <div class="field">
   <%= label_tag "entry_art_notes", "#{subject.name}: specifics" %>
-  <% speaker = subject.is_a?(ArtSubject) %>
   <%= text_area_tag "entry[art_notes]", subject.art_notes, rows: 2, id: "entry_art_notes", placeholder: (speaker ? "white beard, brass goggles, oil-stained apron" : subject.description) %>
   <p class="hint"><%= speaker ? "What they look like: hair, clothes, build. Their notes stay private and never go into a prompt." : "Blank uses the description." %></p>
 </div>
 <%= render "art_directions/installed" %>
-<%= render "art_directions/loras", name: "entry[art_loras]", loras: subject.art_loras %>
+<%= render "art_directions/model_field", name: "entry[art_model]", id: "entry_art_model", value: subject.art_model,
+                                         inherited: ArtDirection.pick_model(type.model, world.art_model, Comfy.config[:model]) %>
+<%= render "art_directions/loras", name: "entry[art_loras]", loras: subject.art_loras, above: ArtDirection.stack_loras(world.art_loras, type.loras) %>
+<% if Llm.enabled? %>
+  <div class="field field--check">
+    <%= hidden_field_tag :write, "0", id: nil %>
+    <%= check_box_tag :write, "1", true, id: "art_write" %>
+    <%= label_tag "art_write", "Let the language model write the subject in the way this model reads best" %>
+  </div>
+<% end %>

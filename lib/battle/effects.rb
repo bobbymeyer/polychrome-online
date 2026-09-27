@@ -38,6 +38,7 @@ module Battle
       when "imbue" then imbue(ctx, target, effect)
       when "percent" then percent(ctx, actor, target, effect)
       when "sap" then sap(ctx, actor, target, effect)
+      when "summon" then summon(ctx, actor, effect)
       else raise Error, "unknown primitive #{effect['primitive']}"
       end
     end
@@ -287,6 +288,28 @@ module Battle
       return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "no_effect") unless amount.positive?
 
       ctx.deal_damage(target, amount, actor: actor["id"], percent: share)
+    end
+
+    # summon(creature, duration, power): the creature comes to the user's
+    # side, a guest under its own script, its Str, Mag and Atk scaled by
+    # power%. It acts as soon as the move is done, and leaves after its
+    # duration (Battle::Resolver#arrive, #take_turn). It earns nothing and
+    # drops nothing.
+    SUMMON_STATS = %w[str mag atk].freeze
+
+    def summon(ctx, actor, effect)
+      spec = State.normalize(ctx.state.fetch("summons", {}).fetch(effect["creature"]))
+      power = effect.fetch("power", 100)
+      spec["stats"] = spec["stats"].to_h { |k, v| [ k, SUMMON_STATS.include?(k) ? v * power / 100 : v ] }
+      taken = ctx.units.map { |u| u["id"] }
+      n = (1..).find { |i| !taken.include?("#{spec['id']}_#{i}") }
+      creature = State.unit(spec.merge("id" => "#{spec['id']}_#{n}", "rewards" => {}, "drops" => []), actor["side"], ctx.type_list)
+      creature["guest"] = true if actor["side"] == "party"
+      creature["summoned"] = { "by" => actor["id"], "left" => effect.fetch("duration", 1) }
+      ctx.units << creature
+      ctx.arrivals << creature
+      ctx.emit(:summoned, actor: actor["id"], unit: creature["id"], name: creature["name"], side: creature["side"],
+                          image: creature["image"], turns: effect.fetch("duration", 1))
     end
 
     # sap(power, keep): MP taken, scaled by mag and softened by mdef; keep%

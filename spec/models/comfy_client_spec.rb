@@ -54,10 +54,41 @@ RSpec.describe Comfy::Client do
     expect(http.requests.sole.path).to eq("/view?filename=a+b.png&subfolder=polychrome&type=output")
   end
 
-  it "lists installed LoRAs and checkpoints, and nothing when unreachable" do
-    info = { "LoraLoader" => { "input" => { "required" => { "lora_name" => [ [ "a.safetensors", "b.safetensors" ] ] } } } }
-    expect(client("/object_info/LoraLoader" => [ 200, info ]).loras).to eq(%w[a.safetensors b.safetensors])
-    expect(client({}).checkpoints).to eq([])
+  it "reads what's installed node by node, in either of ComfyUI's ways of listing choices" do
+    routes = {
+      "/object_info/UNETLoader" => [ 200, { "UNETLoader" => { "input" => { "required" => { "unet_name" => [ [ "anima-preview.safetensors" ], {} ] } } } } ],
+      "/object_info/CLIPLoader" => [ 200, { "CLIPLoader" => { "input" => { "required" => {
+        "clip_name" => [ "COMBO", { "options" => [ "qwen_3_06b_base.safetensors" ] } ], "type" => [ [ "stable_diffusion", "anima" ] ]
+      } } } } ]
+    }
+    http = FakeHttp.new(Comfy::Capabilities::NODES.to_h { |node| [ "/object_info/#{node}", [ 200, {} ] ] }.merge(routes))
+    caps = described_class.new(url: "http://comfy.test", http: http).capabilities
+    expect(caps).to be_reachable
+    expect(caps.diffusion_models).to eq([ "anima-preview.safetensors" ])
+    expect(caps.text_encoders).to eq([ "qwen_3_06b_base.safetensors" ])
+    expect(caps.clip_types).to eq(%w[stable_diffusion anima])
+    expect(caps.node?("UNETLoader")).to be(true)
+    expect(caps.node?("CheckpointLoaderSimple")).to be(false)
+    expect(caps.checkpoints).to eq([])
+    expect(client({}).capabilities).not_to be_reachable
+  end
+
+  it "sends a bearer token and any headers a proxy wants, and basic auth from the URL without ever showing it" do
+    http = FakeHttp.new("/api/prompt" => [ 200, { "prompt_id" => "abc" } ])
+    comfy = described_class.new(url: "https://me:s3cret@comfy.example/api", token: "tok", headers: '{"CF-Access-Client-Id": "id"}', http: http)
+    comfy.submit({})
+    request = http.requests.sole
+    expect(request.path).to eq("/api/prompt")
+    expect(request["Authorization"]).to start_with("Basic ") # basic auth from the URL is applied last
+    expect(request["CF-Access-Client-Id"]).to eq("id")
+    expect(comfy.base.to_s).to eq("https://comfy.example/api")
+
+    bearer = FakeHttp.new("/prompt" => [ 200, { "prompt_id" => "abc" } ])
+    described_class.new(url: "http://comfy.test", token: "tok", http: bearer).submit({})
+    expect(bearer.requests.sole["Authorization"]).to eq("Bearer tok")
+
+    expect { described_class.new(url: "http://me:s3cret@comfy.test", http: FakeHttp.new({})).submit({}) }
+      .to raise_error(Comfy::Error) { |e| expect(e.message).not_to include("s3cret") }
   end
 
   it "says where it tried when ComfyUI isn't there" do

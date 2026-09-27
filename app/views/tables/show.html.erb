@@ -94,6 +94,21 @@
     <% if @seat == "gm" %>
       <%= render "field_uses/requests", campaign: @campaign %>
       <%= render "tables/coop_setup", campaign: @campaign unless view %>
+      <% locked = @campaign.locked_jobs.to_a %>
+      <% if locked.any? %>
+        <details class="window table-scenes">
+          <summary>Grant jobs</summary>
+          <%= form_with url: campaign_job_grants_path(@campaign), class: "book-form" do |f| %>
+            <div class="checks">
+              <% locked.each do |job| %>
+                <label><%= check_box_tag "jobs[]", job.slug, false, id: "grant_#{job.slug}" %> <%= job.name %></label>
+              <% end %>
+            </div>
+            <div class="field"><%= label_tag :line, "The moment" %><%= text_field_tag :line, nil, placeholder: "The Wind Crystal shatters, and its shards settle on you." %></div>
+            <%= f.submit "Grant", class: "button play" %>
+          <% end %>
+        </details>
+      <% end %>
       <details class="window table-scenes">
         <summary>Call for a check</summary>
         <%= form_with url: campaign_checks_path(@campaign), scope: :check, class: "book-form check-form" do |f| %>

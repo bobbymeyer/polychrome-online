@@ -13,7 +13,7 @@ class CampaignsController < ApplicationController
 
   def create
     @world = World.find_by!(slug: params[:world_slug])
-    @campaign = @world.campaigns.new(params.expect(campaign: %i[name]).merge(gm: current_user))
+    @campaign = @world.campaigns.new(params.expect(campaign: %i[name]).merge(gm: current_user, open_jobs: posted_open_jobs))
     if @campaign.save
       redirect_to @campaign, notice: "#{@campaign.name} begins."
     else
@@ -30,7 +30,7 @@ class CampaignsController < ApplicationController
 
   def update
     # Only an admin hands a campaign to another GM.
-    if @campaign.update(params.expect(campaign: admin? ? %i[name gil gm_id] : %i[name gil]))
+    if @campaign.update(params.expect(campaign: admin? ? %i[name gil gm_id] : %i[name gil]).merge(open_jobs: posted_open_jobs))
       redirect_to @campaign, notice: "#{@campaign.name} was updated."
     else
       render :edit, status: :unprocessable_content
@@ -38,6 +38,14 @@ class CampaignsController < ApplicationController
   end
 
   private
+
+  # The form's job boxes: every job (nil), or the ones ticked. None ticked
+  # would leave nobody anything to be, so that's every job too.
+  def posted_open_jobs
+    return if params.dig(:campaign, :every_job) == "1"
+
+    Array(params.dig(:campaign, :open_jobs)).compact_blank.presence
+  end
 
   def set_campaign
     @campaign = Campaign.find(params[:id])

@@ -8,11 +8,15 @@ module Battle
   class Context
     attr_reader :state, :rng, :events
     attr_accessor :countering
+    # Creatures summoned by the move being resolved: they act once it's done
+    # (Battle::Resolver#summon).
+    attr_reader :arrivals
 
     def initialize(state, rng: Rng.new(state["rng"]))
       @state = state
       @rng = rng
       @events = []
+      @arrivals = []
     end
 
     def finish

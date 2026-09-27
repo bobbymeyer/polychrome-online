@@ -14,7 +14,7 @@
 # expression in brackets. Anything else is the narrator's. The last line can
 # put a choice to the table: "? Trust Cid | Refuse -> trusted_cid".
 class Scene < ApplicationRecord
-  ENDINGS = %w[none battle reveal].freeze
+  ENDINGS = %w[none battle reveal mode].freeze
   LINE = /\A(?<name>[^:()]+?)\s*(?:\((?<expression>[^)]*)\))?\s*:\s*(?<text>.+)\z/
   # Longer than this before the colon, it's narration that has a colon in it.
   NAME_WORDS = 3
@@ -57,6 +57,10 @@ class Scene < ApplicationRecord
         map_node.update!(visible: true)
         campaign.messages.create!(kind: "system", body: "#{map_node.name} appears on the map.")
       end
+      # A place changes mode (Location#switch_mode!), or goes back to how it was.
+      if ending == "mode" && (location = map_node&.location)
+        mode_key.present? ? location.switch_mode!(mode_key) : (location.clear_mode! if location.current_mode)
+      end
       update!(played_at: Time.current)
     end
     return unless ending == "battle"
@@ -71,6 +75,10 @@ class Scene < ApplicationRecord
     parts << "then a choice: #{lines.last['choice'][:options].join(' / ')}" if lines.last&.dig("choice")
     parts << "then a battle: #{campaign.describe_encounter(encounter)}" if ending == "battle"
     parts << "then #{map_node&.name || 'a place'} appears on the map" if ending == "reveal"
+    if ending == "mode"
+      in_mode = map_node&.location&.modes&.find { |t| t["key"] == mode_key }
+      parts << (in_mode ? "then #{map_node.name}: #{in_mode['name']}" : "then #{map_node&.name} goes back to how it was")
+    end
     parts.join(", ")
   end
 
@@ -119,6 +127,13 @@ class Scene < ApplicationRecord
       errors.add(:encounter, "needs a monster from the Bestiary") if encounter.empty? || (encounter.keys - known).any?
     when "reveal"
       errors.add(:map_node, "must be a place on this campaign's map") unless map_node && map_node.campaign_id == campaign_id
+    when "mode"
+      location = map_node&.campaign_id == campaign_id && map_node.location
+      if !location
+        errors.add(:map_node, "must be a town or dungeon on this campaign's map")
+      elsif mode_key.present? && location.modes.none? { |t| t["key"] == mode_key }
+        errors.add(:mode_key, "isn't one of #{map_node.name}'s modes")
+      end
     end
   end
 end

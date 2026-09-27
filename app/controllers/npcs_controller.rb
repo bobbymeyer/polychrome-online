@@ -48,6 +48,6 @@ class NpcsController < ApplicationController
   end
 
   def npc_params
-    params.expect(npc: %i[name title description colour])
+    params.expect(npc: %i[name title description colour monster_id])
   end
 end

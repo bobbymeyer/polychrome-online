@@ -12,8 +12,11 @@ module ArtDirection
 
   module_function
 
-  # [{ "name", "strength" }] from form rows or JSON: blank names dropped,
-  # strength a float (default 1.0) kept within ComfyUI's usual range.
+  OFF = [ false, "0", "false", "off" ].freeze
+
+  # [{ "name", "strength", "on" }] from form rows or JSON: blank names
+  # dropped, strength a float (default 1.0) kept within ComfyUI's usual
+  # range, on unless switched off.
   def loras(value)
     rows = value.is_a?(Hash) ? value.values : Array(value)
     rows.filter_map do |row|
@@ -22,15 +25,33 @@ module ArtDirection
       next if name.empty?
 
       strength = row["strength"].to_s.strip.empty? ? 1.0 : row["strength"].to_f
-      { "name" => name, "strength" => strength.clamp(-5.0, 5.0).round(2) }
+      { "name" => name, "strength" => strength.clamp(-5.0, 5.0).round(2), "on" => !OFF.include?(row.fetch("on", true)) }
     end
   end
 
-  # Later layers win: an entry can turn a world LoRA down, or off with 0.
-  def merge_loras(*layers)
+  # The LoRAs stacked in layer order, world first. A LoRA a later layer
+  # names again keeps its place in the stack and takes the later layer's
+  # strength and switch: that is how an entry turns a world LoRA down or off.
+  # Every LoRA is kept, on or off, so the pages can show what was switched off.
+  def stack_loras(*layers)
     layers.flat_map { |layer| loras(layer) }
           .each_with_object({}) { |lora, by_name| by_name[lora["name"]] = lora }
-          .values.reject { |lora| lora["strength"].zero? }
+          .values
+  end
+
+  def active_loras(stack)
+    stack.select { |lora| lora["on"] && !lora["strength"].zero? }
+  end
+
+  # The model from the lowest layer that names one: entry, then type, then
+  # world, then the configured default.
+  def pick_model(*layers_bottom_up)
+    layers_bottom_up.map { |model| model.to_s.strip }.find { |model| !model.empty? }
+  end
+
+  # The prompt from a recipe's parts, in layer order.
+  def compose(parts)
+    join_prompt(*parts.values_at("prefix", "style", "framing", "subject", "detail"))
   end
 
   def join_prompt(*parts)

@@ -229,6 +229,10 @@ export default class extends Controller {
         // The board after the beat has them; here, the entrance.
         this.banner(tl, e.guest ? `${e.name} joins the party!` : `${e.name} appears!`, at, "gm")
         return 900
+      case "summoned":
+        // Small summons: a creature's name, and it's already moving.
+        this.caption(tl, `${e.name}!`, at, "skill")
+        return 500
       case "unit_left":
         gesture(tl, this.sprite(e.unit), "fade", at)
         this.banner(tl, `${e.name} leaves`, at, "gm")

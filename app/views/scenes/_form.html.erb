@@ -18,7 +18,7 @@
     <legend>Then</legend>
     <div class="field">
       <%= f.label :ending, "When the last line is said" %>
-      <%= f.select :ending, [ [ "Nothing: the table carries on", "none" ], [ "A battle", "battle" ], [ "A place appears on the map", "reveal" ] ], {},
+      <%= f.select :ending, [ [ "Nothing: the table carries on", "none" ], [ "A battle", "battle" ], [ "A place appears on the map", "reveal" ], [ "A place changes mode", "mode" ] ], {},
                    data: { kind_switch_target: "select", action: "kind-switch#update" } %>
     </div>
 
@@ -38,6 +38,16 @@
       </table>
       <p class="hint">It starts when the last line has been said; everyone at the table is taken to it.</p>
       <%= turbo_frame_tag "forecast", data: { forecast_target: "frame" } %>
+    </div>
+
+    <div class="field" data-show-for="mode">
+      <%= label_tag "scene_mode_choice", "Place and mode" %>
+      <% options = @campaign.map_nodes.includes(:location).order(:name).select { |n| n.location&.modes.present? }.flat_map do |n|
+           n.location.modes.map { |t| [ "#{n.name}: #{t['name']}", "#{n.id}|#{t['key']}" ] } + [ [ "#{n.name}: back to how it was", "#{n.id}|" ] ]
+         end %>
+      <%= select_tag "scene[mode_choice]", options_for_select(options, scene.ending == "mode" ? "#{scene.map_node_id}|#{scene.mode_key}" : nil),
+                     include_blank: "(choose)", id: "scene_mode_choice" %>
+      <p class="hint">Modes are prepared on the place's page. The mode is set off when the last line has been said.</p>
     </div>
 
     <div class="field" data-show-for="reveal">

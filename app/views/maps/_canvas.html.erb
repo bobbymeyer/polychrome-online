@@ -1,6 +1,6 @@
 <%# The campaign's map as SVG (§7). Rendered once per audience: the GM's copy includes hidden places
     (dimmed); the players' copy leaves them out entirely, so they never reach a player's browser. %>
-<% nodes = campaign.map_nodes.order(:id).to_a %>
+<% nodes = campaign.map_nodes.includes(:location).order(:id).to_a %>
 <% nodes = nodes.select(&:visible?) unless gm %>
 <% ids = nodes.map(&:id) %>
 <% edges = campaign.map_edges.includes(:from_node, :to_node, :encounter_table).order(:id).select { |e| ids.include?(e.from_node_id) && ids.include?(e.to_node_id) } %>

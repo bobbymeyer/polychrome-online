@@ -74,6 +74,7 @@ Rails.application.routes.draw do
     resource :music, only: :update, controller: "music"
     resources :checks, only: :create
     resources :field_uses, only: %i[create update]
+    resources :job_grants, only: :create
     resource :join_code, only: :create
     resource :forecast, only: :show
     resource :table_seat, only: %i[create destroy]
@@ -109,6 +110,10 @@ Rails.application.routes.draw do
       post :move
       post :take_treasure
       post :revert
+      post :add_mode
+      post :switch_mode
+      post :clear_mode
+      delete :remove_mode
     end
     # A town's shop: buy from its stock, sell from the bag.
     resources :services, only: :create

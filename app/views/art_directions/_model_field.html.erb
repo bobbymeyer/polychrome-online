@@ -1,0 +1,7 @@
+<%# One layer's model (§8). name, id, value; inherited: what applies when this is blank. %>
+<div class="field">
+  <%= label_tag id, "Model" %>
+  <%= text_field_tag name, value, id: id, list: "comfy-models", placeholder: inherited %>
+  <% family = Comfy::Family.for(value.presence || inherited, capabilities: -> { Comfy.capabilities }) %>
+  <p class="hint"><%= value.present? ? "Runs as" : "Blank uses #{inherited}, run as" %> <%= family.summary %>.</p>
+</div>

@@ -2,17 +2,33 @@
 
 require "net/http"
 
-# A thin client for ComfyUI's HTTP API: queue a prompt (a workflow graph),
-# ask its history whether it has finished, download the images it saved, and
-# list the checkpoints and LoRAs it has installed.
+# ComfyUI over the network, through its plain HTTP API: queue a prompt (a
+# workflow graph), ask its history whether it has finished, download the
+# images it saved, and ask what it has installed. It assumes nothing about
+# the machine: ComfyUI can be local, on a LAN or tailnet, or behind a proxy
+# that wants a bearer token, basic auth (in the URL) or its own headers.
+#
+# This is the backend interface the pipeline uses; anything answering the
+# same four calls can stand in for it (spec/support/fake_comfy.rb does):
+#   submit(graph) → prompt id      result(prompt id) → nil or [image]
+#   fetch(image)  → bytes          capabilities      → Comfy::Capabilities
 module Comfy
   class Client
-    def initialize(url: Comfy.config[:url], http: nil, timeout: 30)
-      @base = URI(url.to_s.chomp("/"))
+    NETWORK_ERRORS = [ SystemCallError, IOError, SocketError, Timeout::Error, OpenSSL::SSL::SSLError ].freeze
+
+    def initialize(url: Comfy.config[:url], token: Comfy.config[:token], headers: Comfy.config[:headers], http: nil, timeout: 30)
+      given = URI(url.to_s.chomp("/"))
+      @user = given.user && URI.decode_www_form_component(given.user)
+      @password = given.password && URI.decode_www_form_component(given.password)
+      @base = URI(given.to_s.sub(%r{//[^@/]*@}, "//"))
+      @headers = parse_headers(headers)
+      @headers["Authorization"] = "Bearer #{token}" if token.present?
       @http = http
+      @injected = !http.nil?
       @timeout = timeout
     end
 
+    # The address, without any credentials in it: safe to show.
     attr_reader :base
 
     # Queue a graph. Returns ComfyUI's prompt id.
@@ -39,16 +55,23 @@ module Comfy
     # The bytes of one saved image.
     def fetch(image)
       query = URI.encode_www_form(filename: image["filename"], subfolder: image["subfolder"].to_s, type: image["type"] || "output")
-      request(Net::HTTP::Get.new(path("/view?#{query}"))).body
+      request(Net::HTTP::Get.new(path("/view?#{query}"), @headers)).body
     end
 
-    # What ComfyUI has installed, for the pickers. Empty if it can't be reached.
-    def checkpoints
-      choices("CheckpointLoaderSimple", "ckpt_name")
-    end
-
-    def loras
-      choices("LoraLoader", "lora_name")
+    # What this ComfyUI has installed. Each node is asked about on its own
+    # (a full /object_info can run to megabytes); a node it doesn't have
+    # answers empty.
+    def capabilities
+      nodes = (Capabilities::NODES + [ Comfy.config[:rembg_node].presence ]).compact.uniq
+      info = session do
+        nodes.each_with_object({}) do |node, found|
+          definition = get_json("/object_info/#{ERB::Util.url_encode(node)}")[node]
+          found[node] = definition if definition
+        end
+      end
+      Capabilities.new(info)
+    rescue Error, *NETWORK_ERRORS
+      Capabilities.unreachable
     end
 
     def reachable?
@@ -60,11 +83,21 @@ module Comfy
 
     private
 
-    def choices(node, input)
-      info = get_json("/object_info/#{node}")
-      Array(info.dig(node, "input", "required", input, 0))
-    rescue Error
-      []
+    # One connection for a run of requests, when the connection is ours.
+    def session
+      return yield if @http
+
+      @http = connection
+      @http.start { yield }
+    ensure
+      @http = nil unless @injected
+    end
+
+    def parse_headers(headers)
+      value = headers.is_a?(String) ? (headers.strip.empty? ? {} : JSON.parse(headers)) : headers.to_h
+      value.to_h.transform_keys(&:to_s).transform_values(&:to_s)
+    rescue JSON::ParserError
+      raise Error, "COMFY_HEADERS isn't a JSON object"
     end
 
     def execution_error(status)
@@ -73,11 +106,11 @@ module Comfy
     end
 
     def get_json(path)
-      parse(request(Net::HTTP::Get.new(path(path))))
+      parse(request(Net::HTTP::Get.new(path(path), @headers)))
     end
 
     def post_json(path, payload)
-      req = Net::HTTP::Post.new(path(path), "Content-Type" => "application/json")
+      req = Net::HTTP::Post.new(path(path), @headers.merge("Content-Type" => "application/json"))
       req.body = JSON.generate(payload)
       parse(request(req))
     end
@@ -87,11 +120,12 @@ module Comfy
     end
 
     def request(req)
-      response = connection.request(req)
+      req.basic_auth(@user, @password.to_s) if @user
+      response = (@http || connection).request(req)
       return response if response.is_a?(Net::HTTPSuccess)
 
       raise Error, rejection(response)
-    rescue SystemCallError, IOError, SocketError, Timeout::Error, OpenSSL::SSL::SSLError => e
+    rescue *NETWORK_ERRORS => e
       raise Error, "ComfyUI isn't reachable at #{@base} (#{e.class.name.demodulize})"
     end
 
@@ -111,7 +145,7 @@ module Comfy
     end
 
     def connection
-      @http || Net::HTTP.new(@base.host, @base.port).tap do |http|
+      Net::HTTP.new(@base.host, @base.port).tap do |http|
         http.use_ssl = @base.scheme == "https"
         http.open_timeout = [ @timeout, 5 ].min
         http.read_timeout = @timeout

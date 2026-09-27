@@ -5,6 +5,15 @@
     <div class="field"><%= f.label :title %><%= f.text_field :title, placeholder: "Innkeeper, Captain of the Guard…" %></div>
     <div class="field"><%= f.label :colour, "Colour (until they have a portrait)" %><%= f.select :colour, colour_options(f.object.colour) %></div>
   </div>
+  <div class="field">
+    <%= f.label :monster_id, "Fights as" %>
+    <%= f.select :monster_id, @campaign.world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.id ] }, include_blank: "Doesn't fight" %>
+    <p class="hint">
+      A recurring antagonist: they can join a battle under their own name and face, as a boss. If you send them off the field in battle,
+      they get away and come back <%= Npc::GROWTH %>% stronger each time<%= " (#{npc.strength_percent}% now, after #{pluralize(npc.escapes, 'escape')})" if npc.escapes.positive? %>.
+      Knocked out, they're finished<%= npc.defeated? ? ", as they are now" : "" %>.
+    </p>
+  </div>
   <div class="field"><%= f.label :description, "Notes (GM only)" %><%= f.text_area :description, rows: 3 %></div>
   <%= render "portraits/fields", owner: npc %>
   <div class="actions">

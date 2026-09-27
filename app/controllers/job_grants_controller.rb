@@ -1,0 +1,19 @@
+# frozen_string_literal: true
+
+# The GM grants jobs at the table (Campaign#grant_jobs!): a story reward.
+class JobGrantsController < ApplicationController
+  include CampaignScoped
+  include TableSeat
+
+  before_action :set_campaign
+
+  def create
+    return forbid("Only the GM grants jobs.") unless table_seat == "gm"
+
+    jobs = @campaign.world.jobs.where(slug: Array(params[:jobs]).compact_blank).to_a
+    @campaign.grant_jobs!(jobs, params[:line])
+    redirect_back_or_to campaign_table_path(@campaign), status: :see_other
+  rescue ArgumentError => e
+    redirect_back_or_to campaign_table_path(@campaign), alert: e.message, status: :see_other
+  end
+end

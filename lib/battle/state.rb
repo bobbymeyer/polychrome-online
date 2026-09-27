@@ -11,7 +11,7 @@ module Battle
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
   PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan jump away
-                  shield imbue percent sap].freeze
+                  shield imbue percent sap summon].freeze
 
   # Parameters each primitive takes, split into required and optional
   # (optional ones have defaults in Battle::Effects). String-valued params
@@ -52,9 +52,14 @@ module Battle
     "percent" => { required: %w[power], optional: %w[chance] },
     # Takes MP, scaled by mag and softened by mdef; keep% of it goes to
     # the user (Osmose, Rasp, Siphon).
-    "sap" => { required: %w[power], optional: %w[keep] }
+    "sap" => { required: %w[power], optional: %w[keep] },
+    # A creature from the battle's summons (a Bestiary entry) comes to the
+    # user's side, acts at once, and leaves after `duration` of its turns;
+    # power% scales its Str, Mag and Atk (Battle::Resolver#summon).
+    "summon" => { required: %w[creature], optional: %w[duration power] }
   }.freeze
-  PRIMITIVE_STRING_PARAMS = %w[type kind stat who against].freeze
+  PRIMITIVE_STRING_PARAMS = %w[type kind stat who against creature].freeze
+  MAX_SUMMON_TURNS = 5
   # What a bonus can be against, beside statuses and types.
   AGAINST_TRAITS = %w[undead boss].freeze
   MAX_BONUS = 400
@@ -149,7 +154,8 @@ module Battle
     #            { "potion" => { name:, target:, effects: [...], count: 3 } }
     # types:     the world's types and chart (Battle::Types); the base
     #            world's when not given. Everything typed must be one of them.
-    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil)
+    # summons:   creatures abilities can call, as unit specs: { "eagle" => { name:, stats:, ai:, ... } }
+    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {})
       types = types ? Types.validate!(normalize(types)) : normalize(Types::DEFAULT)
       known = Types.list(types)
       library = normalize(abilities)
@@ -166,6 +172,18 @@ module Battle
         raise ArgumentError, "#{id}: count must be a whole number of at least 0" unless count.is_a?(Integer) && count >= 0
 
         [ id, item.slice("id", "name", "target", "effects").merge("count" => count) ]
+      end
+
+      creatures = normalize(summons).to_h do |id, spec|
+        unit(spec.merge("id" => id), "party", known) # checked now, so a summon never fails mid-fight
+        [ id, spec.merge("id" => id) ]
+      end
+      library.each_value do |ability|
+        ability["effects"].each do |effect|
+          next unless effect["primitive"] == "summon" && !creatures.key?(effect["creature"])
+
+          raise ArgumentError, "#{ability['id']}: summons #{effect['creature']}, which isn't in the battle's summons"
+        end
       end
 
       units = normalize(party).map { |spec| unit(spec, "party", known) }
@@ -192,6 +210,7 @@ module Battle
         "terrain" => terrain_type(terrain, known),
         "types" => types,
         "abilities" => library,
+        "summons" => creatures,
         "items" => bag,
         "units" => units,
         "inputs" => {}
@@ -412,6 +431,9 @@ module Battle
           raise ArgumentError, "#{id}: #{effect['kind']} comes from its own primitive" if PRIMITIVE_STATUSES.include?(effect["kind"])
         when "imbue"
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" unless known.include?(effect["type"])
+        when "summon"
+          raise ArgumentError, "#{id}: summon stays 1 to #{MAX_SUMMON_TURNS} turns" if effect["duration"] && !effect["duration"].between?(1, MAX_SUMMON_TURNS)
+          raise ArgumentError, "#{id}: summon power must be 1 to #{MAX_BONUS}" if effect["power"] && !effect["power"].between?(1, MAX_BONUS)
         when "cleanse"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" if effect["kind"] && !STATUSES.include?(effect["kind"])
         when "buff", "debuff"

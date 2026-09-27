@@ -24,11 +24,11 @@
     <%= render "art_batches/subject_fields", subject: entry %>
     <div class="inline-form">
       <div class="field"><%= label_tag :count, "Candidates" %><%= number_field_tag :count, Comfy.config[:candidates], min: 1, max: 8 %></div>
-      <%= submit_tag "Generate", class: "button", disabled: !Comfy.installed[:reachable], title: ("ComfyUI isn't answering" unless Comfy.installed[:reachable]) %>
+      <%= submit_tag "Generate", class: "button", disabled: !Comfy.capabilities.reachable?, title: ("ComfyUI isn't answering" unless Comfy.capabilities.reachable?) %>
     </div>
   <% end %>
 
-  <details><summary>The composed prompt</summary><%= render "art_batches/recipe", recipe: entry.art_recipe %></details>
+  <details><summary>The composed prompt</summary><%= render "art_batches/recipe", recipe: entry.art_recipe, preview: true %></details>
 
   <%= render "art_batches/strip", batch: batch if batch %>
 </section>

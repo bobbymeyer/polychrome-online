@@ -24,11 +24,11 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
   end
 
   it "only offers Generate while ComfyUI answers" do
-    allow(Comfy).to receive(:installed).and_return(reachable: false, loras: [], checkpoints: [])
+    allow(Comfy).to receive(:capabilities).and_return(Comfy::Capabilities.unreachable)
     get world_bestiary_monster_path(world, goblin)
     expect(response.body).to match(/<input[^>]*value="Generate"[^>]*disabled/).and include("nothing can be generated")
 
-    allow(Comfy).to receive(:installed).and_return(reachable: true, loras: [], checkpoints: [])
+    allow(Comfy).to receive(:capabilities).and_return(FakeComfy.capabilities)
     get world_bestiary_monster_path(world, goblin)
     expect(response.body).not_to match(/<input[^>]*value="Generate"[^>]*disabled/)
   end
@@ -56,11 +56,11 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
     expect(response).to redirect_to(world_bestiary_monster_path(world, goblin, anchor: "art"))
     goblin.reload
     expect(goblin.art_notes).to eq("a rusty knife")
-    expect(goblin.art_loras).to eq([ { "name" => "goblin.safetensors", "strength" => 0.6 } ])
+    expect(goblin.art_loras).to eq([ { "name" => "goblin.safetensors", "strength" => 0.6, "on" => true } ])
     batch = goblin.art_batch
     expect(batch.candidates.size).to eq(2)
     expect(batch.recipe["positive"]).to end_with("Goblin, a rusty knife")
-    expect(batch.recipe["loras"]).to eq([ { "name" => "goblin.safetensors", "strength" => 0.6 } ])
+    expect(batch.recipe["loras"]).to eq([ { "name" => "goblin.safetensors", "strength" => 0.6, "on" => true } ])
   end
 
   it "shows candidates as they land, and picking one makes it the image with its seed and recipe" do
@@ -117,16 +117,24 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
     expect(response.body).to include("house style", "Monsters", "Locations")
 
     patch world_art_direction_path(world), params: {
-      world: { art_style: "ink wash", art_negative: "photo", art_checkpoint: "", art_loras: { "0" => { "name" => "ink", "strength" => "0.9" } } },
+      world: { art_style: "ink wash", art_negative: "photo", art_model: "", art_loras: { "0" => { "name" => "ink", "strength" => "0.9", "on" => "1" } } },
       types: { monster: { prompt: "profile view, full body", width: "768", height: "768", transparent: "0",
-                          loras: { "0" => { "name" => "sprites", "strength" => "" } } },
+                          model: "krea2_turbo_bf16.safetensors", loras: { "0" => { "name" => "sprites", "strength" => "" }, "1" => { "name" => "ink", "strength" => "0.9", "on" => "0" } } },
                nope: { prompt: "ignored" } }
     }
     expect(response).to redirect_to(world_art_direction_path(world))
-    expect(world.reload).to have_attributes(art_style: "ink wash", art_loras: [ { "name" => "ink", "strength" => 0.9 } ])
-    expect(world.art_type("monster")).to have_attributes(prompt: "profile view, full body", width: 768, transparent: false,
-                                                          loras: [ { "name" => "sprites", "strength" => 1.0 } ])
-    expect(goblin.art_recipe["positive"]).to start_with("ink wash, profile view, full body, Goblin")
+    expect(world.reload).to have_attributes(art_style: "ink wash", art_loras: [ { "name" => "ink", "strength" => 0.9, "on" => true } ])
+    expect(world.art_type("monster")).to have_attributes(
+      prompt: "profile view, full body", width: 768, transparent: false, model: "krea2_turbo_bf16.safetensors",
+      loras: [ { "name" => "sprites", "strength" => 1.0, "on" => true }, { "name" => "ink", "strength" => 0.9, "on" => false } ]
+    )
+    recipe = goblin.art_recipe
+    expect(recipe["positive"]).to start_with("ink wash, profile view, full body, Goblin")
+    expect(recipe).to include("model" => "krea2_turbo_bf16.safetensors", "family" => "krea2", "negative" => "")
+    expect(recipe["loras"].map { |l| [ l["name"], l["on"] ] }).to eq([ [ "ink", false ], [ "sprites", true ] ])
+
+    get world_art_direction_path(world)
+    expect(response.body).to include("Krea 2 Turbo · 8 steps · CFG 1 · no negative prompt", "From the layers above")
   end
 
   it "rejects a size ComfyUI can't use" do

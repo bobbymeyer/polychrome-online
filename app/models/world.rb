@@ -115,8 +115,18 @@ class World < ApplicationRecord
       update!(damage_types: source.damage_types, terrain_types: source.terrain_types, skills: source.skills)
       tables = {}
       abilities = {}
-      BOOKS.each do |book|
-        source.public_send(book).find_each do |entry|
+      # Summons name creatures from the Bestiary, so they come after it.
+      summoning = source.abilities.select { |a| Array(a.effects).any? { |e| e["primitive"] == "summon" } }.map(&:id)
+      steps = BOOKS.flat_map do |book|
+        entries = source.public_send(book)
+        case book
+        when :abilities then [ [ :abilities, entries.where.not(id: summoning) ] ]
+        when :monsters then [ [ :monsters, entries ], [ :abilities, source.abilities.where(id: summoning) ] ]
+        else [ [ book, entries ] ]
+        end
+      end
+      steps.each do |book, entries|
+        entries.find_each do |entry|
           copy = entry.dup
           copy.world = self
           copy.encounter_table_id = tables[entry.encounter_table_id] if book == :location_templates
@@ -130,7 +140,7 @@ class World < ApplicationRecord
         end
       end
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
-      %w[art_style art_negative art_loras art_checkpoint].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      %w[art_style art_negative art_loras art_model].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
     end
   end
@@ -142,6 +152,12 @@ class World < ApplicationRecord
     art_types.find_by!(kind: kind)
   end
 
+  # The creatures the Grimoire's summons call, as engine unit specs.
+  def summon_library
+    creatures = abilities.flat_map { |a| Array(a.effects).filter_map { |e| e["creature"] if e["primitive"] == "summon" } }.uniq
+    monsters.where(slug: creatures).to_h { |m| [ m.slug, m.to_engine.except("count") ] }
+  end
+
   # The world's Grimoire in the resolver's library format.
   def ability_library
     abilities.in_battle.to_h { |ability| [ ability.slug, ability.to_engine ] }
@@ -149,13 +165,14 @@ class World < ApplicationRecord
 
   # Build a battle straight from the books.
   #   world.battle(seed: 1, party: [...unit specs], monsters: { "goblin" => 3 })
-  def battle(seed:, party:, monsters:, escapable: true, items: {}, terrain: nil)
+  # extra_enemies: engine unit specs to add as they are (antagonists).
+  def battle(seed:, party:, monsters:, escapable: true, items: {}, terrain: nil, extra_enemies: [])
     by_slug = self.monsters.where(slug: monsters.keys).index_by(&:slug)
     enemies = monsters.map do |slug, count|
       by_slug.fetch(slug.to_s) { raise ActiveRecord::RecordNotFound, "no monster #{slug} in #{self.slug}" }.to_engine(count: count)
-    end
+    end + extra_enemies
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: ability_library, escapable: escapable, items: items,
-                        terrain: terrain, types: type_chart.to_engine)
+                        terrain: terrain, types: type_chart.to_engine, summons: summon_library)
   end
 
   private
