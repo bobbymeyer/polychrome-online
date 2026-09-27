@@ -19,7 +19,8 @@ RSpec.describe "Battle resolver properties" do
     expect(seen).to include(*%w[attack cast damage miss crit heal status_applied status_expired ko revive
                                   turn_start turn_end flee victory defeat gm_override buff_applied
                                   buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll
-                                  jump land away back covered counter second_wind mp_restored])
+                                  jump land away back covered counter second_wind mp_restored
+                                  shielded confused mp_lost])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end

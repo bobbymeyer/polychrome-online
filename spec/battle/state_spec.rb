@@ -114,7 +114,7 @@ RSpec.describe Battle::State do
     it "matches the resolver on what counts as a legal target" do
       unit(state, "bartz")["hp"] = 0
       rosa = unit(state, "rosa")
-      expect(described_class.target_options(state, rosa, state["abilities"]["cure"])).to eq(%w[vivi rosa locke])
+      expect(described_class.target_options(state, rosa, state["abilities"]["cure"])).to eq(%w[vivi rosa locke goblin_a goblin_b goblin_c])
       expect(described_class.target_options(state, rosa, state["abilities"]["raise"])).to eq(%w[bartz])
       expect(described_class.target_options(state, rosa, state["abilities"]["attack"])).to eq(%w[goblin_a goblin_b goblin_c])
       expect(described_class.target_options(state, rosa, state["abilities"]["cura"])).to be_nil

@@ -10,7 +10,8 @@ module Battle
 
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
-  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan jump away].freeze
+  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan jump away
+                  shield imbue percent sap].freeze
 
   # Parameters each primitive takes, split into required and optional
   # (optional ones have defaults in Battle::Effects). String-valued params
@@ -37,7 +38,17 @@ module Battle
     # Takes someone off the field for some of their turns (Battle::Effects#away):
     # who "self" (Jump, Hide, Vanish) or "target" (Banish, Knockback).
     # Power > 0: they come back striking.
-    "away" => { required: [], optional: %w[who duration power chance type] }
+    "away" => { required: [], optional: %w[who duration power chance type] },
+    # A barrier that takes the next power-scaled-by-mag damage (Barrier, Stoneskin).
+    "shield" => { required: %w[power], optional: %w[duration] },
+    # Attack strikes with this type for a while (Flame Blade, Venom Edge).
+    "imbue" => { required: %w[type], optional: %w[duration] },
+    # A share of the target's current HP, whatever its defence; it never
+    # knocks anyone out, and a boss takes a quarter as much (Gravity, Demi).
+    "percent" => { required: %w[power], optional: %w[chance] },
+    # Takes MP, scaled by mag and softened by mdef; keep% of it goes to
+    # the user (Osmose, Rasp, Siphon).
+    "sap" => { required: %w[power], optional: %w[keep] }
   }.freeze
   PRIMITIVE_STRING_PARAMS = %w[type kind stat who].freeze
   AWAY_WHO = %w[self target].freeze
@@ -49,20 +60,36 @@ module Battle
   # allies (a Knight's Cover). away: off the field, out of reach, for some
   # of its turns (Battle::Effects#away); airborne is the same from battles
   # before Away, landing on its next turn.
-  STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away].freeze
+  #
+  # aggro:   draws the other side's single-target moves (Taunt, Provoke);
+  #          cover is the same, from battles before it had its name.
+  # stop:    loses its turns; a blow doesn't break it.
+  # berserk: attacks on its own, harder (Str +50%).
+  # confuse: attacks anyone, friend or foe, until a blow brings it round.
+  # charged: its next move that deals or restores HP is twice as strong.
+  # imbued:  Attack strikes with the status's type (the imbue primitive).
+  # shield:  takes damage out of the status's amount first (the shield primitive).
+  STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away
+                aggro stop berserk confuse charged imbued shield].freeze
   # Off the field: nobody can reach them, and they can't be commanded.
   OUT_OF_REACH_STATUSES = %w[airborne away].freeze
+  # Draw the other side's single-target moves.
+  AGGRO_STATUSES = %w[aggro cover].freeze
   # What a cleanse with no kind cures: everything but the good ones.
-  HARMFUL_STATUSES = (STATUSES - %w[haste cover airborne away]).freeze
+  HARMFUL_STATUSES = (STATUSES - %w[haste cover airborne away aggro charged imbued shield]).freeze
+  # Only their own primitives make these: they carry more than a duration.
+  PRIMITIVE_STATUSES = %w[airborne imbued shield].freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
   COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
 
   # Statuses that stop a unit from taking its turn (and from being asked
   # for input).
-  DISABLING_STATUSES = %w[sleep paralyze].freeze
+  DISABLING_STATUSES = %w[sleep paralyze stop].freeze
+  # They act on their own: berserk attacks, confuse attacks anyone.
+  RUNAWAY_STATUSES = %w[berserk confuse].freeze
   # No command while these last: the unit's turn is already spoken for.
-  NO_INPUT_STATUSES = (DISABLING_STATUSES + OUT_OF_REACH_STATUSES).freeze
+  NO_INPUT_STATUSES = (DISABLING_STATUSES + OUT_OF_REACH_STATUSES + RUNAWAY_STATUSES).freeze
   # What a job gives beyond numbers (Battle::Effects, #take_turn):
   #   counter      — sometimes strikes back when hit by an enemy's blow
   #   regen        — a little HP back at the end of each of its turns
@@ -102,6 +129,7 @@ module Battle
     #              immune_as_resist: the type chart's "no effect" is a resistance
     #              mastery:          { ability => { power: percent, stats: { "mag" => n } } },
     #                                what mastery and the active job make of it
+    #            A monster can be undead: true (healing hurts it) or boss: true.
     # enemies:   same shape plus ai: [rules], rewards: {}, and optional count: n
     # abilities: { "fire" => { name:, kind:, target:, cost: { mp: }, effects: [...] } }
     # items:     the party's usable items, shared by everyone in it:
@@ -208,6 +236,8 @@ module Battle
         "last_command" => nil
       }.merge(spec["desperation"] ? { "desperation" => spec["desperation"].to_s } : {})
        .merge(spec["level"] ? { "level" => Integer(spec["level"]) } : {})
+       .merge(spec["undead"] ? { "undead" => true } : {})
+       .merge(spec["boss"] ? { "boss" => true } : {})
        .merge(passives(id, spec))
        .merge(job_parts(id, spec, known))
     end
@@ -284,6 +314,11 @@ module Battle
       ability["effects"].any? { |e| e["primitive"] == "revive" }
     end
 
+    # Heals: a move that can be turned on an enemy.
+    def heals?(ability)
+      ability["effects"].any? { |e| e["primitive"] == "heal" }
+    end
+
     # How many of an item the party can still commit to this round: the
     # count, less what other members have already queued. (Items are shared,
     # so two players can't both spend the last Potion.)
@@ -304,7 +339,9 @@ module Battle
         state["units"].select { |u| u["side"] != unit["side"] && living.(u) }.map { |u| u["id"] }
       when "single_ally"
         allies = state["units"].select { |u| u["side"] == unit["side"] }
-        allies.select { |u| revives?(ability) ? !living.(u) : living.(u) }.map { |u| u["id"] }
+        ids = allies.select { |u| revives?(ability) ? !living.(u) : living.(u) }.map { |u| u["id"] }
+        # Then the enemies, last: healing turned on the undead.
+        ids + (heals?(ability) ? state["units"].select { |u| u["side"] != unit["side"] && living.(u) && !u["gone"] }.map { |u| u["id"] } : [])
       end
     end
 
@@ -342,6 +379,9 @@ module Battle
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !typed
         when "status"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" unless STATUSES.include?(effect["kind"])
+          raise ArgumentError, "#{id}: #{effect['kind']} comes from its own primitive" if PRIMITIVE_STATUSES.include?(effect["kind"])
+        when "imbue"
+          raise ArgumentError, "#{id}: unknown type #{effect['type']}" unless known.include?(effect["type"])
         when "cleanse"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" if effect["kind"] && !STATUSES.include?(effect["kind"])
         when "buff", "debuff"

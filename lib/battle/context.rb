@@ -121,13 +121,28 @@ module Battle
 
     # --- mutations that always emit --------------------------------------
 
+    # A shield takes blows out of its own amount first; poison goes round it.
     def deal_damage(target, amount, **extra)
+      amount = shielded(target, amount) unless extra[:status]
+      return if amount.zero?
+
       target["hp"] = [ target["hp"] - amount, 0 ].max
       emit(:damage, target: target["id"], amount: amount, hp: target["hp"], **extra)
       return unless target["hp"].zero?
 
       knock_out(target)
       second_wind(target)
+    end
+
+    def shielded(target, amount)
+      shield = target["statuses"].find { |s| s["kind"] == "shield" }
+      return amount unless shield
+
+      absorbed = [ shield["amount"].to_i, amount ].min
+      shield["amount"] = shield["amount"].to_i - absorbed
+      emit(:shielded, target: target["id"], absorbed: absorbed, left: shield["amount"])
+      remove_status(target, "shield", reason: "broken") if shield["amount"].zero?
+      amount - absorbed
     end
 
     # Once a battle, a unit with Second Wind gets back up at a quarter HP

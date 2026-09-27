@@ -136,7 +136,7 @@
       <div class="field"><%= f.label :value, "HP / MP" %><%= f.number_field :value, min: 0 %></div>
       <div class="field">
         <%= f.label :status %>
-        <%= f.select :status, Battle::STATUSES.map { |s| [ s.humanize, s ] }, include_blank: true %>
+        <%= f.select :status, (Battle::STATUSES - Battle::PRIMITIVE_STATUSES).map { |s| [ s.humanize, s ] }, include_blank: true %>
       </div>
       <div class="field"><%= f.label :turns %><%= f.number_field :turns, min: 1, placeholder: 3 %></div>
     </div>

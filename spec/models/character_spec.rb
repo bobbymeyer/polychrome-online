@@ -163,7 +163,7 @@ RSpec.describe Character do
       changes = bartz.gain!(abp: Stats::Growth.abp_for_job_level(41) - bartz.character_job.abp)
       expect(changes).to include("mastered_abilities" => [ "War Cry" ], "job_level" => [ 40, 41 ])
       changes = bartz.gain!(abp: 10_000)
-      expect(changes["mastered_abilities"]).to eq([ "Armor Break", "Double Cut" ])
+      expect(changes["mastered_abilities"]).to eq([ "Armor Break", "Double Cut", "Shield Bash" ])
       expect(changes["mastered"]).to eq("job" => "Knight", "passive" => "second_wind")
     end
 

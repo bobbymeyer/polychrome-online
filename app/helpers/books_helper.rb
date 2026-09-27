@@ -115,6 +115,10 @@ module BooksHelper
     when "scan" then "Reveal HP, weaknesses and immunities"
     when "jump" then "Leap out of reach, then land a #{e.fetch('power', 200)}% blow next turn"
     when "away" then describe_away(e)
+    when "shield" then "A barrier against the next #{e['power']}-power worth of damage (#{e.fetch('duration', 3)} turns)"
+    when "imbue" then "Attack strikes as #{effect_type(e['type']).downcase} (#{e.fetch('duration', 3)} turns)"
+    when "percent" then "#{e['power']}% of current HP#{" (#{e['chance']}%)" if e['chance']}; never the last of it"
+    when "sap" then "Take MP, power #{e['power']}#{", keep #{e['keep']}%" if e['keep'].to_i.positive?}"
     else e["primitive"].to_s.humanize
     end
   end

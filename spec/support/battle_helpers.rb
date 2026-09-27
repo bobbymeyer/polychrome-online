@@ -65,7 +65,16 @@ module BattleFixtures
       banish: { name: "Banish", kind: "magic", target: "single_enemy", cost: { mp: 2 },
                 effects: [ { primitive: "away", who: "target", duration: 2, chance: 80 } ] },
       high_jump: { name: "High Jump", kind: "skill", target: "single_enemy", cost: { mp: 0 },
-                   effects: [ { primitive: "away", who: "self", duration: 2, power: 250 } ] }
+                   effects: [ { primitive: "away", who: "self", duration: 2, power: 250 } ] },
+      barrier: { name: "Barrier", kind: "magic", target: "single_ally", cost: { mp: 4 }, effects: [ { primitive: "shield", power: 6 } ] },
+      taunt: { name: "Taunt", kind: "skill", target: "self", cost: { mp: 0 }, effects: [ { primitive: "status", kind: "aggro", duration: 2 } ] },
+      stop: { name: "Stop", kind: "magic", target: "single_enemy", cost: { mp: 5 }, effects: [ { primitive: "status", kind: "stop", chance: 60, duration: 2 } ] },
+      rage: { name: "Rage", kind: "skill", target: "single_enemy", cost: { mp: 2 }, effects: [ { primitive: "status", kind: "berserk", chance: 70, duration: 2 } ] },
+      confuse: { name: "Confuse", kind: "magic", target: "single_enemy", cost: { mp: 3 }, effects: [ { primitive: "status", kind: "confuse", chance: 70, duration: 3 } ] },
+      focus: { name: "Focus", kind: "skill", target: "self", cost: { mp: 0 }, effects: [ { primitive: "status", kind: "charged", duration: 3 } ] },
+      flame_blade: { name: "Flame Blade", kind: "magic", target: "self", cost: { mp: 3 }, effects: [ { primitive: "imbue", type: "fire", duration: 3 } ] },
+      gravity: { name: "Gravity", kind: "magic", target: "single_enemy", cost: { mp: 6 }, effects: [ { primitive: "percent", power: 25, chance: 80 } ] },
+      osmose: { name: "Osmose", kind: "magic", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "sap", power: 20, keep: 100 } ] }
     }
   end
 
@@ -100,8 +109,14 @@ module BattleFixtures
        ai: [ { if: { chance: 25 }, use: "goblin_punch" }, { use: "attack" } ] } ]
   end
 
+  # Bones that remember how to hold a sword: healing hurts them.
+  def skeletons(count = 2)
+    [ { id: "skeleton", name: "Skeleton", count: count, undead: true, stats: stats(max_hp: 60, max_mp: 10, str: 10, atk: 9, agi: 7, def: 4, mdef: 2),
+        types: %w[ghost], rewards: { exp: 8, gil: 10 }, abilities: %w[confuse], ai: [ { if: { chance: 20 }, use: "confuse" }, { use: "attack" } ] } ]
+  end
+
   def ogre
-    [ { id: "ogre", name: "Ogre",
+    [ { id: "ogre", name: "Ogre", boss: true,
        stats: stats(max_hp: 400, max_mp: 30, str: 20, atk: 18, agi: 7, def: 12, mdef: 6, mag: 8),
        types: %w[normal], affinities: { ice: "absorb", fire: "resist" }, status_immune: %w[sleep], rewards: { exp: 80, gil: 150 },
        abilities: %w[cure war_cry],

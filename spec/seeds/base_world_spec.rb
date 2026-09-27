@@ -57,7 +57,7 @@ RSpec.describe Seeds::BaseWorld do
 
     described_class.run
     expect(goblin.reload).to have_attributes(name: "Bog Goblin", exp: 99)
-    expect(knight.reload.job_levels.count).to eq(2)
+    expect(knight.reload.job_levels.count).to eq(3)
     expect(world.monsters.find_by(slug: "ogre")).to be_present # the missing one is back
   end
 
@@ -68,7 +68,7 @@ RSpec.describe Seeds::BaseWorld do
 
     described_class.run(overwrite: true)
     expect(world.monsters.find_by!(slug: "goblin").name).to eq("Goblin")
-    expect(world.jobs.find_by!(slug: "knight").job_levels.count).to eq(3)
+    expect(world.jobs.find_by!(slug: "knight").job_levels.count).to eq(4)
   end
 
   it "gives every job a desperation move aimed at enemies, found rather than learned" do

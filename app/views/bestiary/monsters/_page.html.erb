@@ -1,7 +1,7 @@
 <header class="book-page__header">
   <%= entry_portrait(entry) %>
   <div>
-    <p class="eyebrow">Bestiary · Level <%= entry.level %><%= " · Boss" if entry.boss? %></p>
+    <p class="eyebrow">Bestiary · Level <%= entry.level %><%= " · Boss" if entry.boss? %><%= " · Undead" if entry.undead? %></p>
     <h1><%= entry.name %></h1>
     <dl class="facts">
       <dt>EXP</dt><dd><%= entry.exp %></dd>

@@ -139,6 +139,10 @@ module Battle
         raise InvalidAction, "#{target_id} is not an enemy" if target["side"] == unit["side"]
         raise InvalidAction, "#{target_id} is down" unless ctx.alive?(target)
       when "single_ally"
+        # A healing move can be turned on an enemy, as in the games: it
+        # hurts the undead (Battle::Effects#heal).
+        return if target["side"] != unit["side"] && State.heals?(ability) && ctx.alive?(target)
+
         raise InvalidAction, "#{target_id} is not an ally" unless target["side"] == unit["side"]
         raise InvalidAction, "#{target_id} is down" unless ctx.alive?(target) || ctx.revives?(ability)
       end
@@ -247,11 +251,12 @@ module Battle
       unit = ctx.unit(action["unit"])
       kind = action["status"]
       raise InvalidAction, "unknown status #{kind.inspect}" unless STATUSES.include?(kind)
+      raise InvalidAction, "#{kind} comes from a move, not on its own" if PRIMITIVE_STATUSES.include?(kind)
       raise InvalidAction, "#{unit['id']} is down" unless ctx.alive?(unit)
 
       gm_event(action, unit: unit["id"], status: kind)
       ctx.add_status(unit, kind, Integer(action.fetch("turns", 3)))
-      state["inputs"].delete(unit["id"]) if ctx.disabled?(unit)
+      state["inputs"].delete(unit["id"]) if NO_INPUT_STATUSES.include?(kind)
     end
 
     def gm_remove_status(action)
@@ -478,6 +483,10 @@ module Battle
         nil
       elsif blocking
         ctx.emit(:turn_skipped, unit: unit["id"], reason: blocking)
+      elsif ctx.status?(unit, "confuse")
+        run_amok(unit)
+      elsif ctx.status?(unit, "berserk")
+        use_ability(unit, own(unit, ctx.ability("attack")), nil)
       elsif unit["side"] == "enemy" || unit["guest"]
         ability, target = AI.choose(ctx, unit)
         use_ability(unit, own(unit, ability), target)
@@ -489,6 +498,18 @@ module Battle
 
       Effects.upkeep(ctx, unit) if ctx.alive?(unit) && !ctx.over?
       ctx.emit(:turn_end, unit: unit["id"])
+    end
+
+    # Confused: an Attack at anyone in reach but itself, friend or foe.
+    def run_amok(unit)
+      pool = ctx.units.select { |u| u != unit && ctx.alive?(u) && !ctx.out_of_reach?(u) }
+      target = ctx.rng.pick(pool)
+      ctx.emit(:confused, actor: unit["id"], target: target&.dig("id"))
+      return unless target
+
+      attack = own(unit, ctx.ability("attack"))
+      announce(unit, attack, [ target ], 0)
+      apply_effects(unit, attack, [ target ])
     end
 
     def perform(unit, cmd)
@@ -508,19 +529,27 @@ module Battle
     # the job's own command strike with the job's type, and mastery and the
     # active job scale its power (Stats::Mastery). A mastered move used
     # outside its job brings that job's stats with it.
-    POWERED = %w[physical elemental heal drain jump].freeze
+    POWERED = %w[physical elemental heal drain jump away shield sap].freeze
+    # What an effect's power is when it doesn't say.
+    DEFAULT_POWER = { "jump" => 200, "away" => 0 }.freeze
 
+    def power_of(effect)
+      effect.fetch("power") { DEFAULT_POWER.fetch(effect["primitive"], 100) }
+    end
+
+    # An imbued Attack takes the imbued type over the job's.
     def own(unit, ability)
-      typed = unit["attack_type"] && (ability["id"] == "attack" || ability["id"] == unit["signature"])
+      imbued = unit["statuses"].find { |s| s["kind"] == "imbued" }&.dig("type")
+      attack_type = ability["id"] == "attack" && imbued ? imbued : unit["attack_type"]
+      typed = attack_type && (ability["id"] == "attack" || ability["id"] == unit["signature"])
       mastery = unit.dig("mastery", ability["id"])
       return ability unless typed || mastery
 
       effects = ability["effects"].map do |effect|
         effect = effect.dup
-        effect["type"] ||= unit["attack_type"] if typed && %w[physical jump].include?(effect["primitive"])
+        effect["type"] ||= attack_type if typed && %w[physical jump].include?(effect["primitive"])
         if mastery && POWERED.include?(effect["primitive"])
-          default = effect["primitive"] == "jump" ? 200 : 100
-          effect["power"] = effect.fetch("power", default) * mastery["power"] / 100
+          effect["power"] = power_of(effect) * mastery["power"] / 100
           effect["basis"] = mastery["stats"] if mastery["stats"]
         end
         effect
@@ -561,6 +590,20 @@ module Battle
       special.merge("cost" => {})
     end
 
+    # Charged: the next move that deals or restores HP is twice as strong,
+    # and the charge is spent on it.
+    CHARGE_POWER = 200
+
+    def charged(unit, ability)
+      return ability unless ctx.status?(unit, "charged") && ability["effects"].any? { |e| POWERED.include?(e["primitive"]) }
+
+      ctx.remove_status(unit, "charged", reason: "spent")
+      effects = ability["effects"].map do |effect|
+        POWERED.include?(effect["primitive"]) ? effect.merge("power" => power_of(effect) * CHARGE_POWER / 100) : effect
+      end
+      ability.merge("effects" => effects)
+    end
+
     # An item works like an ability with no cost, and silence doesn't stop
     # it. It is used up when used, even if its target has gone.
     def use_item(unit, item, target_id)
@@ -585,6 +628,7 @@ module Battle
       end
 
       unit["mp"] -= cost
+      ability = charged(unit, ability)
       if ability["target"] == "random_enemy"
         announce(unit, ability, [], cost)
         return random_hits(unit, ability)
@@ -652,6 +696,7 @@ module Battle
         fallen = ctx.allies(unit, alive: false).reject { |a| ctx.alive?(a) }
         valid = chosen && chosen["side"] == unit["side"] && (revive ? !ctx.alive?(chosen) : ctx.alive?(chosen))
         return [ chosen ] if valid
+        return [ chosen ] if chosen && chosen["side"] != unit["side"] && State.heals?(ability) && ctx.alive?(chosen) && !ctx.out_of_reach?(chosen)
         return [ ctx.rng.pick(fallen) ].compact if revive
 
         [ ctx.allies(unit).min_by { |a| [ ctx.hp_percent(a), a["hp"] ] } ]
@@ -664,7 +709,7 @@ module Battle
     def covered(target)
       return target unless target
 
-      guard = ctx.allies(target).find { |a| a != target && ctx.status?(a, "cover") && !ctx.out_of_reach?(a) }
+      guard = ctx.allies(target).find { |a| a != target && AGGRO_STATUSES.any? { |k| ctx.status?(a, k) } && !ctx.out_of_reach?(a) }
       return target unless guard
 
       ctx.emit(:covered, unit: guard["id"], for: target["id"])

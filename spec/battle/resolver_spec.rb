@@ -81,7 +81,12 @@ RSpec.describe Battle::Resolver do
       it("unknown command kinds") { rejects(command("bartz", kind: "summon"), /unknown command/) }
       it("targets that don't exist") { rejects(command("bartz", "attack", "nobody"), /no unit/) }
       it("attacking an ally") { rejects(command("bartz", "attack", "vivi"), /not an enemy/) }
-      it("healing an enemy") { rejects(command("rosa", "cure", "goblin_a"), /not an ally/) }
+      it("a support move at an enemy") { rejects(command("rosa", "haste", "goblin_a"), /not an ally/) }
+
+      it "but takes healing turned on an enemy, as in the games" do
+        s, = apply(state, command("rosa", "cure", "goblin_a"))
+        expect(s["inputs"]["rosa"]).to include("target" => "goblin_a")
+      end
       it("healing a fallen ally") { rejects(command("rosa", "cure", "bartz"), /down/, from: with_unit(state, "bartz", hp: 0)) }
       it("targeting a fallen enemy") { rejects(command("bartz", "attack", "goblin_a"), /down/, from: with_unit(state, "goblin_a", hp: 0)) }
       it("insufficient MP") { rejects(command("vivi", "meteor"), /lacks MP/, from: with_unit(state, "vivi", mp: 3)) }
@@ -631,6 +636,94 @@ RSpec.describe Battle::Resolver do
         state = build_battle(seed: 2, party: [ knight.merge(abilities: %w[banish]) ], enemies: [ brute.first.merge(status_immune: %w[away]) ])
         _, events = round(state, "knight" => { kind: "ability", ability: "banish", target: "brute" })
         expect(of_type(events, :miss)).to include(a_hash_including("reason" => "immune", "status" => "away"))
+      end
+    end
+
+    describe "the effect library" do
+      let(:caster) { mage.merge(stats: mage[:stats].merge("agi" => 60, "max_mp" => 99, "mag" => 20), mp: 99) }
+
+      def cast(ability, target, enemies: brute, seed: 3, **unit)
+        state = build_battle(seed: seed, party: [ caster.merge(abilities: [ ability ], **unit) ], enemies: enemies)
+        round(state, "mage" => { kind: "ability", ability: ability, target: target })
+      end
+
+      it "shields: blows come out of the barrier first" do
+        _, events = cast("barrier", "mage")
+        shield = of_type(events, :status_applied).find { |e| e["status"] == "shield" }
+        expect(shield["amount"]).to eq(6 * (20 + 16) / 16)
+        expect(of_type(events, :shielded).first).to include("target" => "mage")
+      end
+
+      it "draws the enemy's blows to whoever has aggro" do
+        taunter = knight.merge(abilities: %w[taunt], stats: tough.merge("agi" => 60))
+        state = build_battle(seed: 5, party: [ taunter, mage ], enemies: brute)
+        _, events = round(state, "knight" => { kind: "ability", ability: "taunt" }, "mage" => { kind: "defend" })
+        expect(of_type(events, :damage).select { |e| e["actor"] == "brute" }.map { |e| e["target"] }).to all(eq("knight"))
+      end
+
+      it "stops a unit, and a blow doesn't start it again" do
+        state = build_battle(seed: 1, party: [ caster.merge(abilities: %w[stop]) ], enemies: brute)
+        state = with_unit(state, "brute", statuses: [ { "kind" => "stop", "turns" => 2 } ])
+        _, events = round(state, "mage" => { kind: "ability", ability: "attack", target: "brute" })
+        expect(of_type(events, :turn_skipped)).to include(a_hash_including("unit" => "brute", "reason" => "stop"))
+        expect(of_type(events, :status_expired).map { |e| e["status"] }).not_to include("stop")
+      end
+
+      it "has the berserk attack on their own, and the confused hit anyone until a blow brings them round" do
+        state = build_battle(seed: 1, party: [ caster, knight ], enemies: brute)
+        state = with_unit(state, "knight", statuses: [ { "kind" => "berserk", "turns" => 2 } ])
+        expect(Battle::State.awaiting_input(state)).to eq([ "mage" ])
+        _, events = round(state, "mage" => { kind: "defend" })
+        expect(turn_of(events, "knight").map { |e| e["type"] }).to include("attack")
+
+        state = with_unit(build_battle(seed: 4, party: [ caster, knight ], enemies: brute), "knight", statuses: [ { "kind" => "confuse", "turns" => 3 } ])
+        _, events = round(state, "mage" => { kind: "defend" })
+        expect(of_type(events, :confused).sole).to include("actor" => "knight")
+      end
+
+      it "charges the next move, twice as strong, and spends the charge" do
+        plain = cast("cure", "mage", hp: 100).last
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[cure], hp: 100) ], enemies: brute)
+        state = with_unit(state, "mage", statuses: [ { "kind" => "charged", "turns" => 3 } ])
+        _, events = round(state, "mage" => { kind: "ability", ability: "cure", target: "mage" })
+        heal = ->(log) { of_type(log, :heal).find { |e| e["actor"] == "mage" }["amount"] }
+        expect(heal.(events)).to be_within(2).of(heal.(plain) * 2)
+        expect(of_type(events, :status_expired)).to include(a_hash_including("status" => "charged", "reason" => "spent"))
+      end
+
+      it "imbues Attack with a type" do
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[flame_blade]) ], enemies: brute)
+        state, = round(state, "mage" => { kind: "ability", ability: "flame_blade", target: "mage" })
+        _, events = round(state, "mage" => { kind: "ability", ability: "attack", target: "brute" })
+        blow = of_type(events, :damage).find { |e| e["actor"] == "mage" } || of_type(events, :miss).find { |e| e["actor"] == "mage" }
+        expect(blow["damage_type"]).to eq("fire") if blow["type"] == "damage"
+      end
+
+      it "takes a share of current HP, never the last of it, and a quarter as much from a boss" do
+        sure = BattleFixtures.abilities.merge(gravity: BattleFixtures.abilities[:gravity].merge(effects: [ { primitive: "percent", power: 50 } ]))
+        hit = lambda do |enemy|
+          state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[gravity]) ], enemies: [ enemy ], abilities: sure)
+          of_type(round(state, "mage" => { kind: "ability", ability: "gravity", target: "brute" }).last, :damage).find { |e| e["actor"] == "mage" }
+        end
+        expect(hit.(brute.first)["amount"]).to eq(1500)
+        expect(hit.(brute.first.merge(boss: true))["amount"]).to eq(3000 * 12 / 100)
+        expect(hit.(brute.first.merge(hp: 1))).to be_nil
+      end
+
+      it "saps MP and keeps what it takes" do
+        drained = cast("osmose", "brute", enemies: [ brute.first.merge(stats: brute.first[:stats].merge("max_mp" => 50)) ], mp: 10).last
+        lost = of_type(drained, :mp_lost).sole
+        expect(lost).to include("target" => "brute")
+        expect(of_type(drained, :mp_restored)).to include(a_hash_including("target" => "mage", "amount" => lost["amount"]))
+      end
+
+      it "turns healing on the undead into harm, and drains them backwards" do
+        undead = [ brute.first.merge(undead: true) ]
+        _, events = cast("cure", "brute", enemies: undead)
+        expect(of_type(events, :damage)).to include(a_hash_including("target" => "brute", "undead" => true))
+        _, events = cast("drain", "brute", enemies: undead, hp: 500)
+        expect(of_type(events, :damage)).to include(a_hash_including("target" => "mage", "drain" => true))
+        expect(of_type(events, :heal)).to include(a_hash_including("target" => "brute", "drain" => true))
       end
     end
 

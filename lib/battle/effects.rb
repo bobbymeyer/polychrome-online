@@ -33,6 +33,10 @@ module Battle
       when "scan" then scan(ctx, target)
       when "jump" then away(ctx, actor, target, effect.merge("who" => "self", "power" => effect.fetch("power", 200)))
       when "away" then away(ctx, actor, target, effect)
+      when "shield" then shield(ctx, actor, target, effect)
+      when "imbue" then imbue(ctx, target, effect)
+      when "percent" then percent(ctx, actor, target, effect)
+      when "sap" then sap(ctx, actor, target, effect)
       else raise Error, "unknown primitive #{effect['primitive']}"
       end
     end
@@ -96,7 +100,10 @@ module Battle
       # Typed after every draw, so the stream doesn't depend on the chart.
       return if typed(ctx, actor, target, type_of(ctx, effect), amount, crit: crit, roll: crit_roll, needed: crit_needed)
 
-      ctx.remove_status(target, "sleep", reason: "woke") if ctx.alive?(target)
+      if ctx.alive?(target)
+        ctx.remove_status(target, "sleep", reason: "woke")
+        ctx.remove_status(target, "confuse", reason: "came_to")
+      end
       counter(ctx, actor, target)
     end
 
@@ -208,18 +215,68 @@ module Battle
       end
     end
 
-    # heal(power): power scaled by the caster's mag.
+    # heal(power): power scaled by the caster's mag. The undead take it as
+    # damage instead.
     def heal(ctx, actor, target, effect)
       amount = [ vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"), effect["basis"])), 1 ].max
+      return ctx.deal_damage(target, amount, actor: actor["id"], undead: true) if target["undead"]
+
       ctx.restore_hp(target, amount, actor: actor["id"])
     end
 
     # drain(power): non-elemental magic damage returned to the caster as HP.
+    # Against the undead it runs backwards: they're fed, the caster pays.
     def drain(ctx, actor, target, effect)
       amount = [ magic_amount(ctx, actor, target, effect), 1 ].max
-      taken = [ amount, target["hp"] ].min
-      ctx.deal_damage(target, amount, actor: actor["id"], drain: true)
-      ctx.restore_hp(actor, taken, source: target["id"], drain: true)
+      giver, taker = target["undead"] ? [ actor, target ] : [ target, actor ]
+      taken = [ amount, giver["hp"] ].min
+      ctx.deal_damage(giver, amount, actor: actor["id"], drain: true)
+      ctx.restore_hp(taker, taken, source: giver["id"], drain: true) if ctx.alive?(taker)
+    end
+
+    # shield(power, duration): a barrier of power-scaled-by-mag HP that
+    # damage comes out of first (Context#deal_damage). A new one replaces it.
+    def shield(ctx, actor, target, effect)
+      amount = [ scale_by_mag(ctx, actor, effect.fetch("power"), effect["basis"]), 1 ].max
+      target["statuses"].reject! { |s| s["kind"] == "shield" }
+      ctx.add_status(target, "shield", effect.fetch("duration", 3), amount: amount)
+      target["statuses"].find { |s| s["kind"] == "shield" }["amount"] = amount
+    end
+
+    # imbue(type, duration): the target's Attack strikes with the type.
+    def imbue(ctx, target, effect)
+      target["statuses"].reject! { |s| s["kind"] == "imbued" }
+      ctx.add_status(target, "imbued", effect.fetch("duration", 3), damage_type: effect["type"])
+      target["statuses"].find { |s| s["kind"] == "imbued" }["type"] = effect["type"]
+    end
+
+    # percent(power, chance): power% of the target's current HP, whatever its
+    # defence or type. It never knocks anyone out; a boss takes a quarter.
+    def percent(ctx, actor, target, effect)
+      chance = effect.fetch("chance", 100)
+      came_in, roll = ctx.rng.d100(chance)
+      unless came_in || chance >= 100
+        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "evaded", roll: roll, needed: chance)
+      end
+
+      share = effect.fetch("power") / (target["boss"] ? 4 : 1)
+      amount = [ target["hp"] * share / 100, target["hp"] - 1 ].min
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "no_effect") unless amount.positive?
+
+      ctx.deal_damage(target, amount, actor: actor["id"], percent: share)
+    end
+
+    # sap(power, keep): MP taken, scaled by mag and softened by mdef; keep%
+    # of what was taken goes to the user.
+    def sap(ctx, actor, target, effect)
+      amount = [ magic_amount(ctx, actor, target, effect) / 4, 1 ].max
+      taken = [ amount, target["mp"] ].min
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "no_mp") unless taken.positive?
+
+      target["mp"] -= taken
+      ctx.emit(:mp_lost, actor: actor["id"], target: target["id"], amount: taken, mp: target["mp"])
+      kept = taken * effect.fetch("keep", 0) / 100
+      ctx.restore_mp(actor, kept, source: target["id"]) if kept.positive?
     end
 
     # buff/debuff(stat, amount, duration): amount is a percent. A new
@@ -233,8 +290,13 @@ module Battle
       ctx.emit(:buff_applied, target: target["id"], stat: stat, amount: amount, turns: turns)
     end
 
-    # revive(fraction): fraction is a percent of max HP.
+    # revive(fraction): fraction is a percent of max HP. On the living
+    # undead it's that much damage instead.
     def revive(ctx, target, effect)
+      if target["undead"] && ctx.alive?(target)
+        return ctx.deal_damage(target, [ target["stats"]["max_hp"] * effect.fetch("fraction", 25) / 100, 1 ].max, undead: true)
+      end
+
       if ctx.alive?(target)
         return ctx.emit(:miss, target: target["id"], reason: "not_ko")
       end

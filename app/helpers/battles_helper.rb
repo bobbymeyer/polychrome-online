@@ -121,6 +121,9 @@ module BattlesHelper
     when "jump" then "#{name.('actor')} leaps out of reach!"
     when "away" then event["unit"] == event["actor"] ? "#{name.('actor')} slips off the field." : "#{name.('unit')} is sent off the field!"
     when "back" then "#{name.('unit')} is back."
+    when "shielded" then "#{name.('target')}'s barrier takes #{event['absorbed']}#{event['left'].zero? ? ' and breaks' : ''}."
+    when "confused" then event["target"] ? "#{name.('actor')}, confused, turns on #{name.('target')}!" : "#{name.('actor')} stumbles about."
+    when "mp_lost" then "#{name.('target')} loses #{event['amount']} MP."
     when "land" then event["target"] ? "#{name.('actor')} comes down on #{name.('target')}!" : "#{name.('actor')} lands, with nobody to hit."
     when "covered" then "#{name.('unit')} steps in front of #{unit_name(state, event['for'])}!"
     when "counter" then "#{name.('actor')} strikes back!#{dice_note(event)}"
@@ -169,6 +172,8 @@ module BattlesHelper
     return "#{target} takes #{event['amount']} poison damage." if event["status"] == "poison"
 
     line = "#{target} takes #{event['amount']} damage."
+    return "#{line} Healing burns the undead!" if event["undead"]
+
     effectiveness = event["effectiveness"] || (event["weak"] ? 200 : 100) # "weak": battles from before types
     if effectiveness > 100 then "#{line} It's super effective!"
     elsif effectiveness < 100 then "#{line} It's not very effective…"
@@ -185,6 +190,8 @@ module BattlesHelper
     when "nothing_to_cure" then "#{target} has nothing to cure."
     when "nothing_to_steal" then "#{target} has nothing to steal."
     when "steal_failed" then "Couldn't steal from #{target}.#{dice_note(event)}"
+    when "no_effect" then "#{target} barely feels it."
+    when "no_mp" then "#{target} has no MP to take."
     else "#{event['item'] ? item_name(state, event['item']) : ability_name(state, event['ability'])} has no target."
     end
   end
@@ -245,6 +252,7 @@ module BattlesHelper
     when "sleep" then "#{unit} is asleep."
     when "paralyze" then "#{unit} can't move."
     when "away" then "#{unit} is away."
+    when "stop" then "#{unit} is stopped in time."
     else "#{unit} has no orders."
     end
   end

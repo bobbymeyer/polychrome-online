@@ -20,11 +20,12 @@ class RandomTable
                            .map { |u|
                              u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser),
                                      passives: Battle::PASSIVES.sample(@chooser.rand(0..2), random: @chooser),
-                                     abilities: u[:abilities] + %w[cover jump gaia hide banish high_jump].sample(3, random: @chooser))
+                                     abilities: u[:abilities] + %w[cover jump gaia hide banish high_jump barrier taunt stop rage confuse focus flame_blade gravity osmose]
+                                                                         .sample(5, random: @chooser))
                               .merge(job_parts(u))
                            },
       terrain: Battle::TYPES.sample(random: @chooser),
-      enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre ].sample(random: @chooser),
+      enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre, BattleFixtures.skeletons(@chooser.rand(1..3)) ].sample(random: @chooser),
       abilities: BattleFixtures.abilities,
       escapable: @chooser.rand(4) != 0,
       items: BattleFixtures.items(potion: @chooser.rand(0..3), phoenix_down: @chooser.rand(0..2),
@@ -137,9 +138,9 @@ class RandomTable
     when 3
       u = alive.sample(random: @chooser)
       { "type" => "gm_override", "op" => "add_status", "unit" => u["id"],
-        "status" => Battle::STATUSES.sample(random: @chooser), "turns" => @chooser.rand(1..4) }
+        "status" => (Battle::STATUSES - Battle::PRIMITIVE_STATUSES).sample(random: @chooser), "turns" => @chooser.rand(1..4) }
     when 4 then { "type" => "gm_override", "op" => "remove_status", "unit" => target["id"],
-                  "status" => Battle::STATUSES.sample(random: @chooser) }
+                  "status" => (Battle::STATUSES - Battle::PRIMITIVE_STATUSES).sample(random: @chooser) }
     when 5
       side = @chooser.rand(3).zero? ? "party" : "enemy"
       spec = side == "party" ? BattleFixtures.party.sample(random: @chooser).merge(ai: [ { use: "attack" } ]) : BattleFixtures.goblins(1).first.except(:count)

@@ -171,6 +171,15 @@ export default class extends Controller {
         tl.add(this.sprite(e.unit), { opacity: [1, 0], scale: [1, 0.8], duration: 360, ease: "inQuad" }, at)
         this.popup(tl, e.unit, e.unit === e.actor ? "HIDDEN" : "SENT AWAY", "status", at)
         return 420
+      case "shielded":
+        this.popup(tl, e.target, e.left > 0 ? `BARRIER −${e.absorbed}` : "BARRIER BROKEN", "status", at)
+        return 260
+      case "confused":
+        if (e.target) this.popup(tl, e.actor, "CONFUSED", "status", at)
+        return 220
+      case "mp_lost":
+        this.popup(tl, e.target, `−${e.amount} MP`, "status", at)
+        return 260
       case "back":
         tl.add(this.sprite(e.unit), { opacity: [0, 1], scale: [0.8, 1], duration: 300, ease: "outQuad" }, at)
         return 340
