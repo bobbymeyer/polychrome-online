@@ -195,7 +195,7 @@ RSpec.describe "Battle screen", type: :request do
       battle.update!(state: state)
 
       get battle_panel_path(battle)
-      expect(response.body).to include(%(data-controller="menu"), %(data-menu-you-value="#{bartz}"), "Single enemy · Physical")
+      expect(response.body).to include(%(data-controller="menu timing-meter"), %(data-menu-you-value="#{bartz}"), "Single enemy · Physical")
       expect(response.body).to match(/aria-disabled="true" data-help="Not enough MP[^"]*"[^>]*>Cure/)
 
       get battle_panel_path(battle, ability: "attack")
