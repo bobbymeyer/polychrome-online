@@ -186,6 +186,7 @@ a.menu__item:hover, button.menu__item:hover:not(:disabled) { background: var(--c
 button.menu__item:hover:not(:disabled) .menu__cost { color: inherit; }
 .menu__item:disabled { color: var(--grey); border-color: var(--rule); background: var(--paper); cursor: not-allowed; }
 .menu__item.is-current { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .menu__item--accent, button.menu__item--accent:hover:not(:disabled) { background: var(--signal); border-color: var(--signal); color: var(--paper); }
 button.menu__item--accent:hover:not(:disabled) { background: var(--signal-dark); border-color: var(--signal-dark); }
 .menu__cost { color: var(--grey); font-weight: 400; font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -423,6 +424,8 @@ details[open] summary { margin-bottom: 16px; }
   font-size: clamp(56px, 11vw, 128px); line-height: 1; font-weight: 800; letter-spacing: -0.05em;
 }
 .banner--defeat { color: var(--paper); -webkit-text-stroke: 2px var(--ink); }
+/* A round number is routine: a small bar at the top, not giant type over the enemies (DESIGN.md). */
+.banner--round { top: 0; translate: none; font-size: 20px; line-height: 28px; letter-spacing: 0; background: var(--ink); color: var(--paper); padding: 2px 10px; }
 .banner--gm { font-size: 24px; line-height: 32px; letter-spacing: -0.01em; background: var(--ink); color: var(--paper); padding: 4px 12px; }
 .caption.window, .caption {
   position: absolute; left: 0; top: 0; opacity: 0; margin: 0; border: 0;

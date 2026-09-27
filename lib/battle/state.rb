@@ -10,7 +10,7 @@ module Battle
 
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
-  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse].freeze
+  PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan].freeze
 
   # Parameters each primitive takes, split into required and optional
   # (optional ones have defaults in Battle::Effects). String-valued params
@@ -26,7 +26,11 @@ module Battle
     "revive" => { required: [], optional: %w[fraction] },
     "escape" => { required: [], optional: [] },
     # Cures one named status, or every harmful one when none is named.
-    "cleanse" => { required: [], optional: %w[kind] }
+    "cleanse" => { required: [], optional: %w[kind] },
+    # Takes one of the target's drops, once per target.
+    "steal" => { required: [], optional: %w[chance] },
+    # Shows the target's affinities, status immunities and HP.
+    "scan" => { required: [], optional: [] }
   }.freeze
   PRIMITIVE_STRING_PARAMS = %w[element kind stat].freeze
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze

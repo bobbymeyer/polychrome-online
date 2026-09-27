@@ -217,6 +217,33 @@ class Campaign < ApplicationRecord
   end
 
   # An inn: everyone back to full HP and MP, the fallen included.
+  # What the party learns about monsters by fighting them (§ Play: weaknesses
+  # are found, not given). An element that lands shows how the monster takes
+  # it; a status it shrugs off shows it's immune, one that sticks that it
+  # isn't; a scan shows everything. Kept per monster, across battles.
+  def learn_from!(events, state)
+    units = state["units"].index_by { |u| u["id"] }
+    learned = known_affinities.deep_dup
+    events.each do |event|
+      target = units[event["target"]]
+      slug = target && target["side"] == "enemy" && target.dig("image", "slug")
+      next unless slug
+
+      notes = (learned[slug] ||= {})
+      if event["type"] == "scan"
+        Battle::ELEMENTS.each { |element| notes[element] = target["elements"].fetch(element, "none") }
+        Battle::STATUSES.each { |kind| notes[kind] = target["status_immune"].include?(kind) ? "immune" : "none" }
+      elsif event["element"]
+        notes[event["element"]] = target["elements"].fetch(event["element"], "none")
+      elsif event["type"] == "miss" && event["reason"] == "immune" && event["status"]
+        notes[event["status"]] = "immune"
+      elsif event["type"] == "status_applied"
+        notes[event["status"]] = "none"
+      end
+    end
+    update!(known_affinities: learned) if learned != known_affinities
+  end
+
   # The dungeon the party is inside right now, if any.
   def dungeon_in_progress
     location = current_node&.location

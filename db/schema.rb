@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_200800) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -167,6 +167,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200800) do
     t.integer "rng", default: 0, null: false
     t.json "pending_encounter"
     t.integer "gm_id"
+    t.json "known_affinities", default: {}, null: false
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["world_id"], name: "index_campaigns_on_world_id"

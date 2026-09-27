@@ -20,15 +20,37 @@ const BACKLOG_SPEEDUP = 4
 // playing the ones after it anyway.
 const GAP_WAIT = 1500
 const REDUCED_MOTION_SPEED = 4
+const FAST_SPEED = 2
+const FAST_KEY = "polychrome.fastBattles"
 
 export default class extends Controller {
-  static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip"]
+  static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "fast"]
   static values = { panelUrl: String, next: Number }
 
   connect() {
     this.queue = []
     this.current = null
+    this.fast = this.readFast()
+    this.showFast()
     this.scrollLog()
+  }
+
+  // Each viewer's own choice, on top of the GM's pacing for everyone.
+  toggleFast() {
+    this.fast = !this.fast
+    try { localStorage.setItem(FAST_KEY, this.fast ? "1" : "0") } catch {}
+    this.showFast()
+    if (this.current) this.current.timeline.speed = this.speed
+  }
+
+  readFast() {
+    try { return localStorage.getItem(FAST_KEY) === "1" } catch { return false }
+  }
+
+  showFast() {
+    if (!this.hasFastTarget) return
+    this.fastTarget.setAttribute("aria-pressed", String(this.fast))
+    this.fastTarget.classList.toggle("is-current", this.fast)
   }
 
   disconnect() {
@@ -69,7 +91,7 @@ export default class extends Controller {
     const gm = Number(this.hasPlaybackTarget ? this.playbackTarget.dataset.speed : 1) || 1
     const backlog = this.queue.length >= 2 ? BACKLOG_SPEEDUP : 1
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? REDUCED_MOTION_SPEED : 1
-    return gm * backlog * reduced
+    return gm * backlog * reduced * (this.fast ? FAST_SPEED : 1)
   }
 
   playNext() {
@@ -129,7 +151,7 @@ export default class extends Controller {
     switch (e.type) {
       case "round_start":
         this.banner(tl, `Round ${e.round}`, at)
-        return 700
+        return 400
       case "turn_start":
         tl.call(() => this.setActive(e.unit), at)
         return 120
@@ -154,18 +176,18 @@ export default class extends Controller {
         tl.call(() => this.setHp(e.target, e.hp), at)
         this.popup(tl, e.target, String(e.amount), e.status === "poison" ? "poison" : "damage", at)
         gesture(tl, this.sprite(e.target), e.status === "poison" ? "tint" : "shake", at)
-        return 480
+        return 380
       case "heal":
         tl.call(() => this.setHp(e.target, e.hp), at)
         this.popup(tl, e.target, String(e.amount), "heal", at)
         gesture(tl, this.sprite(e.target), "float", at)
-        return 480
+        return 380
       case "crit":
         this.popup(tl, e.target, "CRIT!", "crit", at)
         gesture(tl, this.stageTarget, "flash", at)
         return 260
       case "miss":
-        this.popup(tl, e.target || e.actor, { immune: "IMMUNE", nothing_to_cure: "NO EFFECT" }[e.reason] || "MISS", "miss", at)
+        this.popup(tl, e.target || e.actor, { immune: "IMMUNE", nothing_to_cure: "NO EFFECT", nothing_to_steal: "NOTHING", steal_failed: "MISSED" }[e.reason] || "MISS", "miss", at)
         return 380
       case "status_applied":
         tl.call(() => this.setStatus(e.target, e.status, true), at)
@@ -190,6 +212,13 @@ export default class extends Controller {
       case "revive":
         tl.call(() => { this.setKo(e.target, false); this.setHp(e.target, e.hp) }, at)
         return gesture(tl, this.sprite(e.target), "pop", at)
+      case "steal":
+        this.popup(tl, e.target, `Stole ${e.name}!`, "status", at)
+        gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
+        return 600
+      case "scan":
+        this.popup(tl, e.target, "Scanned", "status", at)
+        return 450
       case "defend":
         this.popup(tl, e.actor, "DEFEND", "miss", at)
         return gesture(tl, this.sprite(e.actor), "bounce", at)
@@ -212,12 +241,16 @@ export default class extends Controller {
         return e.defaulted.length ? 700 : 0
       case "victory":
         this.banner(tl, "Victory!", at, "victory")
-        return 1300
+        // The party's victory hop, as in the games.
+        this.party().forEach((el, i) => { gesture(tl, el, "bounce", at + 200 + i * 80); gesture(tl, el, "bounce", at + 700 + i * 80) })
+        return 1500
       case "defeat":
         this.banner(tl, "Defeat", at, "defeat")
         return 1300
       case "gm_override":
-        // GM power is never hidden (§12): every override gets a banner.
+        // GM power is never hidden (§12): every override is in the log, and
+        // gets a banner, except the routine auto for absent players.
+        if (e.op === "auto") return 0
         this.banner(tl, `GM: ${this.humanize(e.op)}`, at, "gm")
         if (e.hp !== undefined) tl.call(() => this.setHp(e.unit, e.hp), at)
         return 900
@@ -334,7 +367,7 @@ export default class extends Controller {
     el.className = `banner banner--${kind}`
     el.textContent = text
     this.fxTarget.append(el)
-    tl.add(el, { opacity: [0, 1, 1, 0], scale: [0.8, 1, 1, 1], duration: kind === "round" ? 700 : 1200, ease: "outQuad" }, at)
+    tl.add(el, { opacity: [0, 1, 1, 0], scale: [0.8, 1, 1, 1], duration: kind === "round" ? 400 : 1200, ease: "outQuad" }, at)
   }
 
   caption(tl, text, at) {

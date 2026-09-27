@@ -81,7 +81,8 @@ class Character < ApplicationRecord
     {
       "exp" => exp, "abp" => abp,
       "level" => (level > before_level ? [ before_level, level ] : nil),
-      "learned" => learned.map(&:name)
+      "learned" => learned.map(&:name),
+      "to_next" => (Stats::Growth.exp_for_level(level + 1) - self.exp if level < Stats::Growth::MAX_LEVEL)
     }.compact
   end
 

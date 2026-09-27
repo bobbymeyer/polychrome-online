@@ -76,6 +76,10 @@ No emoji or pictographic glyphs. An arrow (→) is typography and may follow a l
 
 The gestures in HANDOFF §3.2 stay. `tint` is an inversion pulse, because a hue shift is
 invisible in black and white. Banners are giant black type, set flush left on the stage.
+*Divergence:* the round number is not a banner but a small black bar at the top of the stage,
+shown briefly. Giant type every round covered the enemies and slowed every round; it is kept
+for the moments that end a fight (Victory, Defeat, Escaped) and for GM overrides. The routine
+auto for absent players gets no banner at all, only its log line.
 Captions are black bars with white type.
 
 ## Play
@@ -89,7 +93,7 @@ keyboard, a mouse or a finger.
   goes back. 1–9 picks an item directly. Movement wraps around the menu, and the cursor
   remembers where it was when the panel reloads.
 - **A help line** under the menu says what the cursor is on: the target, the effects and the MP
-  cost. While you pick a target, it shows an ally's HP, or an enemy's level and affinities. A command you can't use stays
+  cost. While you pick a target, it shows an ally's HP, or an enemy's level and the affinities the party has found out (by hitting it, or with Libra; the campaign remembers them). A command you can't use stays
   selectable with a dashed outline, and the help line says why it's unavailable.
 - **Targets** light up on the battlefield (a red frame) as the cursor passes over them. While
   you choose, the units themselves can be clicked.

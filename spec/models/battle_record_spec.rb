@@ -127,7 +127,7 @@ RSpec.describe BattleRecord do
       expect(characters[faris].reload.exp).to eq(Stats::Growth.exp_for_level(5))
       expect(campaign.reload.gil).to eq(10)
       expect(battle.reload.settlement).to include("result" => "victory", "gil" => 10,
-                                                  "members" => [ { "name" => "Bartz", "exp" => 20, "abp" => 4, "learned" => [] } ])
+                                                  "members" => [ { "name" => "Bartz", "exp" => 20, "abp" => 4, "learned" => [], "to_next" => 80 } ])
     end
 
     it "writes HP and MP back to the characters" do

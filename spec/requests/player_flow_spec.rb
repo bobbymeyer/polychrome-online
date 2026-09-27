@@ -89,6 +89,29 @@ RSpec.describe "The player's way through", type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "shows a monster's weaknesses only once the party has found them, and remembers" do
+    bartz = campaign.characters.create!(name: "Bartz", job: knight)
+    battle = battle_with(bartz)
+    help = -> { ApplicationController.helpers.target_help(battle.reload, battle.state, "goblin") }
+    expect(help.()).to include("Weaknesses unknown").and(satisfy { |h| !h.include?("Weak to Fire") })
+
+    campaign.learn_from!([ { "type" => "damage", "target" => "goblin", "element" => "fire", "amount" => 9 } ], battle.state)
+    expect(help.()).to include("Weak to Fire")
+    expect(campaign.reload.known_affinities).to eq("goblin" => { "fire" => "weak" })
+
+    campaign.learn_from!([ { "type" => "scan", "target" => "goblin" } ], battle.state)
+    expect(campaign.reload.known_affinities["goblin"]).to include("ice" => "none", "sleep" => "none")
+  end
+
+  it "puts stolen things in the bag however the battle ends" do
+    bartz = campaign.characters.create!(name: "Bartz", job: knight)
+    battle = battle_with(bartz)
+    battle.update!(state: battle.state.merge("stolen" => [ "potion" ]))
+    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "fled" }, actor: "gm")
+    expect(battle.reload.settlement["stolen"]).to eq([ "Potion" ])
+    expect(campaign.quantity_of(world.items.find_by!(slug: "potion"))).to eq(1)
+  end
+
   it "points the table at the newest battle, live, and stops once it's over or called off" do
     bartz = campaign.characters.create!(name: "Bartz", job: knight)
     old = battle_with(bartz)

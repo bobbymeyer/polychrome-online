@@ -116,6 +116,7 @@ class BattleRecord < ApplicationRecord
       save!
       settle!(events) if over?
     end
+    campaign&.learn_from!(events, state)
     new_round = !over? && round != before["round"]
     open_round! if new_round
     broadcast_beat(before, events, record.position)
@@ -180,6 +181,17 @@ class BattleRecord < ApplicationRecord
   # HP/MP always; on victory, EXP split among the standing, ABP to each
   # standing character's current job, gil, and the dropped items. Runs
   # once, inside the transaction of the action that ended the battle.
+  # Stolen items are the party's however the battle ends.
+  def take_stolen_items!
+    items = world.items.where(slug: state.fetch("stolen", [])).index_by(&:slug)
+    state.fetch("stolen", []).filter_map do |slug|
+      next unless (item = items[slug])
+
+      campaign.add_item!(item)
+      item.name
+    end
+  end
+
   def settle!(events)
     return if settlement
 
@@ -188,7 +200,8 @@ class BattleRecord < ApplicationRecord
       characters[unit["id"]]&.update!(hp: unit["hp"], mp: unit["mp"])
     end
 
-    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items! }
+    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items!,
+                "stolen" => take_stolen_items! }
     victory = events.find { |e| e["type"] == "victory" }
     if victory
       rewards = victory["rewards"]
@@ -229,6 +242,7 @@ class BattleRecord < ApplicationRecord
 
   def settlement_line(summary)
     parts = [ { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." }.fetch(summary["result"], "It's over.") ]
+    parts << "Stole #{summary['stolen'].to_sentence}." if summary["stolen"].present?
     parts << "Used #{summary['used'].map { |name, n| "#{n} × #{name}" }.to_sentence}." if summary["used"].present?
     parts << "#{summary['gil']} gil." if summary["gil"].positive?
     parts << "Found #{summary['drops'].to_sentence}." if summary["drops"].any?

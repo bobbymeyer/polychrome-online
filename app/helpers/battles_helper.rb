@@ -67,11 +67,15 @@ module BattlesHelper
 
     level = battle && unit_art(battle, target).try(:level)
     facts = [ level ? "Level #{level}" : "Enemy" ]
+    # In a campaign, players see only what the party has found out.
+    known = battle&.campaign&.known_affinities&.fetch(target.dig("image", "slug").to_s, {})
     AFFINITY_LABELS.each do |affinity, label|
       names = target.fetch("elements", {}).select { |_, a| a == affinity }.keys
       names += target.fetch("status_immune", []) if affinity == "immune"
+      names &= known.keys if known
       facts << "#{label} #{names.map { |n| term(n) }.to_sentence}" if names.any?
     end
+    facts << "Weaknesses unknown" if known && known.empty?
     facts
   end
 
@@ -119,6 +123,8 @@ module BattlesHelper
     when "ko" then state["units"].find { |u| u["id"] == event["target"] }&.dig("side") == "party" ? "#{name.('target')} is down!" : "#{name.('target')} is defeated."
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
+    when "steal" then "#{name.('actor')} stole #{event['name']} from #{name.('target')}!"
+    when "scan" then scan_line(event, name.("target"))
     when "flee" then flee_line(event)
     when "turn_skipped" then skipped_line(event, name.("unit"))
     when "action_failed" then action_failed_line(event, name.("actor"), state)
@@ -149,8 +155,19 @@ module BattlesHelper
     when "resisted" then "#{target} resists #{event['status'].to_s.humanize}."
     when "not_ko" then "#{target} is already standing."
     when "nothing_to_cure" then "#{target} has nothing to cure."
+    when "nothing_to_steal" then "#{target} has nothing to steal."
+    when "steal_failed" then "Couldn't steal from #{target}."
     else "#{event['item'] ? item_name(state, event['item']) : ability_name(state, event['ability'])} has no target."
     end
+  end
+
+  def scan_line(event, target)
+    facts = AFFINITY_LABELS.filter_map do |affinity, label|
+      names = event["elements"].select { |_, a| a == affinity }.keys
+      names += event["status_immune"] if affinity == "immune"
+      "#{label.downcase} #{names.map { |n| term(n).downcase }.to_sentence}" if names.any?
+    end
+    "#{target}: HP #{event['hp']}/#{event['max_hp']}#{facts.any? ? ", #{facts.join(', ')}" : ', no weaknesses'}."
   end
 
   def status_expired_line(event, target)

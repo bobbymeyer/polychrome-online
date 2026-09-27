@@ -82,7 +82,7 @@ class Monster < ApplicationRecord
       "abilities" => ability_slugs,
       "ai" => ai_script,
       "rewards" => rewards,
-      "drops" => drops,
+      "drops" => (names = drop_items.transform_values(&:name); drops.map { |d| d.merge("name" => names[d["item"]]).compact }),
       "image" => { "book" => "monsters", "slug" => slug }
     }
   end

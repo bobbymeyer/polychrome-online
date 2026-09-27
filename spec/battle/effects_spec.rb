@@ -250,6 +250,51 @@ RSpec.describe Battle::Effects do
     end
   end
 
+  describe "steal" do
+    let(:state) do
+      drops = [ { "item" => "potion", "chance" => 30, "name" => "Potion" }, { "item" => "dagger", "chance" => 10, "name" => "Dagger" } ]
+      with_unit(build_battle(enemies: BattleFixtures.goblins(2)), "goblin_a", drops: drops)
+    end
+
+    it "takes one weighted drop, once, and keeps it in the state" do
+      ctx = Battle::Context.new(state, rng: ScriptedRng.new(0, 35)) # succeeds; 35 falls past potion's 30
+      described_class.apply(ctx, ctx.unit("bartz"), ctx.unit("goblin_a"), effect("steal", chance: 50))
+      expect(ctx.events.sole).to include("type" => "steal", "actor" => "bartz", "target" => "goblin_a", "item" => "dagger", "name" => "Dagger")
+      expect(ctx.state["stolen"]).to eq([ "dagger" ])
+
+      described_class.apply(ctx, ctx.unit("bartz"), ctx.unit("goblin_a"), effect("steal"))
+      expect(ctx.events.last).to include("type" => "miss", "reason" => "nothing_to_steal")
+    end
+
+    it "draws the same whether or not it works, and can fail" do
+      rng = ScriptedRng.new(99, 0)
+      ctx = Battle::Context.new(state, rng: rng)
+      described_class.apply(ctx, ctx.unit("bartz"), ctx.unit("goblin_a"), effect("steal", chance: 50))
+      expect(ctx.events.sole).to include("type" => "miss", "reason" => "steal_failed")
+      expect(rng.draws).to eq(2)
+      expect(ctx.state["stolen"]).to be_nil
+    end
+
+    it "finds nothing on a foe that drops nothing, without drawing" do
+      rng = ScriptedRng.new
+      ctx = Battle::Context.new(with_unit(state, "goblin_b", drops: []), rng: rng)
+      described_class.apply(ctx, ctx.unit("bartz"), ctx.unit("goblin_b"), effect("steal"))
+      expect(ctx.events.sole).to include("reason" => "nothing_to_steal")
+      expect(rng.draws).to eq(0)
+    end
+  end
+
+  describe "scan" do
+    it "reports affinities, immunities and HP, without drawing" do
+      rng = ScriptedRng.new
+      ctx = Battle::Context.new(state, rng: rng)
+      described_class.apply(ctx, ctx.unit("rosa"), ctx.unit("ogre"), effect("scan"))
+      expect(ctx.events.sole).to include("type" => "scan", "target" => "ogre", "elements" => ctx.unit("ogre")["elements"],
+                                         "status_immune" => ctx.unit("ogre")["status_immune"], "hp" => ctx.unit("ogre")["hp"])
+      expect(rng.draws).to eq(0)
+    end
+  end
+
   describe "escape" do
     it "ends the battle when escapable" do
       described_class.apply(ctx, bartz, bartz, effect("escape"))

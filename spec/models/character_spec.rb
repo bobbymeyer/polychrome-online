@@ -83,7 +83,7 @@ RSpec.describe Character do
     it "levels up and learns abilities, and reports what changed" do
       bartz = create(job_level: 0)
       changes = bartz.gain!(exp: 1000, abp: 30)
-      expect(changes).to eq("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break" ])
+      expect(changes).to eq("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break" ], "to_next" => 120)
       expect(bartz.reload.level).to eq(11) # 200 + 1000 EXP
     end
 
