@@ -92,6 +92,17 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include("tries: “Kick the brazier onto them”", "GM rules on Bartz&#39;s idea: Agi, easy.")
   end
 
+  it "lets the GM rule an idea as a skill check, with the character's job bonus" do
+    battle.world.jobs.find_by!(slug: "knight").update!(skills: %w[athletics])
+    sit(bartz)
+    command!(kind: "custom", text: "Vault the barricade")
+    sit("gm")
+    get battle_panel_path(battle)
+    expect(response.body).to include('value="skill:athletics"')
+    gm!(op: "rule", unit: bartz, stat: "skill:athletics", difficulty: "normal", effect: "none", success: "Over!", failure: "Not quite.")
+    expect(battle.reload.state["inputs"][bartz]["ruling"]).to include("stat" => "str", "skill" => "Athletics", "bonus" => 15)
+  end
+
   it "starts a battle on the terrain it's given, for the Geomancer's arts" do
     campaign = battle.campaign
     post campaign_battles_path(campaign), params: { battle: { name: "Wood", terrain: "grass", characters: [ campaign.characters.first.id ],

@@ -38,6 +38,16 @@ module Battle
       units.find { |u| u["id"] == id }
     end
 
+    # The battle's types (Battle::Types); battles from before worlds had
+    # their own ran on the base world's.
+    def types
+      state["types"] || Types::DEFAULT
+    end
+
+    def type_list
+      Types.list(types)
+    end
+
     def ability(id)
       state["abilities"][id] or raise InvalidAction, "no ability #{id.inspect}"
     end

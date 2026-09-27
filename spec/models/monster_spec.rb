@@ -21,7 +21,7 @@ RSpec.describe Monster do
     expect(monster.affinities).to eq("fire" => "weak")
     monster.affinities = { "plasma" => "weak", "fire" => "hates" }
     expect(monster).not_to be_valid
-    expect(monster.errors[:affinities]).to include("plasma is not a type", "hates is not an affinity")
+    expect(monster.errors[:affinities]).to include("plasma is not one of this world's types", "hates is not an affinity")
     monster.base_type = "fairy"
     expect(monster).not_to be_valid
     expect(monster.errors[:base_type]).to be_present

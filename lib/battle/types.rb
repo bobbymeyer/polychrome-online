@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 
 module Battle
-  # Damage types and how they meet: Pokémon's type chart, less fairy and
-  # dragon. A move's type against the target's type(s) makes it super
-  # effective (x2), not very effective (x1/2) or of no effect at all; two
-  # types multiply. A move with no type (the basic Attack) is always neutral.
+  # Damage types and how they meet. Each world has its own (World#types);
+  # a battle carries its world's in the state, as
+  #   { "chart" => { attacking => { defending => percent } }, "shrugs_off" => { type => [statuses] } }
+  # with every type a key of "chart", in the world's order. The first is
+  # the plain one. A move's type against the target's type(s) makes it
+  # super effective (x2), not very effective (x1/2) or of no effect at all;
+  # two types multiply. A move with no type (the basic Attack) is always
+  # neutral.
+  #
+  # DEFAULT is the base world's: Pokémon's chart, less fairy and dragon.
   #
   # A unit's own affinities (a boss immune to fire, a slime that drinks
   # water) are exceptions on top of the chart: weak doubles, resist halves,
@@ -37,22 +43,54 @@ module Battle
     }.freeze
 
     AFFINITIES = %w[weak resist immune absorb].freeze
+    MAX_PERCENT = 400
 
     # Some types shrug off a status, as in the games: poison and steel
     # can't be poisoned, electric can't be paralysed.
     STATUS_IMMUNITIES = { "poison" => %w[poison], "steel" => %w[poison], "electric" => %w[paralyze] }.freeze
 
+    DEFAULT = {
+      "chart" => ALL.to_h { |type| [ type, CHART.fetch(type, {}) ] },
+      "shrugs_off" => STATUS_IMMUNITIES
+    }.freeze
+
     module_function
 
+    def list(types = DEFAULT)
+      types.fetch("chart").keys
+    end
+
+    # Check a world's types (string keys) before a battle is built on them.
+    def validate!(types)
+      chart = types["chart"]
+      raise ArgumentError, "types need a chart" unless chart.is_a?(Hash)
+      raise ArgumentError, "there must be at least one type" if chart.empty?
+
+      chart.each do |attacking, row|
+        raise ArgumentError, "#{attacking}: chart row must be a hash" unless row.is_a?(Hash)
+
+        row.each do |defending, percent|
+          raise ArgumentError, "#{attacking} against unknown type #{defending}" unless chart.key?(defending)
+          raise ArgumentError, "#{attacking} against #{defending} must be 0 to #{MAX_PERCENT}" unless percent.is_a?(Integer) && percent.between?(0, MAX_PERCENT)
+        end
+      end
+      types.fetch("shrugs_off", {}).each do |type, statuses|
+        raise ArgumentError, "#{type} is not a type" unless chart.key?(type)
+        raise ArgumentError, "#{type} shrugs off unknown statuses" unless (Array(statuses) - STATUSES).empty?
+      end
+      types
+    end
+
     # The percent a move of this type does to the target, or :absorb.
-    def effectiveness(type, target)
+    def effectiveness(type, target, types = DEFAULT)
       return 100 unless type
 
       affinity = target.fetch("affinities", {})[type]
       return :absorb if affinity == "absorb"
       return 0 if affinity == "immune"
 
-      percent = target.fetch("types", []).reduce(100) { |p, defending| p * CHART.fetch(type).fetch(defending, 100) / 100 }
+      row = types.fetch("chart").fetch(type, {})
+      percent = target.fetch("types", []).reduce(100) { |p, defending| p * row.fetch(defending, 100) / 100 }
       # A character's job type never makes them untouchable: what the
       # chart calls no effect is a resistance.
       percent = 50 if percent.zero? && target["immune_as_resist"]
@@ -61,8 +99,9 @@ module Battle
       percent
     end
 
-    def status_immune?(target, kind)
-      target.fetch("types", []).any? { |t| STATUS_IMMUNITIES.fetch(t, []).include?(kind) }
+    def status_immune?(target, kind, types = DEFAULT)
+      shrugs_off = types.fetch("shrugs_off", {})
+      target.fetch("types", []).any? { |t| shrugs_off.fetch(t, []).include?(kind) }
     end
   end
 end

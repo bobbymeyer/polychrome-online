@@ -19,9 +19,10 @@ module Battle
     end
 
     # item: { "name", "target", "effects" }; user, target: party unit specs
-    # (Character#battle_spec). Returns [target_hp, events, new_rng_state].
-    # Raises InvalidAction when the item would do nothing.
-    def use_item(item, user:, target:, rng:)
+    # (Character#battle_spec); types: the world's (Battle::Types). Returns
+    # [target_hp, events, new_rng_state]. Raises InvalidAction when the item
+    # would do nothing.
+    def use_item(item, user:, target:, rng:, types: nil)
       raise InvalidAction, "#{item['name']} can only be used in battle" unless usable?(item)
 
       target = user if item["target"] == "self"
@@ -32,7 +33,7 @@ module Battle
       raise InvalidAction, "#{target['name']} is already at full HP" if !revives && target["hp"] >= target["stats"]["max_hp"]
 
       units = [ user, target ].uniq { |u| u["id"] }.map { |u| u.merge("abilities" => []).except("desperation") }
-      state = State.build(seed: 0, party: units, enemies: [])
+      state = State.build(seed: 0, party: units, enemies: [], types: types)
       state["rng"] = rng
       ctx = Context.new(state)
       actor = ctx.unit(user["id"])

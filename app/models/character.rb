@@ -80,6 +80,14 @@ class Character < ApplicationRecord
     ([ job.passive ] + mastered).compact.uniq
   end
 
+  # --- skills --------------------------------------------------------------
+
+  # Points on a check with this skill (World#skills): the current job's
+  # bonus, if it's good at it.
+  def skill_bonus(slug)
+    job.skills.include?(slug.to_s) ? Job::SKILL_BONUS : 0
+  end
+
   # --- mastery -------------------------------------------------------------
 
   # Each learned ability's mastery, the best any job has given it (ties go

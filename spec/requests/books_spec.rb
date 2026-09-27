@@ -50,13 +50,13 @@ RSpec.describe "Books", type: :request do
   end
 
   it "shows the type chart, and each monster's type and what that makes it weak to" do
-    get types_path
-    expect(response.body).to include("Type chart", "type-tag--ghost", "is-zero")
-    expect(response.body).not_to include("type-tag--fairy", "type-tag--dragon")
+    get world_types_path(world)
+    expect(response.body).to include("Types", ">Ghost</span>", "is-zero")
+    expect(response.body).not_to include("Fairy", "Dragon")
 
     monster = create_monster(world, slug: "skeleton", base_type: "dark", affinities: { fire: "weak" })
     get world_bestiary_monster_path(world, monster)
-    expect(response.body).to include("type-tag--dark", "Weak to", "type-tag--fighting", "type-tag--bug", "Breaks the chart: weak fire")
+    expect(response.body).to include(">Dark</span>", "Weak to", ">Fighting</span>", ">Bug</span>", "Breaks the chart: weak fire")
     get world_bestiary_monsters_path(world)
     expect(response.body).to include("Type chart", "Fighting, Bug, Fire").or include("Fire, Fighting, Bug")
   end

@@ -109,8 +109,9 @@ module BattleHelpers
   def stats(**overrides) = BattleFixtures.stats(**overrides)
 
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
-                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil)
-    Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items, terrain: terrain)
+                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil)
+    Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items, terrain: terrain,
+                        types: types)
   end
 
   def apply(state, action)

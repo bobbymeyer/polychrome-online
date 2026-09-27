@@ -13,7 +13,8 @@ class Monster < ApplicationRecord
   validates :level, numericality: { only_integer: true, greater_than: 0 }
   validates :exp, :gil, :abp, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :stat_block_is_complete
-  validates :base_type, inclusion: { in: Battle::TYPES }
+  before_validation :default_to_plain_type, on: :create
+  validates :base_type, inclusion: { in: ->(monster) { monster.world_types }, message: "isn't one of this world's types" }
   validate :affinities_are_affinities
   validate :status_immunities_are_statuses
   validate :ai_script_is_valid
@@ -104,7 +105,7 @@ class Monster < ApplicationRecord
 
   def affinities_are_affinities
     affinities.each do |type, affinity|
-      errors.add(:affinities, "#{type} is not a type") unless Battle::TYPES.include?(type)
+      errors.add(:affinities, "#{type} is not one of this world's types") unless world_types.include?(type)
       errors.add(:affinities, "#{affinity} is not an affinity") unless Battle::AFFINITIES.include?(affinity)
     end
   end

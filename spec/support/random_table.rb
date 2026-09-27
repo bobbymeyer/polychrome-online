@@ -169,5 +169,6 @@ class RandomTable
     { "type" => "gm_override", "op" => "rule", "unit" => pending.first, "stat" => Stats::Check::STATS.sample(random: @chooser),
       "difficulty" => Stats::Check::DIFFICULTIES.keys.sample(random: @chooser), "aim" => %w[single_enemy all_enemies].sample(random: @chooser),
       "effects" => effects, "success" => "It works!", "failure" => "It doesn't." }
+      .merge(@chooser.rand(2).zero? ? { "skill" => "Athletics", "bonus" => [ 0, 15 ].sample(random: @chooser) } : {})
   end
 end

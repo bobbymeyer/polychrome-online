@@ -36,7 +36,7 @@ module Battle
   }.freeze
   PRIMITIVE_STRING_PARAMS = %w[type kind stat].freeze
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
-  TYPES = Types::ALL
+  TYPES = Types::ALL # the base world's; a battle's own are in its state
   AFFINITIES = Types::AFFINITIES
   # cover: this unit takes the enemies' single-target moves meant for its
   # allies (a Knight's Cover). airborne: off the field after a Jump, out of
@@ -96,25 +96,29 @@ module Battle
     # abilities: { "fire" => { name:, kind:, target:, cost: { mp: }, effects: [...] } }
     # items:     the party's usable items, shared by everyone in it:
     #            { "potion" => { name:, target:, effects: [...], count: 3 } }
-    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil)
+    # types:     the world's types and chart (Battle::Types); the base
+    #            world's when not given. Everything typed must be one of them.
+    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil)
+      types = types ? Types.validate!(normalize(types)) : normalize(Types::DEFAULT)
+      known = Types.list(types)
       library = normalize(abilities)
       library["attack"] ||= normalize(ATTACK)
       library.each do |id, ability|
         ability["id"] = id
-        validate_ability!(ability)
+        validate_ability!(ability, known)
       end
 
       bag = normalize(items).to_h do |id, item|
         item["id"] = id
-        validate_ability!(item.merge("kind" => "skill"))
+        validate_ability!(item.merge("kind" => "skill"), known)
         count = item.fetch("count", 0)
         raise ArgumentError, "#{id}: count must be a whole number of at least 0" unless count.is_a?(Integer) && count >= 0
 
         [ id, item.slice("id", "name", "target", "effects").merge("count" => count) ]
       end
 
-      units = normalize(party).map { |spec| unit(spec, "party") }
-      units += expand_enemies(normalize(enemies)).map { |spec| unit(spec, "enemy") }
+      units = normalize(party).map { |spec| unit(spec, "party", known) }
+      units += expand_enemies(normalize(enemies)).map { |spec| unit(spec, "enemy", known) }
 
       duplicate = units.map { |u| u["id"] }.tally.find { |_, n| n > 1 }
       raise ArgumentError, "duplicate unit id #{duplicate.first}" if duplicate
@@ -134,7 +138,8 @@ module Battle
         "round" => 1,
         "status" => "input",
         "escapable" => escapable ? true : false,
-        "terrain" => terrain_type(terrain),
+        "terrain" => terrain_type(terrain, known),
+        "types" => types,
         "abilities" => library,
         "items" => bag,
         "units" => units,
@@ -142,9 +147,10 @@ module Battle
       }
     end
 
-    def terrain_type(terrain)
-      return "normal" if terrain.nil?
-      raise ArgumentError, "unknown terrain type #{terrain}" unless TYPES.include?(terrain.to_s)
+    # Where the fight is has a type; anywhere in particular is the plain one.
+    def terrain_type(terrain, known = TYPES)
+      return known.first if terrain.nil?
+      raise ArgumentError, "unknown terrain type #{terrain}" unless known.include?(terrain.to_s)
 
       terrain.to_s
     end
@@ -157,18 +163,18 @@ module Battle
       list.any? ? { "passives" => list } : {}
     end
 
-    def unit(spec, side)
+    def unit(spec, side, known = TYPES)
       id = spec.fetch("id") { raise ArgumentError, "unit needs an id" }.to_s
       stats = spec.fetch("stats") { raise ArgumentError, "#{id} needs stats" }
       missing = Stats::NAMES - stats.keys
       raise ArgumentError, "#{id} is missing stats: #{missing.join(', ')}" if missing.any?
 
       affinities = spec.fetch("affinities", {})
-      bad = affinities.reject { |type, aff| TYPES.include?(type) && AFFINITIES.include?(aff) }
+      bad = affinities.reject { |type, aff| known.include?(type) && AFFINITIES.include?(aff) }
       raise ArgumentError, "#{id} has invalid affinities #{bad}" if bad.any?
 
       types = Array(spec["types"])
-      raise ArgumentError, "#{id} has unknown types #{types - TYPES}" if (types - TYPES).any?
+      raise ArgumentError, "#{id} has unknown types #{types - known}" if (types - known).any?
       raise ArgumentError, "#{id} can have at most two types" if types.size > 2
 
       {
@@ -193,15 +199,15 @@ module Battle
       }.merge(spec["desperation"] ? { "desperation" => spec["desperation"].to_s } : {})
        .merge(spec["level"] ? { "level" => Integer(spec["level"]) } : {})
        .merge(passives(id, spec))
-       .merge(job_parts(id, spec))
+       .merge(job_parts(id, spec, known))
     end
 
     # What a character's jobs bring (see #build). Only present keys are kept,
     # so monsters' units are unchanged.
-    def job_parts(id, spec)
+    def job_parts(id, spec, known = TYPES)
       parts = {}
       if spec["attack_type"]
-        raise ArgumentError, "#{id} has unknown attack type #{spec['attack_type']}" unless TYPES.include?(spec["attack_type"])
+        raise ArgumentError, "#{id} has unknown attack type #{spec['attack_type']}" unless known.include?(spec["attack_type"])
 
         parts["attack_type"] = spec["attack_type"]
       end
@@ -292,7 +298,7 @@ module Battle
       end
     end
 
-    def validate_ability!(ability)
+    def validate_ability!(ability, known = TYPES)
       id = ability["id"]
       raise ArgumentError, "#{id}: unknown kind #{ability['kind']}" unless ABILITY_KINDS.include?(ability.fetch("kind", "skill"))
       raise ArgumentError, "#{id}: unknown targeting #{ability['target']}" unless TARGETINGS.include?(ability["target"])
@@ -318,8 +324,8 @@ module Battle
         case primitive
         when "elemental", "physical", "jump"
           # "terrain": the type of where the fight is (a Geomancer's arts).
-          known = TYPES.include?(effect["type"]) || effect["type"] == "terrain"
-          raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !known
+          typed = known.include?(effect["type"]) || effect["type"] == "terrain"
+          raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !typed
         when "status"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" unless STATUSES.include?(effect["kind"])
         when "cleanse"

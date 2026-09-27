@@ -4,9 +4,12 @@
     <p class="eyebrow">Job Compendium</p>
     <h1><%= entry.name %></h1>
     <dl class="facts">
-      <dt>Type</dt><dd><%= type_tag(entry.base_type) %></dd>
+      <% if types_matter? %><dt>Type</dt><dd><%= type_tag(entry.base_type) %></dd><% end %>
       <dt>ABP to master</dt><dd><%= Stats::Growth.abp_for_job_level(Stats::Growth::MAX_JOB_LEVEL) %></dd>
       <dt>Ability slots</dt><dd><%= entry.ability_slots %></dd>
+      <% if entry.skills.any? %>
+        <dt><%= gloss(:skill, "Good at") %></dt><dd><%= entry.skill_names.to_sentence %> <span class="muted">(+<%= Job::SKILL_BONUS %>)</span></dd>
+      <% end %>
       <% if (own = entry.signature_ability) %>
         <dt><%= gloss(:signature, "Signature") %></dt><dd><%= link_to own.name, world_grimoire_ability_path(entry.world, own) %></dd>
       <% end %>
@@ -24,24 +27,26 @@
   <div class="prose"><%= simple_format(entry.description) %></div>
 <% end %>
 
+<% if types_matter? %>
 <section class="window">
   <h2>Type</h2>
   <% profile = type_profile([ entry.base_type ], {}, character: true) %>
   <dl class="facts facts--wide type-facts">
-    <dt>Type</dt><dd><%= type_tag(entry.base_type) %> <%= link_to "the chart", types_path, class: "muted" %></dd>
+    <dt>Type</dt><dd><%= type_tag(entry.base_type) %> <%= link_to "the chart", world_types_path(@world), class: "muted" %></dd>
     <% { "weak" => "Weak to", "resist" => "Resists" }.each do |band, label| %>
       <% if profile[band].any? %><dt><%= label %></dt><dd><%= safe_join(profile[band].map { |t| type_tag(t) }, " ") %></dd><% end %>
     <% end %>
   </dl>
   <p class="hint">
-    <% if entry.base_type == "normal" %>
+    <% if entry.base_type == type_chart.plain %>
       Attack and the signature command are plain blows.
     <% else %>
-      Attack and the signature command strike as <%= term(entry.base_type).downcase %>.
+      Attack and the signature command strike as <%= type_name(entry.base_type).downcase %>.
     <% end %>
     A character is never immune through a job's type: what the chart calls no effect, they resist.
   </p>
 </section>
+<% end %>
 
 <section class="window">
   <h2>Stat modifiers</h2>

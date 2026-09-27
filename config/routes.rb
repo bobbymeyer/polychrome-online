@@ -8,7 +8,7 @@ Rails.application.routes.draw do
 
   root "worlds#index"
 
-  resource :types, only: :show # the type chart
+  get "types", to: redirect("/worlds/base/types") # the base world's chart, where it used to live
   get "how-to-play", to: "guides#show", as: :how_to_play
   # Local co-op: the QR code on the shared screen leads here.
   get "join/:code", to: "joins#show", as: :join
@@ -36,6 +36,10 @@ Rails.application.routes.draw do
     namespace :generation do
       resources :generator_tables, param: :slug, path: "tables"
     end
+
+    # The setting's damage types and chart, and the skills its checks use.
+    resource :types, only: %i[show edit update], controller: "world_types"
+    resource :skills, only: %i[show edit update], controller: "world_skills"
 
     # The asset pipeline (§8): the world's art direction, and generating
     # candidates for an entry's image with ComfyUI.

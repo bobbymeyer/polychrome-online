@@ -21,7 +21,7 @@
           <%= gloss(:job_level, "Lv") %> <%= cj.level %>
           <span class="muted">(<%= cj.abp %> <%= gloss(:abp) %><%= cj.mastered? ? ", mastered" : ", #{cj.abp_to_next} to next" %>)</span>
         </dd>
-        <dt><%= gloss(:type) %></dt><dd><%= type_tag(@character.job.base_type) %></dd>
+        <% if types_matter? %><dt><%= gloss(:type) %></dt><dd><%= type_tag(@character.job.base_type) %></dd><% end %>
         <dt><%= gloss(:max_hp) %></dt><dd><%= @character.current_hp %> / <%= @character.stats["max_hp"] %><%= " · down" unless @character.conscious? %></dd>
         <dt><%= gloss(:max_mp) %></dt><dd><%= @character.current_mp %> / <%= @character.stats["max_mp"] %></dd>
       </dl>
@@ -159,6 +159,25 @@
         <%= f.submit "Set abilities", class: "button" %>
       <% end %>
     <% end %>
+  </section>
+
+  <section class="window" id="skills">
+    <h2><%= gloss(:skill, "Skills") %></h2>
+    <p class="hint">The chance of a Normal check with each of <%= @world.name %>'s skills. The GM can call it easier or harder.</p>
+    <table class="book-table book-table--plain">
+      <thead><tr><th>Skill</th><th>Stat</th><th class="num">Job</th><th class="num">Normal check</th></tr></thead>
+      <tbody>
+        <% Array(@world.skills).each do |skill| %>
+          <% bonus = @character.skill_bonus(skill["slug"]) %>
+          <tr class="<%= 'is-current' if bonus.positive? %>">
+            <td><%= tag.span(skill["name"], class: ("gloss" if skill["description"].present?), tabindex: (0 if skill["description"].present?), data: { gloss: skill["description"].presence }) %></td>
+            <td><%= stat_term(skill["stat"]) %></td>
+            <td class="num"><%= bonus.positive? ? "+#{bonus}" : "—" %></td>
+            <td class="num"><%= Stats::Check.chance(stat_value: @character.stats[skill["stat"]], stat: skill["stat"], level: @character.level, difficulty: "normal", bonus: bonus) %>%</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   </section>
 
   <% masteries = @character.masteries %>

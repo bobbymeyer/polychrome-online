@@ -8,12 +8,9 @@ class EncounterTable < ApplicationRecord
   include Artwork
 
   TERRAINS = %w[plains forest desert mountain cave crypt sea town].freeze
-  # The damage type of a fight on each terrain (a Geomancer's arts take it).
-  TERRAIN_TYPES = { "plains" => "normal", "forest" => "grass", "desert" => "ground", "mountain" => "rock",
-                    "cave" => "rock", "crypt" => "ghost", "sea" => "water", "town" => "normal" }.freeze
-
+  # The damage type of a fight here (World#terrain_type).
   def terrain_type
-    TERRAIN_TYPES.fetch(terrain, "normal")
+    world.terrain_type(terrain)
   end
   MAX_GROUP = 8
 

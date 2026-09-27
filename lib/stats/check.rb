@@ -8,27 +8,30 @@ module Stats
   #
   # At "normal", a character with the stat typical for their level has an
   # even chance. Each point above or below moves it, by less at higher
-  # levels, where stats are bigger. Nothing is ever certain: 5% to 95%.
+  # levels, where stats are bigger. A bonus (a job good at the check's
+  # skill) adds points straight on. Nothing is ever certain: 5% to 95%.
   module Check
     STATS = %w[str mag vit spr agi].freeze
     DIFFICULTIES = { "easy" => 75, "normal" => 100, "hard" => 125, "heroic" => 150 }.freeze
     SWING = 60 # percentage points across one typical stat's worth of difference
+    MAX_BONUS = 50
 
     module_function
 
-    def chance(stat_value:, stat:, level:, difficulty:)
+    def chance(stat_value:, stat:, level:, difficulty:, bonus: 0)
       raise ArgumentError, "unknown stat #{stat}" unless STATS.include?(stat)
+      raise ArgumentError, "bonus must be 0 to #{MAX_BONUS}" unless bonus.is_a?(Integer) && bonus.between?(0, MAX_BONUS)
 
       percent = DIFFICULTIES.fetch(difficulty) { raise ArgumentError, "unknown difficulty #{difficulty}" }
       typical = Growth.base_stats(level).fetch(stat)
       target = typical * percent / 100
-      (50 + ((stat_value - target) * SWING / typical)).clamp(5, 95)
+      (50 + ((stat_value - target) * SWING / typical) + bonus).clamp(5, 95)
     end
 
     # rng: anything with #int(n). Returns { "chance", "roll", "success" }:
     # a roll of 1–100, a success at or under the chance.
-    def roll(stat_value:, stat:, level:, difficulty:, rng:)
-      odds = chance(stat_value: stat_value, stat: stat, level: level, difficulty: difficulty)
+    def roll(stat_value:, stat:, level:, difficulty:, rng:, bonus: 0)
+      odds = chance(stat_value: stat_value, stat: stat, level: level, difficulty: difficulty, bonus: bonus)
       roll = rng.int(100) + 1
       { "chance" => odds, "roll" => roll, "success" => roll <= odds }
     end

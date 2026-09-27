@@ -170,7 +170,8 @@ class Campaign < ApplicationRecord
       raise ArgumentError, "There's no #{item.name} in the bag" unless quantity_of(item).positive?
 
       before = target.current_hp
-      hp, _events, next_rng = Battle::Field.use_item(item.to_engine(1), user: user.battle_spec, target: target.battle_spec, rng: rng)
+      hp, _events, next_rng = Battle::Field.use_item(item.to_engine(1), user: user.battle_spec, target: target.battle_spec, rng: rng,
+                                                                                     types: world.type_chart.to_engine)
       take_item!(item)
       target.update!(hp: hp)
       update!(rng: next_rng)
@@ -295,7 +296,7 @@ class Campaign < ApplicationRecord
       notes = (learned[slug] ||= {})
       if event["type"] == "scan"
         notes["types"] = target.fetch("types", [])
-        Battle::TYPES.each { |type| notes[type] = target.fetch("affinities", {}).fetch(type, "none") }
+        Battle::Types.list(state["types"] || Battle::Types::DEFAULT).each { |type| notes[type] = target.fetch("affinities", {}).fetch(type, "none") }
         Battle::STATUSES.each { |kind| notes[kind] = target["status_immune"].include?(kind) ? "immune" : "none" }
       elsif event["damage_type"]
         # Seeing a type land shows what the monster is: its types, and how it took this one.
@@ -328,20 +329,25 @@ class Campaign < ApplicationRecord
 
   # The GM calls for a check (Stats::Check): each character rolls against
   # their own stat, from the campaign's RNG, and the table sees it land.
+  # stat: a stat, or "skill:<slug>" for one of the world's skills, rolled
+  # on its stat with each character's job bonus (Character#skill_bonus).
   def check!(characters:, stat:, difficulty:, reason: nil)
+    skill = world.skill(stat.to_s.delete_prefix("skill:")) if stat.to_s.start_with?("skill:")
+    stat = skill["stat"] if skill
     raise ArgumentError, "Pick who's trying" if characters.empty?
-    raise ArgumentError, "Pick a stat" unless Stats::Check::STATS.include?(stat)
+    raise ArgumentError, "Pick a skill or a stat" unless Stats::Check::STATS.include?(stat)
     raise ArgumentError, "Pick a difficulty" unless Stats::Check::DIFFICULTIES.key?(difficulty)
 
     transaction do
       rolling = Battle::Rng.new(rng)
       lines = characters.map do |character|
+        bonus = skill ? character.skill_bonus(skill["slug"]) : 0
         result = Stats::Check.roll(stat_value: character.stats.fetch(stat), stat: stat, level: character.level,
-                                   difficulty: difficulty, rng: rolling)
-        label = "#{stat.capitalize} check (#{difficulty})"
+                                   difficulty: difficulty, rng: rolling, bonus: bonus)
+        label = "#{skill ? skill['name'] : stat.capitalize} check (#{difficulty}#{", +#{bonus} #{character.job.name}" if bonus.positive?})"
         body = "#{character.name}: #{label}#{" to #{reason.strip.sub(/\.\z/, '')}" if reason.present?}. " \
                "#{result['chance']}% · rolled #{result['roll']} · #{result['success'] ? 'Success!' : 'Failure.'}"
-        [ body, result.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty) ]
+        [ body, result.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty, "skill" => skill&.fetch("name"), "bonus" => bonus).compact ]
       end
       update!(rng: rolling.state)
       lines.map { |body, data| messages.create!(kind: "system", cue: "check", body: body, data: data) }

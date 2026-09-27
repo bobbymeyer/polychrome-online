@@ -39,7 +39,7 @@ Three places where the engine holds verbs and the books hold nouns and numbers. 
 Ability effects are a fixed set of named formulas with parameters. First set:
 
 - `physical(power, hits)`
-- `elemental(element, power, hits)`
+- `elemental(type, power, hits)`: the type is one of the world's
 - `status(kind, chance, duration)`
 - `heal(power)`
 - `drain(power)`
@@ -49,6 +49,8 @@ Ability effects are a fixed set of named formulas with parameters. First set:
 - `cleanse(kind)`: cure one status, or every harmful one when no kind is named. Added when the base world needed cures (Antidote, Remedy, Esuna).
 
 Plus targeting: `self`, `single_ally`, `single_enemy`, `all_allies`, `all_enemies`, `random_enemy`. Add primitives only when the base world needs one. No expression language.
+
+Damage types and skills are **not** in the closed set: they are the world's nouns, not the engine's verbs. Each world lists its own types (one or many; the first is the plain one), the chart between them, which statuses each shrugs off and the type of each terrain (`worlds.damage_types`, `worlds.terrain_types`). A battle copies its world's chart into its state, so replays stay exact when the chart changes. Removing a type sends its uses to another and drops monsters' affinities with it (`TypeChange`). Each world also lists its skills, each on a stat (`worlds.skills`); a job adds +15 to the ones it's good at (`jobs.skills`). The statuses, stats and passives stay closed: the engine has code behind each.
 
 ### 3.2 Motion gestures
 

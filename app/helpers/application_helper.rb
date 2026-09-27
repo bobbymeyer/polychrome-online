@@ -59,6 +59,14 @@ module ApplicationHelper
     token.to_s.humanize
   end
 
+  # What a check can be made with: the world's skills first, then the bare
+  # stats. A skill is posted as "skill:<slug>" (Campaign#check!).
+  def check_options(world, selected = nil)
+    skills = Array(world.skills).map { |s| [ "#{s['name']} (#{stat_label(s['stat'])})", "skill:#{s['slug']}" ] }
+    stats = Stats::Check::STATS.map { |s| [ stat_label(s), s ] }
+    grouped_options_for_select({ "Skills" => skills, "Stats" => stats }, selected)
+  end
+
   def signed(number)
     number.to_i.positive? ? "+#{number}" : number.to_s
   end

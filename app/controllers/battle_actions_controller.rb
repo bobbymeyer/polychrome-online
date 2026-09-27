@@ -32,6 +32,7 @@ class BattleActionsController < ApplicationController
   # The GM's ruling on an idea, from quick choices: damage (typed or not),
   # a status, healing, or just the story.
   def ruling!(gm)
+    skilled!(gm)
     physical, magic, heal = RULING_STRENGTH.fetch(gm.delete("strength") || "medium", RULING_STRENGTH["medium"])
     type = gm.delete("type").presence
     status = gm.delete("status").presence
@@ -41,6 +42,16 @@ class BattleActionsController < ApplicationController
     when "heal" then [ { "primitive" => "heal", "power" => heal } ]
     else []
     end
+  end
+
+  # "skill:<slug>": the world's skill, rolled on its stat, with the job
+  # bonus of the character trying it.
+  def skilled!(gm)
+    return unless gm["stat"].to_s.start_with?("skill:")
+
+    skill = @battle.world.skill(gm["stat"].delete_prefix("skill:")) or raise Battle::InvalidAction, "That skill isn't in #{@battle.world.name}"
+    character = @battle.campaign&.characters&.find_by(id: Character.from_battle_unit(gm["unit"]))
+    gm.merge!("stat" => skill["stat"], "skill" => skill["name"], "bonus" => character ? character.skill_bonus(skill["slug"]) : 0)
   end
 
   # A unit joining mid-fight comes from the Bestiary: reinforcements as

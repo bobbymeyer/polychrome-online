@@ -101,7 +101,7 @@ module Battle
 
     # "terrain" is the type of where the fight is.
     def type_of(ctx, effect)
-      effect["type"] == "terrain" ? ctx.state.fetch("terrain", "normal") : effect["type"]
+      effect["type"] == "terrain" ? ctx.state.fetch("terrain") { ctx.type_list.first } : effect["type"]
     end
 
     # Counter (a passive): hit by an enemy's blow and still standing, a unit
@@ -145,7 +145,7 @@ module Battle
     # target's affinities. Returns true when it didn't land as damage
     # (no effect, or absorbed).
     def typed(ctx, actor, target, type, amount, crit: false, roll: nil, needed: nil)
-      percent = Types.effectiveness(type, target)
+      percent = Types.effectiveness(type, target, ctx.types)
       if percent == 0 # rubocop:disable Style/NumericPredicate -- may be :absorb
         ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", damage_type: type)
         return true
@@ -174,7 +174,7 @@ module Battle
       landed = came_in || chance >= 100
       dice = chance < 100 ? { roll: roll, needed: chance } : {}
 
-      if target["status_immune"].include?(kind) || Types.status_immune?(target, kind)
+      if target["status_immune"].include?(kind) || Types.status_immune?(target, kind, ctx.types)
         ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", status: kind)
       elsif !landed
         ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "resisted", status: kind, **dice)

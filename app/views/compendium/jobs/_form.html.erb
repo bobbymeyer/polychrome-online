@@ -2,11 +2,15 @@
   <%= render "book_entries/errors", entry: entry %>
   <%= render "book_entries/identity_fields", f: f %>
   <div class="field-row">
-    <div class="field">
-      <%= f.label :base_type, "Type" %>
-      <%= f.select :base_type, Battle::TYPES.map { |t| [ term(t), t ] } %>
-      <p class="hint">A character in the job takes hits as this type, and Attack and the signature command strike with it. <%= link_to "The chart", types_path %>.</p>
-    </div>
+    <% if types_matter? %>
+      <div class="field">
+        <%= f.label :base_type, "Type" %>
+        <%= f.select :base_type, type_options %>
+        <p class="hint">A character in the job takes hits as this type, and Attack and the signature command strike with it. <%= link_to "The chart", world_types_path(@world) %>.</p>
+      </div>
+    <% else %>
+      <%= f.hidden_field :base_type, value: type_chart.plain %>
+    <% end %>
     <div class="field">
       <%= f.label :ability_slots, "Free ability slots" %>
       <%= f.number_field :ability_slots, min: 0, max: 4 %>
@@ -40,6 +44,20 @@
           <%= number_field_tag json_field_name(f, :stat_multipliers, stat), entry.stat_multipliers[stat],
                                id: "job_stat_multipliers_#{stat}", min: 0, max: 500, placeholder: 100 %>
         </div>
+      <% end %>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Good at</legend>
+    <p class="hint">Skills a character in this job adds +<%= Job::SKILL_BONUS %> to, on checks. The world's skills are on <%= link_to "its skills page", world_skills_path(@world) %>.</p>
+    <%= hidden_field_tag "job[skills][]", "", id: nil %>
+    <div class="checks">
+      <% Array(@world.skills).each do |skill| %>
+        <label>
+          <%= check_box_tag "job[skills][]", skill["slug"], entry.skills.include?(skill["slug"]), id: "job_skill_#{skill['slug']}" %>
+          <%= skill["name"] %> <span class="muted">(<%= stat_label(skill["stat"]) %>)</span>
+        </label>
       <% end %>
     </div>
   </fieldset>

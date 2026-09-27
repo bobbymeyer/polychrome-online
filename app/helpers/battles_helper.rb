@@ -72,13 +72,14 @@ module BattlesHelper
     types = target.fetch("types", [])
     # Once the party knows what a monster is, the chart tells them the rest.
     knows_type = types.any? && (known.nil? || known["types"].present?)
-    facts << "#{types.map { |t| term(t) }.join('/')} type" if knows_type
-    profile = type_profile(knows_type ? types : [], target.fetch("affinities", {}))
+    engine = battle&.state&.dig("types") || Battle::Types::DEFAULT
+    facts << "#{types.map { |t| type_name(t) }.join('/')} type" if knows_type && types_matter?
+    profile = type_profile(knows_type ? types : [], target.fetch("affinities", {}), engine: engine)
     AFFINITY_LABELS.each do |affinity, label|
       names = profile[affinity].dup
       names += target.fetch("status_immune", []) if affinity == "immune"
-      names &= (known.keys + (knows_type ? Battle::TYPES : [])) if known
-      facts << "#{label} #{names.map { |n| term(n) }.to_sentence}" if names.any?
+      names &= (known.keys + (knows_type ? Battle::Types.list(engine) : [])) if known
+      facts << "#{label} #{names.map { |n| type_or_status(n) }.to_sentence}" if names.any?
     end
     facts << "Weaknesses unknown" if known && known.empty?
     facts
@@ -145,7 +146,7 @@ module BattlesHelper
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
     when "steal" then "#{name.('actor')} stole #{event['name']} from #{name.('target')}!#{dice_note(event)}"
-    when "scan" then scan_line(event, name.("target"))
+    when "scan" then scan_line(event, name.("target"), state["types"] || Battle::Types::DEFAULT)
     when "flee" then "#{flee_line(event)}#{dice_note(event)}"
     when "turn_skipped" then skipped_line(event, name.("unit"))
     when "action_failed" then action_failed_line(event, name.("actor"), state)
@@ -186,15 +187,21 @@ module BattlesHelper
     end
   end
 
-  def scan_line(event, target)
+  # A name in an affinity list: a type's (the world's name for it), or a
+  # status's.
+  def type_or_status(token)
+    Battle::STATUSES.include?(token) ? term(token) : type_name(token)
+  end
+
+  def scan_line(event, target, engine = Battle::Types::DEFAULT)
     types = Array(event["types"])
-    profile = type_profile(types, event["affinities"] || {})
+    profile = type_profile(types, event["affinities"] || {}, engine: engine)
     facts = AFFINITY_LABELS.filter_map do |affinity, label|
       names = profile[affinity].dup
       names += event["status_immune"] if affinity == "immune"
-      "#{label.downcase} #{names.map { |n| term(n).downcase }.to_sentence}" if names.any?
+      "#{label.downcase} #{names.map { |n| type_or_status(n).downcase }.to_sentence}" if names.any?
     end
-    kind = types.any? ? ", #{types.map { |t| term(t) }.join('/')} type" : ""
+    kind = types.any? && types_matter? ? ", #{types.map { |t| type_name(t) }.join('/')} type" : ""
     "#{target}: HP #{event['hp']}/#{event['max_hp']}#{kind}#{facts.any? ? ", #{facts.join(', ')}" : ', no weaknesses'}."
   end
 

@@ -2,8 +2,9 @@
 
 # Minimal valid book entries for Rails specs. Plain methods, no factory gem.
 module BookFactory
-  def create_world(slug: "testland", name: "Testland")
-    World.create!(slug: slug, name: name)
+  # With the base world's types, unless given its own.
+  def create_world(slug: "testland", name: "Testland", damage_types: TypeChart.default_rows)
+    World.create!(slug: slug, name: name, damage_types: damage_types, terrain_types: TypeChart::DEFAULT_TERRAIN.select { |_, t| damage_types.any? { |r| r["slug"] == t } })
   end
 
   def monster_stats(**overrides)

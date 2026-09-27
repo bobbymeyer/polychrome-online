@@ -289,7 +289,7 @@ module Battle
 
         ability = State.normalize(ability).merge("id" => id)
         begin
-          State.validate_ability!(ability)
+          State.validate_ability!(ability, ctx.type_list)
         rescue ArgumentError => e
           raise InvalidAction, e.message
         end
@@ -305,7 +305,7 @@ module Battle
       raise InvalidAction, "too many #{base_name}s on the field" unless id
 
       begin
-        unit = State.unit(spec.merge("id" => id, "name" => name), side)
+        unit = State.unit(spec.merge("id" => id, "name" => name), side, ctx.type_list)
       rescue ArgumentError => e
         raise InvalidAction, e.message
       end
@@ -339,7 +339,8 @@ module Battle
     # an ability), and what's said either way. It plays out on the unit's
     # turn (#try_something).
     #   { op: "rule", unit:, stat:, difficulty:, aim: "single_enemy", effects: [...],
-    #     success: "The brazier tips over!", failure: "It's heavier than it looks." }
+    #     success: "The brazier tips over!", failure: "It's heavier than it looks.",
+    #     skill: "Athletics", bonus: 15 }   # optional: a skill check, and the job's bonus
     RULING_AIMS = %w[single_enemy all_enemies single_ally all_allies self].freeze
 
     def gm_rule(action)
@@ -348,19 +349,23 @@ module Battle
       raise InvalidAction, "#{unit['name']} isn't trying anything" unless cmd && cmd["kind"] == "custom"
       raise InvalidAction, "unknown stat #{action['stat'].inspect}" unless Stats::Check::STATS.include?(action["stat"])
       raise InvalidAction, "unknown difficulty #{action['difficulty'].inspect}" unless Stats::Check::DIFFICULTIES.key?(action["difficulty"])
+      bonus = action.fetch("bonus", 0)
+      raise InvalidAction, "bonus must be 0 to #{Stats::Check::MAX_BONUS}" unless bonus.is_a?(Integer) && bonus.between?(0, Stats::Check::MAX_BONUS)
 
       aim = action.fetch("aim", "single_enemy")
       raise InvalidAction, "unknown aim #{aim.inspect}" unless RULING_AIMS.include?(aim)
 
       effects = Array(action["effects"])
       begin
-        State.validate_ability!({ "id" => "ruling", "kind" => "skill", "target" => aim, "effects" => effects }) if effects.any?
+        State.validate_ability!({ "id" => "ruling", "kind" => "skill", "target" => aim, "effects" => effects }, ctx.type_list) if effects.any?
       rescue ArgumentError => e
         raise InvalidAction, e.message
       end
 
       ruling = { "stat" => action["stat"], "difficulty" => action["difficulty"], "aim" => aim, "effects" => effects,
                  "success" => action["success"].to_s.strip, "failure" => action["failure"].to_s.strip }
+      # A skill check: the world's skill, on its stat, with the job's bonus.
+      ruling.merge!("skill" => action["skill"].to_s, "bonus" => bonus) unless action["skill"].to_s.strip.empty?
       cmd["ruling"] = ruling
       gm_event(action, unit: unit["id"], stat: ruling["stat"], difficulty: ruling["difficulty"])
       run_round if ready?
@@ -378,11 +383,11 @@ module Battle
       end
 
       needed = Stats::Check.chance(stat_value: ctx.stat(unit, ruling["stat"]), stat: ruling["stat"],
-                                   level: unit.fetch("level", 5), difficulty: ruling["difficulty"])
+                                   level: unit.fetch("level", 5), difficulty: ruling["difficulty"], bonus: ruling.fetch("bonus", 0))
       success, roll = ctx.rng.d100(needed)
       line = success ? ruling["success"] : ruling["failure"]
       ctx.emit(:custom_roll, actor: unit["id"], success: success, roll: roll, needed: needed,
-                             stat: ruling["stat"], difficulty: ruling["difficulty"], line: line)
+                             stat: ruling["stat"], difficulty: ruling["difficulty"], line: line, **ruling.slice("skill").transform_keys(&:to_sym))
       return unless success && ruling["effects"].any?
 
       idea = { "id" => "custom", "name" => cmd["text"], "kind" => "skill", "target" => ruling["aim"], "effects" => ruling["effects"] }

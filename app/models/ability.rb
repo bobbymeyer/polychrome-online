@@ -66,7 +66,7 @@ class Ability < ApplicationRecord
   private
 
   def engine_accepts_effects
-    Battle::State.validate_ability!(to_engine.merge("id" => slug))
+    Battle::State.validate_ability!(to_engine.merge("id" => slug), world_types)
   rescue ArgumentError => e
     errors.add(:effects, e.message.delete_prefix("#{slug}: "))
   end

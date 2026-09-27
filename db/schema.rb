@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_080000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_090000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -348,6 +348,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_080000) do
     t.string "signature"
     t.string "passive"
     t.string "base_type", default: "normal", null: false
+    t.json "skills", default: [], null: false
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -543,6 +544,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_080000) do
     t.json "art_loras", default: [], null: false
     t.string "art_checkpoint"
     t.integer "owner_id"
+    t.json "damage_types", default: [], null: false
+    t.json "terrain_types", default: {}, null: false
+    t.json "skills", default: [], null: false
     t.index ["owner_id"], name: "index_worlds_on_owner_id"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end

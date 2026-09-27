@@ -1,0 +1,100 @@
+<% content_for :title, "#{@world.name}: edit types" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Types", world_types_path(@world) %> / Edit</div>
+<h1>Edit types</h1>
+<p class="prose">
+  A setting has as many types as it needs, and at least one. With one, types disappear from the books and the table. Removing a type
+  sends what used it to another type; a monster's own affinity with it is dropped. Battles already running keep the chart they started with.
+</p>
+<% chart = @world.type_chart %>
+<% harmful = Battle::HARMFUL_STATUSES %>
+<%= form_with url: world_types_path(@world), method: :patch, class: "book-form type-editor" do |f| %>
+  <fieldset class="panel">
+    <legend>Types</legend>
+    <table class="grid-form">
+      <thead><tr><th>Plain</th><th>Name</th><th>Colour</th><th>Shrugs off</th><th>Used by</th><th>Remove, and send its uses to</th></tr></thead>
+      <tbody>
+        <% chart.types.each_with_index do |type, i| %>
+          <tr>
+            <td><%= radio_button_tag :plain, type.slug, i.zero?, "aria-label": "#{type.name} is the plain type" %></td>
+            <td>
+              <%= hidden_field_tag "types[#{i}][slug]", type.slug, id: nil %>
+              <%= text_field_tag "types[#{i}][name]", type.name, "aria-label": "Name of #{type.name}", required: true %>
+            </td>
+            <td><%= color_field_tag "types[#{i}][colour]", type.colour, "aria-label": "Colour of #{type.name}" %></td>
+            <td class="checks checks--tight">
+              <%= hidden_field_tag "types[#{i}][shrugs_off][]", "", id: nil %>
+              <% harmful.each do |status| %>
+                <label><%= check_box_tag "types[#{i}][shrugs_off][]", status, type.shrugs_off.include?(status), id: "type_#{type.slug}_#{status}" %><%= term(status) %></label>
+              <% end %>
+            </td>
+            <td class="muted type-editor__uses"><%= @uses[type.slug].uniq.to_sentence.presence || "Nothing" %></td>
+            <td>
+              <label><%= check_box_tag "types[#{i}][remove]", "1", false, id: "type_#{type.slug}_remove" %> Remove</label>
+              <%= select_tag "types[#{i}][send_to]", options_for_select(chart.types.reject { |t| t.slug == type.slug }.map { |t| [ t.name, t.slug ] }, chart.plain == type.slug ? chart.slugs.second : chart.plain),
+                             include_blank: chart.types.size == 1, "aria-label": "Send #{type.name}'s uses to" %>
+            </td>
+          </tr>
+        <% end %>
+        <% 3.times do |n| %>
+          <% i = chart.types.size + n %>
+          <tr class="type-editor__new">
+            <td></td>
+            <td><%= text_field_tag "types[#{i}][name]", nil, placeholder: "New type", "aria-label": "New type #{n + 1}" %></td>
+            <td><%= color_field_tag "types[#{i}][colour]", TypeChart::NEW_COLOUR, "aria-label": "Colour of new type #{n + 1}" %></td>
+            <td colspan="3" class="muted">Set how it fares once it's added.</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+
+  <% if chart.matter? %>
+    <fieldset class="panel">
+      <legend>The chart</legend>
+      <p class="hint">Attacking type down the side, the target's type along the top. Blank is an ordinary hit.</p>
+      <div class="type-chart-wrap">
+        <table class="type-chart type-chart--edit">
+          <thead>
+            <tr>
+              <th scope="col"><span class="muted">Move ↓ · Target →</span></th>
+              <% chart.slugs.each do |defending| %><th scope="col"><%= type_tag(defending) %></th><% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% chart.slugs.each do |attacking| %>
+              <tr>
+                <th scope="row"><%= type_tag(attacking) %></th>
+                <% chart.slugs.each do |defending| %>
+                  <% percent = chart.percent(attacking, defending) %>
+                  <td class="<%= { 200 => 'is-x2', 50 => 'is-half', 0 => 'is-zero' }[percent] %>">
+                    <%= select_tag "chart[#{attacking}][#{defending}]",
+                                   options_for_select([ [ "", "" ] ] + TypeChart::PERCENTS.map { |p, label| [ label, p ] }, percent == 100 ? "" : percent),
+                                   "aria-label": "#{chart.name(attacking)} against #{chart.name(defending)}" %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </fieldset>
+
+    <fieldset class="panel">
+      <legend>Where the fight is</legend>
+      <p class="hint">The type of a fight on each terrain, for moves that take the place's type.</p>
+      <div class="stat-inputs stat-inputs--types">
+        <% EncounterTable::TERRAINS.each do |place| %>
+          <div class="field">
+            <label for="terrain_<%= place %>"><%= place.capitalize %></label>
+            <%= select_tag "terrain[#{place}]", options_for_select(chart.types.map { |t| [ t.name, t.slug ] }, @world.terrain_type(place)), id: "terrain_#{place}" %>
+          </div>
+        <% end %>
+      </div>
+    </fieldset>
+  <% end %>
+
+  <div class="actions">
+    <%= f.submit "Save types", class: "button" %>
+    <%= link_to "Cancel", world_types_path(@world), class: "button button--quiet" %>
+  </div>
+<% end %>

@@ -21,11 +21,13 @@ module BooksHelper
   # How a type (or pair) takes every type, from the chart and the unit's own
   # exceptions: { "weak" => [...], "resist" => [...], "immune" => [...],
   # "absorb" => [...] }, each in chart order. A character (character: true)
-  # resists what the chart says they're immune to.
-  def type_profile(types, affinities = {}, character: false)
+  # resists what the chart says they're immune to. engine: the chart to
+  # read (a battle's own, Battle::Types); the world's when not given.
+  def type_profile(types, affinities = {}, character: false, engine: nil)
+    engine ||= type_chart.to_engine
     target = { "types" => Array(types), "affinities" => affinities || {}, "immune_as_resist" => character }
-    Battle::TYPES.each_with_object(Hash.new { |h, k| h[k] = [] }) do |attacking, profile|
-      percent = Battle::Types.effectiveness(attacking, target)
+    Battle::Types.list(engine).each_with_object(Hash.new { |h, k| h[k] = [] }) do |attacking, profile|
+      percent = Battle::Types.effectiveness(attacking, target, engine)
       band = if percent == :absorb then "absorb"
       elsif percent.zero? then "immune"
       elsif percent > 100 then "weak"
@@ -35,9 +37,31 @@ module BooksHelper
     end
   end
 
-  # A type as a coloured tag.
+  # The world on the page's types (World#type_chart), once per request.
+  def type_chart(world = nil)
+    world ||= @world || @battle&.world || @campaign&.world || @character&.world
+    @type_charts ||= {}
+    @type_charts[world&.id] ||= world ? world.type_chart : TypeChart.new(TypeChart.default_rows)
+  end
+
+  # Is this a world where types come up at all? Not with only one.
+  def types_matter?(world = nil)
+    type_chart(world).matter?
+  end
+
+  def type_name(type)
+    type_chart.name(type)
+  end
+
+  # [name, slug] pairs for a select.
+  def type_options
+    type_chart.types.map { |t| [ t.name, t.slug ] }
+  end
+
+  # A type as a tag in its colour.
   def type_tag(type)
-    tag.span(term(type), class: "type-tag type-tag--#{type}")
+    chart = type_chart
+    tag.span(chart.name(type), class: "type-tag", style: "--t: #{chart.colour(type)}; --t-ink: var(--#{chart.ink(type)})")
   end
 
   def stat_label(name)

@@ -25,6 +25,7 @@ module GlossaryHelper
     "desperation" => [ "Desperation move", "At a quarter HP or less, your Attack sometimes becomes your job's big move. Once a battle." ],
     "auto" => [ "Auto", "Your character repeats their last command (or attacks) every round, so you can talk. Pick a command to take over again." ],
     "check" => [ "Check", "The GM asks you to try something: your stat against a difficulty, rolled from the campaign's dice." ],
+    "skill" => [ "Skill", "What a check is about: Stealth, Lore, climbing. Each rides on a stat, and a job that's good at it adds +15. Every world has its own." ],
     "signature" => [ "Signature command", "Each job's own command, always on its menu: a Knight's Cover, a Thief's Mug, a Dragoon's Jump." ],
     "passive" => [ "Passive", "Something a job does on its own, like Counter or Regen. Master the job and you keep it in every job." ],
     "mastery" => [ "Mastery", "Each ability grows stronger for 40 job levels after you learn it, up to half again. Used in its own job, it's a quarter stronger still." ],

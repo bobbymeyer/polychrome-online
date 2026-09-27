@@ -100,11 +100,11 @@
             <% end %>
           </fieldset>
           <div class="field-row">
-            <div class="field"><%= f.label :stat %><%= f.select :stat, Stats::Check::STATS.map { |s| [ stat_label(s), s ] } %></div>
+            <div class="field"><%= f.label :stat, "Roll" %><%= f.select :stat, check_options(@campaign.world) %></div>
             <div class="field"><%= f.label :difficulty %><%= f.select :difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, selected: "normal" %></div>
             <div class="field"><%= f.label :reason, "To…" %><%= f.text_field :reason, placeholder: "scale the wall" %></div>
           </div>
-          <p class="hint">Each rolls against their own stat. At Normal, someone typical for their level has an even chance; nothing is ever certain.</p>
+          <p class="hint">Each rolls against their own stat (a skill uses its stat, and a job good at it adds +<%= Job::SKILL_BONUS %>). At Normal, someone typical for their level has an even chance; nothing is ever certain.</p>
           <%= f.submit "Roll", class: "button play" %>
         <% end %>
       </details>

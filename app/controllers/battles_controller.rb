@@ -27,7 +27,7 @@ class BattlesController < ApplicationController
     @battle = BattleRecord.start!(
       campaign: @campaign, characters: characters, name: @setup[:name].presence || "Battle", encounter: encounter,
       seed: @setup[:seed], escapable: @setup[:escapable] != "0", input_seconds: @setup[:input_seconds].presence&.to_i,
-      terrain: @setup[:terrain].presence_in(Battle::TYPES)
+      terrain: @setup[:terrain].presence_in(@campaign.world.type_chart.slugs)
     )
     take_seat("gm")
     redirect_to battle_path(@battle)

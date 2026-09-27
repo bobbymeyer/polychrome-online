@@ -88,7 +88,7 @@ class Item < ApplicationRecord
       return
     end
 
-    Battle::State.validate_ability!("id" => slug, "kind" => "skill", "target" => target, "effects" => effects)
+    Battle::State.validate_ability!({ "id" => slug, "kind" => "skill", "target" => target, "effects" => effects }, world_types)
   rescue ArgumentError => e
     errors.add(:effects, e.message.delete_prefix("#{slug}: "))
   end

@@ -543,6 +543,17 @@ RSpec.describe Battle::Resolver do
       expect { apply(waiting, gm("rule", unit: "bartz", stat: "luck", difficulty: "easy")) }.to raise_error(Battle::InvalidAction, /stat/)
       expect { apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "easy", effects: [ { primitive: "nuke" } ])) }
         .to raise_error(Battle::InvalidAction, /unknown primitive/)
+      expect { apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "easy", skill: "Stealth", bonus: 99)) }
+        .to raise_error(Battle::InvalidAction, /bonus/)
+    end
+
+    it "adds a skill's bonus to the odds, and names the skill" do
+      waiting, = apply(state, idea)
+      plain = of_type(apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "hard")).last, :custom_roll).sole
+      skilled = of_type(apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "hard", skill: "Stealth", bonus: 15)).last, :custom_roll).sole
+      expect(skilled["needed"]).to eq([ plain["needed"] + 15, 95 ].min)
+      expect(skilled).to include("skill" => "Stealth")
+      expect(plain).not_to have_key("skill")
     end
   end
 
@@ -651,6 +662,53 @@ RSpec.describe Battle::Resolver do
           .to raise_error(ArgumentError, /mastery stats/)
         expect { build_battle(party: [ healer.merge(attack_type: "fairy") ]) }.to raise_error(ArgumentError, /attack type/)
       end
+    end
+  end
+
+  describe "a world's own types" do
+    let(:types) { { "chart" => { "plain" => {}, "hot" => { "cold" => 200, "hot" => 50 }, "cold" => {} }, "shrugs_off" => { "hot" => %w[sleep] } } }
+    let(:scorch) { { scorch: { name: "Scorch", kind: "magic", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "elemental", type: "hot", power: 20 } ] } } }
+    let(:mage) { [ { id: "mage", name: "Mage", stats: stats(mag: 20, agi: 50), abilities: %w[scorch] } ] }
+    let(:blob) { [ { id: "blob", name: "Blob", stats: stats(max_hp: 900, agi: 1), types: %w[plain] } ] }
+
+    def world_battle(**options)
+      build_battle(party: mage, enemies: blob, abilities: scorch, types: types, **options)
+    end
+
+    def damage_to(enemy_types)
+      enemies = [ { id: "blob", name: "Blob", stats: stats(max_hp: 900, agi: 1), types: enemy_types } ]
+      state = build_battle(seed: 1, party: mage, enemies: enemies, abilities: scorch, types: types)
+      _, events = apply(state, command("mage", "scorch", "blob"))
+      of_type(events, :damage).find { |e| e["actor"] == "mage" }
+    end
+
+    it "carries the world's chart in the state and hits by it" do
+      expect(world_battle).to include("types" => types, "terrain" => "plain")
+      expect(damage_to(%w[cold])).to include("damage_type" => "hot", "effectiveness" => 200)
+      expect(damage_to(%w[hot])).to include("effectiveness" => 50)
+      expect(damage_to(%w[plain])).to include("effectiveness" => 100)
+    end
+
+    it "only takes types the world has" do
+      expect { world_battle(abilities: scorch.merge(fire: BattleFixtures.abilities[:fire])) }.to raise_error(ArgumentError, /unknown type fire/)
+      expect { world_battle(terrain: "grass") }.to raise_error(ArgumentError, /unknown terrain/)
+      expect { world_battle(enemies: [ blob.first.merge(types: %w[grass]) ]) }.to raise_error(ArgumentError, /unknown types/)
+      expect { world_battle(types: { "chart" => {} }) }.to raise_error(ArgumentError, /at least one type/)
+      expect { world_battle(types: { "chart" => { "plain" => { "odd" => 200 } } }) }.to raise_error(ArgumentError, /unknown type odd/)
+    end
+
+    it "works with a single type, where everything lands as it is" do
+      one = { "chart" => { "normal" => {} } }
+      state = build_battle(seed: 2, party: [ mage.first.merge(abilities: %w[zap]) ], enemies: [ blob.first.merge(types: %w[normal]) ],
+                           abilities: { zap: { name: "Zap", kind: "magic", target: "single_enemy", cost: { mp: 0 },
+                                               effects: [ { primitive: "elemental", type: "normal", power: 20 } ] } }, types: one)
+      _, events = apply(state, command("mage", "zap", "blob"))
+      expect(of_type(events, :damage).find { |e| e["actor"] == "mage" }).to include("effectiveness" => 100)
+    end
+
+    it "plays battles stored before worlds had types on the base world's chart" do
+      old = build_battle.except("types")
+      expect { full_round(old) }.not_to raise_error
     end
   end
 end

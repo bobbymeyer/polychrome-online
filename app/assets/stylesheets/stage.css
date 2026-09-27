@@ -658,11 +658,6 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
   font-size: 12px; font-weight: 900; font-style: italic; letter-spacing: .06em; text-transform: uppercase; line-height: 18px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
 }
-.type-tag--normal { --t: #9a9a78; } .type-tag--fire { --t: #e8702a; } .type-tag--water { --t: #4f82e8; }
-.type-tag--electric { --t: #f2c91c; --t-ink: var(--ink); } .type-tag--grass { --t: #5fae3a; } .type-tag--ice { --t: #7fd0cc; --t-ink: var(--ink); }
-.type-tag--fighting { --t: #b52a24; } .type-tag--poison { --t: #963a94; } .type-tag--ground { --t: #d9b252; --t-ink: var(--ink); }
-.type-tag--flying { --t: #8f76e8; } .type-tag--psychic { --t: #f24b7d; } .type-tag--bug { --t: #93a616; }
-.type-tag--rock { --t: #a8932c; } .type-tag--ghost { --t: #634a88; } .type-tag--dark { --t: #5e4a3c; } .type-tag--steel { --t: #9c9cb8; }
 .stat-inputs--types { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .popup--weak { color: var(--sun-yellow); -webkit-text-stroke: 1px var(--ink); font-size: 16px; line-height: 20px; margin-top: -36px; letter-spacing: .02em; }
 .popup--resist { color: var(--paper); font-size: 12px; line-height: 16px; margin-top: -32px; letter-spacing: .04em; opacity: .85; }
@@ -803,3 +798,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* Mastery: a thin bar per ability; black once it's mastered (DESIGN.md: mastery is red and black). */
 .mastery-bar { display: inline-block; width: 96px; height: 6px; vertical-align: middle; margin-right: 8px; }
 .bar .bar__fill--mastered { background: var(--ink); }
+
+/* The types editor: a row per type, and the chart as a grid of small selects. */
+.type-editor .checks--tight { display: flex; flex-wrap: wrap; gap: 2px 8px; font-size: 12px; }
+.type-editor__uses { font-size: 12px; max-width: 220px; }
+.type-chart--edit select { width: 100%; min-width: 44px; border: 0; background: transparent; font-weight: 900; text-align: center; padding: 0; }

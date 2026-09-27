@@ -13,7 +13,11 @@ class Job < ApplicationRecord
   accepts_nested_attributes_for :job_levels, allow_destroy: true,
                                              reject_if: ->(attrs) { attrs["id"].blank? && attrs["ability_id"].blank? }
 
+  # Points added to a check with a skill the job is good at (Stats::Check).
+  SKILL_BONUS = 15
+
   validates :ability_slots, numericality: { only_integer: true, in: 0..4 }
+  validate :skills_are_the_worlds
   validate :multipliers_are_percentages
   validate :equip_categories_exist
   validate :innates_are_passives
@@ -22,7 +26,8 @@ class Job < ApplicationRecord
   validates :passive, inclusion: { in: Battle::PASSIVES }, allow_nil: true
   # A character in the job has its type: hit as the chart says, and hitting
   # with it through Attack and the job's own command.
-  validates :base_type, inclusion: { in: Battle::TYPES }
+  before_validation :default_to_plain_type, on: :create
+  validates :base_type, inclusion: { in: ->(job) { job.world_types }, message: "isn't one of this world's types" }
 
   normalizes :desperation, :signature, :passive, with: ->(slug) { slug.presence }
 
@@ -40,6 +45,15 @@ class Job < ApplicationRecord
   # Percent per stat (120 = x1.2). Blank or 100 means unmodified.
   def stat_multipliers=(values)
     super((values || {}).to_h.stringify_keys.transform_values { |v| JsonCasting.integer(v) }.compact.reject { |_, v| v == 100 })
+  end
+
+  # Slugs of the world's skills (World#skills) the job is good at.
+  def skills=(values)
+    super(Array(values).map(&:to_s).compact_blank.uniq)
+  end
+
+  def skill_names
+    skills.map { |slug| world.skill_name(slug) }
   end
 
   def equip_categories=(values)
@@ -70,9 +84,9 @@ class Job < ApplicationRecord
   end
 
   # What a job's type gives a character in it, in battle (Battle::State):
-  # a normal job's Attack stays plain.
+  # a job of the world's plain type (the first) keeps a plain Attack.
   def battle_type
-    { "types" => [ base_type ], "attack_type" => (base_type unless base_type == "normal"), "immune_as_resist" => true }.compact
+    { "types" => [ base_type ], "attack_type" => (base_type unless base_type == world.type_chart.plain), "immune_as_resist" => true }.compact
   end
 
   private
@@ -82,6 +96,11 @@ class Job < ApplicationRecord
     errors.add(:stat_multipliers, "has unknown stats: #{unknown.join(', ')}") if unknown.any?
     bad = stat_multipliers.reject { |_, v| JsonCasting.integer?(v) && v.between?(0, 500) }
     errors.add(:stat_multipliers, "must be whole percents from 0 to 500 (#{bad.keys.join(', ')})") if bad.any?
+  end
+
+  def skills_are_the_worlds
+    unknown = skills - Array(world&.skills).map { |s| s["slug"] }
+    errors.add(:skills, "aren't this world's: #{unknown.join(', ')}") if unknown.any?
   end
 
   def equip_categories_exist
