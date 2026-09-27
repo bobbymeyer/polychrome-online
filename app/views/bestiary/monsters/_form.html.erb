@@ -6,6 +6,10 @@
     <div class="field"><%= f.label :exp, "EXP" %><%= f.number_field :exp, min: 0 %></div>
     <div class="field"><%= f.label :gil %><%= f.number_field :gil, min: 0 %></div>
     <div class="field"><%= f.label :abp, "ABP" %><%= f.number_field :abp, min: 0 %></div>
+    <div class="field">
+      <%= f.label :base_type, "Type" %>
+      <%= f.select :base_type, Battle::TYPES.map { |t| [ term(t), t ] } %>
+    </div>
   </div>
   <div class="field-row">
     <div class="field field--check"><%= f.check_box :boss %><%= f.label :boss, "A boss: gets an entrance, its own music and a victory to match" %></div>
@@ -28,14 +32,15 @@
   </fieldset>
 
   <fieldset class="panel">
-    <legend>Affinities</legend>
-    <div class="stat-inputs">
-      <% Battle::ELEMENTS.each do |element| %>
+    <legend>Exceptions to the type chart</legend>
+    <p class="hint">Its type already decides what's super effective against it. Set one here only where this monster breaks the chart: a boss immune to fire, a slime that drinks water.</p>
+    <div class="stat-inputs stat-inputs--types">
+      <% Battle::TYPES.each do |type| %>
         <div class="field">
-          <label for="monster_elements_<%= element %>"><%= term(element) %></label>
-          <%= select_tag json_field_name(f, :elements, element),
-                         options_for_select([["Normal", "normal"]] + Battle::AFFINITIES.map { |a| [term(a), a] }, entry.elements[element]),
-                         id: "monster_elements_#{element}" %>
+          <label for="monster_affinities_<%= type %>"><%= type_tag(type) %></label>
+          <%= select_tag json_field_name(f, :affinities, type),
+                         options_for_select([ [ "As the chart says", "normal" ] ] + Battle::AFFINITIES.map { |a| [ term(a), a ] }, entry.affinities[type]),
+                         id: "monster_affinities_#{type}" %>
         </div>
       <% end %>
     </div>

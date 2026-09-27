@@ -14,11 +14,11 @@ module BattleFixtures
   def abilities
     {
       fire: { name: "Fire", kind: "magic", target: "single_enemy", cost: { mp: 4 },
-              effects: [ { primitive: "elemental", element: "fire", power: 20, hits: 1 } ] },
+              effects: [ { primitive: "elemental", type: "fire", power: 20, hits: 1 } ] },
       firaga_all: { name: "Fira", kind: "magic", target: "all_enemies", cost: { mp: 10 },
-                    effects: [ { primitive: "elemental", element: "fire", power: 18 } ] },
+                    effects: [ { primitive: "elemental", type: "fire", power: 18 } ] },
       blizzard: { name: "Blizzard", kind: "magic", target: "single_enemy", cost: { mp: 4 },
-                  effects: [ { primitive: "elemental", element: "ice", power: 20 } ] },
+                  effects: [ { primitive: "elemental", type: "ice", power: 20 } ] },
       cure: { name: "Cure", kind: "magic", target: "single_ally", cost: { mp: 4 },
               effects: [ { primitive: "heal", power: 25 } ] },
       cura: { name: "Cura", kind: "magic", target: "all_allies", cost: { mp: 9 },
@@ -26,7 +26,7 @@ module BattleFixtures
       raise: { name: "Raise", kind: "magic", target: "single_ally", cost: { mp: 10 },
                effects: [ { primitive: "revive", fraction: 25 } ] },
       bio: { name: "Bio", kind: "magic", target: "single_enemy", cost: { mp: 6 },
-             effects: [ { primitive: "elemental", element: "dark", power: 12 },
+             effects: [ { primitive: "elemental", type: "dark", power: 12 },
                        { primitive: "status", kind: "poison", chance: 100, duration: 4 } ] },
       sleep: { name: "Sleep", kind: "magic", target: "single_enemy", cost: { mp: 3 },
                effects: [ { primitive: "status", kind: "sleep", chance: 70, duration: 3 } ] },
@@ -43,7 +43,7 @@ module BattleFixtures
       haste: { name: "Haste", kind: "magic", target: "single_ally", cost: { mp: 5 },
                effects: [ { primitive: "status", kind: "haste", chance: 100, duration: 3 } ] },
       meteor: { name: "Meteor", kind: "magic", target: "random_enemy", cost: { mp: 15 },
-                effects: [ { primitive: "elemental", element: "earth", power: 15, hits: 4 } ] },
+                effects: [ { primitive: "elemental", type: "ground", power: 15, hits: 4 } ] },
       smoke_bomb: { name: "Smoke Bomb", kind: "skill", target: "self", cost: { mp: 0 },
                     effects: [ { primitive: "escape" } ] },
       goblin_punch: { name: "Goblin Punch", kind: "skill", target: "single_enemy", cost: { mp: 0 },
@@ -83,7 +83,7 @@ module BattleFixtures
   def goblins(count = 3)
     [ { id: "goblin", name: "Goblin", count: count,
        stats: stats(max_hp: 45, max_mp: 0, str: 9, atk: 8, agi: 8, def: 3, mdef: 2),
-       elements: { fire: "weak" }, rewards: { exp: 6, gil: 12 }, drops: [ { item: "potion", chance: 30 } ],
+       types: %w[normal], affinities: { fire: "weak" }, rewards: { exp: 6, gil: 12 }, drops: [ { item: "potion", chance: 30 } ],
        abilities: %w[goblin_punch],
        ai: [ { if: { chance: 25 }, use: "goblin_punch" }, { use: "attack" } ] } ]
   end
@@ -91,7 +91,7 @@ module BattleFixtures
   def ogre
     [ { id: "ogre", name: "Ogre",
        stats: stats(max_hp: 400, max_mp: 30, str: 20, atk: 18, agi: 7, def: 12, mdef: 6, mag: 8),
-       elements: { ice: "absorb", fire: "resist" }, status_immune: %w[sleep], rewards: { exp: 80, gil: 150 },
+       types: %w[normal], affinities: { ice: "absorb", fire: "resist" }, status_immune: %w[sleep], rewards: { exp: 80, gil: 150 },
        abilities: %w[cure war_cry],
        ai: [ { if: { self_hp_below: 30 }, use: "cure", target: "self" },
             { if: { round_multiple: 3 }, use: "war_cry" },

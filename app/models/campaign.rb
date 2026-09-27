@@ -293,10 +293,13 @@ class Campaign < ApplicationRecord
 
       notes = (learned[slug] ||= {})
       if event["type"] == "scan"
-        Battle::ELEMENTS.each { |element| notes[element] = target["elements"].fetch(element, "none") }
+        notes["types"] = target.fetch("types", [])
+        Battle::TYPES.each { |type| notes[type] = target.fetch("affinities", {}).fetch(type, "none") }
         Battle::STATUSES.each { |kind| notes[kind] = target["status_immune"].include?(kind) ? "immune" : "none" }
-      elsif event["element"]
-        notes[event["element"]] = target["elements"].fetch(event["element"], "none")
+      elsif event["damage_type"]
+        # Seeing a type land shows what the monster is: its types, and how it took this one.
+        notes["types"] = target.fetch("types", [])
+        notes[event["damage_type"]] = target.fetch("affinities", {}).fetch(event["damage_type"], "none")
       elsif event["type"] == "miss" && event["reason"] == "immune" && event["status"]
         notes[event["status"]] = "immune"
       elsif event["type"] == "status_applied"

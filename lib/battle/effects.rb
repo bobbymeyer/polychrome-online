@@ -57,10 +57,11 @@ module Battle
       ctx.emit(:steal, actor: actor["id"], target: target["id"], item: drop["item"], name: drop.fetch("name", drop["item"]))
     end
 
-    # scan: what the target is weak to, resists and shrugs off, and its HP.
+    # scan: the target's types, its own affinities, what it shrugs off, and
+    # its HP.
     # No RNG: knowledge always works.
     def scan(ctx, target)
-      ctx.emit(:scan, target: target["id"], elements: target.fetch("elements", {}),
+      ctx.emit(:scan, target: target["id"], types: target.fetch("types", []), affinities: target.fetch("affinities", {}),
                       status_immune: target.fetch("status_immune", []), hp: target["hp"], max_hp: target["stats"]["max_hp"])
     end
 
@@ -86,33 +87,38 @@ module Battle
       amount = mitigate(vary(ctx, base), ctx.stat(target, "def"))
       amount *= 2 if crit
       amount /= 2 if target["defending"]
-      amount = [ amount, 1 ].max
+      # Typed after every draw, so the stream doesn't depend on the chart.
+      return if typed(ctx, actor, target, effect["type"], amount, crit: crit)
 
-      ctx.emit(:crit, actor: actor["id"], target: target["id"]) if crit
-      ctx.deal_damage(target, amount, actor: actor["id"], crit: crit)
       ctx.remove_status(target, "sleep", reason: "woke") if ctx.alive?(target)
     end
 
-    # elemental(element, power, hits): power scaled by mag, softened by
-    # mdef, then multiplied by the target's affinity. Magic never misses.
+    # elemental(type, power, hits): power scaled by mag, softened by mdef,
+    # then by the type chart. Magic never misses.
     def elemental(ctx, actor, target, effect)
-      element = effect["element"]
-      affinity = target["elements"][element]
-      if affinity == "immune"
-        vary(ctx, 0) # keep RNG consumption independent of affinity
-        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", element: element)
+      typed(ctx, actor, target, effect["type"], magic_amount(ctx, actor, target, effect))
+    end
+
+    # Deal damage of a type (nil: typeless) through the chart and the
+    # target's affinities. Returns true when it didn't land as damage
+    # (no effect, or absorbed).
+    def typed(ctx, actor, target, type, amount, crit: false)
+      percent = Types.effectiveness(type, target)
+      if percent == 0 # rubocop:disable Style/NumericPredicate -- may be :absorb
+        ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", damage_type: type)
+        return true
       end
 
-      amount = magic_amount(ctx, actor, target, effect)
-      amount *= 2 if affinity == "weak"
-      amount /= 2 if affinity == "resist"
-      amount = [ amount, 1 ].max
-
-      if affinity == "absorb"
-        ctx.restore_hp(target, amount, actor: actor["id"], element: element, absorbed: true)
-      else
-        ctx.deal_damage(target, amount, actor: actor["id"], element: element, weak: affinity == "weak")
+      amount = [ percent == :absorb ? amount : amount * percent / 100, 1 ].max
+      if percent == :absorb
+        ctx.restore_hp(target, amount, actor: actor["id"], damage_type: type, absorbed: true)
+        return true
       end
+
+      ctx.emit(:crit, actor: actor["id"], target: target["id"]) if crit
+      extra = type ? { damage_type: type, effectiveness: percent } : {}
+      ctx.deal_damage(target, amount, actor: actor["id"], crit: crit, **extra)
+      false
     end
 
     # status(kind, chance, duration). Against opponents the chance is
@@ -124,7 +130,7 @@ module Battle
       chance = chance * 100 / (100 + ctx.stat(target, "spr")) if chance < 100 && target["side"] != actor["side"]
       landed = ctx.rng.percent?(chance) || chance >= 100
 
-      if target["status_immune"].include?(kind)
+      if target["status_immune"].include?(kind) || Types.status_immune?(target, kind)
         ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", status: kind)
       elsif !landed
         ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "resisted", status: kind)

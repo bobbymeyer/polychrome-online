@@ -105,7 +105,7 @@ RSpec.describe Battle::Effects do
 
   describe "elemental" do
     # vivi mag 18: power 20 * (18 + 16) / 16 = 42
-    let(:fire) { effect("elemental", element: "fire", power: 20) }
+    let(:fire) { effect("elemental", type: "fire", power: 20) }
 
     def cast(target_id, spell = fire)
       rng = ScriptedRng.new(31)
@@ -117,7 +117,7 @@ RSpec.describe Battle::Effects do
     it "doubles against weakness" do
       # goblin mdef 2
       expect(cast("goblin_a").events.sole).to include("type" => "damage", "amount" => 42 * 255 / 256 * 100 / 102 * 2,
-                                                      "element" => "fire", "weak" => true)
+                                                      "damage_type" => "fire", "effectiveness" => 200)
     end
 
     it "halves against resistance" do
@@ -126,13 +126,42 @@ RSpec.describe Battle::Effects do
 
     it "heals on absorb" do
       state["units"].find { |u| u["id"] == "ogre" }["hp"] = 100
-      ctx = cast("ogre", effect("elemental", element: "ice", power: 20))
+      ctx = cast("ogre", effect("elemental", type: "ice", power: 20))
       expect(ctx.events.sole).to include("type" => "heal", "absorbed" => true, "hp" => 100 + 41 * 100 / 106)
+    end
+
+    it "follows the type chart, types multiplying, and a typeless move is always neutral" do
+      goblin = state["units"].find { |u| u["id"] == "goblin_a" }
+      goblin["affinities"] = {}
+      goblin["types"] = %w[grass]
+      expect(cast("goblin_a").events.sole).to include("effectiveness" => 200)
+      goblin["types"] = %w[grass bug]
+      expect(cast("goblin_a").events.sole).to include("effectiveness" => 400)
+      goblin["types"] = %w[water]
+      expect(cast("goblin_a").events.sole).to include("effectiveness" => 50)
+      goblin["types"] = %w[ground]
+      expect(cast("goblin_a", effect("elemental", type: "electric", power: 20)).events.sole).to include("type" => "miss", "reason" => "immune")
+      goblin["types"] = %w[ghost]
+      ctx = Battle::Context.new(state, rng: ScriptedRng.new(31))
+      described_class.apply(ctx, ctx.unit("bartz"), ctx.unit("goblin_a"), effect("physical"))
+      expect(ctx.events.last).to include("type" => "damage")
+      expect(ctx.events.last).not_to have_key("effectiveness")
+      ctx = Battle::Context.new(state, rng: ScriptedRng.new(31))
+      described_class.apply(ctx, ctx.unit("bartz"), ctx.unit("goblin_a"), effect("physical", type: "normal"))
+      expect(ctx.events.last).to include("type" => "miss", "reason" => "immune", "damage_type" => "normal")
+    end
+
+    it "keeps poison types from being poisoned, and electric types from paralysis" do
+      goblin = state["units"].find { |u| u["id"] == "goblin_a" }
+      goblin["types"] = %w[poison]
+      ctx = Battle::Context.new(state, rng: ScriptedRng.new(0))
+      described_class.apply(ctx, ctx.unit("vivi"), ctx.unit("goblin_a"), effect("status", kind: "poison", chance: 100))
+      expect(ctx.events.sole).to include("type" => "miss", "reason" => "immune", "status" => "poison")
     end
 
     it "misses on immunity without shifting the RNG stream" do
       goblin_state = state["units"].find { |u| u["id"] == "goblin_a" }
-      goblin_state["elements"] = { "fire" => "immune" }
+      goblin_state["affinities"] = { "fire" => "immune" }
       rng = ScriptedRng.new(31)
       ctx = Battle::Context.new(state, rng: rng)
       described_class.apply(ctx, ctx.unit("vivi"), ctx.unit("goblin_a"), fire)
@@ -289,7 +318,7 @@ RSpec.describe Battle::Effects do
       rng = ScriptedRng.new
       ctx = Battle::Context.new(state, rng: rng)
       described_class.apply(ctx, ctx.unit("rosa"), ctx.unit("ogre"), effect("scan"))
-      expect(ctx.events.sole).to include("type" => "scan", "target" => "ogre", "elements" => ctx.unit("ogre")["elements"],
+      expect(ctx.events.sole).to include("type" => "scan", "target" => "ogre", "types" => [ "normal" ], "affinities" => ctx.unit("ogre")["affinities"],
                                          "status_immune" => ctx.unit("ogre")["status_immune"], "hp" => ctx.unit("ogre")["hp"])
       expect(rng.draws).to eq(0)
     end

@@ -652,6 +652,29 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .service__body > p:first-child { margin-top: 0; }
 .service__pin { margin: 8px 0 0; }
 
+/* Damage types (Battle::Types): a tag in each type's colour, the chart, and the popups. */
+.type-tag {
+  display: inline-block; padding: 1px 10px 1px 8px; margin: 1px 0; background: var(--t, var(--grey)); color: var(--t-ink, #fff);
+  font-size: 12px; font-weight: 900; font-style: italic; letter-spacing: .06em; text-transform: uppercase; line-height: 18px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+}
+.type-tag--normal { --t: #9a9a78; } .type-tag--fire { --t: #e8702a; } .type-tag--water { --t: #4f82e8; }
+.type-tag--electric { --t: #f2c91c; --t-ink: var(--ink); } .type-tag--grass { --t: #5fae3a; } .type-tag--ice { --t: #7fd0cc; --t-ink: var(--ink); }
+.type-tag--fighting { --t: #b52a24; } .type-tag--poison { --t: #963a94; } .type-tag--ground { --t: #d9b252; --t-ink: var(--ink); }
+.type-tag--flying { --t: #8f76e8; } .type-tag--psychic { --t: #f24b7d; } .type-tag--bug { --t: #93a616; }
+.type-tag--rock { --t: #a8932c; } .type-tag--ghost { --t: #634a88; } .type-tag--dark { --t: #5e4a3c; } .type-tag--steel { --t: #9c9cb8; }
+.stat-inputs--types { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.popup--weak { color: var(--sun-yellow); -webkit-text-stroke: 1px var(--ink); font-size: 16px; line-height: 20px; margin-top: -36px; letter-spacing: .02em; }
+.popup--resist { color: var(--paper); font-size: 12px; line-height: 16px; margin-top: -32px; letter-spacing: .04em; opacity: .85; }
+.type-chart { border-collapse: collapse; font-size: 13px; }
+.type-chart th, .type-chart td { border: 1px solid var(--light-grey); padding: 0; text-align: center; min-width: 30px; height: 30px; }
+.type-chart thead th { vertical-align: bottom; padding: 4px 0; }
+.type-chart thead .type-tag { writing-mode: vertical-rl; clip-path: none; padding: 8px 1px; }
+.type-chart tbody th { text-align: left; padding-right: 6px; border: 0; }
+.type-chart .is-x2 { background: #7fce6b; font-weight: 900; } .type-chart .is-half { background: #f4a78f; }
+.type-chart .is-zero { background: var(--ink); color: var(--paper); font-weight: 900; }
+.type-chart-wrap { overflow-x: auto; }
+
 /* Taking a line back: quiet, and only on hover or focus once shown. */
 .chat-line__retract-form { display: inline; margin: 0; }
 .chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }

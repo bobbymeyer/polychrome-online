@@ -49,10 +49,22 @@ RSpec.describe "Books", type: :request do
     end
   end
 
+  it "shows the type chart, and each monster's type and what that makes it weak to" do
+    get types_path
+    expect(response.body).to include("Type chart", "type-tag--ghost", "is-zero")
+    expect(response.body).not_to include("type-tag--fairy", "type-tag--dragon")
+
+    monster = create_monster(world, slug: "skeleton", base_type: "dark", affinities: { fire: "weak" })
+    get world_bestiary_monster_path(world, monster)
+    expect(response.body).to include("type-tag--dark", "Weak to", "type-tag--fighting", "type-tag--bug", "Breaks the chart: weak fire")
+    get world_bestiary_monsters_path(world)
+    expect(response.body).to include("Type chart", "Fighting, Bug, Fire").or include("Fire, Fighting, Bug")
+  end
+
   describe "Grimoire" do
     let(:form) do
       { name: "Bio", kind: "magic", target: "single_enemy", mp_cost: "6", gesture: "tint", description: "Rot.",
-        effects: { "0" => { primitive: "elemental", element: "dark", power: "12", hits: "", chance: "" },
+        effects: { "0" => { primitive: "elemental", type: "dark", power: "12", hits: "", chance: "" },
                    "1" => { primitive: "status", kind: "poison", chance: "100", duration: "4" },
                    "2" => { primitive: "", power: "" } } }
     end

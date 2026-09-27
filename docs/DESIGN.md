@@ -71,6 +71,11 @@ deliberate divergence from much of what follows, and where the two disagree the 
 - **A town's services** are panels with a 3px frame, one per building: a white bar with the
   building's name in heavy italic and a red marker, which turns black when open. The buildings
   in the skyline that house them outline in red on hover and open their panel.
+- **Types** are slanted tags in their own colours (fire orange, water blue, ghost violet and so
+  on): this is the one place the palette steps outside Vasakronan, because a type's colour is
+  how players recognise it. "Super effective!" lands as a yellow outlined popup with a flash;
+  "not very effective" is small and pale. The type chart is a grid of ×2 (green), ½ (salmon)
+  and 0 (black).
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide

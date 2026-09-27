@@ -570,6 +570,36 @@ Each event is a hash like `{"type" => "damage", "target" => "goblin_a",
 "amount" => 24, "hp" => 21, ...}`. Every event that changes HP carries the
 resulting `hp`, so the view never computes an outcome.
 
+## Damage types
+
+`Battle::Types` (pure) holds 16 types (normal, fire, water, electric, grass,
+ice, fighting, poison, ground, flying, psychic, bug, rock, ghost, dark,
+steel) and Pokémon's chart between them. Fairy and dragon are left out.
+The chart is on `/types`, linked from the Bestiary and the Grimoire.
+
+- **Moves.** `elemental` takes a `type` (it used to take an element), and
+  `physical` can take one. The basic Attack has none, so it always lands as it
+  is: a party can always hit a ghost. Set a move's type in the effect rows.
+- **Monsters** have a base type (`monsters.base_type`, normal by default).
+  The engine takes one or two types per unit (`"types"`), and two multiply,
+  as in the games. Characters are typeless.
+- **Effectiveness.** A move does ×2 (super effective), ×½ (not very
+  effective) or nothing (no effect) against each of the target's types. A
+  monster's `affinities` (weak, resist, immune, absorb) are exceptions on
+  top of the chart, like a boss immune to fire or a slime that drinks water.
+  Damage events carry `damage_type` and `effectiveness` (a percent); a move
+  with no effect is a miss with reason `immune`.
+- **Statuses by type.** Poison and steel types can't be poisoned, and
+  electric types can't be paralysed.
+- **What the party learns.** Seeing a typed move land on a monster shows
+  its type, and the chart fills in the rest for the command help. A scan
+  shows everything.
+- **Moving over.** Migration `ElementsToTypes` maps the old elements (bolt
+  → electric, wind → flying, earth → ground, holy → psychic, the rest by
+  name) in abilities, items, monsters and stored battles, so a battle in
+  progress carries on. Re-run `bin/rails base_world:update` to get the Base
+  World's own types, the Skeleton (dark) and the Nymph (water).
+
 ## Departures from the handoff
 
 - **RNG.** The handoff says `Random.new(seed)`, but Ruby's `Random` can't
@@ -577,8 +607,10 @@ resulting `hp`, so the view never computes an outcome.
   whose whole state is one integer (`state["rng"]`). A battle can resume
   exactly from any persisted state, which is what the handoff is asking for.
 - **Abilities take a list of effects** instead of one primitive, e.g. Bio is
-  `elemental(dark)` + `status(poison)`. The list only draws on the closed
+  `elemental(poison)` + `status(poison)`. The list only draws on the closed
   primitive set, so the vocabulary stays closed.
+- **Damage types, not elements.** The handoff's eight elements are replaced
+  by Pokémon's type chart, less fairy and dragon (see "Damage types").
 - **Buff/debuff `amount` is a percentage**, so it scales across levels.
 - **`haste`/`slow` are statuses** that modify agi through `Stats::Derivation`.
   `blind` halves physical hit chance. `sleep` and `paralyze` skip turns, and

@@ -25,15 +25,18 @@
       <div><dt><%= stat_label(stat) %></dt><dd><%= number_with_delimiter(entry.stats[stat]) %></dd></div>
     <% end %>
   </dl>
-  <% if entry.elements.any? || entry.status_immune.any? %>
-    <dl class="facts facts--wide">
-      <% entry.elements.group_by { |_, a| a }.each do |affinity, pairs| %>
-        <dt><%= term(affinity) %></dt><dd><%= pairs.map { |element, _| term(element) }.join(", ") %></dd>
-      <% end %>
-      <% if entry.status_immune.any? %>
-        <dt>Immune to</dt><dd><%= entry.status_immune.map { |s| term(s) }.join(", ") %></dd>
-      <% end %>
-    </dl>
+  <% profile = type_profile([ entry.base_type ], entry.affinities) %>
+  <dl class="facts facts--wide type-facts">
+    <dt>Type</dt><dd><%= type_tag(entry.base_type) %> <%= link_to "the chart", types_path, class: "muted" %></dd>
+    <% { "weak" => "Weak to", "resist" => "Resists", "immune" => "Immune to", "absorb" => "Absorbs" }.each do |band, label| %>
+      <% if profile[band].any? %><dt><%= label %></dt><dd><%= safe_join(profile[band].map { |t| type_tag(t) }, " ") %></dd><% end %>
+    <% end %>
+    <% if entry.status_immune.any? %>
+      <dt>Shrugs off</dt><dd><%= entry.status_immune.map { |s| term(s) }.join(", ") %></dd>
+    <% end %>
+  </dl>
+  <% if entry.affinities.any? %>
+    <p class="hint">Breaks the chart: <%= entry.affinities.map { |type, a| "#{term(a).downcase} #{term(type).downcase}" }.to_sentence %>.</p>
   <% end %>
 </section>
 

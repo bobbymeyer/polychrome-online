@@ -16,8 +16,8 @@ module Battle
   # (optional ones have defaults in Battle::Effects). String-valued params
   # are named in PRIMITIVE_STRING_PARAMS; everything else is an integer.
   PRIMITIVE_PARAMS = {
-    "physical" => { required: [], optional: %w[power hits] },
-    "elemental" => { required: %w[element power], optional: %w[hits] },
+    "physical" => { required: [], optional: %w[power hits type] },
+    "elemental" => { required: %w[type power], optional: %w[hits] },
     "status" => { required: %w[kind], optional: %w[chance duration] },
     "heal" => { required: %w[power], optional: [] },
     "drain" => { required: %w[power], optional: [] },
@@ -32,10 +32,10 @@ module Battle
     # Shows the target's affinities, status immunities and HP.
     "scan" => { required: [], optional: [] }
   }.freeze
-  PRIMITIVE_STRING_PARAMS = %w[element kind stat].freeze
+  PRIMITIVE_STRING_PARAMS = %w[type kind stat].freeze
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
-  ELEMENTS = %w[fire ice bolt water wind earth holy dark].freeze
-  AFFINITIES = %w[weak resist immune absorb].freeze
+  TYPES = Types::ALL
+  AFFINITIES = Types::AFFINITIES
   STATUSES = %w[poison sleep paralyze silence blind haste slow].freeze
   # What a cleanse with no kind cures: everything but the good ones.
   HARMFUL_STATUSES = (STATUSES - %w[haste]).freeze
@@ -71,7 +71,7 @@ module Battle
 
     # Build an initial battle state.
     #
-    # party:     [{ id:, name:, stats:, abilities: [...], elements: {}, status_immune: [] , hp:, mp:, desperation: }]
+    # party:     [{ id:, name:, stats:, abilities: [...], types: [], affinities: {}, status_immune: [] , hp:, mp:, desperation: }]
     # enemies:   same shape plus ai: [rules], rewards: {}, and optional count: n
     # abilities: { "fire" => { name:, kind:, target:, cost: { mp: }, effects: [...] } }
     # items:     the party's usable items, shared by everyone in it:
@@ -127,9 +127,13 @@ module Battle
       missing = Stats::NAMES - stats.keys
       raise ArgumentError, "#{id} is missing stats: #{missing.join(', ')}" if missing.any?
 
-      elements = spec.fetch("elements", {})
-      bad = elements.reject { |el, aff| ELEMENTS.include?(el) && AFFINITIES.include?(aff) }
-      raise ArgumentError, "#{id} has invalid elements #{bad}" if bad.any?
+      affinities = spec.fetch("affinities", {})
+      bad = affinities.reject { |type, aff| TYPES.include?(type) && AFFINITIES.include?(aff) }
+      raise ArgumentError, "#{id} has invalid affinities #{bad}" if bad.any?
+
+      types = Array(spec["types"])
+      raise ArgumentError, "#{id} has unknown types #{types - TYPES}" if (types - TYPES).any?
+      raise ArgumentError, "#{id} can have at most two types" if types.size > 2
 
       {
         "id" => id,
@@ -141,7 +145,8 @@ module Battle
         "statuses" => [],
         "buffs" => [],
         "abilities" => ([ "attack" ] + spec.fetch("abilities", [])).uniq,
-        "elements" => elements,
+        "types" => types.uniq,
+        "affinities" => affinities,
         "status_immune" => spec.fetch("status_immune", []),
         "ai" => spec.fetch("ai", []),
         "rewards" => spec.fetch("rewards", {}),
@@ -249,8 +254,8 @@ module Battle
         end
 
         case primitive
-        when "elemental"
-          raise ArgumentError, "#{id}: unknown element #{effect['element']}" unless ELEMENTS.include?(effect["element"])
+        when "elemental", "physical"
+          raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !TYPES.include?(effect["type"])
         when "status"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" unless STATUSES.include?(effect["kind"])
         when "cleanse"

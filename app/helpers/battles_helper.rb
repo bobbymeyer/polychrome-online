@@ -69,10 +69,15 @@ module BattlesHelper
     facts = [ level ? "Level #{level}" : "Enemy" ]
     # In a campaign, players see only what the party has found out.
     known = battle&.campaign&.known_affinities&.fetch(target.dig("image", "slug").to_s, {})
+    types = target.fetch("types", [])
+    # Once the party knows what a monster is, the chart tells them the rest.
+    knows_type = types.any? && (known.nil? || known["types"].present?)
+    facts << "#{types.map { |t| term(t) }.join('/')} type" if knows_type
+    profile = type_profile(knows_type ? types : [], target.fetch("affinities", {}))
     AFFINITY_LABELS.each do |affinity, label|
-      names = target.fetch("elements", {}).select { |_, a| a == affinity }.keys
+      names = profile[affinity].dup
       names += target.fetch("status_immune", []) if affinity == "immune"
-      names &= known.keys if known
+      names &= (known.keys + (knows_type ? Battle::TYPES : [])) if known
       facts << "#{label} #{names.map { |n| term(n) }.to_sentence}" if names.any?
     end
     facts << "Weaknesses unknown" if known && known.empty?
@@ -148,13 +153,17 @@ module BattlesHelper
     return "#{target} takes #{event['amount']} poison damage." if event["status"] == "poison"
 
     line = "#{target} takes #{event['amount']} damage."
-    event["weak"] ? "#{line} It's super effective!" : line
+    effectiveness = event["effectiveness"] || (event["weak"] ? 200 : 100) # "weak": battles from before types
+    if effectiveness > 100 then "#{line} It's super effective!"
+    elsif effectiveness < 100 then "#{line} It's not very effective…"
+    else line
+    end
   end
 
   def miss_line(event, target, state)
     case event["reason"]
     when "evaded" then "#{target} dodges."
-    when "immune" then "#{target} is unaffected."
+    when "immune" then event["damage_type"] ? "It doesn't affect #{target}…" : "#{target} is unaffected."
     when "resisted" then "#{target} resists #{event['status'].to_s.humanize}."
     when "not_ko" then "#{target} is already standing."
     when "nothing_to_cure" then "#{target} has nothing to cure."
@@ -165,12 +174,15 @@ module BattlesHelper
   end
 
   def scan_line(event, target)
+    types = Array(event["types"])
+    profile = type_profile(types, event["affinities"] || {})
     facts = AFFINITY_LABELS.filter_map do |affinity, label|
-      names = event["elements"].select { |_, a| a == affinity }.keys
+      names = profile[affinity].dup
       names += event["status_immune"] if affinity == "immune"
       "#{label.downcase} #{names.map { |n| term(n).downcase }.to_sentence}" if names.any?
     end
-    "#{target}: HP #{event['hp']}/#{event['max_hp']}#{facts.any? ? ", #{facts.join(', ')}" : ', no weaknesses'}."
+    kind = types.any? ? ", #{types.map { |t| term(t) }.join('/')} type" : ""
+    "#{target}: HP #{event['hp']}/#{event['max_hp']}#{kind}#{facts.any? ? ", #{facts.join(', ')}" : ', no weaknesses'}."
   end
 
   def status_expired_line(event, target)

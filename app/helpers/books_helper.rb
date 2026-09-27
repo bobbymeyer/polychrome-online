@@ -18,6 +18,27 @@ module BooksHelper
     end
   end
 
+  # How a type (or pair) takes every type, from the chart and the unit's own
+  # exceptions: { "weak" => [...], "resist" => [...], "immune" => [...],
+  # "absorb" => [...] }, each in chart order.
+  def type_profile(types, affinities = {})
+    target = { "types" => Array(types), "affinities" => affinities || {} }
+    Battle::TYPES.each_with_object(Hash.new { |h, k| h[k] = [] }) do |attacking, profile|
+      percent = Battle::Types.effectiveness(attacking, target)
+      band = if percent == :absorb then "absorb"
+      elsif percent.zero? then "immune"
+      elsif percent > 100 then "weak"
+      elsif percent < 100 then "resist"
+      end
+      profile[band] << attacking if band
+    end
+  end
+
+  # A type as a coloured tag.
+  def type_tag(type)
+    tag.span(term(type), class: "type-tag type-tag--#{type}")
+  end
+
   def stat_label(name)
     STAT_LABELS.fetch(name.to_s, name.to_s.humanize)
   end
@@ -55,8 +76,8 @@ module BooksHelper
   def describe_effect(effect)
     e = effect
     case e["primitive"]
-    when "physical" then "Physical #{e.fetch('power', 100)}%#{hits(e)}"
-    when "elemental" then "#{term(e['element'])} damage, power #{e['power']}#{hits(e)}"
+    when "physical" then "#{"#{term(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}"
+    when "elemental" then "#{term(e['type'])} damage, power #{e['power']}#{hits(e)}"
     when "status" then "#{term(e['kind'])} (#{e.fetch('chance', 100)}%, #{e.fetch('duration', 3)} turns)"
     when "heal" then "Restore HP, power #{e['power']}"
     when "drain" then "Drain HP, power #{e['power']}"

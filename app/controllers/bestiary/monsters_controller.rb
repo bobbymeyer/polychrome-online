@@ -14,8 +14,8 @@ module Bestiary
 
     def entry_params
       params.expect(monster: [
-        :name, :slug, :level, :description, :exp, :gil, :abp, :boss, :boss_line, *art_params,
-        { stats: Stats::NAMES, elements: Battle::ELEMENTS, status_immune: [],
+        :name, :slug, :level, :description, :base_type, :exp, :gil, :abp, :boss, :boss_line, *art_params,
+        { stats: Stats::NAMES, affinities: Battle::TYPES, status_immune: [],
           ai_script: [ [ :use, :target, *Battle::AI::CONDITIONS ] ], drops: [ %i[item chance] ] }
       ])
     end

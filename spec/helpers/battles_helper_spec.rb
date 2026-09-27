@@ -56,14 +56,14 @@ RSpec.describe BattlesHelper, type: :helper do
 
     it "shows an ally's HP and MP but never an enemy's" do
       expect(helper.target_help(nil, state, "vivi")).to start_with("HP #{vivi['hp']}/#{vivi['stats']['max_hp']} · MP #{vivi['mp']}")
-      expect(helper.target_help(nil, state, "goblin_a")).to eq("Enemy · Weak to Fire")
+      expect(helper.target_help(nil, state, "goblin_a")).to eq("Enemy · Normal type · Weak to Fire and Fighting · Immune to Ghost")
       expect(helper.target_help(nil, state, "goblin_a")).not_to include("HP")
     end
 
     it "tells what the Bestiary knows of an enemy: affinities and status immunities" do
       ogre = build_battle(enemies: BattleFixtures.ogre)
       target = ogre["units"].find { |u| u["side"] == "enemy" }
-      expect(helper.target_help(nil, ogre, target["id"])).to eq("Enemy · Resists Fire · Immune to Sleep · Absorbs Ice")
+      expect(helper.target_help(nil, ogre, target["id"])).to eq("Enemy · Normal type · Weak to Fighting · Resists Fire · Immune to Ghost and Sleep · Absorbs Ice")
     end
   end
 end

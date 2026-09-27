@@ -2,6 +2,7 @@
 <div class="book-header">
   <h1><%= book_title %></h1>
   <%= link_to "New #{entry_class.model_name.human.downcase}", polymorphic_path([:new, @world, book_key, entry_class.model_name.singular.to_sym]), class: "button" if can_edit_world? %>
+  <%= link_to "Type chart", types_path, class: "button button--quiet" if %i[bestiary grimoire].include?(book_key) %>
 </div>
 <% if @entries.empty? %>
   <p class="empty">The <%= book_title %> is empty.</p>

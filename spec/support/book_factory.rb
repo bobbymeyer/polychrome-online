@@ -13,7 +13,7 @@ module BookFactory
 
   def create_ability(world, slug: "fire", **attrs)
     world.abilities.create!({ slug: slug, name: slug.humanize, kind: "magic", target: "single_enemy", mp_cost: 4,
-                              effects: [ { primitive: "elemental", element: "fire", power: 20 } ] }.merge(attrs))
+                              effects: [ { primitive: "elemental", type: "fire", power: 20 } ] }.merge(attrs))
   end
 
   def create_item(world, slug: "sword", **attrs)

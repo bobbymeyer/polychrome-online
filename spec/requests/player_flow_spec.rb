@@ -95,9 +95,10 @@ RSpec.describe "The player's way through", type: :request do
     help = -> { ApplicationController.helpers.target_help(battle.reload, battle.state, "goblin") }
     expect(help.()).to include("Weaknesses unknown").and(satisfy { |h| !h.include?("Weak to Fire") })
 
-    campaign.learn_from!([ { "type" => "damage", "target" => "goblin", "element" => "fire", "amount" => 9 } ], battle.state)
-    expect(help.()).to include("Weak to Fire")
-    expect(campaign.reload.known_affinities).to eq("goblin" => { "fire" => "weak" })
+    campaign.learn_from!([ { "type" => "damage", "target" => "goblin", "damage_type" => "fire", "amount" => 9 } ], battle.state)
+    # Seeing a typed hit land shows what the monster is, and the chart does the rest.
+    expect(help.()).to include("Normal type", "Weak to Fire and Fighting", "Immune to Ghost")
+    expect(campaign.reload.known_affinities).to eq("goblin" => { "types" => [ "normal" ], "fire" => "weak" })
 
     campaign.learn_from!([ { "type" => "scan", "target" => "goblin" } ], battle.state)
     expect(campaign.reload.known_affinities["goblin"]).to include("ice" => "none", "sleep" => "none")

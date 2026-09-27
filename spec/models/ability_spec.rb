@@ -30,7 +30,7 @@ RSpec.describe Ability do
   describe "effects from form rows" do
     let(:rows) do
       {
-        "0" => { "primitive" => "elemental", "element" => "fire", "power" => "20", "hits" => "",
+        "0" => { "primitive" => "elemental", "type" => "fire", "power" => "20", "hits" => "",
                  "chance" => "50", "stat" => "", "kind" => "" },
         "1" => { "primitive" => "status", "kind" => "poison", "chance" => "100", "duration" => "4", "power" => "9" },
         "2" => { "primitive" => "", "power" => "5" }
@@ -40,7 +40,7 @@ RSpec.describe Ability do
     it "keeps only the params each primitive takes, cast to integers, dropping blank rows" do
       ability = world.abilities.new(name: "Bio", kind: "magic", target: "single_enemy", effects: rows)
       expect(ability.effects).to eq([
-        { "primitive" => "elemental", "element" => "fire", "power" => 20 },
+        { "primitive" => "elemental", "type" => "fire", "power" => 20 },
         { "primitive" => "status", "kind" => "poison", "chance" => 100, "duration" => 4 }
       ])
       expect(ability).to be_valid
@@ -52,7 +52,7 @@ RSpec.describe Ability do
       expect(ability).not_to be_valid
       expect(ability.errors[:effects]).to include("heal needs power")
 
-      ability.effects = [ { primitive: "elemental", element: "fire", power: "lots" } ]
+      ability.effects = [ { primitive: "elemental", type: "fire", power: "lots" } ]
       expect(ability).not_to be_valid
       expect(ability.errors[:effects].first).to match(/power must be an integer/)
 
@@ -73,7 +73,7 @@ RSpec.describe Ability do
     ability = create_ability(world, gesture: "flash")
     expect(ability.to_engine).to eq(
       "name" => "Fire", "kind" => "magic", "target" => "single_enemy", "cost" => { "mp" => 4 },
-      "effects" => [ { "primitive" => "elemental", "element" => "fire", "power" => 20 } ], "gesture" => "flash"
+      "effects" => [ { "primitive" => "elemental", "type" => "fire", "power" => 20 } ], "gesture" => "flash"
     )
   end
 

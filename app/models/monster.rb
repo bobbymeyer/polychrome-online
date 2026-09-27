@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-# Bestiary entry: a stat block, elemental affinities, an FF-style AI script
+# Bestiary entry: a stat block, a base type (Battle::Types) with any
+# affinities that break the type chart, an FF-style AI script
 # (ordered condition/action rules, §5), rewards and a drop table. The
 # engine reads the entry through #to_engine; enemies in a battle are
 # instances of it.
@@ -12,7 +13,8 @@ class Monster < ApplicationRecord
   validates :level, numericality: { only_integer: true, greater_than: 0 }
   validates :exp, :gil, :abp, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :stat_block_is_complete
-  validate :elements_are_affinities
+  validates :base_type, inclusion: { in: Battle::TYPES }
+  validate :affinities_are_affinities
   validate :status_immunities_are_statuses
   validate :ai_script_is_valid
   validate :drops_are_items
@@ -21,8 +23,8 @@ class Monster < ApplicationRecord
     super((values || {}).to_h.stringify_keys.transform_values { |v| JsonCasting.integer(v) }.compact)
   end
 
-  # Only non-neutral affinities are stored.
-  def elements=(values)
+  # Only the exceptions are stored: blank or "normal" means the chart decides.
+  def affinities=(values)
     super((values || {}).to_h.stringify_keys.transform_values(&:to_s).reject { |_, v| v.blank? || v == "normal" })
   end
 
@@ -78,7 +80,8 @@ class Monster < ApplicationRecord
       "name" => name,
       "count" => count,
       "stats" => stats,
-      "elements" => elements,
+      "types" => [ base_type ],
+      "affinities" => affinities,
       "status_immune" => status_immune,
       "abilities" => ability_slugs,
       "ai" => ai_script,
@@ -99,10 +102,10 @@ class Monster < ApplicationRecord
     errors.add(:stats, "must be whole numbers within caps (#{bad.keys.join(', ')})") if bad.any?
   end
 
-  def elements_are_affinities
-    elements.each do |element, affinity|
-      errors.add(:elements, "#{element} is not an element") unless Battle::ELEMENTS.include?(element)
-      errors.add(:elements, "#{affinity} is not an affinity") unless Battle::AFFINITIES.include?(affinity)
+  def affinities_are_affinities
+    affinities.each do |type, affinity|
+      errors.add(:affinities, "#{type} is not a type") unless Battle::TYPES.include?(type)
+      errors.add(:affinities, "#{affinity} is not an affinity") unless Battle::AFFINITIES.include?(affinity)
     end
   end
 

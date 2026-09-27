@@ -8,6 +8,7 @@ Rails.application.routes.draw do
 
   root "worlds#index"
 
+  resource :types, only: :show # the type chart
   resources :worlds, param: :slug, except: :destroy do
     # Each book is a resource namespace inside its world (docs/HANDOFF.md §7).
     namespace :bestiary do

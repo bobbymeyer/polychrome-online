@@ -187,6 +187,16 @@ export default class extends Controller {
         tl.call(() => this.setHp(e.target, e.hp), at)
         this.popup(tl, e.target, String(e.amount), e.status === "poison" ? "poison" : "damage", at)
         gesture(tl, this.sprite(e.target), e.status === "poison" ? "tint" : "shake", at)
+        // The type chart, said out loud.
+        if (e.effectiveness > 100) {
+          this.popup(tl, e.target, "SUPER EFFECTIVE!", "weak", at + 120)
+          gesture(tl, this.stageTarget, "flash", at + 120)
+          return 560
+        }
+        if (e.effectiveness < 100) {
+          this.popup(tl, e.target, "NOT VERY EFFECTIVE", "resist", at + 120)
+          return 520
+        }
         return 380
       case "heal":
         tl.call(() => this.setHp(e.target, e.hp), at)
@@ -198,7 +208,7 @@ export default class extends Controller {
         gesture(tl, this.stageTarget, "flash", at)
         return 260
       case "miss":
-        this.popup(tl, e.target || e.actor, { immune: "IMMUNE", nothing_to_cure: "NO EFFECT", nothing_to_steal: "NOTHING", steal_failed: "MISSED" }[e.reason] || "MISS", "miss", at)
+        this.popup(tl, e.target || e.actor, { immune: e.damage_type ? "NO EFFECT" : "IMMUNE", nothing_to_cure: "NO EFFECT", nothing_to_steal: "NOTHING", steal_failed: "MISSED" }[e.reason] || "MISS", "miss", at)
         return 380
       case "status_applied":
         tl.call(() => this.setStatus(e.target, e.status, true), at)
