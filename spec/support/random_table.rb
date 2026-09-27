@@ -60,6 +60,7 @@ class RandomTable
 
   def player_command(state, u)
     roll = @chooser.rand(100)
+    return cmd(u, "kind" => "custom", "text" => "tries something daring", "target" => state["units"].sample(random: @chooser)["id"]) if roll < 4
     return cmd(u, "kind" => "defend") if roll < 8
     return cmd(u, "kind" => "flee") if roll < 11 && state["escapable"]
     if roll < 22
@@ -102,7 +103,7 @@ class RandomTable
   def gm_action(state)
     target = state["units"].reject { |u| u["gone"] }.sample(random: @chooser)
     alive = state["units"].select { |u| u["hp"].positive? && !u["gone"] }
-    case @chooser.rand(8)
+    case @chooser.rand(9)
     when 0 then { "type" => "gm_override", "op" => "execute_round" }
     when 1 then { "type" => "gm_override", "op" => "set_hp", "unit" => target["id"],
                   "value" => @chooser.rand(-10..(target["stats"]["max_hp"] + 10)) }
@@ -117,6 +118,14 @@ class RandomTable
       side = @chooser.rand(3).zero? ? "party" : "enemy"
       spec = side == "party" ? BattleFixtures.party.sample(random: @chooser).merge(ai: [ { use: "attack" } ]) : BattleFixtures.goblins(1).first.except(:count)
       { "type" => "gm_override", "op" => "add_unit", "side" => side, "unit" => Battle::State.normalize(spec) }
+    when 7
+      pending = state["inputs"].find { |_, c| c["kind"] == "custom" && !c["ruling"] }
+      return { "type" => "gm_override", "op" => "execute_round" } unless pending
+
+      effects = [ [ { "primitive" => "physical", "power" => 150 } ], [ { "primitive" => "status", "kind" => "sleep", "chance" => 60 } ], [] ].sample(random: @chooser)
+      { "type" => "gm_override", "op" => "rule", "unit" => pending.first, "stat" => Stats::Check::STATS.sample(random: @chooser),
+        "difficulty" => Stats::Check::DIFFICULTIES.keys.sample(random: @chooser), "aim" => %w[single_enemy all_enemies].sample(random: @chooser),
+        "effects" => effects, "success" => "It works!", "failure" => "It doesn't." }
     when 6
       leaving = state["units"].select { |u| (u["side"] == "enemy" || u["guest"]) && !u["gone"] }.sample(random: @chooser)
       return { "type" => "gm_override", "op" => "execute_round" } unless leaving

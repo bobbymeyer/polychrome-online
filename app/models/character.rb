@@ -222,7 +222,8 @@ class Character < ApplicationRecord
       "mp" => current_mp,
       "abilities" => battle_abilities.map(&:slug),
       "image" => { "book" => "jobs", "slug" => job.slug },
-      "desperation" => job.desperation_ability&.slug
+      "desperation" => job.desperation_ability&.slug,
+      "level" => level
     }.compact
   end
 

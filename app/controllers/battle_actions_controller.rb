@@ -5,7 +5,10 @@
 class BattleActionsController < ApplicationController
   include BattleSeat
 
-  GM_FIELDS = %i[op unit value status turns result note monster side name].freeze
+  GM_FIELDS = %i[op unit value status turns result note monster side name stat difficulty aim effect strength type success failure].freeze
+
+  # A ruling's "what success does", from the GM's quick choices to engine effects.
+  RULING_STRENGTH = { "light" => [ 100, 15, 15 ], "medium" => [ 150, 25, 30 ], "heavy" => [ 220, 40, 50 ] }.freeze
 
   before_action :set_battle
 
@@ -25,6 +28,20 @@ class BattleActionsController < ApplicationController
   end
 
   private
+
+  # The GM's ruling on an idea, from quick choices: damage (typed or not),
+  # a status, healing, or just the story.
+  def ruling!(gm)
+    physical, magic, heal = RULING_STRENGTH.fetch(gm.delete("strength") || "medium", RULING_STRENGTH["medium"])
+    type = gm.delete("type").presence
+    status = gm.delete("status").presence
+    gm["effects"] = case gm.delete("effect")
+    when "damage" then [ type ? { "primitive" => "elemental", "type" => type, "power" => magic } : { "primitive" => "physical", "power" => physical } ]
+    when "status" then status ? [ { "primitive" => "status", "kind" => status, "chance" => 100, "duration" => 3 } ] : []
+    when "heal" then [ { "primitive" => "heal", "power" => heal } ]
+    else []
+    end
+  end
 
   # A unit joining mid-fight comes from the Bestiary: reinforcements as
   # they are, or a guest fighting beside the party (under a name of the
@@ -46,9 +63,10 @@ class BattleActionsController < ApplicationController
       gm["value"] = gm["value"].to_i if gm["value"]
       gm["turns"] = gm["turns"].to_i if gm["turns"]
       joining!(gm) if gm["op"] == "add_unit"
+      ruling!(gm) if gm["op"] == "rule"
       [ { "type" => "gm_override", "actor" => "gm" }.merge(gm), "gm" ]
     elsif params[:command] && seat_unit
-      command = params.expect(command: %i[kind ability item target timing]).to_h.compact_blank
+      command = params.expect(command: %i[kind ability item target timing text]).to_h.compact_blank
       [ { "type" => "command", "actor" => seat_unit["id"], "command" => command }, seat_unit["id"] ]
     end
   end

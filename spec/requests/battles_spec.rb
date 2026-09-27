@@ -71,6 +71,27 @@ RSpec.describe "Battle screen", type: :request do
     expect(battle.reload.state["inputs"][bartz]).to include("timing" => "perfect")
   end
 
+  it "lets a player try something off the menu, which the GM rules on and the dice decide" do
+    sit(bartz)
+    get battle_panel_path(battle)
+    expect(response.body).to include("Try something")
+    get battle_panel_path(battle, custom: 1)
+    expect(response.body).to include("What do you try?")
+    command!(kind: "custom", text: "Kick the brazier onto them", target: "goblin_a")
+    expect(battle.reload.state["inputs"][bartz]).to include("kind" => "custom", "text" => "Kick the brazier onto them")
+
+    sit("gm")
+    get battle_panel_path(battle)
+    expect(response.body).to include("Ideas to rule on", "Kick the brazier onto them")
+    battle.set_auto!(faris, true)
+    gm!(op: "rule", unit: bartz, stat: "agi", difficulty: "easy", effect: "damage", strength: "heavy", type: "fire", aim: "all_enemies",
+        success: "Coals everywhere!", failure: "It won't budge.")
+    events = battle.reload.battle_events.map(&:payload)
+    expect(events.map { |e| e["type"] }).to include("custom_action", "custom_roll")
+    get battle_path(battle)
+    expect(response.body).to include("tries: “Kick the brazier onto them”", "GM rules on Bartz&#39;s idea: Agi, easy.")
+  end
+
   describe "setting up" do
     let!(:world) { Seeds::BaseWorld.run }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road") }

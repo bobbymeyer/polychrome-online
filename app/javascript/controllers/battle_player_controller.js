@@ -162,6 +162,18 @@ export default class extends Controller {
       case "command_accepted":
         tl.call(() => this.setReady(e.actor, true), at)
         return 0
+      case "custom_action":
+        // A player's own idea, in their words.
+        this.caption(tl, `“${e.text}”`, at, "custom")
+        return Math.max(gesture(tl, this.sprite(e.actor), "bounce", at), 700)
+      case "custom_roll":
+        this.die(tl, e.actor, e, at)
+        this.banner(tl, e.success ? "It works!" : "No luck", at + 150, "gm")
+        if (e.line) this.caption(tl, e.line, at + 500, "narration")
+        return e.line ? 1400 : 900
+      case "custom_unruled":
+        this.caption(tl, "No ruling: attacks instead", at)
+        return 500
       case "desperation":
         return this.cutIn(tl, e, at)
       case "unit_joined":

@@ -18,7 +18,7 @@ RSpec.describe "Battle resolver properties" do
     seen = all_events.map { |e| e["type"] }.uniq
     expect(seen).to include(*%w[attack cast damage miss crit heal status_applied status_expired ko revive
                                   turn_start turn_end flee victory defeat gm_override buff_applied
-                                  buff_expired turn_skipped timeout desperation unit_joined unit_left])
+                                  buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end
@@ -75,11 +75,22 @@ RSpec.describe "Battle resolver properties" do
         case e["type"]
         when "crit", "steal", "status_applied" then expect(came_in).to be(true)
         when "miss" then expect(came_in).to be(false)
-        when "flee" then expect(came_in).to eq(e["success"])
+        when "flee", "custom_roll" then expect(came_in).to eq(e["success"])
         end
       end
     end
     expect(seen).to be_positive
+  end
+
+  it "never runs a round past an idea the GM hasn't ruled on, unless the timer or the GM forces it" do
+    each_step do |_, before, action, _, events|
+      next unless of_type(events, :round_start).any?
+      next if %w[timeout].include?(action["type"]) || action["op"] == "execute_round"
+
+      pending = before["inputs"].select { |_, c| c["kind"] == "custom" && !c["ruling"] }.keys
+      pending -= [ action["unit"] ] if action["op"] == "rule"
+      expect(pending).to be_empty
+    end
   end
 
   it "only uses up items by using them, one at a time, never below zero" do

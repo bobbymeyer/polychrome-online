@@ -596,6 +596,18 @@ getaways. The board shows each one as a die beside the unit (green when it
 came in, wine when it didn't), and the log says "(rolled 98, needed 90 or
 under)". The property specs check the dice are honest.
 
+**Trying something.** A `custom` command carries the player's idea in
+words ("kick the brazier onto them") and an optional target. The round
+waits for the GM to rule on it (`rule`: a stat, a difficulty, where it's
+aimed, what success does as effects from the closed primitive set, and a
+line for success and one for failure). From the GM's panel that's quick
+choices: just the story, damage (light to heavy, with a type), a status or
+healing. On the character's turn a d100 is rolled against the same odds as
+a check at the table (characters bring their level into battle for it).
+Then the line is said and the effects land. A timer or "run the round
+now" doesn't wait: an idea nobody ruled on is an Attack. An idea is never
+repeated as a default.
+
 **The timing meter.** An ability command can carry `"timing" => "perfect"`,
 from the meter a player stops when confirming a move (Mario RPG's timed
 hits). A Perfect raises every power in the move by a quarter and every

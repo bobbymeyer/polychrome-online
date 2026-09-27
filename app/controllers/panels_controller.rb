@@ -13,6 +13,7 @@ class PanelsController < ApplicationController
     @choosing = state["abilities"][params[:ability]] if params[:ability]
     @choosing = state.fetch("items", {})[params[:item]]&.merge("kind" => "item") if params[:item]
     @item_menu = params[:items].present?
+    @trying = params[:custom].present?
     render layout: false
   end
 end

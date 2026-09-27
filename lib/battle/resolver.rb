@@ -21,7 +21,7 @@ module Battle
   # usable (never an item: nobody spends the party's items by default),
   # otherwise Attack on a random target.
   class Resolver
-    GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle add_unit dismiss].freeze
+    GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle add_unit dismiss rule].freeze
     END_RESULTS = %w[victory defeat fled].freeze
 
     def self.apply(state, action)
@@ -65,6 +65,16 @@ module Battle
       awaiting - state["inputs"].keys
     end
 
+    # Custom actions the GM hasn't ruled on yet.
+    def unruled
+      state["inputs"].select { |_, cmd| cmd["kind"] == "custom" && !cmd["ruling"] }.keys
+    end
+
+    # Everyone has chosen and the GM has ruled on every idea: run the round.
+    def ready?
+      missing_inputs.empty? && unruled.empty?
+    end
+
     def command(action)
       unit = ctx.unit(action["actor"])
       raise InvalidAction, "#{unit['id']} is not a party member" unless unit["side"] == "party"
@@ -73,7 +83,7 @@ module Battle
       cmd = validate_command(unit, action.fetch("command") { raise InvalidAction, "command missing" })
       state["inputs"][unit["id"]] = cmd
       ctx.emit(:command_accepted, actor: unit["id"])
-      run_round if missing_inputs.empty?
+      run_round if ready?
     end
 
     def validate_command(unit, cmd)
@@ -87,6 +97,7 @@ module Battle
         return { "kind" => "flee" }
       end
       return validate_item(unit, cmd) if kind == "item"
+      return validate_custom(cmd) if kind == "custom"
 
       ability = ctx.ability(cmd.fetch("ability", "attack"))
       raise InvalidAction, "#{unit['id']} does not know #{ability['id']}" unless unit["abilities"].include?(ability["id"])
@@ -98,6 +109,18 @@ module Battle
       command = { "kind" => "ability", "ability" => ability["id"], "target" => target }
       # The timing meter: stopped on the mark, the move lands harder.
       cmd["timing"] == "perfect" ? command.merge("timing" => "perfect") : command
+    end
+
+    # "Try something": the player's idea in words, for the GM to rule on.
+    CUSTOM_TEXT_LIMIT = 200
+
+    def validate_custom(cmd)
+      text = cmd["text"].to_s.strip
+      raise InvalidAction, "say what you try" if text.empty?
+      raise InvalidAction, "keep it under #{CUSTOM_TEXT_LIMIT} characters" if text.length > CUSTOM_TEXT_LIMIT
+
+      target = ctx.find_unit(cmd["target"].to_s) ? cmd["target"].to_s : nil
+      { "kind" => "custom", "text" => text, "target" => target }
     end
 
     def validate_item(unit, cmd)
@@ -130,6 +153,7 @@ module Battle
 
     def still_valid?(unit, cmd)
       case cmd["kind"]
+      when "custom" then false # an idea is for its moment
       when "defend" then true
       when "flee" then state["escapable"]
       when "item" then false
@@ -190,7 +214,7 @@ module Battle
       else
         gm_event(action, unit: units.first["id"], command: state["inputs"][units.first["id"]])
       end
-      run_round if missing_inputs.empty?
+      run_round if ready?
     end
 
     def gm_execute_round(action)
@@ -310,6 +334,62 @@ module Battle
       ctx.check_end
     end
 
+    # The GM rules on a player's idea ("Try something"): which stat, how hard,
+    # what success does (effects from the closed primitive set, aimed like
+    # an ability), and what's said either way. It plays out on the unit's
+    # turn (#try_something).
+    #   { op: "rule", unit:, stat:, difficulty:, aim: "single_enemy", effects: [...],
+    #     success: "The brazier tips over!", failure: "It's heavier than it looks." }
+    RULING_AIMS = %w[single_enemy all_enemies single_ally all_allies self].freeze
+
+    def gm_rule(action)
+      unit = ctx.unit(action["unit"])
+      cmd = state["inputs"][unit["id"]]
+      raise InvalidAction, "#{unit['name']} isn't trying anything" unless cmd && cmd["kind"] == "custom"
+      raise InvalidAction, "unknown stat #{action['stat'].inspect}" unless Stats::Check::STATS.include?(action["stat"])
+      raise InvalidAction, "unknown difficulty #{action['difficulty'].inspect}" unless Stats::Check::DIFFICULTIES.key?(action["difficulty"])
+
+      aim = action.fetch("aim", "single_enemy")
+      raise InvalidAction, "unknown aim #{aim.inspect}" unless RULING_AIMS.include?(aim)
+
+      effects = Array(action["effects"])
+      begin
+        State.validate_ability!({ "id" => "ruling", "kind" => "skill", "target" => aim, "effects" => effects }) if effects.any?
+      rescue ArgumentError => e
+        raise InvalidAction, e.message
+      end
+
+      ruling = { "stat" => action["stat"], "difficulty" => action["difficulty"], "aim" => aim, "effects" => effects,
+                 "success" => action["success"].to_s.strip, "failure" => action["failure"].to_s.strip }
+      cmd["ruling"] = ruling
+      gm_event(action, unit: unit["id"], stat: ruling["stat"], difficulty: ruling["difficulty"])
+      run_round if ready?
+    end
+
+    # A player's idea on their turn: the d100 against their stat (the same
+    # odds as a check at the table), then what the GM said success does. An
+    # idea nobody ruled on (the timer ran out) is an Attack instead.
+    def try_something(unit, cmd)
+      ctx.emit(:custom_action, actor: unit["id"], text: cmd["text"], target: cmd["target"])
+      ruling = cmd["ruling"]
+      unless ruling
+        ctx.emit(:custom_unruled, actor: unit["id"])
+        return use_ability(unit, ctx.ability("attack"), cmd["target"])
+      end
+
+      needed = Stats::Check.chance(stat_value: ctx.stat(unit, ruling["stat"]), stat: ruling["stat"],
+                                   level: unit.fetch("level", 5), difficulty: ruling["difficulty"])
+      success, roll = ctx.rng.d100(needed)
+      line = success ? ruling["success"] : ruling["failure"]
+      ctx.emit(:custom_roll, actor: unit["id"], success: success, roll: roll, needed: needed,
+                             stat: ruling["stat"], difficulty: ruling["difficulty"], line: line)
+      return unless success && ruling["effects"].any?
+
+      idea = { "id" => "custom", "name" => cmd["text"], "kind" => "skill", "target" => ruling["aim"], "effects" => ruling["effects"] }
+      targets = resolve_targets(unit, idea, cmd["target"])
+      apply_effects(unit, idea, targets) if targets.any?
+    end
+
     # --- round execution ---------------------------------------------------
 
     def run_round
@@ -368,6 +448,7 @@ module Battle
       when "defend" then ctx.emit(:defend, actor: unit["id"])
       when "flee" then Effects.attempt_flee(ctx, unit)
       when "item" then use_item(unit, ctx.item(cmd["item"]), cmd["target"])
+      when "custom" then try_something(unit, cmd)
       else
         ability = desperate(unit, ctx.ability(cmd["ability"]))
         ability = perfect(ability) if cmd["timing"] == "perfect"

@@ -40,7 +40,7 @@ module Battle
   # What a cleanse with no kind cures: everything but the good ones.
   HARMFUL_STATUSES = (STATUSES - %w[haste]).freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
-  COMMAND_KINDS = %w[ability item defend flee].freeze
+  COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
 
   # Statuses that stop a unit from taking its turn (and from being asked
@@ -155,6 +155,7 @@ module Battle
         "defending" => false,
         "last_command" => nil
       }.merge(spec["desperation"] ? { "desperation" => spec["desperation"].to_s } : {})
+       .merge(spec["level"] ? { "level" => Integer(spec["level"]) } : {})
     end
 
     # { id: "goblin", name: "Goblin", count: 3 } -> Goblin A, Goblin B, Goblin C

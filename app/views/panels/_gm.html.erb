@@ -5,6 +5,40 @@
   <%= render "panels/countdown" %>
 </div>
 
+<% ideas = state["inputs"].select { |_, c| c["kind"] == "custom" && !c["ruling"] } %>
+<% if ideas.any? %>
+  <section class="rulings">
+    <h3>Ideas to rule on <span class="muted">(the round waits for you)</span></h3>
+    <% ideas.each do |id, idea| %>
+      <%= form_with url: battle_actions_path(@battle), scope: :gm, class: "book-form ruling" do |f| %>
+        <%= f.hidden_field :op, value: "rule" %>
+        <%= f.hidden_field :unit, value: id %>
+        <p class="ruling__idea"><strong><%= unit_name(state, id) %></strong> tries: “<%= idea["text"] %>”<%= " at #{unit_name(state, idea['target'])}" if idea["target"] %></p>
+        <div class="field-row">
+          <div class="field"><%= f.label :stat, "Roll", for: "rule_stat_#{id}" %><%= f.select :stat, Stats::Check::STATS.map { |st| [ stat_label(st), st ] }, {}, id: "rule_stat_#{id}" %></div>
+          <div class="field"><%= f.label :difficulty, "How hard", for: "rule_difficulty_#{id}" %><%= f.select :difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, { selected: "normal" }, id: "rule_difficulty_#{id}" %></div>
+          <div class="field">
+            <%= f.label :effect, "If it works", for: "rule_effect_#{id}" %>
+            <%= f.select :effect, [ [ "Just the story", "none" ], [ "Damage", "damage" ], [ "A status", "status" ], [ "Healing", "heal" ] ], { selected: "damage" }, id: "rule_effect_#{id}" %>
+          </div>
+          <div class="field"><%= f.label :strength, "How much", for: "rule_strength_#{id}" %><%= f.select :strength, %w[light medium heavy].map { |x| [ x.capitalize, x ] }, { selected: "medium" }, id: "rule_strength_#{id}" %></div>
+          <div class="field"><%= f.label :type, "Type", for: "rule_type_#{id}" %><%= f.select :type, Battle::TYPES.map { |t| [ term(t), t ] }, { include_blank: "None" }, id: "rule_type_#{id}" %></div>
+          <div class="field"><%= f.label :status, "Status", for: "rule_status_#{id}" %><%= f.select :status, Battle::STATUSES.map { |st| [ st.humanize, st ] }, { include_blank: true }, id: "rule_status_#{id}" %></div>
+          <div class="field">
+            <%= f.label :aim, "On", for: "rule_aim_#{id}" %>
+            <%= f.select :aim, [ [ idea["target"] ? "Their target" : "One enemy", "single_enemy" ], [ "Every enemy", "all_enemies" ], [ "One ally", "single_ally" ], [ "The whole party", "all_allies" ], [ "Themselves", "self" ] ], {}, id: "rule_aim_#{id}" %>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><%= f.label :success, "If it works, the table hears", for: "rule_success_#{id}" %><%= f.text_field :success, id: "rule_success_#{id}", placeholder: "The brazier tips, and coals go everywhere!" %></div>
+          <div class="field"><%= f.label :failure, "If it doesn't", for: "rule_failure_#{id}" %><%= f.text_field :failure, id: "rule_failure_#{id}", placeholder: "It's heavier than it looks." %></div>
+        </div>
+        <%= f.submit "Rule", class: "button play" %>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>
+
 <section>
   <h3>Waiting on</h3>
   <% if awaiting.empty? %>

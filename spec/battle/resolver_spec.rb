@@ -507,4 +507,42 @@ RSpec.describe Battle::Resolver do
       expect(of_type(events, :attack).first).not_to have_key("perfect")
     end
   end
+
+  describe "trying something" do
+    let(:party) { [ BattleFixtures.party.first.merge(level: 5) ] }
+    let(:state) { build_battle(seed: 9, party: party, enemies: BattleFixtures.goblins(2)) }
+    let(:idea) { { type: "command", actor: "bartz", command: { kind: "custom", text: "Kick the brazier onto them", target: "goblin_a" } } }
+
+    it "waits for the GM's ruling, then rolls for it on the unit's turn" do
+      waiting, events = apply(state, idea)
+      expect(waiting["inputs"]["bartz"]).to include("kind" => "custom", "text" => "Kick the brazier onto them")
+      expect(types(events)).not_to include("round_start")
+
+      ruling = gm("rule", unit: "bartz", stat: "agi", difficulty: "easy", aim: "all_enemies",
+                          effects: [ { primitive: "elemental", type: "fire", power: 30 } ], success: "Burning coals everywhere!", failure: "It won't budge.")
+      _, events = apply(waiting, ruling)
+      roll = of_type(events, :custom_roll).sole
+      expect(roll).to include("actor" => "bartz", "stat" => "agi", "difficulty" => "easy")
+      expect(roll["roll"] <= roll["needed"]).to eq(roll["success"])
+      expect(roll["line"]).to eq(roll["success"] ? "Burning coals everywhere!" : "It won't budge.")
+      fire = of_type(events, :damage).select { |e| e["damage_type"] == "fire" }
+      expect(fire.map { |e| e["target"] }.sort).to eq(roll["success"] ? %w[goblin_a goblin_b] : [])
+    end
+
+    it "is an Attack when time runs out before a ruling, and never repeats" do
+      waiting, = apply(state, idea)
+      after, events = apply(waiting, { type: "timeout" })
+      expect(types(events)).to include("custom_action", "custom_unruled", "attack")
+      _, events = apply(after, { type: "timeout" })
+      expect(types(events)).not_to include("custom_action")
+    end
+
+    it "only takes a ruling on a pending idea, from the closed vocabulary" do
+      expect { apply(state, gm("rule", unit: "bartz", stat: "agi", difficulty: "easy")) }.to raise_error(Battle::InvalidAction, /isn't trying/)
+      waiting, = apply(state, idea)
+      expect { apply(waiting, gm("rule", unit: "bartz", stat: "luck", difficulty: "easy")) }.to raise_error(Battle::InvalidAction, /stat/)
+      expect { apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "easy", effects: [ { primitive: "nuke" } ])) }
+        .to raise_error(Battle::InvalidAction, /unknown primitive/)
+    end
+  end
 end

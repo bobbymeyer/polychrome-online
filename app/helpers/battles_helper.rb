@@ -114,6 +114,9 @@ module BattlesHelper
     when "attack" then "#{name.('actor')} attacks."
     when "unit_joined" then event["guest"] ? "#{event['name']} joins the party!" : "#{event['name']} joins the fight!"
     when "unit_left" then "#{event['name']} leaves the field."
+    when "custom_action" then "#{name.('actor')} tries: “#{event['text']}”#{" at #{unit_name(state, event['target'])}" if event['target']}"
+    when "custom_roll" then "#{event['success'] ? 'It works!' : 'No luck.'} #{event['line'].presence}".strip + dice_note(event).to_s
+    when "custom_unruled" then "No ruling in time: #{name.('actor')} attacks instead."
     when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
     when "cast"
       verb = state["abilities"].dig(event["ability"], "kind") == "magic" ? "casts" : "uses"
@@ -245,6 +248,7 @@ module BattlesHelper
     when "end_battle" then "ends the battle: #{event['result']}."
     when "add_unit" then event["side"] == "party" ? "brings in #{who} to fight beside the party." : "brings in #{who}."
     when "dismiss" then "sends #{who} off."
+    when "rule" then "rules on #{who}'s idea: #{stat_label(event['stat'])}, #{event['difficulty']}."
     else event["op"].to_s.humanize
     end
     [ "GM #{text}", (%("#{event['note']}") if event["note"].present?) ].compact.join(" ")
