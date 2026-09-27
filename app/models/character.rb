@@ -10,6 +10,7 @@
 class Character < ApplicationRecord
   include Portrayed
   include ArtSubject
+  include Colourable
 
   SLOTS = %w[weapon shield head body accessory].freeze
 

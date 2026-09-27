@@ -19,7 +19,7 @@ module BattlesHelper
     if entry&.image&.attached?
       image_tag(url_for(entry.image), alt: "", class: "sprite__image", style: style, draggable: false)
     else
-      tag.span(unit["name"].to_s.first, class: "sprite__plate", style: [ plate_style(unit.dig("image", "slug") || unit["name"]), style ].compact.join(" "))
+      tag.span(unit["name"].to_s.first, class: "sprite__plate", style: [ plate_style(unit.dig("image", "slug") || unit["name"], entry.try(:colour)), style ].compact.join(" "))
     end
   end
 

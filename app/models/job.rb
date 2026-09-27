@@ -5,6 +5,7 @@
 class Job < ApplicationRecord
   include BookEntry
   include Artwork
+  include Colourable
 
   has_many :job_levels, -> { order(:level) }, dependent: :destroy, inverse_of: :job
   has_many :abilities, through: :job_levels

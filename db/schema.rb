@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_201000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_201100) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -198,6 +198,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_201000) do
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
     t.integer "user_id"
+    t.string "colour"
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
     t.index ["user_id"], name: "index_characters_on_user_id"
@@ -327,6 +328,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_201000) do
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
     t.json "image_recipe"
+    t.string "colour"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -435,6 +437,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_201000) do
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
     t.json "image_recipe"
+    t.string "colour"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end
@@ -450,6 +453,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_201000) do
     t.string "location_key"
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
+    t.string "colour"
     t.index ["campaign_id"], name: "index_npcs_on_campaign_id"
     t.index ["location_id"], name: "index_npcs_on_location_id"
   end

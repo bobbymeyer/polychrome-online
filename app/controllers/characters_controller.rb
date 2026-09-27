@@ -34,7 +34,7 @@ class CharactersController < ApplicationController
   def edit; end
 
   def update
-    if @character.update(params.expect(character: can_gm?(@campaign) ? %i[name player_name user_id] : %i[name player_name]))
+    if @character.update(params.expect(character: can_gm?(@campaign) ? %i[name player_name user_id colour] : %i[name player_name colour]))
       @character.update_portraits!(**portrait_params)
       redirect_to character_path(@character), notice: "#{@character.name} was updated."
     else

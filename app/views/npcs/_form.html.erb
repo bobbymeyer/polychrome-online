@@ -3,6 +3,7 @@
   <div class="field-row">
     <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
     <div class="field"><%= f.label :title %><%= f.text_field :title, placeholder: "Innkeeper, Captain of the Guard…" %></div>
+    <div class="field"><%= f.label :colour, "Colour (until they have a portrait)" %><%= f.select :colour, colour_options(f.object.colour) %></div>
   </div>
   <div class="field"><%= f.label :description, "Notes (GM only)" %><%= f.text_area :description, rows: 3 %></div>
   <%= render "portraits/fields", owner: npc %>

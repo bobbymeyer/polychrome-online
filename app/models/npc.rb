@@ -4,6 +4,7 @@
 class Npc < ApplicationRecord
   include Portrayed
   include ArtSubject
+  include Colourable
 
   belongs_to :campaign
   belongs_to :location, optional: true

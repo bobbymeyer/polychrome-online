@@ -4,6 +4,12 @@
   <div class="art-fields">
     <%= entry_portrait(f.object, size: :small) %>
     <div>
+      <% if f.object.respond_to?(:colour) %>
+        <div class="field">
+          <%= f.label :colour, "Colour (until it has art)" %>
+          <%= f.select :colour, colour_options(f.object.colour) %>
+        </div>
+      <% end %>
       <div class="field">
         <%= f.label :image %>
         <%= f.file_field :image, accept: "image/*" %>

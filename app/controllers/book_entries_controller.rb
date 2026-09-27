@@ -95,6 +95,7 @@ class BookEntriesController < ApplicationController
 
   # Art fields every book entry shares (§3.3, §8).
   def art_params
-    [ :image, { variant: %i[hue scale flip] } ]
+    colour = entry_class.column_names.include?("colour") ? [ :colour ] : []
+    [ :image, *colour, { variant: %i[hue scale flip] } ]
   end
 end
