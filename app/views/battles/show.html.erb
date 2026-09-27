@@ -1,4 +1,5 @@
 <% content_for :title, @battle.name %>
+<% content_for :head, music_meta(@battle.campaign, @battle.boss? ? "boss" : "battle", fixed: true) %>
 <% content_for :head do %>
   <%# The battle screen is one long-lived page (§9.9): never show a stale cached snapshot. %>
   <meta name="turbo-cache-control" content="no-cache">

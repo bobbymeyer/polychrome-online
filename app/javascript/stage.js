@@ -3,7 +3,7 @@
 // palette sweep across the screen, the page follows, and they sweep away on
 // the other side. Where you came from is remembered, so the battle can send
 // you back.
-import { play } from "sound"
+import { play, holdMusic } from "sound"
 
 const RETURN_KEY = "polychrome.returnTo"
 const ARRIVE_KEY = "polychrome.arriving"
@@ -22,6 +22,7 @@ export function toBattle(url, { boss = false } = {}) {
   store((s) => s.setItem(RETURN_KEY, JSON.stringify({ url: window.location.href, title: document.title.replace(/ · Polychrome$/, "") })))
   // Nobody is pulled away mid-sentence: a scene's lines finish first.
   whenDialogueIdle(() => {
+    holdMusic()
     play(boss ? "boss" : "encounter")
     if (reducedMotion()) return window.Turbo.visit(url)
 

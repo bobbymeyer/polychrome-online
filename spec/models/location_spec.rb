@@ -187,6 +187,7 @@ RSpec.describe Location do
         when "treasure"
           dungeon.take_treasure!(key)
           expect(campaign.quantity_of(world.items.find_by!(slug: "potion"))).to eq(1)
+          expect(campaign.messages.last.cue).to eq("treasure")
           expect { dungeon.take_treasure!(key) }.to raise_error(ArgumentError)
         end
       end
@@ -245,6 +246,8 @@ RSpec.describe Location do
       expect(dungeon.unlocked?(lock)).to be(true)
       expect(dungeon.keys_in_hand).to be_empty
       expect(campaign.messages.pluck(:body)).to include(a_string_including("opens #{lock["name"]}. The way is clear."))
+      # Each has its jingle.
+      expect(campaign.messages.where.not(cue: nil).pluck(:cue).uniq).to include("key", "door")
     end
 
     it "shows players only the rooms they've been in and the exits out of them" do

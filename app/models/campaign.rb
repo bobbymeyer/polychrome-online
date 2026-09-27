@@ -20,6 +20,13 @@ class Campaign < ApplicationRecord
   # Travel encounters use their own seeded RNG, stored here like a battle's.
   before_create { self.rng = Random.new_seed % 2**32 if rng.zero? }
 
+  # The GM's choice of music: a scene's track or silence. Nil follows the
+  # scene, so a town sounds like a town and a dungeon like a dungeon.
+  MUSIC_CHOICES = (World::MUSIC + %w[silence]).freeze
+  normalizes :music, with: ->(value) { value.presence }
+  validates :music, inclusion: { in: MUSIC_CHOICES }, allow_nil: true
+  after_update_commit :broadcast_music, if: :saved_change_to_music?
+
   validates :name, presence: true
   validates :gil, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
@@ -245,6 +252,21 @@ class Campaign < ApplicationRecord
   end
 
   # The dungeon the party is inside right now, if any.
+  # The kind of scene the party is in, for its music: a dungeon being
+  # explored, a town, or the open road.
+  def scene
+    return "dungeon" if dungeon_in_progress
+
+    current_node&.location&.town? ? "town" : "field"
+  end
+
+  # Every game page of the campaign changes track with the GM (stage.js);
+  # a battle keeps its own.
+  def broadcast_music
+    Turbo::StreamsChannel.broadcast_action_to(self, :stage, action: :music, target: "stage",
+                                              attributes: { follow: music.nil?, url: world.music_path(music).to_s })
+  end
+
   def dungeon_in_progress
     location = current_node&.location
     location if location&.dungeon? && location.progress["current"]

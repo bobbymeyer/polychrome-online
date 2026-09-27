@@ -1,4 +1,5 @@
 <% content_for :title, @campaign.name %>
+<% content_for :head, music_meta(@campaign, @campaign.scene) %>
 <%= render "shared/stage_stream", campaign: @campaign %>
 <div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Campaign</div>
 <div class="book-header">

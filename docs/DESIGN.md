@@ -57,6 +57,29 @@ deliberate divergence from much of what follows, and where the two disagree the 
   in, results land one after another. It is quick (about 120ms) with a little overshoot. All of it
   stops for `prefers-reduced-motion`.
 
+## Sound
+
+Sound marks the moments, not every click. The jingles are synthesised in the browser
+(`sound.js`) from square, triangle and noise voices, in the spirit of the consoles the game
+remembers. The melodies are our own:
+
+- **Encounter:** a climbing figure over a pulsing bass, then a stab. **Boss:** slow steps down,
+  a tritone. **Boss entrance:** one deep hit as the name lands, then silence.
+- **Victory:** a leap up, a turn and a held top note. **Defeat:** down and down. **Level up:**
+  a run up two octaves and a sparkle.
+- **Key found:** a small bell. **Door opened:** a thud and a rising fifth. **Treasure:** four
+  quick notes.
+- **Confirm:** a soft blip on game menus and play buttons, and nowhere else.
+
+Music is the world's own: a track for each kind of scene (field, town, dungeon, battle,
+boss), uploaded on the world's edit page. Each page plays its scene's track, crossfading as
+you move, and a scene without a track is quiet. At the table the GM can switch everyone to
+another scene's track, or to silence; battles keep their own. A boss's entrance stops the
+music for its moment, then the boss track starts.
+
+Nothing sounds until the viewer has clicked or pressed a key (browsers insist), and "Sound
+on/off" in the top bar mutes this device.
+
 ## Paper and type
 
 - White paper with black type. There is no dark theme, and no rounded corners. (The stage adds hard

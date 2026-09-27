@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_201200) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_230000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -168,6 +168,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_201200) do
     t.json "pending_encounter"
     t.integer "gm_id"
     t.json "known_affinities", default: {}, null: false
+    t.string "music"
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["world_id"], name: "index_campaigns_on_world_id"
@@ -409,6 +410,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_201200) do
     t.text "body", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "cue"
     t.index ["battle_id"], name: "index_messages_on_battle_id"
     t.index ["campaign_id", "created_at"], name: "index_messages_on_campaign_id_and_created_at"
     t.index ["campaign_id"], name: "index_messages_on_campaign_id"

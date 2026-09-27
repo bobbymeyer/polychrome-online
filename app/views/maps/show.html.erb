@@ -1,4 +1,5 @@
 <% content_for :title, "#{@campaign.name} · Map" %>
+<% content_for :head, music_meta(@campaign, @campaign.scene) %>
 <% content_for :head do %><meta name="turbo-cache-control" content="no-cache"><% end %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / Map</div>
 <div class="book-header">

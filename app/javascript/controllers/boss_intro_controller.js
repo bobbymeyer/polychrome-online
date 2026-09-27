@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { animate } from "animejs"
-import { play } from "sound"
+import { play, holdMusic, releaseMusic } from "sound"
 
 // A boss's entrance (docs/DESIGN.md, "The stage"): the room goes quiet, its
 // name is slammed across the stage, and it has the first word. Plays once per
@@ -16,16 +16,18 @@ export default class extends Controller {
   connect() {
     if (!this.freshValue || this.seen) return
     this.seen = true
+    // A moment of silence: the scene's music stops for the entrance.
+    holdMusic()
     // Let the wipe clear the screen first.
     this.timer = setTimeout(() => this.enter(), 700)
   }
 
   disconnect() {
     clearTimeout(this.timer)
+    releaseMusic()
   }
 
   enter() {
-    window.dispatchEvent(new CustomEvent("stage:boss-intro"))
     play("boss-intro")
     const card = this.cardTarget
     this.element.hidden = false
@@ -44,6 +46,7 @@ export default class extends Controller {
 
   leave() {
     this.element.hidden = true
+    releaseMusic()
     if (this.lineValue) {
       window.dispatchEvent(new CustomEvent("dialogue:say", {
         detail: { speaker: this.nameValue, text: this.lineValue, plate: this.plateValue, expression: "angry" }

@@ -12,6 +12,26 @@
     </div>
   </div>
   <div class="field"><%= f.label :description %><%= f.text_area :description, rows: 4 %></div>
+  <% if world.persisted? %>
+    <fieldset class="field music-fields">
+      <legend>Music</legend>
+      <p class="hint">A track for each kind of scene, looped while the party is there. Every page at the table plays its scene's track; the GM can switch it from the table. A scene without a track is quiet. Audio files up to <%= World::MUSIC_MAX_BYTES / 1.megabyte %> MB, and only music you have the rights to.</p>
+      <% World::MUSIC.each do |scene| %>
+        <% track = world.music_track(scene) %>
+        <div class="field">
+          <%= f.label :"music_#{scene}", scene.capitalize %>
+          <% if track&.persisted? %>
+            <p class="music-fields__current">
+              <audio controls preload="none" src="<%= rails_blob_path(track) %>"></audio>
+              <span class="muted"><%= track.filename %></span>
+              <label class="inline"><%= check_box_tag "world[remove_music][]", scene, false, id: "remove_music_#{scene}" %> Remove</label>
+            </p>
+          <% end %>
+          <%= f.file_field :"music_#{scene}", accept: "audio/*" %>
+        </div>
+      <% end %>
+    </fieldset>
+  <% end %>
   <% unless world.persisted? %>
     <% sources = World.order(:name) %>
     <div class="field">

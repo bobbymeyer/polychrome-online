@@ -516,6 +516,15 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 }
 .boss-line::before { content: "\201C"; } .boss-line::after { content: "\201D"; }
 
+/* Sound: the GM's music switch at the table, and the world's tracks. */
+.music-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
+.music-switch label { font-style: italic; font-weight: 900; }
+.music-switch select { width: auto; }
+.music-fields { border: 0; border-top: 3px solid var(--ink); padding: 8px 0 0; margin: 16px 0; }
+.music-fields legend { padding: 2px calc(12px + var(--slant)) 2px 10px; background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 900; clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
+.music-fields__current { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0; }
+.music-fields__current audio { height: 32px; max-width: 100%; }
+
 /* ---------------------------------------------------------------------------
  * Everything that moves holds still for people who asked for stillness.
  * ------------------------------------------------------------------------- */

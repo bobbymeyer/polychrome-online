@@ -145,6 +145,24 @@ other browsers and have each player take a seat.
   and derived stats in. When the battle ends, `BattleRecord#settle!` writes
   results back in the same transaction as the ending action (see below).
 
+## Sound
+
+- **Jingles** are synthesised in `app/javascript/sound.js` (WebAudio), so
+  there are no sound files in the repo. `play(name)` plays one: the battle
+  player plays victory and defeat, `stage.js` the encounter and boss calls,
+  and a log line with a `cue` (`key`, `door`, `treasure`, set where
+  `Location` writes the line) plays its jingle as it arrives live.
+- **Music** comes from the world's uploaded tracks (`World::MUSIC`, one
+  Active Storage attachment per scene, audio only, 25 MB each; removed
+  tracks are purged in the background). Every game page names its track in
+  `<meta name="polychrome-music">` (`ApplicationHelper#music_meta`), and one
+  `Audio` element, which lives as long as the tab does, crossfades between
+  tracks across Turbo visits.
+- **The GM's choice** (`campaigns.music`: a scene or `silence`, nil to
+  follow the scene) is set from the table and broadcast as a `music` stream
+  action on the campaign's `:stage` stream. Battle pages ignore it.
+- Muting is per device (`localStorage`).
+
 ## Characters and jobs
 
 A world has campaigns (§4): a party, a shared bag, gil, flags, a map and its

@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { createTimeline } from "animejs"
 import { gesture } from "motion/gestures"
+import { play } from "sound"
 
 // The event player (docs/HANDOFF.md §6).
 //
@@ -241,6 +242,7 @@ export default class extends Controller {
         return e.defaulted.length ? 700 : 0
       case "victory":
         this.banner(tl, "Victory!", at, "victory")
+        tl.call(() => play("victory"), at)
         // The party's victory hop, as in the games.
         this.party().forEach((el, i) => { gesture(tl, el, "bounce", at + 200 + i * 80); gesture(tl, el, "bounce", at + 700 + i * 80) })
         // A boss gets its epitaph: the victory says what it beat.
@@ -251,6 +253,7 @@ export default class extends Controller {
         return 1500
       case "defeat":
         this.banner(tl, "Defeat", at, "defeat")
+        tl.call(() => play("defeat"), at)
         return 1300
       case "gm_override":
         // GM power is never hidden (§12): every override is in the log, and

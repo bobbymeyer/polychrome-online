@@ -308,7 +308,7 @@ class Location < ApplicationRecord
     transaction do
       if lock
         update!(progress: progress.merge("unlocked" => progress.fetch("unlocked", []) | [ lock["id"] ]))
-        campaign.messages.create!(kind: "system", body: "#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.")
+        campaign.messages.create!(kind: "system", cue: "door", body: "#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.")
       end
       update!(progress: progress.merge("current" => key, "visited" => (visited | [ key ])))
       campaign.messages.create!(kind: "system", body: "#{name}: the party enters #{target['name']}.")
@@ -328,7 +328,7 @@ class Location < ApplicationRecord
       campaign.add_item!(item) if item
       campaign.increment!(:gil, decision["gil"].to_i) if decision["gil"]
       resolve!(key)
-      campaign.messages.create!(kind: "system", body: "Found #{describe_treasure(decision)} in #{target['name']}.")
+      campaign.messages.create!(kind: "system", cue: "treasure", body: "Found #{describe_treasure(decision)} in #{target['name']}.")
     end
   end
 
@@ -368,7 +368,7 @@ class Location < ApplicationRecord
     when "key"
       update!(progress: progress.merge("keys" => keys_found | [ decision["lock"] ]))
       lock = view.fetch("paths", []).find { |p| p.dig("lock", "id") == decision["lock"] }&.dig("lock")
-      campaign.messages.create!(kind: "system", body: "Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}")
+      campaign.messages.create!(kind: "system", cue: "key", body: "Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}")
       resolve!(target["key"])
     end
   end

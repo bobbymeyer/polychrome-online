@@ -21,6 +21,18 @@ module ApplicationHelper
   # A lettered plate's colour: the one chosen for it, or one picked from its
   # name, so a Goblin is the same colour in the Bestiary, in battle and at
   # the table.
+  # The music a page asks for (sound.js): its own scene's track, unless the
+  # GM has chosen one for the table. A battle is fixed: it keeps its music
+  # whatever the GM picks. An empty track is silence.
+  def music_meta(campaign, scene, fixed: false)
+    return unless campaign
+
+    world = campaign.world
+    chosen = fixed ? scene : (campaign.music || scene)
+    tag.meta(name: "polychrome-music", content: world.music_path(chosen).to_s,
+             data: { default: world.music_path(scene).to_s, fixed: fixed })
+  end
+
   def plate_style(key, colour = nil)
     hex, ink = Palette.pick(key, colour)
     "--plate: #{hex}; --plate-ink: #{ink};"

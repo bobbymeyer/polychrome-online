@@ -10,7 +10,8 @@
 <% end %>
 
 <% if settlement["result"] == "victory" %>
-  <ul class="refs">
+  <% levelled = settlement["members"].any? { |m| m["level"] || m["learned"].present? } %>
+  <ul class="refs" <%= tag.attributes(data: { controller: "jingle", jingle_name_value: "level_up", jingle_once_value: "levelled-#{@battle.id}" }) if levelled %>>
     <% if settlement["gil"].to_i.positive? %><li><%= settlement["gil"] %> gil for the party</li><% end %>
     <% if settlement["drops"].present? %><li>Found <%= settlement["drops"].to_sentence %></li><% end %>
     <% settlement["members"].each do |member| %>

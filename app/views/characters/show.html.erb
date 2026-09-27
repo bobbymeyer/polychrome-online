@@ -1,4 +1,5 @@
 <% content_for :title, @character.name %>
+<% content_for :head, music_meta(@character.campaign, @character.campaign&.scene) %>
 <%= render "shared/stage_stream", campaign: @character.campaign %>
 <% stages = @character.stat_stages %>
 <% cj = @character.character_job %>
