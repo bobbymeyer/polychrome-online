@@ -16,6 +16,11 @@ RSpec.describe "The player's way through", type: :request do
 
   def battle_with(*characters) = BattleRecord.start!(campaign: campaign, characters: characters, name: "Road", encounter: { "goblin" => 1 }, seed: 3)
 
+  it "offers the admin a new campaign from the home page" do
+    get root_path
+    expect(response.body).to include("New campaign", "you run it as its GM")
+  end
+
   it "lists your campaigns on the home page, then the ones to join" do
     campaign.characters.create!(name: "Krile", job: white_mage, user: krile)
     world.campaigns.create!(name: "Someone else's")
@@ -61,6 +66,27 @@ RSpec.describe "The player's way through", type: :request do
     campaign.characters.create!(name: "Faris", job: knight, user: @admin) # made before this fix
     get campaign_table_path(campaign)
     expect(response.body).to include("At the table as <strong>GM</strong>")
+  end
+
+  it "takes a character back off auto when their player sits down and chooses" do
+    lenna = campaign.characters.create!(name: "Lenna", job: white_mage, user: krile)
+    bartz = campaign.characters.create!(name: "Bartz", job: knight)
+    battle = battle_with(lenna, bartz)
+    expect(battle.auto?(bartz.battle_unit_id)).to be(true)
+
+    patch battle_auto_path(battle), params: { unit: bartz.battle_unit_id, on: "0" } # the GM
+    expect(battle.reload.auto?(bartz.battle_unit_id)).to be(false)
+    patch battle_auto_path(battle), params: { unit: bartz.battle_unit_id, on: "1" }
+    expect(battle.reload.auto?(bartz.battle_unit_id)).to be(true)
+
+    bartz.update!(user: krile) # Krile picks Bartz up too
+    sign_in_as(krile)
+    post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
+    post battle_actions_path(battle), params: { command: { kind: "ability", ability: "attack", target: "goblin" } }
+    expect(battle.reload.auto?(bartz.battle_unit_id)).to be(false)
+
+    patch battle_auto_path(battle), params: { unit: bartz.battle_unit_id, on: "1" }
+    expect(response).to have_http_status(:forbidden)
   end
 
   it "points the table at the newest battle, live, and stops once it's over or called off" do

@@ -8,7 +8,7 @@
         <div class="field"><%= f.label :state %><%= f.select :state, MapEdge::STATES.map { |s| [ s.humanize, s ] } %></div>
         <div class="field">
           <%= f.label :encounter_table_id, "Encounters" %>
-          <%= f.select :encounter_table_id, @world.encounter_tables.order(:tier, :name).map { |t| [ "#{t.name} (tier #{t.tier})", t.id ] }, include_blank: "None" %>
+          <%= f.select :encounter_table_id, @world.encounter_tables.order(:tier, :name).map { |t| [ "#{t.name} (tier #{t.tier})", t.id ] }, include_blank: "None (a safe path)" %>
         </div>
       </div>
       <div class="field">

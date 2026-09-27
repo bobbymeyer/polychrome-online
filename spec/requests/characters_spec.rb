@@ -33,10 +33,17 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(campaign.reload.gil).to eq(250)
     end
 
-    it "rests the party" do
+    it "rests the party, and says so at the table, but not mid-battle" do
       bartz.update!(hp: 0, mp: 0)
       post campaign_rest_path(campaign)
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
+      expect(campaign.messages.last.body).to include("The party rests")
+
+      bartz.update!(hp: 5)
+      BattleRecord.start!(campaign: campaign, characters: [ bartz ], name: "Road", encounter: { "goblin" => 1 }, seed: 1)
+      post campaign_rest_path(campaign)
+      expect(flash[:alert]).to include("Not while a battle is on")
+      expect(bartz.reload.hp).to eq(5)
     end
   end
 

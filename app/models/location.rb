@@ -228,6 +228,16 @@ class Location < ApplicationRecord
     visited.include?(key) || visited.any? { |v| neighbours(v).include?(key) }
   end
 
+  # Only the place the party stands on the map can be explored.
+  def party_here?
+    map_node&.party_here? || false
+  end
+
+  # The party went back out onto the map: next time, they come in at the entrance.
+  def leave!
+    update!(progress: progress.except("current")) if progress["current"]
+  end
+
   def enter!
     move_to!(view["entrance"], from: nil)
   end
@@ -237,6 +247,8 @@ class Location < ApplicationRecord
   # waits for the GM to fight or wave off (like on the map); treasure waits
   # to be handed over; a fork shows its visible cost.
   def move_to!(key, from: progress["current"])
+    raise ArgumentError, "The party isn't at #{name}. Take them there on the map first." unless party_here?
+
     target = room(key) or raise ArgumentError, "No such room"
     raise ArgumentError, "That room isn't next to this one" if from && !neighbours(from).include?(key)
 

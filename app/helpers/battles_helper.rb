@@ -199,7 +199,7 @@ module BattlesHelper
   def gm_line(event, state)
     who = unit_name(state, event["unit"]) if event["unit"]
     text = case event["op"]
-    when "auto" then "#{who} acts on auto."
+    when "auto" then "plays #{who} on auto."
     when "execute_round" then "runs the round now."
     when "set_hp" then "sets #{who}'s HP to #{event['hp']}."
     when "set_mp" then "sets #{who}'s MP to #{event['mp']}."

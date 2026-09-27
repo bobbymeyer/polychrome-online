@@ -121,5 +121,6 @@ Rails.application.routes.draw do
     resource :panel, only: :show
     resources :actions, only: :create, controller: "battle_actions"
     resource :playback, only: :update
+    resource :auto, only: :update, controller: "battle_autos"
   end
 end

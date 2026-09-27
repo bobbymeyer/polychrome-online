@@ -14,6 +14,7 @@ class BattleActionsController < ApplicationController
     return head :forbidden unless action
 
     @battle.apply!(action, actor: actor)
+    @battle.set_auto!(actor, false) if @battle.auto?(actor) # someone is here to play them now
     # The panel must not show the new state before the beat has played
     # (§6), so the response is a placeholder. The battle player reloads the
     # real panel once the animation finishes.

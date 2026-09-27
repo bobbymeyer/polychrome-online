@@ -15,6 +15,7 @@ class BattleRecord < ApplicationRecord
 
   SPEEDS = [ 1, 2, 4 ].freeze
   INPUT_TIMERS = [ nil, 30, 60, 120 ].freeze
+  DEFAULT_TIMER = 60
   # Added to the input timer when a round opens, to cover the previous
   # round's animation before players can act.
   ANIMATION_GRACE = 8.seconds
@@ -40,10 +41,11 @@ class BattleRecord < ApplicationRecord
     party = characters.map(&:battle_spec)
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items)
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
-                     input_seconds: input_seconds)
+                     input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id))
     battle.open_round!
     battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against " \
                      "#{encounter.map { |slug, count| "#{count} × #{campaign.world.monsters.find_by(slug: slug)&.name || slug}" }.to_sentence}.")
+    battle.auto_fill!
     battle
   end
 
@@ -114,10 +116,43 @@ class BattleRecord < ApplicationRecord
       save!
       settle!(events) if over?
     end
-    open_round! if !over? && round != before["round"]
+    new_round = !over? && round != before["round"]
+    open_round! if new_round
     broadcast_beat(before, events)
+    auto_fill! if new_round
     [ before, events ]
   end
+
+  # Units the GM has put on auto: nobody is there to play them, so each
+  # round they take their default command as it opens (§5, "GM auto for an
+  # absent player"). The GM's call, so each one is an override in the log.
+  # If everyone still standing is on auto, nothing is filled: the round
+  # waits for the GM or the timer, so a battle never plays itself out.
+  def auto_fill!
+    return if over?
+
+    standing = party.select { |u| u["hp"].positive? }.map { |u| u["id"] }
+    return if (standing - auto_units).empty?
+
+    this_round = round
+    (awaiting_input & auto_units).each do |id|
+      break if round != this_round || over? # the last one ran the round
+      next unless awaiting_input.include?(id)
+
+      apply!({ "type" => "gm_override", "op" => "auto", "unit" => id }, actor: "gm", if_round: this_round)
+    rescue Battle::InvalidAction
+      next # someone sat down and chose for them first
+    end
+  end
+
+  def set_auto!(unit_id, on)
+    return unless party.any? { |u| u["id"] == unit_id }
+
+    update!(auto_units: on ? (auto_units | [ unit_id ]) : (auto_units - [ unit_id ]))
+    auto_fill! if on
+  end
+
+  def auto?(unit_id) = auto_units.include?(unit_id)
 
   # Start the input timer for the current round, if this battle has one.
   def open_round!

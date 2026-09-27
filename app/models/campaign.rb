@@ -160,6 +160,7 @@ class Campaign < ApplicationRecord
         self.rng, rolled = Pointcrawl::Encounters.roll(rng, edge.encounter_table.entries, edge.state)
       end
       destination.update!(visible: true)
+      origin.location&.leave!
       self.current_node = destination
       self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled }
       save!
@@ -176,19 +177,20 @@ class Campaign < ApplicationRecord
   def place_party!(node)
     transaction do
       node.update!(visible: true)
+      current_node&.location&.leave! unless current_node == node
       update!(current_node: node)
       messages.create!(kind: "system", body: "The party is at #{node.name}.")
     end
     broadcast_map
   end
 
-  def start_pending_encounter!
+  def start_pending_encounter!(input_seconds: nil)
     encounter = pending_encounter or raise ArgumentError, "No encounter is waiting"
     standing = characters.order(:created_at).select(&:conscious?)
     raise ArgumentError, "Nobody is standing to fight" if standing.empty?
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
-                                 encounter: encounter["monsters"])
+                                 encounter: encounter["monsters"], input_seconds: input_seconds)
     update!(pending_encounter: nil)
     battle
   end
@@ -215,7 +217,19 @@ class Campaign < ApplicationRecord
   end
 
   # An inn: everyone back to full HP and MP, the fallen included.
+  # The dungeon the party is inside right now, if any.
+  def dungeon_in_progress
+    location = current_node&.location
+    location if location&.dungeon? && location.progress["current"]
+  end
+
+  # Everyone back to full, told at the table. Not in the middle of a fight.
   def rest!
-    characters.update_all(hp: nil, mp: nil)
+    raise ArgumentError, "Not while a battle is on" if battle_on?
+
+    transaction do
+      characters.update_all(hp: nil, mp: nil)
+      messages.create!(kind: "system", body: "The party rests. Everyone is back to full HP and MP.")
+    end
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_200503) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_200600) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -151,6 +151,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200503) do
     t.datetime "updated_at", null: false
     t.integer "campaign_id"
     t.json "settlement"
+    t.json "auto_units", default: [], null: false
     t.index ["campaign_id"], name: "index_battles_on_campaign_id"
     t.index ["world_id"], name: "index_battles_on_world_id"
   end

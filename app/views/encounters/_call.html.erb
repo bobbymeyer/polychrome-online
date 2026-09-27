@@ -1,0 +1,18 @@
+<%# The GM's call on a rolled encounter, on the map or in a dungeon. %>
+<section class="encounter-call">
+  <h3>Encounter!</h3>
+  <p><%= @campaign.describe_encounter(encounter["monsters"]) %> <span class="muted">(<%= encounter["table"] %>)</span></p>
+  <%= form_with url: campaign_encounter_path(@campaign), class: "encounter-call__fight", data: { turbo_frame: "_top" } do |f| %>
+    <div class="field">
+      <%= f.label :input_seconds, "Input timer" %>
+      <%= f.select :input_seconds, BattleRecord::INPUT_TIMERS.map { |s| [ s ? "#{s} seconds" : "None", s ] }, selected: BattleRecord::DEFAULT_TIMER %>
+    </div>
+    <div class="menu menu--row">
+      <%= f.button "Fight", class: "menu__item menu__item--accent" %>
+    </div>
+  <% end %>
+  <div class="menu menu--row">
+    <%= button_to "Wave it off", campaign_encounter_path(@campaign), method: :delete, params: ({ return_to: return_to } if local_assigns[:return_to]),
+                  class: "menu__item", form: { data: { turbo_confirm: "Wave off the encounter? The table will see that you did." } } %>
+  </div>
+</section>

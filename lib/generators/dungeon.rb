@@ -149,11 +149,11 @@ module Generators
       when "fork"
         costly = onward[pool.int(onward.size)]
         path = edge_list.find { |e| [ e["from"], e["to"] ].sort == [ room["key"], "room-#{costly}" ].sort }
-        cost = pool.pick(tables.fetch("forks", []))&.fetch("text") || "The way is hard."
+        cost = pool.pick_fresh(tables.fetch("forks", []))&.fetch("text") || "The way is hard."
         path["cost"] = cost
         { "kind" => "fork", "text" => cost, "costly_path" => path["key"] }
       else
-        { "kind" => "event", "text" => pool.pick(tables.fetch("room_events", []))&.fetch("text") || "Something stirs in the dark." }
+        { "kind" => "event", "text" => pool.pick_fresh(tables.fetch("room_events", []))&.fetch("text") || "Something stirs in the dark." }
       end
     end
 

@@ -230,7 +230,10 @@ module Battle
       state["status"] = result
       case result
       when "victory" then ctx.emit(:victory, rewards: ctx.rewards, drops: ctx.roll_drops)
-      when "defeat" then ctx.emit(:defeat)
+      when "defeat"
+        # The party has fallen: whoever was still standing goes down too.
+        ctx.side("party").select { |u| ctx.alive?(u) }.each { |u| ctx.knock_out(u) }
+        ctx.emit(:defeat)
       when "fled" then ctx.emit(:flee, success: true)
       end
     end

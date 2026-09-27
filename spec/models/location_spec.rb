@@ -9,7 +9,11 @@ RSpec.describe Location do
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:cave) { world.location_templates.find_by!(slug: "goblin_cave") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
-  let(:dungeon) { campaign.locations.create!(location_template: cave, seed: 11) }
+  let(:dungeon) do
+    campaign.locations.create!(location_template: cave, seed: 11).tap do |d|
+      campaign.update!(current_node: campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 1, y: 1, location: d))
+    end
+  end
 
   describe "the books" do
     it "validates generator-table rows against their kind" do
@@ -113,6 +117,15 @@ RSpec.describe Location do
       expect(dungeon.neighbours(entrance)).to include(key)
       expect { dungeon.add_room!(name: "X", connect: entrance, decision: { "kind" => "encounter", "monsters" => { "dragon" => 1 } }) }
         .to raise_error(ArgumentError, /Bestiary/)
+    end
+
+    it "can only be explored while the party is there, and is left when they travel on" do
+      dungeon.enter!
+      road = campaign.map_nodes.create!(name: "Road", kind: "field", x: 2, y: 2)
+      campaign.travel!(campaign.map_edges.create!(from_node: campaign.current_node, to_node: road))
+      expect(dungeon.reload.progress["current"]).to be_nil
+      expect(dungeon.visited).to include(entrance)
+      expect { dungeon.enter! }.to raise_error(ArgumentError, /isn't at/)
     end
 
     it "is explored room by room, each room playing its decision at the table" do

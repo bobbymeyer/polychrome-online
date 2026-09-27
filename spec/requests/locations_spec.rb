@@ -80,6 +80,7 @@ RSpec.describe "Locations", type: :request do
     it "explores a dungeon: enter, move, fight or wave off" do
       cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
       cave = generate("goblin_cave", on: cave_node)
+      campaign.update!(current_node: cave_node)
       post enter_location_path(cave)
       expect(cave.reload.progress["current"]).to eq(cave.view["entrance"])
 
@@ -98,10 +99,22 @@ RSpec.describe "Locations", type: :request do
       expect(cave.reload.view["rooms"].last).to include("name" => "Vault", "added" => true)
     end
 
+    it "sends everyone back into the dungeon after a fight in it" do
+      cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+      cave = generate("goblin_cave", on: cave_node)
+      campaign.update!(current_node: cave_node)
+      cave.enter!
+      battle = BattleRecord.start!(campaign: campaign, characters: [ bartz ], name: "Cave", encounter: { "goblin" => 1 }, seed: 1)
+      battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "fled" }, actor: "gm")
+      get battle_panel_path(battle)
+      expect(response.body).to include("Back to #{cave.name}", "Back to the table")
+    end
+
     it "shows players only the explored part of a dungeon" do
       cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
       cave = generate("goblin_cave", on: cave_node)
       boss_name = cave.room(cave.view["boss"])["name"]
+      campaign.update!(current_node: cave_node)
       post enter_location_path(cave)
       sit(bartz.id)
       get location_path(cave)

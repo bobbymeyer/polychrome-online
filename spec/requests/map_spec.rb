@@ -83,16 +83,25 @@ RSpec.describe "Map pages", type: :request do
       campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "dangerous", encounter_table: world.encounter_tables.find_by!(slug: "grasslands"))
       post place_party_map_node_path(tule)
       get campaign_map_panel_path(campaign)
-      expect(response.body).to include("The party is at Tule", "To Secret Ruins")
+      expect(response.body).to include("The party is at Tule", "To Secret Ruins", "dangerous · Grasslands")
 
       post campaign_travel_path(campaign), params: { edge_id: campaign.map_edges.sole.id }
       follow_redirect!
       expect(response.body).to include("The party is at Secret Ruins", "Encounter!", "Fight", "Wave it off")
 
-      post campaign_encounter_path(campaign)
+      expect(response.body).to include("Input timer")
+      post campaign_encounter_path(campaign), params: { input_seconds: "30" }
       battle = campaign.battles.last
       expect(response).to redirect_to(battle_path(battle))
       expect(battle.party.map { |u| u["name"] }).to eq([ "Bartz" ])
+      expect(battle.input_seconds).to eq(30)
+    end
+
+    it "says when a path is safe because it has no encounter table" do
+      campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "dangerous")
+      campaign.place_party!(tule)
+      get campaign_map_panel_path(campaign)
+      expect(response.body).to include("dangerous · safe")
     end
 
     it "reports a blocked path instead of travelling" do

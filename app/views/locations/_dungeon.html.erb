@@ -32,17 +32,13 @@
 
     <% if gm %>
       <% if (encounter = @campaign.pending_encounter) %>
-        <section class="encounter-call">
-          <h3>Encounter!</h3>
-          <p><%= @campaign.describe_encounter(encounter["monsters"]) %> <span class="muted">(<%= encounter["table"] %>)</span></p>
-          <div class="menu menu--row">
-            <%= button_to "Fight", campaign_encounter_path(@campaign), class: "menu__item menu__item--accent" %>
-            <%= button_to "Wave it off", campaign_encounter_path(@campaign), method: :delete, params: { return_to: location_path(location) }, class: "menu__item" %>
-          </div>
-        </section>
+        <%= render "encounters/call", encounter: encounter, return_to: location_path(location) %>
       <% end %>
 
-      <% if here.nil? %>
+      <% if !location.party_here? %>
+        <% at = @campaign.current_node %>
+        <p class="hint">The party is <%= at ? "at #{at.name}" : "not on the map" %>. Take them to <%= location.name %> on the <%= link_to "map", campaign_map_path(@campaign) %> to go in.</p>
+      <% elsif here.nil? %>
         <%= button_to "Lead the party in", enter_location_path(location), class: "button play" %>
       <% else %>
         <% if here["decision"]["kind"] == "treasure" && !location.resolved?(here["key"]) %>

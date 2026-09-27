@@ -1,7 +1,12 @@
 <% content_for :title, "Home" %>
 <section class="window" aria-label="Your campaigns">
-  <h2>Your campaigns</h2>
-  <% if @my_campaigns.empty? %>
+  <div class="book-header">
+    <h2>Your campaigns</h2>
+    <%= link_to "New campaign", new_world_campaign_path(@worlds.first), class: "button" if admin? && @worlds.one? %>
+  </div>
+  <% if @my_campaigns.empty? && admin? %>
+    <p class="empty">None yet. Start one<%= " in a world below" unless @worlds.one? %> and you run it as its GM<%= ", or make a character in one below to play" if @other_campaigns.any? %>.</p>
+  <% elsif @my_campaigns.empty? %>
     <p class="empty">None yet. Pick one below, make a character in it, and you're in.</p>
   <% else %>
     <%= render "worlds/campaign_list", campaigns: @my_campaigns %>
@@ -26,6 +31,7 @@
     <% @worlds.each do |world| %>
       <li class="window">
         <h2><%= link_to world.name, world %></h2>
+        <% if admin? && !@worlds.one? %><p><%= link_to "New campaign in #{world.name}", new_world_campaign_path(world) %></p><% end %>
         <% if world.description.present? %><p><%= world.description %></p><% end %>
       </li>
     <% end %>

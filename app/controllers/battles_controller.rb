@@ -52,7 +52,7 @@ class BattlesController < ApplicationController
   def default_setup
     monster = @world.monsters.order(:level).first&.slug
     {
-      name: "Battle", seed: nil, escapable: "1", input_seconds: "60",
+      name: "Battle", seed: nil, escapable: "1", input_seconds: BattleRecord::DEFAULT_TIMER.to_s,
       characters: @campaign.characters.select(&:conscious?).first(4).map(&:id),
       encounter: [ { monster: monster.to_s, count: "3" } ] + Array.new(ENCOUNTER_SLOTS - 1) { { monster: "", count: "1" } }
     }
