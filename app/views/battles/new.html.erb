@@ -27,6 +27,22 @@
     </div>
   </div>
 
+  <% antagonists = @campaign.npcs.at_large.includes(:monster).order(:name) %>
+  <% if antagonists.any? %>
+    <fieldset class="panel">
+      <legend>Antagonists</legend>
+      <p class="hint">They fight as their Bestiary entry, under their own name, as a boss. Send them off the field and they get away, stronger next time.</p>
+      <%= hidden_field_tag "battle[antagonists][]", "", id: nil %>
+      <div class="checks">
+        <% antagonists.each do |npc| %>
+          <label>
+            <%= check_box_tag "battle[antagonists][]", npc.id, @setup[:antagonists].include?(npc.id), id: "battle_antagonist_#{npc.id}" %>
+            <%= npc.name %> <span class="muted">(as <%= npc.monster.name %><%= ", #{npc.strength_percent}%" if npc.escapes.positive? %>)</span>
+          </label>
+        <% end %>
+      </div>
+    </fieldset>
+  <% end %>
   <fieldset class="panel">
     <legend>Party</legend>
     <% characters = @campaign.characters.includes(:job).order(:created_at) %>

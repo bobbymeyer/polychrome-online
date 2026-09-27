@@ -19,15 +19,16 @@ class BattlesController < ApplicationController
     characters = @campaign.characters.where(id: @setup[:characters]).order(:created_at).to_a
     encounter = @setup[:encounter].select { |row| row[:monster].present? }
                                   .to_h { |row| [ row[:monster], row[:count].to_i.clamp(1, 8) ] }
+    antagonists = @campaign.npcs.at_large.where(id: @setup[:antagonists]).to_a
     @error = if characters.none?(&:conscious?) then "Pick at least one character who is still standing."
-    elsif encounter.empty? then "Pick at least one monster."
+    elsif encounter.empty? && antagonists.empty? then "Pick at least one monster or antagonist."
     end
     return render :new, status: :unprocessable_content if @error
 
     @battle = BattleRecord.start!(
       campaign: @campaign, characters: characters, name: @setup[:name].presence || "Battle", encounter: encounter,
       seed: @setup[:seed], escapable: @setup[:escapable] != "0", input_seconds: @setup[:input_seconds].presence&.to_i,
-      terrain: @setup[:terrain].presence_in(@campaign.world.type_chart.slugs)
+      terrain: @setup[:terrain].presence_in(@campaign.world.type_chart.slugs), antagonists: antagonists
     )
     take_seat("gm")
     redirect_to battle_path(@battle)
@@ -62,15 +63,16 @@ class BattlesController < ApplicationController
     monster = @world.monsters.order(:level).first&.slug
     {
       name: "Battle", seed: nil, escapable: "1", input_seconds: BattleRecord::DEFAULT_TIMER.to_s, terrain: "",
-      characters: @campaign.characters.select(&:conscious?).first(4).map(&:id),
+      characters: @campaign.characters.select(&:conscious?).first(4).map(&:id), antagonists: [],
       encounter: [ { monster: monster.to_s, count: "3" } ] + Array.new(ENCOUNTER_SLOTS - 1) { { monster: "", count: "1" } }
     }
   end
 
   def setup_params
-    raw = params.expect(battle: [ :name, :seed, :escapable, :input_seconds, :terrain, { characters: [], encounter: [ %i[monster count] ] } ])
+    raw = params.expect(battle: [ :name, :seed, :escapable, :input_seconds, :terrain, { characters: [], antagonists: [], encounter: [ %i[monster count] ] } ])
     raw.to_h.symbolize_keys.merge(
       characters: Array(raw[:characters]).compact_blank.map(&:to_i),
+      antagonists: Array(raw[:antagonists]).compact_blank.map(&:to_i),
       encounter: JsonCasting.rows(raw[:encounter]).map(&:symbolize_keys)
     )
   end

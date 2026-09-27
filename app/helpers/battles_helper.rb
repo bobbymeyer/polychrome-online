@@ -7,7 +7,8 @@ module BattlesHelper
     @unit_art ||= {}
     @unit_art[battle.id] ||= {
       "monsters" => battle.world.monsters.with_attached_image.index_by(&:slug),
-      "jobs" => battle.world.jobs.with_attached_image.index_by(&:slug)
+      "jobs" => battle.world.jobs.with_attached_image.index_by(&:slug),
+      "npcs" => (battle.campaign&.npcs&.antagonists || Npc.none).to_h { |npc| [ npc.id.to_s, npc.battle_art ] }
     }
     ref = unit["image"] || {}
     @unit_art[battle.id].dig(ref["book"], ref["slug"])
