@@ -9,6 +9,9 @@ Rails.application.routes.draw do
   root "worlds#index"
 
   resource :types, only: :show # the type chart
+  # Local co-op: the QR code on the shared screen leads here.
+  get "join/:code", to: "joins#show", as: :join
+  post "join/:code", to: "joins#create"
   resources :worlds, param: :slug, except: :destroy do
     # Each book is a resource namespace inside its world (docs/HANDOFF.md §7).
     namespace :bestiary do
@@ -64,6 +67,7 @@ Rails.application.routes.draw do
     resource :table, only: :show
     resource :music, only: :update, controller: "music"
     resources :checks, only: :create
+    resource :join_code, only: :create
     resource :forecast, only: :show
     resource :table_seat, only: %i[create destroy]
     resource :composer, only: :show

@@ -85,8 +85,9 @@ RSpec.describe "The player's way through", type: :request do
     post battle_actions_path(battle), params: { command: { kind: "ability", ability: "attack", target: "goblin" } }
     expect(battle.reload.auto?(bartz.battle_unit_id)).to be(false)
 
+    # ...and can put themselves back on it, to talk and let the fight run.
     patch battle_auto_path(battle), params: { unit: bartz.battle_unit_id, on: "1" }
-    expect(response).to have_http_status(:forbidden)
+    expect(battle.reload.auto?(bartz.battle_unit_id)).to be(true)
   end
 
   it "shows a monster's weaknesses only once the party has found them, and remembers" do

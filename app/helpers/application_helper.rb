@@ -33,6 +33,12 @@ module ApplicationHelper
              data: { default: world.music_path(scene).to_s, fixed: fixed })
   end
 
+  # A QR code as inline SVG (local co-op: scan the shared screen to join).
+  def qr_svg(url)
+    RQRCode::QRCode.new(url).as_svg(module_size: 6, standalone: true, use_path: true, viewbox: true,
+                                    color: "000", shape_rendering: "crispEdges").sub(/\A<\?xml[^>]*\?>/, "").html_safe # rubocop:disable Rails/OutputSafety -- generated SVG, no user markup
+  end
+
   def plate_style(key, colour = nil)
     hex, ink = Palette.pick(key, colour)
     "--plate: #{hex}; --plate-ink: #{ink};"

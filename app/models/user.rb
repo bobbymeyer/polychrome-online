@@ -20,7 +20,7 @@ class User < ApplicationRecord
 
   # The first account gets admin. Sign-ups run in an IMMEDIATE transaction
   # (SQLite), so two at once can't both see an empty table.
-  before_create { self.admin = true unless User.exists? }
+  before_create { self.admin = true unless guest? || User.exists? }
   before_destroy :keep_an_admin
 
   scope :alphabetical, -> { order(:name, :email_address) }
@@ -28,6 +28,14 @@ class User < ApplicationRecord
   # Change a world's books: an admin, or, for a world a GM made, its owner
   # and the GMs running campaigns in it. The Base World has no owner, so it
   # stays the admins': GMs copy it to make one of their own.
+  # A player who joined local co-op from the shared screen with just a name
+  # (JoinsController): an account like any other, minus the email and
+  # password they never chose. They sign in by scanning the code again.
+  def self.guest!(name)
+    create!(name: name, guest: true, email_address: "guest-#{SecureRandom.hex(8)}@guest.invalid",
+            password: SecureRandom.base58(24))
+  end
+
   def can_edit_world?(world)
     return true if admin?
     return false unless world&.owner_id

@@ -675,6 +675,55 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .type-chart .is-zero { background: var(--ink); color: var(--paper); font-weight: 900; }
 .type-chart-wrap { overflow-x: auto; }
 
+/* ---------------------------------------------------------------------------
+ * Local co-op (LocalCoop): the shared screen is the show, phones are
+ * controllers.
+ * ------------------------------------------------------------------------- */
+
+/* The screen: edge to edge, no menus, big enough to read across a room. */
+body[data-view="screen"] .topbar__books, body[data-view="screen"] .topbar__account { display: none; }
+body[data-view="screen"] .page { max-width: none; padding-left: 32px; padding-right: 32px; }
+.table--screen .table__stage { grid-column: span 8; }
+.table--screen .table__side { grid-column: span 4; }
+.table--screen .dialogue__body { font-size: 24px; line-height: 34px; }
+.battle--screen .battle__lower > :only-child, .battle--screen .dialogue--battle { grid-column: 1 / -1; }
+.battle--screen .dialogue--battle .dialogue__body { font-size: 24px; line-height: 34px; }
+.coop-join { text-align: center; }
+.coop-join__qr svg { display: block; width: min(220px, 100%); height: auto; margin: 0 auto 8px; padding: 10px; background: #fff; border: 3px solid var(--ink); }
+.coop-join__url { font-size: 14px; word-break: break-all; }
+.coop-join__code strong { font: var(--display); font-size: 32px; letter-spacing: .12em; }
+.coop-party__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.coop-party__list li { display: flex; gap: 10px; align-items: center; }
+.coop-party__list li > div { flex: 1; min-width: 0; }
+.coop-party__list li.is-ko { opacity: .55; }
+.coop-leave { margin-top: 24px; opacity: .6; }
+
+/* The controller: one column, big targets, no show. */
+body[data-view="controller"] .topbar__books { display: none; }
+body[data-view="controller"] .page { padding-top: 16px; }
+.table--controller .table__stage, .table--controller .table__side { grid-column: 1 / -1; }
+.table--controller .battle__header h1 { font-size: 36px; line-height: 40px; }
+.table--controller .choice__pick { width: 100%; min-height: 56px; font-size: 22px; }
+.table--controller .choice__pick-form { flex: 1 1 100%; }
+/* The board still plays, off screen, so commands wait for each beat as on the screen. */
+.battle--controller .stage { position: absolute; left: -10000px; top: 0; width: 960px; }
+.battle--controller .battle__controls { display: none; }
+.battle--controller .battle__lower { margin-top: 12px; }
+.battle--controller .battle__lower > :first-child { grid-column: 1 / -1; }
+.battle--controller .menu__item { min-height: 52px; font-size: 20px; }
+.coop-links { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 16px; }
+.vitals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin: 4px 0 0; }
+.vitals .bar { flex: 1 1 100%; order: 3; }
+.vitals .label { font-size: 12px; font-weight: 800; color: var(--grey); }
+.vitals .label + strong ~ .label { margin-left: 10px; }
+.coop-setup__steps { padding-left: 20px; display: grid; gap: 10px; }
+
+/* A player on auto: the toggle under their commands lights up. */
+.auto-toggle-form { margin: 12px 0 0; }
+.auto-toggle { font-size: 14px; }
+.auto-toggle.is-on { padding: 4px calc(12px + var(--slant)) 4px 10px; background: var(--sun-yellow); color: var(--ink); text-decoration: none; font-weight: 800;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
+
 /* Taking a line back: quiet, and only on hover or focus once shown. */
 .chat-line__retract-form { display: inline; margin: 0; }
 .chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }

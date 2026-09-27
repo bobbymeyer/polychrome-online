@@ -44,12 +44,14 @@ class BattlesController < ApplicationController
   end
 
   def show
+    remember_coop_view(@battle.campaign) if @battle.campaign
     @log = @battle.battle_events.last(40)
     return unless @battle.campaign
 
     # The table's log and dialogue come along, as this seat may see them.
     seat = current_seat
     @chat_seat = seat == "gm" ? "gm" : (seat && seat_character(seat))
+    @chat_seat = nil if coop_view(@battle.campaign) == "screen" # the shared screen sees what everyone sees
     @messages = Message.visible_to(@battle.campaign, @chat_seat).last(TablesController::LOG_LENGTH)
   end
 

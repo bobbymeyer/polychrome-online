@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_060000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -169,8 +169,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_050000) do
     t.integer "gm_id"
     t.json "known_affinities", default: {}, null: false
     t.string "music"
+    t.string "join_code"
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
+    t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true
     t.index ["world_id"], name: "index_campaigns_on_world_id"
   end
 
@@ -524,6 +526,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_050000) do
     t.datetime "updated_at", null: false
     t.string "name"
     t.boolean "admin", default: false, null: false
+    t.boolean "guest", default: false, null: false
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 

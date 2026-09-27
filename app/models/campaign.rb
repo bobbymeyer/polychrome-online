@@ -347,6 +347,17 @@ class Campaign < ApplicationRecord
     end
   end
 
+  # The code behind the shared screen's QR code (local co-op): made when
+  # first asked for, and replaced when the GM wants to shut old links out.
+  def join_code!
+    join_code || new_join_code!
+  end
+
+  def new_join_code!
+    update!(join_code: SecureRandom.alphanumeric(6).upcase)
+    join_code
+  end
+
   # The choice the table is deciding, if any (Message#settle!).
   def open_choice
     messages.where(kind: "choice", settled: nil).order(:id).last

@@ -1,0 +1,34 @@
+<% content_for :title, "Join #{@campaign.name}" %>
+<div class="join">
+  <p class="eyebrow">Local co-op</p>
+  <h1><%= @campaign.name %></h1>
+  <p>Pick who you're playing. This phone becomes your controller; the game itself plays on the shared screen.</p>
+
+  <% if @characters.empty? %>
+    <p class="empty">Everyone here is taken. Ask the GM to make you a character.</p>
+  <% else %>
+    <%= form_with url: join_path(@campaign.join_code), class: "book-form join__form" do |f| %>
+      <% unless current_user %>
+        <div class="field">
+          <%= label_tag :name, "Your name" %>
+          <%= text_field_tag :name, nil, maxlength: 60, autocomplete: "nickname", placeholder: "So the table knows who's who" %>
+        </div>
+      <% end %>
+      <div class="menu join__characters">
+        <% @characters.each do |character| %>
+          <%= button_tag type: "submit", name: "character_id", value: character.id, class: "menu__item join__character" do %>
+            <%= entry_portrait(character.job, size: :small) %>
+            <span>
+              <strong><%= character.name %></strong>
+              <span class="muted">Lv <%= character.level %> <%= character.job.name %><%= " · yours" if current_user && character.user_id == current_user.id %></span>
+              <% if character.motive %><span class="motive motive--card"><%= character.motive %></span><% end %>
+            </span>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>
+  <% if current_user %>
+    <p class="hint">Joining as <strong><%= current_user.name %></strong>.</p>
+  <% end %>
+</div>

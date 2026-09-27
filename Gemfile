@@ -56,3 +56,6 @@ end
 group :development, :test do
   gem "rspec-rails", "~> 8.0"
 end
+
+# QR codes on the shared screen, so players join local co-op from their phones.
+gem "rqrcode", "~> 3.2"

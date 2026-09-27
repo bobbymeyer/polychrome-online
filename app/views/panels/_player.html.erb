@@ -86,5 +86,13 @@
   </div>
   <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
 <% end %>
+<% if unit["hp"].positive? %>
+  <%# Talk, and let the fight run: your default command every round until you pick one yourself. %>
+  <% on = @battle.auto?(unit["id"]) %>
+  <%= button_to on ? "Auto is on: every round, your last command (or Attack)" : "Go on auto (chat, and let the fight run)",
+                battle_auto_path(@battle), method: :patch, params: { unit: unit["id"], on: on ? "0" : "1" },
+                class: [ "link-button", "auto-toggle", ("is-on" if on) ], form: { class: "auto-toggle-form" },
+                aria: { pressed: on }, title: "Picking a command yourself takes you off auto" %>
+<% end %>
 <p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick</p>
 </div>

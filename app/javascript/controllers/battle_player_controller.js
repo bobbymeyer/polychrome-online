@@ -110,7 +110,7 @@ export default class extends Controller {
     if (!beat) {
       this.current = null
       this.skipTarget.hidden = true
-      this.panelTarget.classList.remove("is-resolving")
+      if (this.hasPanelTarget) this.panelTarget.classList.remove("is-resolving")
       return
     }
 
@@ -132,7 +132,7 @@ export default class extends Controller {
     this.current = { beat, timeline }
     const busy = events.some((e) => e.type !== "command_accepted")
     this.skipTarget.hidden = !busy
-    if (busy) this.panelTarget.classList.add("is-resolving")
+    if (busy && this.hasPanelTarget) this.panelTarget.classList.add("is-resolving")
     timeline.speed = this.speed
     timeline.play()
   }
@@ -459,6 +459,7 @@ export default class extends Controller {
   // After submitting, the panel shows a placeholder until the beat plays.
   // If that beat already finished before the response landed, reload now.
   panelLoaded() {
+    if (!this.hasPanelTarget) return
     if (this.panelTarget.querySelector("[data-resolving]") && !this.current && !this.queue.length) {
       this.refreshPanel()
     }
@@ -468,6 +469,7 @@ export default class extends Controller {
   // only records someone else's command doesn't interrupt a player who is
   // mid-choice or typing.
   refreshPanel(events = []) {
+    if (!this.hasPanelTarget) return // the shared screen has no commands
     const panel = this.panelTarget
     panel.classList.remove("is-resolving")
     const onlyInputs = events.every((e) => e.type === "command_accepted")

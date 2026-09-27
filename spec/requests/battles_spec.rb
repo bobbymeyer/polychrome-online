@@ -50,6 +50,19 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include("Pick who fights")
   end
 
+  it "lets a player put themselves on auto, and only themselves" do
+    sit(bartz)
+    battle.set_auto!(bartz, false) # unclaimed characters start on auto
+    get battle_panel_path(battle)
+    expect(response.body).to include("Go on auto")
+    patch battle_auto_path(battle), params: { unit: faris, on: "1" }
+    expect(response).to have_http_status(:forbidden)
+    patch battle_auto_path(battle), params: { unit: bartz, on: "1" }
+    expect(battle.reload.auto?(bartz)).to be(true)
+    get battle_panel_path(battle)
+    expect(response.body).to include("Auto is on")
+  end
+
   describe "setting up" do
     let!(:world) { Seeds::BaseWorld.run }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road") }

@@ -1,17 +1,19 @@
 # frozen_string_literal: true
 
-# The GM puts a party member on auto for the rest of the battle, or takes
-# them off it (BattleRecord#auto_fill!).
+# Auto for the rest of the battle (BattleRecord#auto_fill!): the GM for any
+# party member, a player for their own, so they can talk and let the fight
+# run. Picking a command yourself takes you off it again.
 class BattleAutosController < ApplicationController
   include BattleSeat
 
   before_action :set_battle
 
   def update
-    return head :forbidden unless gm_seat?
+    unit = params.expect(:unit)
+    return head :forbidden unless gm_seat? || seat_unit&.dig("id") == unit
 
     acted = @battle.battle_actions.count
-    @battle.set_auto!(params.expect(:unit), params[:on] == "1")
+    @battle.set_auto!(unit, params[:on] == "1")
     # If that played a beat, wait for it like any other action (§6).
     return render("panels/resolving", layout: false) if @battle.battle_actions.count > acted
 

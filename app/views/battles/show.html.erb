@@ -6,7 +6,8 @@
 <% end %>
 
 <% bosses = @battle.boss_monsters.to_a %>
-<div class="battle<%= " battle--boss" if bosses.any? %>" data-controller="battle-player dialogue"
+<% view = @battle.campaign && coop_view(@battle.campaign) %>
+<div class="battle<%= " battle--#{view}" if view %><%= " battle--boss" if bosses.any? %>" data-controller="battle-player dialogue"
      <%= tag.attributes(data: { boss_down: ("#{bosses.map(&:name).to_sentence} #{bosses.size > 1 ? 'fall' : 'falls'}!" if bosses.any?) }) %>
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
      data-battle-player-next-value="<%= @battle.battle_actions.count %>"
@@ -48,15 +49,21 @@
   </div>
 
   <div class="battle__lower">
-    <%= turbo_frame_tag "command_panel", src: battle_panel_path(@battle), class: "command-frame",
-                        data: { battle_player_target: "panel" } do %>
-      <div class="window"><p class="muted">Loading…</p></div>
+    <% unless view == "screen" %>
+      <%= turbo_frame_tag "command_panel", src: battle_panel_path(@battle), class: "command-frame",
+                          data: { battle_player_target: "panel" } do %>
+        <div class="window"><p class="muted">Loading…</p></div>
+      <% end %>
     <% end %>
 
-    <%= render "tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign %>
+    <%= render "tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
   </div>
 
-  <% if @battle.campaign && @chat_seat %>
+  <% if view == "controller" %>
+    <p class="coop-links"><%= link_to "Leave controller view", battle_path(@battle, view: "off"), class: "link-button" %></p>
+  <% elsif view == "screen" %>
+    <p class="hint coop-leave"><%= link_to "Leave the shared screen", battle_path(@battle, view: "off") %></p>
+  <% elsif @battle.campaign && @chat_seat %>
     <%# Talk without leaving the fight: a monster's taunt, a cry across the field. Open for the GM. %>
     <details class="battle-composer" <%= "open" if @chat_seat == "gm" %>>
       <summary><%= @chat_seat == "gm" ? "Speak (as the narrator or an NPC)" : "Speak" %></summary>

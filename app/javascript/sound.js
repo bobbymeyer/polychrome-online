@@ -167,9 +167,13 @@ const JINGLES = {
   }
 }
 
+// A phone used as a controller in local co-op stays quiet: the shared
+// screen has the sound.
+const controller = () => document.body?.dataset.view === "controller"
+
 export function play(name) {
   const jingle = JINGLES[name]
-  if (!jingle || muted() || !unlocked) return
+  if (!jingle || muted() || !unlocked || controller()) return
   if (!audio()) return
   jingle(ctx.currentTime + 0.02)
 }
@@ -225,7 +229,7 @@ function apply() {
 }
 
 export function setMusic(url) {
-  wanted = url || ""
+  wanted = controller() ? "" : url || ""
   apply()
 }
 

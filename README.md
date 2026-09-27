@@ -284,6 +284,35 @@ flags the party knows that changed, and the last line said to the table.
 Whispers are never in it. "Previously on …" under the table's title opens it
 again at any time.
 
+## Local co-op
+
+For a table around a TV, or a call with one shared stream: one **shared
+screen** everyone watches, and phones as **controllers**. People talk out
+loud (or on voice chat), so the app doesn't need to carry the talking.
+
+- **The GM starts it** from the table ("Local co-op"): open the shared screen
+  on whatever drives the TV or the stream. It shows a QR code, a link and a
+  six-letter code.
+- **Players scan and pick a character.** No account needed: someone not
+  signed in gives a name and gets a guest account (`users.guest`), which
+  plays like any other. The code can be replaced ("New join code") to shut
+  old links out.
+- **Views, not new pages** (`LocalCoop`). The table and battle pages render
+  as `?view=screen` or `?view=controller` (`?view=off` to leave). The view is
+  kept per campaign in the browser session, so it survives being pulled into
+  a battle and back.
+  - **Screen:** map, dialogue, choices, checks, the party's HP and the join
+    code, big. No menus. It renders as a spectator whoever is signed in,
+    so the GM's hidden places, notes and whispers never reach the TV. In
+    battle: the board and the dialogue, no command panel. It has the sound.
+  - **Controller:** your character's HP and MP, your picks when the table has
+    a choice, your commands in battle. The map, dialogue box and check
+    moments stay on the screen. It's quiet. In battle the board still plays
+    off screen, so your commands wait for each beat just as the screen does.
+- **Auto.** A player can put their own character on auto from the command
+  panel ("Go on auto"), to talk and let the fight run. Picking a command
+  takes them off it. The timer stays.
+
 ## The pointcrawl map
 
 Each campaign has a map (`/campaigns/:id/map`), and the table shows it too.

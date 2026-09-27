@@ -12,7 +12,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body data-book="<%= current_book %>" style="<%= accent_style %>">
+  <body data-book="<%= current_book %>" style="<%= accent_style %>" <%= tag.attributes(data: { view: coop_view(@campaign || @battle&.campaign) }) %>>
     <header class="topbar">
       <%= link_to "Polychrome", root_path, class: "topbar__brand" %>
       <% if @world&.persisted? %>

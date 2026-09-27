@@ -13,6 +13,7 @@ export default class extends Controller {
 
   connect() {
     if (this.element.dataset.chatLineLiveValue !== "true" || this.element.dataset.rolled) return
+    if (document.body.dataset.view === "controller") return // the shared screen shows it
     this.element.dataset.rolled = "true"
     // Several at once (the whole party rolling) take turns.
     // Broadcasts can land out of order: gather the batch, then go in order.
