@@ -12,6 +12,7 @@
   <fieldset class="panel">
     <legend>Rows</legend>
     <p class="hint" data-show-for="treasure">Each row is an item or an amount of gil.</p>
+    <p class="hint"><strong>Worlds are live:</strong> towns and dungeons already rolled from this table change with it, except the people and rooms a GM has pinned.</p>
     <p class="hint">Weight defaults to 1: a row with weight 3 comes up three times as often. Clear a row to remove it.</p>
     <% items = @world.items.order(:name).map { |i| [ i.name, i.slug ] } %>
     <table class="grid-form">

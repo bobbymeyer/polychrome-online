@@ -3,17 +3,24 @@
 # The base world's first book entries (docs/HANDOFF.md §2: "The base world
 # is seed data: the first World and its children").
 #
-# Idempotent: entries are matched by slug and updated in place, so this can
-# be re-run after editing. Numbers are first-pass tuning (§9.2).
+# Worlds are live: a GM develops theirs as they play, editing entries in the
+# books. So an ordinary run only adds what's missing (a new monster, a new
+# table) and never touches an entry that's already there, edited or not.
+# `bin/rails base_world:update` (overwrite: true) puts every entry back to
+# what's written here, for when the seed data itself has been retuned.
+# Numbers are first-pass tuning (§9.2).
 module Seeds
   module BaseWorld
     module_function
 
-    def run
+    def run(overwrite: false)
+      @overwrite = overwrite
       world = World.find_or_initialize_by(slug: "base")
-      world.update!(name: "Base World",
-                    description: "The opinionated default setting: crystals, jobs, and a world map of towns, " \
-                                 "dungeons and the roads between them.")
+      if world.new_record? || overwrite
+        world.update!(name: "Base World",
+                      description: "The opinionated default setting: crystals, jobs, and a world map of towns, " \
+                                   "dungeons and the roads between them.")
+      end
 
       ABILITIES.each { |slug, attrs| upsert(world.abilities, slug, attrs) }
       ITEMS.each { |slug, attrs| upsert(world.items, slug, attrs) }
@@ -26,7 +33,10 @@ module Seeds
       end
       JOBS.each do |slug, attrs|
         levels = attrs.fetch(:levels)
+        fresh = !world.jobs.exists?(slug: slug.to_s)
         job = upsert(world.jobs, slug, attrs.except(:levels))
+        next unless fresh || overwrite
+
         job.job_levels.destroy_all
         levels.each_with_index do |(ability, abp), i|
           job.job_levels.create!(level: i + 1, abp: abp, ability: world.abilities.find_by!(slug: ability))
@@ -35,9 +45,11 @@ module Seeds
       world
     end
 
+    # Create the entry if it's missing; only rewrite an existing one when
+    # overwriting.
     def upsert(scope, slug, attrs)
       record = scope.find_or_initialize_by(slug: slug.to_s)
-      record.update!(attrs)
+      record.update!(attrs) if record.new_record? || @overwrite
       record
     end
 

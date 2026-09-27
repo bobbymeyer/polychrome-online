@@ -46,4 +46,28 @@ RSpec.describe Seeds::BaseWorld do
       expect(%w[victory defeat input]).to include(state["status"])
     end
   end
+
+  it "only adds what's missing when re-run, so a GM's edits survive a deploy" do
+    world = described_class.run
+    goblin = world.monsters.find_by!(slug: "goblin")
+    goblin.update!(name: "Bog Goblin", exp: 99)
+    knight = world.jobs.find_by!(slug: "knight")
+    knight.job_levels.last.destroy!
+    world.monsters.find_by!(slug: "ogre").destroy!
+
+    described_class.run
+    expect(goblin.reload).to have_attributes(name: "Bog Goblin", exp: 99)
+    expect(knight.reload.job_levels.count).to eq(2)
+    expect(world.monsters.find_by(slug: "ogre")).to be_present # the missing one is back
+  end
+
+  it "puts everything back when asked to overwrite" do
+    world = described_class.run
+    world.monsters.find_by!(slug: "goblin").update!(name: "Bog Goblin")
+    world.jobs.find_by!(slug: "knight").job_levels.last.destroy!
+
+    described_class.run(overwrite: true)
+    expect(world.monsters.find_by!(slug: "goblin").name).to eq("Goblin")
+    expect(world.jobs.find_by!(slug: "knight").job_levels.count).to eq(3)
+  end
 end

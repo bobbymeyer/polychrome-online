@@ -2,6 +2,7 @@
 <%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form", data: { controller: "kind-switch" } do |f| %>
   <%= render "book_entries/errors", entry: entry %>
   <%= render "book_entries/identity_fields", f: f %>
+  <p class="hint"><strong>Worlds are live:</strong> places already rolled from this template change with it, except what a GM has pinned.</p>
   <div class="field-row">
     <div class="field"><%= f.label :kind %><%= f.select :kind, LocationTemplate::KINDS.map { |k| [ k.humanize, k ] }, {}, data: { kind_switch_target: "select", action: "kind-switch#update" } %></div>
   </div>

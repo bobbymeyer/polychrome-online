@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_27_201000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -160,7 +160,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_200900) do
     t.integer "world_id", null: false
     t.string "name", null: false
     t.integer "gil", default: 0, null: false
-    t.integer "world_version"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "current_node_id"

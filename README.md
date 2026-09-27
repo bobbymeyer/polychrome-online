@@ -47,6 +47,11 @@ bin/rspec               # all specs; bin/ci also runs RuboCop, Brakeman and audi
 
 No database server needed: it's SQLite, with databases stored in `storage/`.
 
+After a deploy, `bin/rails db:seed` adds any Base World entries that are new in
+`db/seeds/base_world.rb` and leaves existing ones alone, so a GM's edits
+survive. To put every Base World entry back to the seed data (after a
+rebalance, say), run `bin/rails base_world:update`. It overwrites edits.
+
 ## Books
 
 Every book is a resource namespace inside a world, e.g.
@@ -132,8 +137,8 @@ other browsers and have each player take a seat.
 ## Characters and jobs
 
 A world has campaigns (§4): a party, a shared bag, gil, flags, a map and its
-locations. The `world_version` column is the §9.8 pin, designed but not used
-(see "Campaign flags and GM changes").
+locations. Worlds are live (§9.8): a campaign reads its world's books as they
+are now (see "Campaign flags and GM changes").
 
 - **Level:** comes from EXP (`Stats::Growth`, pure, like `Stats::Derivation`).
 - **Stats are never stored.** The sheet shows each derivation stage: level
@@ -276,10 +281,12 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   That covers renames, pins, pinned or written-in NPCs, shop stock, placed
   bosses and added rooms. Each one reverts on its own; revert them all and
   the location is exactly what was rolled.
-- **World-version pins (§9.8) are not built**, by decision. Campaigns read the
-  books live, so editing the Bestiary changes live campaigns, as §9.8 warns.
-  The unused `campaigns.world_version` column is the seam for when a second
-  author makes that matter (§1: no edition tooling until then).
+- **Worlds are live (§9.8, decided).** Campaigns read the books as they are
+  now, so a GM can develop their world while playing it: retune the Knight and
+  every Knight follows. A battle in progress is unaffected (it copies what it
+  needs when it starts). Towns and dungeons are rebuilt from their seed and the
+  current tables, so editing a table changes places already rolled, except
+  what's pinned. To fork a world instead, start a new one from its books.
 
 ## Accounts
 
