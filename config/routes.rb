@@ -23,6 +23,7 @@ Rails.application.routes.draw do
     end
     namespace :grimoire do
       resources :abilities, param: :slug
+      resources :families, only: %i[new create]
     end
     namespace :armory do
       resources :items, param: :slug

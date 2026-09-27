@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_110000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -29,6 +29,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_100000) do
     t.text "art_notes"
     t.json "art_loras", default: [], null: false
     t.json "image_recipe"
+    t.integer "hp_cost", default: 0, null: false
+    t.integer "charge", default: 0, null: false
     t.index ["world_id", "slug"], name: "index_abilities_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_abilities_on_world_id"
   end

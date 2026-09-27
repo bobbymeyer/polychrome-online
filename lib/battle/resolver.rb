@@ -103,6 +103,7 @@ module Battle
       raise InvalidAction, "#{unit['id']} does not know #{ability['id']}" unless unit["abilities"].include?(ability["id"])
       raise InvalidAction, "#{unit['id']} is silenced" if ability["kind"] == "magic" && ctx.status?(unit, "silence")
       raise InvalidAction, "#{unit['id']} lacks MP for #{ability['id']}" if unit["mp"] < ctx.ability_cost(ability)
+      raise InvalidAction, "#{unit['id']} lacks the HP for #{ability['id']}" unless ctx.usable?(unit, ability)
 
       target = cmd["target"]
       validate_target(unit, ability, target) if target
@@ -483,6 +484,8 @@ module Battle
         nil
       elsif blocking
         ctx.emit(:turn_skipped, unit: unit["id"], reason: blocking)
+      elsif ctx.status?(unit, "charging")
+        release(unit)
       elsif ctx.status?(unit, "confuse")
         run_amok(unit)
       elsif ctx.status?(unit, "berserk")
@@ -590,6 +593,26 @@ module Battle
       special.merge("cost" => {})
     end
 
+    # A move that takes turns to go off: the user winds it up (charging,
+    # no commands) and it goes off on the turn the charge runs out, paid for
+    # then (#release). Knocked out, the charge is lost with every status.
+    def wind_up(unit, ability, target_id)
+      unit["statuses"] << { "kind" => "charging", "turns" => ability["charge"], "left" => ability["charge"],
+                            "ability" => ability, "target" => target_id }
+      ctx.emit(:charging, actor: unit["id"], ability: ability["id"], turns: ability["charge"])
+    end
+
+    # Counts the charge down; on the last turn the move goes off.
+    def release(unit)
+      status = unit["statuses"].find { |s| s["kind"] == "charging" }
+      status["left"] = status.fetch("left", status["turns"]) - 1
+      return ctx.emit(:turn_skipped, unit: unit["id"], reason: "charging") if status["left"].positive?
+
+      unit["statuses"].delete(status)
+      ability = status["ability"] || ctx.ability("attack")
+      use_ability(unit, ability.merge("released" => true), status["target"])
+    end
+
     # Charged: the next move that deals or restores HP is twice as strong,
     # and the charge is spent on it.
     CHARGE_POWER = 200
@@ -626,8 +649,17 @@ module Battle
       if unit["mp"] < cost
         return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: "no_mp")
       end
+      blood = State.hp_cost(unit, ability)
+      if blood.positive? && unit["hp"] <= blood
+        return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: "no_hp")
+      end
+      return wind_up(unit, ability, target_id) if ability.fetch("charge", 0).positive? && !ability["released"]
 
       unit["mp"] -= cost
+      if blood.positive?
+        unit["hp"] -= blood
+        ctx.emit(:hp_paid, actor: unit["id"], amount: blood, hp: unit["hp"])
+      end
       ability = charged(unit, ability)
       if ability["target"] == "random_enemy"
         announce(unit, ability, [], cost)

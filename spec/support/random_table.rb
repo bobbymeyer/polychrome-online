@@ -20,7 +20,8 @@ class RandomTable
                            .map { |u|
                              u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser),
                                      passives: Battle::PASSIVES.sample(@chooser.rand(0..2), random: @chooser),
-                                     abilities: u[:abilities] + %w[cover jump gaia hide banish high_jump barrier taunt stop rage confuse focus flame_blade gravity osmose]
+                                     abilities: u[:abilities] + %w[cover jump gaia hide banish high_jump barrier taunt stop rage confuse focus flame_blade gravity osmose
+                                                                            blood_strike holy comet sneak_attack]
                                                                          .sample(5, random: @chooser))
                               .merge(job_parts(u))
                            },
@@ -95,10 +96,7 @@ class RandomTable
       return cmd(u, "kind" => "item", "item" => item["id"], "target" => target_for(state, u, item)) if item
     end
 
-    usable = u["abilities"].map { |id| state["abilities"][id] }.select do |a|
-      u["mp"] >= a.dig("cost", "mp").to_i &&
-        !(a["kind"] == "magic" && u["statuses"].any? { |s| s["kind"] == "silence" })
-    end
+    usable = u["abilities"].map { |id| state["abilities"][id] }.select { |a| Battle::State.usable?(u, a) }
     ability = usable.sample(random: @chooser)
     command = { "kind" => "ability", "ability" => ability["id"], "target" => target_for(state, u, ability) }
     command["timing"] = "perfect" if @chooser.rand(4).zero?

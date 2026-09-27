@@ -18,6 +18,8 @@ class Ability < ApplicationRecord
   validates :kind, inclusion: { in: KINDS }
   validates :target, inclusion: { in: Battle::TARGETINGS }
   validates :mp_cost, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :hp_cost, numericality: { only_integer: true, in: 0..Battle::MAX_HP_COST }
+  validates :charge, numericality: { only_integer: true, in: 0..Battle::MAX_CHARGE }
   validates :gesture, inclusion: { in: GESTURES }, allow_blank: true
   validates :slug, exclusion: { in: %w[attack], message: "is reserved for the built-in Attack" }
   validate :engine_accepts_effects
@@ -51,9 +53,10 @@ class Ability < ApplicationRecord
       "name" => name,
       "kind" => kind,
       "target" => target,
-      "cost" => { "mp" => mp_cost.to_i },
+      "cost" => { "mp" => mp_cost.to_i, "hp" => (hp_cost if hp_cost.to_i.positive?) }.compact,
       "effects" => effects,
-      "gesture" => gesture.presence
+      "gesture" => gesture.presence,
+      "charge" => (charge if charge.to_i.positive?)
     }.compact
   end
 

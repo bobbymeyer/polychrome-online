@@ -17,8 +17,10 @@ module Battle
   # (optional ones have defaults in Battle::Effects). String-valued params
   # are named in PRIMITIVE_STRING_PARAMS; everything else is an integer.
   PRIMITIVE_PARAMS = {
-    "physical" => { required: [], optional: %w[power hits type] },
-    "elemental" => { required: %w[type power], optional: %w[hits] },
+    # against/bonus: bonus% of the damage against a target with that status
+    # or type, or that's undead or a boss (×2 against the sleeping).
+    "physical" => { required: [], optional: %w[power hits type against bonus] },
+    "elemental" => { required: %w[type power], optional: %w[hits against bonus] },
     "status" => { required: %w[kind], optional: %w[chance duration] },
     "heal" => { required: %w[power], optional: [] },
     "drain" => { required: %w[power], optional: [] },
@@ -50,7 +52,14 @@ module Battle
     # the user (Osmose, Rasp, Siphon).
     "sap" => { required: %w[power], optional: %w[keep] }
   }.freeze
-  PRIMITIVE_STRING_PARAMS = %w[type kind stat who].freeze
+  PRIMITIVE_STRING_PARAMS = %w[type kind stat who against].freeze
+  # What a bonus can be against, beside statuses and types.
+  AGAINST_TRAITS = %w[undead boss].freeze
+  MAX_BONUS = 400
+  # Most turns a move can take to charge before it goes off.
+  MAX_CHARGE = 3
+  # Most of the user's max HP a move can cost.
+  MAX_HP_COST = 90
   AWAY_WHO = %w[self target].freeze
   MAX_AWAY_TURNS = 5
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
@@ -69,16 +78,17 @@ module Battle
   # charged: its next move that deals or restores HP is twice as strong.
   # imbued:  Attack strikes with the status's type (the imbue primitive).
   # shield:  takes damage out of the status's amount first (the shield primitive).
+  # charging: winding up a move that takes turns to go off.
   STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away
-                aggro stop berserk confuse charged imbued shield].freeze
+                aggro stop berserk confuse charged imbued shield charging].freeze
   # Off the field: nobody can reach them, and they can't be commanded.
   OUT_OF_REACH_STATUSES = %w[airborne away].freeze
   # Draw the other side's single-target moves.
   AGGRO_STATUSES = %w[aggro cover].freeze
   # What a cleanse with no kind cures: everything but the good ones.
-  HARMFUL_STATUSES = (STATUSES - %w[haste cover airborne away aggro charged imbued shield]).freeze
+  HARMFUL_STATUSES = (STATUSES - %w[haste cover airborne away aggro charged imbued shield charging]).freeze
   # Only their own primitives make these: they carry more than a duration.
-  PRIMITIVE_STATUSES = %w[airborne imbued shield].freeze
+  PRIMITIVE_STATUSES = %w[airborne imbued shield charging].freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
   COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
@@ -89,7 +99,7 @@ module Battle
   # They act on their own: berserk attacks, confuse attacks anyone.
   RUNAWAY_STATUSES = %w[berserk confuse].freeze
   # No command while these last: the unit's turn is already spoken for.
-  NO_INPUT_STATUSES = (DISABLING_STATUSES + OUT_OF_REACH_STATUSES + RUNAWAY_STATUSES).freeze
+  NO_INPUT_STATUSES = (DISABLING_STATUSES + OUT_OF_REACH_STATUSES + RUNAWAY_STATUSES + %w[charging]).freeze
   # What a job gives beyond numbers (Battle::Effects, #take_turn):
   #   counter      — sometimes strikes back when hit by an enemy's blow
   #   regen        — a little HP back at the end of each of its turns
@@ -302,12 +312,18 @@ module Battle
       ability.fetch("cost", {}).fetch("mp", 0)
     end
 
-    # Can this unit pay for and use the ability right now?
+    # HP a move costs this unit: a percent of its max HP (Blood Magic).
+    def hp_cost(unit, ability)
+      unit["stats"]["max_hp"] * ability.fetch("cost", {}).fetch("hp", 0) / 100
+    end
+
+    # Can this unit pay for and use the ability right now? A move that costs
+    # HP needs more than it costs: nobody spends their last.
     def usable?(unit, ability)
       return false unless unit["abilities"].include?(ability["id"])
       return false if ability["kind"] == "magic" && unit["statuses"].any? { |s| s["kind"] == "silence" }
 
-      unit["mp"] >= ability_cost(ability)
+      unit["mp"] >= ability_cost(ability) && (hp_cost(unit, ability).zero? || unit["hp"] > hp_cost(unit, ability))
     end
 
     def revives?(ability)
@@ -347,6 +363,10 @@ module Battle
 
     def validate_ability!(ability, known = TYPES)
       id = ability["id"]
+      hp = ability.fetch("cost", {}).fetch("hp", 0)
+      raise ArgumentError, "#{id}: HP cost must be 0 to #{MAX_HP_COST}%" unless hp.is_a?(Integer) && hp.between?(0, MAX_HP_COST)
+      charge = ability.fetch("charge", 0)
+      raise ArgumentError, "#{id}: charge must be 0 to #{MAX_CHARGE} turns" unless charge.is_a?(Integer) && charge.between?(0, MAX_CHARGE)
       raise ArgumentError, "#{id}: unknown kind #{ability['kind']}" unless ABILITY_KINDS.include?(ability.fetch("kind", "skill"))
       raise ArgumentError, "#{id}: unknown targeting #{ability['target']}" unless TARGETINGS.include?(ability["target"])
 
@@ -374,6 +394,11 @@ module Battle
           raise ArgumentError, "#{id}: away lasts 1 to #{MAX_AWAY_TURNS} turns" if effect["duration"] && !effect["duration"].between?(1, MAX_AWAY_TURNS)
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !(known.include?(effect["type"]) || effect["type"] == "terrain")
         when "elemental", "physical", "jump"
+          if effect["against"]
+            against_ok = STATUSES.include?(effect["against"]) || known.include?(effect["against"]) || AGAINST_TRAITS.include?(effect["against"])
+            raise ArgumentError, "#{id}: a bonus can't be against #{effect['against']}" unless against_ok
+          end
+          raise ArgumentError, "#{id}: bonus must be 0 to #{MAX_BONUS}" if effect["bonus"] && !effect["bonus"].between?(0, MAX_BONUS)
           # "terrain": the type of where the fight is (a Geomancer's arts).
           typed = known.include?(effect["type"]) || effect["type"] == "terrain"
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !typed

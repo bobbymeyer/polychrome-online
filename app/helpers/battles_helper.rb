@@ -124,6 +124,8 @@ module BattlesHelper
     when "shielded" then "#{name.('target')}'s barrier takes #{event['absorbed']}#{event['left'].zero? ? ' and breaks' : ''}."
     when "confused" then event["target"] ? "#{name.('actor')}, confused, turns on #{name.('target')}!" : "#{name.('actor')} stumbles about."
     when "mp_lost" then "#{name.('target')} loses #{event['amount']} MP."
+    when "hp_paid" then "#{name.('actor')} pays #{event['amount']} HP."
+    when "charging" then "#{name.('actor')} gathers strength for #{ability_name(state, event['ability'])}…"
     when "land" then event["target"] ? "#{name.('actor')} comes down on #{name.('target')}!" : "#{name.('actor')} lands, with nobody to hit."
     when "covered" then "#{name.('unit')} steps in front of #{unit_name(state, event['for'])}!"
     when "counter" then "#{name.('actor')} strikes back!#{dice_note(event)}"
@@ -227,6 +229,7 @@ module BattlesHelper
     case event["reason"]
     when "silenced" then "#{actor} is silenced!"
     when "no_item" then "There's no #{item_name(state, event['item'])} left."
+    when "no_hp" then "#{actor} doesn't have the HP to spare."
     else "#{actor} doesn't have the MP."
     end
   end
@@ -253,6 +256,7 @@ module BattlesHelper
     when "paralyze" then "#{unit} can't move."
     when "away" then "#{unit} is away."
     when "stop" then "#{unit} is stopped in time."
+    when "charging" then "#{unit} is still gathering strength."
     else "#{unit} has no orders."
     end
   end

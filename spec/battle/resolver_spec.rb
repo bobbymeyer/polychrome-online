@@ -717,6 +717,31 @@ RSpec.describe Battle::Resolver do
         expect(of_type(drained, :mp_restored)).to include(a_hash_including("target" => "mage", "amount" => lost["amount"]))
       end
 
+      it "hits harder against what a move is good against" do
+        plain = cast("holy", "brute").last
+        against = cast("holy", "brute", enemies: [ brute.first.merge(undead: true) ]).last
+        amount = ->(log) { of_type(log, :damage).find { |e| e["actor"] == "mage" }["amount"] }
+        expect(amount.(against)).to be_within(3).of(amount.(plain) * 3)
+      end
+
+      it "costs HP for a blood move, and won't spend the last of it" do
+        _, events = cast("blood_strike", "brute", hp: 900)
+        expect(of_type(events, :hp_paid).sole).to include("actor" => "mage", "amount" => 90, "hp" => 810)
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[blood_strike], hp: 90) ], enemies: brute)
+        expect { round(state, "mage" => { kind: "ability", ability: "blood_strike", target: "brute" }) }.to raise_error(Battle::InvalidAction, /HP/)
+      end
+
+      it "winds up a charged move, then lets it go on the next turn, paid for then" do
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[comet]) ], enemies: brute)
+        state, events = round(state, "mage" => { kind: "ability", ability: "comet" })
+        expect(of_type(events, :charging).sole).to include("actor" => "mage", "turns" => 1)
+        expect(unit(state, "mage")["mp"]).to eq(99)
+        expect(Battle::State.awaiting_input(state)).to be_empty
+        state, events = apply(state, { type: "timeout" })
+        expect(of_type(events, :damage).find { |e| e["actor"] == "mage" }).to include("damage_type" => "rock")
+        expect(unit(state, "mage")["mp"]).to eq(99 - 8 + 0)
+      end
+
       it "turns healing on the undead into harm, and drains them backwards" do
         undead = [ brute.first.merge(undead: true) ]
         _, events = cast("cure", "brute", enemies: undead)

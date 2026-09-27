@@ -177,6 +177,13 @@ export default class extends Controller {
       case "confused":
         if (e.target) this.popup(tl, e.actor, "CONFUSED", "status", at)
         return 220
+      case "hp_paid":
+        this.popup(tl, e.actor, `−${e.amount} HP`, "status", at)
+        return 240
+      case "charging":
+        this.popup(tl, e.actor, "CHARGING", "status", at)
+        gesture(tl, this.sprite(e.actor), "shake", at)
+        return 360
       case "mp_lost":
         this.popup(tl, e.target, `−${e.amount} MP`, "status", at)
         return 260

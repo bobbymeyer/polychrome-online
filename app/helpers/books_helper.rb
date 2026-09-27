@@ -101,8 +101,8 @@ module BooksHelper
   def describe_effect(effect)
     e = effect
     case e["primitive"]
-    when "physical" then "#{"#{effect_type(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}"
-    when "elemental" then "#{effect_type(e['type'])} damage, power #{e['power']}#{hits(e)}"
+    when "physical" then "#{"#{effect_type(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}#{describe_against(e)}"
+    when "elemental" then "#{effect_type(e['type'])} damage, power #{e['power']}#{hits(e)}#{describe_against(e)}"
     when "status" then "#{term(e['kind'])} (#{e.fetch('chance', 100)}%, #{e.fetch('duration', 3)} turns)"
     when "heal" then "Restore HP, power #{e['power']}"
     when "drain" then "Drain HP, power #{e['power']}"
@@ -121,6 +121,13 @@ module BooksHelper
     when "sap" then "Take MP, power #{e['power']}#{", keep #{e['keep']}%" if e['keep'].to_i.positive?}"
     else e["primitive"].to_s.humanize
     end
+  end
+
+  def describe_against(e)
+    return "" unless e["against"]
+
+    what = Battle::STATUSES.include?(e["against"]) || Battle::AGAINST_TRAITS.include?(e["against"]) ? term(e["against"]).downcase : type_name(e["against"])
+    ", ×#{format('%g', e.fetch('bonus', 200) / 100.0)} against #{what}"
   end
 
   def describe_away(e)

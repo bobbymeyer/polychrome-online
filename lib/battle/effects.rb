@@ -94,7 +94,7 @@ module Battle
       crit, crit_roll = ctx.rng.d100(crit_needed)
       basis = effect["basis"]
       base = (ctx.stat(actor, "atk", basis: basis) + ctx.stat(actor, "str", basis: basis)) * effect.fetch("power", 100) / 100
-      amount = mitigate(vary(ctx, base), ctx.stat(target, "def"))
+      amount = against(ctx, target, effect, mitigate(vary(ctx, base), ctx.stat(target, "def")))
       amount *= 2 if crit
       amount /= 2 if target["defending"]
       # Typed after every draw, so the stream doesn't depend on the chart.
@@ -170,7 +170,17 @@ module Battle
     # elemental(type, power, hits): power scaled by mag, softened by mdef,
     # then by the type chart. Magic never misses.
     def elemental(ctx, actor, target, effect)
-      typed(ctx, actor, target, type_of(ctx, effect), magic_amount(ctx, actor, target, effect))
+      typed(ctx, actor, target, type_of(ctx, effect), against(ctx, target, effect, magic_amount(ctx, actor, target, effect)))
+    end
+
+    # against/bonus: bonus% (default ×2) when the target has the status or
+    # type named, or is undead or a boss.
+    def against(ctx, target, effect, amount)
+      trait = effect["against"]
+      return amount unless trait
+
+      matched = ctx.status?(target, trait) || target.fetch("types", []).include?(trait) || (AGAINST_TRAITS.include?(trait) && target[trait])
+      matched ? amount * effect.fetch("bonus", 200) / 100 : amount
     end
 
     # Deal damage of a type (nil: typeless) through the chart and the
@@ -348,8 +358,8 @@ module Battle
         ctx.restore_mp(unit, [ unit["stats"]["max_mp"] / REGEN_DIVISOR, 1 ].max, regen: true)
       end
 
-      # Away counts its own turns (Battle::Resolver#come_back).
-      unit["statuses"].each { |s| s["turns"] -= 1 unless s["kind"] == "away" }
+      # Away and charging count their own turns (Battle::Resolver).
+      unit["statuses"].each { |s| s["turns"] -= 1 unless %w[away charging].include?(s["kind"]) }
       unit["statuses"].select { |s| s["turns"] <= 0 }.map { |s| s["kind"] }.each do |kind|
         ctx.remove_status(unit, kind, reason: "wore_off")
       end

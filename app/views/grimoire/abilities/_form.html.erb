@@ -16,6 +16,16 @@
       <%= f.number_field :mp_cost, min: 0 %>
     </div>
     <div class="field">
+      <%= f.label :hp_cost, "HP cost (% of max)" %>
+      <%= f.number_field :hp_cost, min: 0, max: Battle::MAX_HP_COST %>
+      <p class="hint">Paid in the user's own HP. Nobody can spend their last.</p>
+    </div>
+    <div class="field">
+      <%= f.label :charge, "Charge (turns)" %>
+      <%= f.number_field :charge, min: 0, max: Battle::MAX_CHARGE %>
+      <p class="hint">Turns it takes to go off. The user can't act meanwhile.</p>
+    </div>
+    <div class="field">
       <%= f.label :gesture %>
       <%= f.select :gesture, Ability::GESTURES.map { |g| [term(g), g] }, include_blank: "None" %>
     </div>

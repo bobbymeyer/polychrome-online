@@ -74,7 +74,14 @@ module BattleFixtures
       focus: { name: "Focus", kind: "skill", target: "self", cost: { mp: 0 }, effects: [ { primitive: "status", kind: "charged", duration: 3 } ] },
       flame_blade: { name: "Flame Blade", kind: "magic", target: "self", cost: { mp: 3 }, effects: [ { primitive: "imbue", type: "fire", duration: 3 } ] },
       gravity: { name: "Gravity", kind: "magic", target: "single_enemy", cost: { mp: 6 }, effects: [ { primitive: "percent", power: 25, chance: 80 } ] },
-      osmose: { name: "Osmose", kind: "magic", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "sap", power: 20, keep: 100 } ] }
+      osmose: { name: "Osmose", kind: "magic", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "sap", power: 20, keep: 100 } ] },
+      blood_strike: { name: "Blood Strike", kind: "skill", target: "single_enemy", cost: { mp: 0, hp: 10 }, effects: [ { primitive: "physical", power: 180 } ] },
+      holy: { name: "Holy", kind: "magic", target: "single_enemy", cost: { mp: 6 },
+              effects: [ { primitive: "elemental", type: "psychic", power: 18, against: "undead", bonus: 300 } ] },
+      comet: { name: "Comet", kind: "magic", target: "all_enemies", cost: { mp: 8 }, charge: 1,
+               effects: [ { primitive: "elemental", type: "rock", power: 30 } ] },
+      sneak_attack: { name: "Sneak Attack", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+                      effects: [ { primitive: "physical", power: 100, against: "sleep", bonus: 200 } ] }
     }
   end
 
