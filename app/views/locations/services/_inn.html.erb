@@ -1,0 +1,11 @@
+<%# An inn's panel (locations/_town): a room for the night, per character. %>
+<p>A room for the night: full HP and MP. It can't help the fallen: that takes a temple.</p>
+<%= render layout: "locations/services/customers", locals: { location: location, kind: "inn", action: "Rest", shopping: shopping } do |character| %>
+  <%= !character.conscious? ? "Down" : (@campaign.rested?(character) ? "Rested" : nil) %>
+<% end %>
+<% tired = @campaign.characters.select { |c| c.conscious? && !@campaign.rested?(c) } %>
+<% if shopping && tired.size > 1 %>
+  <% total = tired.sum { |c| @campaign.service_price("inn", c) } %>
+  <%= button_to "Rooms for everyone (#{number_with_delimiter(total)} gil)", location_services_path(location), params: { kind: "inn", everyone: 1 },
+                class: "button", disabled: total > @campaign.gil %>
+<% end %>

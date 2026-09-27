@@ -627,6 +627,31 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .forecast--hard { --c: var(--orange); } .forecast--deadly { --c: var(--wine-red); }
 .forecast--none { background: none; border: 0; padding: 0; }
 
+/* A town's services: a panel under each building, closed until you walk in. */
+.services { display: grid; gap: 8px; }
+.service { border: 3px solid var(--ink); background: var(--paper); }
+.service > summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 10px 14px; cursor: pointer; list-style: none;
+  background: var(--paper); transition: background var(--quick);
+}
+.service > summary::-webkit-details-marker { display: none; }
+.service > summary::before {
+  content: "▸"; width: auto; height: auto; margin: 0; border: 0; transform: none;
+  color: var(--signal); font-weight: 900; transition: rotate var(--quick);
+}
+.service[open] > summary::before { transform: none; rotate: 90deg; }
+.service[open] > summary { margin-bottom: 0; }
+.skyline__service { cursor: pointer; }
+.skyline__service:hover .skyline__wall, .skyline__service:focus-visible .skyline__wall { stroke: var(--signal); stroke-width: 4; }
+.service > summary:hover { background: var(--tint); }
+.service[open] > summary { background: var(--ink); color: var(--paper); }
+.service__name { font-style: italic; font-weight: 900; font-size: 18px; }
+.service__kind { color: var(--grey); font-size: 14px; }
+.service[open] .service__kind { color: var(--light-grey); }
+.service__body { padding: 12px 14px 14px; }
+.service__body > p:first-child { margin-top: 0; }
+.service__pin { margin: 8px 0 0; }
+
 /* Taking a line back: quiet, and only on hover or focus once shown. */
 .chat-line__retract-form { display: inline; margin: 0; }
 .chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }

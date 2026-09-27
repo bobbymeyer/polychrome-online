@@ -89,6 +89,60 @@ class Campaign < ApplicationRecord
     end
   end
 
+  # --- town services -----------------------------------------------------------
+
+  # What a town's services charge, from the party's purse: gil per level of
+  # the character served, with a floor. A rumour costs the same for anyone.
+  SERVICE_PRICES = { "inn" => [ 5, 10 ], "temple" => [ 20, 50 ], "guild" => [ 0, 30 ] }.freeze
+  SERVICE_OFFERS = { "inn" => "a room for the night", "temple" => "a raising", "guild" => "a rumour" }.freeze
+
+  def service_price(kind, character)
+    per_level, floor = SERVICE_PRICES.fetch(kind)
+    [ per_level * character.level, floor ].max
+  end
+
+  # A character pays for a service in the town the party is in:
+  #   inn    — a night's rest: full HP and MP (the fallen need a temple)
+  #   temple — a fallen character raised, at full HP and MP
+  #   guild  — a rumour: the GM owes them one
+  def use_service!(kind, character, at:, by:)
+    raise ArgumentError, "Not while a battle is on" if battle_on?
+    raise ArgumentError, "#{character.name} isn't in this party" unless character.campaign_id == id
+    service = at.view.fetch("services", []).find { |s| s["kind"] == kind } or raise ArgumentError, "#{at.name} has no #{kind}"
+    case kind
+    when "inn"
+      raise ArgumentError, "#{character.name} is down: an inn can't help the fallen. A temple can." unless character.conscious?
+      raise ArgumentError, "#{character.name} is already rested" if rested?(character)
+    when "temple"
+      raise ArgumentError, "#{character.name} is still on their feet" if character.conscious?
+    end
+
+    cost = service_price(kind, character)
+    transaction do
+      reload
+      raise ArgumentError, "The party has #{gil} gil; #{SERVICE_OFFERS.fetch(kind)} for #{character.name} costs #{cost}" if cost > gil
+
+      update!(gil: gil - cost)
+      character.update!(hp: nil, mp: nil) if %w[inn temple].include?(kind)
+      messages.create!(kind: "system", body: service_line(kind, character, service, by, cost))
+    end
+  end
+
+  # Everyone who needs it takes a room, in one payment.
+  def rest_at_inn!(at:, by:)
+    tired = characters.order(:created_at).select { |c| c.conscious? && !rested?(c) }
+    raise ArgumentError, "Everyone standing is already rested" if tired.empty?
+
+    cost = tired.sum { |c| service_price("inn", c) }
+    raise ArgumentError, "The party has #{gil} gil; rooms for everyone cost #{cost}" if cost > gil
+
+    transaction { tired.each { |c| use_service!("inn", c, at: at, by: by) } }
+  end
+
+  def rested?(character)
+    character.current_hp == character.stats["max_hp"] && character.current_mp == character.stats["max_mp"]
+  end
+
   # --- using items outside battle ---------------------------------------------
 
   def battle_on?
@@ -301,6 +355,15 @@ class Campaign < ApplicationRecord
   end
 
   # Everyone back to full, told at the table. Not in the middle of a fight.
+  def service_line(kind, character, service, by, cost)
+    payer = by == character.name ? character.name : "#{by}, for #{character.name},"
+    case kind
+    when "inn" then "#{payer} takes a room at #{service['name']} (#{cost} gil). #{character.name} is rested: full HP and MP."
+    when "temple" then "#{payer} pays #{cost} gil at #{service['name']}. #{character.name} is raised, whole again."
+    when "guild" then "#{payer} buys a rumour at #{service['name']} (#{cost} gil). The GM owes #{character.name} something true."
+    end
+  end
+
   def rest!
     raise ArgumentError, "Not while a battle is on" if battle_on?
 

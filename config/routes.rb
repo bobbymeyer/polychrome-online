@@ -99,6 +99,7 @@ Rails.application.routes.draw do
       post :revert
     end
     # A town's shop: buy from its stock, sell from the bag.
+    resources :services, only: :create
     resource :shop, only: [] do
       post :buy
       post :sell

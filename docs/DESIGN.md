@@ -68,6 +68,9 @@ deliberate divergence from much of what follows, and where the two disagree the 
   Several go one after another.
 - **The forecast** on the battle form is a tinted band with a heavy verdict word, coloured from
   green (Easy) to wine (Deadly).
+- **A town's services** are panels with a 3px frame, one per building: a white bar with the
+  building's name in heavy italic and a red marker, which turns black when open. The buildings
+  in the skyline that house them outline in red on hover and open their panel.
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide

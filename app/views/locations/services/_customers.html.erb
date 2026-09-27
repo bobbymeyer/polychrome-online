@@ -1,0 +1,29 @@
+<%# One row per character the viewer pays for, with what this service costs them (inn, temple, guild). %>
+<% customers = @campaign.characters.order(:created_at).select { |c| can_manage?(c) } %>
+<% if customers.empty? %>
+  <p class="hint">Only the party's own players (and the GM) pay here.</p>
+<% else %>
+  <table class="book-table book-table--plain shop-table">
+    <tbody>
+      <% customers.each do |character| %>
+        <% price = @campaign.service_price(kind, character) %>
+        <% why_not = yield(character).to_s.strip.presence %>
+        <tr>
+          <td>
+            <%= character.name %>
+            <span class="muted">HP <%= character.current_hp %>/<%= character.stats["max_hp"] %> · MP <%= character.current_mp %>/<%= character.stats["max_mp"] %></span>
+          </td>
+          <td class="num"><%= number_with_delimiter(price) %> gil</td>
+          <td class="shop-table__buy">
+            <% if why_not %>
+              <span class="muted"><%= why_not %></span>
+            <% elsif shopping %>
+              <%= button_to action, location_services_path(location), params: { kind: kind, character_id: character.id },
+                            class: "button play", disabled: price > @campaign.gil %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

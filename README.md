@@ -326,6 +326,21 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   sells. Only that character's player or the GM can do that. Players can
   only shop in the town where the party is; the GM can shop anywhere. Every
   purchase and sale is announced at the table.
+- **Services.** Each of a town's services is a collapsible panel under
+  Services, named for its building and keeper. A building in the skyline
+  opens its panel too, and panels stay as you left them after paying.
+  A character pays from the party's purse (`Campaign#use_service!`): a player
+  for their own character, the GM for anyone, only in the town where the
+  party is, and never mid-battle. Prices are gil per level of the character
+  served, with a floor (`Campaign::SERVICE_PRICES`).
+  - **Inn:** a night's rest, full HP and MP. It can't help the fallen.
+    "Rooms for everyone" pays for all who need one at once.
+  - **Temple:** a fallen character is raised, whole again.
+  - **Guild:** a rumour. The table is told the GM owes that character
+    something true.
+
+  The GM's free "Rest" on the campaign page is still there, for when the
+  story says so.
 
 - **Stored:** only template + seed + GM overrides. What the location contains
   is generated from those on every view, by the pure `Generators::Town` and
