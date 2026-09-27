@@ -115,6 +115,14 @@
 
   <section class="window">
     <h2>Abilities</h2>
+    <% if (own = @character.job.signature_ability) %>
+      <p class="signature-line"><%= gloss(:signature, "Signature") %>: <%= link_to own.name, world_grimoire_ability_path(@world, own) %>
+        <span class="muted"><%= own.description %></span></p>
+    <% end %>
+    <% if (passives = @character.passives).any? %>
+      <p class="signature-line"><%= gloss(:passive, passives.size > 1 ? "Passives" : "Passive") %>:
+        <%= safe_join(passives.map { |p| passive_term(p) }, ", ") %></p>
+    <% end %>
     <h3>From <%= @character.job.name %></h3>
     <% native = @character.native_abilities %>
     <% if native.empty? %>
@@ -160,7 +168,7 @@
         <% @character.character_jobs.includes(job: { job_levels: :ability }).sort_by { |j| j.job.name }.each do |job_progress| %>
           <tr class="<%= 'is-current' if job_progress.job_id == @character.job_id %>">
             <td><%= link_to job_progress.job.name, world_compendium_job_path(@world, job_progress.job) %><%= " (current)" if job_progress.job_id == @character.job_id %></td>
-            <td class="num"><%= job_progress.level %>/<%= job_progress.job.job_levels.size %></td>
+            <td class="num"><%= job_progress.level %>/<%= job_progress.job.job_levels.size %><%= tag.span(" ★", title: "Mastered", class: "mastered-star") if job_progress.mastered? %></td>
             <td class="num"><%= job_progress.abp %></td>
             <td><%= job_progress.learned_abilities.map(&:name).join(", ").presence || "—" %></td>
           </tr>

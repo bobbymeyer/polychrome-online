@@ -23,6 +23,24 @@
       </li>
     <% end %>
   </ul>
+  <%# The moments worth a card of their own: a new ability, a job mastered. %>
+  <% cards = settlement["members"].flat_map do |member|
+       Array(member["abilities"]).map { |a| [ "New ability", member["name"], a["name"], a["description"] ] } +
+         (member["mastered"] ? [ [ "Mastered", member["name"], member["mastered"]["job"],
+                                   (member["mastered"]["passive"] ? "#{GlossaryHelper::PASSIVES.dig(member['mastered']['passive'], 0)} is yours in every job now." : "Every level learned.") ] ] : [])
+     end %>
+  <% if cards.any? %>
+    <div class="reward-cards">
+      <% cards.each do |kind, who, what, detail| %>
+        <article class="reward-card reward-card--<%= kind.parameterize %>">
+          <p class="reward-card__kind"><%= kind %>!</p>
+          <h3><%= what %></h3>
+          <p class="reward-card__who"><%= who %></p>
+          <% if detail.present? %><p class="reward-card__detail"><%= detail %></p><% end %>
+        </article>
+      <% end %>
+    </div>
+  <% end %>
 <% end %>
 
 <% if battle_gm? %>

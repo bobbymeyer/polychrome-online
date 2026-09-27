@@ -224,7 +224,7 @@ class Campaign < ApplicationRecord
       destination.update!(visible: true)
       origin.location&.leave!
       self.current_node = destination
-      self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled }
+      self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled, "terrain" => edge.encounter_table.terrain_type }
       save!
 
       messages.create!(kind: "system", body: "The party travels from #{origin.name} to #{destination.name}.")
@@ -252,7 +252,8 @@ class Campaign < ApplicationRecord
     raise ArgumentError, "Nobody is standing to fight" if standing.empty?
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
-                                 encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false)
+                                 encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
+                                 terrain: encounter["terrain"])
     update!(pending_encounter: nil)
     battle
   end

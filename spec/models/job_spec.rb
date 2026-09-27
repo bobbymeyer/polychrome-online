@@ -55,4 +55,13 @@ RSpec.describe Job do
     expect(job.update(desperation: "")).to be(true)
     expect(job.reload.desperation).to be_nil
   end
+
+  it "takes a signature command from its Grimoire and a passive from the engine's list" do
+    create_ability(world, slug: "cover", kind: "skill", target: "self", effects: [ { primitive: "status", kind: "cover", duration: 2 } ])
+    job = create_job(world)
+    expect(job.update(signature: "nothing")).to be(false)
+    expect(job.update(passive: "flying")).to be(false)
+    expect(job.update(signature: "cover", passive: "second_wind")).to be(true)
+    expect(job.signature_ability.slug).to eq("cover")
+  end
 end

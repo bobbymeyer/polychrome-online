@@ -18,8 +18,15 @@ class Job < ApplicationRecord
   validate :equip_categories_exist
   validate :innates_are_passives
   validate :desperation_is_an_attack
+  validate :signature_is_an_ability
+  validates :passive, inclusion: { in: Battle::PASSIVES }, allow_nil: true
 
-  normalizes :desperation, with: ->(slug) { slug.presence }
+  normalizes :desperation, :signature, :passive, with: ->(slug) { slug.presence }
+
+  # The job's own command: always on the menu while in the job, learned or not.
+  def signature_ability
+    signature && world.abilities.find_by(slug: signature)
+  end
 
   # The move an attack can become at the end of a character's rope, once a
   # battle (Battle::Resolver#desperate). Any offensive Grimoire entry.
@@ -75,6 +82,10 @@ class Job < ApplicationRecord
   def equip_categories_exist
     unknown = equip_categories - Item::EQUIPMENT_CATEGORIES
     errors.add(:equip_categories, "has unknown categories: #{unknown.join(', ')}") if unknown.any?
+  end
+
+  def signature_is_an_ability
+    errors.add(:signature, "must be an ability in the Grimoire") if signature && !world&.abilities&.exists?(slug: signature)
   end
 
   def desperation_is_an_attack

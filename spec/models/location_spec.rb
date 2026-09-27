@@ -183,7 +183,7 @@ RSpec.describe Location do
           expect(campaign.messages.last).to have_attributes(body: "The floor tilts.", speaker: nil)
           expect(campaign.messages.last).to be_dialogue
         when "encounter"
-          expect(campaign.reload.pending_encounter).to eq("table" => "#{dungeon.name}: Test 1", "monsters" => { "goblin" => 2 }, "boss" => false)
+          expect(campaign.reload.pending_encounter).to eq("table" => "#{dungeon.name}: Test 1", "monsters" => { "goblin" => 2 }, "boss" => false, "terrain" => "rock")
         when "treasure"
           dungeon.take_treasure!(key)
           expect(campaign.quantity_of(world.items.find_by!(slug: "potion"))).to eq(1)

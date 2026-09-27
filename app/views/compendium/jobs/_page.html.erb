@@ -7,6 +7,12 @@
       <dt>Job levels</dt><dd><%= entry.job_levels.size %></dd>
       <dt>ABP to master</dt><dd><%= entry.total_abp %></dd>
       <dt>Ability slots</dt><dd><%= entry.ability_slots %></dd>
+      <% if (own = entry.signature_ability) %>
+        <dt><%= gloss(:signature, "Signature") %></dt><dd><%= link_to own.name, world_grimoire_ability_path(entry.world, own) %></dd>
+      <% end %>
+      <% if entry.passive %>
+        <dt><%= gloss(:passive, "Passive") %></dt><dd><%= passive_term(entry.passive) %></dd>
+      <% end %>
       <% if (move = entry.desperation_ability) %>
         <dt>Desperation</dt><dd><%= link_to move.name, world_grimoire_ability_path(entry.world, move) %></dd>
       <% end %>

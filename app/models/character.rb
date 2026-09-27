@@ -74,12 +74,19 @@ class Character < ApplicationRecord
     (native_abilities + slotted_abilities).uniq
   end
 
+  # The current job's passive, and every mastered job's: mastery keeps it.
+  def passives
+    mastered = character_jobs.includes(job: :job_levels).select(&:mastered?).map { |cj| cj.job.passive }
+    ([ job.passive ] + mastered).compact.uniq
+  end
+
   # Award EXP and ABP (to the current job). Returns what changed, for the
   # battle's settlement summary.
   def gain!(exp: 0, abp: 0)
     cj = character_job
     before_level = level
     before_learned = cj.learned_abilities
+    was_mastered = cj.mastered?
     transaction do
       cj.update!(abp: cj.abp + abp)
       update!(exp: self.exp + exp)
@@ -89,6 +96,9 @@ class Character < ApplicationRecord
       "exp" => exp, "abp" => abp,
       "level" => (level > before_level ? [ before_level, level ] : nil),
       "learned" => learned.map(&:name),
+      # For the result panel's cards: what each new ability does.
+      "abilities" => learned.map { |a| { "name" => a.name, "description" => a.description.to_s } }.presence,
+      "mastered" => (cj.reload.mastered? && !was_mastered ? { "job" => job.name, "passive" => job.passive } : nil),
       "to_next" => (Stats::Growth.exp_for_level(level + 1) - self.exp if level < Stats::Growth::MAX_LEVEL)
     }.compact
   end
@@ -220,7 +230,8 @@ class Character < ApplicationRecord
       "stats" => stats,
       "hp" => current_hp,
       "mp" => current_mp,
-      "abilities" => battle_abilities.map(&:slug),
+      "abilities" => (battle_abilities.map(&:slug) + [ job.signature ].compact).uniq,
+      "passives" => passives,
       "image" => { "book" => "jobs", "slug" => job.slug },
       "desperation" => job.desperation_ability&.slug,
       "level" => level

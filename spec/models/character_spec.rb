@@ -83,7 +83,8 @@ RSpec.describe Character do
     it "levels up and learns abilities, and reports what changed" do
       bartz = create(job_level: 0)
       changes = bartz.gain!(exp: 1000, abp: 30)
-      expect(changes).to eq("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break" ], "to_next" => 120)
+      expect(changes).to include("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break" ], "to_next" => 120)
+    expect(changes["abilities"].map { |a| a["name"] }).to eq([ "War Cry", "Armor Break" ])
       expect(bartz.reload.level).to eq(11) # 200 + 1000 EXP
     end
 
@@ -166,7 +167,7 @@ RSpec.describe Character do
       bartz = create(job_level: 2)
       bartz.change_job!(job.("thief"))
       bartz.set_ability_slots!([ ability.("armor_break") ])
-      expect(bartz.battle_spec["abilities"]).to eq(%w[armor_break])
+      expect(bartz.battle_spec["abilities"]).to eq(%w[armor_break mug]) # and the Thief's own command
 
       expect { bartz.set_ability_slots!([ ability.("war_cry"), ability.("armor_break") ]) }
         .to raise_error(ActiveRecord::RecordInvalid, /1 ability slot/)
@@ -180,7 +181,7 @@ RSpec.describe Character do
     bartz = create
     bartz.update!(hp: 40)
     spec = bartz.battle_spec
-    expect(spec).to include("id" => "character_#{bartz.id}", "hp" => 40, "abilities" => %w[war_cry],
+    expect(spec).to include("id" => "character_#{bartz.id}", "hp" => 40, "abilities" => %w[war_cry cover], "passives" => %w[second_wind], "level" => 5,
                             "image" => { "book" => "jobs", "slug" => "knight" })
     expect(Character.from_battle_unit(spec["id"])).to eq(bartz.id)
     expect(Character.from_battle_unit("goblin_a")).to be_nil
@@ -199,5 +200,18 @@ RSpec.describe Character do
     job.("knight").update!(desperation: nil)
     expect(bartz.reload.battle_spec).not_to have_key("desperation")
     expect(bartz.update(motive: "x" * 141)).to be(false)
+  end
+
+  it "carries its job's signature and passive, and keeps a mastered job's passive in every job" do
+    bartz = create(job_slug: "knight")
+    expect(bartz.battle_spec).to include("passives" => %w[second_wind])
+    expect(bartz.battle_spec["abilities"]).to include("cover")
+
+    changes = bartz.gain!(abp: 10_000)
+    expect(changes["mastered"]).to eq("job" => "Knight", "passive" => "second_wind")
+    bartz.change_job!(job.("thief"))
+    expect(bartz.reload.passives).to eq(%w[first_strike second_wind])
+    expect(bartz.battle_spec["abilities"]).to include("mug")
+    expect(bartz.battle_spec["abilities"]).not_to include("cover")
   end
 end

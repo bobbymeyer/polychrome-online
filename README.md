@@ -188,6 +188,28 @@ are now (see "Campaign flags and GM changes").
   of the replay. The result panel reports level-ups and newly learned abilities.
 - **GM tools:** add items to the bag, adjust gil, grant EXP/ABP, and rest the
   party at an inn.
+- **Signature commands and passives.** A job has a signature command
+  (`jobs.signature`, any Grimoire ability), always on its menu while in the
+  job, learned or not, and a passive (`jobs.passive`, one of
+  `Battle::PASSIVES`). A character has the current job's passive plus every
+  mastered job's, so mastery keeps it for good. The Base World's:
+  - **Freelancer:** Rally
+  - **Knight:** Cover, Second Wind
+  - **Thief:** Mug, First Strike
+  - **Monk:** Focus, Counter
+  - **Black Mage:** Channel, Clear Mind
+  - **White Mage:** Pray, Regen
+  - **Red Mage:** Flame Blade, Regen
+  - **Summoner:** Carbuncle, Clear Mind (plus the summons)
+  - **Geomancer:** Gaia, Regen
+  - **Dragoon:** Jump, First Strike
+
+  Each new job has its own learn table and desperation move.
+- **Terrain.** A battle has a terrain type: from the encounter table's
+  terrain on the road or in a dungeon (forest is grass, crypt is ghost, sea
+  is water), or picked on the battle form. Moves typed `terrain` take it.
+- **The end of a fight** shows a card for each ability learned (with what it
+  does) and for each job mastered (with the passive now kept).
 - **Why they're here:** a character has one line in their own words
   (`characters.motive`), on their card and sheet. It is also their battle cry.
 - **Desperation moves** (FF6-style): a job can name any offensive Grimoire

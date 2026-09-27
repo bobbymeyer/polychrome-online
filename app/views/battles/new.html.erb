@@ -13,6 +13,10 @@
       <%= f.select :input_seconds, BattleRecord::INPUT_TIMERS.map { |s| [ s ? "#{s} seconds" : "None", s ] }, selected: @setup[:input_seconds].presence&.to_i %>
     </div>
     <div class="field"><%= f.label :seed %><%= f.number_field :seed, value: @setup[:seed], placeholder: "random" %></div>
+    <div class="field">
+      <%= f.label :terrain, "Where" %>
+      <%= f.select :terrain, EncounterTable::TERRAIN_TYPES.map { |place, type| [ "#{place.capitalize} (#{term(type)})", type ] }.uniq(&:last), { selected: @setup[:terrain], include_blank: "Anywhere (Normal)" } %>
+    </div>
     <div class="field field--check">
       <%= f.hidden_field :escapable, value: "0", id: nil %>
       <%= f.check_box :escapable, { checked: @setup[:escapable] != "0" }, "1", nil %>

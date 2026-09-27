@@ -770,6 +770,19 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .ruling__idea { font-size: 18px; margin: 0 0 8px; }
 .try-form textarea { font-size: 18px; }
 
+/* The end of a fight: a card for each new ability, and for a job mastered. */
+.reward-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+.reward-card { padding: 12px 14px 14px; background: var(--paper); border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--sun-yellow); animation: slash-in .35s var(--snap) both; }
+.reward-card:nth-child(2) { animation-delay: .1s; } .reward-card:nth-child(3) { animation-delay: .2s; } .reward-card:nth-child(4) { animation-delay: .3s; }
+.reward-card__kind { margin: 0; display: inline-block; padding: 1px calc(10px + var(--slant)) 1px 8px; background: var(--ink); color: var(--sun-yellow);
+  font-size: 12px; font-weight: 900; font-style: italic; letter-spacing: .08em; text-transform: uppercase; clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
+.reward-card h3 { margin: 6px 0 0; font: var(--display); font-size: 26px; }
+.reward-card__who { margin: 0; color: var(--grey); font-weight: 700; }
+.reward-card__detail { margin: 6px 0 0; font-size: 14px; line-height: 20px; }
+.reward-card--mastered { box-shadow: 6px 6px 0 var(--bright-red), 12px 12px 0 var(--ink); }
+.signature-line { margin: 4px 0; }
+.mastered-star { color: var(--orange); font-weight: 900; }
+
 /* Taking a line back: quiet, and only on hover or focus once shown. */
 .chat-line__retract-form { display: inline; margin: 0; }
 .chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }
@@ -783,6 +796,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 @media (prefers-reduced-motion: reduce) {
   .page, .play .menu__item, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
   .unit.is-targeted .sprite::after, .roster__row [data-hp], .command-panel__vitals .is-low, .countdown.is-urgent,
-  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open], .choice:not([hidden]) { animation: none !important; }
+  .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open], .choice:not([hidden]), .reward-card { animation: none !important; }
   * { transition-duration: 0s !important; }
 }

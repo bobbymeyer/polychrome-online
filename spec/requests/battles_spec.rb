@@ -92,6 +92,13 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include("tries: “Kick the brazier onto them”", "GM rules on Bartz&#39;s idea: Agi, easy.")
   end
 
+  it "starts a battle on the terrain it's given, for the Geomancer's arts" do
+    campaign = battle.campaign
+    post campaign_battles_path(campaign), params: { battle: { name: "Wood", terrain: "grass", characters: [ campaign.characters.first.id ],
+                                                             encounter: { "0" => { monster: "goblin", count: "1" } } } }
+    expect(campaign.battles.order(:id).last.state["terrain"]).to eq("grass")
+  end
+
   describe "setting up" do
     let!(:world) { Seeds::BaseWorld.run }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road") }

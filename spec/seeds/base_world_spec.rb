@@ -79,4 +79,11 @@ RSpec.describe Seeds::BaseWorld do
       expect(world.jobs.flat_map { |j| j.abilities.map(&:slug) }).not_to include(move.slug)
     end
   end
+
+  it "gives every job a signature command, and has the new jobs with their own arts" do
+    world.jobs.each { |job| expect(job.signature_ability).to be_present, job.slug }
+    expect(world.jobs.pluck(:slug)).to include("red_mage", "summoner", "geomancer", "dragoon")
+    expect(world.jobs.where.not(passive: nil).count).to be >= 8
+    expect(world.abilities.find_by!(slug: "gaia").effects.first).to include("type" => "terrain")
+  end
 end

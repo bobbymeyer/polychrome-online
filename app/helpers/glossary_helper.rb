@@ -24,8 +24,25 @@ module GlossaryHelper
     "type" => [ "Type", "Fire, water, ghost and the rest. A move's type against a monster's type can do double damage, half, or nothing. See the type chart." ],
     "desperation" => [ "Desperation move", "At a quarter HP or less, your Attack sometimes becomes your job's big move. Once a battle." ],
     "auto" => [ "Auto", "Your character repeats their last command (or attacks) every round, so you can talk. Pick a command to take over again." ],
-    "check" => [ "Check", "The GM asks you to try something: your stat against a difficulty, rolled from the campaign's dice." ]
+    "check" => [ "Check", "The GM asks you to try something: your stat against a difficulty, rolled from the campaign's dice." ],
+    "signature" => [ "Signature command", "Each job's own command, always on its menu: a Knight's Cover, a Thief's Mug, a Dragoon's Jump." ],
+    "passive" => [ "Passive", "Something a job does on its own, like Counter or Regen. Master the job and you keep it in every job." ],
+    "mastered" => [ "Mastered", "Every level of a job learned. Its passive is yours for good, whatever job you're in." ],
+    "terrain" => [ "Terrain", "Where the fight is. A forest is grass, a crypt is ghost, the sea is water: a Geomancer's arts take its type." ]
   }.freeze
+
+  PASSIVES = {
+    "counter" => [ "Counter", "Hit by an enemy's blow, sometimes strike straight back." ],
+    "regen" => [ "Regen", "A little HP back at the end of each of your turns." ],
+    "mp_regen" => [ "Clear Mind", "A little MP back at the end of each of your turns." ],
+    "first_strike" => [ "First Strike", "In the first round of a fight, you go before anyone." ],
+    "second_wind" => [ "Second Wind", "Once a battle, get back up at a quarter HP when knocked down." ]
+  }.freeze
+
+  def passive_term(key)
+    label, definition = PASSIVES.fetch(key.to_s) { return key.to_s.humanize }
+    tag.span(label, class: "gloss", tabindex: 0, data: { gloss: definition }, aria: { label: "#{label}: #{definition}" })
+  end
 
   # The word, with its definition on hover, or on tap on a phone.
   def gloss(key, text = nil)

@@ -31,6 +31,10 @@
     <li>Every move and monster may have a <%= gloss(:type) %>. Fire burns grass, water puts out fire, ghosts ignore
       normal moves. The <%= link_to "type chart", types_path %> has the lot. Your basic Attack has no type, so it always lands.</li>
     <li>At the end of your rope you might find a <%= gloss(:desperation) %>.</li>
+    <li>Confirm a move and a <strong>timing meter</strong> sweeps: stop it on the mark for a Perfect, a quarter harder.
+      Missing costs nothing, and you can turn it off.</li>
+    <li>Not on the menu? <strong>Try something</strong>: say what you do, the GM rules on it, and you roll for it.
+      The dice that decide things show on the board.</li>
     <li>At 0 HP you're down, not dead. A Phoenix Down, a Raise or a temple brings you back.</li>
   </ul>
 
@@ -40,6 +44,8 @@
       every stat grows on its own, so there's no paperwork.</li>
     <li>Your <%= gloss(:job) %> is your class, and you can change it between fights. Each job keeps its own
       <%= gloss(:job_level) %>, and each job level teaches one of its abilities.</li>
+    <li>Every job has a <%= gloss(:signature) %> that's always on its menu (a Knight's Cover, a Dragoon's Jump) and
+      usually a <%= gloss(:passive) %>. <%= gloss(:mastered, "Master") %> a job and you keep its passive in every job.</li>
     <li>Take abilities you learned in one job into another with <%= gloss(:ability_slots) %>. A Knight who once studied
       as a White Mage can still cast Cure.</li>
     <li>Gear comes out of the party's bag and goes back into it. The party shares one purse of <%= gloss(:gil) %>.</li>

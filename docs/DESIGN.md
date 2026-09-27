@@ -83,6 +83,12 @@ deliberate divergence from much of what follows, and where the two disagree the 
 - **The game's words** keep their JRPG names and explain themselves. A dotted underline marks
   one; hovering or tapping it shows a black card with the definition (and the nearest D&D idea).
   "How to play" in the top bar has the rules in plain words and every term together.
+- **Rewards** get cards: "New ability!" and "Mastered!" tags over a heavy name, a hard yellow (or
+  red and black, for mastery) shadow, dealt in one after another.
+- **Job moments on the board:** a Jump leaves the top of the frame and slams back down, Cover and
+  Counter get tag popups, Second Wind a yellow one, and the dice sit beside whoever they decided for.
+- **The timing meter** is a black slab near the bottom: a striped bar, the mark in yellow, a red
+  needle. PERFECT! lands in heavy yellow italic.
 - **The table.** The dialogue is a speech box: a 3px black frame with a hard shadow and the
   speaker's name as a black tag on its corner. System lines are grey slanted slips.
 - **Motion.** Everything you press answers: a nudge on hover, a squeeze on press, pages slide

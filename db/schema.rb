@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_070000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -346,6 +346,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_060000) do
     t.json "image_recipe"
     t.string "colour"
     t.string "desperation"
+    t.string "signature"
+    t.string "passive"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
