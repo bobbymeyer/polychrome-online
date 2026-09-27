@@ -16,5 +16,6 @@ RSpec.describe ApplicationHelper do
     expect(helper.accent_style).to eq("--accent: #13955F; --accent-ink: #fff;")
     allow(helper).to receive(:controller_path).and_return("campaigns")
     expect(helper.accent_style).to include("#4153A1")
+    expect(helper.accent_style("armory")).to eq("--accent: #F4971B; --accent-ink: #111;") # a light colour takes ink
   end
 end

@@ -11,9 +11,10 @@ module ApplicationHelper
     BOOK_COLOURS.keys.find { |key| controller_path.start_with?("#{key}/") }
   end
 
-  # The page's accent: its book's colour, or dark blue at the table.
-  def accent_style
-    hex, ink = Palette::COLOURS.fetch(BOOK_COLOURS.fetch(current_book.to_s, "dark_blue"))
+  # The page's accent: its book's colour, or dark blue at the table. Pass a
+  # book to colour one section as that book (the world's shelf does).
+  def accent_style(book = current_book)
+    hex, ink = Palette::COLOURS.fetch(BOOK_COLOURS.fetch(book.to_s, "dark_blue"))
     "--accent: #{hex}; --accent-ink: #{ink};"
   end
 

@@ -106,6 +106,14 @@ h1 { font-weight: 900; font-style: italic; letter-spacing: -0.045em; text-shadow
   background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 800;
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
+/* A link in a tab takes the tab's ink, underlined in it, so it reads on any colour. */
+.window > h2:first-child a, .panel > h2:first-child a, .book-header > h2 a, .command-panel__head h2 a,
+.flash a, .log-drawer__tab, .topbar__book.is-current {
+  color: var(--accent-ink); text-decoration-color: color-mix(in srgb, var(--accent-ink) 55%, transparent);
+}
+.window > h2:first-child a:hover, .panel > h2:first-child a:hover, .book-header > h2 a:hover, .flash a:hover {
+  color: var(--accent-ink); text-decoration-color: var(--accent-ink);
+}
 .window > .book-header:first-child { margin-top: 0; }
 .book-header > h2 { margin: 0; }
 .window > .book-header:first-child > h2 { margin-top: -16px; }
