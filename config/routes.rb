@@ -110,10 +110,10 @@ Rails.application.routes.draw do
       post :move
       post :take_treasure
       post :revert
-      post :add_turn
-      post :turn
-      post :settle_turn
-      delete :remove_turn
+      post :add_mode
+      post :switch_mode
+      post :clear_mode
+      delete :remove_mode
     end
     # A town's shop: buy from its stock, sell from the bag.
     resources :services, only: :create

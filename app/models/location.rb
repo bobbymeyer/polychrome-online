@@ -16,7 +16,7 @@ class Location < ApplicationRecord
 
   validates :seed, numericality: { only_integer: true }
   validate :template_from_this_world
-  validate :turns_are_turns
+  validate :modes_are_modes
 
   before_validation(on: :create) { self.seed ||= Location.new_seed }
 
@@ -56,9 +56,9 @@ class Location < ApplicationRecord
     super
   end
 
-  # --- turns: the place's other states --------------------------------------
+  # --- modes: the place's other states --------------------------------------
   #
-  # A turn is prepared by the GM and set off at the table: the city burns,
+  # A mode is prepared by the GM and set off at the table: the city burns,
   # the mine floods, the festival starts. While it lasts, some services are
   # shut, the music changes, there can be trouble on arrival (an encounter
   # table), and players read a line about it. The world doesn't change.
@@ -67,41 +67,41 @@ class Location < ApplicationRecord
   #     "description" => "Half the market is ash.", "closed" => ["shop"], "music" => "battle",
   #     "encounters" => "town_riot" }
 
-  def current_turn
-    turns.find { |t| t["key"] == turn } if turn
+  def current_mode
+    modes.find { |t| t["key"] == mode } if mode
   end
 
   def service_closed?(kind)
-    Array(current_turn&.dig("closed")).include?(kind.to_s)
+    Array(current_mode&.dig("closed")).include?(kind.to_s)
   end
 
-  def encounter_table_for_turn
-    slug = current_turn&.dig("encounters")
+  def encounter_table_for_mode
+    slug = current_mode&.dig("encounters")
     slug && campaign.world.encounter_tables.find_by(slug: slug)
   end
 
-  def add_turn!(attrs)
+  def add_mode!(attrs)
     name = attrs["name"].to_s.strip
-    raise ArgumentError, "A turn needs a name" if name.empty?
+    raise ArgumentError, "A mode needs a name" if name.empty?
 
     key = name.parameterize(separator: "_")
-    raise ArgumentError, "#{view['name']} already has a turn called #{name}" if turns.any? { |t| t["key"] == key }
+    raise ArgumentError, "#{view['name']} already has a mode called #{name}" if modes.any? { |t| t["key"] == key }
 
-    turn = { "key" => key, "name" => name, "line" => attrs["line"].to_s.strip.presence, "description" => attrs["description"].to_s.strip.presence,
+    entry = { "key" => key, "name" => name, "line" => attrs["line"].to_s.strip.presence, "description" => attrs["description"].to_s.strip.presence,
              "closed" => Array(attrs["closed"]).compact_blank, "music" => attrs["music"].presence,
              "encounters" => attrs["encounters"].presence }.compact
-    update!(turns: turns + [ turn ])
+    update!(modes: modes + [ entry ])
   end
 
-  def remove_turn!(key)
-    update!(turns: turns.reject { |t| t["key"] == key }, turn: (turn unless turn == key))
+  def remove_mode!(key)
+    update!(modes: modes.reject { |t| t["key"] == key }, mode: (mode unless mode == key))
   end
 
-  # Sets the turn off, and tells the table.
-  def turn_to!(key)
-    chosen = turns.find { |t| t["key"] == key } or raise ArgumentError, "#{view['name']} has no turn called #{key}"
+  # Sets the mode off, and tells the table.
+  def switch_mode!(key)
+    chosen = modes.find { |t| t["key"] == key } or raise ArgumentError, "#{view['name']} has no mode called #{key}"
     transaction do
-      update!(turn: key)
+      update!(mode: key)
       campaign.messages.create!(kind: "system", body: chosen["line"] || "#{view['name']}: #{chosen['name']}.")
     end
     campaign.broadcast_map
@@ -109,10 +109,10 @@ class Location < ApplicationRecord
   end
 
   # Back to how it was.
-  def settle_turn!(line = nil)
-    was = current_turn or raise ArgumentError, "#{view['name']} is as it always was"
+  def clear_mode!(line = nil)
+    was = current_mode or raise ArgumentError, "#{view['name']} is as it always was"
     transaction do
-      update!(turn: nil)
+      update!(mode: nil)
       campaign.messages.create!(kind: "system", body: line.to_s.strip.presence || "#{view['name']} is itself again: #{was['name'].downcase} no more.")
     end
     campaign.broadcast_map
@@ -438,13 +438,13 @@ class Location < ApplicationRecord
     end
   end
 
-  def turns_are_turns
+  def modes_are_modes
     world = campaign&.world or return
-    Array(turns).each do |t|
-      errors.add(:turns, "#{t['name']}: music must be one of #{Campaign::MUSIC_CHOICES.join(', ')}") if t["music"] && !Campaign::MUSIC_CHOICES.include?(t["music"])
-      errors.add(:turns, "#{t['name']}: #{t['encounters']} isn't an encounter table") if t["encounters"] && !world.encounter_tables.exists?(slug: t["encounters"])
+    Array(modes).each do |t|
+      errors.add(:modes, "#{t['name']}: music must be one of #{Campaign::MUSIC_CHOICES.join(', ')}") if t["music"] && !Campaign::MUSIC_CHOICES.include?(t["music"])
+      errors.add(:modes, "#{t['name']}: #{t['encounters']} isn't an encounter table") if t["encounters"] && !world.encounter_tables.exists?(slug: t["encounters"])
     end
-    errors.add(:turn, "isn't one of this place's turns") if turn && Array(turns).none? { |t| t["key"] == turn }
+    errors.add(:mode, "isn't one of this place's modes") if mode && Array(modes).none? { |t| t["key"] == mode }
   end
 
   def template_from_this_world

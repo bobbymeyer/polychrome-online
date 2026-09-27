@@ -81,28 +81,28 @@ class LocationsController < ApplicationController
     back_to ? redirect_to(back_to, notice: "Reverted.", status: :see_other) : back("Reverted.")
   end
 
-  # Turns: the place's other states (Location#turn_to!).
-  def add_turn
-    fields = params.expect(turn: [ :name, :line, :description, :music, :encounters, { closed: [] } ])
-    @location.add_turn!(fields.to_h)
+  # Modes: the place's other states (Location#switch_mode!).
+  def add_mode
+    fields = params.expect(mode: [ :name, :line, :description, :music, :encounters, { closed: [] } ])
+    @location.add_mode!(fields.to_h)
     back "#{fields[:name]} is ready to set off."
   rescue ActiveRecord::RecordInvalid => e
     back alert: e.record.errors.full_messages.to_sentence
   end
 
-  def turn
-    @location.turn_to!(params.expect(:key))
-    back "#{@location.name}: #{@location.current_turn['name']}."
+  def switch_mode
+    @location.switch_mode!(params.expect(:key))
+    back "#{@location.name}: #{@location.current_mode['name']}."
   end
 
-  def settle_turn
-    @location.settle_turn!(params[:line])
+  def clear_mode
+    @location.clear_mode!(params[:line])
     back "#{@location.name} is itself again."
   end
 
-  def remove_turn
-    @location.remove_turn!(params.expect(:key))
-    back "Turn removed."
+  def remove_mode
+    @location.remove_mode!(params.expect(:key))
+    back "Mode removed."
   end
 
   def take_treasure

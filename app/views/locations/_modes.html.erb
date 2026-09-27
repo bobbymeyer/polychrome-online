@@ -1,35 +1,35 @@
-<%# The GM's turns for a place (Location#turn_to!): prepared, set off, put back. %>
-<% turns = location.turns %>
-<details class="window gm-tools" <%= "open" if location.current_turn %>>
-  <summary>GM: turns<%= " · #{location.current_turn['name']} now" if location.current_turn %></summary>
+<%# The GM's modes for a place (Location#switch_mode!): prepared, set off, put back. %>
+<% modes = location.modes %>
+<details class="window gm-tools" <%= "open" if location.current_mode %>>
+  <summary>GM: modes<%= " · #{location.current_mode['name']} now" if location.current_mode %></summary>
   <p class="hint">
     Another state for this place, prepared ahead and set off at the table: the city burns, the mine floods, the festival starts.
     While it lasts, services can be shut, the music changes, and arriving can mean trouble. The rest of the world stays as it is.
   </p>
-  <% if turns.any? %>
-    <ul class="turns">
-      <% turns.each do |t| %>
-        <li class="<%= 'is-current' if location.turn == t['key'] %>">
+  <% if modes.any? %>
+    <ul class="modes">
+      <% modes.each do |t| %>
+        <li class="<%= 'is-current' if location.mode == t['key'] %>">
           <strong><%= t["name"] %></strong>
           <span class="muted">
             <%= [ ("shuts #{t['closed'].map(&:humanize).to_sentence.downcase}" if t["closed"].present?), ("#{t['music']} music" if t["music"]),
                   ("trouble from #{@world.encounter_tables.find_by(slug: t['encounters'])&.name}" if t["encounters"]) ].compact.join(" · ") %>
           </span>
-          <% if location.turn == t["key"] %>
-            <%= form_with url: settle_turn_location_path(location), class: "inline-form" do |f| %>
+          <% if location.mode == t["key"] %>
+            <%= form_with url: clear_mode_location_path(location), class: "inline-form" do |f| %>
               <%= f.text_field :line, placeholder: "The fires are out. (optional)", "aria-label": "What the table hears" %>
               <%= f.submit "Put it back", class: "button" %>
             <% end %>
           <% else %>
-            <%= button_to "Set it off", turn_location_path(location), params: { key: t["key"] }, class: "button play",
+            <%= button_to "Set it off", switch_mode_location_path(location), params: { key: t["key"] }, class: "button play",
                           form: { class: "inline", data: { turbo_confirm: "#{view['name']}: #{t['name']}? The table hears: “#{t['line'] || "#{view['name']}: #{t['name']}."}”" } } %>
           <% end %>
-          <%= button_to "Remove", remove_turn_location_path(location), method: :delete, params: { key: t["key"] }, class: "link-button", form: { class: "inline" } %>
+          <%= button_to "Remove", remove_mode_location_path(location), method: :delete, params: { key: t["key"] }, class: "link-button", form: { class: "inline" } %>
         </li>
       <% end %>
     </ul>
   <% end %>
-  <%= form_with url: add_turn_location_path(location), scope: :turn, class: "book-form" do |f| %>
+  <%= form_with url: add_mode_location_path(location), scope: :mode, class: "book-form" do |f| %>
     <div class="field-row">
       <div class="field"><%= f.label :name %><%= f.text_field :name, placeholder: "Burning", required: true %></div>
       <div class="field">
@@ -47,14 +47,14 @@
     <% if services.any? %>
       <fieldset class="field">
         <legend>Shut meanwhile</legend>
-        <%= hidden_field_tag "turn[closed][]", "", id: nil %>
+        <%= hidden_field_tag "mode[closed][]", "", id: nil %>
         <div class="checks">
           <% services.map { |s| s["kind"] }.uniq.each do |kind| %>
-            <label><%= check_box_tag "turn[closed][]", kind, false, id: "turn_closed_#{kind}" %> <%= kind.humanize %></label>
+            <label><%= check_box_tag "mode[closed][]", kind, false, id: "mode_closed_#{kind}" %> <%= kind.humanize %></label>
           <% end %>
         </div>
       </fieldset>
     <% end %>
-    <%= f.submit "Prepare the turn", class: "button" %>
+    <%= f.submit "Prepare the mode", class: "button" %>
   <% end %>
 </details>

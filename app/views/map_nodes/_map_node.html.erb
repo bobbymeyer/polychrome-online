@@ -1,9 +1,9 @@
-<% turned = node.location&.current_turn %>
-<g class="map-node map-node--<%= node.kind %> <%= 'is-hidden' unless node.visible? %> <%= 'is-party' if party&.id == node.id %> <%= 'is-turned' if turned %>"
+<% in_mode = node.location&.current_mode %>
+<g class="map-node map-node--<%= node.kind %> <%= 'is-hidden' unless node.visible? %> <%= 'is-party' if party&.id == node.id %> <%= 'has-mode' if in_mode %>"
    transform="translate(<%= node.x %> <%= node.y %>)"
    <% if gm %>data-map-node data-edit-url="<%= edit_map_node_path(node) %>" data-update-url="<%= map_node_path(node, format: :json) %>" tabindex="0" role="button"<% end %>>
   <title><%= node.name %> (<%= node.kind %><%= ", hidden" unless node.visible? %>)</title>
   <%= render "map_nodes/shape", kind: node.kind %>
   <text class="map-node__label" y="38" text-anchor="middle"><%= node.name %></text>
-  <% if turned %><text class="map-node__turn" y="54" text-anchor="middle"><%= turned["name"] %></text><% end %>
+  <% if in_mode %><text class="map-node__mode" y="54" text-anchor="middle"><%= in_mode["name"] %></text><% end %>
 </g>
