@@ -125,7 +125,7 @@
         <% generated = slot["generated"] %>
         <li>
           <%= speaker_portrait(npc, "neutral", size: :medium) if npc %>
-          <% unless npc %><span class="speaker-portrait speaker-portrait--medium speaker-portrait--plate speaker-portrait--generated"><%= generated["name"].first %></span><% end %>
+          <% unless npc %><span class="speaker-portrait speaker-portrait--medium speaker-portrait--plate speaker-portrait--generated" style="<%= plate_style(generated["name"]) %>"><%= generated["name"].first %></span><% end %>
           <div>
             <strong><%= npc&.name || generated["name"] %></strong>
             <span class="muted"><%= npc&.title || generated["title"] %></span>

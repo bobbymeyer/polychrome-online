@@ -12,7 +12,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
+  <body data-book="<%= current_book %>" style="<%= accent_style %>">
     <header class="topbar">
       <%= link_to "Polychrome", root_path, class: "topbar__brand" %>
       <% if @world&.persisted? %>

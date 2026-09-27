@@ -20,8 +20,8 @@ deliberate divergence from much of what follows, and where the two disagree the 
   Portrait plates and sprites get one cut corner. Rounded corners are still out.
 - **Type.** Display type (h1, banners, damage numbers, names in the roster) is Inter at 900,
   italic, tracked tight. A page title carries a grey echo, offset 4px.
-- **Tabs.** A section's heading is a black tab hanging from its 3px rule, white italic type.
-- **The masthead** is a black band, full bleed, with a red rule under the name.
+- **Tabs.** A section's heading is a tab in the page's accent colour, hanging from its 3px rule.
+- **The masthead** is a black band, full bleed, with the palette as a stripe under it.
 - **Ground.** A halftone falls from the top right of every page and fills the enemies' side of the
   battlefield; the party's side is a slanted grey wash.
 - **Shadows.** Only hard ones, offset, never blurred: a focused field, the dialogue box.
@@ -44,7 +44,7 @@ deliberate divergence from much of what follows, and where the two disagree the 
 ## Paper and type
 
 - White paper with black type. There is no dark theme, and no rounded corners. (The stage adds hard
-  shadows and a halftone.)
+  shadows, a halftone and the palette.)
 - One typeface: Inter, a grotesk. It is vendored as a variable font in `app/assets/fonts/` under
   the SIL OFL. Hierarchy comes from size and weight, never from colour.
 - Everything sits on an 8px baseline. Body text is 16/24, h2 is 24/32 and h1 is 48/56 with tight
@@ -61,25 +61,48 @@ deliberate divergence from much of what follows, and where the two disagree the 
 
 ## Colour
 
-Colour is kept for the game. Red, Swiss red `#d71920`, means **a game move**. Everything else
-you can press is grey, so the moves stand out.
+Polychrome is in colour. The palette is fifteen colours (below), and every colour on the stage
+is one of them; type stays near-black on white. Colour does four jobs, and each job keeps
+its own colours, so they never argue.
 
-- **Red (`.play`, `.menu__item--accent`):** battle commands and targets (with the red frame on
-  the field), travel on the map, the ways on in a dungeon, leading the party in, handing over
-  treasure, Fight, joining a battle that is on, Send at the table, starting a battle, and the
-  dialogue's advance square.
-- **Grey (the default):** navigation, the book pages, crumbs, admin and GM bookkeeping (Edit,
-  Save, Reroll, Pin, flags, Wave it off, Auto), disclosures, form focus, seat pickers and map
-  editing. Links are grey with a light underline and go black on hover. Buttons are a grey
-  fill, and quiet buttons are a grey outline.
-- **State is not red by default** (state colours for low HP and statuses are listed under
-  Divergences). HP, KO, the current room, whose turn it is and where the party stands are shown
-  with black geometry, weight, fill and outline.
-- A selected option (the current pacing, say) is filled black, and so is a pinned element.
-- Uploaded images are content and keep their own colours.
+| Name | Hex | | Name | Hex | | Name | Hex |
+|---|---|---|---|---|---|---|---|
+| Sun Yellow | `#FCC010` | | Grey | `#DEDCDD` | | Steel Grey | `#627E8B` |
+| Orange | `#F4971B` | | Greyish Green | `#9DBFAE` | | Dark Blue | `#4153A1` |
+| Bright Red | `#E9473A` | | Green | `#8DC04E` | | Blue | `#438ECC` |
+| Wine Red | `#CD2E55` | | Forest Green | `#13955F` | | Turquoise | `#1EB8D1` |
+| Pink | `#F6BCD0` | | Dark Green | `#335F4B` | | Lake Green | `#088EA7` |
 
-When you add a control, ask whether pressing it moves the game. If it does, give it `play`.
-Otherwise leave it grey.
+1. **Game moves are Bright Red** (Wine Red for its hover and for red text). This hasn't changed:
+   battle commands and targets (the red reticle), travel, the ways on in a dungeon, Fight,
+   joining a battle, Send, starting a battle, the dialogue's advance mark. When you add a
+   control, ask whether pressing it moves the game. If it does, give it `play`; otherwise it's
+   grey, and grey controls stay the Grey of the palette.
+2. **Where you are.** Each book has a colour, and so does the table: Bestiary Forest Green,
+   Compendium Blue, Grimoire Lake Green, Armory Orange, Encounters Dark Green, Gazetteer Steel
+   Grey, Generators Sun Yellow, and everywhere else (campaigns, the table, battles) Dark Blue.
+   It's the page's accent (`--accent`, set on `<body>`): section tabs, the current book in the
+   masthead, the echo behind a title, the halftone, flash messages, link underlines on hover,
+   and tints mixed from it.
+3. **Who.** Every creature, job and character without art gets a plate in a palette colour,
+   picked from its name (`plate_style`), so the Goblin is the same green in the Bestiary, on the
+   battlefield and at the table. The palette decides whether its letter is white or ink.
+4. **What happened.** State has fixed colours: HP bars are Green, then Sun Yellow at half, then
+   Bright Red at a quarter; statuses are Poison Forest Green, Sleep Blue, Paralyze Sun Yellow,
+   Silence Wine Red, Blind Steel Grey, Haste Lake Green, Slow Dark Green; heals are Green; a
+   crit is a Sun Yellow tag. Moves announce themselves by kind: magic Dark Blue, skills Orange,
+   items Green. Victory is a Sun Yellow slab, Defeat an ink one, Escaped Turquoise.
+
+Places are coloured by kind: towns Orange, dungeons Wine Red, fields Green, events Blue. Rooms
+by decision: fights Bright Red, the boss Wine Red, treasure Sun Yellow, events Blue, forks
+Orange. In a town, the inn is Orange, the shop Sun Yellow, the guild Blue and the temple Pink, and
+lit windows are Sun Yellow.
+
+The battlefield is a stage in colour: the enemies on Dark Blue under a white halftone (each
+creature outlined in white so any colour reads), the party on a slanted slab of Sun Yellow.
+
+The masthead is black, with the whole palette as a stripe under it. Uploaded images are content
+and keep their own colours.
 
 ## Geometry
 
@@ -87,21 +110,21 @@ Simple shapes carry meaning, and each one is explained in a legend next to the m
 
 | Thing | Shape |
 |---|---|
-| Enemy | Black square with its initial |
-| Party member | Black circle with their initial |
+| Enemy | Square with its initial and a cut corner, in its own colour, outlined in white |
+| Party member | Circle with their initial, in their job's colour |
 | Knocked out | The same shape, outline only |
-| Ready (input in) | Small black square in the roster |
-| Active unit | Heavy rule under its name |
-| Town | Black square |
-| Dungeon | Black triangle |
-| Field | Black circle |
-| Event | Black diamond |
+| Ready (input in) | Small Green diamond in the roster |
+| Active unit | A slash under it (Sun Yellow for enemies, Bright Red for the party) |
+| Town | Orange square |
+| Dungeon | Wine Red triangle |
+| Field | Green circle |
+| Event | Blue diamond |
 | Hidden place (GM only) | Dashed outline |
-| Party on a map | Black triangle pointing down at them |
+| Party on a map | Bright Red triangle pointing down at them |
 | Open, dangerous and blocked paths | Solid line, dashed line, and grey dotted line with an × |
 | Encounter, boss, treasure, event and fork rooms | Small square, large square, diamond, circle, and a branching line |
 | Costly way in a dungeon | Dashed path with a black diamond at its middle |
-| Current room | The room shown inverted (black) |
+| Current room | The room filled Dark Blue |
 | Resolved room | Its marker shown in outline |
 
 No emoji or pictographic glyphs. An arrow (→) is typography and may follow a link.

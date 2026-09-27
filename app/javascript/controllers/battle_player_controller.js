@@ -164,11 +164,11 @@ export default class extends Controller {
       case "attack":
         return gesture(tl, this.sprite(e.actor), "lunge", at, this.facing(e.actor))
       case "item_used":
-        this.caption(tl, e.name || e.item, at)
+        this.caption(tl, e.name || e.item, at, "item")
         return Math.max(gesture(tl, this.sprite(e.actor), "bounce", at), 450)
       case "cast": {
         const ability = this.abilities[e.ability] || {}
-        this.caption(tl, ability.name || e.ability, at)
+        this.caption(tl, ability.name || e.ability, at, ability.kind)
         if (e.mp_cost) tl.call(() => this.addMp(e.actor, -e.mp_cost), at)
         return Math.max(gesture(tl, this.sprite(e.actor), ability.gesture || "flash", at, this.facing(e.actor)), 450)
       }
@@ -377,9 +377,9 @@ export default class extends Controller {
     }
   }
 
-  caption(tl, text, at) {
+  caption(tl, text, at, kind = null) {
     const el = document.createElement("div")
-    el.className = "caption window"
+    el.className = `caption window${kind ? ` caption--${kind}` : ""}`
     el.textContent = text
     this.fxTarget.append(el)
     tl.add(el, { opacity: [0, 1, 1, 0], translateX: [-32, 0, 0, 0], duration: 700, ease: "outQuad" }, at)

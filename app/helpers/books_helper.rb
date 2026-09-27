@@ -33,7 +33,7 @@ module BooksHelper
         image_tag(url_for(entry.image), alt: entry.name, style: variant_style(entry.variant))
       end
     else
-      tag.figure(class: classes + [ "portrait--empty" ], aria: { label: "No image yet" }) do
+      tag.figure(class: classes + [ "portrait--empty" ], aria: { label: "No image yet" }, style: plate_style(entry.try(:slug) || entry.name)) do
         tag.span(entry.name.to_s.first, style: variant_style(entry.variant), class: "portrait__initial")
       end
     end
