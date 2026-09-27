@@ -4,7 +4,7 @@
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
-<div class="table" data-controller="dialogue recap" data-action="chat-line:arrived->dialogue#arrive keydown@window->dialogue#key"
+<div class="table" data-controller="dialogue recap" data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>">
   <%= render "tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
@@ -57,7 +57,7 @@
   </div>
 
   <%= render layout: "shared/log_drawer" do %>
-    <%= render "tables/chat_log", messages: @messages %>
+    <%= render "tables/chat_log", messages: @messages, seat: @seat %>
   <% end %>
 
   <% if @seat %>

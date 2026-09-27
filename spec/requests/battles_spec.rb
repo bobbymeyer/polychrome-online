@@ -30,6 +30,12 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include(Turbo::StreamsChannel.signed_stream_name([ battle.campaign, :table ]))
   end
 
+  it "lets the seated speak from the battle, and takes back lines there too" do
+    post campaign_table_seat_path(battle.campaign), params: { seat: "gm" }
+    get battle_path(battle)
+    expect(response.body).to include("battle-composer", campaign_composer_path(battle.campaign), 'data-retract="all"')
+  end
+
   describe "setting up" do
     let!(:world) { Seeds::BaseWorld.run }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road") }

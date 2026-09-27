@@ -12,7 +12,7 @@
      data-battle-player-next-value="<%= @battle.battle_actions.count %>"
      data-battle-player-cries-value="<%= (@battle.campaign ? @battle.characters_by_unit.transform_values(&:motive).compact : {}).to_json %>"
      data-dialogue-auto-hide-value="true"
-     data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key chat-line:arrived->dialogue#arrive dialogue:say@window->dialogue#say">
+     data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
   <%= turbo_stream_from @battle %>
   <%# What's said at the table reaches the battle too (the same signed streams as the table). %>
   <% if @battle.campaign %>
@@ -56,6 +56,16 @@
     <%= render "tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign %>
   </div>
 
+  <% if @battle.campaign && @chat_seat %>
+    <%# Talk without leaving the fight: a monster's taunt, a cry across the field. Open for the GM. %>
+    <details class="battle-composer" <%= "open" if @chat_seat == "gm" %>>
+      <summary><%= @chat_seat == "gm" ? "Speak (as the narrator or an NPC)" : "Speak" %></summary>
+      <%= turbo_frame_tag "composer", src: campaign_composer_path(@battle.campaign), loading: "lazy" do %>
+        <div class="window"><p class="muted">Loading…</p></div>
+      <% end %>
+    </details>
+  <% end %>
+
   <%= render layout: "shared/log_drawer" do %>
     <section class="battle-log log-drawer__section" aria-label="Battle">
       <h3>Battle</h3>
@@ -66,7 +76,7 @@
         <% end %>
       </ol>
     </section>
-    <%= render "tables/chat_log", messages: @messages if @battle.campaign %>
+    <%= render "tables/chat_log", messages: @messages, seat: @chat_seat if @battle.campaign %>
   <% end %>
 
   <% if (boss = bosses.first) %>

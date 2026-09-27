@@ -175,4 +175,35 @@ RSpec.describe "The table", type: :request do
     get campaign_table_path(campaign)
     expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap"', "The crystal is cracking.")
   end
+
+  describe "taking a line back" do
+    def stream(*streamables)
+      Turbo::StreamsChannel.send(:stream_name_from, streamables)
+    end
+
+    it "lets the GM take back any line said, for everyone, but not what the game logged" do
+      sit("gm")
+      line = campaign.messages.create!(speaker: cid, body: "Typo'd lnie")
+      logged = campaign.messages.create!(kind: "system", body: "The party rests.")
+      get campaign_table_path(campaign)
+      expect(response.body).to include('data-retract="all"', "Take back")
+
+      expect { delete message_path(line) }.to have_broadcasted_to(stream(campaign, :table)).with(a_string_including('action="remove"', "message_#{line.id}"))
+      expect(Message.exists?(line.id)).to be(false)
+      delete message_path(logged)
+      expect(Message.exists?(logged.id)).to be(true)
+    end
+
+    it "lets a player take back only their own lines" do
+      sit(bartz.id)
+      mine = campaign.messages.create!(speaker: bartz, body: "Oops")
+      theirs = campaign.messages.create!(speaker: lenna, body: "Mine")
+      get campaign_table_path(campaign)
+      expect(response.body).to include("data-retract=\"Character:#{bartz.id}\"")
+      delete message_path(theirs)
+      expect(Message.exists?(theirs.id)).to be(true)
+      delete message_path(mine)
+      expect(Message.exists?(mine.id)).to be(false)
+    end
+  end
 end

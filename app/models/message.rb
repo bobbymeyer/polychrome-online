@@ -36,6 +36,7 @@ class Message < ApplicationRecord
   scope :chronological, -> { order(:created_at, :id) }
 
   after_create_commit :broadcast
+  after_destroy_commit { streams.each { |stream| broadcast_remove_to(*stream) } }
 
   def whisper?
     scope == "whisper"

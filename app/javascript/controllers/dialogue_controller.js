@@ -82,6 +82,24 @@ export default class extends Controller {
     if (!this.current) this.next()
   }
 
+  // A line taken back while it's in the box leaves it at once.
+  streamed(event) {
+    const stream = event.target
+    if (stream.getAttribute?.("action") !== "remove" || !this.current?.element) return
+    if (stream.getAttribute("target") !== this.current.element.id) return
+
+    this.stopTyping()
+    clearTimeout(this.holdTimer)
+    this.holdTimer = null
+    this.current = null
+    if (this.queue.length) return this.next()
+    this.textTarget.textContent = ""
+    this.nameTarget.textContent = ""
+    this.portraitTarget.replaceChildren()
+    if (this.autoHideValue) this.boxTarget.hidden = true
+    this.busy = false
+  }
+
   advance() {
     if (this.typing) return this.finishTyping()
     if (this.queue.length) this.next()
@@ -101,7 +119,8 @@ export default class extends Controller {
   next() {
     clearTimeout(this.holdTimer)
     this.holdTimer = null
-    const line = this.queue.shift()
+    let line = this.queue.shift()
+    while (line && !line.element.isConnected) line = this.queue.shift() // taken back before its turn
     if (!line) {
       this.current = null
       this.busy = false

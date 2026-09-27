@@ -31,6 +31,9 @@
         <time class="muted" datetime="<%= message.created_at.iso8601 %>"><%= message.created_at.strftime("%H:%M") %></time>
       </p>
       <div class="chat-line__body" data-chat-line-target="body"><%= simple_format(message.body, {}, wrapper_tag: "p") %></div>
+      <%= button_to "Take back", message_path(message), method: :delete, class: "link-button chat-line__retract",
+                    form: { class: "chat-line__retract-form", hidden: true,
+                            data: { chat_line_target: "retract", turbo_confirm: "Take this line back? It goes for everyone." } } %>
     </div>
   <% end %>
 </li>

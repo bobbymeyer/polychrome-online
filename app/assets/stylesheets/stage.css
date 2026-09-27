@@ -576,6 +576,17 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .recap .actions { margin-top: 16px; justify-content: flex-end; }
 .recap-link { margin-top: 4px; font-style: italic; }
 
+/* Speaking from the battle page. */
+.battle-composer { margin-top: 12px; }
+.battle-composer summary { cursor: pointer; font-style: italic; font-weight: 900; }
+.battle-composer[open] summary { margin-bottom: 8px; }
+
+/* Taking a line back: quiet, and only on hover or focus once shown. */
+.chat-line__retract-form { display: inline; margin: 0; }
+.chat-line__retract { font-size: 12px; color: var(--grey); opacity: 0; }
+.chat-line:hover .chat-line__retract, .chat-line__retract:focus-visible { opacity: 1; }
+@media (hover: none) { .chat-line__retract { opacity: 1; } }
+
 /* ---------------------------------------------------------------------------
  * Everything that moves holds still for people who asked for stillness.
  * ------------------------------------------------------------------------- */
