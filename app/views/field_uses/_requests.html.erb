@@ -1,0 +1,29 @@
+<%# The GM's list of field abilities asked for (FieldUse), broadcast on the GM's stream. %>
+<% pending = campaign.field_uses.pending.includes(:character, :ability).order(:created_at) %>
+<div id="field_requests">
+  <% if pending.any? %>
+    <section class="window field-requests" aria-label="Field abilities asked for">
+      <h2>Asked for</h2>
+      <% pending.each do |use| %>
+        <% skill = campaign.world.skill(use.ability.field_skill) %>
+        <div class="field-request">
+          <p>
+            <strong><%= use.character.name %></strong> wants to <strong><%= use.ability.name %></strong>
+            <span class="muted">· <%= skill ? skill["name"] : "a check" %> · <%= FieldUse.describe(use.ability) %></span>
+          </p>
+          <div class="field-request__actions">
+          <%= form_with url: campaign_field_use_path(campaign, use), method: :patch, class: "inline-form" do |f| %>
+            <%= f.select :difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, { selected: use.ability.field_difficulty }, "aria-label": "Difficulty" %>
+            <%= f.submit "Roll it", class: "button play" %>
+          <% end %>
+          <%= form_with url: campaign_field_use_path(campaign, use), method: :patch, class: "inline-form" do |f| %>
+            <%= f.hidden_field :verdict, value: "veto" %>
+            <%= f.text_field :line, placeholder: "Why not (optional)", "aria-label": "Why not" %>
+            <%= f.submit "Not now", class: "button button--quiet" %>
+          <% end %>
+          </div>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+</div>

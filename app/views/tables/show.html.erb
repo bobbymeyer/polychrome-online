@@ -84,11 +84,15 @@
         <div class="window"><p class="muted">Loading…</p></div>
       <% end %>
     <% end %>
+    <% if @seat.is_a?(Character) %>
+      <%= render "field_uses/ability", character: @seat %>
+    <% end %>
     <p class="hint">
       At the table as <strong><%= @seat == "gm" ? "GM" : @seat.name %></strong>.
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
     <% if @seat == "gm" %>
+      <%= render "field_uses/requests", campaign: @campaign %>
       <%= render "tables/coop_setup", campaign: @campaign unless view %>
       <details class="window table-scenes">
         <summary>Call for a check</summary>

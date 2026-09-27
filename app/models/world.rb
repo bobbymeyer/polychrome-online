@@ -144,7 +144,7 @@ class World < ApplicationRecord
 
   # The world's Grimoire in the resolver's library format.
   def ability_library
-    abilities.to_h { |ability| [ ability.slug, ability.to_engine ] }
+    abilities.in_battle.to_h { |ability| [ ability.slug, ability.to_engine ] }
   end
 
   # Build a battle straight from the books.

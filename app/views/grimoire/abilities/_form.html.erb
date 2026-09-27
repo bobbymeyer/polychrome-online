@@ -5,7 +5,7 @@
     <div class="field">
       <%= f.label :kind %>
       <%= f.select :kind, Ability::KINDS.map { |k| [term(k), k] } %>
-      <p class="hint">Magic is blocked by Silence.</p>
+      <p class="hint">Magic is blocked by Silence. Field is for outside battle: a job's field ability, below.</p>
     </div>
     <div class="field">
       <%= f.label :target %>
@@ -30,6 +30,19 @@
       <%= f.select :gesture, Ability::GESTURES.map { |g| [term(g), g] }, include_blank: "None" %>
     </div>
   </div>
+  <fieldset class="panel">
+    <legend>Outside battle (kind Field)</legend>
+    <p class="hint">A check with a skill, asked for at the table and approved by the GM, once per rest. On a success, the outcome happens. Field abilities have no battle effects.</p>
+    <div class="field-row">
+      <div class="field"><%= f.label :field_skill, "Skill" %><%= f.select :field_skill, Array(@world.skills).map { |s| [ s["name"], s["slug"] ] }, include_blank: true %></div>
+      <div class="field"><%= f.label :field_outcome, "On a success" %><%= f.select :field_outcome, FieldUse::OUTCOMES.map { |k, v| [ "#{k.humanize}: #{v}", k ] }, include_blank: true %></div>
+      <div class="field"><%= f.label :field_difficulty, "Usual difficulty" %><%= f.select :field_difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] } %></div>
+      <div class="field">
+        <%= f.label :field_power, "Power" %><%= f.number_field :field_power, min: 0 %>
+        <p class="hint">Find: the most an item can be worth. Restore: the % of HP and MP back.</p>
+      </div>
+    </div>
+  </fieldset>
   <%= render "book_entries/effect_rows", f: f %>
   <%= render "book_entries/art_fields", f: f %>
   <div class="actions">

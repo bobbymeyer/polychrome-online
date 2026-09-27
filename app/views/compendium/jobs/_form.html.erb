@@ -22,6 +22,11 @@
       <p class="hint">The job's own command: always on its menu, learned or not.</p>
     </div>
     <div class="field">
+      <%= f.label :field_ability, "Field ability" %>
+      <%= f.select :field_ability, @world.abilities.field.order(:name).map { |a| [ a.name, a.slug ] }, include_blank: "(none)" %>
+      <p class="hint">Its move outside battle, once per rest: a Grimoire entry of kind Field.</p>
+    </div>
+    <div class="field">
       <%= f.label :passive %>
       <%= f.select :passive, Battle::PASSIVES.map { |p| [ GlossaryHelper::PASSIVES.fetch(p).first, p ] }, include_blank: "(none)" %>
       <p class="hint">What the job gives beyond numbers. Master the job and a character keeps it in every job.</p>

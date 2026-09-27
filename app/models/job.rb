@@ -23,13 +23,19 @@ class Job < ApplicationRecord
   validate :innates_are_passives
   validate :desperation_is_an_attack
   validate :signature_is_an_ability
+  validate :field_ability_is_a_field_ability
   validates :passive, inclusion: { in: Battle::PASSIVES }, allow_nil: true
   # A character in the job has its type: hit as the chart says, and hitting
   # with it through Attack and the job's own command.
   before_validation :default_to_plain_type, on: :create
   validates :base_type, inclusion: { in: ->(job) { job.world_types }, message: "isn't one of this world's types" }
 
-  normalizes :desperation, :signature, :passive, with: ->(slug) { slug.presence }
+  normalizes :desperation, :signature, :passive, :field_ability, with: ->(slug) { slug.presence }
+
+  # The job's move outside battle (FieldUse): a Grimoire entry of kind field.
+  def field_ability_entry
+    field_ability && world.abilities.field.find_by(slug: field_ability)
+  end
 
   # The job's own command: always on the menu while in the job, learned or not.
   def signature_ability
@@ -106,6 +112,10 @@ class Job < ApplicationRecord
   def equip_categories_exist
     unknown = equip_categories - Item::EQUIPMENT_CATEGORIES
     errors.add(:equip_categories, "has unknown categories: #{unknown.join(', ')}") if unknown.any?
+  end
+
+  def field_ability_is_a_field_ability
+    errors.add(:field_ability, "must be a field ability in the Grimoire") if field_ability && !world&.abilities&.field&.exists?(slug: field_ability)
   end
 
   def signature_is_an_ability

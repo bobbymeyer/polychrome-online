@@ -71,7 +71,7 @@ class Character < ApplicationRecord
   end
 
   def battle_abilities
-    (native_abilities + slotted_abilities).uniq
+    (native_abilities + slotted_abilities).uniq.reject(&:field?)
   end
 
   # The current job's passive, and every mastered job's: mastery keeps it.

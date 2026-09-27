@@ -13,6 +13,9 @@
       <% if (own = entry.signature_ability) %>
         <dt><%= gloss(:signature, "Signature") %></dt><dd><%= link_to own.name, world_grimoire_ability_path(entry.world, own) %></dd>
       <% end %>
+      <% if (field = entry.field_ability_entry) %>
+        <dt><%= gloss(:field_ability, "Field") %></dt><dd><%= link_to field.name, world_grimoire_ability_path(entry.world, field) %></dd>
+      <% end %>
       <% if entry.passive %>
         <dt><%= gloss(:passive, "Passive") %></dt><dd><%= passive_term(entry.passive) %></dd>
       <% end %>

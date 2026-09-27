@@ -16,6 +16,7 @@ class Campaign < ApplicationRecord
   has_many :locations, dependent: :destroy
   has_many :flags, dependent: :delete_all
   has_many :scenes, dependent: :destroy
+  has_many :field_uses, dependent: :destroy
   belongs_to :current_node, class_name: "MapNode", optional: true
 
   # Travel encounters use their own seeded RNG, stored here like a battle's.
@@ -124,6 +125,7 @@ class Campaign < ApplicationRecord
 
       update!(gil: gil - cost)
       character.update!(hp: nil, mp: nil) if %w[inn temple].include?(kind)
+      character.update!(field_used: false) if kind == "inn" # a night's rest: field abilities are back
       messages.create!(kind: "system", body: service_line(kind, character, service, by, cost))
     end
   end
@@ -219,9 +221,13 @@ class Campaign < ApplicationRecord
 
       origin = current_node
       destination = edge.other_end(origin)
-      if edge.encounter_table
+      # A field ability found a way through (FieldUse "safe_road"): the next
+      # dangerous path rolls nothing.
+      safe = edge.encounter_table && safe_road
+      if edge.encounter_table && !safe
         self.rng, rolled = Pointcrawl::Encounters.roll(rng, edge.encounter_table.entries, edge.state)
       end
+      self.safe_road = false if safe
       destination.update!(visible: true)
       origin.location&.leave!
       self.current_node = destination
@@ -230,6 +236,7 @@ class Campaign < ApplicationRecord
 
       messages.create!(kind: "system", body: "The party travels from #{origin.name} to #{destination.name}.")
       messages.create!(body: edge.travel_event) if edge.travel_event
+      messages.create!(kind: "system", body: "The way is safe: nothing troubles the party on the road.") if safe
       messages.create!(kind: "system", body: "Encounter! #{describe_encounter(rolled)}.") if rolled
     end
     broadcast_map
@@ -389,7 +396,7 @@ class Campaign < ApplicationRecord
     raise ArgumentError, "Not while a battle is on" if battle_on?
 
     transaction do
-      characters.update_all(hp: nil, mp: nil)
+      characters.update_all(hp: nil, mp: nil, field_used: false)
       messages.create!(kind: "system", body: "The party rests. Everyone is back to full HP and MP.")
     end
   end

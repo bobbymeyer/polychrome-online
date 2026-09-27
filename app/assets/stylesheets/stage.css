@@ -803,3 +803,13 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .type-editor .checks--tight { display: flex; flex-wrap: wrap; gap: 2px 8px; font-size: 12px; }
 .type-editor__uses { font-size: 12px; max-width: 220px; }
 .type-chart--edit select { width: 100%; min-width: 44px; border: 0; background: transparent; font-weight: 900; text-align: center; padding: 0; }
+
+/* Field abilities (FieldUse): the player's move outside battle, and the GM's list of requests. */
+.field-ability h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; }
+.field-ability .button_to { margin: 8px 0 0; }
+.field-requests .field-request { border-top: 1px solid var(--light-grey); padding: 8px 0; }
+.field-requests .field-request p { margin: 0 0 6px; }
+.field-requests .field-request__actions { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.field-requests .inline-form { display: flex; gap: 8px; align-items: center; margin: 0; }
+.field-requests .inline-form select { width: auto; }
+.field-requests .inline-form input[type=text] { width: 220px; }
