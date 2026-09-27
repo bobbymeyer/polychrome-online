@@ -1,0 +1,6 @@
+<% content_for :title, @scene.name %>
+<div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @scene.name %></div>
+<h1><%= @scene.name %></h1>
+<%= render "form", scene: @scene %>
+<%= button_to "Delete this scene", scene_path(@scene), method: :delete, class: "button button--quiet",
+              form: { data: { turbo_confirm: "Delete #{@scene.name}?" } } %>

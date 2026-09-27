@@ -51,6 +51,7 @@ Rails.application.routes.draw do
     resources :inventories, only: %i[create update], path: "bag"
     resource :rest, only: :create
     resources :npcs, only: %i[new create]
+    resources :scenes, only: %i[new create]
 
     # The table (§7): the live session page with the dialogue box and log.
     resources :flags, only: %i[create update destroy] do
@@ -105,6 +106,9 @@ Rails.application.routes.draw do
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"
 
   resources :npcs, only: %i[edit update destroy]
+  resources :scenes, only: %i[edit update destroy] do
+    post :play, on: :member
+  end
 
   resources :characters, only: %i[show edit update destroy] do
     resource :job, only: :update, controller: "character_jobs"

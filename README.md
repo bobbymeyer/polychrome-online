@@ -220,6 +220,23 @@ everything outside battle.
 - NPCs belong to the campaign (the "Cast" section of the campaign page). The
   town generator in step 7 will create them too.
 
+## Scenes
+
+The GM writes scenes before the session, on the campaign page, and plays
+them from the table with one press (`Scene#play!`). A script reads like a
+play, one line each: `Cid (worried): The airship won't hold.` speaks as
+the NPC with that expression, and anything else is narration (a name that
+isn't in the cast is an error, unless it's clearly a sentence). The lines
+become table messages in order, so every viewer's dialogue box types them
+out one after another. The scene can then end:
+
+- **In a battle** against the monsters chosen for it. The battle starts
+  straight away, and each viewer is taken to it once their dialogue box has
+  finished the scene (`stage.js` waits for it).
+- **With a place revealed** on the map.
+
+A played scene stays in the list, greyed, and can be played again.
+
 ## The pointcrawl map
 
 Each campaign has a map (`/campaigns/:id/map`), and the table shows it too.

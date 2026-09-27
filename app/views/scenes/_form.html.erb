@@ -1,0 +1,50 @@
+<%= form_with model: scene, url: scene.persisted? ? scene_path(scene) : campaign_scenes_path(@campaign), class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: scene %>
+  <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, placeholder: "The airship falls" %></div>
+  <div class="field">
+    <%= f.label :script %>
+    <%= f.text_area :script, rows: 10, class: "script-field",
+                    placeholder: "Cid (worried): The airship won't hold.\nThe wind picks up.\nNarrator: A shadow crosses the moon." %>
+    <p class="hint">
+      One line each, like a play. Start with an NPC's name and a colon to speak as them, with an expression in brackets if you like
+      (<%= Portrait::EXPRESSIONS.to_sentence(last_word_connector: " or ") %>). Anything else is narration.
+      <% if (cast = @campaign.npcs.order(:name).pluck(:name)).any? %>The cast: <%= cast.to_sentence %>.<% else %>There's no cast yet: add NPCs on the campaign page.<% end %>
+    </p>
+  </div>
+
+  <fieldset class="field" data-controller="kind-switch">
+    <legend>Then</legend>
+    <div class="field">
+      <%= f.label :ending, "When the last line is said" %>
+      <%= f.select :ending, [ [ "Nothing: the table carries on", "none" ], [ "A battle", "battle" ], [ "A place appears on the map", "reveal" ] ], {},
+                   data: { kind_switch_target: "select", action: "kind-switch#update" } %>
+    </div>
+
+    <div class="field" data-show-for="battle">
+      <% monsters = @world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level}#{', boss' if m.boss?})", m.slug ] } %>
+      <% rows = scene.encounter.to_a + Array.new([ ScenesController::ENCOUNTER_SLOTS - scene.encounter.size, 0 ].max) { [ "", 1 ] } %>
+      <table class="book-table">
+        <thead><tr><th scope="col">Monster</th><th scope="col">How many</th></tr></thead>
+        <tbody>
+          <% rows.each_with_index do |(slug, count), i| %>
+            <tr>
+              <td><%= select_tag "scene[encounter][#{i}][monster]", options_for_select(monsters, slug), include_blank: "(none)", "aria-label": "Monster #{i + 1}" %></td>
+              <td><%= number_field_tag "scene[encounter][#{i}][count]", count, min: 1, max: 9, "aria-label": "How many #{i + 1}" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <p class="hint">It starts when the last line has been said; everyone at the table is taken to it.</p>
+    </div>
+
+    <div class="field" data-show-for="reveal">
+      <%= f.label :map_node_id, "Place" %>
+      <%= f.select :map_node_id, @campaign.map_nodes.order(:name).map { |n| [ "#{n.name}#{' (hidden)' unless n.visible?}", n.id ] }, include_blank: "(choose)" %>
+    </div>
+  </fieldset>
+
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", campaign_path(@campaign, anchor: "scenes"), class: "button button--quiet" %>
+  </div>
+<% end %>

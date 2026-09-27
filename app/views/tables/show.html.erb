@@ -64,6 +64,11 @@
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
     <% if @seat == "gm" %>
+      <details class="window table-scenes" <%= "open" if @campaign.scenes.where(played_at: nil).exists? %>>
+        <summary>Scenes</summary>
+        <%= render "scenes/list", campaign: @campaign, play: true %>
+        <%= link_to "New scene", new_campaign_scene_path(@campaign), class: "button button--quiet" %>
+      </details>
       <%= form_with url: campaign_music_path(@campaign), method: :patch, class: "music-switch", data: { controller: "autosubmit" } do %>
         <%= label_tag :music, "Music for the table" %>
         <%= select_tag :music, options_for_select([ [ "Follow the scene (#{@campaign.scene})", "" ] ] +

@@ -1,0 +1,23 @@
+<%# The GM's prepared scenes, unplayed first. On the table, each has a Play button. %>
+<% scenes = campaign.scenes.in_order.includes(:map_node).to_a %>
+<% if scenes.empty? %>
+  <p class="empty">No scenes yet. Write one before the session: its lines play in order at the press of a button, and it can end in a battle or a new place on the map.</p>
+<% else %>
+  <ol class="scene-list">
+    <% scenes.each do |scene| %>
+      <li class="scene-list__item<%= ' is-played' if scene.played? %>">
+        <div>
+          <strong><%= scene.name %></strong>
+          <span class="muted"><%= scene.summary %><%= " · played #{time_ago_in_words(scene.played_at)} ago" if scene.played? %></span>
+        </div>
+        <div class="scene-list__actions">
+          <% if local_assigns[:play] %>
+            <%= button_to scene.played? ? "Play again" : "Play", play_scene_path(scene), class: ["button", ("play" unless scene.played?), ("button--quiet" if scene.played?)],
+                          form: { class: "inline", data: ({ turbo_confirm: "Play #{scene.name} again?" } if scene.played?) } %>
+          <% end %>
+          <%= link_to "Edit", edit_scene_path(scene), class: "button button--quiet", data: { turbo_frame: "_top" } %>
+        </div>
+      </li>
+    <% end %>
+  </ol>
+<% end %>

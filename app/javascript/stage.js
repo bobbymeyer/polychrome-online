@@ -10,6 +10,9 @@ const ARRIVE_KEY = "polychrome.arriving"
 const SLABS = 7
 const COVER_MS = 700
 const DIALOGUE_WAIT_MS = 20000
+// A scene's lines and its battle go out together, and can arrive in any
+// order: give the lines a moment to land before asking if anyone's talking.
+const SETTLE_MS = 600
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
 const store = (fn) => { try { return fn(window.sessionStorage) } catch { return null } }
@@ -21,7 +24,7 @@ export function toBattle(url, { boss = false } = {}) {
   root.dataset.leaving = "true"
   store((s) => s.setItem(RETURN_KEY, JSON.stringify({ url: window.location.href, title: document.title.replace(/ · Polychrome$/, "") })))
   // Nobody is pulled away mid-sentence: a scene's lines finish first.
-  whenDialogueIdle(() => {
+  setTimeout(() => whenDialogueIdle(() => {
     holdMusic()
     play(boss ? "boss" : "encounter")
     if (reducedMotion()) return window.Turbo.visit(url)
@@ -31,7 +34,7 @@ export function toBattle(url, { boss = false } = {}) {
       store((s) => s.setItem(ARRIVE_KEY, boss ? "boss" : "battle"))
       window.Turbo.visit(url)
     }, COVER_MS)
-  })
+  }), SETTLE_MS)
 }
 
 // Where the battle should send you back to, if you were pulled in.

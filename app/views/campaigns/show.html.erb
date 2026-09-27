@@ -75,6 +75,16 @@
   <% end %>
 </section>
 
+<% if can_gm?(@campaign) %>
+  <section id="scenes">
+    <div class="book-header">
+      <h2>Scenes</h2>
+      <%= link_to "New scene", new_campaign_scene_path(@campaign), class: "button button--quiet" %>
+    </div>
+    <%= render "scenes/list", campaign: @campaign %>
+  </section>
+<% end %>
+
 <% if table_gm? %>
   <section class="window" id="flags">
     <div class="book-header">

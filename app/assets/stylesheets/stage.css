@@ -525,6 +525,17 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .music-fields__current { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0; }
 .music-fields__current audio { height: 32px; max-width: 100%; }
 
+/* The GM's scenes: a running order, played from the table. */
+.scene-list { list-style: none; margin: 0; padding: 0; border-top: 3px solid var(--ink); }
+.scene-list__item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding: 10px 0; border-bottom: 1px solid var(--light-grey); }
+.scene-list__item strong { font-style: italic; font-weight: 900; font-size: 18px; margin-right: 8px; }
+.scene-list__item.is-played strong { color: var(--grey); }
+.scene-list__actions { display: flex; gap: 8px; align-items: center; }
+.table-scenes { margin-top: 12px; }
+.table-scenes summary { cursor: pointer; font-style: italic; font-weight: 900; font-size: 18px; }
+.table-scenes[open] summary { margin-bottom: 8px; }
+.script-field { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 15px; line-height: 24px; }
+
 /* ---------------------------------------------------------------------------
  * Everything that moves holds still for people who asked for stillness.
  * ------------------------------------------------------------------------- */

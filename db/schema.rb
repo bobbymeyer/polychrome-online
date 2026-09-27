@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_27_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_000000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -476,6 +476,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_230000) do
     t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
   end
 
+  create_table "scenes", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.string "name", null: false
+    t.text "script"
+    t.string "ending", default: "none", null: false
+    t.json "encounter", default: {}, null: false
+    t.integer "map_node_id"
+    t.datetime "played_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_scenes_on_campaign_id"
+    t.index ["map_node_id"], name: "index_scenes_on_map_node_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "ip_address"
@@ -556,5 +570,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_27_230000) do
   add_foreign_key "monsters", "worlds"
   add_foreign_key "npcs", "campaigns"
   add_foreign_key "npcs", "locations"
+  add_foreign_key "scenes", "campaigns"
+  add_foreign_key "scenes", "map_nodes", on_delete: :nullify
   add_foreign_key "sessions", "users"
 end
