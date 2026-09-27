@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module ArtHelper
+  MISSING = "Not on ComfyUI"
+
   # A LoRA stack, in order, switched-off ones struck through (§8).
   def lora_stack(loras)
     return "none" if loras.empty?
@@ -9,5 +11,32 @@ module ArtHelper
       text = "#{lora['name']} #{lora['strength']}"
       lora.fetch("on", true) && !lora["strength"].to_f.zero? ? text : tag.s(text, title: "switched off")
     end, " · ")
+  end
+
+  # The installed models, grouped by the family each would run as, in the
+  # order config/comfy.yml lists the families: [[label, [file, ...]], ...].
+  def model_groups(caps)
+    order = Comfy::Family.configured.keys
+    caps.models.map { |file| [ Comfy::Family.for(file, capabilities: caps), file ] }
+        .group_by { |family, _| [ order.index(family.slug) || order.size, family.label ] }
+        .sort_by { |(rank, label), _| [ rank, label ] }
+        .map { |(_, label), rows| [ label, rows.map(&:last).sort_by(&:downcase) ] }
+  end
+
+  # The installed LoRAs, grouped by the subfolder they sit in (the usual way
+  # of keeping them apart by family), loose ones first.
+  def lora_groups(caps)
+    caps.loras.group_by { |file| File.dirname(file) }
+        .sort_by { |dir, _| dir == "." ? "" : dir.downcase }
+        .map { |dir, files| [ dir == "." ? "LoRAs" : dir, files.sort_by(&:downcase) ] }
+  end
+
+  # A strict picker from grouped choices. A value that isn't installed any
+  # more stays selectable, in its own group, so saving doesn't lose it.
+  def grouped_picker(name, value, groups, blank:, **options)
+    value = value.to_s
+    groups += [ [ MISSING, [ value ] ] ] if value.present? && groups.none? { |_, files| files.include?(value) }
+    choices = groups.map { |label, files| [ label, files.map { |file| [ file, file ] } ] }
+    select_tag name, grouped_options_for_select(choices, value), include_blank: blank, **options
   end
 end

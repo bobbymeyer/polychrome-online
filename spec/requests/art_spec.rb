@@ -137,6 +137,32 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
     expect(response.body).to include("Krea 2 Turbo · 8 steps · CFG 1 · no negative prompt", "From the layers above")
   end
 
+  it "picks models and LoRAs from what ComfyUI has, models grouped by family, keeping a name it no longer has" do
+    allow(Comfy).to receive(:capabilities).and_return(FakeComfy.capabilities(
+      checkpoints: [ "ponyDiffusionV6XL.safetensors", "sd_xl_base_1.0.safetensors" ],
+      diffusion_models: [ "anima-preview.safetensors", "krea2_turbo_bf16.safetensors" ],
+      loras: [ "ink.safetensors", "SDXL/pony_sprites.safetensors" ]
+    ))
+    world.update!(art_model: "retired.safetensors")
+    get world_art_direction_path(world)
+    page = Nokogiri::HTML(response.body)
+    picker = page.at_css("select#world_art_model")
+    groups = picker.css("optgroup").to_h { |g| [ g["label"], g.css("option").map(&:text) ] }
+    expect(groups).to eq("Anima" => [ "anima-preview.safetensors" ], "Krea 2 Turbo" => [ "krea2_turbo_bf16.safetensors" ],
+                         "Pony" => [ "ponyDiffusionV6XL.safetensors" ], "SDXL" => [ "sd_xl_base_1.0.safetensors" ],
+                         "Not on ComfyUI" => [ "retired.safetensors" ])
+    expect(picker.at_css("option[selected]")["value"]).to eq("retired.safetensors")
+    expect(picker.at_css("option").text).to eq("Inherit: #{Comfy.config[:model]}")
+    expect(page.at_css("select#types_monster_model option[selected]")).to be_nil # inherits
+
+    loras = page.at_css("select#world_art_loras_0_name").css("optgroup").to_h { |g| [ g["label"], g.css("option").map(&:text) ] }
+    expect(loras).to eq("LoRAs" => [ "ink.safetensors" ], "SDXL" => [ "SDXL/pony_sprites.safetensors" ])
+
+    allow(Comfy).to receive(:capabilities).and_return(Comfy::Capabilities.unreachable)
+    get world_art_direction_path(world)
+    expect(Nokogiri::HTML(response.body).at_css("input#world_art_model")["value"]).to eq("retired.safetensors")
+  end
+
   it "rejects a size ComfyUI can't use" do
     patch world_art_direction_path(world), params: { world: { art_style: "x" }, types: { monster: { width: "10" } } }
     expect(response).to have_http_status(:unprocessable_content)

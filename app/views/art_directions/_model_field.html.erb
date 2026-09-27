@@ -1,7 +1,13 @@
-<%# One layer's model (§8). name, id, value; inherited: what applies when this is blank. %>
+<%# One layer's model (§8). name, id, value; inherited: what applies when this is blank.
+    A strict picker of what ComfyUI has, grouped by family; a text field while ComfyUI isn't answering. %>
+<% caps = Comfy.capabilities %>
 <div class="field">
   <%= label_tag id, "Model" %>
-  <%= text_field_tag name, value, id: id, list: "comfy-models", placeholder: inherited %>
-  <% family = Comfy::Family.for(value.presence || inherited, capabilities: -> { Comfy.capabilities }) %>
+  <% if caps.reachable? %>
+    <%= grouped_picker name, value, model_groups(caps), blank: "Inherit: #{inherited}", id: id %>
+  <% else %>
+    <%= text_field_tag name, value, id: id, placeholder: inherited %>
+  <% end %>
+  <% family = Comfy::Family.for(value.presence || inherited, capabilities: caps) %>
   <p class="hint"><%= value.present? ? "Runs as" : "Blank uses #{inherited}, run as" %> <%= family.summary %>.</p>
 </div>
