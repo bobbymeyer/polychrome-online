@@ -7,23 +7,11 @@ class SecretsController < ApplicationController
 
   before_action :set_campaign
   before_action :require_gm
-  before_action :set_secret, only: %i[destroy reveal conceal]
+  before_action :set_secret, only: :destroy
 
   def create
     secret = @campaign.secrets.new(secret_params)
     secret.save ? back(notice: "Secret kept.") : back(alert: secret.errors.full_messages.to_sentence)
-  end
-
-  def reveal
-    @secret.reveal!
-    back
-  rescue Refusal => e
-    back alert: e.message
-  end
-
-  def conceal
-    @secret.conceal!
-    back notice: "Put back: the party doesn't know that after all."
   end
 
   def destroy

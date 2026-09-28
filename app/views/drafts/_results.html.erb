@@ -2,7 +2,7 @@
 <div id="<%= Draft.slot_id(kind, target) %>" class="draft-results">
   <% if draft %>
     <% owner = draft.owner %>
-    <% keep_path = ->(i) { owner.is_a?(Campaign) ? keep_campaign_draft_path(owner, draft, item: i) : keep_world_draft_path(owner, draft, item: i) } %>
+    <% keep_path = ->(i) { owner.is_a?(Campaign) ? campaign_draft_keeps_path(owner, draft, item: i) : world_draft_keeps_path(owner, draft, item: i) } %>
     <% case draft.status %>
     <% when "queued", "running" %>
       <p class="draft-results__status" role="status">Thinking…</p>

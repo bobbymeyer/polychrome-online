@@ -29,7 +29,7 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
 
   def keep(draft, index = 0)
     owner = draft.owner
-    post(owner.is_a?(Campaign) ? keep_campaign_draft_path(owner, draft, item: index) : keep_world_draft_path(owner, draft, item: index))
+    post(owner.is_a?(Campaign) ? campaign_draft_keeps_path(owner, draft, item: index) : world_draft_keeps_path(owner, draft, item: index))
   end
 
   it "suggests secrets from what's in the campaign, and keeps the one the GM wants" do

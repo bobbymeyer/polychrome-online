@@ -8,7 +8,7 @@ class ScenesController < ApplicationController
   ENCOUNTER_SLOTS = 3
 
   before_action :set_campaign, only: %i[new create]
-  before_action :set_scene, only: %i[edit update destroy play]
+  before_action :set_scene, only: %i[edit update destroy]
   before_action :require_campaign_gm
 
   # A suggested scene (Drafts::Scene) arrives with its name and script.
@@ -38,13 +38,6 @@ class ScenesController < ApplicationController
   def destroy
     @scene.destroy!
     redirect_to campaign_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} was deleted.", status: :see_other
-  end
-
-  def play
-    @scene.play!
-    redirect_back_or_to campaign_table_path(@campaign), status: :see_other
-  rescue Refusal, ActiveRecord::RecordInvalid => e
-    redirect_back_or_to campaign_table_path(@campaign), alert: e.message, status: :see_other
   end
 
   private

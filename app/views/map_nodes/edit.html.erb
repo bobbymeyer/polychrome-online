@@ -27,7 +27,7 @@
 
     <div class="menu menu--row">
       <% unless @node.party_here? %>
-        <%= button_to "Put the party here", place_party_map_node_path(@node), class: "menu__item menu__item--accent" %>
+        <%= button_to "Put the party here", map_node_party_path(@node), class: "menu__item menu__item--accent" %>
       <% end %>
     </div>
 

@@ -210,3 +210,7 @@ Steps 1–3 are the proof. If the battle isn't fun with a GM in the seat, nothin
 - GM power is never hidden. Overrides are actions and appear in the log.
 - Book entries are descriptions/recipes. Rendering (image variants, generated locations) is derived and cacheable, never the source of truth.
 - Prefer boring Rails. Reach for JS only in the event player and the map.
+- Controllers only do CRUD. A verb is a resource that hasn't been named yet: "reroll a location" is `Locations::RerollsController#create`, "reveal a secret" is `Secrets::RevelationsController#create` (and concealing it is `#destroy`). Nested controllers live in a folder named for their parent, and load it through a concern (`LocationScoped`, `DraftOwned`, `ChoiceScoped`).
+- A model that tells several stories tells them in concerns, one story each, in a folder named for the model (`Campaign::Shopping`, `Location::Exploration`). A slice's constants live in the slice.
+- When the game says no ("the party can't afford that"), a model raises `Refusal`, and the person who asked sees it as an alert. `ArgumentError` means a bug, and crashes.
+- The table hears the game through `Campaign#narrate`.

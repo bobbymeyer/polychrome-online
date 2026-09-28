@@ -16,12 +16,12 @@ RSpec.describe "Flags and GM changes", type: :request do
       sit("gm")
       post campaign_flags_path(campaign), params: { flag: { key: "Crystals found", value: "1", public: "1" } }
       flag = campaign.flags.find_by!(key: "crystals_found")
-      post bump_campaign_flag_path(campaign, flag), params: { by: 1 }
+      post campaign_flag_bumps_path(campaign, flag), params: { by: 1 }
       expect(flag.reload.value).to eq("2")
 
       patch campaign_flag_path(campaign, flag), params: { flag: { value: "all four" } }
       expect(flag.reload.value).to eq("all four")
-      post bump_campaign_flag_path(campaign, flag), params: { by: 1 }
+      post campaign_flag_bumps_path(campaign, flag), params: { by: 1 }
       follow_redirect!
       expect(response.body).to include("isn&#39;t a number")
 
@@ -78,10 +78,10 @@ RSpec.describe "Flags and GM changes", type: :request do
       get campaign_changes_path(campaign)
       expect(response.body).to include("Renamed to The Den", "Boss placed: 1 × Ogre", "Added room Hidden Vault", "Revert")
 
-      post revert_location_path(cave), params: { kind: "room", key: added, return_to: campaign_changes_path(campaign) }
+      post location_reversions_path(cave), params: { kind: "room", key: added, return_to: campaign_changes_path(campaign) }
       expect(response).to redirect_to(campaign_changes_path(campaign))
-      post revert_location_path(cave), params: { kind: "boss" }
-      post revert_location_path(cave), params: { kind: "name" }
+      post location_reversions_path(cave), params: { kind: "boss" }
+      post location_reversions_path(cave), params: { kind: "name" }
       expect(cave.reload.changes).to be_empty
       expect(cave.view).to eq(rolled)
     end
@@ -95,7 +95,7 @@ RSpec.describe "Flags and GM changes", type: :request do
 
       sit("gm")
       town.changes.select { |c| c["kind"] == "npc" }.each do |change|
-        post revert_location_path(town), params: { kind: "npc", key: change["key"] }
+        post location_reversions_path(town), params: { kind: "npc", key: change["key"] }
       end
       expect(campaign.npcs.where(location: town)).to be_empty
       expect(Npc.exists?(galuf.id)).to be(false)
@@ -105,7 +105,7 @@ RSpec.describe "Flags and GM changes", type: :request do
       sit(bartz.id)
       get campaign_changes_path(campaign)
       expect(response).to have_http_status(:forbidden)
-      post revert_location_path(cave), params: { kind: "name" }
+      post location_reversions_path(cave), params: { kind: "name" }
       expect(response).to have_http_status(:forbidden)
     end
   end

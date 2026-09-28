@@ -80,7 +80,7 @@ RSpec.describe "Map pages", type: :request do
 
     it "places the party, travels, and deals with the encounter" do
       campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "dangerous", encounter_table: world.encounter_tables.find_by!(slug: "grasslands"))
-      post place_party_map_node_path(tule)
+      post map_node_party_path(tule)
       get campaign_map_panel_path(campaign)
       expect(response.body).to include("The party is at Tule", "To Secret Ruins", "dangerous · Grasslands")
 

@@ -74,22 +74,22 @@ RSpec.describe "Items and shops", type: :request do
       get location_path(town)
       expect(response.body).to include("The party has <strong>200 gil</strong>", "Antidote", 'value="Buy"')
 
-      post buy_location_shop_path(town), params: { item: "potion", quantity: 3 }
+      post location_purchases_path(town), params: { item: "potion", quantity: 3 }
       expect(campaign.reload.gil).to eq(80)
       expect(campaign.quantity_of(potion)).to eq(3)
       expect(campaign.messages.last.body).to eq("Lenna bought 3 × Potion in #{town.name} for 120 gil.")
 
-      post sell_location_shop_path(town), params: { item: "potion", quantity: 2 }
+      post location_sales_path(town), params: { item: "potion", quantity: 2 }
       expect(campaign.reload.gil).to eq(120)
       expect(campaign.quantity_of(potion)).to eq(1)
     end
 
     it "won't sell what it doesn't stock, overspend, or buy what the bag lacks" do
-      post buy_location_shop_path(town), params: { item: "phoenix_down" }
+      post location_purchases_path(town), params: { item: "phoenix_down" }
       expect(flash[:alert]).to include("doesn't sell Phoenix Down")
-      post buy_location_shop_path(town), params: { item: "antidote", quantity: 5 }
+      post location_purchases_path(town), params: { item: "antidote", quantity: 5 }
       expect(flash[:alert]).to include("The party has 200 gil; 5 × Antidote costs 250")
-      post sell_location_shop_path(town), params: { item: "antidote" }
+      post location_sales_path(town), params: { item: "antidote" }
       expect(flash[:alert]).to include("The bag has 0 × Antidote")
       expect(campaign.reload.gil).to eq(200)
     end
@@ -121,11 +121,11 @@ RSpec.describe "Items and shops", type: :request do
       get location_path(town)
       expect(response.body).to include("The party has to be here to use them.")
       expect(response.body).not_to include('value="Buy"')
-      post buy_location_shop_path(town), params: { item: "potion" }
+      post location_purchases_path(town), params: { item: "potion" }
       expect(flash[:alert]).to eq("You can only shop in the town where the party is.")
 
       sign_in_as(@admin)
-      post buy_location_shop_path(town), params: { item: "potion" }
+      post location_purchases_path(town), params: { item: "potion" }
       expect(campaign.reload.quantity_of(potion)).to eq(1)
     end
   end
@@ -193,7 +193,7 @@ RSpec.describe "Items and shops", type: :request do
       get location_path(town)
       expect(response.body).to include("Sell what the party is wearing", "Broadsword")
 
-      post sell_worn_location_shop_path(town), params: { character_id: bartz.id, slot: "weapon" }
+      post location_sales_path(town), params: { character_id: bartz.id, slot: "weapon" }
       expect(bartz.reload.equipped["weapon"]).to be_nil
       expect(campaign.reload.gil).to eq(200 + broadsword.resale_price)
       expect(campaign.quantity_of(broadsword)).to eq(0)
@@ -207,7 +207,7 @@ RSpec.describe "Items and shops", type: :request do
       sign_in_as(lenna)
       get location_path(town)
       expect(response.body).not_to include("Sell what the party is wearing")
-      post sell_worn_location_shop_path(town), params: { character_id: bartz.id, slot: "weapon" }
+      post location_sales_path(town), params: { character_id: bartz.id, slot: "weapon" }
       expect(bartz.reload.equipped["weapon"]).to be_present
     end
   end

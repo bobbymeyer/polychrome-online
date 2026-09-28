@@ -24,9 +24,9 @@ RSpec.describe "Scenes", type: :request do
     create_character(campaign, name: "Bartz")
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
     get campaign_table_path(campaign)
-    expect(response.body).to include("Ambush", play_scene_path(scene))
+    expect(response.body).to include("Ambush", scene_play_path(scene))
 
-    post play_scene_path(scene)
+    post scene_play_path(scene)
     expect(campaign.messages.pluck(:body)).to include("Behind you!")
     expect(campaign.battles.last.name).to eq("Ambush")
   end
@@ -41,7 +41,7 @@ RSpec.describe "Scenes", type: :request do
     campaign.update!(gm: make_user("GM"))
     sign_in_as(make_user("Player"))
     scene = campaign.scenes.create!(name: "Secret", script: "Narrator: The twist.")
-    post play_scene_path(scene)
+    post scene_play_path(scene)
     expect(campaign.messages).to be_empty
     get campaign_path(campaign)
     expect(response.body).not_to include("Secret")

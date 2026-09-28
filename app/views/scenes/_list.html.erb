@@ -12,7 +12,7 @@
         </div>
         <div class="scene-list__actions">
           <% if local_assigns[:play] %>
-            <%= button_to scene.played? ? "Play again" : "Play", play_scene_path(scene), class: ["button", ("play" unless scene.played?), ("button--quiet" if scene.played?)],
+            <%= button_to scene.played? ? "Play again" : "Play", scene_play_path(scene), class: ["button", ("play" unless scene.played?), ("button--quiet" if scene.played?)],
                           form: { class: "inline", data: ({ turbo_confirm: "Play #{scene.name} again?" } if scene.played?) } %>
           <% end %>
           <%= link_to "Edit", edit_scene_path(scene), class: "button button--quiet", data: { turbo_frame: "_top" } %>

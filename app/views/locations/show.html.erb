@@ -20,7 +20,7 @@
   <div class="actions">
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--quiet" %>
     <% if @gm %>
-      <%= button_to "Reroll", reroll_location_path(@location), class: "button button--quiet",
+      <%= button_to "Reroll", location_reroll_path(@location), class: "button button--quiet",
                     form: { data: { turbo_confirm: "Reroll #{view['name']}? Pinned things stay; everything else changes#{', and exploration starts over' if @location.dungeon?}." } } %>
     <% end %>
   </div>

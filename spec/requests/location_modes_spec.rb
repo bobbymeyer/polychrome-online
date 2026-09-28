@@ -14,7 +14,7 @@ RSpec.describe "Location modes", type: :request do
   before { post campaign_table_seat_path(campaign), params: { seat: "gm" } }
 
   def prepare_burning
-    post add_mode_location_path(town), params: { mode: { name: "Burning", line: "Smoke over the rooftops: Tule is burning.",
+    post location_modes_path(town), params: { mode: { name: "Burning", line: "Smoke over the rooftops: Tule is burning.",
                                                          description: "Half the market is ash.", music: "battle",
                                                          encounters: "grasslands", closed: %w[shop inn] } }
   end
@@ -25,13 +25,13 @@ RSpec.describe "Location modes", type: :request do
     get location_path(town)
     expect(response.body).to include("GM: modes", "Burning", "Set it off")
 
-    post switch_mode_location_path(town), params: { key: "burning" }
+    patch location_current_mode_path(town), params: { key: "burning" }
     expect(town.reload.current_mode["name"]).to eq("Burning")
     expect(campaign.messages.last.body).to eq("Smoke over the rooftops: Tule is burning.")
     get location_path(town)
     expect(response.body).to include("location-mode", "Half the market is ash.", "Shut: Shop and Inn")
 
-    post clear_mode_location_path(town), params: { line: "The fires are out." }
+    delete location_current_mode_path(town), params: { line: "The fires are out." }
     expect(town.reload.current_mode).to be_nil
     expect(campaign.messages.last.body).to eq("The fires are out.")
   end

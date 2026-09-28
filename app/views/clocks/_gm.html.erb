@@ -16,8 +16,8 @@
           </div>
           <%= render "clocks/dial", clock: clock %>
           <div class="flag-tools">
-            <%= button_to "−1", tick_campaign_clock_path(campaign, clock), params: { by: -1 }, class: "pin", "aria-label": "Wind back #{clock.name}" %>
-            <%= button_to "+1", tick_campaign_clock_path(campaign, clock), params: { by: 1 }, class: "pin", "aria-label": "Tick #{clock.name}", disabled: clock.full? %>
+            <%= button_to "−1", campaign_clock_ticks_path(campaign, clock), params: { by: -1 }, class: "pin", "aria-label": "Wind back #{clock.name}" %>
+            <%= button_to "+1", campaign_clock_ticks_path(campaign, clock), params: { by: 1 }, class: "pin", "aria-label": "Tick #{clock.name}", disabled: clock.full? %>
             <%= button_to "Remove", campaign_clock_path(campaign, clock), method: :delete, class: "link-button",
                           form: { data: { turbo_confirm: "Take away the clock “#{clock.name}”?" } } %>
           </div>

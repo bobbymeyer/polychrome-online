@@ -24,7 +24,7 @@
         <% changes.each do |change| %>
           <li>
             <span><%= change["summary"] %></span>
-            <%= button_to "Revert", revert_location_path(location),
+            <%= button_to "Revert", location_reversions_path(location),
                           params: { kind: change["kind"], key: change["key"], return_to: campaign_changes_path(@campaign) },
                           class: "pin", form: { data: { turbo_confirm: "Revert: #{change['summary']}?" } } %>
           </li>

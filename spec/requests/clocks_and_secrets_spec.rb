@@ -39,7 +39,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       campaign.reload.travel!(edge)
       expect(clock.reload.filled).to eq(2)
 
-      post tick_campaign_clock_path(campaign, clock), params: { by: 1 }
+      post campaign_clock_ticks_path(campaign, clock), params: { by: 1 }
       expect(clock.reload).to be_full
       expect(town.reload.current_mode["name"]).to eq("Burning")
       expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The Syndicate torches Tule: it has happened.", "Smoke over the rooftops: Tule is burning." ])
@@ -47,7 +47,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       campaign.rest!
       expect(clock.reload.filled).to eq(3) # a full clock stays full
 
-      post tick_campaign_clock_path(campaign, clock), params: { by: -1 }
+      post campaign_clock_ticks_path(campaign, clock), params: { by: -1 }
       expect(clock.reload).to have_attributes(filled: 2, full_at: nil)
       expect(town.reload.mode).to eq("burning") # winding back doesn't put the fire out
     end
@@ -122,7 +122,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(response.body).not_to include("The mayor pays the goblins.")
 
       sit("gm")
-      post reveal_campaign_secret_path(campaign, secret)
+      post campaign_secret_revelation_path(campaign, secret)
       expect(secret.reload).to be_revealed
       expect(campaign.messages.last.body).to eq("The party learns: The mayor pays the goblins.")
 
@@ -132,7 +132,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(Recap.for(campaign).learned).to include("The mayor pays the goblins.")
 
       sit("gm")
-      post conceal_campaign_secret_path(campaign, secret)
+      delete campaign_secret_revelation_path(campaign, secret)
       expect(secret.reload).not_to be_revealed
     end
 

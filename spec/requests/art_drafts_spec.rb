@@ -32,7 +32,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
     get world_bestiary_monster_path(world, goblin)
     expect(response.body).to include("Drafts", "Make this one properly", "Use the draft", "43s")
 
-    post refine_world_art_candidate_path(world, chosen)
+    post world_art_candidate_refinements_path(world, chosen)
     refinement = goblin.reload.art_batch
     expect(refinement.recipe).to include("width" => 1024, "height" => 1024, "transparent" => true, "denoise" => 0.6)
     expect(refinement.candidates.sole.seed).to eq(chosen.seed)
@@ -52,7 +52,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
 
     comfy.finish!("prompt-3")
     run(refinement)
-    post pick_world_art_candidate_path(world, refinement.candidates.sole)
+    post world_art_candidate_pick_path(world, refinement.candidates.sole)
     expect(goblin.reload.image).to be_attached
     expect(goblin.art_batches).to be_empty # drafts and all
   end
@@ -63,7 +63,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
     run(batch)
     comfy.finish!("prompt-1")
     run(batch)
-    post refine_world_art_candidate_path(world, batch.candidates.sole)
+    post world_art_candidate_refinements_path(world, batch.candidates.sole)
     expect(flash[:alert]).to eq("Only a draft can be made properly")
   end
 end

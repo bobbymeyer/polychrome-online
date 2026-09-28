@@ -16,20 +16,20 @@
                   ("trouble from #{@world.encounter_tables.find_by(slug: t['encounters'])&.name}" if t["encounters"]) ].compact.join(" · ") %>
           </span>
           <% if location.mode == t["key"] %>
-            <%= form_with url: clear_mode_location_path(location), class: "inline-form" do |f| %>
+            <%= form_with url: location_current_mode_path(location), method: :delete, class: "inline-form" do |f| %>
               <%= f.text_field :line, placeholder: "The fires are out. (optional)", "aria-label": "What the table hears" %>
               <%= f.submit "Put it back", class: "button" %>
             <% end %>
           <% else %>
-            <%= button_to "Set it off", switch_mode_location_path(location), params: { key: t["key"] }, class: "button play",
+            <%= button_to "Set it off", location_current_mode_path(location), method: :patch, params: { key: t["key"] }, class: "button play",
                           form: { class: "inline", data: { turbo_confirm: "#{view['name']}: #{t['name']}? The table hears: “#{t['line'] || "#{view['name']}: #{t['name']}."}”" } } %>
           <% end %>
-          <%= button_to "Remove", remove_mode_location_path(location), method: :delete, params: { key: t["key"] }, class: "link-button", form: { class: "inline" } %>
+          <%= button_to "Remove", location_mode_path(location, t["key"]), method: :delete, class: "link-button", form: { class: "inline" } %>
         </li>
       <% end %>
     </ul>
   <% end %>
-  <%= form_with url: add_mode_location_path(location), scope: :mode, class: "book-form" do |f| %>
+  <%= form_with url: location_modes_path(location), scope: :mode, class: "book-form" do |f| %>
     <div class="field-row">
       <div class="field"><%= f.label :name %><%= f.text_field :name, placeholder: "Burning", required: true %></div>
       <div class="field">

@@ -7,7 +7,7 @@ class ClocksController < ApplicationController
 
   before_action :set_campaign
   before_action :require_gm
-  before_action :set_clock, only: %i[update destroy tick]
+  before_action :set_clock, only: %i[update destroy]
 
   def create
     clock = @campaign.clocks.new(clock_params)
@@ -16,11 +16,6 @@ class ClocksController < ApplicationController
 
   def update
     @clock.update(clock_params) ? back(notice: "Clock “#{@clock.name}” saved.") : back(alert: @clock.errors.full_messages.to_sentence)
-  end
-
-  def tick
-    @clock.tick!(params[:by].to_i.clamp(-12, 12))
-    back
   end
 
   def destroy
