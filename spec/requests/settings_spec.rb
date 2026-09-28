@@ -22,6 +22,20 @@ RSpec.describe "The app's settings (SiteSetting)", type: :request do
     expect(Llm).not_to be_enabled
   end
 
+  it "sets how rough drafts are, and how many candidates a batch makes" do
+    patch settings_path, params: { site_setting: { draft_size: "384", draft_steps: "10", draft_denoise: "0.5", candidates: "2" } }
+    expect(Comfy.config[:candidates]).to eq(2)
+    family = Comfy::Family.for("anima-preview.safetensors")
+    expect([ family.draft_size(1024, 1024), family.draft_steps, family.refine_denoise ]).to eq([ [ 384, 384 ], 10, 0.5 ])
+
+    patch settings_path, params: { site_setting: { draft_size: "", draft_steps: "", draft_denoise: "", candidates: "" } }
+    family = Comfy::Family.for("anima-preview.safetensors")
+    expect([ family.draft_size(1024, 1024), family.draft_steps, family.refine_denoise ]).to eq([ [ 512, 512 ], 16, 0.6 ])
+
+    patch settings_path, params: { site_setting: { draft_size: "5000" } }
+    expect(response).to have_http_status(:unprocessable_content)
+  end
+
   it "keeps passwords out of the database, and wants real addresses" do
     patch settings_path, params: { site_setting: { comfy_url: "http://me:s3cret@comfy.lan:8188" } }
     expect(response).to have_http_status(:unprocessable_content)

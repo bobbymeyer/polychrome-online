@@ -709,8 +709,10 @@ Every image slot can be uploaded or generated with
   - **"Use the draft"** keeps a draft as it is.
   - **Timings:** each image shows how long ComfyUI spent on it, from
     ComfyUI's own history.
-  - **Tuning:** a family can set its own `draft_steps`, and `draft.pixels`
-    and `draft.steps` set how rough drafts are.
+  - **Tuning** is on the Settings page: draft size and steps, how much
+    "properly" changes a draft, and candidates per batch. Blank uses
+    `draft` in `config/comfy.yml`; a family can also set its own
+    `draft_steps`.
 - **Background removal** is an optional step for any batch, on by default
   for content types marked to remove it.
   - **Which node:** ComfyUI has no removal node of its own, so the first
