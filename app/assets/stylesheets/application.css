@@ -744,3 +744,4 @@ details[open] summary { margin-bottom: 16px; }
 .draft-script { white-space: pre-wrap; font-size: 13px; margin: 4px 0; }
 .draft-tiers { margin: 0; padding-left: 20px; }
 .type-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--ink); vertical-align: middle; }
+.front-row { padding: 8px 0 12px; border-bottom: 1px solid var(--rule); }

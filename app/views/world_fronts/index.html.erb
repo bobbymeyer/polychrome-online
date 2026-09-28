@@ -1,0 +1,33 @@
+<% content_for :title, "Fronts · #{@world.name}" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Fronts</div>
+<div class="book-header">
+  <h1>Fronts</h1>
+  <% if can_edit_world? %><%= link_to "New front", new_world_world_front_path(@world), class: "button" %><% end %>
+</div>
+<p class="prose">
+  The setting's pressures: what its people want and what happens if nobody stops them, as clocks and the secrets behind them.
+  A GM deals a front into a campaign from its page; from then on the clocks tick and the secrets wait there, tied to the places and people the campaign brought in.
+</p>
+<% if @fronts.any? %>
+  <% places = @world.world_places.index_by(&:id) %>
+  <% figures = @world.world_figures.index_by(&:id) %>
+  <% @fronts.each do |front| %>
+    <section class="window">
+      <div class="book-header">
+        <h2><%= front.name %></h2>
+        <%= link_to "Edit", edit_world_world_front_path(@world, front), class: "button button--quiet" if can_edit_world? %>
+      </div>
+      <% if front.description.present? %><p><%= front.description %></p><% end %>
+      <ul class="refs">
+        <% front.clocks.each do |c| %>
+          <li><strong><%= c["name"] %></strong> <span class="muted">· <%= c["segments"] %> segments<%= " · ticks on #{c['triggers'].map { |t| Clock::TRIGGERS[t] }.to_sentence}" if c["triggers"].present? %><%= " · then #{places[c['place_id']]&.name}: #{c['mode_name']}" if c["mode_name"] && places[c["place_id"]] %></span></li>
+        <% end %>
+        <% front.secrets.each do |s| %>
+          <li><em><%= s["body"] %></em> <span class="muted"><%= [ figures[s["figure_id"]]&.name, places[s["place_id"]]&.name ].compact.join(", ") %></span></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+<% else %>
+  <p class="empty">No fronts yet.</p>
+<% end %>

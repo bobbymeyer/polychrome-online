@@ -12,6 +12,7 @@ class World < ApplicationRecord
   has_many :world_routes, dependent: :destroy
   has_many :world_places, dependent: :destroy
   has_many :codex_entries, dependent: :destroy
+  has_many :world_fronts, dependent: :destroy
   has_many :abilities, dependent: :destroy
   has_many :items, dependent: :destroy
   has_many :jobs, dependent: :destroy
@@ -174,6 +175,13 @@ class World < ApplicationRecord
       figure.portraits.each { |p| copy.portraits.create!(expression: p.expression).image.attach(p.image.blob) if p.image.attached? }
     end
     source.codex_entries.find_each { |entry| codex_entries.create!(entry.attributes.except(*COPIED)) }
+    # Fronts name places and people by id: point them at the copies.
+    figures = source.world_figures.to_h { |f| [ f.id, world_figures.find_by(name: f.name)&.id ] }
+    source.world_fronts.find_each do |front|
+      world_fronts.create!(name: front.name, description: front.description,
+                           clocks: front.clocks.map { |c| c.merge("place_id" => places[c["place_id"]]&.id).compact },
+                           secrets: front.secrets.map { |s| s.merge("place_id" => places[s["place_id"]]&.id, "figure_id" => figures[s["figure_id"]]).compact })
+    end
   end
 
   # A content type's framing (§8), made from config/comfy.yml the first time.

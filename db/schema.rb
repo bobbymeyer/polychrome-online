@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_231000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -245,8 +245,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_230000) do
     t.datetime "full_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "world_front_id"
     t.index ["campaign_id"], name: "index_clocks_on_campaign_id"
     t.index ["location_id"], name: "index_clocks_on_location_id"
+    t.index ["world_front_id"], name: "index_clocks_on_world_front_id"
   end
 
   create_table "codex_entries", force: :cascade do |t|
@@ -628,9 +630,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_230000) do
     t.string "revealed_by"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "world_front_id"
     t.index ["campaign_id"], name: "index_secrets_on_campaign_id"
     t.index ["location_id"], name: "index_secrets_on_location_id"
     t.index ["npc_id"], name: "index_secrets_on_npc_id"
+    t.index ["world_front_id"], name: "index_secrets_on_world_front_id"
   end
 
   create_table "sessions", force: :cascade do |t|
@@ -668,6 +672,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_230000) do
     t.index ["monster_id"], name: "index_world_figures_on_monster_id"
     t.index ["world_id"], name: "index_world_figures_on_world_id"
     t.index ["world_place_id"], name: "index_world_figures_on_world_place_id"
+  end
+
+  create_table "world_fronts", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.json "clocks", default: [], null: false
+    t.json "secrets", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id"], name: "index_world_fronts_on_world_id"
   end
 
   create_table "world_places", force: :cascade do |t|
@@ -750,6 +765,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_230000) do
   add_foreign_key "choice_picks", "messages", on_delete: :cascade
   add_foreign_key "clocks", "campaigns"
   add_foreign_key "clocks", "locations"
+  add_foreign_key "clocks", "world_fronts"
   add_foreign_key "codex_entries", "worlds"
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
@@ -791,10 +807,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_230000) do
   add_foreign_key "secrets", "campaigns"
   add_foreign_key "secrets", "locations"
   add_foreign_key "secrets", "npcs"
+  add_foreign_key "secrets", "world_fronts"
   add_foreign_key "sessions", "users"
   add_foreign_key "world_figures", "monsters"
   add_foreign_key "world_figures", "world_places"
   add_foreign_key "world_figures", "worlds"
+  add_foreign_key "world_fronts", "worlds"
   add_foreign_key "world_places", "location_templates"
   add_foreign_key "world_places", "worlds"
   add_foreign_key "world_routes", "encounter_tables"

@@ -19,6 +19,7 @@ class Clock < ApplicationRecord
   REASONS = { "rest" => "the party rested", "travel" => "time on the road", "failed_check" => "a failed check" }.freeze
 
   belongs_to :campaign
+  belongs_to :world_front, optional: true
   belongs_to :location, optional: true
 
   normalizes :name, with: ->(name) { name.to_s.strip }

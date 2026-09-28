@@ -47,6 +47,7 @@ Rails.application.routes.draw do
     resources :world_routes, path: "atlas/roads", only: %i[create destroy]
     resources :world_figures, path: "cast", except: :show
     resources :codex_entries, path: "codex"
+    resources :world_fronts, path: "fronts", except: :show
 
     # The asset pipeline (§8): the world's art direction, and generating
     # candidates for an entry's image with ComfyUI.
@@ -87,6 +88,7 @@ Rails.application.routes.draw do
     end
     # The world's atlas and cast, brought into the campaign (Atlas).
     resource :canon, only: :create
+    resources :front_deals, only: :create
     # The language model's suggestions for prep (Draft).
     resources :drafts, only: %i[create destroy] do
       post :keep, on: :member

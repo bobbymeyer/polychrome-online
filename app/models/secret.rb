@@ -9,6 +9,7 @@
 # and is in the next recap.
 class Secret < ApplicationRecord
   belongs_to :campaign
+  belongs_to :world_front, optional: true
   belongs_to :location, optional: true
   belongs_to :npc, optional: true
 
