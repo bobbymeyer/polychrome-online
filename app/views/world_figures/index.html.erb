@@ -1,0 +1,28 @@
+<% content_for :title, "Cast · #{@world.name}" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Cast</div>
+<div class="book-header">
+  <h1>Cast</h1>
+  <% if can_edit_world? %><%= link_to "New person", new_world_world_figure_path(@world), class: "button" %><% end %>
+</div>
+<p class="prose">
+  <%= @world.name %>'s people. Each campaign brings them in as its own NPCs, faces and all, and from then on they're the campaign's.
+  Linked to the Bestiary, they're antagonists in every campaign that brings them in.
+</p>
+<% if @figures.any? %>
+  <div class="roster-cards">
+    <% @figures.each do |figure| %>
+      <% card = capture do %>
+        <%= speaker_portrait(figure, "neutral", size: :medium) %>
+        <div>
+          <h3><%= figure.name %></h3>
+          <% if figure.title.present? %><p class="muted"><%= figure.title %></p><% end %>
+          <% if figure.blurb.present? %><p>“<%= figure.blurb %>”</p><% end %>
+          <p class="muted"><%= [ ("of #{figure.world_place.name}" if figure.world_place), ("fights as #{figure.monster.name}" if figure.monster) ].compact.join(" · ") %></p>
+        </div>
+      <% end %>
+      <%= can_edit_world? ? link_to(card, edit_world_world_figure_path(@world, figure), class: "window character-card") : tag.div(card, class: "window character-card") %>
+    <% end %>
+  </div>
+<% else %>
+  <p class="empty">No one yet. <%= link_to "Add the first", new_world_world_figure_path(@world) if can_edit_world? %></p>
+<% end %>

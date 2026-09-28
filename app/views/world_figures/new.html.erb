@@ -1,0 +1,4 @@
+<% content_for :title, "New person · #{@world.name}" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Cast", world_world_figures_path(@world) %> / New</div>
+<h1>New person</h1>
+<%= render "form", figure: @figure %>

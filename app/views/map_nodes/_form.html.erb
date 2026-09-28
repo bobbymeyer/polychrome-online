@@ -10,6 +10,7 @@
       <%= f.label :visible, "Revealed to players" %>
     </div>
   </div>
+  <div class="field"><%= f.label :description, "What players read here" %><%= f.text_area :description, rows: 2 %></div>
   <div class="field"><%= f.label :notes, "GM notes" %><%= f.text_area :notes, rows: 2 %></div>
   <%= f.submit node.persisted? ? "Save" : "Add to map", class: "button" %>
 <% end %>

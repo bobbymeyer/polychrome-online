@@ -1,0 +1,76 @@
+<% content_for :title, "Atlas · #{@world.name}" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Atlas</div>
+<div class="book-header">
+  <h1>Atlas</h1>
+  <% if can_edit_world? %><%= link_to "New place", new_world_world_place_path(@world), class: "button" %><% end %>
+</div>
+<p class="prose">
+  <%= @world.name %>'s places and the roads between them. A new campaign starts with them on its map, rolled the same way every time;
+  after that, each campaign's map is its own. Places marked "known" start visible to the players.
+</p>
+
+<% if @places.any? %>
+  <div class="window map-window"><div class="map-canvas">
+    <svg class="map" viewBox="0 0 <%= MapNode::WIDTH %> <%= MapNode::HEIGHT %>" role="img" aria-label="The atlas of <%= @world.name %>">
+      <rect class="map__ground" x="0" y="0" width="<%= MapNode::WIDTH %>" height="<%= MapNode::HEIGHT %>" />
+      <% @routes.each do |route| %>
+        <g class="map-edge map-edge--<%= route.state %>">
+          <line class="map-edge__line" x1="<%= route.from_place.x %>" y1="<%= route.from_place.y %>" x2="<%= route.to_place.x %>" y2="<%= route.to_place.y %>" />
+        </g>
+      <% end %>
+      <% @places.each do |place| %>
+        <g class="map-node map-node--<%= place.kind %> <%= 'is-hidden' unless place.known %>" transform="translate(<%= place.x %> <%= place.y %>)">
+          <title><%= place.name %> (<%= place.kind %><%= ", hidden at first" unless place.known %>)</title>
+          <%= render "map_nodes/shape", kind: place.kind %>
+          <text class="map-node__label" y="38" text-anchor="middle"><%= place.name %></text>
+        </g>
+      <% end %>
+    </svg>
+  </div></div>
+
+  <table class="book-table">
+    <thead><tr><th>Place</th><th>Kind</th><th>Rolled from</th><th>Players see</th><th></th></tr></thead>
+    <tbody>
+      <% @places.each do |place| %>
+        <tr>
+          <td><strong><%= place.name %></strong><% if place.notes.present? %><br><span class="muted"><%= place.notes.truncate(120) %></span><% end %></td>
+          <td><%= place.kind.humanize %></td>
+          <td><%= place.location_template ? "#{place.location_template.name}, seed #{place.seed}" : "—" %></td>
+          <td><%= place.known ? "From the start" : "Once found" %></td>
+          <td><%= link_to "Edit", edit_world_world_place_path(@world, place) if can_edit_world? %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <section class="window" id="routes">
+    <h2>Roads</h2>
+    <% if @routes.any? %>
+      <ul class="refs">
+        <% @routes.each do |route| %>
+          <li>
+            <%= route.label %> <span class="muted">· <%= route.state %><%= " · #{route.encounter_table.name}" if route.encounter_table %><%= " · “#{route.travel_event.truncate(60)}”" if route.travel_event %></span>
+            <%= button_to "Remove", world_world_route_path(@world, route), method: :delete, class: "link-button", form: { class: "inline" } if can_edit_world? %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="empty">No roads yet.</p>
+    <% end %>
+    <% if can_edit_world? && @places.size > 1 %>
+      <%= form_with model: WorldRoute.new, url: world_world_routes_path(@world), class: "book-form" do |f| %>
+        <% options = @places.map { |p| [ p.name, p.id ] } %>
+        <div class="field-row">
+          <div class="field"><%= f.label :from_place_id, "From" %><%= f.select :from_place_id, options %></div>
+          <div class="field"><%= f.label :to_place_id, "To" %><%= f.select :to_place_id, options, selected: options.second&.last %></div>
+          <div class="field"><%= f.label :state, "The road is" %><%= f.select :state, MapEdge::STATES.map { |s| [ s.capitalize, s ] } %></div>
+          <div class="field"><%= f.label :encounter_table_id, "What waits on it" %><%= f.select :encounter_table_id, @world.encounter_tables.order(:name).map { |t| [ t.name, t.id ] }, include_blank: "Nothing" %></div>
+        </div>
+        <div class="field"><%= f.label :travel_event, "What the table hears on the way" %><%= f.text_field :travel_event, placeholder: "Rain turns the road to mud." %></div>
+        <%= f.submit "Add the road", class: "button" %>
+      <% end %>
+    <% end %>
+  </section>
+<% else %>
+  <p class="empty">No places yet. <%= link_to "Add the first", new_world_world_place_path(@world) if can_edit_world? %></p>
+<% end %>

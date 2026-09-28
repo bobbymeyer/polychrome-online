@@ -1,0 +1,4 @@
+<% content_for :title, "#{@entry.title} · Codex" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Codex", world_codex_entries_path(@world) %> / <%= @entry.title %></div>
+<h1><%= @entry.title %></h1>
+<%= render "form", entry: @entry %>

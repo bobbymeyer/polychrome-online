@@ -6,7 +6,7 @@ module Authorization
   extend ActiveSupport::Concern
 
   included do
-    helper_method :current_user, :admin?, :can_gm?, :can_play?, :can_manage?, :can_generate?, :can_edit_world?
+    helper_method :current_user, :admin?, :can_gm?, :can_play?, :can_manage?, :can_generate?, :can_edit_world?, :knows_the_lore?
   end
 
   private
@@ -37,6 +37,10 @@ module Authorization
 
   # Generating art costs GPU time: admins for book entries; a campaign's GM
   # (or an admin) for its speakers' portraits.
+  def knows_the_lore?(world = @world)
+    current_user&.knows_the_lore?(world) || false
+  end
+
   def can_generate?(entry)
     case entry
     when Portrait then can_gm?(entry.owner.campaign)

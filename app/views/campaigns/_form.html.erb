@@ -24,6 +24,12 @@
       <% end %>
     </div>
   </fieldset>
+  <% if !campaign.persisted? && (@world.world_places.exists? || @world.world_figures.exists?) %>
+    <div class="field field--check">
+      <%= check_box_tag :blank_map, "1", false, id: "campaign_blank_map" %>
+      <%= label_tag "campaign_blank_map", "Start from nothing: leave out #{@world.name}'s atlas (#{pluralize(@world.world_places.count, 'place')}) and cast (#{pluralize(@world.world_figures.count, 'person', plural: 'people')})" %>
+    </div>
+  <% end %>
   <div class="actions">
     <%= f.submit class: "button" %>
     <%= link_to "Cancel", campaign.persisted? ? campaign_path(campaign) : world_path(@world), class: "button button--quiet" %>

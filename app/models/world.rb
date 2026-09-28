@@ -5,6 +5,11 @@
 # another row (§1, §9.1).
 class World < ApplicationRecord
   belongs_to :owner, class_name: "User", optional: true
+  # The setting's canon, first: it points into the books below.
+  has_many :world_figures, dependent: :destroy
+  has_many :world_routes, dependent: :destroy
+  has_many :world_places, dependent: :destroy
+  has_many :codex_entries, dependent: :destroy
   has_many :abilities, dependent: :destroy
   has_many :items, dependent: :destroy
   has_many :jobs, dependent: :destroy
@@ -142,7 +147,31 @@ class World < ApplicationRecord
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
       %w[art_style art_negative art_loras art_model].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
+      copy_canon_from!(source)
     end
+  end
+
+  COPIED = %w[id world_id created_at updated_at].freeze
+
+  # The atlas, cast and codex, pointing at this world's copies of the books.
+  def copy_canon_from!(source)
+    places = {}
+    source.world_places.find_each do |place|
+      template = place.location_template && location_templates.find_by(slug: place.location_template.slug)
+      places[place.id] = world_places.create!(place.attributes.except(*COPIED, "location_template_id").merge(location_template: template, seed: place.seed))
+    end
+    source.world_routes.find_each do |route|
+      table = route.encounter_table && encounter_tables.find_by(slug: route.encounter_table.slug)
+      world_routes.create!(route.attributes.except(*COPIED, "from_place_id", "to_place_id", "encounter_table_id")
+                                .merge(from_place: places.fetch(route.from_place_id), to_place: places.fetch(route.to_place_id), encounter_table: table))
+    end
+    source.world_figures.includes(portraits: { image_attachment: :blob }).find_each do |figure|
+      copy = world_figures.create!(figure.attributes.except(*COPIED, "monster_id", "world_place_id")
+                                         .merge(monster: figure.monster && monsters.find_by(slug: figure.monster.slug),
+                                                world_place: places[figure.world_place_id]))
+      figure.portraits.each { |p| copy.portraits.create!(expression: p.expression).image.attach(p.image.blob) if p.image.attached? }
+    end
+    source.codex_entries.find_each { |entry| codex_entries.create!(entry.attributes.except(*COPIED)) }
   end
 
   # A content type's framing (§8), made from config/comfy.yml the first time.

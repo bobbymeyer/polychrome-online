@@ -34,8 +34,16 @@ module Drafts
       text.to_s.squish.truncate(length)
     end
 
+    # The world as the model sees it: its pitch, its lore (the GM's notes
+    # too: this is for the GM), and the names in its atlas and cast.
     def setting
-      "Setting: #{world.name}. #{clip(world.description, 400)}".strip
+      codex = world.codex_entries.in_order.limit(12).map do |entry|
+        "- #{entry.title}#{" (#{entry.category})" if entry.category}: #{clip([ entry.body, entry.gm_notes ].compact_blank.join(' '), 220)}"
+      end
+      [ "Setting: #{world.name}. #{clip(world.description, 400)}".strip,
+        ("Lore:\n#{codex.join("\n")}" if codex.any?),
+        ("Places in the setting: #{world.world_places.in_order.limit(20).map(&:name).join(', ')}." if world.world_places.exists?),
+        ("People in the setting: #{world.world_figures.in_order.limit(20).map { |f| [ f.name, f.title ].compact_blank.join(', ') }.join('; ')}." if world.world_figures.exists?) ].compact.join("\n\n")
     end
 
     # --- the campaign as the model sees it --------------------------------

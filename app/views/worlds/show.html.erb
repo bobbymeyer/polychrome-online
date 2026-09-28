@@ -4,6 +4,11 @@
   <div class="actions">
     <%= link_to "New campaign", new_world_campaign_path(@world), class: "button" %>
     <%= link_to "Copy this world", new_world_path(copy_from: @world.slug), class: "button button--quiet" %>
+    <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" %>
+    <% if knows_the_lore? %>
+      <%= link_to "Atlas", world_world_places_path(@world), class: "button button--quiet" %>
+      <%= link_to "Cast", world_world_figures_path(@world), class: "button button--quiet" %>
+    <% end %>
     <%= link_to "Types", world_types_path(@world), class: "button button--quiet" %>
     <%= link_to "Skills", world_skills_path(@world), class: "button button--quiet" %>
     <% if admin? %><%= link_to "Art direction", world_art_direction_path(@world), class: "button button--quiet" %><% end %>

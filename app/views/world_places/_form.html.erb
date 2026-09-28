@@ -1,0 +1,29 @@
+<%= form_with model: place, url: place.persisted? ? world_world_place_path(@world, place) : world_world_places_path(@world), class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: place %>
+  <div class="field-row">
+    <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, placeholder: "Varn" %></div>
+    <div class="field"><%= f.label :kind %><%= f.select :kind, MapNode::KINDS.map { |k| [ k.humanize, k ] } %></div>
+    <div class="field"><%= f.label :x %><%= f.number_field :x, min: 0, max: MapNode::WIDTH %></div>
+    <div class="field"><%= f.label :y %><%= f.number_field :y, min: 0, max: MapNode::HEIGHT %></div>
+  </div>
+  <p class="hint">
+    Where it sits on a <%= MapNode::WIDTH %> × <%= MapNode::HEIGHT %> map. Towns and dungeons can be rolled from a Gazetteer template; the
+    seed is kept, so it comes out the same in every campaign. Landmarks (a lighthouse, a manor) and wilds (a marsh, a sea) are places with no generator.
+  </p>
+  <div class="field">
+    <%= f.label :location_template_id, "Rolled from" %>
+    <%= f.select :location_template_id, @world.location_templates.order(:kind, :name).map { |t| [ "#{t.name} (#{t.kind})", t.id ] }, include_blank: "Nothing: it's just a place on the map" %>
+    <% if place.seed %><p class="hint">Seed <%= place.seed %>.</p><% end %>
+  </div>
+  <div class="field field--check"><%= f.check_box :known %><%= f.label :known, "The players know it from the start" %></div>
+  <div class="field"><%= f.label :description, "What players read about it" %><%= f.text_area :description, rows: 3 %></div>
+  <div class="field"><%= f.label :notes, "GM notes" %><%= f.text_area :notes, rows: 3 %></div>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", world_world_places_path(@world), class: "button button--quiet" %>
+  </div>
+<% end %>
+<% if place.persisted? %>
+  <%= button_to "Take it off the atlas", world_world_place_path(@world, place), method: :delete, class: "button button--danger",
+                form: { data: { turbo_confirm: "Take #{place.name} off the atlas? Campaigns keep theirs." } } %>
+<% end %>

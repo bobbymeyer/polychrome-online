@@ -3,12 +3,13 @@
 # A point on a campaign's pointcrawl map (§4, §7). Hidden until the GM
 # reveals it or the party arrives.
 class MapNode < ApplicationRecord
-  KINDS = %w[town dungeon field event].freeze
+  KINDS = %w[town dungeon landmark wilds field event].freeze
   WIDTH = 1000
   HEIGHT = 700
 
   belongs_to :campaign
   belongs_to :location, optional: true
+  belongs_to :world_place, optional: true
   has_many :outgoing_edges, class_name: "MapEdge", foreign_key: :from_node_id, dependent: :destroy, inverse_of: :from_node
   has_many :incoming_edges, class_name: "MapEdge", foreign_key: :to_node_id, dependent: :destroy, inverse_of: :to_node
 

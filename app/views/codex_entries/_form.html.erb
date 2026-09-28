@@ -1,0 +1,17 @@
+<%= form_with model: entry, url: entry.persisted? ? world_codex_entry_path(@world, entry) : world_codex_entries_path(@world), class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: entry %>
+  <div class="field-row">
+    <div class="field"><%= f.label :title %><%= f.text_field :title, required: true, placeholder: "The Brass Syndicate" %></div>
+    <div class="field">
+      <%= f.label :category %><%= f.text_field :category, list: "codex_categories", placeholder: "Faction" %>
+      <datalist id="codex_categories"><% (CodexEntry::CATEGORIES + @world.codex_entries.distinct.pluck(:category).compact).uniq.each do |c| %><option value="<%= c %>"><% end %></datalist>
+    </div>
+  </div>
+  <div class="field"><%= f.label :body, "What's known (players read this)" %><%= f.text_area :body, rows: 10 %></div>
+  <div class="field"><%= f.label :gm_notes, "GM notes (never shown to players)" %><%= f.text_area :gm_notes, rows: 5 %></div>
+  <div class="field field--check"><%= f.check_box :public %><%= f.label :public, "Players can read this page" %></div>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", entry.persisted? ? world_codex_entry_path(@world, entry) : world_codex_entries_path(@world), class: "button button--quiet" %>
+  </div>
+<% end %>

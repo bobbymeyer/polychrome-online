@@ -10,6 +10,7 @@
   <div class="actions">
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
     <%= link_to "Map", campaign_map_path(@campaign), class: "button button--quiet" %>
+    <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" if @world.codex_entries.exists? %>
     <% if can_gm?(@campaign) %>
     <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" %>
     <%= button_to "Rest at an inn", campaign_rest_path(@campaign), class: "button button--quiet",
@@ -75,6 +76,18 @@
     </div>
   <% end %>
 </section>
+
+<% if can_gm?(@campaign) && (atlas = Atlas.new(@campaign)).missing? %>
+  <section class="window" id="canon">
+    <h2>New in <%= @world.name %></h2>
+    <p>
+      The setting has <%= [ (pluralize(atlas.missing_places.count, "place") + " not on this map" if atlas.missing_places.exists?),
+                            (pluralize(atlas.missing_figures.count, "person", plural: "people") + " not in this cast" if atlas.missing_figures.exists?) ].compact.to_sentence %>:
+      <%= (atlas.missing_places.limit(6).map(&:name) + atlas.missing_figures.limit(6).map(&:name)).to_sentence %>.
+    </p>
+    <%= button_to "Bring them in", campaign_canon_path(@campaign), class: "button button--quiet" %>
+  </section>
+<% end %>
 
 <% if can_gm?(@campaign) %>
   <section id="scenes">

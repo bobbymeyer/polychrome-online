@@ -42,6 +42,12 @@ Rails.application.routes.draw do
     resource :types, only: %i[show edit update], controller: "world_types"
     resource :skills, only: %i[show edit update], controller: "world_skills"
 
+    # The setting's canon: its atlas, its cast, its lore.
+    resources :world_places, path: "atlas", except: :show
+    resources :world_routes, path: "atlas/roads", only: %i[create destroy]
+    resources :world_figures, path: "cast", except: :show
+    resources :codex_entries, path: "codex"
+
     # The asset pipeline (§8): the world's art direction, and generating
     # candidates for an entry's image with ComfyUI.
     resource :art_direction, only: %i[show update], path: "art"
@@ -79,6 +85,8 @@ Rails.application.routes.draw do
       post :reveal, on: :member
       post :conceal, on: :member
     end
+    # The world's atlas and cast, brought into the campaign (Atlas).
+    resource :canon, only: :create
     # The language model's suggestions for prep (Draft).
     resources :drafts, only: %i[create destroy] do
       post :keep, on: :member
