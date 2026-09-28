@@ -5,6 +5,8 @@
 # they reach a place it has got to, or buys it at a guild. The GM sees
 # every rumour and how far it has gone.
 class Rumour < ApplicationRecord
+  include CampaignPages
+
   belongs_to :campaign
   belongs_to :origin, class_name: "MapNode", optional: true
   belongs_to :deed, optional: true

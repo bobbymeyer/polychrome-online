@@ -177,10 +177,6 @@ RSpec.describe "The table", type: :request do
   end
 
   describe "taking a line back" do
-    def stream(*streamables)
-      Turbo::StreamsChannel.send(:stream_name_from, streamables)
-    end
-
     it "lets the GM take back any line said, for everyone, but not what the game logged" do
       sit("gm")
       line = campaign.messages.create!(speaker: cid, body: "Typo'd lnie")

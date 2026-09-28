@@ -17,6 +17,8 @@ class Npc < ApplicationRecord
 
   Art = Data.define(:image, :variant, :colour, :level)
 
+  include CampaignPages
+
   belongs_to :campaign
   belongs_to :location, optional: true
   belongs_to :monster, optional: true

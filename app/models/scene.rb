@@ -19,6 +19,8 @@ class Scene < ApplicationRecord
   # Longer than this before the colon, it's narration that has a colon in it.
   NAME_WORDS = 3
 
+  include CampaignPages
+
   belongs_to :campaign
   belongs_to :map_node, optional: true
   # A "mode" ending sets this mode off; without one, the place goes back

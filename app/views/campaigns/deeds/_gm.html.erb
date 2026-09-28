@@ -21,7 +21,7 @@
     <% towns.each_with_index do |node, i| %><%= " · " if i.positive? %><%= node.name %>: <%= node.location.standing %><%= " (#{format('%+d', node.location.reputation)})" if node.location.reputation.nonzero? %><% end %>
   </p>
 <% end %>
-<details>
+<details id="new_deed" data-turbo-permanent>
   <summary>Record a deed</summary>
   <%= form_with model: Deed.new, url: campaign_deeds_path(campaign), class: "book-form" do |f| %>
     <div class="field"><%= f.label :body, "What they did, as people will tell it" %><%= f.text_field :body, required: true, placeholder: "Rook's party burned the Vell mill." %></div>

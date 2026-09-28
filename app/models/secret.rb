@@ -8,6 +8,8 @@
 # Revealed, a secret is announced at the table, joins what the party knows,
 # and is in the next recap.
 class Secret < ApplicationRecord
+  include CampaignPages
+
   belongs_to :campaign
   belongs_to :world_front, optional: true
   belongs_to :location, optional: true
@@ -67,9 +69,7 @@ class Secret < ApplicationRecord
   end
 
   def broadcast
-    { false => :map, true => :map_gm }.each do |gm, stream|
-      broadcast_replace_to campaign, stream, target: "party_knows", partial: "campaigns/tables/party_knows", locals: { campaign: campaign, gm: gm }
-    end
+    campaign.broadcast_party_knows
     broadcast_replace_to campaign, :map_gm, target: "gm_secrets", partial: "campaigns/secrets/gm", locals: { campaign: campaign }
   end
 end

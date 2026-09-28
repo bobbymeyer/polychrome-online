@@ -28,7 +28,7 @@
     <p class="empty">No clocks. A clock is something that happens if the party doesn't stop it.</p>
   <% end %>
 
-  <details>
+  <details id="new_clock" data-turbo-permanent>
     <summary>New clock</summary>
     <%= form_with model: Clock.new, url: campaign_clocks_path(campaign), class: "book-form" do |f| %>
       <div class="field-row">

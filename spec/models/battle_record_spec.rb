@@ -108,10 +108,6 @@ RSpec.describe BattleRecord do
   end
 
   describe "bosses" do
-    def stream(*streamables)
-      Turbo::StreamsChannel.send(:stream_name_from, streamables)
-    end
-
     it "calls everyone at the table into the battle when it starts" do
       campaign = create_campaign
       expect { start_battle(campaign: campaign) }

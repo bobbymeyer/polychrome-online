@@ -1,6 +1,10 @@
 <% content_for :title, @campaign.name %>
 <% content_for :head, music_meta(@campaign, @campaign.scene) %>
 <%= render "shared/stage_stream", campaign: @campaign %>
+<% content_for :head do %>
+  <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
+<% end %>
+<%= turbo_stream_from @campaign, :pages %>
 <div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Campaign</div>
 <div class="book-header">
   <div>
@@ -114,7 +118,7 @@
       </table>
     <% end %>
     <% if can_gm?(@campaign) %>
-    <details>
+    <details id="add_items" data-turbo-permanent>
       <summary>GM: add items</summary>
       <%= form_with url: campaign_inventories_path(@campaign), scope: :inventory, class: "book-form" do |f| %>
         <div class="field-row">

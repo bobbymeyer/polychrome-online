@@ -13,7 +13,6 @@ module Timekeeping
   included do
     validates :time_of_day, inclusion: { in: TIMES }
     validates :day, numericality: { only_integer: true, greater_than: 0 }
-    after_update_commit :broadcast_time, if: -> { saved_change_to_day? || saved_change_to_time_of_day? }
   end
 
   # "Moonsday, 12 Rainfall · dusk", or "Day 12 · dusk".
@@ -46,11 +45,5 @@ module Timekeeping
   # Sleep until the next dawn.
   def until_dawn
     TIMES.size - TIMES.index(time_of_day)
-  end
-
-  private
-
-  def broadcast_time
-    %i[map map_gm].each { |stream| broadcast_replace_to self, stream, target: "table_time", partial: "campaigns/tables/time", locals: { campaign: self } }
   end
 end

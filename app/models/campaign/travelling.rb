@@ -85,15 +85,6 @@ module Campaign::Travelling
     monsters.map { |slug, count| "#{count} × #{names[slug]&.name || slug}" }.to_sentence
   end
 
-  # Re-render the map for each audience. Players get a separately rendered
-  # map without hidden places, on their own stream, so a hidden node never
-  # reaches their browser.
-  def broadcast_map
-    { false => :map, true => :map_gm }.each do |gm, stream|
-      broadcast_replace_to self, stream, target: "map_canvas", partial: "campaigns/maps/canvas", locals: { campaign: self, gm: gm }
-    end
-  end
-
   # The dungeon the party is inside right now, if any.
   def dungeon_in_progress
     location = current_node&.location

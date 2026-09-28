@@ -8,6 +8,8 @@ class Deed < ApplicationRecord
   KINDS = %w[gm antagonist cleared].freeze
   SWAYS = -2..2
 
+  include CampaignPages
+
   belongs_to :campaign
   belongs_to :map_node, optional: true
   # Striking a deed takes its story with it, and so what the towns it

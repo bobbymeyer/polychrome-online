@@ -1,5 +1,9 @@
 <% content_for :title, "Prep · #{@campaign.name}" %>
 <%= render "shared/stage_stream", campaign: @campaign %>
+<% content_for :head do %>
+  <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
+<% end %>
+<%= turbo_stream_from @campaign, :pages %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / Prep</div>
 <div class="book-header">
   <div>
