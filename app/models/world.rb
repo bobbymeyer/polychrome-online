@@ -59,6 +59,7 @@ class World < ApplicationRecord
   validate :types_make_a_chart
   validate :terrain_types_are_types
   validate :skills_are_skills
+  validate :origins_are_origins
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true, format: { with: BookEntry::SLUG_FORMAT }
@@ -148,13 +149,21 @@ class World < ApplicationRecord
         end
       end
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
-      %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar origins].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
       copy_canon_from!(source)
     end
   end
 
   COPIED = %w[id world_id created_at updated_at].freeze
+
+  # Where characters can come from: [{ "slug", "name", "description",
+  # "skill" }]. An origin's skill (one of the world's) gets a bonus.
+  ORIGIN_BONUS = 10
+
+  def origin(slug)
+    Array(origins).find { |o| o["slug"] == slug.to_s }
+  end
 
   # A campaign's day as the setting names it: "Moonsday, 12 Rainfall", or
   # "Day 12" for a world with no calendar.
@@ -244,6 +253,16 @@ class World < ApplicationRecord
   def terrain_types_are_types
     bad = terrain_types.to_h.reject { |place, type| EncounterTable::TERRAINS.include?(place) && type_chart.include?(type) }
     errors.add(:terrain_types, "names unknown places or types: #{bad.keys.join(', ')}") if bad.any?
+  end
+
+  def origins_are_origins
+    Array(origins).each do |origin|
+      errors.add(:origins, "#{origin['slug'].inspect} isn't a usable id") unless origin["slug"].to_s.match?(TypeChart::SLUG)
+      errors.add(:origins, "#{origin['slug']} needs a name") if origin["name"].blank?
+      errors.add(:origins, "#{origin['name']}: #{origin['skill']} isn't one of the skills") if origin["skill"].present? && !skill(origin["skill"])
+    end
+    dupes = Array(origins).map { |o| o["slug"] }.tally.select { |_, n| n > 1 }.keys
+    errors.add(:origins, "#{dupes.join(', ')} appear more than once") if dupes.any?
   end
 
   def skills_are_skills

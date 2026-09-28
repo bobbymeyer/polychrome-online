@@ -41,6 +41,7 @@ Rails.application.routes.draw do
     # The setting's damage types and chart, and the skills its checks use.
     resource :types, only: %i[show edit update], controller: "world_types"
     resource :skills, only: %i[show edit update], controller: "world_skills"
+    resource :origins, only: %i[show edit update], controller: "world_origins"
 
     # The setting's canon: its atlas, its cast, its lore.
     resources :world_places, path: "atlas", except: :show

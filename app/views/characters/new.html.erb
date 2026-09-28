@@ -12,6 +12,7 @@
     <%= f.text_field :motive, maxlength: Character::MOTIVE_LENGTH, placeholder: "“My sister's debt is mine now.”" %>
     <p class="hint">One line, in their own words. It's on their card, and it's what they shout when their back is to the wall.</p>
   </div>
+  <%= render "characters/origin_fields", f: f, character: @character %>
   <div class="field-row">
     <div class="field">
       <%= f.label :job_id, "Starting job" %>

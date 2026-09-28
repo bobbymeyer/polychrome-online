@@ -11,8 +11,9 @@ module Drafts
         "(#{Stats::Check::STATS.join(', ')}: strength, magic, vitality, spirit, agility), and jobs (character classes). " \
         'Reply with JSON: {"types": [{"name": "...", "colour": "#rrggbb"}], ' \
         '"skills": [{"name": "...", "stat": "one of the stats", "description": "one short sentence"}], ' \
-        '"jobs": [{"name": "...", "description": "one short sentence", "type": "one of your types, or null"}]}, ' \
-        "with 4 to 8 types, 6 to 8 skills and 6 to 10 jobs."
+        '"jobs": [{"name": "...", "description": "one short sentence", "type": "one of your types, or null"}], ' \
+        '"origins": [{"name": "where a character comes from", "description": "one short sentence", "skill": "one of the skills, or null"}]}, ' \
+        "with 4 to 8 types, 6 to 8 skills, 6 to 10 jobs and 4 to 6 origins."
     end
 
     def context
@@ -38,7 +39,13 @@ module Drafts
         name = clip(j["name"], 40)
         { "section" => "job", "name" => name, "description" => clip(j["description"], 200), "type" => clip(j["type"], 30).presence }.compact unless name.empty?
       end
-      types.first(10) + skills.first(10) + jobs.first(12)
+      skill_names = world.skills.map { |sk| sk["name"] } + skills.map { |sk| sk["name"] }
+      origins = rows(json, "origins").filter_map do |o|
+        name = clip(o["name"], 40)
+        skill = skill_names.find { |n| n.casecmp?(o["skill"].to_s) }
+        { "section" => "origin", "name" => name, "description" => clip(o["description"], 200), "skill" => skill }.compact unless name.empty?
+      end
+      types.first(10) + skills.first(10) + jobs.first(12) + origins.first(8)
     end
 
     def keep!(item)
@@ -53,6 +60,12 @@ module Drafts
       when "skill"
         world.update!(skills: world.skills + [ { "slug" => slug, "name" => item["name"], "stat" => item["stat"], "description" => item["description"] } ])
         { notice: "#{item['name']} is one of #{world.name}'s skills." }
+      when "origin"
+        skill = world.skills.find { |sk| sk["name"].casecmp?(item["skill"].to_s) }
+        raise ArgumentError, "Keep the #{item['skill']} skill first" if item["skill"] && !skill
+
+        world.update!(origins: Array(world.origins) + [ { "slug" => slug, "name" => item["name"], "description" => item["description"], "skill" => skill&.dig("slug") }.compact ])
+        { notice: "#{item['name']} is one of #{world.name}'s origins." }
       else
         raise ArgumentError, "A job needs its numbers: make it in the Compendium"
       end

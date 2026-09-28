@@ -10,6 +10,7 @@ class MapNode < ApplicationRecord
   belongs_to :campaign
   belongs_to :location, optional: true
   belongs_to :world_place, optional: true
+  has_many :home_characters, class_name: "Character", foreign_key: :home_node_id, dependent: :nullify, inverse_of: :home_node
   has_many :outgoing_edges, class_name: "MapEdge", foreign_key: :from_node_id, dependent: :destroy, inverse_of: :from_node
   has_many :incoming_edges, class_name: "MapEdge", foreign_key: :to_node_id, dependent: :destroy, inverse_of: :to_node
 

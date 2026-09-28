@@ -456,6 +456,65 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   current tables, so editing a table changes places already rolled, except
   what's pinned. To fork a world instead, start a new one from its books.
 
+## The setting: canon, voice, words, time and origins
+
+A world is a setting, not only rulebooks. Its editors write these once, and
+every campaign in it uses them.
+
+- **Atlas** (`/worlds/:slug/atlas`): named places and the roads between them.
+  - **Place kinds:** a town or dungeon can be rolled from a Gazetteer
+    template with a fixed seed, so Varn is the same Varn in every campaign.
+    Landmarks (a lighthouse, a manor) and wilds (a marsh, a sea) are places
+    with no generator.
+  - **What a place carries:** a description players read on the map, GM
+    notes, and whether players know it from the start.
+  - **Roads** have a state, what waits on them, what the table hears on the
+    way, and how long they take.
+- **Cast** (`/cast`): the setting's people, with portraits, what people say
+  about them, GM notes, a home, and optionally a Bestiary entry that makes
+  them an antagonist.
+- **Codex** (`/codex`): lore pages by category (faction, faith, history…).
+  Each page is public or GM only, and its GM notes are never shown to
+  players. Players can read the public pages from the campaign page.
+- **A new campaign starts with the atlas on its map and the cast as its
+  NPCs,** unless the GM chooses to start from nothing. Places and people
+  the world gains later can be brought in from the campaign page, never
+  twice. What's brought in is the campaign's to change.
+- **Fronts** (`/fronts`): the setting's pressures, written once.
+  - A front has clocks and the secrets behind them, naming atlas places and
+    cast.
+  - A GM deals one into a campaign, where it becomes that campaign's own
+    clocks and secrets, linked to what it brought in.
+  - A front's clock can say what a place becomes when it fills, and dealing
+    it in prepares that mode.
+- **Voice** (on the world's edit page): tone and touchstones, and words or
+  tropes to avoid. The language model writes in it.
+- **Lines and veils:** lines never happen in the setting; veils happen
+  off-screen. They are shown on the world and campaign pages, and the model
+  never writes them, image prompts included.
+- **Words** (on the world's edit page): the setting's names for the game's
+  fixed things.
+  - **What can be renamed:** money, HP and MP, the five stats, the four town
+    services and every status. The rules don't change.
+  - **Services can be left out:** a secular setting has no temple in its
+    towns.
+  - **Blank keeps the game's word.** The words reach the table, towns,
+    shops, messages, the battle board and its animations.
+- **Time:** each campaign keeps a day and a part of it (dawn, day, dusk,
+  night).
+  - **What moves it:** journeys take their road's time, a rest sleeps until
+    dawn, and the GM can pass time from the table.
+  - **Clocks** can tick on each new day, so "the festival is in three days"
+    is a three-segment clock.
+  - **A world's calendar** names its weekdays and months.
+- **Origins** (`/origins`): where characters come from, each optionally
+  better at one skill (+10 to its checks).
+  - A character picks an origin, a home on the campaign's map, and ties to
+    people in the cast ("owes her money").
+  - These show on the sheet, and the language model sees the party this
+    way.
+- **Copying a world** copies all of this with its books.
+
 ## Pressure and prep: modes, clocks, secrets
 
 - **Location modes** are another state for a place, prepared ahead and set

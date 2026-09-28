@@ -76,8 +76,18 @@ module Drafts
         *campaign.flags.order(:key).limit(15).map { |f| "- flag: #{f.key} = #{clip(f.value, 60)}" } ]
     end
 
+    # The party, as people: job, origin, home and ties.
+    def party
+      campaign.characters.includes(:job, :home_node).order(:created_at).limit(8).map do |c|
+        ties = c.tie_lines.map { |npc, text| [ npc&.name, text ].compact.join(": ") }
+        "- #{c.name}, #{c.job.name}#{", #{c.origin_entry['name']}" if c.origin_entry}#{", home in #{c.home_node.name}" if c.home_node}" \
+          "#{"; ties: #{ties.join('; ')}" if ties.any?}#{"; \"#{c.motive}\"" if c.motive.present?}"
+      end
+    end
+
     def campaign_context
       [ setting, "Campaign: #{campaign.name}.",
+        "Party:\n#{party.join("\n").presence || '(no one yet)'}",
         "Cast:\n#{cast.join("\n").presence || '(none yet)'}",
         "Places:\n#{places.join("\n").presence || '(none yet)'}",
         "Already prepared:\n#{already.join("\n").presence || '(nothing yet)'}" ].join("\n\n")

@@ -1,0 +1,29 @@
+<% content_for :title, "#{@world.name}: edit origins" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Origins", world_origins_path(@world) %> / Edit</div>
+<h1>Edit origins</h1>
+<% skills = Array(@world.skills).map { |s| [ s["name"], s["slug"] ] } %>
+<%= form_with url: world_origins_path(@world), method: :patch, class: "book-form" do |f| %>
+  <fieldset class="panel">
+    <legend>Origins</legend>
+    <table class="grid-form">
+      <thead><tr><th>Name</th><th>Better at</th><th>What it means</th><th>Remove</th></tr></thead>
+      <tbody>
+        <% (Array(@world.origins) + Array.new(3) { {} }).each_with_index do |origin, i| %>
+          <tr>
+            <td>
+              <%= hidden_field_tag "origins[#{i}][slug]", origin["slug"], id: nil if origin["slug"] %>
+              <%= text_field_tag "origins[#{i}][name]", origin["name"], placeholder: ("Dockborn" unless origin["slug"]), "aria-label": "Origin #{i + 1} name" %>
+            </td>
+            <td><%= select_tag "origins[#{i}][skill]", options_for_select(skills, origin["skill"]), include_blank: "Nothing", "aria-label": "Origin #{i + 1} skill" %></td>
+            <td><%= text_field_tag "origins[#{i}][description]", origin["description"], placeholder: ("Raised on the wharves: knows every rope and every rumour." unless origin["slug"]), "aria-label": "Origin #{i + 1} description" %></td>
+            <td><% if origin["slug"] %><%= check_box_tag "origins[#{i}][remove]", "1", false, "aria-label": "Remove #{origin['name']}" %><% end %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </fieldset>
+  <div class="actions">
+    <%= f.submit "Save origins", class: "button" %>
+    <%= link_to "Cancel", world_origins_path(@world), class: "button button--quiet" %>
+  </div>
+<% end %>

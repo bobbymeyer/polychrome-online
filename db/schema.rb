@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_232000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_233000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -218,7 +218,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_232000) do
     t.string "motive"
     t.boolean "field_used", default: false, null: false
     t.string "art_model"
+    t.string "origin"
+    t.integer "home_node_id"
+    t.json "ties", default: [], null: false
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
+    t.index ["home_node_id"], name: "index_characters_on_home_node_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
     t.index ["user_id"], name: "index_characters_on_user_id"
   end
@@ -741,6 +745,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_232000) do
     t.text "veils"
     t.json "terms", default: {}, null: false
     t.json "calendar", default: {}, null: false
+    t.json "origins", default: [], null: false
     t.index ["owner_id"], name: "index_worlds_on_owner_id"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end
@@ -765,6 +770,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_232000) do
   add_foreign_key "character_jobs", "jobs"
   add_foreign_key "characters", "campaigns"
   add_foreign_key "characters", "jobs"
+  add_foreign_key "characters", "map_nodes", column: "home_node_id"
   add_foreign_key "characters", "users", on_delete: :nullify
   add_foreign_key "choice_picks", "characters", on_delete: :cascade
   add_foreign_key "choice_picks", "messages", on_delete: :cascade

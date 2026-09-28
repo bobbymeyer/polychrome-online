@@ -195,6 +195,8 @@ Simple shapes carry meaning, and each one is explained in a legend next to the m
 | Active unit | A slash under it (Sun Yellow for enemies, Bright Red for the party) |
 | Town | Orange square |
 | Dungeon | Wine Red triangle |
+| Landmark (a lighthouse, a manor) | Steel Grey house: a square with a pitched roof |
+| Wilds (a marsh, a sea) | Dark Green hexagon |
 | Field | Green circle |
 | Event | Blue diamond |
 | Hidden place (GM only) | Dashed outline |

@@ -1,0 +1,26 @@
+<% content_for :title, "#{@world.name}: origins" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Origins</div>
+<div class="book-header">
+  <h1>Origins</h1>
+  <div class="actions"><% if can_edit_world? %><%= link_to "Edit origins", edit_world_origins_path(@world), class: "button" %><% end %></div>
+</div>
+<p class="prose">
+  Where characters in <%= @world.name %> come from. A character picks one when they're made; an origin with a skill adds
+  +<%= World::ORIGIN_BONUS %> to that skill's checks.
+</p>
+<% if Array(@world.origins).any? %>
+  <table class="book-table">
+    <thead><tr><th>Origin</th><th>Skill</th><th>What it means</th></tr></thead>
+    <tbody>
+      <% @world.origins.each do |origin| %>
+        <tr>
+          <td><strong><%= origin["name"] %></strong></td>
+          <td><%= @world.skill(origin["skill"])&.dig("name") || "—" %></td>
+          <td><%= origin["description"].presence || "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="empty">None yet: characters come from nowhere in particular.</p>
+<% end %>
