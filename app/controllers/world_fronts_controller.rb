@@ -25,7 +25,7 @@ class WorldFrontsController < ApplicationController
   def edit; end
 
   def update
-    @front.update(front_params) ? redirect_to(world_world_fronts_path(@world), notice: "#{@front.name} saved.") : render(:edit, status: :unprocessable_content)
+    @front.update(front_params.merge("edited" => true)) ? redirect_to(world_world_fronts_path(@world), notice: "#{@front.name} saved.") : render(:edit, status: :unprocessable_content)
   end
 
   def destroy

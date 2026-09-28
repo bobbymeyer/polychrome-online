@@ -56,7 +56,11 @@ RSpec.describe "A setting's pocket history (Chronicle) and where things came fro
     expect(front.clocks.sole["name"]).to end_with("comes to blood")
 
     # Written in again: the same, and what the GM changed stays theirs.
-    world.codex_entries.find_by!(title: "The #{families.first['name']} family").tap { |e| e.update!(body: "Mine now.", updated_at: 1.minute.from_now) }
+    mine = world.codex_entries.find_by!(title: "The #{families.first['name']} family")
+    patch world_codex_entry_path(world, mine), params: { codex_entry: { body: "Mine now." } }
+    # Touched or saved by anything but the GM's form, it's still the history's.
+    travel(1.minute) { world.world_figures.where.not(history_key: nil).find_each(&:touch) }
+    world.world_fronts.where.not(history_key: nil).find_each { |f| f.update!(description: "#{f.description} ") }
     post world_history_path(world)
     expect(world.codex_entries.find_by!(title: "The #{families.first['name']} family").body).to eq("Mine now.")
     expect(world.codex_entries.where(title: "The last 100 years").count).to eq(1)

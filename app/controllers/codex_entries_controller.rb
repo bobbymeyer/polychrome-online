@@ -28,7 +28,7 @@ class CodexEntriesController < ApplicationController
   def edit; end
 
   def update
-    @entry.update(entry_params) ? redirect_to(world_codex_entry_path(@world, @entry), notice: "#{@entry.title} saved.") : render(:edit, status: :unprocessable_content)
+    @entry.update(entry_params.merge(edited: true)) ? redirect_to(world_codex_entry_path(@world, @entry), notice: "#{@entry.title} saved.") : render(:edit, status: :unprocessable_content)
   end
 
   def destroy

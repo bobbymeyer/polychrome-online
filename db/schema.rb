@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_060000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_070000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -273,6 +273,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_060000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "history_key"
+    t.boolean "edited", default: false, null: false
     t.index ["world_id", "title"], name: "index_codex_entries_on_world_id_and_title", unique: true
     t.index ["world_id"], name: "index_codex_entries_on_world_id"
   end
@@ -699,6 +700,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_060000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "history_key"
+    t.boolean "edited", default: false, null: false
     t.index ["monster_id"], name: "index_world_figures_on_monster_id"
     t.index ["world_id"], name: "index_world_figures_on_world_id"
     t.index ["world_place_id"], name: "index_world_figures_on_world_place_id"
@@ -711,6 +713,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_060000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "history_key"
+    t.boolean "edited", default: false, null: false
     t.index ["world_id"], name: "index_world_fronts_on_world_id"
   end
 

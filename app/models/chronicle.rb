@@ -95,9 +95,10 @@ class Chronicle
     end
   end
 
-  # Changed by hand since it was written: the GM's now.
+  # Changed by the GM since it was written (saved from its form, or given
+  # portraits): theirs now.
   def changed?(row)
-    row.updated_at.to_i > row.created_at.to_i
+    row.edited? || (row.respond_to?(:portraits) && row.portraits.exists?)
   end
 
   def family(key) = generated["families"].find { |f| f["key"] == key }
