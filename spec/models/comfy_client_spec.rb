@@ -92,8 +92,10 @@ RSpec.describe Comfy::Client do
       .to raise_error(Comfy::Error) { |e| expect(e.message).not_to include("s3cret") }
   end
 
-  it "says where it tried when ComfyUI isn't there" do
-    expect { client({}).submit({}) }.to raise_error(Comfy::Error, /isn't reachable at http:\/\/comfy.test/)
+  it "says where it tried when ComfyUI isn't there, as something worth trying again" do
+    expect { client({}).submit({}) }.to raise_error(Comfy::Unreachable, /isn't reachable at http:\/\/comfy.test/)
     expect(client({})).not_to be_reachable
+    expect(client({}).capabilities).to be_offline
+    expect(client("/object_info/CheckpointLoaderSimple" => [ 500, { "error" => { "message" => "boom" } } ]).capabilities).not_to be_offline
   end
 end

@@ -12,16 +12,20 @@ module Comfy
                CLIPSetLastLayer CLIPTextEncode ConditioningZeroOut KSampler EmptyLatentImage EmptySD3LatentImage
                VAEDecode SaveImage LoadImage ImageScale VAEEncode].freeze
 
-    def self.unreachable(error = nil) = new({}, reachable: false, error: error)
+    # offline: nothing answered at all (Comfy::Unreachable), rather than
+    # ComfyUI answering with an error.
+    def self.unreachable(error = nil, offline: false) = new({}, reachable: false, error: error, offline: offline)
 
     # info: { node class => its /object_info definition }
-    def initialize(info, reachable: true, error: nil)
+    def initialize(info, reachable: true, error: nil, offline: false)
       @info = info.to_h
       @reachable = reachable
       @error = error
+      @offline = offline
     end
 
     def reachable? = @reachable
+    def offline? = @offline
 
     # Why it isn't, when it isn't.
     attr_reader :error

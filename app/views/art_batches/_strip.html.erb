@@ -5,6 +5,8 @@
   <% case batch.status %>
   <% when "queued", "running" %>
     <p class="art-batch__status" role="status">Generating: <%= batch.candidates.count(&:finished?) %> of <%= batch.candidates.size %> in.</p>
+  <% when "waiting" %>
+    <p class="art-batch__status" role="status">Waiting for ComfyUI: it can't be reached right now, so this will carry on by itself when it's back. <span class="muted">(<%= batch.error %>)</span></p>
   <% when "failed" %>
     <p class="form-errors" role="alert"><%= batch.error %></p>
   <% end %>

@@ -31,6 +31,8 @@ class ArtCandidate < ApplicationRecord
     wanted = art_batch.recipe["transparent"]
     update!(status: "done", transparent: (Comfy::BackgroundRemoval.png_alpha?(bytes) if wanted),
             run_seconds: client.respond_to?(:run_seconds) ? client.run_seconds(comfy_prompt_id) : nil)
+  rescue Comfy::Unreachable
+    raise # not this image's fault: the batch waits for ComfyUI (ArtBatchJob)
   rescue Comfy::Error => e
     update!(status: "failed", error: e.message)
   end
