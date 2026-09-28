@@ -18,6 +18,7 @@
     <%= hidden_field_tag :owner_type, owner.model_name.singular %>
     <%= hidden_field_tag :owner_id, owner.id %>
     <%= render "art_batches/subject_fields", subject: owner %>
+    <%= render "art_batches/background_field", art: sample %>
     <div class="inline-form">
       <div class="field">
         <%= label_tag :expression %>

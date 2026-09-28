@@ -26,7 +26,7 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
   it "only offers Generate while ComfyUI answers" do
     allow(Comfy).to receive(:capabilities).and_return(Comfy::Capabilities.unreachable)
     get world_bestiary_monster_path(world, goblin)
-    expect(response.body).to match(/<input[^>]*value="Generate"[^>]*disabled/).and include("nothing can be generated")
+    expect(response.body).to match(/<input[^>]*value="Generate"[^>]*disabled/).and include("Nothing can be generated")
 
     allow(Comfy).to receive(:capabilities).and_return(FakeComfy.capabilities)
     get world_bestiary_monster_path(world, goblin)

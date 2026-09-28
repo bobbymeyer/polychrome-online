@@ -12,7 +12,8 @@
 # - No negative encode when the sampler would ignore it (cfg 1): the empty
 #   conditioning is made from the positive one instead.
 # - Sampler and scheduler are the family's first preference the server has.
-# - Background removal only when asked for and the node is installed.
+# - Background removal when asked for, with whichever removal node the
+#   server has (Comfy::BackgroundRemoval); without one, the background stays.
 #
 # Raises Comfy::Error, saying what's missing, when the server can't make it.
 module Comfy
@@ -87,9 +88,8 @@ module Comfy
       })
       image = [ add.("VAEDecode", { "samples" => [ sampler, 0 ], "vae" => vae }), 0 ]
 
-      rembg = Comfy.config[:rembg_node].presence
-      if recipe["transparent"] && rembg && caps.node?(rembg)
-        image = [ add.(rembg, { Comfy.config[:rembg_input].presence || "image" => image }), 0 ]
+      if recipe["transparent"] && (removal = BackgroundRemoval.pick(caps))
+        image = BackgroundRemoval.wire(add, image, removal)
       end
 
       add.("SaveImage", { "filename_prefix" => prefix, "images" => image })

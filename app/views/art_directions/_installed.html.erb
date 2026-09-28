@@ -1,4 +1,8 @@
 <%# The model and LoRA pickers list what ComfyUI has installed; while it isn't answering they are plain text fields. %>
 <% if !Comfy.capabilities.reachable? %>
-  <p class="hint">ComfyUI at <code><%= Comfy.client.base %></code> isn't answering, so nothing can be generated and model and LoRA names can't be picked from a list (type them instead). Start it and reload; uploading an image on the edit page still works.</p>
+  <p class="hint">
+    ComfyUI at <code><%= Comfy.client.base %></code> isn't answering<%= ": #{Comfy.capabilities.error}" if Comfy.capabilities.error %>.
+    Nothing can be generated, and model and LoRA names can't be picked from a list (type them instead). Uploading an image on the edit page still works.
+    <%= link_to "Check the connection step by step", world_art_direction_path(vocabulary_world || World.first, check: 1, anchor: "connection") if admin? %>
+  </p>
 <% end %>

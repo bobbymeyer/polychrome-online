@@ -37,7 +37,7 @@ class FakeComfy
                         text_encoders: [ "qwen_3_06b_base.safetensors" ], clip_types: %w[stable_diffusion sdxl anima],
                         vaes: [ "qwen_image_vae.safetensors" ], loras: [ "goblin.safetensors", "house.safetensors" ],
                         samplers: %w[euler euler_ancestral er_sde dpmpp_2m], schedulers: %w[normal karras simple sgm_uniform],
-                        nodes: Comfy::Capabilities::NODES)
+                        nodes: Comfy::Capabilities::NODES, extra: {})
     combo = ->(choices) { [ choices ] }
     info = nodes.index_with { { "input" => { "required" => {} } } }
     set = ->(node, input, choices) { info[node]["input"]["required"][input] = combo.(choices) if info[node] }
@@ -50,8 +50,19 @@ class FakeComfy
     set.("LoraLoaderModelOnly", "lora_name", loras)
     set.("KSampler", "sampler_name", samplers)
     set.("KSampler", "scheduler", schedulers)
-    Comfy::Capabilities.new(info)
+    Comfy::Capabilities.new(info.merge(extra))
   end
+
+  # How two real background-removal packs describe their nodes.
+  REMOVAL_NODES = {
+    "InspyrenetRembg" => { "input" => { "required" => { "image" => [ "IMAGE" ], "torchscript_jit" => [ %w[default on] ] } },
+                           "output" => %w[IMAGE MASK] },
+    "RMBG" => { "input" => { "required" => { "image" => [ "IMAGE" ], "model" => [ [ "RMBG-2.0", "BEN2" ] ],
+                                             "sensitivity" => [ "FLOAT", { "default" => 1.0 } ],
+                                             "background" => [ "COMBO", { "options" => %w[Alpha Color] } ] } },
+                "output" => %w[IMAGE MASK IMAGE] },
+    "NeedsAModel" => { "input" => { "required" => { "model" => [ "BG_MODEL" ], "image" => [ "IMAGE" ] } }, "output" => [ "IMAGE" ] }
+  }.freeze
 
   # A 1×1 PNG, built by hand so specs need no image library.
   def self.png

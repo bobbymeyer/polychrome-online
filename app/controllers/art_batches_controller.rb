@@ -18,7 +18,8 @@ class ArtBatchesController < ApplicationController
     # A speaker shows one strip at a time, whichever expression it is for.
     ArtBatch.where(entry: subject.portraits).destroy_all if entry.is_a?(Portrait)
     ArtBatch.where(entry: entry.location.mode_arts).destroy_all if entry.is_a?(ModeArt)
-    ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0")
+    transparent = { "1" => true, "0" => false }[params[:transparent]]
+    ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0", transparent: transparent)
     redirect_to entry_page(entry, anchor: "art")
   end
 

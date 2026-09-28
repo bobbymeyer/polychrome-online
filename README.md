@@ -698,6 +698,33 @@ Every image slot can be uploaded or generated with
   "Use this" makes one the entry's image and stores its `image_seed`,
   `image_prompt` and full `image_recipe`, including the workflow's outline,
   so it can be regenerated exactly. Uploading an image by hand clears them.
+- **Background removal** is an optional step for any batch, on by default
+  for content types marked to remove it.
+  - **Which node:** ComfyUI has no removal node of its own, so the first
+    installed one from `background_removal` in `config/comfy.yml` is used:
+    InspyrenetRembg, RMBG or BiRefNetRMBG (ComfyUI-RMBG), WAS's rembg
+    node, or Easy-Use's.
+  - **Wiring:** each is wired from ComfyUI's own description of it. The
+    image goes in its IMAGE input, other inputs take their defaults (or
+    what config says), and its IMAGE output goes on. A node that needs
+    something else plugged in is passed over.
+  - **Checking:** every image that should have lost its background is
+    checked for real transparency, and the strip says "background kept"
+    when it didn't.
+  - **No node installed:** backgrounds stay, and the pages say which to
+    install.
+- **Can't see ComfyUI?** Use "Connection" on the Art direction page, or
+  `bin/rails comfy:doctor` inside the app's container. It checks, in turn:
+  - the address: in a container, 127.0.0.1 is the container itself;
+  - the name: `host.docker.internal` needs `extra_hosts`, and MagicDNS
+    names don't resolve in containers;
+  - the connection: a refusal usually means ComfyUI only listens on
+    127.0.0.1, and a timeout on a 100.x address means the container isn't
+    on the tailnet;
+  - the answer: TLS trouble, or what's installed.
+
+  It does the same for the language model, and never prints a token or
+  password.
 - **Optional: a language model writes the subject** (`PromptWriter`,
   `config/llm.yml`).
   - When `LLM_URL` is set, each batch first has the subject layer rewritten
@@ -722,8 +749,8 @@ Every image slot can be uploaded or generated with
   | `COMFY_TOKEN` | blank | Sent as `Authorization: Bearer …` |
   | `COMFY_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
   | `COMFY_MODEL` | `anima-preview.safetensors` | The model when no layer names one |
-  | `COMFY_REMBG_NODE` | blank (keeps backgrounds) | A background-removal node |
-  | `COMFY_REMBG_INPUT` | `image` | That node's image input |
+  | `COMFY_REMBG_NODE` | blank | A background-removal node to try before the listed ones |
+  | `COMFY_REMBG_INPUT` | blank | That node's image input, if it has more than one |
   | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1` |
   | `LLM_MODEL` | blank | The model to ask for, as the server names it |
   | `LLM_TOKEN`, `LLM_HEADERS` | blank | As for ComfyUI |

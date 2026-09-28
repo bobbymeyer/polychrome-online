@@ -30,6 +30,7 @@ RSpec.describe ArtBatchJob, type: :job do
     comfy.finish!("prompt-2", "prompt-3")
     run(batch)
     expect(batch.reload.status).to eq("done")
+    expect(batch.candidates.map(&:transparent)).to all(be(true)) # the goblin's type removes its background, and the images have alpha
     expect(comfy.submitted.size).to eq(3) # nothing resubmitted
   end
 

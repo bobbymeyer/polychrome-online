@@ -1,0 +1,15 @@
+<%# Take the background off this batch or not (Comfy::BackgroundRemoval). art: what's being made. %>
+<% caps = Comfy.capabilities %>
+<% removal = Comfy::BackgroundRemoval.pick(caps) if caps.reachable? %>
+<div class="field field--check">
+  <%= hidden_field_tag :transparent, "0", id: nil %>
+  <%= check_box_tag :transparent, "1", art.art_type.transparent, id: "art_transparent" %>
+  <%= label_tag "art_transparent", "Remove the background" %>
+  <p class="hint">
+    <% if removal %>
+      With <code><%= removal[:node] %></code>. Each image is checked for real transparency.
+    <% elsif caps.reachable? %>
+      This ComfyUI has no background-removal node, so backgrounds stay. Install one of: <%= Comfy::BackgroundRemoval.node_names.to_sentence(last_word_connector: " or ") %>.
+    <% end %>
+  </p>
+</div>

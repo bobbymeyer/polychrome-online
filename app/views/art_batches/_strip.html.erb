@@ -17,7 +17,7 @@
           <% else %>
             <span class="candidate__empty"><%= candidate.status == "failed" ? "Failed" : "…" %></span>
           <% end %>
-          <figcaption>Seed <%= candidate.seed %><%= tag.span(" · #{candidate.error}", class: "muted") if candidate.error && candidate.status == "failed" && batch.status != "failed" %></figcaption>
+          <figcaption>Seed <%= candidate.seed %><%= tag.span(" · background kept", class: "muted", title: "The removal step gave back an image with no transparency") if candidate.transparent == false %><%= tag.span(" · #{candidate.error}", class: "muted") if candidate.error && candidate.status == "failed" && batch.status != "failed" %></figcaption>
         </figure>
         <% if candidate.image.attached? %>
           <%# The whole page, since the new image shows outside this frame too. %>
