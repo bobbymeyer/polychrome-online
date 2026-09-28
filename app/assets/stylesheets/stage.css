@@ -236,9 +236,8 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 }
 .unit--enemy .unit__label { color: var(--paper); }
 .unit--enemy.is-ko .unit__label { color: rgba(255, 255, 255, .45); }
-/* A white outline, so any colour of creature reads on the blue (on the
-   sprite, since the plate's clip would cut it). */
-.unit--enemy .sprite { filter: drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(5px 5px 0 var(--ink)); }
+/* A hard shadow under each creature (on the sprite, since the plate's clip would cut it). */
+.unit--enemy .sprite { filter: drop-shadow(5px 5px 0 var(--ink)); }
 .unit--enemy.is-ko .sprite { filter: none; }
 .unit--enemy.is-ko .sprite__plate { background: transparent; color: rgba(255, 255, 255, .5); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .5); }
 .unit--party.is-ko .sprite__plate { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
