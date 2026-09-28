@@ -178,8 +178,9 @@ lit windows are Sun Yellow.
 
 The battlefield is a stage in colour: the enemies on Dark Blue under a white halftone (each
 creature outlined in white so any colour reads), the party on a slanted slab of Sun Yellow.
-The art is the show there: enemies stand 176px tall and the party 96px (120 and 72 on a phone),
-twice the size the Swiss grid would give them.
+The art is the show there. Enemies fill their side of the stage: the fewer there are, the bigger
+they stand, from 176px (120 on a phone) up to 360px or half the screen's height, so a lone boss
+towers. The party stands 96px (72 on a phone).
 
 The masthead is black, with the whole palette as a stripe under it. Uploaded images are content
 and keep their own colours.

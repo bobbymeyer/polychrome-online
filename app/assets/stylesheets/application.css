@@ -347,6 +347,11 @@ details[open] summary { margin-bottom: 16px; }
   border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink);
 }
 .battlefield__side { display: flex; flex-wrap: wrap; align-content: center; gap: 24px 32px; }
+/* Enemies fill their side of the stage: the fewer there are, the bigger
+   they stand (a lone boss towers), never smaller than --sprite and never
+   taller than half the screen. */
+.battlefield__side--enemy { container-type: inline-size; justify-content: space-evenly; }
+.unit--enemy { --sprite: clamp(var(--sprite-min, 176px), calc(100cqi / var(--count, 1) - 40px), min(360px, 45vh)); }
 .battlefield__side--party { flex-direction: column; flex-wrap: nowrap; align-items: flex-end; justify-content: center; gap: 8px; border-left: 1px solid var(--rule); }
 
 .unit { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
