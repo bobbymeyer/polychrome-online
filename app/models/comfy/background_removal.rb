@@ -10,9 +10,60 @@
 # A node that needs something else plugged in (a model loader) is passed over.
 #
 # Whether it worked is checked on the image itself (ArtCandidate#transparent).
+#
+# A removal model takes whatever looks like the background, and on flat art
+# drawn on white that includes the white inside the subject: a belly, a
+# face, a sail. So the result is mended (#keep_interior): only what's
+# transparent and connected to the edge of the picture is background; a
+# transparent patch enclosed by the subject is put back, from the picture as
+# rendered (saved alongside, with PLAIN on its name). The cost: a gap that
+# really is background but is closed in (an arm on a hip) is filled too.
 module Comfy
   module BackgroundRemoval
+    PLAIN = "-plain"
+    # Alpha under this counts as removed.
+    CLEAR = 128
+
     module_function
+
+    # Of a finished prompt's images: [the removed one, the plain one or nil].
+    def split(images)
+      plain = images.find { |image| image["filename"].to_s.include?("#{PLAIN}_") }
+      [ (images - [ plain ]).first, plain ]
+    end
+
+    # The removed image with the holes inside the subject made opaque again,
+    # in the plain image's colours when there is one. PNG bytes in and out.
+    def keep_interior(removed, plain = nil)
+      require "vips" # libvips: in the image (Dockerfile), loaded only when mending
+      cut = Vips::Image.new_from_buffer(removed, "")
+      return removed unless cut.has_alpha?
+
+      alpha = cut.extract_band(cut.bands - 1)
+      width, height = cut.width, cut.height
+      clear = (alpha < CLEAR).ifthenelse(255, 0).cast(:uchar)
+      # A clear ring round the picture, so one flood from a corner reaches
+      # every clear area that touches an edge: the background.
+      ring = clear.embed(1, 1, width + 2, height + 2, extend: :background, background: [ 255 ])
+      outside = ring.mutate { |image| image.draw_flood!(128, 0, 0, equal: true) }.crop(1, 1, width, height)
+      holes = (outside == 255)
+      return removed if holes.max.zero?
+
+      # Take in the soft edge round each hole too.
+      holes = holes.morph(Vips::Image.new_from_array(Array.new(5) { Array.new(5, 255) }), :dilate)
+      colours = plain_colours(plain, cut) || cut.extract_band(0, n: cut.bands - 1)
+      colours.bandjoin(holes.ifthenelse(255, alpha).cast(:uchar)).pngsave_buffer
+    end
+
+    def plain_colours(plain, cut)
+      return unless plain
+
+      image = Vips::Image.new_from_buffer(plain, "")
+      return unless image.width == cut.width && image.height == cut.height
+
+      image = image.extract_band(0, n: image.bands - 1) if image.has_alpha?
+      image.bands == cut.bands - 1 ? image : nil
+    end
 
     # [{ "node", "image_input", "inputs" => { name => value } }] in order of
     # preference: COMFY_REMBG_NODE first, then comfy.yml's list.

@@ -100,6 +100,9 @@ module Comfy
       image = [ add.("VAEDecode", { "samples" => [ sampler, 0 ], "vae" => vae }), 0 ]
 
       if recipe["transparent"] && (removal = BackgroundRemoval.pick(caps))
+        # The picture as rendered too, to put back what the removal takes
+        # from inside the subject (BackgroundRemoval.keep_interior).
+        add.("SaveImage", { "filename_prefix" => "#{prefix}#{BackgroundRemoval::PLAIN}", "images" => image })
         image = BackgroundRemoval.wire(add, image, removal)
       end
 
