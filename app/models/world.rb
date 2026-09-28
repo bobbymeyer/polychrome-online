@@ -209,8 +209,11 @@ class World < ApplicationRecord
     figures = source.world_figures.to_h { |f| [ f.id, world_figures.find_by(name: f.name)&.id ] }
     source.world_fronts.find_each do |front|
       world_fronts.create!(name: front.name, description: front.description, history_key: front.history_key,
-                           clocks: front.clocks.map { |c| c.merge("place_id" => places[c["place_id"]]&.id).compact },
-                           secrets: front.secrets.map { |s| s.merge("place_id" => places[s["place_id"]]&.id, "figure_id" => figures[s["figure_id"]]).compact })
+                           clocks: front.clocks.map { |c|
+                             c.attributes.slice("name", "segments", "triggers", "full_line", "public", "mode_name", "mode_line", "mode_description")
+                              .merge("place_id" => places[c.place_id]&.id)
+                           },
+                           secrets: front.secrets.map { |s| { "body" => s.body, "place_id" => places[s.place_id]&.id, "figure_id" => figures[s.figure_id] } })
     end
   end
 

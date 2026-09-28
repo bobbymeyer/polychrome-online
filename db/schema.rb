@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_040000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -343,6 +343,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_040000) do
     t.datetime "updated_at", null: false
     t.index ["campaign_id", "key"], name: "index_flags_on_campaign_id_and_key", unique: true
     t.index ["campaign_id"], name: "index_flags_on_campaign_id"
+  end
+
+  create_table "front_clocks", force: :cascade do |t|
+    t.integer "world_front_id", null: false
+    t.string "name", null: false
+    t.integer "segments", default: 6, null: false
+    t.json "triggers", default: [], null: false
+    t.text "full_line"
+    t.boolean "public", default: false, null: false
+    t.integer "place_id"
+    t.string "mode_name"
+    t.text "mode_line"
+    t.text "mode_description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["place_id"], name: "index_front_clocks_on_place_id"
+    t.index ["world_front_id"], name: "index_front_clocks_on_world_front_id"
+  end
+
+  create_table "front_secrets", force: :cascade do |t|
+    t.integer "world_front_id", null: false
+    t.text "body", null: false
+    t.integer "place_id"
+    t.integer "figure_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["figure_id"], name: "index_front_secrets_on_figure_id"
+    t.index ["place_id"], name: "index_front_secrets_on_place_id"
+    t.index ["world_front_id"], name: "index_front_secrets_on_world_front_id"
   end
 
   create_table "generator_tables", force: :cascade do |t|
@@ -720,8 +749,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_040000) do
     t.integer "world_id", null: false
     t.string "name", null: false
     t.text "description"
-    t.json "clocks", default: [], null: false
-    t.json "secrets", default: [], null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "history_key"
@@ -823,6 +850,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_040000) do
   add_foreign_key "field_uses", "campaigns"
   add_foreign_key "field_uses", "characters"
   add_foreign_key "flags", "campaigns"
+  add_foreign_key "front_clocks", "world_fronts"
+  add_foreign_key "front_clocks", "world_places", column: "place_id", on_delete: :nullify
+  add_foreign_key "front_secrets", "world_figures", column: "figure_id", on_delete: :nullify
+  add_foreign_key "front_secrets", "world_fronts"
+  add_foreign_key "front_secrets", "world_places", column: "place_id", on_delete: :nullify
   add_foreign_key "generator_tables", "worlds"
   add_foreign_key "inventories", "campaigns"
   add_foreign_key "inventories", "items"

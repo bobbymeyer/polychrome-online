@@ -21,8 +21,8 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
 
   it "is written once and dealt into a campaign, tied to what the campaign brought in" do
     front = write_front
-    expect(front.clocks.sole).to include("name" => "The Syndicate takes the docks", "segments" => 4, "public" => true, "triggers" => [ "rest" ], "place_id" => varn.id)
-    expect(front.secrets.sole).to eq("body" => "Mara's ledger is fake.", "place_id" => varn.id, "figure_id" => mara.id)
+    expect(front.clocks.sole).to have_attributes(name: "The Syndicate takes the docks", segments: 4, public: true, triggers: [ "rest" ], place: varn)
+    expect(front.secrets.sole).to have_attributes(body: "Mara's ledger is fake.", place: varn, figure: mara)
 
     post world_campaigns_path(world), params: { campaign: { name: "Rust" } }
     campaign = world.campaigns.find_by!(name: "Rust")
@@ -53,5 +53,19 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     copied = copy.world_fronts.sole
     expect(copied.clocks.sole["place_id"]).to eq(copy.world_places.find_by!(name: "Varn").id)
     expect(copied.secrets.sole["figure_id"]).to eq(copy.world_figures.find_by!(name: "Mara Vell").id)
+  end
+
+  it "keeps its rows through a save that fails, and lets go of a place taken off the atlas" do
+    front = write_front
+    patch world_world_front_path(world, front), params: { world_front: { name: "" } }
+    expect(front.reload.clocks.count).to eq(1)
+
+    patch world_world_front_path(world, front), params: { world_front: { name: front.name, clocks: { "0" => { name: "" } },
+                                                                          secrets: { "0" => { body: "Only this." } } } }
+    expect([ front.reload.clocks.count, front.secrets.pluck(:body) ]).to eq([ 0, [ "Only this." ] ])
+
+    write_front_again = world.world_fronts.create!(name: "Again", clocks: [ { "name" => "Tick", "place_id" => varn.id } ])
+    varn.destroy!
+    expect(write_front_again.clocks.sole.reload.place).to be_nil
   end
 end
