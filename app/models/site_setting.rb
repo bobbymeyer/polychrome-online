@@ -7,10 +7,16 @@
 # or a password in a URL stays in the environment, never in the database.
 class SiteSetting < ApplicationRecord
   URLS = %i[comfy_url llm_url].freeze
-  FIELDS = %i[comfy_url comfy_model rembg_node llm_url llm_model].freeze
+  TEXT = %i[comfy_url comfy_model rembg_node llm_url llm_model].freeze
+  NUMBERS = %i[draft_size draft_steps draft_denoise candidates].freeze
+  FIELDS = (TEXT + NUMBERS).freeze
 
-  normalizes(*FIELDS, with: ->(value) { value.to_s.strip.presence })
+  normalizes(*TEXT, with: ->(value) { value.to_s.strip.presence })
 
+  validates :draft_size, numericality: { only_integer: true, in: 256..1024 }, allow_nil: true
+  validates :draft_steps, numericality: { only_integer: true, in: 1..60 }, allow_nil: true
+  validates :draft_denoise, numericality: { in: 0.1..1.0 }, allow_nil: true
+  validates :candidates, numericality: { only_integer: true, in: 1..8 }, allow_nil: true
   validate :urls_are_plain_addresses
 
   after_commit { self.class.forget! }
@@ -30,7 +36,9 @@ class SiteSetting < ApplicationRecord
 
   # The settings that override the environment's, for Comfy.config.
   def comfy_overrides
-    { url: comfy_url, model: comfy_model, rembg_node: rembg_node }.compact
+    draft = { pixels: draft_size && draft_size**2, steps: draft_steps, denoise: draft_denoise }.compact
+    overrides = { url: comfy_url, model: comfy_model, rembg_node: rembg_node, candidates: candidates }.compact
+    draft.empty? ? overrides : overrides.merge(draft: Rails.configuration.x.comfy.fetch(:draft, {}).to_h.symbolize_keys.merge(draft))
   end
 
   def llm_overrides

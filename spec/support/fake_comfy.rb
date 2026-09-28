@@ -32,6 +32,15 @@ class FakeComfy
 
   def fetch(_image) = FakeComfy.png
 
+  def run_seconds(id) = (42.5 if @done.include?(id))
+
+  def upload(bytes, name)
+    (@uploads ||= []) << [ name, bytes ]
+    name
+  end
+
+  def uploads = @uploads || []
+
   # A ComfyUI's /object_info, reduced to what the builder reads.
   def self.capabilities(checkpoints: [], diffusion_models: [ "anima-preview.safetensors" ],
                         text_encoders: [ "qwen_3_06b_base.safetensors" ], clip_types: %w[stable_diffusion sdxl anima],

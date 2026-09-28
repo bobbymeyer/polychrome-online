@@ -44,6 +44,16 @@ shared: &shared
     - node: easy imageRemBg
       inputs: { image_output: Hide, add_background: none }
   candidates: 4
+  # Drafts: rough, quick previews, about 512 × 512 (the same number of
+  # pixels, keeping the shape) in 16 steps; a family can set its own
+  # draft_steps, and one that takes fewer steps already keeps them.
+  # "Make this one properly" re-renders a chosen draft at full size,
+  # starting from the draft itself, re-noised by `denoise` (lower keeps more
+  # of the draft), so it stays the same picture.
+  draft:
+    pixels: 262144
+    steps: 16
+    denoise: 0.6
   # Give up on a batch that hasn't finished after this many seconds.
   timeout: 900
 
@@ -68,6 +78,7 @@ shared: &shared
   #                      there is one (config/llm.yml), writes the subject
   #   pixels, multiple   the trained size range, in pixels; sizes are scaled
   #                      into it, keeping their shape, rounded to `multiple`
+  #   draft_steps        steps for a quick draft (default: draft.steps below)
   #   variants           overrides for names that also match these words
   default_family: anima
   checkpoint_family: sdxl

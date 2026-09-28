@@ -59,6 +59,7 @@ Rails.application.routes.draw do
     resource :art_panel, only: :show, path: "art/panel"
     resources :art_candidates, only: [], path: "art/candidates" do
       post :pick, on: :member
+      post :refine, on: :member
     end
 
     # The language model's suggestions for world building (Draft).

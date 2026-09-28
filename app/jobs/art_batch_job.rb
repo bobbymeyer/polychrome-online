@@ -14,6 +14,7 @@ class ArtBatchJob < ApplicationJob
 
     if batch.status == "queued"
       batch.write_prompt!(llm) if llm
+      batch.upload_source!(client)
       batch.submit!(client)
     end
     return if batch.collect!(client)

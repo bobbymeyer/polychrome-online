@@ -29,7 +29,8 @@ class ArtCandidate < ApplicationRecord
     image.attach(io: StringIO.new(bytes), filename: entry.art_filename(seed), content_type: "image/png")
     # Asked to lose its background: did it? (A removal node can fail quietly.)
     wanted = art_batch.recipe["transparent"]
-    update!(status: "done", transparent: (Comfy::BackgroundRemoval.png_alpha?(bytes) if wanted))
+    update!(status: "done", transparent: (Comfy::BackgroundRemoval.png_alpha?(bytes) if wanted),
+            run_seconds: client.respond_to?(:run_seconds) ? client.run_seconds(comfy_prompt_id) : nil)
   rescue Comfy::Error => e
     update!(status: "failed", error: e.message)
   end
@@ -39,6 +40,7 @@ class ArtCandidate < ApplicationRecord
     raise ArgumentError, "That candidate has no image" unless status == "done" && image.attached?
 
     entry.adopt_art!(self)
+    art_batch.drafts&.destroy!
     art_batch.destroy!
   end
 end

@@ -77,14 +77,25 @@ module Comfy
         [ add.("CLIPTextEncode", { "text" => "", "clip" => clip }), 0 ]
       end
 
-      width, height = family.size(recipe.fetch("width").to_i, recipe.fetch("height").to_i)
-      latent_node = caps.node?(family.latent) ? family.latent : "EmptyLatentImage"
-      latent = add.(latent_node, { "width" => width, "height" => height, "batch_size" => 1 })
+      # A draft keeps its small size; anything else is scaled into range.
+      width, height = recipe["draft"] ? [ recipe.fetch("width").to_i, recipe.fetch("height").to_i ] : family.size(recipe.fetch("width").to_i, recipe.fetch("height").to_i)
+      denoise = 1
+      if recipe["source_image"]
+        # A refinement: the chosen draft, scaled up, encoded, and re-noised in part.
+        %w[LoadImage ImageScale VAEEncode].each { |node| need.(node) }
+        loaded = add.("LoadImage", { "image" => recipe["source_image"] })
+        scaled = add.("ImageScale", { "image" => [ loaded, 0 ], "upscale_method" => "lanczos", "width" => width, "height" => height, "crop" => "disabled" })
+        latent = add.("VAEEncode", { "pixels" => [ scaled, 0 ], "vae" => vae })
+        denoise = recipe["denoise"] || family.refine_denoise
+      else
+        latent_node = caps.node?(family.latent) ? family.latent : "EmptyLatentImage"
+        latent = add.(latent_node, { "width" => width, "height" => height, "batch_size" => 1 })
+      end
       sampler = add.("KSampler", {
-        "seed" => seed, "steps" => family.steps, "cfg" => family.cfg,
+        "seed" => seed, "steps" => recipe["steps"] || family.steps, "cfg" => family.cfg,
         "sampler_name" => caps.prefer(caps.samplers, family.samplers) || caps.samplers.first || "euler",
         "scheduler" => caps.prefer(caps.schedulers, family.schedulers) || caps.schedulers.first || "normal",
-        "denoise" => 1, "model" => model, "positive" => positive, "negative" => negative, "latent_image" => [ latent, 0 ]
+        "denoise" => denoise, "model" => model, "positive" => positive, "negative" => negative, "latent_image" => [ latent, 0 ]
       })
       image = [ add.("VAEDecode", { "samples" => [ sampler, 0 ], "vae" => vae }), 0 ]
 
