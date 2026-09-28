@@ -81,10 +81,10 @@ class FieldUse < ApplicationRecord
       campaign.lock!
       stat = skill ? skill["stat"] : "agi"
       bonus = character.skill_bonus(ability.field_skill)
-      rolling = Battle::Rng.new(campaign.rng)
-      roll = Stats::Check.roll(stat_value: character.stats.fetch(stat), stat: stat, level: character.level,
-                               difficulty: difficulty, rng: rolling, bonus: bonus)
-      campaign.update!(rng: rolling.state)
+      roll = campaign.roll do |dice|
+        Stats::Check.roll(stat_value: character.stats.fetch(stat), stat: stat, level: character.level,
+                          difficulty: difficulty, rng: dice, bonus: bonus)
+      end
       label = "#{ability.name} (#{[ skill&.fetch('name'), difficulty, ("+#{bonus} #{character.job.name}" if bonus.positive?) ].compact.join(', ')})"
       campaign.narrate("#{character.name}: #{label}. #{roll['chance']}% · rolled #{roll['roll']} · #{roll['success'] ? 'Success!' : 'Failure.'}",
                        cue: "check", data: roll.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty,
@@ -152,9 +152,7 @@ class FieldUse < ApplicationRecord
     finds = campaign.world.items.where(category: "consumable").where(price: 1..worth).order(:price, :id).to_a
     return "#{name} searches, but finds nothing worth the carrying." if finds.empty?
 
-    rolling = Battle::Rng.new(campaign.rng)
-    item = finds[rolling.int(finds.size)]
-    campaign.update!(rng: rolling.state)
+    item = campaign.roll { |dice| finds[dice.int(finds.size)] }
     campaign.add_item!(item)
     "#{name} finds #{item.name.start_with?(/[AEIOU]/i) ? 'an' : 'a'} #{item.name}."
   end

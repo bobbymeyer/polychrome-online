@@ -16,17 +16,17 @@ module Campaign::Checks
     raise Refusal, "Pick a difficulty" unless Stats::Check::DIFFICULTIES.key?(difficulty)
 
     transaction do
-      rolling = Battle::Rng.new(rng)
-      lines = characters.map do |character|
+      lines = roll do |dice|
+        characters.map do |character|
         bonus = skill ? character.skill_bonus(skill["slug"]) : 0
         result = Stats::Check.roll(stat_value: character.stats.fetch(stat), stat: stat, level: character.level,
-                                   difficulty: difficulty, rng: rolling, bonus: bonus)
+                                   difficulty: difficulty, rng: dice, bonus: bonus)
         label = "#{skill ? skill['name'] : stat.capitalize} check (#{difficulty}#{", +#{bonus} #{character.job.name}" if bonus.positive?})"
         body = "#{character.name}: #{label}#{" to #{reason.strip.sub(/\.\z/, '')}" if reason.present?}. " \
                "#{result['chance']}% · rolled #{result['roll']} · #{result['success'] ? 'Success!' : 'Failure.'}"
         [ body, result.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty, "skill" => skill&.fetch("name"), "bonus" => bonus).compact ]
+        end
       end
-      update!(rng: rolling.state)
       created = lines.map { |body, data| narrate(body, cue: "check", data: data) }
       tick_clocks!("failed_check") if lines.any? { |_, data| !data["success"] }
       created

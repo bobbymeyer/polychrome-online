@@ -27,8 +27,29 @@ class Campaign < ApplicationRecord
 
   include Bag, Shopping, Services, Travelling, Checks, MonsterNotes, JobRewards, Overnight, Deeds, Broadcasts
 
-  # Travel encounters use their own seeded RNG, stored here like a battle's.
+  # The campaign's dice: one seeded RNG, stored here like a battle's, for
+  # everything outside a battle (encounters on the road, checks, what
+  # happens overnight). Every roll goes through #roll or #roll_with, which
+  # keep where the dice got to: a state left unsaved rolls the same again.
   before_create { self.rng = Random.new_seed % 2**32 if rng.zero? }
+
+  # Roll with the dice (a Battle::Rng); returns what the block does.
+  #   roll { |dice| dice.d100(40) }
+  def roll
+    dice = Battle::Rng.new(rng)
+    result = yield dice
+    update!(rng: dice.state)
+    result
+  end
+
+  # Hand the dice's state to a pure step that returns the next state and
+  # what it rolled (Pointcrawl, Battle::Field); returns what it rolled.
+  #   roll_with { |state| Pointcrawl::Encounters.roll(state, entries, "dangerous") }
+  def roll_with
+    next_state, result = yield rng
+    update!(rng: next_state)
+    result
+  end
 
   # The GM's choice of music: a scene's track or silence. Nil follows the
   # scene, so a town sounds like a town and a dungeon like a dungeon.
