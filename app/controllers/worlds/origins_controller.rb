@@ -2,7 +2,7 @@
 
 # Where characters in a setting can come from (World#origins): each a name,
 # a line, and optionally a skill they're better at.
-class WorldOriginsController < ApplicationController
+class Worlds::OriginsController < ApplicationController
   before_action :set_world
   before_action :require_world_editor, except: :show
 

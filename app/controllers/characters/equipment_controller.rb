@@ -2,7 +2,7 @@
 
 # Equipping from the party bag: one field per slot, holding an item id, or
 # blank to take the slot off. All changes apply together or not at all.
-class EquipmentController < ApplicationController
+class Characters::EquipmentController < ApplicationController
   include CampaignScoped
 
   before_action :set_character

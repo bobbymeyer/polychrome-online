@@ -7,7 +7,7 @@
     <span class="label"><%= gloss(:max_hp) %></span> <strong class="<%= 'is-low' if hp_band(unit) == 'danger' %>"><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
     <span class="label"><%= gloss(:max_mp) %></span> <strong><%= unit["mp"] %></strong><span class="muted">/<%= unit["stats"]["max_mp"] %></span>
   </span>
-  <%= render "panels/countdown" %>
+  <%= render "battles/panels/countdown" %>
 </div>
 
 <% if unit["hp"].zero? %>

@@ -2,7 +2,7 @@
 
 # Using an item from the party's bag outside battle, from a character's
 # sheet: that character uses it, on themselves or another party member.
-class ItemUsesController < ApplicationController
+class Characters::ItemUsesController < ApplicationController
   include CampaignScoped
 
   before_action :set_character

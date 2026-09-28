@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Changing a character's current job.
-class CharacterJobsController < ApplicationController
+class Characters::JobsController < ApplicationController
   include CampaignScoped
 
   before_action :set_character

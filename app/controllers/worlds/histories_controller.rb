@@ -3,7 +3,7 @@
 # A setting's pocket history (Chronicle): rolled over its atlas, rerolled
 # until it's right, and written into the codex, cast, atlas and fronts. Its
 # GMs can read it; its editors roll and write it.
-class WorldHistoriesController < ApplicationController
+class Worlds::HistoriesController < ApplicationController
   before_action :set_world
   before_action :require_lore, only: :show
   before_action :require_world_editor, except: :show

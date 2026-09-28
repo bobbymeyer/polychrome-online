@@ -3,7 +3,7 @@
 # A setting's fronts (WorldFront): its pressures, as clocks and secrets,
 # written once and dealt into campaigns. Its editors write them; its GMs
 # read them.
-class WorldFrontsController < ApplicationController
+class Worlds::FrontsController < ApplicationController
   before_action :set_world
   before_action :require_lore, only: :index
   before_action :require_world_editor, except: :index

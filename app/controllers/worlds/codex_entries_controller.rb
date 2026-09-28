@@ -3,7 +3,7 @@
 # A setting's codex (CodexEntry): its lore. Anyone can read the public
 # pages; the GM-only ones, and every page's GM notes, are for its editors
 # and GMs.
-class CodexEntriesController < ApplicationController
+class Worlds::CodexEntriesController < ApplicationController
   before_action :set_world
   before_action :require_world_editor, except: %i[index show]
   before_action :set_entry, only: %i[show edit update destroy]

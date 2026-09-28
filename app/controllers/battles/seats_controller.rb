@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class SeatsController < ApplicationController
+class Battles::SeatsController < ApplicationController
   include BattleSeat
 
   before_action :set_battle

@@ -2,7 +2,7 @@
 
 # A setting's cast (WorldFigure): its people, written once, brought into
 # each campaign as NPCs. Its editors write it; its GMs read it.
-class WorldFiguresController < ApplicationController
+class Worlds::FiguresController < ApplicationController
   include PortraitUploads
 
   before_action :set_world

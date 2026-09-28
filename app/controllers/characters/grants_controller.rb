@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # GM tool: grant EXP and ABP outside battle (a quest reward, a montage).
-class GrantsController < ApplicationController
+class Characters::GrantsController < ApplicationController
   include CampaignScoped
 
   before_action :set_character

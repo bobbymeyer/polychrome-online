@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # GM fast-forward (§6): sets the playback speed for every viewer.
-class PlaybacksController < ApplicationController
+class Battles::PlaybacksController < ApplicationController
   include BattleSeat
 
   before_action :set_battle

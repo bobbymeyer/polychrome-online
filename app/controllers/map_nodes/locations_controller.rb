@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Roll a location for a map place from a Gazetteer template.
-class NodeLocationsController < ApplicationController
+class MapNodes::LocationsController < ApplicationController
   include MapGm
 
   def create

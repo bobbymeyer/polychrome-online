@@ -5,13 +5,13 @@
     <% end %>
 
     <% if @battle.over? %>
-      <%= render "panels/over" %>
+      <%= render "battles/panels/over" %>
     <% elsif !current_seat.seated? %>
-      <%= render "panels/seats" %>
+      <%= render "battles/panels/seats" %>
     <% elsif gm_seat? %>
-      <%= render "panels/gm" %>
+      <%= render "battles/panels/gm" %>
     <% else %>
-      <%= render "panels/player", unit: seat_unit %>
+      <%= render "battles/panels/player", unit: seat_unit %>
     <% end %>
 
     <% if current_seat.seated? %>

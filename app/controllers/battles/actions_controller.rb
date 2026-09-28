@@ -2,7 +2,7 @@
 
 # Submits one action to the resolver. Players can only command their own
 # unit; only the GM seat can send overrides (which the resolver logs, §12).
-class BattleActionsController < ApplicationController
+class Battles::ActionsController < ApplicationController
   include BattleSeat
 
   GM_FIELDS = %i[op unit value status turns result note monster side name stat difficulty aim effect strength type success failure].freeze
@@ -21,10 +21,10 @@ class BattleActionsController < ApplicationController
     # The panel must not show the new state before the beat has played
     # (§6), so the response is a placeholder. The battle player reloads the
     # real panel once the animation finishes.
-    render "panels/resolving", layout: false
+    render "battles/panels/resolving", layout: false
   rescue Battle::InvalidAction => e
     @error = e.message
-    render "panels/show", layout: false, status: :unprocessable_content
+    render "battles/panels/show", layout: false, status: :unprocessable_content
   end
 
   private

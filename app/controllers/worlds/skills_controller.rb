@@ -2,7 +2,7 @@
 
 # A world's skills (World#skills): what its checks are made with, each on a
 # stat. A removed skill comes off the jobs that were good at it.
-class WorldSkillsController < ApplicationController
+class Worlds::SkillsController < ApplicationController
   before_action :set_world
   before_action :require_world_editor, only: %i[edit update]
 

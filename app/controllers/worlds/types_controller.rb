@@ -3,7 +3,7 @@
 # A world's damage types (TypeChart): the chart for everyone, and the editor
 # for whoever may change the world. A save goes through TypeChange, which
 # sends a removed type's uses where the author says.
-class WorldTypesController < ApplicationController
+class Worlds::TypesController < ApplicationController
   before_action :set_world
   before_action :require_world_editor, only: %i[edit update]
 

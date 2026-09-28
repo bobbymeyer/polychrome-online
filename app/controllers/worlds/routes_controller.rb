@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # The roads on a setting's atlas (WorldRoute).
-class WorldRoutesController < ApplicationController
+class Worlds::RoutesController < ApplicationController
   before_action :set_world
   before_action :require_world_editor
 

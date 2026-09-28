@@ -2,7 +2,7 @@
 
 # A setting's atlas (WorldPlace, WorldRoute): its places and roads, written
 # once for every campaign in the world. Its editors write it; its GMs read it.
-class WorldPlacesController < ApplicationController
+class Worlds::PlacesController < ApplicationController
   before_action :set_world
   before_action :require_lore, only: :index
   before_action :require_world_editor, except: :index

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class AbilitySlotsController < ApplicationController
+class Characters::AbilitySlotsController < ApplicationController
   include CampaignScoped
 
   before_action :set_character
