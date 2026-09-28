@@ -9,10 +9,6 @@
 module Campaign::Deeds
   extend ActiveSupport::Concern
 
-  included do
-    has_many :deeds, dependent: :delete_all
-  end
-
   def record_deed!(body, at: current_node, sway: 0, kind: "gm")
     transaction do
       deed = deeds.create!(body: body, map_node: at, day: day, sway: sway.to_i, kind: kind)

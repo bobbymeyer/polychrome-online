@@ -30,6 +30,8 @@ class BattleRecord < ApplicationRecord
   belongs_to :campaign, optional: true
   has_many :battle_actions, -> { order(:position) }, foreign_key: :battle_id, inverse_of: :battle, dependent: :destroy
   has_many :battle_events, -> { order(:position) }, foreign_key: :battle_id, inverse_of: :battle, dependent: :delete_all
+  # The table's lines about it stay, no longer linked.
+  has_many :messages, foreign_key: :battle_id, inverse_of: :battle, dependent: :nullify
 
   validates :name, presence: true
   validates :campaign, presence: true, on: :create

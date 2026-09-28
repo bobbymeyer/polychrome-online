@@ -9,10 +9,6 @@
 module Campaign::Overnight
   extend ActiveSupport::Concern
 
-  included do
-    has_many :rumours, dependent: :delete_all
-  end
-
   # People start talking about something at a place on the map. seen: the
   # party was there and saw it happen, so there's nothing to hear. sway: a
   # deed's, moving each town's view of the party as the news gets there.

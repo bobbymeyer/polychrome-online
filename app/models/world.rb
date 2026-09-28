@@ -7,23 +7,26 @@ class World < ApplicationRecord
   include Vocabulary, Setting, Music, Copying
 
   belongs_to :owner, class_name: "User", optional: true
-  # The setting's canon, first: it points into the books below.
-  has_many :world_figures, dependent: :destroy
-  has_many :world_routes, dependent: :destroy
-  has_many :world_places, dependent: :destroy
-  has_many :codex_entries, dependent: :destroy
-  has_many :world_fronts, dependent: :destroy
-  has_many :abilities, dependent: :destroy
-  has_many :items, dependent: :destroy
-  has_many :jobs, dependent: :destroy
-  has_many :monsters, dependent: :destroy
-  has_many :encounter_tables, dependent: :destroy
-  has_many :generator_tables, dependent: :destroy
-  has_many :location_templates, dependent: :destroy
+  # In the order they go when the world does: the foreign keys are plain,
+  # so whatever points at something goes before it (spec/models/deleting_spec.rb).
+  # Campaigns and battles first (they use the books), then the canon (it
+  # points into the books), then the books themselves.
   has_many :campaigns, dependent: :destroy
   has_many :battles, class_name: "BattleRecord", dependent: :destroy
-  has_many :art_types, dependent: :destroy
   has_many :art_batches, dependent: :destroy
+  has_many :world_fronts, dependent: :destroy # at places and figures
+  has_many :world_figures, dependent: :destroy # at places and monsters
+  has_many :world_routes, dependent: :destroy # at places and encounter tables
+  has_many :world_places, dependent: :destroy # at location templates
+  has_many :codex_entries, dependent: :destroy
+  has_many :jobs, dependent: :destroy # at abilities
+  has_many :abilities, dependent: :destroy
+  has_many :items, dependent: :destroy
+  has_many :monsters, dependent: :destroy
+  has_many :location_templates, dependent: :destroy # at encounter tables
+  has_many :encounter_tables, dependent: :destroy
+  has_many :generator_tables, dependent: :destroy
+  has_many :art_types, dependent: :destroy
 
   before_validation(on: :create) { self.slug = name.to_s.parameterize(separator: "_") if slug.blank? }
 
