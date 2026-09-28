@@ -168,7 +168,7 @@ class Location < ApplicationRecord
     chosen = modes.find { |t| t["key"] == key } or raise Refusal, "#{view['name']} has no mode called #{key}"
     transaction do
       update!(mode: key)
-      campaign.messages.create!(kind: "system", body: chosen["line"] || "#{view['name']}: #{chosen['name']}.")
+      campaign.narrate(chosen["line"] || "#{view['name']}: #{chosen['name']}.")
     end
     campaign.broadcast_map
     campaign.broadcast_music
@@ -179,7 +179,7 @@ class Location < ApplicationRecord
     was = current_mode or raise Refusal, "#{view['name']} is as it always was"
     transaction do
       update!(mode: nil)
-      campaign.messages.create!(kind: "system", body: line.to_s.strip.presence || "#{view['name']} is itself again: #{was['name'].downcase} no more.")
+      campaign.narrate(line.to_s.strip.presence || "#{view['name']} is itself again: #{was['name'].downcase} no more.")
     end
     campaign.broadcast_map
     campaign.broadcast_music
@@ -438,11 +438,11 @@ class Location < ApplicationRecord
     transaction do
       if lock
         update!(progress: progress.merge("unlocked" => progress.fetch("unlocked", []) | [ lock["id"] ]))
-        campaign.messages.create!(kind: "system", cue: "door", body: "#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.")
+        campaign.narrate("#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.", cue: "door")
       end
       update!(progress: progress.merge("current" => key, "visited" => (visited | [ key ])))
-      campaign.messages.create!(kind: "system", body: "#{name}: the party enters #{target['name']}.")
-      campaign.messages.create!(kind: "system", body: "The cost of that way: #{path['cost']}") if path&.dig("cost")
+      campaign.narrate("#{name}: the party enters #{target['name']}.")
+      campaign.narrate("The cost of that way: #{path['cost']}") if path&.dig("cost")
       announce(target) unless resolved?(key)
     end
   end
@@ -458,7 +458,7 @@ class Location < ApplicationRecord
       campaign.add_item!(item) if item
       campaign.increment!(:gil, decision["gil"].to_i) if decision["gil"]
       resolve!(key)
-      campaign.messages.create!(kind: "system", cue: "treasure", body: "Found #{describe_treasure(decision)} in #{target['name']}.")
+      campaign.narrate("Found #{describe_treasure(decision)} in #{target['name']}.", cue: "treasure")
     end
   end
 
@@ -492,17 +492,17 @@ class Location < ApplicationRecord
       label = decision["kind"] == "boss" ? "The master of #{name}" : "#{name}: #{target['name']}"
       campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => decision["kind"] == "boss",
                                             "terrain" => location_template.encounter_table&.terrain_type }.compact)
-      campaign.messages.create!(kind: "system", body: "#{decision['kind'] == 'boss' ? 'Boss' : 'Encounter'}! #{campaign.describe_encounter(decision['monsters'])}.")
+      campaign.narrate("#{decision['kind'] == 'boss' ? 'Boss' : 'Encounter'}! #{campaign.describe_encounter(decision['monsters'])}.")
       resolve!(target["key"])
     when "treasure"
-      campaign.messages.create!(kind: "system", body: "There is treasure in #{target['name']}.")
+      campaign.narrate("There is treasure in #{target['name']}.")
     when "fork"
-      campaign.messages.create!(kind: "system", body: "The way splits. One path has a cost: #{decision['text']}")
+      campaign.narrate("The way splits. One path has a cost: #{decision['text']}")
       resolve!(target["key"])
     when "key"
       update!(progress: progress.merge("keys" => keys_found | [ decision["lock"] ]))
       lock = view.fetch("paths", []).find { |p| p.dig("lock", "id") == decision["lock"] }&.dig("lock")
-      campaign.messages.create!(kind: "system", cue: "key", body: "Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}")
+      campaign.narrate("Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}", cue: "key")
       resolve!(target["key"])
     end
   end

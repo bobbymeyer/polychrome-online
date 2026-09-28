@@ -64,7 +64,7 @@ class Clock < ApplicationRecord
       if full? && !was_full
         fill!
       elsif public? && by.positive?
-        campaign.messages.create!(kind: "system", body: "#{name}: #{filled} of #{segments}#{" (#{reason})" if reason}.")
+        campaign.narrate("#{name}: #{filled} of #{segments}#{" (#{reason})" if reason}.")
       end
     end
     self
@@ -80,7 +80,7 @@ class Clock < ApplicationRecord
   def fill!
     line = full_line || ("#{name}: it has happened." if public?)
     # Full when the table heard it, so the recap finds it in that session.
-    update!(full_at: campaign.messages.create!(kind: "system", body: line).created_at) if line
+    update!(full_at: campaign.narrate(line).created_at) if line
     location.switch_mode!(mode_key) if location && mode_key && location.mode != mode_key
   end
 

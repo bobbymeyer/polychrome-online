@@ -53,6 +53,13 @@ class Campaign < ApplicationRecord
     row.update!(quantity: row.quantity + count)
   end
 
+  # Tell the table what happened, in the game's own voice: "The party
+  # rests.", "Found a Potion in the Ossuary." cue: a sound or picture for it
+  # ("treasure", "check"); data: what the page needs to show it.
+  def narrate(body, **details)
+    messages.create!(kind: "system", body: body, **details)
+  end
+
   # --- shopping ------------------------------------------------------------
 
   # Buy from a town's stock with party gil. Raises Refusal with a
@@ -69,7 +76,7 @@ class Campaign < ApplicationRecord
 
       update!(gil: gil - cost)
       add_item!(item, quantity)
-      messages.create!(kind: "system", body: "#{by} bought #{quantity} × #{item.name} in #{at.name} for #{money(cost)}.")
+      narrate("#{by} bought #{quantity} × #{item.name} in #{at.name} for #{money(cost)}.")
     end
   end
 
@@ -84,7 +91,7 @@ class Campaign < ApplicationRecord
       row.update!(quantity: row.quantity - quantity)
       earned = item.resale_price * quantity
       update!(gil: gil + earned)
-      messages.create!(kind: "system", body: "#{by} sold #{quantity} × #{item.name} in #{at.name} for #{money(earned)}.")
+      narrate("#{by} sold #{quantity} × #{item.name} in #{at.name} for #{money(earned)}.")
     end
   end
 
@@ -134,7 +141,7 @@ class Campaign < ApplicationRecord
       update!(gil: gil - cost)
       character.update!(hp: nil, mp: nil) if %w[inn temple].include?(kind)
       character.update!(field_used: false) if kind == "inn" # a night's rest: field abilities are back
-      messages.create!(kind: "system", body: service_line(kind, character, service, by, cost))
+      narrate(service_line(kind, character, service, by, cost))
     end
   end
 
@@ -190,7 +197,7 @@ class Campaign < ApplicationRecord
       target.update!(hp: hp)
       update!(rng: next_rng)
       on = target == user ? "" : " on #{target.name}"
-      messages.create!(kind: "system", body: "#{user.name} uses #{item.name}#{on}: HP #{before} → #{hp}.")
+      narrate("#{user.name} uses #{item.name}#{on}: HP #{before} → #{hp}.")
     end
   rescue Battle::InvalidAction => e
     raise Refusal, e.message
@@ -252,10 +259,10 @@ class Campaign < ApplicationRecord
       end
       save!
 
-      messages.create!(kind: "system", body: "The party travels from #{origin.name} to #{destination.name}.")
+      narrate("The party travels from #{origin.name} to #{destination.name}.")
       messages.create!(body: edge.travel_event) if edge.travel_event
-      messages.create!(kind: "system", body: "The way is safe: nothing troubles the party on the road.") if safe
-      messages.create!(kind: "system", body: "Encounter! #{describe_encounter(rolled)}.") if rolled
+      narrate("The way is safe: nothing troubles the party on the road.") if safe
+      narrate("Encounter! #{describe_encounter(rolled)}.") if rolled
       tick_clocks!("travel")
       pass_time!(edge.duration, announce: :new_day)
     end
@@ -269,7 +276,7 @@ class Campaign < ApplicationRecord
       node.update!(visible: true)
       current_node&.location&.leave! unless current_node == node
       update!(current_node: node)
-      messages.create!(kind: "system", body: "The party is at #{node.name}.")
+      narrate("The party is at #{node.name}.")
     end
     broadcast_map
   end
@@ -290,7 +297,7 @@ class Campaign < ApplicationRecord
     return unless pending_encounter
 
     update!(pending_encounter: nil)
-    messages.create!(kind: "system", body: "The GM waves off the encounter.")
+    narrate("The GM waves off the encounter.")
   end
 
   def describe_encounter(monsters)
@@ -381,7 +388,7 @@ class Campaign < ApplicationRecord
         [ body, result.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty, "skill" => skill&.fetch("name"), "bonus" => bonus).compact ]
       end
       update!(rng: rolling.state)
-      created = lines.map { |body, data| messages.create!(kind: "system", cue: "check", body: body, data: data) }
+      created = lines.map { |body, data| narrate(body, cue: "check", data: data) }
       tick_clocks!("failed_check") if lines.any? { |_, data| !data["success"] }
       created
     end
@@ -455,8 +462,8 @@ class Campaign < ApplicationRecord
     transaction do
       update!(open_jobs: (open_jobs || []) + jobs.map(&:slug))
       body = [ line.to_s.strip.presence, "New #{'job'.pluralize(jobs.size)}: #{jobs.map(&:name).to_sentence}." ].compact.join(" ")
-      messages.create!(kind: "system", cue: "jobs", body: body,
-                       data: { "jobs" => jobs.map { |j| { "name" => j.name, "slug" => j.slug, "description" => j.description.to_s } } })
+      narrate(body, cue: "jobs",
+                    data: { "jobs" => jobs.map { |j| { "name" => j.name, "slug" => j.slug, "description" => j.description.to_s } } })
     end
   end
 
@@ -465,7 +472,7 @@ class Campaign < ApplicationRecord
 
     transaction do
       characters.update_all(hp: nil, mp: nil, field_used: false)
-      messages.create!(kind: "system", body: "The party rests. Everyone is back to full #{world.word('hp')} and #{world.word('mp')}.")
+      narrate("The party rests. Everyone is back to full #{world.word('hp')} and #{world.word('mp')}.")
       tick_clocks!("rest")
       pass_time!(until_dawn, announce: :new_day)
     end

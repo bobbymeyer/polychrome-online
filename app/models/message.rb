@@ -103,7 +103,7 @@ class Message < ApplicationRecord
         flag = campaign.flags.find_or_initialize_by(key: Flag.new(key: flag_key).key)
         flag.update!(value: option, public: true)
       end
-      campaign.messages.create!(kind: "system", body: "The party chose: #{option}.")
+      campaign.narrate("The party chose: #{option}.")
     end
     broadcast_choice
     streams.each { |stream| broadcast_replace_to(*stream, target: self, partial: "messages/message", locals: { message: self }) }

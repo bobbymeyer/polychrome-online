@@ -37,7 +37,7 @@ class Secret < ApplicationRecord
     raise Refusal, "The party already knows that" if revealed?
 
     transaction do
-      said = campaign.messages.create!(kind: "system", body: "#{by ? "#{by}: the" : 'The'} party learns: #{body.sub(/\.\z/, '')}.")
+      said = campaign.narrate("#{by ? "#{by}: the" : 'The'} party learns: #{body.sub(/\.\z/, '')}.")
       # Revealed when it was said, so the recap finds it in that session.
       update!(revealed_at: said.created_at, revealed_by: by)
     end

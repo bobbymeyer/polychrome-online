@@ -59,7 +59,7 @@ class FieldUse < ApplicationRecord
 
     transaction do
       use = campaign.field_uses.create!(character: character, ability: ability)
-      campaign.messages.create!(kind: "system", body: "#{character.name} wants to #{ability.name}.")
+      campaign.narrate("#{character.name} wants to #{ability.name}.")
       use
     end
   end
@@ -86,12 +86,11 @@ class FieldUse < ApplicationRecord
                                difficulty: difficulty, rng: rolling, bonus: bonus)
       campaign.update!(rng: rolling.state)
       label = "#{ability.name} (#{[ skill&.fetch('name'), difficulty, ("+#{bonus} #{character.job.name}" if bonus.positive?) ].compact.join(', ')})"
-      campaign.messages.create!(kind: "system", cue: "check",
-                                body: "#{character.name}: #{label}. #{roll['chance']}% · rolled #{roll['roll']} · #{roll['success'] ? 'Success!' : 'Failure.'}",
-                                data: roll.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty,
-                                                 "skill" => skill&.fetch("name"), "bonus" => bonus).compact)
+      campaign.narrate("#{character.name}: #{label}. #{roll['chance']}% · rolled #{roll['roll']} · #{roll['success'] ? 'Success!' : 'Failure.'}",
+                       cue: "check", data: roll.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty,
+                                                      "skill" => skill&.fetch("name"), "bonus" => bonus).compact)
       line = roll["success"] ? apply_outcome : nil
-      campaign.messages.create!(kind: "system", body: line) if line
+      campaign.narrate(line) if line
       campaign.tick_clocks!("failed_check") unless roll["success"]
       character.update!(field_used: true)
       update!(status: "done", difficulty: difficulty, result: roll.merge("line" => line).compact)
@@ -105,7 +104,7 @@ class FieldUse < ApplicationRecord
 
     transaction do
       update!(status: "vetoed", result: { "line" => line.to_s.strip.presence }.compact)
-      campaign.messages.create!(kind: "system", body: "Not now, #{character.name}.#{" #{line.strip}" if line.present?}")
+      campaign.narrate("Not now, #{character.name}.#{" #{line.strip}" if line.present?}")
     end
   end
 

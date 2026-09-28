@@ -55,7 +55,7 @@ class Scene < ApplicationRecord
       end
       if ending == "reveal" && map_node && !map_node.visible?
         map_node.update!(visible: true)
-        campaign.messages.create!(kind: "system", body: "#{map_node.name} appears on the map.")
+        campaign.narrate("#{map_node.name} appears on the map.")
       end
       # A place changes mode (Location#switch_mode!), or goes back to how it was.
       if ending == "mode" && (location = map_node&.location)

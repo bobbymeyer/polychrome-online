@@ -72,7 +72,7 @@ class BattleRecord < ApplicationRecord
 
   # A system line at the campaign's table, linking back to this battle.
   def announce!(body)
-    campaign&.messages&.create!(kind: "system", battle: self, body: body)
+    campaign&.narrate(body, battle: self)
   end
 
   def over?
