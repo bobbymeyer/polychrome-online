@@ -10,3 +10,4 @@ pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
 pin_all_from "app/javascript/controllers", under: "controllers"
 pin "animejs" # @4.5.0
 pin_all_from "app/javascript/motion", under: "motion"
+pin_all_from "app/javascript/battle", under: "battle"
