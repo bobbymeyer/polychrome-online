@@ -1,266 +1,27 @@
 <% content_for :title, @character.name %>
 <% content_for :head, music_meta(@character.campaign, @character.campaign&.scene) %>
 <%= render "shared/stage_stream", campaign: @character.campaign %>
-<% stages = @character.stat_stages %>
-<% cj = @character.character_job %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @character.name %></div>
 
 <article class="book-page">
-  <header class="book-page__header">
-    <%= entry_portrait(@character.job) %>
-    <div>
-      <p class="eyebrow">Character<% if (player = @character.user&.name.presence || @character.player_name.presence) %> · played by <%= player %><% end %></p>
-      <h1><%= @character.name %></h1>
-      <% if @character.motive %><p class="motive"><%= @character.motive %></p><% end %>
-      <% from = [ @character.origin_entry&.dig("name"), (@character.home_node && "home in #{@character.home_node.name}") ].compact %>
-      <% if from.any? %><p class="muted"><%= from.join(", ").upcase_first %>.</p><% end %>
-      <% if @character.ties.any? %>
-        <ul class="refs character-ties"><% @character.tie_lines.each do |npc, text| %><li><%= [ npc&.name, text ].compact.join(": ") %></li><% end %></ul>
-      <% end %>
-      <dl class="facts">
-        <dt><%= gloss(:exp, "Level") %></dt>
-        <dd><%= @character.level %> <span class="muted">(<%= @character.exp %> EXP<%= ", #{@character.exp_to_next} to next" if @character.exp_to_next %>)</span></dd>
-        <dt><%= gloss(:job) %></dt>
-        <dd>
-          <%= link_to @character.job.name, world_compendium_job_path(@world, @character.job) %>
-          <%= gloss(:job_level, "Lv") %> <%= cj.level %>
-          <span class="muted">(<%= cj.abp %> <%= gloss(:abp) %><%= cj.mastered? ? ", mastered" : ", #{cj.abp_to_next} to next" %>)</span>
-        </dd>
-        <% if types_matter? %><dt><%= gloss(:type) %></dt><dd><%= type_tag(@character.job.base_type) %></dd><% end %>
-        <dt><%= gloss(:max_hp) %></dt><dd><%= @character.current_hp %> / <%= @character.stats["max_hp"] %><%= " · down" unless @character.conscious? %></dd>
-        <dt><%= gloss(:max_mp) %></dt><dd><%= @character.current_mp %> / <%= @character.stats["max_mp"] %></dd>
-      </dl>
-    </div>
-  </header>
+  <%= render "characters/header", cj: @character.character_job %>
 
-  <section class="window">
-    <h2>Stats</h2>
-    <p class="hint">What their level gives, shaped by their job, then their gear, then the job's innate abilities.</p>
-    <table class="book-table book-table--plain stat-table">
-      <thead>
-        <tr><th>Stat</th><th class="num">Base</th><th class="num">Job</th><th class="num">Gear</th><th class="num">Total</th></tr>
-      </thead>
-      <tbody>
-        <% Stats::NAMES.each do |stat| %>
-          <tr>
-            <td><%= stat_term(stat) %></td>
-            <td class="num"><%= stages[:base][stat] %></td>
-            <td class="num"><%= stages[:job][stat] %></td>
-            <td class="num"><%= stages[:equipment][stat] %></td>
-            <td class="num"><strong><%= stages[:total][stat] %></strong></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </section>
+  <%= render "characters/stats", stages: @character.stat_stages %>
 
-  <% if can_manage?(@character) %>
-    <section class="window" id="items">
-      <h2>Items</h2>
-      <% usable = @campaign.field_items %>
-      <% if @campaign.battle_on? %>
-        <% open_battle = @campaign.battles.where(status: "input").order(:id).last %>
-        <p class="hint">A battle is on (<%= link_to open_battle.name, battle_path(open_battle) %>): use items from its Item menu. The GM can end it from the battle if it's been abandoned.</p>
-      <% elsif usable.empty? %>
-        <p class="empty">Nothing in the bag that works outside battle. Potions and Phoenix Downs do.</p>
-      <% else %>
-        <% party = @campaign.characters.order(:created_at) %>
-        <table class="book-table book-table--plain shop-table">
-          <tbody>
-            <% usable.each do |row| %>
-              <% revive = Battle::State.revives?(row.item.to_engine(1)) %>
-              <tr>
-                <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span><br><span class="hint"><%= row.item.effects.map { |e| describe_effect(e) }.join(" · ") %></span></td>
-                <td class="shop-table__buy">
-                  <%= form_with url: character_item_use_path(@character), class: "inline-form shop-form" do |f| %>
-                    <%= hidden_field_tag :item, row.item.slug, id: nil %>
-                    <% if row.item.target == "self" %>
-                      <span class="muted"><%= @character.name %></span>
-                    <% else %>
-                      <%= select_tag :target_id, options_for_select(party.map { |c| [ "#{c.name} (HP #{c.current_hp}/#{c.stats['max_hp']})", c.id ] },
-                                                                   (revive ? party.find { |c| !c.conscious? } : party.min_by { |c| c.current_hp.fdiv(c.stats["max_hp"]) })&.id),
-                                     id: "use_#{row.item.slug}_target", "aria-label": "Use #{row.item.name} on" %>
-                    <% end %>
-                    <%= f.submit "Use", class: "button play" %>
-                  <% end %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-        <p class="hint"><%= @character.name %> uses it. Items that cure statuses only work in battle, where statuses are.</p>
-      <% end %>
-    </section>
-  <% end %>
+  <%= render "characters/items" if can_manage?(@character) %>
 
-  <section class="window">
-    <h2>Equipment</h2>
-    <% equipped = @character.equipped %>
-    <% bag = @campaign.bag.map(&:item) %>
-    <% unless can_manage?(@character) %>
-      <dl class="facts">
-        <% Character::SLOTS.each do |slot| %><dt><%= term(slot) %></dt><dd><%= equipped[slot]&.item&.name || "—" %></dd><% end %>
-      </dl>
-    <% else %>
-    <%= form_with url: character_equipment_path(@character), method: :patch, scope: :equipment, class: "book-form" do |f| %>
-      <div class="stat-inputs equipment-inputs">
-        <% Character::SLOTS.each do |slot| %>
-          <% current = equipped[slot]&.item %>
-          <% options = ([ current ].compact + bag.select { |item| item.slot == slot && @character.job.equips?(item) }).uniq %>
-          <div class="field">
-            <%= f.label slot, term(slot) %>
-            <%= f.select slot, options.map { |item| [ item.name, item.id ] }, { include_blank: "—", selected: current&.id } %>
-          </div>
-        <% end %>
-      </div>
-      <p class="hint">Choices come from the party bag, limited to what a <%= @character.job.name %> can use.</p>
-      <%= f.submit "Update equipment", class: "button" %>
-    <% end %>
-    <% end %>
-  </section>
+  <%= render "characters/equipment" %>
 
-  <section class="window">
-    <h2>Abilities</h2>
-    <% if (own = @character.job.signature_ability) %>
-      <p class="signature-line"><%= gloss(:signature, "Signature") %>: <%= link_to own.name, world_grimoire_ability_path(@world, own) %>
-        <span class="muted"><%= own.description %></span></p>
-    <% end %>
-    <% if (passives = @character.passives).any? %>
-      <p class="signature-line"><%= gloss(:passive, passives.size > 1 ? "Passives" : "Passive") %>:
-        <%= safe_join(passives.map { |p| passive_term(p) }, ", ") %></p>
-    <% end %>
-    <h3>From <%= @character.job.name %></h3>
-    <% native = @character.native_abilities %>
-    <% if native.empty? %>
-      <p class="empty">Nothing learned in this job yet. Attack is always available.</p>
-    <% else %>
-      <ul class="refs refs--inline">
-        <% native.each do |ability| %>
-          <li><%= link_to ability.name, world_grimoire_ability_path(@world, ability) %></li>
-        <% end %>
-      </ul>
-    <% end %>
+  <%= render "characters/abilities" %>
 
-    <h3>Free slots (<%= @character.job.ability_slots %>)</h3>
-    <% slottable = @character.learned_abilities - native %>
-    <% if @character.job.ability_slots.zero? %>
-      <p class="empty"><%= @character.job.name %> has no free slots.</p>
-    <% elsif slottable.empty? %>
-      <p class="empty">Learn abilities in other jobs to bring them here.</p>
-    <% elsif !can_manage?(@character) %>
-      <ul class="refs refs--inline"><% @character.slotted_abilities.compact.each do |ability| %><li><%= ability.name %></li><% end %></ul>
-    <% else %>
-      <% slotted = @character.slotted_abilities %>
-      <%= form_with url: character_ability_slots_path(@character), method: :patch, scope: :ability_slots, class: "book-form" do |f| %>
-        <div class="field-row">
-          <% @character.job.ability_slots.times do |i| %>
-            <div class="field">
-              <label for="ability_slot_<%= i %>">Slot <%= i + 1 %></label>
-              <%= select_tag "ability_slots[abilities][]", options_for_select(slottable.map { |a| [ a.name, a.id ] }, slotted[i]&.id),
-                             include_blank: "—", id: "ability_slot_#{i}" %>
-            </div>
-          <% end %>
-        </div>
-        <%= f.submit "Set abilities", class: "button" %>
-      <% end %>
-    <% end %>
-  </section>
-
-  <section class="window" id="skills">
-    <h2><%= gloss(:skill, "Skills") %></h2>
-    <% if (field = @character.job.field_ability_entry) %>
-      <p>
-        <%= gloss(:field_ability) %>: <%= link_to field.name, world_grimoire_ability_path(@world, field) %>
-        <span class="muted">(<%= @world.skill_name(field.field_skill) %>; <%= @character.field_used? ? "used, back after a rest" : "ready" %>)</span>
-      </p>
-    <% end %>
-    <p class="hint">The chance of a Normal check with each of <%= @world.name %>'s skills. The GM can call it easier or harder.</p>
-    <table class="book-table book-table--plain">
-      <thead><tr><th>Skill</th><th>Stat</th><th class="num">Job</th><th class="num">Normal check</th></tr></thead>
-      <tbody>
-        <% Array(@world.skills).each do |skill| %>
-          <% bonus = @character.skill_bonus(skill["slug"]) %>
-          <tr class="<%= 'is-current' if bonus.positive? %>">
-            <td><%= tag.span(skill["name"], class: ("gloss" if skill["description"].present?), tabindex: (0 if skill["description"].present?), data: { gloss: skill["description"].presence }) %></td>
-            <td><%= stat_term(skill["stat"]) %></td>
-            <td class="num"><%= bonus.positive? ? "+#{bonus}" : "—" %></td>
-            <td class="num"><%= Stats::Check.chance(stat_value: @character.stats[skill["stat"]], stat: skill["stat"], level: @character.level, difficulty: "normal", bonus: bonus) %>%</td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </section>
+  <%= render "characters/skills" %>
 
   <% masteries = @character.masteries %>
-  <% if masteries.any? %>
-  <section class="window" id="mastery">
-    <h2><%= gloss(:mastery) %></h2>
-    <p class="hint">
-      Each ability grows stronger for <%= Stats::Mastery::SPAN %> job levels after it's learned, up to +<%= Stats::Mastery::MASTERY_BONUS %>%.
-      Used in the job that teaches it, it gets another +<%= Stats::Mastery::ACTIVE_BONUS %>%. A mastered ability used in another job keeps its own job's STR and MAG.
-    </p>
-    <table class="book-table book-table--plain mastery-table">
-      <thead><tr><th>Ability</th><th>Job</th><th>Mastery</th><th class="num">Power now</th></tr></thead>
-      <tbody>
-        <% masteries.sort_by { |ability, m| [ @character.active?(ability) ? 0 : 1, -m[:percent], ability.name ] }.each do |ability, m| %>
-          <% active = @character.active?(ability) %>
-          <tr class="<%= 'is-current' if active %>">
-            <td><%= link_to ability.name, world_grimoire_ability_path(@world, ability) %></td>
-            <td><%= m[:job].name %></td>
-            <td>
-              <span class="bar mastery-bar"><span class="bar__fill bar__fill--<%= m[:percent] == Stats::Mastery::FULL ? 'mastered' : 'ok' %>" style="width: <%= m[:percent] %>%"></span></span>
-              <%= m[:percent] == Stats::Mastery::FULL ? tag.strong("Mastered") : "#{m[:percent]}%" %>
-            </td>
-            <td class="num">
-              <%= Stats::Mastery.power(m[:percent], active: active) %>%
-              <% if m[:percent] == Stats::Mastery::FULL && !active && m[:job] != @character.job %>
-                <br><span class="muted">with <%= m[:job].name %>'s <%= @character.home_stats(m[:job]).select { |stat, value| value > @character.stats[stat] }.keys.map { |stat| stat_label(stat) }.to_sentence.presence || "stats" %></span>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </section>
-  <% end %>
+  <%= render "characters/mastery", masteries: masteries if masteries.any? %>
 
-  <section class="window">
-    <h2>Jobs</h2>
-    <table class="book-table book-table--plain">
-      <thead><tr><th>Job</th><th class="num">Lv</th><th class="num">ABP</th><th>Learned</th></tr></thead>
-      <tbody>
-        <% @character.character_jobs.includes(job: { job_levels: :ability }).sort_by { |j| j.job.name }.each do |job_progress| %>
-          <tr class="<%= 'is-current' if job_progress.job_id == @character.job_id %>">
-            <td><%= link_to job_progress.job.name, world_compendium_job_path(@world, job_progress.job) %><%= " (current)" if job_progress.job_id == @character.job_id %></td>
-            <td class="num"><%= job_progress.level %>/<%= Stats::Growth::MAX_JOB_LEVEL %><%= tag.span(" ★", title: "Mastered", class: "mastered-star") if job_progress.mastered? %></td>
-            <td class="num"><%= job_progress.abp %></td>
-            <td><%= job_progress.learned_abilities.map(&:name).join(", ").presence || "—" %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-    <% if can_manage?(@character) %>
-    <%= form_with url: character_job_path(@character), method: :patch, class: "book-form inline-form" do |f| %>
-      <div class="field">
-        <%= f.label :job_id, "Change job" %>
-        <%= f.select :job_id, (@campaign.available_jobs.to_a | [ @character.job ]).map { |j| [ j.name, j.id ] }, selected: @character.job_id %>
-      </div>
-      <%= f.submit "Change job", class: "button" %>
-    <% end %>
-    <p class="hint">Changing job keeps each job's ABP and every ability's mastery. Gear the new job can't use goes back to the bag. Only the current job earns ABP.</p>
-    <% end %>
-  </section>
+  <%= render "characters/jobs" %>
 
-  <% if can_gm?(@campaign) %>
-  <details class="window">
-    <summary>GM: grant EXP / ABP</summary>
-    <%= form_with url: character_grant_path(@character), scope: :grant, class: "book-form inline-form" do |f| %>
-      <div class="field"><%= f.label :exp, "EXP" %><%= f.number_field :exp, min: 0, value: 0 %></div>
-      <div class="field"><%= f.label :abp, "ABP (#{@character.job.name})" %><%= f.number_field :abp, min: 0, value: 0 %></div>
-      <%= f.submit "Grant", class: "button" %>
-    <% end %>
-  </details>
-  <% end %>
+  <%= render "characters/gm" if can_gm?(@campaign) %>
 </article>
 
 <% if can_manage?(@character) %>

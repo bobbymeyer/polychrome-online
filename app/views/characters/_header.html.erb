@@ -1,0 +1,26 @@
+<header class="book-page__header">
+  <%= entry_portrait(@character.job) %>
+  <div>
+    <p class="eyebrow">Character<% if (player = @character.user&.name.presence || @character.player_name.presence) %> · played by <%= player %><% end %></p>
+    <h1><%= @character.name %></h1>
+    <% if @character.motive %><p class="motive"><%= @character.motive %></p><% end %>
+    <% from = [ @character.origin_entry&.dig("name"), (@character.home_node && "home in #{@character.home_node.name}") ].compact %>
+    <% if from.any? %><p class="muted"><%= from.join(", ").upcase_first %>.</p><% end %>
+    <% if @character.ties.any? %>
+      <ul class="refs character-ties"><% @character.tie_lines.each do |npc, text| %><li><%= [ npc&.name, text ].compact.join(": ") %></li><% end %></ul>
+    <% end %>
+    <dl class="facts">
+      <dt><%= gloss(:exp, "Level") %></dt>
+      <dd><%= @character.level %> <span class="muted">(<%= @character.exp %> EXP<%= ", #{@character.exp_to_next} to next" if @character.exp_to_next %>)</span></dd>
+      <dt><%= gloss(:job) %></dt>
+      <dd>
+        <%= link_to @character.job.name, world_compendium_job_path(@world, @character.job) %>
+        <%= gloss(:job_level, "Lv") %> <%= cj.level %>
+        <span class="muted">(<%= cj.abp %> <%= gloss(:abp) %><%= cj.mastered? ? ", mastered" : ", #{cj.abp_to_next} to next" %>)</span>
+      </dd>
+      <% if types_matter? %><dt><%= gloss(:type) %></dt><dd><%= type_tag(@character.job.base_type) %></dd><% end %>
+      <dt><%= gloss(:max_hp) %></dt><dd><%= @character.current_hp %> / <%= @character.stats["max_hp"] %><%= " · down" unless @character.conscious? %></dd>
+      <dt><%= gloss(:max_mp) %></dt><dd><%= @character.current_mp %> / <%= @character.stats["max_mp"] %></dd>
+    </dl>
+  </div>
+</header>

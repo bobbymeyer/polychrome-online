@@ -1,0 +1,25 @@
+<section class="window">
+  <h2>Equipment</h2>
+  <% equipped = @character.equipped %>
+  <% bag = @campaign.bag.map(&:item) %>
+  <% unless can_manage?(@character) %>
+    <dl class="facts">
+      <% Character::SLOTS.each do |slot| %><dt><%= term(slot) %></dt><dd><%= equipped[slot]&.item&.name || "—" %></dd><% end %>
+    </dl>
+  <% else %>
+  <%= form_with url: character_equipment_path(@character), method: :patch, scope: :equipment, class: "book-form" do |f| %>
+    <div class="stat-inputs equipment-inputs">
+      <% Character::SLOTS.each do |slot| %>
+        <% current = equipped[slot]&.item %>
+        <% options = ([ current ].compact + bag.select { |item| item.slot == slot && @character.job.equips?(item) }).uniq %>
+        <div class="field">
+          <%= f.label slot, term(slot) %>
+          <%= f.select slot, options.map { |item| [ item.name, item.id ] }, { include_blank: "—", selected: current&.id } %>
+        </div>
+      <% end %>
+    </div>
+    <p class="hint">Choices come from the party bag, limited to what a <%= @character.job.name %> can use.</p>
+    <%= f.submit "Update equipment", class: "button" %>
+  <% end %>
+  <% end %>
+</section>
