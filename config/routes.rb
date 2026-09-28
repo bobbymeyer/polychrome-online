@@ -67,6 +67,13 @@ Rails.application.routes.draw do
     resources :flags, only: %i[create update destroy] do
       post :bump, on: :member
     end
+    resources :clocks, only: %i[create update destroy] do
+      post :tick, on: :member
+    end
+    resources :secrets, only: %i[create destroy] do
+      post :reveal, on: :member
+      post :conceal, on: :member
+    end
     # Every GM diff on this campaign's locations, with reverts (§7).
     resource :changes, only: :show
 

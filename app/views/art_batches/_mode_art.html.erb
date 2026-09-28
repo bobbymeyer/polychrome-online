@@ -1,0 +1,58 @@
+<%# Pictures for a location's modes (§8), on its page, for the GM. Each mode is one more layer after the place's
+    Gazetteer entry. location; chosen: the mode key the form starts on. %>
+<% world = location.campaign.world %>
+<% arts = location.mode_arts.includes(image_attachment: :blob).index_by(&:mode_key) %>
+<% batch = ArtBatch.where(entry: location.mode_arts).order(:id).last %>
+<% chosen = batch&.entry&.mode_key || local_assigns[:chosen].presence || location.mode || location.modes.first["key"] %>
+<% mode = location.modes.find { |m| m["key"] == chosen } || location.modes.first %>
+<% sample = arts[mode["key"]] || location.mode_arts.new(mode_key: mode["key"]) %>
+<%= turbo_frame_tag "art_panel", data: { src: world_art_panel_path(world, entry_type: "location_mode", location_id: location.id, mode: chosen) } do %>
+<section class="window art-studio" id="art" aria-label="Pictures for modes">
+  <h2>Pictures for modes</h2>
+  <p class="hint">
+    While a mode lasts, the table sees its picture instead of <%= location.location_template.name %>'s.
+    Each is <%= location.location_template.name %>'s own picture with the mode's words added<%= ", starting from its seed so it stays recognisable" if location.location_template.image_seed %>.
+  </p>
+  <ul class="mode-pictures">
+    <% location.modes.each do |m| %>
+      <li>
+        <% art = arts[m["key"]] %>
+        <% if art&.image&.attached? %>
+          <%= image_tag url_for(art.image), alt: "#{location.name}: #{m['name']}" %>
+        <% else %>
+          <span class="candidate__empty">No picture</span>
+        <% end %>
+        <span><%= m["name"] %></span>
+      </li>
+    <% end %>
+  </ul>
+
+  <h3>The prompt, in layers</h3>
+  <%= render "art_batches/layers", art: sample %>
+
+  <%= form_with url: world_art_batches_path(world), class: "book-form" do |f| %>
+    <%= hidden_field_tag :entry_type, "location_mode" %>
+    <%= hidden_field_tag :location_id, location.id %>
+    <div class="field-row">
+      <div class="field">
+        <%= label_tag :mode, "Mode" %>
+        <%= select_tag :mode, options_for_select(location.modes.map { |m| [ m["name"], m["key"] ] }, mode["key"]) %>
+      </div>
+      <div class="field">
+        <%= label_tag :mode_art, "How it looks" %>
+        <%= text_field_tag :mode_art, mode["art"], placeholder: "on fire, thick smoke, ash falling" %>
+      </div>
+    </div>
+    <p class="hint">Blank uses the mode's name. The words are kept with the mode.</p>
+    <div class="inline-form">
+      <div class="field"><%= label_tag :count, "Candidates" %><%= number_field_tag :count, Comfy.config[:candidates], min: 1, max: 8 %></div>
+      <%= submit_tag "Generate", class: "button", disabled: !Comfy.capabilities.reachable?, title: ("ComfyUI isn't answering" unless Comfy.capabilities.reachable?) %>
+    </div>
+  <% end %>
+  <% unless Comfy.capabilities.reachable? %>
+    <p class="hint">ComfyUI at <code><%= Comfy.client.base %></code> isn't answering, so nothing can be generated. Start it and reload.</p>
+  <% end %>
+
+  <%= render "art_batches/strip", batch: batch if batch %>
+</section>
+<% end %>

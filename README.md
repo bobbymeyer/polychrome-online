@@ -302,7 +302,8 @@ three hours, or ever), a title card opens: the last session in brief
 recap is of the last one that has ended, so it still recaps last week once
 tonight has started. It covers the road the party took (read from the travel
 and dungeon lines), the battles and level-ups, keys and treasure found, the
-flags the party knows that changed, and the last line said to the table.
+flags the party knows that changed, secrets found out and public clocks that
+filled, and the last line said to the table.
 Whispers are never in it. "Previously on …" under the table's title opens it
 again at any time.
 
@@ -454,6 +455,43 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   needs when it starts). Towns and dungeons are rebuilt from their seed and the
   current tables, so editing a table changes places already rolled, except
   what's pinned. To fork a world instead, start a new one from its books.
+
+## Pressure and prep: modes, clocks, secrets
+
+- **Location modes** are another state for a place, prepared ahead and set
+  off at the table: the city burns, the mine floods, the festival starts.
+  - **While it lasts:** services can be shut, the music changes, and
+    arriving can mean trouble. The rest of the world stays as it is.
+  - **A picture of its own.** A mode can have "art words" ("on fire, thick
+    smoke") and a generated picture: the place's Gazetteer image, with those
+    words added as one more layer. It starts from the same seed, so the
+    place stays recognisable. While the mode lasts, the location page shows
+    that picture instead.
+  - Made on the location page ("GM: modes", "Pictures for modes").
+- **Clocks** are things that happen if the party doesn't stop them: "The
+  Brass Syndicate takes the docks", in 2–12 segments.
+  - **Ticking:** the GM ticks them by hand, or they tick on their own on a
+    rest, a journey or a failed check (a GM-called check or a field
+    ability).
+  - **Filling:** the table hears the clock's line, and it can set off one of
+    a location's modes. The city burns because the party took too long.
+    Winding a full clock back doesn't put the fire out; clear the mode on
+    the location.
+  - **Visibility:** public clocks show at the table under "The party knows"
+    as a row of squares, filled black, red when full. Hidden clocks are the
+    GM's alone and are never sent to players; nothing is said when they
+    tick, and only their line when they fill.
+- **Secrets** are things that are true ("the mayor pays the goblins"),
+  written in prep and not tied to a scene, so the party finds them out
+  however it gets there.
+  - **About:** each can be about a place or someone.
+  - **Revealing:** the GM reveals one at the table. It is announced, listed
+    under "The party knows", and in the next recap. "Put back" undoes a
+    slip.
+  - **Field abilities:** a field ability with the `uncover` outcome brings
+    one out on a success, preferring one about where the party stands.
+- **Where:** clocks and secrets are on the campaign page for prep, and in
+  the GM's panels at the table for play. Both update live.
 
 ## Accounts
 

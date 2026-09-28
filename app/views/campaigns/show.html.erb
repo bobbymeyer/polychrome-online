@@ -87,6 +87,19 @@
 <% end %>
 
 <% if table_gm? %>
+  <div class="two-up">
+    <section class="window" id="clocks">
+      <h2>Clocks</h2>
+      <p class="hint">Things that happen if the party doesn't stop them. They tick by hand, or on their own as the party rests, travels or fails.</p>
+      <%= render "clocks/gm", campaign: @campaign %>
+    </section>
+    <section class="window" id="secrets">
+      <h2>Secrets</h2>
+      <p class="hint">Things that are true. Reveal them at the table as the party finds them out, whichever way that happens.</p>
+      <%= render "secrets/gm", campaign: @campaign %>
+    </section>
+  </div>
+
   <section class="window" id="flags">
     <div class="book-header">
       <h2>Flags</h2>

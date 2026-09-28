@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_190000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -230,6 +230,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.index ["character_id"], name: "index_choice_picks_on_character_id"
     t.index ["message_id", "character_id"], name: "index_choice_picks_on_message_id_and_character_id", unique: true
     t.index ["message_id"], name: "index_choice_picks_on_message_id"
+  end
+
+  create_table "clocks", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.string "name", null: false
+    t.integer "segments", default: 6, null: false
+    t.integer "filled", default: 0, null: false
+    t.boolean "public", default: false, null: false
+    t.json "triggers", default: [], null: false
+    t.text "full_line"
+    t.integer "location_id"
+    t.string "mode_key"
+    t.datetime "full_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_clocks_on_campaign_id"
+    t.index ["location_id"], name: "index_clocks_on_location_id"
   end
 
   create_table "encounter_tables", force: :cascade do |t|
@@ -474,6 +491,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.index ["speaker_type", "speaker_id"], name: "index_messages_on_speaker"
   end
 
+  create_table "mode_arts", force: :cascade do |t|
+    t.integer "location_id", null: false
+    t.string "mode_key", null: false
+    t.integer "image_seed"
+    t.text "image_prompt"
+    t.json "image_recipe"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id", "mode_key"], name: "index_mode_arts_on_location_id_and_mode_key", unique: true
+    t.index ["location_id"], name: "index_mode_arts_on_location_id"
+  end
+
   create_table "monsters", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -555,6 +584,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.index ["map_node_id"], name: "index_scenes_on_map_node_id"
   end
 
+  create_table "secrets", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.text "body", null: false
+    t.integer "location_id"
+    t.integer "npc_id"
+    t.datetime "revealed_at"
+    t.string "revealed_by"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_secrets_on_campaign_id"
+    t.index ["location_id"], name: "index_secrets_on_location_id"
+    t.index ["npc_id"], name: "index_secrets_on_npc_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "ip_address"
@@ -616,6 +659,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
   add_foreign_key "characters", "users", on_delete: :nullify
   add_foreign_key "choice_picks", "characters", on_delete: :cascade
   add_foreign_key "choice_picks", "messages", on_delete: :cascade
+  add_foreign_key "clocks", "campaigns"
+  add_foreign_key "clocks", "locations"
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"
@@ -643,12 +688,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
   add_foreign_key "messages", "battles"
   add_foreign_key "messages", "campaigns"
   add_foreign_key "messages", "characters", column: "recipient_id"
+  add_foreign_key "mode_arts", "locations"
   add_foreign_key "monsters", "worlds"
   add_foreign_key "npcs", "campaigns"
   add_foreign_key "npcs", "locations"
   add_foreign_key "npcs", "monsters"
   add_foreign_key "scenes", "campaigns"
   add_foreign_key "scenes", "map_nodes", on_delete: :nullify
+  add_foreign_key "secrets", "campaigns"
+  add_foreign_key "secrets", "locations"
+  add_foreign_key "secrets", "npcs"
   add_foreign_key "sessions", "users"
   add_foreign_key "worlds", "users", column: "owner_id", on_delete: :nullify
 end

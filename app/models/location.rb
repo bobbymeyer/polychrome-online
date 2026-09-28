@@ -11,6 +11,7 @@
 class Location < ApplicationRecord
   belongs_to :campaign
   belongs_to :location_template
+  has_many :mode_arts, dependent: :destroy
   has_one :map_node, dependent: :nullify
   has_many :npcs, dependent: :nullify
 
@@ -89,12 +90,32 @@ class Location < ApplicationRecord
 
     entry = { "key" => key, "name" => name, "line" => attrs["line"].to_s.strip.presence, "description" => attrs["description"].to_s.strip.presence,
              "closed" => Array(attrs["closed"]).compact_blank, "music" => attrs["music"].presence,
-             "encounters" => attrs["encounters"].presence }.compact
+             "encounters" => attrs["encounters"].presence, "art" => attrs["art"].to_s.strip.presence }.compact
     update!(modes: modes + [ entry ])
   end
 
   def remove_mode!(key)
-    update!(modes: modes.reject { |t| t["key"] == key }, mode: (mode unless mode == key))
+    transaction do
+      mode_arts.where(mode_key: key).destroy_all
+      update!(modes: modes.reject { |t| t["key"] == key }, mode: (mode unless mode == key))
+    end
+  end
+
+  # How a mode changes the place's picture (§8): words after the rest of
+  # the prompt ("on fire, thick smoke, ash falling").
+  def set_mode_art!(key, words)
+    raise ArgumentError, "#{name} has no mode called #{key}" unless modes.any? { |t| t["key"] == key }
+
+    update!(modes: modes.map { |t| t["key"] == key ? t.merge("art" => words.to_s.strip.presence).compact : t })
+  end
+
+  # The place's picture as it is now: the mode's own, if it has one, else
+  # the Gazetteer entry's. nil when neither has been made.
+  def picture
+    in_mode = current_mode && mode_arts.find_by(mode_key: mode)
+    return in_mode.image if in_mode&.image&.attached?
+
+    location_template.image if location_template.image.attached?
   end
 
   # Sets the mode off, and tells the table.

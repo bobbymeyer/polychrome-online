@@ -22,7 +22,8 @@ class FieldUse < ApplicationRecord
     "find" => "An item worth up to its power in gil, into the bag",
     "restore" => "Everyone standing gets its power% of HP and MP back",
     "learn" => "The waiting encounter's weaknesses are known before the fight",
-    "safe_road" => "The next dangerous path rolls no encounter"
+    "safe_road" => "The next dangerous path rolls no encounter",
+    "uncover" => "One of the GM's secrets comes out, one about where the party is if there is one"
   }.freeze
   # What success does, with the ability's own numbers.
   def self.describe(ability)
@@ -91,6 +92,7 @@ class FieldUse < ApplicationRecord
                                                  "skill" => skill&.fetch("name"), "bonus" => bonus).compact)
       line = roll["success"] ? apply_outcome : nil
       campaign.messages.create!(kind: "system", body: line) if line
+      campaign.tick_clocks!("failed_check") unless roll["success"]
       character.update!(field_used: true)
       update!(status: "done", difficulty: difficulty, result: roll.merge("line" => line).compact)
     end
@@ -129,6 +131,10 @@ class FieldUse < ApplicationRecord
     when "safe_road"
       campaign.update!(safe_road: true)
       "#{name} finds a way through: the next dangerous path is safe."
+    when "uncover"
+      secret = Secret.next_for(campaign) or return "#{name} digs, but there's nothing more to find out."
+      secret.reveal!(by: "#{name}'s #{ability.name}")
+      nil
     else "#{name} manages it. What happens is the GM's to tell."
     end
   end

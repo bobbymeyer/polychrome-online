@@ -43,6 +43,7 @@
     </div>
     <div class="field"><%= f.label :line, "What the table hears" %><%= f.text_field :line, placeholder: "Smoke over the rooftops: the city is burning." %></div>
     <div class="field"><%= f.label :description, "What players read here meanwhile" %><%= f.text_field :description, placeholder: "Half the market is ash. The guard is everywhere." %></div>
+    <div class="field"><%= f.label :art, "How it looks (for its picture)" %><%= f.text_field :art, placeholder: "on fire, thick smoke, ash falling" %></div>
     <% services = view.fetch("services", []) %>
     <% if services.any? %>
       <fieldset class="field">

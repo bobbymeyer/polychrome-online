@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # Finds what the asset pipeline (§8) is working on, from request params,
-# within the world in the URL: a book entry (entry_type + entry_slug), or a
-# speaker (owner_type + owner_id) and one of their portraits.
+# within the world in the URL: a book entry (entry_type + entry_slug), a
+# speaker (owner_type + owner_id) and one of their portraits, or a location
+# (location_id + mode) and one of its modes' pictures.
 module ArtTargets
   extend ActiveSupport::Concern
 
@@ -28,5 +29,18 @@ module ArtTargets
 
   def speaker_request?
     params[:entry_type] == "portrait"
+  end
+
+  def mode_request?
+    params[:entry_type] == "location_mode"
+  end
+
+  # The picture for one of a location's modes, made when first asked for.
+  def art_mode
+    location = Location.joins(:campaign).where(campaigns: { world_id: @world.id }).find(params[:location_id])
+    key = params[:mode].to_s
+    raise ActiveRecord::RecordNotFound unless location.modes.any? { |m| m["key"] == key }
+
+    location.mode_arts.find_or_create_by!(mode_key: key)
   end
 end

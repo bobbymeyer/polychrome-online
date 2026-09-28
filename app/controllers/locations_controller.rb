@@ -83,7 +83,7 @@ class LocationsController < ApplicationController
 
   # Modes: the place's other states (Location#switch_mode!).
   def add_mode
-    fields = params.expect(mode: [ :name, :line, :description, :music, :encounters, { closed: [] } ])
+    fields = params.expect(mode: [ :name, :line, :description, :music, :encounters, :art, { closed: [] } ])
     @location.add_mode!(fields.to_h)
     back "#{fields[:name]} is ready to set off."
   rescue ActiveRecord::RecordInvalid => e

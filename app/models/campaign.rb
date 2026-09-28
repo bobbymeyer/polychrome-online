@@ -17,6 +17,8 @@ class Campaign < ApplicationRecord
   has_many :flags, dependent: :delete_all
   has_many :scenes, dependent: :destroy
   has_many :field_uses, dependent: :destroy
+  has_many :clocks, dependent: :delete_all
+  has_many :secrets, dependent: :delete_all
   belongs_to :current_node, class_name: "MapNode", optional: true
 
   # Travel encounters use their own seeded RNG, stored here like a battle's.
@@ -142,7 +144,10 @@ class Campaign < ApplicationRecord
     cost = tired.sum { |c| service_price("inn", c) }
     raise ArgumentError, "The party has #{gil} gil; rooms for everyone cost #{cost}" if cost > gil
 
-    transaction { tired.each { |c| use_service!("inn", c, at: at, by: by) } }
+    transaction do
+      tired.each { |c| use_service!("inn", c, at: at, by: by) }
+      tick_clocks!("rest")
+    end
   end
 
   def rested?(character)
@@ -248,6 +253,7 @@ class Campaign < ApplicationRecord
       messages.create!(body: edge.travel_event) if edge.travel_event
       messages.create!(kind: "system", body: "The way is safe: nothing troubles the party on the road.") if safe
       messages.create!(kind: "system", body: "Encounter! #{describe_encounter(rolled)}.") if rolled
+      tick_clocks!("travel")
     end
     broadcast_map
     rolled
@@ -371,8 +377,16 @@ class Campaign < ApplicationRecord
         [ body, result.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty, "skill" => skill&.fetch("name"), "bonus" => bonus).compact ]
       end
       update!(rng: rolling.state)
-      lines.map { |body, data| messages.create!(kind: "system", cue: "check", body: body, data: data) }
+      created = lines.map { |body, data| messages.create!(kind: "system", cue: "check", body: body, data: data) }
+      tick_clocks!("failed_check") if lines.any? { |_, data| !data["success"] }
+      created
     end
+  end
+
+  # Every running clock that ticks on this (Clock::TRIGGERS) goes on a segment.
+  def tick_clocks!(trigger)
+    clocks.running.order(:id).select { |clock| clock.ticks_on?(trigger) }
+          .each { |clock| clock.tick!(1, reason: Clock::REASONS[trigger]) }
   end
 
   # The code behind the shared screen's QR code (local co-op): made when
@@ -443,6 +457,7 @@ class Campaign < ApplicationRecord
     transaction do
       characters.update_all(hp: nil, mp: nil, field_used: false)
       messages.create!(kind: "system", body: "The party rests. Everyone is back to full HP and MP.")
+      tick_clocks!("rest")
     end
   end
 

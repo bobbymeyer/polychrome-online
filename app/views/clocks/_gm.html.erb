@@ -1,0 +1,58 @@
+<%# The GM's clocks (Clock): tick them, see what fills them, make new ones. Replaced live as they change. %>
+<% clocks = campaign.clocks.order(:full_at, :id) %>
+<div id="gm_clocks" class="gm-clocks">
+  <% if clocks.any? %>
+    <ul class="clock-rows">
+      <% clocks.each do |clock| %>
+        <li class="clock-row<%= " is-full" if clock.full? %>">
+          <div>
+            <strong><%= clock.name %></strong>
+            <span class="label"><%= clock.public? ? "Everyone sees it" : "GM only" %></span>
+            <p class="muted">
+              <%= [ ("Ticks on #{clock.triggers.map { |t| Clock::TRIGGERS[t] }.to_sentence}" if clock.triggers.any?),
+                    ("then #{clock.location.name}: #{clock.mode_name}" if clock.mode_name),
+                    ("“#{clock.full_line}”" if clock.full_line) ].compact.join(" · ").presence || "Ticked by hand" %>
+            </p>
+          </div>
+          <%= render "clocks/dial", clock: clock %>
+          <div class="flag-tools">
+            <%= button_to "−1", tick_campaign_clock_path(campaign, clock), params: { by: -1 }, class: "pin", "aria-label": "Wind back #{clock.name}" %>
+            <%= button_to "+1", tick_campaign_clock_path(campaign, clock), params: { by: 1 }, class: "pin", "aria-label": "Tick #{clock.name}", disabled: clock.full? %>
+            <%= button_to "Remove", campaign_clock_path(campaign, clock), method: :delete, class: "link-button",
+                          form: { data: { turbo_confirm: "Take away the clock “#{clock.name}”?" } } %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="empty">No clocks. A clock is something that happens if the party doesn't stop it.</p>
+  <% end %>
+
+  <details>
+    <summary>New clock</summary>
+    <%= form_with model: Clock.new, url: campaign_clocks_path(campaign), class: "book-form" do |f| %>
+      <div class="field-row">
+        <div class="field"><%= f.label :name, "What happens", for: "clock_name_#{campaign.id}" %><%= f.text_field :name, id: "clock_name_#{campaign.id}", placeholder: "The Brass Syndicate takes the docks", required: true %></div>
+        <div class="field"><%= f.label :segments, for: "clock_segments_#{campaign.id}" %><%= f.number_field :segments, value: 6, min: 2, max: 12, id: "clock_segments_#{campaign.id}" %></div>
+      </div>
+      <fieldset class="field">
+        <legend>Ticks by itself on</legend>
+        <% Clock::TRIGGERS.each do |key, label| %>
+          <label class="inline"><%= check_box_tag "clock[triggers][]", key, false, id: "clock_trigger_#{key}_#{campaign.id}" %> <%= label.capitalize %></label>
+        <% end %>
+      </fieldset>
+      <div class="field"><%= f.label :full_line, "When it fills, the table hears", for: "clock_full_line_#{campaign.id}" %><%= f.text_field :full_line, id: "clock_full_line_#{campaign.id}", placeholder: "Smoke over the harbour: the Syndicate holds the docks." %></div>
+      <% modes = campaign.map_nodes.includes(:location).order(:name).select { |n| n.location&.modes.present? }.map do |n|
+           [ n.name, n.location.modes.map { |m| [ m["name"], "#{n.location.id}|#{m['key']}" ] } ]
+         end %>
+      <% if modes.any? %>
+        <div class="field">
+          <%= label_tag "clock_when_full_#{campaign.id}", "And a place changes" %>
+          <%= select_tag "clock[when_full]", grouped_options_for_select(modes), include_blank: "Nothing changes", id: "clock_when_full_#{campaign.id}" %>
+        </div>
+      <% end %>
+      <div class="field field--check"><%= f.check_box :public, id: "clock_public_#{campaign.id}" %><%= f.label :public, "Players see it", for: "clock_public_#{campaign.id}" %></div>
+      <%= f.submit "Set the clock", class: "button" %>
+    <% end %>
+  </details>
+</div>

@@ -38,7 +38,11 @@ module Authorization
   # Generating art costs GPU time: admins for book entries; a campaign's GM
   # (or an admin) for its speakers' portraits.
   def can_generate?(entry)
-    entry.is_a?(Portrait) ? can_gm?(entry.owner.campaign) : admin?
+    case entry
+    when Portrait then can_gm?(entry.owner.campaign)
+    when ModeArt then can_gm?(entry.location.campaign)
+    else admin?
+    end
   end
 
   def require_admin

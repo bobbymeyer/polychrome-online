@@ -55,15 +55,7 @@
       <%= render "tables/coop_join", campaign: @campaign %>
       <%= render "tables/party", campaign: @campaign %>
     <% end %>
-    <% known = @campaign.flags.shown_to_players.order(:key) %>
-    <% if known.any? %>
-      <section class="window party-knows" aria-label="What the party knows">
-        <h2>The party knows</h2>
-        <dl class="facts">
-          <% known.each do |flag| %><dt><%= flag.label %></dt><dd><%= flag.value.presence || "yes" %></dd><% end %>
-        </dl>
-      </section>
-    <% end %>
+    <%= render "tables/party_knows", campaign: @campaign %>
     </div>
   </div>
 
@@ -94,6 +86,14 @@
     <% if @seat == "gm" %>
       <%= render "field_uses/requests", campaign: @campaign %>
       <%= render "tables/coop_setup", campaign: @campaign unless view %>
+      <details class="window table-scenes" <%= "open" if @campaign.clocks.running.exists? %>>
+        <summary>Clocks</summary>
+        <%= render "clocks/gm", campaign: @campaign %>
+      </details>
+      <details class="window table-scenes">
+        <summary>Secrets</summary>
+        <%= render "secrets/gm", campaign: @campaign %>
+      </details>
       <% locked = @campaign.locked_jobs.to_a %>
       <% if locked.any? %>
         <details class="window table-scenes">
