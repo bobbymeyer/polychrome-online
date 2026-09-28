@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_100000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -506,7 +506,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090000) do
     t.datetime "updated_at", null: false
     t.integer "current_mode_id"
     t.integer "prices", default: 0, null: false
-    t.integer "reputation", default: 0, null: false
     t.index ["campaign_id"], name: "index_locations_on_campaign_id"
     t.index ["current_mode_id"], name: "index_locations_on_current_mode_id"
     t.index ["location_template_id"], name: "index_locations_on_location_template_id"
@@ -637,11 +636,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090000) do
     t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
   end
 
+  create_table "rumour_places", force: :cascade do |t|
+    t.integer "rumour_id", null: false
+    t.integer "map_node_id", null: false
+    t.integer "day"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["map_node_id"], name: "index_rumour_places_on_map_node_id"
+    t.index ["rumour_id", "map_node_id"], name: "index_rumour_places_on_rumour_id_and_map_node_id", unique: true
+    t.index ["rumour_id"], name: "index_rumour_places_on_rumour_id"
+  end
+
   create_table "rumours", force: :cascade do |t|
     t.integer "campaign_id", null: false
     t.text "body", null: false
     t.integer "origin_id"
-    t.json "reached", default: [], null: false
     t.integer "age", default: 0, null: false
     t.boolean "heard", default: false, null: false
     t.boolean "faded", default: false, null: false
@@ -651,8 +660,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090000) do
     t.integer "deed_id"
     t.integer "secret_id"
     t.integer "heard_day"
+    t.integer "heard_at_id"
     t.index ["campaign_id"], name: "index_rumours_on_campaign_id"
     t.index ["deed_id"], name: "index_rumours_on_deed_id"
+    t.index ["heard_at_id"], name: "index_rumours_on_heard_at_id"
     t.index ["origin_id"], name: "index_rumours_on_origin_id"
     t.index ["secret_id"], name: "index_rumours_on_secret_id"
   end
@@ -886,8 +897,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_090000) do
   add_foreign_key "npcs", "locations"
   add_foreign_key "npcs", "monsters"
   add_foreign_key "npcs", "world_figures"
+  add_foreign_key "rumour_places", "map_nodes"
+  add_foreign_key "rumour_places", "rumours"
   add_foreign_key "rumours", "campaigns"
   add_foreign_key "rumours", "deeds", on_delete: :nullify
+  add_foreign_key "rumours", "map_nodes", column: "heard_at_id"
   add_foreign_key "rumours", "map_nodes", column: "origin_id", on_delete: :nullify
   add_foreign_key "rumours", "secrets", on_delete: :nullify
   add_foreign_key "scenes", "campaigns"

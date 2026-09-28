@@ -17,10 +17,9 @@ module Campaign::Overnight
   # party was there and saw it happen, so there's nothing to hear. sway: a
   # deed's, moving each town's view of the party as the news gets there.
   def start_rumour!(body, at:, also: [], seen: false, sway: 0, deed: nil, secret: nil)
-    places = ([ at ] + also).compact
-    rumour = rumours.create!(body: body, origin: at, reached: places.map(&:id).uniq, heard: seen, heard_day: (day if seen),
+    rumour = rumours.create!(body: body, origin: at, heard: seen, heard_day: (day if seen), heard_at: (at if seen),
                              sway: sway, deed: deed, secret: secret)
-    places.each { |node| node.location&.sway!(sway) }
+    rumour.reach!(([ at ] + also).compact, day: day)
     rumour
   end
 
@@ -30,8 +29,8 @@ module Campaign::Overnight
     return [] unless node&.location
 
     # Not their own deed where they did it: they were there.
-    rumours.travelling.unheard.order(:id).select { |r| r.reached?(node) && !(r.deed_id && r.origin_id == node.id) }.each do |rumour|
-      rumour.update!(heard: true, heard_day: day)
+    rumours.travelling.unheard.at(node).where.not(id: rumours.about_deeds.where(origin: node).select(:id)).order(:id).each do |rumour|
+      rumour.update!(heard: true, heard_day: day, heard_at: node)
       narrate(rumour.secret_id ? "In #{node.name}, someone whispers: “#{rumour.body}”" : "In #{node.name}, people are saying: “#{rumour.body}”")
     end
   end
@@ -56,9 +55,7 @@ module Campaign::Overnight
           clock.tick!(1, reason: Clock::REASONS["now_and_then"])
           notes << "#{clock.name} moved on (#{clock.filled} of #{clock.segments})."
         when "spread"
-          rumour = rumours.find(event["rumour"])
-          rumour.update!(reached: rumour.reached | event["to"])
-          event["to"].each { |id| by_id[id]&.location&.sway!(rumour.sway) }
+          rumours.find(event["rumour"]).reach!(event["to"], day: day)
         when "fade"
           rumours.find(event["rumour"]).update!(faded: true)
         when "moved"
@@ -94,7 +91,7 @@ module Campaign::Overnight
       "places" => nodes.map { |n| { "id" => n.id, "name" => n.name, "town" => n.location&.town? || false, "settled" => !n.location.nil? } },
       "roads" => map_edges.map { |e| { "from" => e.from_node_id, "to" => e.to_node_id, "state" => e.state } },
       "clocks" => clocks.running.order(:id).select { |c| c.ticks_on?("now_and_then") }.map(&:id),
-      "rumours" => rumours.travelling.order(:id).map { |r| { "id" => r.id, "reached" => r.reached, "age" => r.age } },
+      "rumours" => rumours.travelling.includes(:rumour_places).order(:id).map { |r| { "id" => r.id, "reached" => r.reached, "age" => r.age } },
       "antagonists" => npcs.at_large.where("escapes > 0").includes(location: :map_node).order(:id)
                            .map { |n| { "id" => n.id, "name" => n.name, "at" => n.location&.map_node&.id } },
       "prices" => nodes.select { |n| n.location&.town? }.to_h { |n| [ n.id, n.location.prices ] },

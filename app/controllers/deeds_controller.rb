@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # The GM's record of what the party did (Campaign::Deeds): written at the
-# table, or struck when it was a mistake, which takes back what the towns
-# that heard it thought of the party.
+# table, or struck when it was a mistake. Its story goes with it, and so
+# does what the towns it reached thought of the party.
 class DeedsController < ApplicationController
   include CampaignScoped
   include TableSeat
@@ -20,14 +20,7 @@ class DeedsController < ApplicationController
   end
 
   def destroy
-    deed = @campaign.deeds.find(params[:id])
-    @campaign.transaction do
-      deed.rumours.each do |rumour|
-        @campaign.map_nodes.where(id: rumour.reached).includes(:location).each { |node| node.location&.sway!(-rumour.sway) }
-        rumour.update!(faded: true)
-      end
-      deed.destroy!
-    end
+    @campaign.deeds.find(params[:id]).destroy!
     back notice: "Struck: it never happened."
   end
 

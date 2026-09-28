@@ -3,14 +3,16 @@
 # Something the party did that people will talk about: beat an antagonist
 # for good, cleared a dungeon, or whatever the GM says counts. Each starts a
 # rumour where it happened (Campaign::Deeds), and a town's view of the party
-# moves by its sway as the news gets there: heroic deeds up, dark ones down.
+# is the sway of the deeds whose news has got there: heroic up, dark down.
 class Deed < ApplicationRecord
   KINDS = %w[gm antagonist cleared].freeze
   SWAYS = -2..2
 
   belongs_to :campaign
   belongs_to :map_node, optional: true
-  has_many :rumours, dependent: :nullify
+  # Striking a deed takes its story with it, and so what the towns it
+  # reached thought of the party (Location::Town#reputation).
+  has_many :rumours, dependent: :destroy
 
   normalizes :body, with: ->(body) { body.to_s.strip }
 

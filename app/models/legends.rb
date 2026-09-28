@@ -34,7 +34,7 @@ class Legends
     names = campaign.map_nodes.pluck(:id, :name).to_h
     deeds = campaign.deeds.in_order.map { |d| Entry.new(day: d.day, kind: "deed", text: d.body, where: names[d.map_node_id]) }
     heard = campaign.rumours.where(heard: true).where.not(heard_day: nil).where(deed_id: nil).order(:heard_day, :id)
-                    .map { |r| Entry.new(day: r.heard_day, kind: "rumour", text: r.body, where: nil) }
+                    .map { |r| Entry.new(day: r.heard_day, kind: "rumour", text: r.body, where: names[r.heard_at_id]) }
     (deeds + heard).sort_by(&:day).group_by(&:day)
   end
 

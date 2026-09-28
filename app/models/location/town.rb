@@ -36,8 +36,17 @@ module Location::Town
     end
   end
 
-  # How the town sees the party, from what it has heard of their deeds
-  # (Campaign::Deeds), -5 to 5.
+  # How the town sees the party, -5 to 5: the sway of every deed whose
+  # story has got here (Campaign::Deeds), struck deeds not included.
+  def reputation
+    @reputation ||= map_node ? campaign.rumours.about_deeds.at(map_node).sum(:sway).clamp(-5, 5) : 0
+  end
+
+  def reload(*)
+    @reputation = nil
+    super
+  end
+
   STANDINGS = { -5..-3 => "Unwelcome", -2..-1 => "Wary", 0..0 => "Strangers", 1..2 => "Welcome", 3..5 => "Heroes" }.freeze
   REPUTATION_PRICE = 5 # percent off for each point in the party's favour
 
@@ -45,10 +54,6 @@ module Location::Town
 
   # Nobody here will trade with them, or give them a bed.
   def shuns_party? = reputation <= -3
-
-  def sway!(by)
-    update!(reputation: (reputation + by).clamp(-5, 5)) unless by.zero?
-  end
 
   # What the shop asks today: dearer after a caravan is lost on the road,
   # easing back day by day (Campaign::Overnight), and cheaper for friends.

@@ -13,6 +13,9 @@ class MapNode < ApplicationRecord
   has_many :home_characters, class_name: "Character", foreign_key: :home_node_id, dependent: :nullify, inverse_of: :home_node
   has_many :outgoing_edges, class_name: "MapEdge", foreign_key: :from_node_id, dependent: :destroy, inverse_of: :from_node
   has_many :incoming_edges, class_name: "MapEdge", foreign_key: :to_node_id, dependent: :destroy, inverse_of: :to_node
+  # What's being said here, and the rumours the party heard here.
+  has_many :rumour_places, dependent: :delete_all
+  has_many :heard_rumours, class_name: "Rumour", foreign_key: :heard_at_id, dependent: :nullify, inverse_of: :heard_at
 
   validates :name, presence: true
   validates :kind, inclusion: { in: KINDS }

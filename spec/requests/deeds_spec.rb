@@ -31,12 +31,20 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     expect(campaign.messages.where("body LIKE ?", "In Varn, people are saying%")).to be_empty # they were there
     campaign.travel!(road)
     expect(campaign.messages.where(body: "In Tule, people are saying: “Rook pulled the miller's child from the weir.”")).to exist
+    expect(campaign.rumours.sole).to have_attributes(heard_at: tule, heard_day: 2)
+    expect(campaign.rumours.sole.rumour_places.pluck(:map_node_id, :day)).to eq([ [ varn.id, 1 ], [ tule.id, 2 ] ])
+    expect(campaign.rumours.at(tule)).to eq([ campaign.rumours.sole ])
     expect(tule_town.price_of(potion)).to eq((potion.price * 0.9).round)
 
     get location_path(tule_town)
     expect(response.body).to include("Tule sees the party as <strong>welcome</strong>")
     get campaign_path(campaign)
     expect(response.body).to include("Deeds", "Rook pulled the miller&#39;s child from the weir.", "Tule: Welcome (+2)")
+
+    campaign.start_rumour!("Wolves at the ford.", at: varn)
+    varn.destroy!
+    expect(RumourPlace.where(map_node_id: varn.id)).to be_empty
+    expect(tule_town.reload.reputation).to eq(2) # the story still got to Tule
   end
 
   it "has a town that thinks badly enough of the party refuse them, until the GM strikes the deed" do
@@ -47,8 +55,10 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     campaign.update!(current_node: tule)
     expect { campaign.buy!(potion, 1, at: tule_town, by: "Rook") }.to raise_error(Refusal, "Nobody in Tule will deal with the party.")
 
-    delete campaign_deed_path(campaign, campaign.deeds.first)
-    expect(tule_town.reload.reputation).to eq(-2)
+    struck = campaign.deeds.first
+    delete campaign_deed_path(campaign, struck)
+    expect(tule_town.reload.reputation).to eq(-2) # the sum of what's left, not a stored number undone
+    expect(campaign.rumours.where(deed_id: struck.id)).to be_empty
     expect { campaign.buy!(potion, 1, at: tule_town, by: "Rook") }.not_to raise_error
   end
 
@@ -83,7 +93,9 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     fresh = world.campaigns.create!(name: "Legends", gm: @admin)
     Atlas.new(fresh).bring_in_all!
     fresh.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"))
-    fresh.record_deed!("Rook climbed the old tower.", at: fresh.map_nodes.find_by!(name: "Varnhold"), sway: 1)
+    varnhold = fresh.map_nodes.find_by!(name: "Varnhold")
+    fresh.record_deed!("Rook climbed the old tower.", at: varnhold, sway: 1)
+    fresh.start_rumour!("The abbey bells rang at midnight.", at: varnhold).update!(heard: true, heard_day: 1, heard_at: varnhold)
 
     post campaign_table_seat_path(fresh), params: { seat: "gm" }
     get campaign_legends_path(fresh)
@@ -94,5 +106,6 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     get campaign_legends_path(fresh)
     expect(response.body).to include("Rook climbed the old tower.", about_known["text"].split(".").first)
     expect(response.body).not_to include(about_unknown["text"].split(".").first, "GM:")
+    expect(response.body).to include("Heard in Varnhold:", "The abbey bells rang at midnight.")
   end
 end

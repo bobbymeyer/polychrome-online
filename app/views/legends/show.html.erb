@@ -27,7 +27,7 @@
             <span class="history-list__when"><%= @campaign.world.date(day) if i.zero? %></span>
             <span>
               <% if entry.kind == "deed" %><strong><%= entry.text %></strong><%= tag.span(" · #{entry.where}", class: "muted") if entry.where %>
-              <% else %><span class="muted">Heard:</span> “<%= entry.text %>”<% end %>
+              <% else %><span class="muted">Heard<%= " in #{entry.where}" if entry.where %>:</span> “<%= entry.text %>”<% end %>
             </span>
           </li>
         <% end %>
