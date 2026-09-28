@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Field abilities", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
   let(:job) { ->(slug) { world.jobs.find_by!(slug: slug) } }
   let(:tule) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true) }

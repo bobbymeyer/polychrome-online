@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 require "turbo/broadcastable/test_helper"
 
 RSpec.describe "The asset pipeline (§8)", type: :request do
   include ActiveJob::TestHelper
   include Turbo::Broadcastable::TestHelper
 
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:goblin) { world.monsters.find_by!(slug: "goblin") }
   let(:comfy) { FakeComfy.new }
 
@@ -171,7 +170,7 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
 end
 
 RSpec.describe "Generated portraits (§8)", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let(:cid) { campaign.npcs.create!(name: "Cid", title: "Engineer", description: "An old airship engineer") }
   let(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight")) }

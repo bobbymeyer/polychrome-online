@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 require "turbo/broadcastable/test_helper"
 
 RSpec.describe "Clocks and secrets", type: :request do
   include Turbo::Broadcastable::TestHelper
 
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }

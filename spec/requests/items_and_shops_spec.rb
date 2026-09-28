@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Items and shops", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin, gil: 200) }
   let(:potion) { world.items.find_by!(slug: "potion") }
   let(:antidote) { world.items.find_by!(slug: "antidote") }

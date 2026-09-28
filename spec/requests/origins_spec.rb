@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Where characters come from", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Rust", gm: @admin) }
   let!(:varn) { campaign.map_nodes.create!(name: "Varn", kind: "town", x: 1, y: 1, visible: true) }
   let!(:mara) { campaign.npcs.create!(name: "Mara Vell") }

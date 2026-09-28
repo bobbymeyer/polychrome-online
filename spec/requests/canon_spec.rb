@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "A setting's canon: atlas, cast and codex", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let!(:varn) { world.world_places.create!(name: "Varn", kind: "town", x: 200, y: 200, known: true, location_template: village, description: "Rain, rust and ropes.", notes: "The Syndicate owns the docks.") }
   let!(:lighthouse) { world.world_places.create!(name: "The Old Light", kind: "landmark", x: 500, y: 150, description: "It still turns, with no keeper.") }

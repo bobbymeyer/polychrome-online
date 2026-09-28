@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Campaigns and characters", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let(:knight) { world.jobs.find_by!(slug: "knight") }
   let(:bartz) { campaign.characters.create!(name: "Bartz", player_name: "Sam", job: knight, starting_level: 5, starting_job_level: 1, starting_gear: false) }

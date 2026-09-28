@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 require "turbo/broadcastable/test_helper"
 
 # What a player runs into, from signing in to the end of a battle.
 RSpec.describe "The player's way through", type: :request do
   include Turbo::Broadcastable::TestHelper
 
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
   let(:knight) { world.jobs.find_by!(slug: "knight") }
   let(:white_mage) { world.jobs.find_by!(slug: "white_mage") }

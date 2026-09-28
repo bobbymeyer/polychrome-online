@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Battle screen", type: :request do
   let(:battle) { start_battle }
@@ -111,7 +110,7 @@ RSpec.describe "Battle screen", type: :request do
   end
 
   describe "setting up" do
-    let!(:world) { Seeds::BaseWorld.run }
+    let!(:world) { base_world }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
     let!(:bartz_character) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5) }
     let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5) }

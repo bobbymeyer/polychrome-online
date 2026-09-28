@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe Location do
-  let(:world) { Seeds::BaseWorld.run }
+  let(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:cave) { world.location_templates.find_by!(slug: "goblin_cave") }

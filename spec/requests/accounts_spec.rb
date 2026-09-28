@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Accounts", type: :request do
   describe "signing up and in", signed_out: true do
@@ -51,7 +50,7 @@ RSpec.describe "Accounts", type: :request do
   end
 
   describe "what a player can and can't do" do
-    let!(:world) { Seeds::BaseWorld.run }
+    let!(:world) { base_world }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
     let!(:lenna) { make_user("Lenna") }
     let(:goblin) { world.monsters.find_by!(slug: "goblin") }
@@ -162,7 +161,7 @@ RSpec.describe "Accounts", type: :request do
   end
 
   describe "a campaign's GM" do
-    let!(:world) { Seeds::BaseWorld.run }
+    let!(:world) { base_world }
     let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
     let!(:krile) { make_user("Krile") }
 

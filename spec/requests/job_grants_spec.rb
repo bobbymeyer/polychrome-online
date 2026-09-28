@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Jobs as story rewards", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
 
   def start(open)
     post world_campaigns_path(world), params: { campaign: { name: "Shards", open_jobs: open } }

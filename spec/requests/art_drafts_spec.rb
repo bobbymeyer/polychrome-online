@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Drafts first, then made properly (§8)", type: :request do
   include ActiveJob::TestHelper
 
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:goblin) { world.monsters.find_by!(slug: "goblin") }
   let(:comfy) { FakeComfy.new(capabilities: FakeComfy.capabilities(extra: FakeComfy::REMOVAL_NODES.slice("InspyrenetRembg"))) }
 
