@@ -17,7 +17,8 @@ class Message < ApplicationRecord
   MAX_OPTIONS = 6
   # The jingle a line plays as it arrives (sound.js).
   CUES = %w[key door treasure check jobs].freeze
-  SCOPES = %w[table whisper].freeze
+  # table: everyone; whisper: a player and the GM; gm: a note for the GM alone.
+  SCOPES = %w[table whisper gm].freeze
   SPEAKER_TYPES = %w[Character Npc].freeze
 
   belongs_to :campaign
@@ -47,6 +48,10 @@ class Message < ApplicationRecord
 
   def whisper?
     scope == "whisper"
+  end
+
+  def gm_only?
+    scope == "gm"
   end
 
   def system?
@@ -125,14 +130,17 @@ class Message < ApplicationRecord
 
   # seat: "gm", a Character, or nil for someone just watching.
   def visible_to?(seat)
-    return true unless whisper?
     return true if seat == "gm"
+    return false if gm_only?
+    return true unless whisper?
 
     seat.is_a?(Character) && seat == whisper_character
   end
 
   # Every stream this message goes to.
   def streams
+    return [ [ campaign, :gm ] ] if gm_only?
+
     whisper? ? [ [ campaign, :gm ], [ whisper_character, :whispers ] ] : [ [ campaign, :table ] ]
   end
 

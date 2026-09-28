@@ -90,6 +90,7 @@ Rails.application.routes.draw do
     resources :clocks, only: %i[create update destroy] do
       resources :ticks, only: :create, module: :clocks
     end
+    resources :rumours, only: %i[create destroy]
     resources :secrets, only: %i[create destroy] do
       resource :revelation, only: %i[create destroy], module: :secrets
     end

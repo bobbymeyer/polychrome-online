@@ -213,7 +213,7 @@ class Chronicle
       world.world_fronts.create!(
         name: name, history_key: "feud-#{feud['families'].join('-')}",
         description: "#{Generators::History.plural(a['name'])} and #{Generators::History.plural(b['name'])}, at odds since #{feud['cause']} (#{Generators::History.ago(feud['since'])}).",
-        clocks: [ { "name" => "The #{a['name']}–#{b['name']} feud comes to blood", "segments" => 6, "triggers" => [],
+        clocks: [ { "name" => "The #{a['name']}–#{b['name']} feud comes to blood", "segments" => 6, "triggers" => [ "now_and_then" ],
                     "full_line" => "The feud comes to blood: a #{b['name']} is found dead, and every #{a['name']} is carrying a knife.",
                     "place_id" => seat&.id } ],
         secrets: secrets

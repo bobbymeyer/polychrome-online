@@ -551,6 +551,23 @@ every campaign in it uses them.
   - **Clocks** can tick on each new day, so "the festival is in three days"
     is a three-segment clock.
   - **A world's calendar** names its weekdays and months.
+  - **The world moves overnight** (`Pointcrawl::Overnight`, run from the
+    campaign's own dice, so a night always goes the same way). Each new day:
+    - **Clocks** that tick "now and then" go on a segment on a roll (about
+      one night in three). The history's feud fronts tick this way.
+    - **Rumours** travel one road from wherever they've got to, and fade
+      after six days. They start when a place changes mode, when an
+      antagonist is seen, when a caravan is lost, or when the GM lets one
+      loose from the campaign page.
+    - **Antagonists who got away** wander to a town or dungeon nearby,
+      across wild country if need be, about half the nights.
+    - **Caravans** are lost on dangerous roads between two towns, and prices
+      go up 15% at both ends, easing back 5% a day. Shops charge and pay by
+      today's prices.
+    - **The GM gets a note** in the log, for their eyes only, of what moved.
+      The party learns only what reaches them: arriving in a town, they
+      hear what people there are saying, and a guild sells a rumour they
+      haven't heard.
 - **Origins** (`/origins`): where characters come from, each optionally
   better at one skill (+10 to its checks).
   - A character picks an origin, a home on the campaign's map, and ties to

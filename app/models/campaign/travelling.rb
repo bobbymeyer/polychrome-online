@@ -43,6 +43,7 @@ module Campaign::Travelling
       narrate("Encounter! #{describe_encounter(rolled)}.") if rolled
       tick_clocks!("travel")
       pass_time!(edge.duration, announce: :new_day)
+      hear_rumours!(destination)
     end
     broadcast_map
     rolled
@@ -55,6 +56,7 @@ module Campaign::Travelling
       current_node&.location&.leave! unless current_node == node
       update!(current_node: node)
       narrate("The party is at #{node.name}.")
+      hear_rumours!(node)
     end
     broadcast_map
   end

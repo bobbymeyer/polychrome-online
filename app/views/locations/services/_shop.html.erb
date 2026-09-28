@@ -16,13 +16,13 @@
               <% end %>
             </td>
             <td class="muted"><%= term(item.category) %></td>
-            <td class="num"><%= money(item.price) %></td>
+            <td class="num"><%= money(location.price_of(item)) %></td>
             <% if shopping %>
               <td class="shop-table__buy">
                 <%= form_with url: location_purchases_path(location), class: "inline-form shop-form" do |f| %>
                   <%= hidden_field_tag :item, item.slug, id: nil %>
                   <%= number_field_tag :quantity, 1, min: 1, max: 99, id: "buy_#{item.slug}", "aria-label": "How many #{item.name}" %>
-                  <%= f.submit "Buy", class: "button play", disabled: item.price > @campaign.gil %>
+                  <%= f.submit "Buy", class: "button play", disabled: location.price_of(item) > @campaign.gil %>
                 <% end %>
               </td>
             <% end %>
@@ -39,7 +39,7 @@
         <% bag.each do |row| %>
           <tr>
             <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span></td>
-            <td class="num"><%= money(row.item.resale_price) %></td>
+            <td class="num"><%= money(location.resale_price_of(row.item)) %></td>
             <td class="shop-table__buy">
               <%= form_with url: location_sales_path(location), class: "inline-form shop-form" do |f| %>
                 <%= hidden_field_tag :item, row.item.slug, id: nil %>
@@ -61,15 +61,18 @@
         <% worn.each do |character, slot| %>
           <tr>
             <td><%= slot.item.name %> <span class="muted"><%= character.name %>, <%= term(slot.slot).downcase %></span></td>
-            <td class="num"><%= money(slot.item.resale_price) %></td>
+            <td class="num"><%= money(location.resale_price_of(slot.item)) %></td>
             <td class="shop-table__buy">
               <%= button_to "Sell", location_sales_path(location), params: { character_id: character.id, slot: slot.slot },
-                            class: "button play", form: { data: { turbo_confirm: "Take #{slot.item.name} off #{character.name} and sell it for #{money(slot.item.resale_price)}?" } } %>
+                            class: "button play", form: { data: { turbo_confirm: "Take #{slot.item.name} off #{character.name} and sell it for #{money(location.resale_price_of(slot.item))}?" } } %>
             </td>
           </tr>
         <% end %>
       </tbody>
     </table>
+  <% end %>
+  <% if location.prices.nonzero? %>
+    <p class="hint"><%= location.prices.positive? ? "Everything is dear here: #{location.prices}% over the usual." : "Everything is cheap here: #{-location.prices}% under the usual." %></p>
   <% end %>
   <% if shopping %><p class="hint">Shops pay half the price.</p><% end %>
 </div>

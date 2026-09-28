@@ -11,7 +11,7 @@ module Campaign::Shopping
     raise Refusal, "The shop is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
     raise Refusal, "#{at.name} doesn't sell #{item.name}" unless at.stock_items.include?(item)
 
-    cost = item.price * quantity
+    cost = (at.respond_to?(:price_of) ? at.price_of(item) : item.price) * quantity
     transaction do
       reload
       raise Refusal, "The party has #{money(gil)}; #{quantity} × #{item.name} costs #{cost}" if cost > gil
@@ -31,7 +31,7 @@ module Campaign::Shopping
       raise Refusal, "The bag has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
 
       row.update!(quantity: row.quantity - quantity)
-      earned = item.resale_price * quantity
+      earned = (at.respond_to?(:resale_price_of) ? at.resale_price_of(item) : item.resale_price) * quantity
       update!(gil: gil + earned)
       narrate("#{by} sold #{quantity} × #{item.name} in #{at.name} for #{money(earned)}.")
     end

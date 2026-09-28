@@ -36,6 +36,13 @@ module Location::Town
     end
   end
 
+  # What the shop asks today: dearer after a caravan is lost on the road,
+  # easing back day by day (Campaign::Overnight).
+  def price_of(item) = (item.price * (100 + prices) / 100.0).round
+
+  # Shops pay half.
+  def resale_price_of(item) = price_of(item) / 2
+
   def stock_items
     slugs = view.fetch("stock", [])
     items = campaign.world.items.where(slug: slugs).index_by(&:slug)

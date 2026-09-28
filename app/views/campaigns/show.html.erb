@@ -130,6 +130,16 @@
     </section>
   </div>
 
+  <section class="window" id="rumours">
+    <h2>Rumours</h2>
+    <p class="hint">
+      What people are saying. A rumour travels one road a day from where it started, and the party hears it when they reach a town it has got to,
+      or buys it at a guild. The world starts its own overnight: a caravan lost on a dangerous road, someone who got away seen somewhere new,
+      a place changing mode.
+    </p>
+    <%= render "rumours/gm", campaign: @campaign %>
+  </section>
+
   <section class="window" id="flags">
     <div class="book-header">
       <h2>Flags</h2>

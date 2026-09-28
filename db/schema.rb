@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_070000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_080000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -492,6 +492,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_070000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "current_mode_id"
+    t.integer "prices", default: 0, null: false
     t.index ["campaign_id"], name: "index_locations_on_campaign_id"
     t.index ["current_mode_id"], name: "index_locations_on_current_mode_id"
     t.index ["location_template_id"], name: "index_locations_on_location_template_id"
@@ -620,6 +621,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_070000) do
     t.datetime "updated_at", null: false
     t.index ["owner_type", "owner_id", "expression"], name: "index_portraits_on_owner_type_and_owner_id_and_expression", unique: true
     t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
+  end
+
+  create_table "rumours", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.text "body", null: false
+    t.integer "origin_id"
+    t.json "reached", default: [], null: false
+    t.integer "age", default: 0, null: false
+    t.boolean "heard", default: false, null: false
+    t.boolean "faded", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_rumours_on_campaign_id"
+    t.index ["origin_id"], name: "index_rumours_on_origin_id"
   end
 
   create_table "scenes", force: :cascade do |t|
@@ -849,6 +864,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_070000) do
   add_foreign_key "npcs", "locations"
   add_foreign_key "npcs", "monsters"
   add_foreign_key "npcs", "world_figures"
+  add_foreign_key "rumours", "campaigns"
+  add_foreign_key "rumours", "map_nodes", column: "origin_id", on_delete: :nullify
   add_foreign_key "scenes", "campaigns"
   add_foreign_key "scenes", "location_modes"
   add_foreign_key "scenes", "map_nodes", on_delete: :nullify

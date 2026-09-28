@@ -25,7 +25,7 @@ class Campaign < ApplicationRecord
   has_many :secrets, dependent: :delete_all
   belongs_to :current_node, class_name: "MapNode", optional: true
 
-  include Bag, Shopping, Services, Travelling, Checks, MonsterNotes, JobRewards
+  include Bag, Shopping, Services, Travelling, Checks, MonsterNotes, JobRewards, Overnight
 
   # Travel encounters use their own seeded RNG, stored here like a battle's.
   before_create { self.rng = Random.new_seed % 2**32 if rng.zero? }
