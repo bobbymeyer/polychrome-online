@@ -1,0 +1,34 @@
+<%# The GM's record of the party's deeds (Deed), and how each town sees them. %>
+<% deeds = campaign.deeds.includes(:map_node).in_order.reverse %>
+<% towns = campaign.map_nodes.includes(:location).select { |n| n.location&.town? }.sort_by(&:name) %>
+<% if deeds.any? %>
+  <ul class="secret-rows">
+    <% deeds.each do |deed| %>
+      <li>
+        <div>
+          <%= deed.body %>
+          <span class="muted"> · day <%= deed.day %><%= " · #{deed.map_node.name}" if deed.map_node %><%= " · #{format('%+d', deed.sway)}" if deed.sway.nonzero? %></span>
+        </div>
+        <%= button_to "Strike", campaign_deed_path(campaign, deed), method: :delete, class: "link-button", form: { class: "inline", data: { turbo_confirm: "Strike this deed? Towns that heard it forget it." } } %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="empty">Nothing yet that anyone would tell a story about.</p>
+<% end %>
+<% if towns.any? %>
+  <p class="muted">
+    <% towns.each_with_index do |node, i| %><%= " · " if i.positive? %><%= node.name %>: <%= node.location.standing %><%= " (#{format('%+d', node.location.reputation)})" if node.location.reputation.nonzero? %><% end %>
+  </p>
+<% end %>
+<details>
+  <summary>Record a deed</summary>
+  <%= form_with model: Deed.new, url: campaign_deeds_path(campaign), class: "book-form" do |f| %>
+    <div class="field"><%= f.label :body, "What they did, as people will tell it" %><%= f.text_field :body, required: true, placeholder: "Rook's party burned the Vell mill." %></div>
+    <div class="field-row">
+      <div class="field"><%= f.label :map_node_id, "Where" %><%= f.select :map_node_id, campaign.map_nodes.order(:name).map { |n| [ n.name, n.id ] }, selected: campaign.current_node_id %></div>
+      <div class="field"><%= f.label :sway, "What people will think" %><%= f.select :sway, [ [ "Much better of them (+2)", 2 ], [ "Better (+1)", 1 ], [ "Nothing either way", 0 ], [ "Worse (−1)", -1 ], [ "Much worse (−2)", -2 ] ], selected: 0 %></div>
+    </div>
+    <%= f.submit "Record it", class: "button" %>
+  <% end %>
+</details>

@@ -30,6 +30,12 @@ class Chronicle
   def written? = history.key?("written")
   def written_seed = history["written"]
 
+  # The events as they were written in: [{ "ago", "kind", "text", "truth", "places" => ["place-12"] }].
+  def written_events = Array(history["events"])
+
+  # The atlas place an event's key names ("place-12").
+  def self.place_id(key) = key.to_s.delete_prefix("place-").to_i
+
   def generated
     @generated ||= Generators::History.generate(seed: seed, places: places, years: years, families: kept,
                                                 given_names: table_texts("names"), family_names: table_texts("families"))
@@ -77,7 +83,8 @@ class Chronicle
       write_figures(counts)
       write_places(counts)
       write_fronts(counts)
-      save!({ "written" => seed, "written_at" => Time.current.iso8601 })
+      # Kept as written, for the legends: the atlas can change after.
+      save!({ "written" => seed, "written_at" => Time.current.iso8601, "events" => generated["events"] })
     end
     counts
   end
@@ -91,7 +98,7 @@ class Chronicle
       world.world_places.find_each do |place|
         place.update!(past: {}) if place.past.present? && !Past.new(place.past).edited?
       end
-      save!(history.except("written", "written_at"), replace: true) if record
+      save!(history.except("written", "written_at", "events"), replace: true) if record
     end
   end
 

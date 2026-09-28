@@ -42,6 +42,7 @@ module BattleRecord::Settlement
     end
     update!(settlement: summary)
     announce!(settlement_line(summary))
+    record_deeds!(summary, characters) if victory
   end
 
   # Stolen items: the party's however it ended. Returns their names.
@@ -108,5 +109,16 @@ module BattleRecord::Settlement
       parts << "#{member['name']} learned #{member['learned'].to_sentence}." if member["learned"].any?
     end
     "#{name}: #{parts.join(' ')}"
+  end
+
+  # What people will say about it (Campaign::Deeds): an antagonist beaten for
+  # good, or a dungeon's master fallen.
+  def record_deeds!(summary, characters)
+    party = campaign.party_names(characters.values.sort_by(&:created_at))
+    Array(summary["antagonists"]).select { |a| a["fate"] == "defeated" }.each do |antagonist|
+      campaign.record_deed!("#{party} defeated #{antagonist['name']} for good.", sway: 1, kind: "antagonist")
+    end
+    dungeon = campaign.dungeon_in_progress
+    campaign.record_deed!("#{party} cleared #{dungeon.name}.", sway: 1, kind: "cleared") if boss? && dungeon
   end
 end

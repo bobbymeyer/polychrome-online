@@ -64,4 +64,12 @@ RSpec.describe Pointcrawl::Overnight do
     quiet = world.merge("rumours" => [])
     expect(kinds(night(9, quiet).last, "moved")).to eq(kinds(night(9).last, "moved"))
   end
+
+  it "lets a kept secret out now and then, where it's about, without changing the rest of the night" do
+    secret_world = world.merge("secrets" => [ { "id" => 30, "at" => 4 } ])
+    leaks = (1..300).flat_map { |s| kinds(night(s, secret_world).last, "leak") }
+    expect(leaks.size).to be_within(18).of(30)
+    expect(leaks.uniq).to eq([ { "kind" => "leak", "secret" => 30, "at" => 4 } ])
+    expect(night(5, secret_world).last - kinds(night(5, secret_world).last, "leak")).to eq(night(5).last)
+  end
 end

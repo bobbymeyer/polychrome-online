@@ -91,6 +91,8 @@ Rails.application.routes.draw do
       resources :ticks, only: :create, module: :clocks
     end
     resources :rumours, only: %i[create destroy]
+    resources :deeds, only: %i[create destroy]
+    resource :legends, only: :show
     resources :secrets, only: %i[create destroy] do
       resource :revelation, only: %i[create destroy], module: :secrets
     end

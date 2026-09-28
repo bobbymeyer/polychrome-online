@@ -11,6 +11,7 @@
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
     <%= link_to "Map", campaign_map_path(@campaign), class: "button button--quiet" %>
     <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" if @world.codex_entries.exists? %>
+    <%= link_to "Legends", campaign_legends_path(@campaign), class: "button button--quiet" %>
     <% if can_gm?(@campaign) %>
     <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" %>
     <%= button_to "Rest at an inn", campaign_rest_path(@campaign), class: "button button--quiet",
@@ -129,6 +130,19 @@
       <%= render "drafts/panel", owner: @campaign, kind: "secrets", title: "Suggest secrets", placeholder: "Something rotten at the mill" %>
     </section>
   </div>
+
+  <section class="window" id="deeds">
+    <div class="book-header">
+      <h2>Deeds</h2>
+      <%= link_to "Legends", campaign_legends_path(@campaign), class: "button button--quiet" %>
+    </div>
+    <p class="hint">
+      What the party did that people will talk about. Each deed starts a rumour where it happened, and every town the news reaches thinks
+      better or worse of the party: friends sell cheaper, and a town that thinks badly enough of them won't trade at all.
+      Beating an antagonist for good and clearing a dungeon are recorded by themselves.
+    </p>
+    <%= render "deeds/gm", campaign: @campaign %>
+  </section>
 
   <section class="window" id="rumours">
     <h2>Rumours</h2>

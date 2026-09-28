@@ -14,9 +14,14 @@ module Campaign::Overnight
   end
 
   # People start talking about something at a place on the map. seen: the
-  # party was there and saw it happen, so there's nothing to hear.
-  def start_rumour!(body, at:, also: [], seen: false)
-    rumours.create!(body: body, origin: at, reached: ([ at ] + also).compact.map(&:id).uniq, heard: seen)
+  # party was there and saw it happen, so there's nothing to hear. sway: a
+  # deed's, moving each town's view of the party as the news gets there.
+  def start_rumour!(body, at:, also: [], seen: false, sway: 0, deed: nil, secret: nil)
+    places = ([ at ] + also).compact
+    rumour = rumours.create!(body: body, origin: at, reached: places.map(&:id).uniq, heard: seen, heard_day: (day if seen),
+                             sway: sway, deed: deed, secret: secret)
+    places.each { |node| node.location&.sway!(sway) }
+    rumour
   end
 
   # What the party hears on reaching a place: every rumour that got there
@@ -24,15 +29,16 @@ module Campaign::Overnight
   def hear_rumours!(node = current_node)
     return [] unless node&.location
 
-    rumours.travelling.unheard.order(:id).select { |r| r.reached?(node) }.each do |rumour|
-      rumour.update!(heard: true)
-      narrate("In #{node.name}, people are saying: “#{rumour.body}”")
+    # Not their own deed where they did it: they were there.
+    rumours.travelling.unheard.order(:id).select { |r| r.reached?(node) && !(r.deed_id && r.origin_id == node.id) }.each do |rumour|
+      rumour.update!(heard: true, heard_day: day)
+      narrate(rumour.secret_id ? "In #{node.name}, someone whispers: “#{rumour.body}”" : "In #{node.name}, people are saying: “#{rumour.body}”")
     end
   end
 
   # A rumour nobody at the table has heard yet (the guild sells one).
   def rumour_for_sale
-    rumours.travelling.unheard.order(:id).first
+    rumours.travelling.unheard.where(deed_id: nil).order(:id).first
   end
 
   def overnight!
@@ -52,6 +58,7 @@ module Campaign::Overnight
         when "spread"
           rumour = rumours.find(event["rumour"])
           rumour.update!(reached: rumour.reached | event["to"])
+          event["to"].each { |id| by_id[id]&.location&.sway!(rumour.sway) }
         when "fade"
           rumours.find(event["rumour"]).update!(faded: true)
         when "moved"
@@ -67,6 +74,11 @@ module Campaign::Overnight
           node = by_id.fetch(event["place"])
           node.location.update!(prices: event["shift"])
           notes << "Prices in #{node.name}: #{format('%+d', event['shift'])}%." if event["shift"].abs >= Pointcrawl::Overnight::CARAVAN_SHOCK
+        when "leak"
+          secret = secrets.find(event["secret"])
+          at = by_id.fetch(event["at"])
+          start_rumour!(secret.body, at: at, secret: secret)
+          notes << "A secret got out in #{at.name}: #{secret.body}"
         end
       end
       narrate("Overnight: #{notes.join(' ')}", scope: "gm") if notes.any?
@@ -85,7 +97,17 @@ module Campaign::Overnight
       "rumours" => rumours.travelling.order(:id).map { |r| { "id" => r.id, "reached" => r.reached, "age" => r.age } },
       "antagonists" => npcs.at_large.where("escapes > 0").includes(location: :map_node).order(:id)
                            .map { |n| { "id" => n.id, "name" => n.name, "at" => n.location&.map_node&.id } },
-      "prices" => nodes.select { |n| n.location&.town? }.to_h { |n| [ n.id, n.location.prices ] }
+      "prices" => nodes.select { |n| n.location&.town? }.to_h { |n| [ n.id, n.location.prices ] },
+      "secrets" => leakable_secrets
     }
+  end
+
+  # Kept secrets about somewhere on the map, not already going around.
+  def leakable_secrets
+    going = rumours.where.not(secret_id: nil).pluck(:secret_id)
+    secrets.kept.where.not(id: going).includes(location: :map_node, npc: { location: :map_node }).order(:id).filter_map do |secret|
+      node = secret.location&.map_node || secret.npc&.location&.map_node
+      { "id" => secret.id, "at" => node.id } if node
+    end
   end
 end

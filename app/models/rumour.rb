@@ -7,6 +7,8 @@
 class Rumour < ApplicationRecord
   belongs_to :campaign
   belongs_to :origin, class_name: "MapNode", optional: true
+  belongs_to :deed, optional: true
+  belongs_to :secret, optional: true
 
   normalizes :body, with: ->(body) { body.to_s.strip }
 

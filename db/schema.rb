@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_080000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_090000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -278,6 +278,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_080000) do
     t.index ["world_id"], name: "index_codex_entries_on_world_id"
   end
 
+  create_table "deeds", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.text "body", null: false
+    t.integer "map_node_id"
+    t.integer "day", null: false
+    t.integer "sway", default: 0, null: false
+    t.string "kind", default: "gm", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_deeds_on_campaign_id"
+    t.index ["map_node_id"], name: "index_deeds_on_map_node_id"
+  end
+
   create_table "drafts", force: :cascade do |t|
     t.string "owner_type", null: false
     t.integer "owner_id", null: false
@@ -493,6 +506,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_080000) do
     t.datetime "updated_at", null: false
     t.integer "current_mode_id"
     t.integer "prices", default: 0, null: false
+    t.integer "reputation", default: 0, null: false
     t.index ["campaign_id"], name: "index_locations_on_campaign_id"
     t.index ["current_mode_id"], name: "index_locations_on_current_mode_id"
     t.index ["location_template_id"], name: "index_locations_on_location_template_id"
@@ -633,8 +647,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_080000) do
     t.boolean "faded", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sway", default: 0, null: false
+    t.integer "deed_id"
+    t.integer "secret_id"
+    t.integer "heard_day"
     t.index ["campaign_id"], name: "index_rumours_on_campaign_id"
+    t.index ["deed_id"], name: "index_rumours_on_deed_id"
     t.index ["origin_id"], name: "index_rumours_on_origin_id"
+    t.index ["secret_id"], name: "index_rumours_on_secret_id"
   end
 
   create_table "scenes", force: :cascade do |t|
@@ -820,6 +840,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_080000) do
   add_foreign_key "clocks", "location_modes"
   add_foreign_key "clocks", "world_fronts"
   add_foreign_key "codex_entries", "worlds"
+  add_foreign_key "deeds", "campaigns"
+  add_foreign_key "deeds", "map_nodes", on_delete: :nullify
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"
@@ -865,7 +887,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_080000) do
   add_foreign_key "npcs", "monsters"
   add_foreign_key "npcs", "world_figures"
   add_foreign_key "rumours", "campaigns"
+  add_foreign_key "rumours", "deeds", on_delete: :nullify
   add_foreign_key "rumours", "map_nodes", column: "origin_id", on_delete: :nullify
+  add_foreign_key "rumours", "secrets", on_delete: :nullify
   add_foreign_key "scenes", "campaigns"
   add_foreign_key "scenes", "location_modes"
   add_foreign_key "scenes", "map_nodes", on_delete: :nullify

@@ -1,0 +1,65 @@
+<% content_for :title, "Legends · #{@campaign.name}" %>
+<div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / Legends</div>
+<div class="book-header">
+  <div>
+    <p class="eyebrow"><%= @campaign.world.name %> · <%= @campaign.when_it_is %></p>
+    <h1>Legends</h1>
+  </div>
+  <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--quiet" %>
+</div>
+<p class="prose">
+  What's told of this part of the world, as far as the party knows it, and the story of the party since they arrived.
+  <% if @legends.gm? %>You're the GM: you also see what they don't know yet, and what really happened.<% end %>
+</p>
+
+<% if @legends.empty? %>
+  <p class="empty">No legends yet. The world's history is written on its History page; the party's story starts with what they do.</p>
+<% end %>
+
+<% story = @legends.story %>
+<% if story.any? %>
+  <section class="window">
+    <h2>The party's story</h2>
+    <ol class="history-list">
+      <% story.each do |day, entries| %>
+        <% entries.each_with_index do |entry, i| %>
+          <li class="legend legend--<%= entry.kind %>">
+            <span class="history-list__when"><%= @campaign.world.date(day) if i.zero? %></span>
+            <span>
+              <% if entry.kind == "deed" %><strong><%= entry.text %></strong><%= tag.span(" · #{entry.where}", class: "muted") if entry.where %>
+              <% else %><span class="muted">Heard:</span> “<%= entry.text %>”<% end %>
+            </span>
+          </li>
+        <% end %>
+      <% end %>
+    </ol>
+  </section>
+<% end %>
+
+<% if (uncovered = @legends.uncovered).any? %>
+  <section class="window">
+    <h2>What they found out</h2>
+    <ul class="refs">
+      <% uncovered.each do |secret| %><li><%= secret.body %></li><% end %>
+    </ul>
+  </section>
+<% end %>
+
+<% history = @legends.history %>
+<% if history.any? %>
+  <section class="window">
+    <h2>Long ago</h2>
+    <ol class="history-list">
+      <% history.each do |event| %>
+        <li class="<%= 'is-unknown' unless event['known'] %>">
+          <span class="history-list__when"><%= Generators::History.ago(event["ago"]) %></span>
+          <span>
+            <%= event["text"] %>
+            <% if event["truth"] %> <em class="muted">GM: <%= event["truth"] %></em><% end %>
+            <% unless event["known"] %> <span class="muted">(the party doesn't know this yet)</span><% end %>
+          </span>
+        </li>
+      <% end %>
+    </ol>
+  </section>
+<% end %>

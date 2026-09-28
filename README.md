@@ -551,6 +551,21 @@ every campaign in it uses them.
   - **Clocks** can tick on each new day, so "the festival is in three days"
     is a three-segment clock.
   - **A world's calendar** names its weekdays and months.
+  - **Deeds and reputation** (campaign page, "Deeds"): what the party did
+    that people will talk about.
+    - **Recorded by themselves:** beating an antagonist for good, and
+      clearing a dungeon by winning its boss fight. The GM records the rest,
+      each with a sway from −2 to +2.
+    - **The story travels:** each deed starts a rumour where it happened, so
+      the party hears about themselves on reaching the next town.
+    - **Reputation:** every town the story reaches moves by the deed's sway,
+      from Unwelcome to Heroes. Friends sell 5% cheaper per point, wary
+      towns dearer, and at −3 nobody will trade or give the party a bed.
+      Striking a deed takes it back. The language model sees it too.
+  - **Legends** (`/campaigns/:id/legends`): the party's story by day (their
+    deeds and the rumours they heard), what they found out, and the world's
+    written history as far as it touches places they know. The GM's page
+    has all of it, with what really happened.
   - **The world moves overnight** (`Pointcrawl::Overnight`, run from the
     campaign's own dice, so a night always goes the same way). Each new day:
     - **Clocks** that tick "now and then" go on a segment on a roll (about
@@ -564,6 +579,9 @@ every campaign in it uses them.
     - **Caravans** are lost on dangerous roads between two towns, and prices
       go up 15% at both ends, easing back 5% a day. Shops charge and pay by
       today's prices.
+    - **Secrets leak:** some nights a kept secret about a place gets out
+      there as a rumour ("someone whispers…"). It isn't revealed; the GM's
+      secrets list shows it's going round, and whether the party heard it.
     - **The GM gets a note** in the log, for their eyes only, of what moved.
       The party learns only what reaches them: arriving in a town, they
       hear what people there are saying, and a guild sells a rumour they

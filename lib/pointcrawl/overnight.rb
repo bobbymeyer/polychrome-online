@@ -10,6 +10,7 @@ module Pointcrawl
   # - Antagonists who got away wander to a place nearby.
   # - Caravans are attacked on dangerous roads between towns, which drives
   #   the prices up at both ends; prices drift back towards normal.
+  # - A kept secret about a place sometimes gets out, as a rumour there.
   #
   # Pure: the state and the RNG go in, what happened and the RNG come out,
   # so the same night always goes the same way. The draws are fixed per
@@ -22,7 +23,8 @@ module Pointcrawl
   #   "clocks"      => [clock ids that tick now and then],
   #   "rumours"     => [{ "id", "reached" => [place ids], "age" }],
   #   "antagonists" => [{ "id", "name", "at" => place id or nil }],
-  #   "prices"      => { place id => percent shift }
+  #   "prices"      => { place id => percent shift },
+  #   "secrets"     => [{ "id", "at" => place id }]           kept, and not going around yet
   # }
   module Overnight
     CLOCK_CHANCE = 35      # percent, for a clock that ticks now and then
@@ -32,6 +34,7 @@ module Pointcrawl
     CARAVAN_SHOCK = 15     # percent on prices, at each end
     PRICE_CAP = 50
     PRICE_EASE = 5         # percent back towards normal each day
+    LEAK_CHANCE = 10       # percent, for a kept secret about a place
 
     module_function
 
@@ -42,6 +45,7 @@ module Pointcrawl
     #   { "kind" => "moved", "npc", "name", "from", "to" }
     #   { "kind" => "caravan", "from", "to" }
     #   { "kind" => "price", "place", "shift" }
+    #   { "kind" => "leak", "secret", "at" }
     def run(world, rng_state)
       rng = Battle::Rng.new(rng_state)
       roads = passable(world.fetch("roads", []))
@@ -87,6 +91,10 @@ module Pointcrawl
         eased = was.positive? ? [ was - PRICE_EASE, 0 ].max : [ was + PRICE_EASE, 0 ].min
         now = (eased + shocked[id]).clamp(-PRICE_CAP, PRICE_CAP)
         happenings << { "kind" => "price", "place" => id, "shift" => now } if now != was
+      end
+
+      world.fetch("secrets", []).each do |secret|
+        happenings << { "kind" => "leak", "secret" => secret["id"], "at" => secret["at"] } if rng.percent?(LEAK_CHANCE)
       end
 
       [ rng.state, happenings ]
