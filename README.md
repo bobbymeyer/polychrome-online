@@ -68,8 +68,11 @@ page with its stat block, prose, image and cross-references ("Used by",
   creation. They're the engine's ids and what AI scripts and drop tables use to
   refer to other entries.
 - Each entry has an image slot (Active Storage) and a variant recipe (hue,
-  scale, flip), applied with CSS. It also has `image_seed` and `image_prompt`
-  columns for the future generation pipeline.
+  scale, flip), applied with CSS. How it's drawn lives in its `Art`: the art
+  notes, LoRAs and model it adds to a prompt, and the seed, prompt and recipe
+  of its generated picture. Speakers, the cast, portraits and mode pictures
+  have one too. Each still reads and writes these as `entry.art_notes`,
+  `entry.image_seed` and so on (`Drawn`).
 - `World#battle(seed:, party:, monsters: { "goblin" => 3 })` builds a battle
   state straight from the books. `Job#to_derivation`, `Job#passives` and
   `Item#to_equipment` feed `Stats::Derivation`.
@@ -736,8 +739,8 @@ Every image slot can be uploaded or generated with
   Frame and a `reload_frame` stream action), so a half-typed form elsewhere on
   the page is left alone. For a portrait, the first candidate reuses the
   Neutral portrait's seed, so the face stays closer across expressions.
-  "Use this" makes one the entry's image and stores its `image_seed`,
-  `image_prompt` and full `image_recipe`, including the workflow's outline,
+  "Use this" makes one the entry's image and stores its seed, prompt and
+  full recipe on the entry's `Art`, including the workflow's outline,
   so it can be regenerated exactly. Uploading an image by hand clears them.
 - **Drafts first** (on by default for each batch): rough previews of about
   512 × 512 (the same pixel count, keeping the shape) in 16 steps, with

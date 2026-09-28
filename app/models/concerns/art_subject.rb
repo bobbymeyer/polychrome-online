@@ -4,10 +4,7 @@
 # specifics and LoRAs, shared by every expression.
 module ArtSubject
   extend ActiveSupport::Concern
-
-  def art_loras=(value)
-    super(ArtDirection.loras(value))
-  end
+  include Drawn
 
   def art_world
     campaign.world

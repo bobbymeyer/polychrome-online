@@ -9,6 +9,7 @@
 # Book entries use the defaults below; Portrait overrides the hooks.
 module Artwork
   extend ActiveSupport::Concern
+  include Drawn
 
   included do
     has_many :art_batches, as: :entry, dependent: :destroy
@@ -33,10 +34,6 @@ module Artwork
   def art_seed_hint = nil
 
   # -----------------------------------------------------------------------------
-
-  def art_loras=(value)
-    super(ArtDirection.loras(value))
-  end
 
   def art_type
     art_world.art_type(art_kind)

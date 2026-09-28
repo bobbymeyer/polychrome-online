@@ -138,6 +138,7 @@ class World < ApplicationRecord
         entries.find_each do |entry|
           copy = entry.dup
           copy.world = self
+          copy.build_art(entry.art.attributes.slice(*Drawn::FIELDS.values.map(&:to_s))) if entry.respond_to?(:art) && entry.art
           copy.encounter_table_id = tables[entry.encounter_table_id] if book == :location_templates
           copy.save!
           copy.image.attach(entry.image.blob) if entry.image.attached?
@@ -199,7 +200,7 @@ class World < ApplicationRecord
                                 .merge(from_place: places.fetch(route.from_place_id), to_place: places.fetch(route.to_place_id), encounter_table: table))
     end
     source.world_figures.includes(portraits: { image_attachment: :blob }).find_each do |figure|
-      copy = world_figures.create!(figure.attributes.except(*COPIED, "monster_id", "world_place_id")
+      copy = world_figures.create!(figure.attributes.except(*COPIED, "monster_id", "world_place_id").merge(art_notes: figure.art_notes)
                                          .merge(monster: figure.monster && monsters.find_by(slug: figure.monster.slug),
                                                 world_place: places[figure.world_place_id]))
       figure.portraits.each { |p| copy.portraits.create!(expression: p.expression).image.attach(p.image.blob) if p.image.attached? }

@@ -90,7 +90,7 @@ class BookEntriesController < ApplicationController
 
     entry.image_seed = nil
     entry.image_prompt = nil
-    entry.image_recipe = nil if entry.has_attribute?(:image_recipe)
+    entry.image_recipe = nil
   end
 
   # Art fields every book entry shares (§3.3, §8).

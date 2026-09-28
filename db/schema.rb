@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_060000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -22,20 +22,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.string "gesture"
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
     t.integer "hp_cost", default: 0, null: false
     t.integer "charge", default: 0, null: false
     t.string "field_skill"
     t.string "field_outcome"
     t.string "field_difficulty", default: "normal", null: false
     t.integer "field_power", default: 0, null: false
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_abilities_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_abilities_on_world_id"
   end
@@ -120,6 +114,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.string "model"
     t.index ["world_id", "kind"], name: "index_art_types_on_world_id_and_kind", unique: true
     t.index ["world_id"], name: "index_art_types_on_world_id"
+  end
+
+  create_table "arts", force: :cascade do |t|
+    t.string "subject_type", null: false
+    t.integer "subject_id", null: false
+    t.text "notes"
+    t.json "loras", default: [], null: false
+    t.string "model"
+    t.integer "seed"
+    t.text "prompt"
+    t.json "recipe"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["subject_type", "subject_id"], name: "index_arts_on_subject", unique: true
   end
 
   create_table "battle_actions", force: :cascade do |t|
@@ -213,13 +221,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.integer "mp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
     t.integer "user_id"
     t.string "colour"
     t.string "motive"
     t.boolean "field_used", default: false, null: false
-    t.string "art_model"
     t.string "origin"
     t.integer "home_node_id"
     t.json "ties", default: [], null: false
@@ -296,14 +301,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.json "entries", default: [], null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_encounter_tables_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_encounter_tables_on_world_id"
   end
@@ -382,14 +381,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.json "entries", default: [], null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_generator_tables_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_generator_tables_on_world_id"
   end
@@ -416,14 +409,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.json "effects", default: [], null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_items_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_items_on_world_id"
   end
@@ -448,14 +435,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.json "innates", default: [], null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "ability_slots", default: 1, null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
     t.string "colour"
     t.string "desperation"
     t.string "signature"
@@ -463,7 +445,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.string "base_type", default: "normal", null: false
     t.json "skills", default: [], null: false
     t.string "field_ability"
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -494,14 +475,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.integer "encounter_table_id"
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
-    t.string "art_model"
     t.index ["encounter_table_id"], name: "index_location_templates_on_encounter_table_id"
     t.index ["world_id", "slug"], name: "index_location_templates_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_location_templates_on_world_id"
@@ -583,9 +558,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
 
   create_table "mode_arts", force: :cascade do |t|
     t.integer "location_id", null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
-    t.json "image_recipe"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "location_mode_id", null: false
@@ -608,19 +580,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.integer "abp", default: 0, null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
     t.string "colour"
     t.boolean "boss", default: false, null: false
     t.text "boss_line"
     t.string "base_type", default: "normal", null: false
     t.boolean "undead", default: false, null: false
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end
@@ -634,13 +600,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.datetime "updated_at", null: false
     t.integer "location_id"
     t.string "location_key"
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
     t.string "colour"
     t.integer "monster_id"
     t.integer "escapes", default: 0, null: false
     t.datetime "defeated_at"
-    t.string "art_model"
     t.integer "world_figure_id"
     t.index ["campaign_id"], name: "index_npcs_on_campaign_id"
     t.index ["location_id"], name: "index_npcs_on_location_id"
@@ -654,9 +617,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.string "expression", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
-    t.json "image_recipe"
     t.index ["owner_type", "owner_id", "expression"], name: "index_portraits_on_owner_type_and_owner_id_and_expression", unique: true
     t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
   end
@@ -733,7 +693,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_050000) do
     t.string "title"
     t.text "blurb"
     t.text "description"
-    t.text "art_notes"
     t.string "colour"
     t.integer "monster_id"
     t.integer "world_place_id"
