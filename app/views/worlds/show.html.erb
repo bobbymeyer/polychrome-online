@@ -26,6 +26,7 @@
 <% if @world.description.present? %>
   <div class="prose"><%= simple_format(@world.description) %></div>
 <% end %>
+<%= render "worlds/lines_and_veils", world: @world %>
 <% if can_edit_world? %>
   <%= render "drafts/panel", owner: @world, kind: "setting", title: "Suggest types, skills and jobs for this setting" %>
 <% end %>

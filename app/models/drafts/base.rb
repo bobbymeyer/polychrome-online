@@ -5,8 +5,9 @@ module Drafts
   # the model in a few compact lines (a local model's context is small), and
   # the house voice.
   class Base
-    VOICE = "The GM tells small, pulp stories in a JRPG-flavoured world: a town burns, not the world; a gang, a debt, " \
-            "a haunted mill. Be concrete, specific and playable at the table. Never name real people or real artists."
+    # When a world hasn't said how it sounds.
+    VOICE = "Small, pulp stories in a JRPG-flavoured world: a town burns, not the world; a gang, a debt, a haunted mill."
+    RULES = "Be concrete, specific and playable at the table. Never name real people or real artists."
 
     attr_reader :draft
 
@@ -23,7 +24,15 @@ module Drafts
 
     # { system:, user: } for Llm::Client#json.
     def messages
-      { system: "#{VOICE} #{instructions}", user: [ context, ("The GM's idea: #{idea}" unless idea.empty?) ].compact.join("\n\n") }
+      { system: [ voice, instructions ].join(" "), user: [ context, ("The GM's idea: #{idea}" unless idea.empty?) ].compact.join("\n\n") }
+    end
+
+    # The world's own voice and limits (World#voice, #avoid, #lines, #veils).
+    def voice
+      [ "The setting's voice: #{world.voice.presence&.squish || VOICE}", RULES,
+        ("Avoid: #{world.avoid.squish}." if world.avoid.present?),
+        ("Never include, in any form: #{world.lines.squish}." if world.lines.present?),
+        ("Keep these off-screen, never described: #{world.veils.squish}." if world.veils.present?) ].compact.join(" ")
     end
 
     private

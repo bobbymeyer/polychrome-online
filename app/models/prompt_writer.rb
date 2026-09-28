@@ -21,7 +21,7 @@ module PromptWriter
 
   # The subject rewritten, or nil when there is nothing to rewrite with.
   # Raises Llm::Error when the language model can't be reached.
-  def write(parts, family:, client: Llm.client)
+  def write(parts, family:, client: Llm.client, world: nil)
     subject = parts["subject"].to_s.strip
     return nil if subject.empty?
 
@@ -31,6 +31,7 @@ module PromptWriter
       #{STYLES.fetch(style)}
       Leave out art style, medium, camera, framing, lighting, background and quality words: those are added separately.
       Never name real artists or real people. Keep any names the entry gives only if they help describe it.
+      #{"Never depict: #{world.lines.squish}." if world&.lines.present?}
       Reply with the prompt text alone, on one line, with nothing before or after it.
     TEXT
     user = <<~TEXT
@@ -49,10 +50,10 @@ module PromptWriter
 
   # The recipe with its subject rewritten and the prompt put back together,
   # or unchanged (with the reason) when the language model can't help.
-  def rewrite(recipe, client: Llm.client)
+  def rewrite(recipe, client: Llm.client, world: nil)
     parts = recipe["parts"] or return recipe
     family = Comfy::Family.new(recipe["family"], recipe["model"])
-    written = write(parts, family: family, client: client)
+    written = write(parts, family: family, client: client, world: world)
     return recipe unless written.present?
 
     recipe.merge("positive" => ArtDirection.compose(parts.merge("subject" => written)),

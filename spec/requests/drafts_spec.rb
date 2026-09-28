@@ -138,6 +138,19 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
     end
   end
 
+  it "writes in the world's voice and keeps to its lines and veils" do
+    world.update!(voice: "Wet noir with a kind heart.", avoid: "prophecies", lines: "harm to children", veils: "torture")
+    suggest(campaign, "secrets", '{"secrets": [{"text": "x"}]}')
+    system = @llm.asked.sole[:system]
+    expect(system).to include("The setting's voice: Wet noir with a kind heart.", "Avoid: prophecies.",
+                              "Never include, in any form: harm to children.", "Keep these off-screen, never described: torture.")
+    expect(system).not_to include("JRPG-flavoured")
+
+    sign_in_as(make_user("Player"))
+    get world_path(world)
+    expect(response.body).to include("Lines and veils", "harm to children", "torture")
+  end
+
   it "offers nothing when no language model is set up" do
     allow(Llm).to receive(:enabled?).and_return(false)
     get campaign_path(campaign)

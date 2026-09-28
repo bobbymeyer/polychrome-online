@@ -13,6 +13,18 @@
   </div>
   <div class="field"><%= f.label :description %><%= f.text_area :description, rows: 4 %></div>
   <% if world.persisted? %>
+    <fieldset class="panel">
+      <legend>Voice</legend>
+      <p class="hint">How the setting sounds. The language model writes in this voice when it drafts for you, and keeps clear of what you rule out.</p>
+      <div class="field"><%= f.label :voice, "Tone and touchstones" %><%= f.text_area :voice, rows: 3, placeholder: "Wet noir with a kind heart. Dashiell Hammett by way of Studio Ghibli. Short sentences; people say less than they mean." %></div>
+      <div class="field"><%= f.label :avoid, "Words and tropes to avoid" %><%= f.text_area :avoid, rows: 2, placeholder: "chosen ones, prophecies, 'ancient evil', elves" %></div>
+    </fieldset>
+    <fieldset class="panel">
+      <legend>Lines and veils</legend>
+      <p class="hint">Shown to everyone who plays here, and the language model never writes them. Lines never happen in this setting; veils can happen, but off-screen.</p>
+      <div class="field"><%= f.label :lines %><%= f.text_area :lines, rows: 2, placeholder: "harm to children, sexual violence" %></div>
+      <div class="field"><%= f.label :veils %><%= f.text_area :veils, rows: 2, placeholder: "torture, the details of a plague" %></div>
+    </fieldset>
     <fieldset class="field music-fields">
       <legend>Music</legend>
       <p class="hint">A track for each kind of scene, looped while the party is there. Every page at the table plays its scene's track; the GM can switch it from the table. A scene without a track is quiet. Audio files up to <%= World::MUSIC_MAX_BYTES / 1.megabyte %> MB, and only music you have the rights to.</p>

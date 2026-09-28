@@ -49,7 +49,7 @@ class ArtBatch < ApplicationRecord
   def write_prompt!(llm)
     return unless recipe["write"] && !recipe.dig("parts", "written") && !recipe["writer_error"]
 
-    update!(recipe: PromptWriter.rewrite(recipe, client: llm))
+    update!(recipe: PromptWriter.rewrite(recipe, client: llm, world: world))
   end
 
   # Queue every candidate with ComfyUI, each graph built against what this
