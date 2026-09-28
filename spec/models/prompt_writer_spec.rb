@@ -49,6 +49,14 @@ RSpec.describe "Writing prompts with a language model (§8)" do
     end
   end
 
+  describe "reading JSON from a model's reply" do
+    it "takes the first object, whatever is around it" do
+      expect(Llm.parse_json("Sure!\n```json\n{\"a\": \"x } y\", \"b\": [{\"c\": 2}]}\n```\nHope that helps.")).to eq("a" => "x } y", "b" => [ { "c" => 2 } ])
+      expect(Llm.parse_json("no json here")).to be_nil
+      expect(Llm.parse_json("{broken")).to be_nil
+    end
+  end
+
   describe PromptWriter do
     let(:parts) { { "prefix" => "masterpiece, best quality", "style" => "ink wash", "framing" => "profile view", "subject" => "Goblin, a small green raider", "detail" => "" } }
     let(:recipe) { { "model" => "anima-preview.safetensors", "family" => "anima", "parts" => parts, "positive" => ArtDirection.compose(parts) } }

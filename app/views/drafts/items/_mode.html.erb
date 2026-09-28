@@ -1,0 +1,3 @@
+<strong><%= item["name"] %></strong><% if item["line"] %>: “<%= item["line"] %>”<% end %>
+<br><span class="muted"><%= [ item["description"], ("shuts #{item['closed'].map(&:humanize).to_sentence.downcase}" if item["closed"].present?),
+                              ("#{item['music']} music" if item["music"]), ("looks: #{item['art']}" if item["art"]) ].compact.join(" · ") %></span>

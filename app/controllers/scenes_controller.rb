@@ -11,8 +11,9 @@ class ScenesController < ApplicationController
   before_action :set_scene, only: %i[edit update destroy play]
   before_action :require_campaign_gm
 
+  # A suggested scene (Drafts::Scene) arrives with its name and script.
   def new
-    @scene = @campaign.scenes.new
+    @scene = @campaign.scenes.new(params.fetch(:scene, {}).permit(:name, :script))
   end
 
   def create

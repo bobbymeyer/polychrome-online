@@ -1,0 +1,28 @@
+<%# What the language model came back with (Draft), each to keep or not. Replaced live as it comes. %>
+<div id="<%= Draft.slot_id(kind, target) %>" class="draft-results">
+  <% if draft %>
+    <% owner = draft.owner %>
+    <% keep_path = ->(i) { owner.is_a?(Campaign) ? keep_campaign_draft_path(owner, draft, item: i) : keep_world_draft_path(owner, draft, item: i) } %>
+    <% case draft.status %>
+    <% when "queued", "running" %>
+      <p class="draft-results__status" role="status">Thinking…</p>
+    <% when "failed" %>
+      <p class="form-errors" role="alert"><%= draft.error %></p>
+    <% else %>
+      <ol class="draft-items">
+        <% draft.items.each_with_index do |item, i| %>
+          <li class="<%= 'is-kept' if item['kept'] %>">
+            <div class="draft-item"><%= render "drafts/items/#{kind}", item: item %></div>
+            <% if item["kept"] %>
+              <span class="label">Kept</span>
+            <% elsif !(kind == "setting" && item["section"] == "job") %>
+              <%= button_to({ "scene" => "Put on the form", "family" => "Use these" }.fetch(kind, "Keep"), keep_path.(i), class: "button button--quiet",
+                            form: { data: { turbo_frame: "_top" } }) %>
+            <% end %>
+          </li>
+        <% end %>
+      </ol>
+    <% end %>
+    <%= button_to "Throw these away", (owner.is_a?(Campaign) ? campaign_draft_path(owner, draft) : world_draft_path(owner, draft)), method: :delete, class: "link-button" %>
+  <% end %>
+</div>

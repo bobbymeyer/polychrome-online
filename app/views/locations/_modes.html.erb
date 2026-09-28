@@ -58,4 +58,5 @@
     <% end %>
     <%= f.submit "Prepare the mode", class: "button" %>
   <% end %>
+  <%= render "drafts/panel", owner: location.campaign, kind: "mode", target: location, title: "Suggest modes", placeholder: "plague, or a festival" %>
 </details>

@@ -46,7 +46,7 @@ class AbilityFamily
     names = self.class.names_for(root)
     presets.each_with_index.map do |preset, i|
       posted = Array(tiers)[i].to_h
-      { "name" => posted["name"].presence || names[i], "target" => preset.target,
+      { "name" => posted["name"].presence || names[i], "description" => posted["description"].presence, "target" => preset.target,
         "power" => (posted["power"].presence || preset.power).to_i, "mp" => (posted["mp"].presence || preset.mp).to_i,
         "level" => (posted["level"].presence || preset.level).to_i }
     end
@@ -66,7 +66,7 @@ class AbilityFamily
       rows.each do |row|
         ability = world.abilities.new(name: row["name"], kind: kind, target: row["target"], mp_cost: row["mp"],
                                       gesture: GESTURES[shape], effects: [ effect(row) ],
-                                      description: "#{root.strip}, #{tier_word(written.size)}.")
+                                      description: row["description"] || "#{root.strip}, #{tier_word(written.size)}.")
         unless ability.save
           ability.errors.full_messages.each { |m| errors.add(:base, "#{row['name']}: #{m}") }
           raise ActiveRecord::Rollback

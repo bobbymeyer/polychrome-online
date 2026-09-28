@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_200000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -247,6 +247,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_190000) do
     t.datetime "updated_at", null: false
     t.index ["campaign_id"], name: "index_clocks_on_campaign_id"
     t.index ["location_id"], name: "index_clocks_on_location_id"
+  end
+
+  create_table "drafts", force: :cascade do |t|
+    t.string "owner_type", null: false
+    t.integer "owner_id", null: false
+    t.string "kind", null: false
+    t.string "target"
+    t.json "request", default: {}, null: false
+    t.string "status", default: "queued", null: false
+    t.json "items", default: [], null: false
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["owner_type", "owner_id", "kind", "target"], name: "index_drafts_on_owner_type_and_owner_id_and_kind_and_target"
+    t.index ["owner_type", "owner_id"], name: "index_drafts_on_owner"
   end
 
   create_table "encounter_tables", force: :cascade do |t|

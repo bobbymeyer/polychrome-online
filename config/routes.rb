@@ -51,6 +51,11 @@ Rails.application.routes.draw do
       post :pick, on: :member
     end
 
+    # The language model's suggestions for world building (Draft).
+    resources :drafts, only: %i[create destroy] do
+      post :keep, on: :member
+    end
+
     # The campaign layer (§2): a party's run through the world.
     resources :campaigns, only: %i[new create]
   end
@@ -73,6 +78,10 @@ Rails.application.routes.draw do
     resources :secrets, only: %i[create destroy] do
       post :reveal, on: :member
       post :conceal, on: :member
+    end
+    # The language model's suggestions for prep (Draft).
+    resources :drafts, only: %i[create destroy] do
+      post :keep, on: :member
     end
     # Every GM diff on this campaign's locations, with reverts (§7).
     resource :changes, only: :show

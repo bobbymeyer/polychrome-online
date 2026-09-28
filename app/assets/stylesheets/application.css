@@ -732,3 +732,15 @@ details[open] summary { margin-bottom: 16px; }
 .mode-pictures li { display: grid; gap: 4px; font-size: 13px; }
 .mode-pictures img, .mode-pictures .candidate__empty { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border: 1px solid var(--rule); }
 .mode-pictures .candidate__empty { display: grid; place-items: center; font-size: 13px; font-weight: 400; }
+
+/* The language model's suggestions (Draft). */
+.draft-panel { margin: 12px 0; }
+.draft-panel > summary { cursor: pointer; font-weight: 700; }
+.draft-results__status { color: var(--grey); }
+.draft-items { list-style: none; margin: 12px 0; padding: 0; }
+.draft-items li { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.draft-items li.is-kept { color: var(--grey); }
+.draft-item { flex: 1; }
+.draft-script { white-space: pre-wrap; font-size: 13px; margin: 4px 0; }
+.draft-tiers { margin: 0; padding-left: 20px; }
+.type-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--ink); vertical-align: middle; }

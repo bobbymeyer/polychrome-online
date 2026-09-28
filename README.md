@@ -493,6 +493,37 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
 - **Where:** clocks and secrets are on the campaign page for prep, and in
   the GM's panels at the table for play. Both update live.
 
+## Suggestions from a language model
+
+With a language model set up (`LLM_URL`, see "Art"), the GM can ask it for
+drafts while preparing and world building. It drafts and the GM decides:
+nothing it writes is used until it is kept, and keeping goes through the same
+forms and checks as writing by hand. Without one, none of this shows.
+
+- **Prep** (the campaign page and location pages, for the GM):
+  - **Secrets:** they tie together the cast and places already there.
+  - **Clocks:** each has segments, triggers and the line the table hears
+    when it fills.
+  - **A scene:** its script goes onto the new scene form, with lines to fix
+    flagged, for the GM to pick an ending and save.
+  - **Modes for a place:** each has its line, what players read, services
+    shut, music and art words.
+- **World building** (for whoever can edit the world):
+  - **An entry's description,** in the voice of the rest of its book (the
+    entry's page). Only words: the numbers stay the author's.
+  - **An ability family's four tier names and descriptions:** they go onto
+    the family form.
+  - **A setting's types, skills and jobs,** from a pitch (the world's page).
+    Types and skills can be kept straight in; jobs need numbers, so they are
+    ideas for the Compendium.
+- **How:** each ask runs in the background (`DraftJob`), and the
+  suggestions land on the page as they come. A new ask replaces the last
+  one.
+- **What the model is told:** a few compact lines about the setting and the
+  campaign, the GM's notes included, so they go to the configured server.
+  It is asked for JSON, and chatter or code fences around the JSON are
+  ignored.
+
 ## Accounts
 
 Everything needs an account, except signing in, making an account,

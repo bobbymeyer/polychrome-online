@@ -1,0 +1,3 @@
+<strong><%= item["name"] %></strong>
+<pre class="draft-script"><%= item["script"] %></pre>
+<% if item["problems"].present? %><p class="hint">To fix on the form: <%= item["problems"].to_sentence %></p><% end %>

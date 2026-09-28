@@ -6,8 +6,10 @@ module Grimoire
     before_action :set_world
     before_action :require_world_editor
 
+    # Suggested names (Drafts::Family) arrive filled in.
     def new
       @family = AbilityFamily.new(world: @world, shape: "caster", type: @world.type_chart.slugs.second || @world.type_chart.plain)
+      @family.assign_attributes(family_params) if params[:family]
     end
 
     def create
@@ -27,7 +29,7 @@ module Grimoire
     end
 
     def family_params
-      fields = params.expect(family: [ :root, :shape, :type, :status, :job_id, { tiers: [ %i[name power mp level] ] } ])
+      fields = params.expect(family: [ :root, :shape, :type, :status, :job_id, { tiers: [ %i[name description power mp level] ] } ])
       # Tiers by position: "0".."3", any of them left out.
       posted = fields[:tiers].respond_to?(:each_pair) ? fields[:tiers].to_h : {}
       fields[:tiers] = Array.new(4) { |i| posted[i.to_s] || {} }

@@ -5,6 +5,8 @@
   Name a root and a shape, and this writes four tiers: one foe, one foe harder, every foe, every foe harder.
   Leave a tier's fields blank for the shape's numbers. Each one is an ordinary Grimoire entry afterwards.
 </p>
+<%= render "drafts/panel", owner: @world, kind: "family", title: "Suggest names" %>
+
 <%= form_with model: @family, scope: :family, url: world_grimoire_families_path(@world), class: "book-form" do |f| %>
   <% if @family.errors.any? %>
     <div class="flash flash--alert" role="alert"><%= @family.errors.full_messages.to_sentence %></div>
@@ -34,13 +36,14 @@
       Caster presets: <%= AbilityFamily::SHAPES["caster"][2].map { |t| "#{t.power} for #{t.mp} MP" }.join(", ") %>.
     </p>
     <table class="grid-form">
-      <thead><tr><th>Tier</th><th>Name</th><th>Aims at</th><th>Power</th><th>MP</th><th>Job level</th></tr></thead>
+      <thead><tr><th>Tier</th><th>Name</th><th>Description</th><th>Aims at</th><th>Power</th><th>MP</th><th>Job level</th></tr></thead>
       <tbody>
         <% AbilityFamily::SHAPES["caster"][2].each_with_index do |tier, i| %>
           <% posted = Array(@family.tiers)[i].to_h %>
           <tr>
             <td><%= i + 1 %></td>
             <td><%= text_field_tag "family[tiers][#{i}][name]", posted["name"], placeholder: "From the root", "aria-label": "Tier #{i + 1} name" %></td>
+            <td><%= text_field_tag "family[tiers][#{i}][description]", posted["description"], placeholder: "Written for you", "aria-label": "Tier #{i + 1} description" %></td>
             <td class="muted"><%= tier.target.start_with?("all") ? "Everyone" : "One" %></td>
             <td><%= number_field_tag "family[tiers][#{i}][power]", posted["power"], min: 1, placeholder: "preset", "aria-label": "Tier #{i + 1} power" %></td>
             <td><%= number_field_tag "family[tiers][#{i}][mp]", posted["mp"], min: 0, placeholder: tier.mp, "aria-label": "Tier #{i + 1} MP" %></td>
