@@ -9,6 +9,7 @@ class WorldRoute < ApplicationRecord
   belongs_to :encounter_table, optional: true
 
   validates :state, inclusion: { in: MapEdge::STATES }
+  validates :duration, numericality: { only_integer: true, in: 1..28 }
   validate :joins_two_places_of_the_world
 
   def label = "#{from_place.name} – #{to_place.name}"

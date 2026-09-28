@@ -148,13 +148,34 @@ class World < ApplicationRecord
         end
       end
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
-      %w[art_style art_negative art_loras art_model voice avoid lines veils terms].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
       copy_canon_from!(source)
     end
   end
 
   COPIED = %w[id world_id created_at updated_at].freeze
+
+  # A campaign's day as the setting names it: "Moonsday, 12 Rainfall", or
+  # "Day 12" for a world with no calendar.
+  #   calendar: { "weekdays" => [...], "months" => [...], "month_length" => 30 }
+  def date(day)
+    weekdays = Array(calendar["weekdays"]).compact_blank
+    months = Array(calendar["months"]).compact_blank
+    length = calendar["month_length"].to_i
+    index = day.to_i - 1
+    [ (weekdays[index % weekdays.size] if weekdays.any?),
+      (months.any? && length.positive? ? "#{(index % length) + 1} #{months[(index / length) % months.size]}" : "day #{day}") ]
+      .compact.join(", ").upcase_first
+  end
+
+  # From the form: names as comma-separated text.
+  def calendar=(value)
+    value = value.to_h.stringify_keys
+    split = ->(v) { (v.is_a?(Array) ? v : v.to_s.split(",")).map { |n| n.to_s.strip }.reject(&:empty?).first(24) }
+    super({ "weekdays" => split.(value["weekdays"]), "months" => split.(value["months"]),
+            "month_length" => value["month_length"].to_i.clamp(0, 400) }.reject { |_, v| v.blank? })
+  end
 
   # The atlas, cast and codex, pointing at this world's copies of the books.
   def copy_canon_from!(source)

@@ -4,6 +4,8 @@
 # now it holds the characters, the shared bag and party funds; flags, GM
 # diffs and edition pins arrive with build step 8.
 class Campaign < ApplicationRecord
+  include Timekeeping
+
   belongs_to :world
   belongs_to :gm, class_name: "User", optional: true
   has_many :characters, dependent: :destroy
@@ -147,6 +149,7 @@ class Campaign < ApplicationRecord
     transaction do
       tired.each { |c| use_service!("inn", c, at: at, by: by) }
       tick_clocks!("rest")
+      pass_time!(until_dawn, announce: :new_day)
     end
   end
 
@@ -254,6 +257,7 @@ class Campaign < ApplicationRecord
       messages.create!(kind: "system", body: "The way is safe: nothing troubles the party on the road.") if safe
       messages.create!(kind: "system", body: "Encounter! #{describe_encounter(rolled)}.") if rolled
       tick_clocks!("travel")
+      pass_time!(edge.duration, announce: :new_day)
     end
     broadcast_map
     rolled
@@ -463,6 +467,7 @@ class Campaign < ApplicationRecord
       characters.update_all(hp: nil, mp: nil, field_used: false)
       messages.create!(kind: "system", body: "The party rests. Everyone is back to full #{world.word('hp')} and #{world.word('mp')}.")
       tick_clocks!("rest")
+      pass_time!(until_dawn, announce: :new_day)
     end
   end
 

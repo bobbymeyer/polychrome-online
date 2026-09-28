@@ -20,6 +20,7 @@
   <% else %>
     <aside class="window map-panel">
       <h2>Where are we?</h2>
+      <%= render "tables/time", campaign: @campaign %>
       <p><%= @campaign.current_node ? "The party is at #{@campaign.current_node.name}." : "The journey hasn't started." %></p>
       <% if @campaign.current_node&.description.present? %><p class="prose"><%= @campaign.current_node.description %></p><% end %>
       <% places = @campaign.map_nodes.where(visible: true).where.not(location_id: nil).includes(:location).order(:name) %>

@@ -5,7 +5,7 @@
 <div class="book-header">
   <div>
     <h1><%= @campaign.name %></h1>
-    <p class="muted"><%= money(@campaign.gil) %></p>
+    <p class="muted"><%= money(@campaign.gil) %> · <%= @campaign.when_it_is %></p>
   </div>
   <div class="actions">
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>

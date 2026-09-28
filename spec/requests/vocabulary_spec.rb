@@ -31,7 +31,7 @@ RSpec.describe "A setting's own words (Vocabulary)", type: :request do
     get campaign_path(campaign)
     expect(response.body).to include("500 crowns", "Grit #{hero.current_hp}", "Nerve")
     campaign.rest!
-    expect(campaign.messages.last.body).to eq("The party rests. Everyone is back to full Grit and Nerve.")
+    expect(campaign.messages.where(body: "The party rests. Everyone is back to full Grit and Nerve.")).to exist
 
     towns = Array.new(12) { |i| campaign.locations.create!(location_template: village, seed: i + 1) }
     expect(towns.flat_map { |t| t.view["services"].map { |s| s["kind"] } }).not_to include("guild")

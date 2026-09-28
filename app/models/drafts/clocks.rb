@@ -6,7 +6,7 @@ module Drafts
     def instructions
       "You write clocks for the GM's prep: things that will happen if the party doesn't stop them, filling in steps. " \
         'Reply with JSON: {"clocks": [{"name": "what happens, a short sentence", "segments": 4 to 8, ' \
-        '"ticks_on": ["rest", "travel", "failed_check"] (any of these, or none), ' \
+        '"ticks_on": ["rest", "travel", "failed_check", "dawn"] (any of these, or none; dawn is each new day), ' \
         '"when_full": "the line the table hears when it happens", "public": true if the players can see it coming}]}, with 3 clocks.'
     end
 

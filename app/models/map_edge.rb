@@ -15,6 +15,7 @@ class MapEdge < ApplicationRecord
   normalizes :travel_event, with: ->(text) { text.presence }
 
   validates :state, inclusion: { in: STATES }
+  validates :duration, numericality: { only_integer: true, in: 1..28 }
   validate :joins_two_nodes_of_this_campaign
   validate :one_path_per_pair
   validate :encounter_table_from_this_world

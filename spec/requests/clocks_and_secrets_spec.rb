@@ -33,7 +33,7 @@ RSpec.describe "Clocks and secrets", type: :request do
 
       campaign.rest!
       expect(clock.reload.filled).to eq(1)
-      expect(campaign.messages.last.body).to eq("The Syndicate torches Tule: 1 of 3 (the party rested).")
+      expect(campaign.messages.where(body: "The Syndicate torches Tule: 1 of 3 (the party rested).")).to exist
 
       campaign.place_party!(road)
       edge = campaign.map_edges.create!(from_node: road, to_node: node)
@@ -96,6 +96,18 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(clock).not_to be_valid
       expect(clock.errors[:mode_key].sole).to include("isn't one of")
     end
+  end
+
+  it "lets the GM pass time at the table, and shows everyone the time" do
+    patch campaign_time_path(campaign), params: { parts: 2 }
+    expect(campaign.reload.time_of_day).to eq("dusk")
+    patch campaign_time_path(campaign), params: { until: "dawn" }
+    expect(campaign.reload).to have_attributes(day: 2, time_of_day: "dawn")
+    sit(hero)
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Day 2 · dawn")
+    patch campaign_time_path(campaign), params: { parts: 1 }
+    expect(response).to have_http_status(:forbidden)
   end
 
   describe "secrets" do

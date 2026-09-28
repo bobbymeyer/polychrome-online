@@ -54,7 +54,7 @@ RSpec.describe "Campaigns and characters", type: :request do
       bartz.update!(hp: 0, mp: 0)
       post campaign_rest_path(campaign)
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
-      expect(campaign.messages.last.body).to include("The party rests")
+      expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The party rests. Everyone is back to full HP and MP.", "Day 2: dawn." ])
 
       bartz.update!(hp: 5)
       BattleRecord.start!(campaign: campaign, characters: [ bartz ], name: "Road", encounter: { "goblin" => 1 }, seed: 1)

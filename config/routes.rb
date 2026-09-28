@@ -89,6 +89,7 @@ Rails.application.routes.draw do
     # The world's atlas and cast, brought into the campaign (Atlas).
     resource :canon, only: :create
     resources :front_deals, only: :create
+    resource :time, only: :update
     # The language model's suggestions for prep (Draft).
     resources :drafts, only: %i[create destroy] do
       post :keep, on: :member

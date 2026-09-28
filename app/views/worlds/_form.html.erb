@@ -55,6 +55,15 @@
       </details>
     </fieldset>
     <fieldset class="panel">
+      <legend>Calendar</legend>
+      <p class="hint">How campaigns here count their days. Blank counts them plainly: Day 1, Day 2.</p>
+      <div class="field"><%= label_tag "world_calendar_weekdays", "Days of the week" %><%= text_field_tag "world[calendar][weekdays]", Array(world.calendar["weekdays"]).join(", "), id: "world_calendar_weekdays", placeholder: "Moonsday, Tidesday, Ashday, Bellday, Restday" %></div>
+      <div class="field-row">
+        <div class="field"><%= label_tag "world_calendar_months", "Months" %><%= text_field_tag "world[calendar][months]", Array(world.calendar["months"]).join(", "), id: "world_calendar_months", placeholder: "Thaw, Rainfall, Highsun, Harvest, Frost" %></div>
+        <div class="field"><%= label_tag "world_calendar_month_length", "Days in a month" %><%= number_field_tag "world[calendar][month_length]", world.calendar["month_length"], min: 0, max: 400, id: "world_calendar_month_length", placeholder: "30" %></div>
+      </div>
+    </fieldset>
+    <fieldset class="panel">
       <legend>Lines and veils</legend>
       <p class="hint">Shown to everyone who plays here, and the language model never writes them. Lines never happen in this setting; veils can happen, but off-screen.</p>
       <div class="field"><%= f.label :lines %><%= f.text_area :lines, rows: 2, placeholder: "harm to children, sexual violence" %></div>

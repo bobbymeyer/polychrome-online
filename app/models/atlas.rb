@@ -56,7 +56,7 @@ class Atlas
       next if campaign.map_edges.where(from_node: from, to_node: to).or(campaign.map_edges.where(from_node: to, to_node: from)).exists?
 
       campaign.map_edges.create!(from_node: from, to_node: to, state: route.state, encounter_table: route.encounter_table,
-                                 travel_event: route.travel_event, world_route: route)
+                                 travel_event: route.travel_event, duration: route.duration, world_route: route)
     end
   end
 

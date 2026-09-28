@@ -49,7 +49,7 @@
       <ul class="refs">
         <% @routes.each do |route| %>
           <li>
-            <%= route.label %> <span class="muted">· <%= route.state %><%= " · #{route.encounter_table.name}" if route.encounter_table %><%= " · “#{route.travel_event.truncate(60)}”" if route.travel_event %></span>
+            <%= route.label %> <span class="muted">· <%= route.state %><%= " · #{route.encounter_table.name}" if route.encounter_table %><%= " · #{pluralize(route.duration, 'part')} of a day" %><%= " · “#{route.travel_event.truncate(60)}”" if route.travel_event %></span>
             <%= button_to "Remove", world_world_route_path(@world, route), method: :delete, class: "link-button", form: { class: "inline" } if can_edit_world? %>
           </li>
         <% end %>
@@ -64,6 +64,7 @@
           <div class="field"><%= f.label :from_place_id, "From" %><%= f.select :from_place_id, options %></div>
           <div class="field"><%= f.label :to_place_id, "To" %><%= f.select :to_place_id, options, selected: options.second&.last %></div>
           <div class="field"><%= f.label :state, "The road is" %><%= f.select :state, MapEdge::STATES.map { |s| [ s.capitalize, s ] } %></div>
+          <div class="field"><%= f.label :duration, "Takes (parts of a day)" %><%= f.number_field :duration, value: 1, min: 1, max: 28 %></div>
           <div class="field"><%= f.label :encounter_table_id, "What waits on it" %><%= f.select :encounter_table_id, @world.encounter_tables.order(:name).map { |t| [ t.name, t.id ] }, include_blank: "Nothing" %></div>
         </div>
         <div class="field"><%= f.label :travel_event, "What the table hears on the way" %><%= f.text_field :travel_event, placeholder: "Rain turns the road to mud." %></div>

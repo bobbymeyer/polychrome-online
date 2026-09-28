@@ -55,6 +55,7 @@
       <%= render "tables/coop_join", campaign: @campaign %>
       <%= render "tables/party", campaign: @campaign %>
     <% end %>
+    <%= render "tables/time", campaign: @campaign %>
     <%= render "tables/party_knows", campaign: @campaign %>
     </div>
   </div>
@@ -86,6 +87,18 @@
     <% if @seat == "gm" %>
       <%= render "field_uses/requests", campaign: @campaign %>
       <%= render "tables/coop_setup", campaign: @campaign unless view %>
+      <details class="window table-scenes">
+        <summary>Time</summary>
+        <div class="inline-form">
+          <%= button_to "A part of the day passes", campaign_time_path(@campaign), method: :patch, params: { parts: 1 }, class: "button button--quiet" %>
+          <%= button_to "Until dawn", campaign_time_path(@campaign), method: :patch, params: { until: "dawn" }, class: "button button--quiet" %>
+          <%= form_with url: campaign_time_path(@campaign), method: :patch, class: "inline-form" do |f| %>
+            <%= number_field_tag :parts, 4, min: 1, max: 28, "aria-label": "Parts of the day" %>
+            <%= f.submit "Pass", class: "button button--quiet" %>
+          <% end %>
+        </div>
+        <p class="hint">A day has four parts: dawn, day, dusk and night. Journeys take their road's time; a rest sleeps until dawn. Each new day ticks the clocks that tick on dawn.</p>
+      </details>
       <details class="window table-scenes" <%= "open" if @campaign.clocks.running.exists? %>>
         <summary>Clocks</summary>
         <%= render "clocks/gm", campaign: @campaign %>

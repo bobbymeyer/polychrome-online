@@ -13,10 +13,11 @@ class Clock < ApplicationRecord
   TRIGGERS = {
     "rest" => "each rest",
     "travel" => "each journey",
-    "failed_check" => "each failed check"
+    "failed_check" => "each failed check",
+    "dawn" => "each new day"
   }.freeze
   # What ticked it, as the table hears it.
-  REASONS = { "rest" => "the party rested", "travel" => "time on the road", "failed_check" => "a failed check" }.freeze
+  REASONS = { "rest" => "the party rested", "travel" => "time on the road", "failed_check" => "a failed check", "dawn" => "a new day" }.freeze
 
   belongs_to :campaign
   belongs_to :world_front, optional: true

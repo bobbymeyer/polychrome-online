@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_231000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_232000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -180,6 +180,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_231000) do
     t.string "join_code"
     t.boolean "safe_road", default: false, null: false
     t.json "open_jobs"
+    t.integer "day", default: 1, null: false
+    t.string "time_of_day", default: "dawn", null: false
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true
@@ -477,6 +479,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_231000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "world_route_id"
+    t.integer "duration", default: 1, null: false
     t.index ["campaign_id"], name: "index_map_edges_on_campaign_id"
     t.index ["encounter_table_id"], name: "index_map_edges_on_encounter_table_id"
     t.index ["from_node_id"], name: "index_map_edges_on_from_node_id"
@@ -711,6 +714,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_231000) do
     t.text "travel_event"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "duration", default: 1, null: false
     t.index ["encounter_table_id"], name: "index_world_routes_on_encounter_table_id"
     t.index ["from_place_id"], name: "index_world_routes_on_from_place_id"
     t.index ["to_place_id"], name: "index_world_routes_on_to_place_id"
@@ -736,6 +740,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_231000) do
     t.text "lines"
     t.text "veils"
     t.json "terms", default: {}, null: false
+    t.json "calendar", default: {}, null: false
     t.index ["owner_id"], name: "index_worlds_on_owner_id"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end
