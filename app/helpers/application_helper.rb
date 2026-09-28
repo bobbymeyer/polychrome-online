@@ -59,7 +59,7 @@ module ApplicationHelper
   def term(token, world = vocabulary_world)
     token = token.to_s
     return word("status.#{token}", world) if Battle::STATUSES.include?(token)
-    return word("service.#{token}", world) if Vocabulary::SERVICES.include?(token)
+    return word("service.#{token}", world) if World::Vocabulary::SERVICES.include?(token)
 
     token.humanize
   end

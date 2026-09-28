@@ -1,0 +1,20 @@
+<section class="window">
+  <h2>Stats</h2>
+  <p class="hint">What their level gives, shaped by their job, then their gear, then the job's innate abilities.</p>
+  <table class="book-table book-table--plain stat-table">
+    <thead>
+      <tr><th>Stat</th><th class="num">Base</th><th class="num">Job</th><th class="num">Gear</th><th class="num">Total</th></tr>
+    </thead>
+    <tbody>
+      <% Stats::NAMES.each do |stat| %>
+        <tr>
+          <td><%= stat_term(stat) %></td>
+          <td class="num"><%= stages[:base][stat] %></td>
+          <td class="num"><%= stages[:job][stat] %></td>
+          <td class="num"><%= stages[:equipment][stat] %></td>
+          <td class="num"><strong><%= stages[:total][stat] %></strong></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>

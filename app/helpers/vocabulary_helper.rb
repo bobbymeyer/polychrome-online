@@ -9,7 +9,7 @@ module VocabularyHelper
   end
 
   def word(key, world = vocabulary_world)
-    world ? world.word(key) : Vocabulary.word({}, key)
+    world ? world.word(key) : World::Vocabulary.word({}, key)
   end
 
   # "150 gil", in the world's money.

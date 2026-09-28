@@ -68,8 +68,8 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
 
     note = campaign.messages.find_by!(scope: "gm")
     expect(note.body).to start_with("Overnight: The feud comes to blood moved on (1 of 6).").and include("Mara went from Varn to Tule.", "Prices in Tule: +15%.")
-    expect(Message.visible_to(campaign, hero)).not_to include(note)
-    expect(Message.visible_to(campaign, "gm")).to include(note)
+    expect(Message.visible_to(campaign, Seat.of(hero))).not_to include(note)
+    expect(Message.visible_to(campaign, Seat.gm)).to include(note)
 
     potion = world.items.find_by!(slug: "potion")
     expect(tule_town.price_of(potion)).to eq((potion.price * 1.15).round)

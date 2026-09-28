@@ -8,7 +8,7 @@ class Campaigns::JobGrantsController < ApplicationController
   before_action :set_campaign
 
   def create
-    return forbid("Only the GM grants jobs.") unless table_seat == "gm"
+    return forbid("Only the GM grants jobs.") unless table_gm?
 
     jobs = @campaign.world.jobs.where(slug: Array(params[:jobs]).compact_blank).to_a
     @campaign.grant_jobs!(jobs, params[:line])

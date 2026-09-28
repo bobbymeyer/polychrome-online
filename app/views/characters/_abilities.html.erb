@@ -1,0 +1,46 @@
+<section class="window">
+  <h2>Abilities</h2>
+  <% if (own = @character.job.signature_ability) %>
+    <p class="signature-line"><%= gloss(:signature, "Signature") %>: <%= link_to own.name, world_grimoire_ability_path(@world, own) %>
+      <span class="muted"><%= own.description %></span></p>
+  <% end %>
+  <% if (passives = @character.passives).any? %>
+    <p class="signature-line"><%= gloss(:passive, passives.size > 1 ? "Passives" : "Passive") %>:
+      <%= safe_join(passives.map { |p| passive_term(p) }, ", ") %></p>
+  <% end %>
+  <h3>From <%= @character.job.name %></h3>
+  <% native = @character.native_abilities %>
+  <% if native.empty? %>
+    <p class="empty">Nothing learned in this job yet. Attack is always available.</p>
+  <% else %>
+    <ul class="refs refs--inline">
+      <% native.each do |ability| %>
+        <li><%= link_to ability.name, world_grimoire_ability_path(@world, ability) %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <h3>Free slots (<%= @character.job.ability_slots %>)</h3>
+  <% slottable = @character.learned_abilities - native %>
+  <% if @character.job.ability_slots.zero? %>
+    <p class="empty"><%= @character.job.name %> has no free slots.</p>
+  <% elsif slottable.empty? %>
+    <p class="empty">Learn abilities in other jobs to bring them here.</p>
+  <% elsif !can_manage?(@character) %>
+    <ul class="refs refs--inline"><% @character.slotted_abilities.compact.each do |ability| %><li><%= ability.name %></li><% end %></ul>
+  <% else %>
+    <% slotted = @character.slotted_abilities %>
+    <%= form_with url: character_ability_slots_path(@character), method: :patch, scope: :ability_slots, class: "book-form" do |f| %>
+      <div class="field-row">
+        <% @character.job.ability_slots.times do |i| %>
+          <div class="field">
+            <label for="ability_slot_<%= i %>">Slot <%= i + 1 %></label>
+            <%= select_tag "ability_slots[abilities][]", options_for_select(slottable.map { |a| [ a.name, a.id ] }, slotted[i]&.id),
+                           include_blank: "—", id: "ability_slot_#{i}" %>
+          </div>
+        <% end %>
+      </div>
+      <%= f.submit "Set abilities", class: "button" %>
+    <% end %>
+  <% end %>
+</section>

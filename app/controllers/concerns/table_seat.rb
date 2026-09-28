@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-# Who is sitting at a campaign's table: "gm", a character, or nobody.
+# Who is sitting at a campaign's table (Seat): the GM, a character, or
+# nobody.
 #
 # A seat is a choice remembered in the session, but only a seat the account
 # may take counts (User#can_gm?, #can_play?), checked on every request: the
@@ -17,17 +18,17 @@ module TableSeat
 
   private
 
-  # "gm", a Character of this campaign, or nil. With no seat chosen yet, the
-  # obvious one: the GM seat if it's your campaign, otherwise your only
-  # character here.
+  # The Seat this account has at the campaign's table. With no seat chosen
+  # yet, the obvious one: the GM seat if it's your campaign, otherwise your
+  # only character here.
   def table_seat(campaign = @campaign)
     seat = session.dig(:table_seats, seat_key(campaign))
     return default_table_seat(campaign) if seat.nil?
-    return nil if seat == "" # stood up on purpose
-    return (can_gm?(campaign) ? "gm" : nil) if seat == "gm"
+    return Seat.nobody if seat == "" # stood up on purpose
+    return (can_gm?(campaign) ? Seat.gm : Seat.nobody) if seat == "gm"
 
     character = campaign.characters.find_by(id: seat)
-    character if character && can_play?(character)
+    character && can_play?(character) ? Seat.of(character) : Seat.nobody
   end
 
   # Seats belong to the account, not the browser: two people signing in on
@@ -37,12 +38,11 @@ module TableSeat
   end
 
   def default_table_seat(campaign)
-    return nil unless current_user
-
-    return "gm" if campaign.gm_id == current_user.id
+    return Seat.nobody unless current_user
+    return Seat.gm if campaign.gm_id == current_user.id
 
     mine = campaign.characters.where(user: current_user).limit(2).to_a
-    mine.first if mine.one?
+    mine.one? ? Seat.of(mine.first) : Seat.nobody
   end
 
   # Take a seat if this account may. Returns whether it did.
@@ -60,7 +60,7 @@ module TableSeat
   end
 
   def table_gm?(campaign = @campaign)
-    table_seat(campaign) == "gm"
+    table_seat(campaign).gm?
   end
 
   def take_table_seat(campaign, seat)

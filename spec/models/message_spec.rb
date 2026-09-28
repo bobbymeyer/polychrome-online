@@ -58,17 +58,17 @@ RSpec.describe Message do
     let!(:from_lenna) { say(scope: "whisper", speaker: lenna) }
 
     it "shows whispers only to the GM and the character involved" do
-      expect(described_class.visible_to(campaign, "gm")).to eq([ table_line, to_bartz, from_lenna ])
-      expect(described_class.visible_to(campaign, bartz)).to eq([ table_line, to_bartz ])
-      expect(described_class.visible_to(campaign, lenna)).to eq([ table_line, from_lenna ])
-      expect(described_class.visible_to(campaign, nil)).to eq([ table_line ])
+      expect(described_class.visible_to(campaign, Seat.gm)).to eq([ table_line, to_bartz, from_lenna ])
+      expect(described_class.visible_to(campaign, Seat.of(bartz))).to eq([ table_line, to_bartz ])
+      expect(described_class.visible_to(campaign, Seat.of(lenna))).to eq([ table_line, from_lenna ])
+      expect(described_class.visible_to(campaign, Seat.nobody)).to eq([ table_line ])
     end
 
-    it "agrees with #visible_to?" do
-      [ "gm", bartz, lenna, nil ].each do |seat|
+    it "agrees with Seat#sees?" do
+      [ Seat.gm, Seat.of(bartz), Seat.of(lenna), Seat.nobody ].each do |seat|
         visible = described_class.visible_to(campaign, seat)
         [ table_line, to_bartz, from_lenna ].each do |message|
-          expect(message.visible_to?(seat)).to eq(visible.include?(message)), "#{seat.try(:name) || seat.inspect} / #{message.body}"
+          expect(seat.sees?(message)).to eq(visible.include?(message)), "#{seat.name.inspect} / #{message.body}"
         end
       end
     end

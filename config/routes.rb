@@ -41,18 +41,20 @@ Rails.application.routes.draw do
     end
 
     # The setting's damage types and chart, and the skills its checks use.
-    resource :types, only: %i[show edit update], controller: "world_types"
-    resource :skills, only: %i[show edit update], controller: "world_skills"
-    resource :origins, only: %i[show edit update], controller: "world_origins"
+    scope module: :worlds do
+      resource :types, only: %i[show edit update]
+      resource :skills, only: %i[show edit update]
+      resource :origins, only: %i[show edit update]
 
-    # The setting's canon: its atlas, its cast, its lore.
-    resources :world_places, path: "atlas", except: :show
-    resources :world_routes, path: "atlas/roads", only: %i[create destroy]
-    resources :world_figures, path: "cast", except: :show
-    resources :codex_entries, path: "codex"
-    resources :world_fronts, path: "fronts", except: :show
-    # Its pocket history, rolled over the atlas and written into the canon.
-    resource :history, only: %i[show update create destroy], controller: "world_histories"
+      # The setting's canon: its atlas, its cast, its lore.
+      resources :world_places, path: "atlas", except: :show, controller: "places"
+      resources :world_routes, path: "atlas/roads", only: %i[create destroy], controller: "routes"
+      resources :world_figures, path: "cast", except: :show, controller: "figures"
+      resources :codex_entries, path: "codex"
+      resources :world_fronts, path: "fronts", except: :show, controller: "fronts"
+      # Its pocket history, rolled over the atlas and written into the canon.
+      resource :history, only: %i[show update create destroy], controller: "histories"
+    end
 
     # The asset pipeline (§8): the world's art direction, and generating
     # candidates for an entry's image with ComfyUI.
@@ -136,7 +138,7 @@ Rails.application.routes.draw do
   resources :map_nodes, only: %i[edit update destroy], path: "map/nodes" do
     resource :party, only: :create, module: :map_nodes
     resources :map_edges, only: :create, path: "paths"
-    resource :location, only: :create, controller: "node_locations"
+    resource :location, only: :create, module: :map_nodes
   end
 
   # Towns and dungeons (§7). Everything but viewing is a GM control, each a
@@ -175,21 +177,25 @@ Rails.application.routes.draw do
   end
 
   resources :characters, only: %i[show edit update destroy] do
-    resource :job, only: :update, controller: "character_jobs"
-    resource :equipment, only: :update
-    resource :ability_slots, only: :update
-    resource :grant, only: :create
-    resource :item_use, only: :create
+    scope module: :characters do
+      resource :job, only: :update
+      resource :equipment, only: :update, controller: "equipment"
+      resource :ability_slots, only: :update
+      resource :grant, only: :create
+      resource :item_use, only: :create
+    end
   end
 
   # The battle screen (§6): one long-lived page fed by Turbo Streams. The
   # command panel is a Turbo Frame reloaded after each beat plays.
   resources :battles, only: :show do
-    resource :call_off, only: :create, module: :battles
-    resource :seat, only: %i[create destroy]
-    resource :panel, only: :show
-    resources :actions, only: :create, controller: "battle_actions"
-    resource :playback, only: :update
-    resource :auto, only: :update, controller: "battle_autos"
+    scope module: :battles do
+      resource :call_off, only: :create
+      resource :seat, only: %i[create destroy]
+      resource :panel, only: :show
+      resources :actions, only: :create
+      resource :playback, only: :update
+      resource :auto, only: :update
+    end
   end
 end

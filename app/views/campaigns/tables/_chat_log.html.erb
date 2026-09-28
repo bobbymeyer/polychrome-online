@@ -2,7 +2,7 @@
     data-retract says whose lines this seat may take back: the GM any line said, a player their
     own (the lines themselves are the same for everyone; chat_line_controller shows the button). %>
 <% seat = local_assigns[:seat] %>
-<% retract = seat == "gm" ? "all" : (seat.is_a?(Character) ? "Character:#{seat.id}" : nil) %>
+<% retract = seat&.retracts %>
 <section class="chat-log log-drawer__section" aria-label="Table" <%= tag.attributes(data: { retract: retract }) %>>
   <h3>Table</h3>
   <ol id="chat_log" data-dialogue-target="log" data-log-drawer-target="list">

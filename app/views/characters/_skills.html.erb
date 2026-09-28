@@ -1,0 +1,24 @@
+<section class="window" id="skills">
+  <h2><%= gloss(:skill, "Skills") %></h2>
+  <% if (field = @character.job.field_ability_entry) %>
+    <p>
+      <%= gloss(:field_ability) %>: <%= link_to field.name, world_grimoire_ability_path(@world, field) %>
+      <span class="muted">(<%= @world.skill_name(field.field_skill) %>; <%= @character.field_used? ? "used, back after a rest" : "ready" %>)</span>
+    </p>
+  <% end %>
+  <p class="hint">The chance of a Normal check with each of <%= @world.name %>'s skills. The GM can call it easier or harder.</p>
+  <table class="book-table book-table--plain">
+    <thead><tr><th>Skill</th><th>Stat</th><th class="num">Job</th><th class="num">Normal check</th></tr></thead>
+    <tbody>
+      <% Array(@world.skills).each do |skill| %>
+        <% bonus = @character.skill_bonus(skill["slug"]) %>
+        <tr class="<%= 'is-current' if bonus.positive? %>">
+          <td><%= tag.span(skill["name"], class: ("gloss" if skill["description"].present?), tabindex: (0 if skill["description"].present?), data: { gloss: skill["description"].presence }) %></td>
+          <td><%= stat_term(skill["stat"]) %></td>
+          <td class="num"><%= bonus.positive? ? "+#{bonus}" : "—" %></td>
+          <td class="num"><%= Stats::Check.chance(stat_value: @character.stats[skill["stat"]], stat: skill["stat"], level: @character.level, difficulty: "normal", bonus: bonus) %>%</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>

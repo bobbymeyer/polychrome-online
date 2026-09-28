@@ -28,17 +28,17 @@
         <div class="field"><%= label_tag "world_terms_mp", "MP" %><%= text_field_tag "world[terms][mp]", world.terms["mp"], id: "world_terms_mp", placeholder: "MP", maxlength: 30 %></div>
       </div>
       <div class="field-row">
-        <% Vocabulary::STATS.each do |stat| %>
-          <div class="field"><%= label_tag "world_terms_stats_#{stat}", Vocabulary::DEFAULTS["stats"][stat] %><%= text_field_tag "world[terms][stats][#{stat}]", world.terms.dig("stats", stat), id: "world_terms_stats_#{stat}", placeholder: Vocabulary::DEFAULTS["stats"][stat], maxlength: 30 %></div>
+        <% World::Vocabulary::STATS.each do |stat| %>
+          <div class="field"><%= label_tag "world_terms_stats_#{stat}", World::Vocabulary::DEFAULTS["stats"][stat] %><%= text_field_tag "world[terms][stats][#{stat}]", world.terms.dig("stats", stat), id: "world_terms_stats_#{stat}", placeholder: World::Vocabulary::DEFAULTS["stats"][stat], maxlength: 30 %></div>
         <% end %>
       </div>
       <fieldset class="field">
         <legend>Town services</legend>
         <div class="field-row">
-          <% Vocabulary::SERVICES.each do |kind| %>
+          <% World::Vocabulary::SERVICES.each do |kind| %>
             <div class="field">
-              <%= label_tag "world_terms_services_#{kind}", Vocabulary::DEFAULTS["services"][kind] %>
-              <%= text_field_tag "world[terms][services][#{kind}]", world.terms.dig("services", kind), id: "world_terms_services_#{kind}", placeholder: Vocabulary::DEFAULTS["services"][kind], maxlength: 30 %>
+              <%= label_tag "world_terms_services_#{kind}", World::Vocabulary::DEFAULTS["services"][kind] %>
+              <%= text_field_tag "world[terms][services][#{kind}]", world.terms.dig("services", kind), id: "world_terms_services_#{kind}", placeholder: World::Vocabulary::DEFAULTS["services"][kind], maxlength: 30 %>
               <label class="inline"><%= check_box_tag "world[terms][services_off][]", kind, world.services_off.include?(kind), id: "world_terms_off_#{kind}" %> Not in this setting</label>
             </div>
           <% end %>

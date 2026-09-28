@@ -8,7 +8,7 @@ class Campaigns::ChecksController < ApplicationController
   before_action :set_campaign
 
   def create
-    return forbid("Only the GM calls for checks.") unless table_seat == "gm"
+    return forbid("Only the GM calls for checks.") unless table_gm?
 
     fields = params.expect(check: [ :stat, :difficulty, :reason, { characters: [] } ])
     characters = @campaign.characters.where(id: Array(fields[:characters]).compact_blank).order(:created_at).to_a

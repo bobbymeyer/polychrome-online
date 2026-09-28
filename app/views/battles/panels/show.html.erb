@@ -1,0 +1,24 @@
+<%= turbo_frame_tag "command_panel" do %>
+  <div class="window command-panel">
+    <% if @error %>
+      <p class="form-errors" role="alert"><%= @error %></p>
+    <% end %>
+
+    <% if @battle.over? %>
+      <%= render "battles/panels/over" %>
+    <% elsif !current_seat.seated? %>
+      <%= render "battles/panels/seats" %>
+    <% elsif gm_seat? %>
+      <%= render "battles/panels/gm" %>
+    <% else %>
+      <%= render "battles/panels/player", unit: seat_unit %>
+    <% end %>
+
+    <% if current_seat.seated? %>
+      <footer class="command-panel__footer">
+        Seated as <strong><%= gm_seat? ? "GM" : seat_unit["name"] %></strong>
+        <%= button_to "Change seat", battle_seat_path(@battle), method: :delete, class: "link-button" %>
+      </footer>
+    <% end %>
+  </div>
+<% end %>

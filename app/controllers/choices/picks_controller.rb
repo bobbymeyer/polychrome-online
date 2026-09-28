@@ -6,9 +6,9 @@ class Choices::PicksController < ApplicationController
 
   def create
     seat = table_seat
-    return forbid("Sit as your character to pick.") unless seat.is_a?(Character)
+    return forbid("Sit as your character to pick.") unless seat.character?
 
-    pick = @choice.picks.find_or_initialize_by(character: seat)
+    pick = @choice.picks.find_or_initialize_by(character: seat.character)
     pick.option = params[:option]
     pick.save ? head(:no_content) : forbid(pick.errors.full_messages.to_sentence)
   end

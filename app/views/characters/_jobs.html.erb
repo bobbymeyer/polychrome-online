@@ -1,0 +1,26 @@
+<section class="window">
+  <h2>Jobs</h2>
+  <table class="book-table book-table--plain">
+    <thead><tr><th>Job</th><th class="num">Lv</th><th class="num">ABP</th><th>Learned</th></tr></thead>
+    <tbody>
+      <% @character.character_jobs.includes(job: { job_levels: :ability }).sort_by { |j| j.job.name }.each do |job_progress| %>
+        <tr class="<%= 'is-current' if job_progress.job_id == @character.job_id %>">
+          <td><%= link_to job_progress.job.name, world_compendium_job_path(@world, job_progress.job) %><%= " (current)" if job_progress.job_id == @character.job_id %></td>
+          <td class="num"><%= job_progress.level %>/<%= Stats::Growth::MAX_JOB_LEVEL %><%= tag.span(" ★", title: "Mastered", class: "mastered-star") if job_progress.mastered? %></td>
+          <td class="num"><%= job_progress.abp %></td>
+          <td><%= job_progress.learned_abilities.map(&:name).join(", ").presence || "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if can_manage?(@character) %>
+  <%= form_with url: character_job_path(@character), method: :patch, class: "book-form inline-form" do |f| %>
+    <div class="field">
+      <%= f.label :job_id, "Change job" %>
+      <%= f.select :job_id, (@campaign.available_jobs.to_a | [ @character.job ]).map { |j| [ j.name, j.id ] }, selected: @character.job_id %>
+    </div>
+    <%= f.submit "Change job", class: "button" %>
+  <% end %>
+  <p class="hint">Changing job keeps each job's ABP and every ability's mastery. Gear the new job can't use goes back to the bag. Only the current job earns ABP.</p>
+  <% end %>
+</section>

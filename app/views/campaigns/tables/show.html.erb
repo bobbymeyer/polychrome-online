@@ -5,25 +5,21 @@
 <% end %>
 
 <% view = coop_view %>
-<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap" <%= tag.attributes(data: { seat: (@seat == "gm" ? "gm" : ("player" if @seat)) }) %> data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)) }) %> data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= turbo_stream_from @campaign, :table %>
   <%= render "shared/stage_stream", campaign: @campaign %>
-  <%= turbo_stream_from @campaign, (@seat == "gm" ? :map_gm : :map) %>
-  <% if @seat == "gm" %>
-    <%= turbo_stream_from @campaign, :gm %>
-  <% elsif @seat %>
-    <%= turbo_stream_from @seat, :whispers %>
-  <% end %>
+  <%= turbo_stream_from @campaign, @seat.map_stream %>
+  <%= seat_stream_from @seat, @campaign %>
 
   <header class="battle__header">
     <div>
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= { "screen" => "Shared screen", "controller" => "Controller" }.fetch(view, "Table") %></p>
-      <h1><%= view == "controller" && @seat.is_a?(Character) ? @seat.name : @campaign.name %></h1>
-      <% if view == "controller" && @seat.is_a?(Character) %>
-        <%= render "campaigns/tables/vitals", character: @seat %>
+      <h1><%= view == "controller" && @seat.character? ? @seat.name : @campaign.name %></h1>
+      <% if view == "controller" && @seat.character? %>
+        <%= render "campaigns/tables/vitals", character: @seat.character %>
       <% end %>
       <% if @recap %>
         <button type="button" class="link-button recap-link" data-action="recap#open">Previously on <%= @campaign.name %>…</button>
@@ -37,9 +33,9 @@
     <% unless view == "controller" %>
     <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
     <section class="window table__map" aria-label="Map">
-      <%= render "campaigns/maps/canvas", campaign: @campaign, gm: @seat == "gm" %>
+      <%= render "campaigns/maps/canvas", campaign: @campaign, gm: @seat.gm? %>
       <p class="hint">
-        <%= link_to(@seat == "gm" ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %>
+        <%= link_to(@seat.gm? ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %>
         <% if (here = @campaign.current_node&.location) %>
           · <%= link_to "#{here.dungeon? ? 'Explore' : 'Visit'} #{here.name} →", location_path(here) %>
         <% end %>
@@ -66,10 +62,10 @@
 
   <% if view == "screen" %>
     <p class="hint coop-leave"><%= link_to "Leave the shared screen", campaign_table_path(@campaign, view: "off") %></p>
-  <% elsif @seat %>
+  <% elsif @seat.seated? %>
     <% if view == "controller" %>
       <p class="coop-links">
-        <%= link_to "My sheet", character_path(@seat), class: "button button--quiet" if @seat.is_a?(Character) %>
+        <%= link_to "My sheet", character_path(@seat.character), class: "button button--quiet" if @seat.character? %>
         <%= link_to "Leave controller view", campaign_table_path(@campaign, view: "off"), class: "link-button" %>
       </p>
     <% else %>
@@ -77,14 +73,14 @@
         <div class="window"><p class="muted">Loading…</p></div>
       <% end %>
     <% end %>
-    <% if @seat.is_a?(Character) %>
-      <%= render "campaigns/field_uses/ability", character: @seat %>
+    <% if @seat.character? %>
+      <%= render "campaigns/field_uses/ability", character: @seat.character %>
     <% end %>
     <p class="hint">
-      At the table as <strong><%= @seat == "gm" ? "GM" : @seat.name %></strong>.
+      At the table as <strong><%= @seat.name %></strong>.
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
-    <% if @seat == "gm" %>
+    <% if @seat.gm? %>
       <%= render "campaigns/field_uses/requests", campaign: @campaign %>
       <%= render "campaigns/tables/coop_setup", campaign: @campaign unless view %>
       <details class="window table-scenes">

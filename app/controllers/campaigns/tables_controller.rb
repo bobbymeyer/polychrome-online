@@ -14,7 +14,7 @@ class Campaigns::TablesController < ApplicationController
     remember_coop_view(@campaign)
     # The shared screen is for everyone to see: a spectator's view, whoever is
     # signed in on it, so no GM map, notes or whispers end up on the TV.
-    @seat = coop_view(@campaign) == "screen" ? nil : table_seat
+    @seat = coop_view(@campaign) == "screen" ? Seat.nobody : table_seat
     @messages = Message.visible_to(@campaign, @seat).last(LOG_LENGTH)
     @last_dialogue = @messages.reverse.find(&:dialogue?)
     @recap = Recap.for(@campaign)
