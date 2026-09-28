@@ -338,10 +338,12 @@ details[open] summary { margin-bottom: 16px; }
 .stage { position: relative; }
 .fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 
-/* The field: enemies left, party right, standing on one black line. */
+/* The field: enemies left, party right, standing on one black line. The
+   art is the show: enemies big, the party a size down (DESIGN.md). */
 .battlefield {
-  display: grid; grid-template-columns: 1fr minmax(128px, 30%); gap: var(--gutter);
-  min-height: 232px; padding: 16px 0;
+  --sprite: 176px; --sprite-party: 96px;
+  display: grid; grid-template-columns: 1fr minmax(160px, 30%); gap: var(--gutter);
+  min-height: calc(var(--sprite) + 144px); padding: 16px 0;
   border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ink);
 }
 .battlefield__side { display: flex; flex-wrap: wrap; align-content: center; gap: 24px 32px; }
@@ -353,17 +355,17 @@ details[open] summary { margin-bottom: 16px; }
 .unit.is-active .unit__label { border-bottom-color: var(--ink); font-weight: 800; }
 .unit.is-ko .unit__label { color: var(--grey); }
 
-.sprite { width: 88px; height: 88px; display: grid; place-items: center; will-change: transform; }
-.unit--party .sprite { width: 48px; height: 48px; }
+.sprite { width: var(--sprite, 88px); height: var(--sprite, 88px); display: grid; place-items: center; will-change: transform; }
+.unit--party .sprite { width: var(--sprite-party, 48px); height: var(--sprite-party, 48px); }
 .sprite__image { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
 /* Enemies are black squares, the party black circles; knocked out, only the outline is left. */
 .sprite__plate {
   display: grid; place-items: center; width: 100%; height: 100%;
   background: var(--ink); color: var(--paper); border: 2px solid var(--ink);
-  font-weight: 800; font-size: 32px; letter-spacing: -0.03em;
+  font-weight: 800; font-size: calc(var(--sprite, 88px) * .36); letter-spacing: -0.03em;
 }
 .unit--enemy .sprite__plate { width: 80%; height: 80%; }
-.unit--party .sprite__plate { border-radius: 50%; font-size: 24px; }
+.unit--party .sprite__plate { border-radius: 50%; font-size: calc(var(--sprite-party, 48px) * .5); }
 .unit.is-ko .sprite__plate { background: transparent; color: var(--ink); }
 .unit.is-ko .sprite__image { opacity: .25; filter: grayscale(1); }
 
