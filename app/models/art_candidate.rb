@@ -25,12 +25,16 @@ class ArtCandidate < ApplicationRecord
     return if images.nil?
     return update!(status: "failed", error: "The workflow saved no image") if images.empty?
 
-    bytes = client.fetch(images.first)
-    image.attach(io: StringIO.new(bytes), filename: entry.art_filename(seed), content_type: "image/png")
     # Asked to lose its background: did it? (A removal node can fail quietly.)
     wanted = art_batch.recipe["transparent"]
+    main, plain = Comfy::BackgroundRemoval.split(images)
+    bytes = client.fetch(main)
+    bytes = Comfy::BackgroundRemoval.keep_interior(bytes, plain && client.fetch(plain)) if wanted && Comfy::BackgroundRemoval.png_alpha?(bytes)
+    image.attach(io: StringIO.new(bytes), filename: entry.art_filename(seed), content_type: "image/png")
     update!(status: "done", transparent: (Comfy::BackgroundRemoval.png_alpha?(bytes) if wanted),
             run_seconds: client.respond_to?(:run_seconds) ? client.run_seconds(comfy_prompt_id) : nil)
+  rescue Comfy::Unreachable
+    raise # not this image's fault: the batch waits for ComfyUI (ArtBatchJob)
   rescue Comfy::Error => e
     update!(status: "failed", error: e.message)
   end

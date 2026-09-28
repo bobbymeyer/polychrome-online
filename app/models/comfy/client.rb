@@ -97,10 +97,12 @@ module Comfy
         end
       end
       Capabilities.new(info)
+    rescue Unreachable => e
+      Capabilities.unreachable(e.message, offline: true)
     rescue Error => e
       Capabilities.unreachable(e.message)
     rescue *NETWORK_ERRORS => e
-      Capabilities.unreachable("ComfyUI isn't reachable at #{@base} (#{e.class.name.demodulize}: #{e.message})")
+      Capabilities.unreachable(unreachable_message(e), offline: true)
     end
 
     def reachable?
@@ -155,7 +157,11 @@ module Comfy
 
       raise Error, rejection(response)
     rescue *NETWORK_ERRORS => e
-      raise Error, "ComfyUI isn't reachable at #{@base} (#{e.class.name.demodulize}: #{e.message})"
+      raise Unreachable, unreachable_message(e)
+    end
+
+    def unreachable_message(error)
+      "ComfyUI isn't reachable at #{@base} (#{error.class.name.demodulize}: #{error.message})"
     end
 
     # ComfyUI explains a rejected graph in "error" and per-node "node_errors".

@@ -5,7 +5,8 @@
 # its own ComfyUI prompt with its own seed. ArtBatchJob submits and collects;
 # every change refreshes the pages watching the entry.
 class ArtBatch < ApplicationRecord
-  STATUSES = %w[queued running done failed].freeze
+  # waiting: ComfyUI couldn't be reached; ArtBatchJob tries again later.
+  STATUSES = %w[queued waiting running done failed].freeze
 
   belongs_to :world
   belongs_to :entry, polymorphic: true
@@ -108,7 +109,9 @@ class ArtBatch < ApplicationRecord
   # loaded model and encoded prompt between them.
   def submit!(client)
     capabilities = client.capabilities
-    raise Comfy::Error, "ComfyUI isn't answering" unless capabilities.reachable?
+    unless capabilities.reachable?
+      raise (capabilities.offline? ? Comfy::Unreachable : Comfy::Error), capabilities.error || "ComfyUI isn't answering"
+    end
 
     candidates.each do |candidate|
       next if candidate.comfy_prompt_id
@@ -121,7 +124,7 @@ class ArtBatch < ApplicationRecord
       end
       candidate.update!(comfy_prompt_id: client.submit(graph), status: "running")
     end
-    update!(status: "running")
+    update!(status: "running", error: nil, submitted_at: submitted_at || Time.current)
   end
 
   # Collect whatever has finished. Returns true once every candidate has.
@@ -137,13 +140,20 @@ class ArtBatch < ApplicationRecord
     true
   end
 
+  # ComfyUI couldn't be reached: say so, and keep everything for the retry.
+  def wait!(message)
+    update!(status: "waiting", error: message)
+  end
+
   def fail!(message)
     update!(status: "failed", error: message)
     candidates.reject(&:finished?).each { |c| c.update!(status: "failed", error: message) }
   end
 
+  # Rendering has taken too long (counted from when ComfyUI took it: a
+  # batch waiting for ComfyUI to come back isn't timing out).
   def timed_out?
-    created_at < Comfy.config.fetch(:timeout, 900).to_i.seconds.ago
+    (submitted_at || created_at) < Comfy.config.fetch(:timeout, 900).to_i.seconds.ago
   end
 
   # Only the art section reloads (app/javascript/stream_actions.js), so a

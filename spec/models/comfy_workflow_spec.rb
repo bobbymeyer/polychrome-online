@@ -87,7 +87,9 @@ RSpec.describe Comfy::Workflow do
     removal = nodes(graph, "RMBG")
     expect(removal.values.sole["inputs"]).to eq("image" => [ nodes(graph, "VAEDecode").keys.sole, 0 ], "model" => "RMBG-2.0",
                                                 "sensitivity" => 1.0, "background" => "Alpha")
-    expect(sole(graph, "SaveImage")["images"]).to eq([ removal.keys.sole, 0 ])
+    saves = nodes(graph, "SaveImage").values.to_h { |node| [ node["inputs"]["filename_prefix"], node["inputs"]["images"] ] }
+    expect(saves).to eq("polychrome/goblin-42" => [ removal.keys.sole, 0 ],                         # the picture, cut out
+                        "polychrome/goblin-42-plain" => [ nodes(graph, "VAEDecode").keys.sole, 0 ]) # and as rendered, to mend it from
     expect(nodes(build({ "transparent" => false }, capabilities: rmbg), "RMBG")).to be_empty
 
     both = FakeComfy.capabilities(extra: FakeComfy::REMOVAL_NODES)
