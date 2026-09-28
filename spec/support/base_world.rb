@@ -15,6 +15,7 @@ RSpec.configure do |config|
   config.before(:suite) do
     next unless defined?(Rails) && defined?(World)
 
+    require Rails.root.join("db/seeds/base_world")
     World.where(slug: "base").destroy_all
     Seeds::BaseWorld.run
   end
