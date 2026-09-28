@@ -19,7 +19,8 @@ class ArtBatchesController < ApplicationController
     ArtBatch.where(entry: subject.portraits).destroy_all if entry.is_a?(Portrait)
     ArtBatch.where(entry: entry.location.mode_arts).destroy_all if entry.is_a?(ModeArt)
     transparent = { "1" => true, "0" => false }[params[:transparent]]
-    ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0", transparent: transparent)
+    ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0", transparent: transparent,
+                                draft: params[:draft] == "1")
     redirect_to entry_page(entry, anchor: "art")
   end
 

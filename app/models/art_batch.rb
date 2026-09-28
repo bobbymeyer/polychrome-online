@@ -20,7 +20,9 @@ class ArtBatch < ApplicationRecord
   # portrait's neutral seed), so a face stays closer across expressions.
   # write: let the language model (if there is one) rewrite the subject.
   # transparent: remove the background, or keep it, whatever the type says.
-  def self.start!(entry, count: Comfy.config[:candidates], write: true, transparent: nil)
+  # draft: quick previews (fewer steps, smaller, background left for the
+  # full render), to be made properly with #refine!.
+  def self.start!(entry, count: Comfy.config[:candidates], write: true, transparent: nil, draft: false)
     count = count.to_i.clamp(1, 8)
     base = Random.rand(2**31)
     seeds = Array.new(count) { |i| (base + i) % 2**31 }
@@ -29,12 +31,59 @@ class ArtBatch < ApplicationRecord
       entry.art_batches.destroy_all
       recipe = entry.art_recipe.merge("write" => write && Llm.enabled?)
       recipe["transparent"] = transparent unless transparent.nil?
+      recipe = draft_of(recipe) if draft
       create!(world: entry.art_world, entry: entry, recipe: recipe).tap do |b|
         seeds.each_with_index { |seed, i| b.candidates.create!(position: i, seed: seed) }
       end
     end
     ArtBatchJob.perform_later(batch)
     batch
+  end
+
+  # A recipe made quick: the family's draft steps and size, no background
+  # removal yet. What the full render needs is kept.
+  def self.draft_of(recipe)
+    family = Comfy::Family.new(recipe["family"], recipe["model"])
+    width, height = family.draft_size(recipe["width"], recipe["height"])
+    recipe.merge("draft" => true, "steps" => family.draft_steps, "width" => width, "height" => height, "transparent" => false,
+                 "full" => recipe.slice("width", "height", "transparent"))
+  end
+
+  def draft? = recipe["draft"] == true
+
+  # Make one draft properly: the same prompt and seed at full size and
+  # steps, starting from the draft image so it stays the same picture. A
+  # new batch of one; the drafts stay on the page beside it.
+  def self.refine!(candidate)
+    batch = candidate.art_batch
+    raise ArgumentError, "Only a draft can be made properly" unless batch.draft?
+    raise ArgumentError, "That draft has no image yet" unless candidate.status == "done" && candidate.image.attached?
+
+    family = Comfy::Family.new(batch.recipe["family"], batch.recipe["model"])
+    recipe = batch.recipe.except("draft", "steps", "full", "workflow", "background_node").merge(batch.recipe["full"])
+                  .merge("write" => false, "refines" => { "batch_id" => batch.id, "candidate_id" => candidate.id }, "denoise" => family.refine_denoise)
+    refinement = transaction do
+      batch.entry.art_batches.where.not(id: batch.id).destroy_all
+      create!(world: batch.world, entry: batch.entry, recipe: recipe).tap { |b| b.candidates.create!(position: 0, seed: candidate.seed) }
+    end
+    ArtBatchJob.perform_later(refinement)
+    refinement
+  end
+
+  # The drafts a refinement came from, while they're still here.
+  def drafts
+    ArtBatch.find_by(id: recipe.dig("refines", "batch_id")) if recipe["refines"]
+  end
+
+  # A refinement starts from its draft's image, put in ComfyUI's inputs.
+  def upload_source!(client)
+    return unless recipe["refines"] && !recipe["source_image"]
+
+    source = ArtCandidate.find_by(id: recipe.dig("refines", "candidate_id"))
+    raise Comfy::Error, "The draft to refine is gone" unless source&.image&.attached?
+
+    name = client.upload(source.image.download, "polychrome-draft-#{source.id}-#{source.seed}.png")
+    update!(recipe: recipe.merge("source_image" => name))
   end
 
   def finished?

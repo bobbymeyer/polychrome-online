@@ -698,6 +698,19 @@ Every image slot can be uploaded or generated with
   "Use this" makes one the entry's image and stores its `image_seed`,
   `image_prompt` and full `image_recipe`, including the workflow's outline,
   so it can be regenerated exactly. Uploading an image by hand clears them.
+- **Drafts first** (on by default for each batch): quick previews at about
+  half the pixels and half the steps, with background removal left for
+  later.
+  - **"Make this one properly"** re-renders a chosen draft at full size and
+    steps, starting from the draft image itself. It scales the draft up and
+    re-noises it in part (`draft.denoise` in `config/comfy.yml`), so it
+    stays the same picture. A new image from the same seed at a different
+    size would not.
+  - **"Use the draft"** keeps a draft as it is.
+  - **Timings:** each image shows how long ComfyUI spent on it, from
+    ComfyUI's own history.
+  - **Tuning:** a family can set its own `draft_steps`, and `draft.area`
+    sets how small drafts are.
 - **Background removal** is an optional step for any batch, on by default
   for content types marked to remove it.
   - **Which node:** ComfyUI has no removal node of its own, so the first

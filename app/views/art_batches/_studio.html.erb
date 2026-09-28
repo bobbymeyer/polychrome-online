@@ -32,5 +32,6 @@
   <details><summary>The composed prompt</summary><%= render "art_batches/recipe", recipe: entry.art_recipe, preview: true %></details>
 
   <%= render "art_batches/strip", batch: batch if batch %>
+  <%= render "art_batches/strip", batch: batch.drafts if batch&.drafts %>
 </section>
 <% end %>

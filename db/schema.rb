@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_010000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -102,6 +102,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "transparent"
+    t.float "run_seconds"
     t.index ["art_batch_id"], name: "index_art_candidates_on_art_batch_id"
   end
 

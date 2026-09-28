@@ -1,7 +1,7 @@
 <%# One batch's candidates (§8). The page refreshes itself as they land. %>
 <% world = batch.world %>
 <div class="art-batch" id="<%= dom_id(batch) %>">
-  <h3>Candidates<%= " for #{batch.entry.expression.humanize}" if batch.entry.is_a?(Portrait) %><%= " for #{batch.entry.mode['name']}" if batch.entry.is_a?(ModeArt) %></h3>
+  <h3><%= batch.draft? ? "Drafts" : (batch.recipe["refines"] ? "Made properly" : "Candidates") %><%= " for #{batch.entry.expression.humanize}" if batch.entry.is_a?(Portrait) %><%= " for #{batch.entry.mode['name']}" if batch.entry.is_a?(ModeArt) %></h3>
   <% case batch.status %>
   <% when "queued", "running" %>
     <p class="art-batch__status" role="status">Generating: <%= batch.candidates.count(&:finished?) %> of <%= batch.candidates.size %> in.</p>
@@ -17,12 +17,19 @@
           <% else %>
             <span class="candidate__empty"><%= candidate.status == "failed" ? "Failed" : "…" %></span>
           <% end %>
-          <figcaption>Seed <%= candidate.seed %><%= tag.span(" · background kept", class: "muted", title: "The removal step gave back an image with no transparency") if candidate.transparent == false %><%= tag.span(" · #{candidate.error}", class: "muted") if candidate.error && candidate.status == "failed" && batch.status != "failed" %></figcaption>
+          <figcaption>Seed <%= candidate.seed %><%= tag.span(" · #{candidate.run_seconds < 60 ? "#{candidate.run_seconds.round}s" : "#{(candidate.run_seconds / 60).floor}m #{(candidate.run_seconds % 60).round}s"}", class: "muted", title: "Time ComfyUI spent on it") if candidate.run_seconds %><%= tag.span(" · background kept", class: "muted", title: "The removal step gave back an image with no transparency") if candidate.transparent == false %><%= tag.span(" · #{candidate.error}", class: "muted") if candidate.error && candidate.status == "failed" && batch.status != "failed" %></figcaption>
         </figure>
         <% if candidate.image.attached? %>
           <%# The whole page, since the new image shows outside this frame too. %>
-          <%= button_to "Use this", pick_world_art_candidate_path(world, candidate), class: "button",
-                        form: { data: { turbo_frame: "_top", turbo_action: "advance" } } %>
+          <% if batch.draft? %>
+            <%= button_to "Make this one properly", refine_world_art_candidate_path(world, candidate), class: "button",
+                          form: { data: { turbo_frame: "_top", turbo_action: "advance" } } %>
+            <%= button_to "Use the draft", pick_world_art_candidate_path(world, candidate), class: "link-button",
+                          form: { data: { turbo_frame: "_top", turbo_action: "advance" } } %>
+          <% else %>
+            <%= button_to "Use this", pick_world_art_candidate_path(world, candidate), class: "button",
+                          form: { data: { turbo_frame: "_top", turbo_action: "advance" } } %>
+          <% end %>
         <% end %>
       </li>
     <% end %>

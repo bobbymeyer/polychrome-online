@@ -10,7 +10,7 @@ module Comfy
     # about as well when one is configured.
     NODES = %w[CheckpointLoaderSimple UNETLoader CLIPLoader VAELoader LoraLoader LoraLoaderModelOnly
                CLIPSetLastLayer CLIPTextEncode ConditioningZeroOut KSampler EmptyLatentImage EmptySD3LatentImage
-               VAEDecode SaveImage].freeze
+               VAEDecode SaveImage LoadImage ImageScale VAEEncode].freeze
 
     def self.unreachable(error = nil) = new({}, reachable: false, error: error)
 

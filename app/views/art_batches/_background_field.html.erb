@@ -1,4 +1,10 @@
-<%# Take the background off this batch or not (Comfy::BackgroundRemoval). art: what's being made. %>
+<%# How this batch is made: drafts first or not, and the background off or not (Comfy::BackgroundRemoval). art: what's being made. %>
+<div class="field field--check">
+  <%= hidden_field_tag :draft, "0", id: nil %>
+  <%= check_box_tag :draft, "1", true, id: "art_draft" %>
+  <%= label_tag "art_draft", "Drafts first" %>
+  <p class="hint">Quick previews, smaller and in fewer steps; then “Make this one properly” renders the one you like at full quality, from the draft, so it stays the same picture.</p>
+</div>
 <% caps = Comfy.capabilities %>
 <% removal = Comfy::BackgroundRemoval.pick(caps) if caps.reachable? %>
 <div class="field field--check">

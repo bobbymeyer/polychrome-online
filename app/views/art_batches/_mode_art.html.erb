@@ -55,5 +55,6 @@
   <% end %>
 
   <%= render "art_batches/strip", batch: batch if batch %>
+  <%= render "art_batches/strip", batch: batch.drafts if batch&.drafts %>
 </section>
 <% end %>

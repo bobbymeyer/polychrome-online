@@ -12,6 +12,8 @@ require "net/http"
 # same four calls can stand in for it (spec/support/fake_comfy.rb does):
 #   submit(graph) → prompt id      result(prompt id) → nil or [image]
 #   fetch(image)  → bytes          capabilities      → Comfy::Capabilities
+#   upload(bytes, name) → the name ComfyUI keeps it under (for LoadImage)
+#   run_seconds(prompt id) → how long ComfyUI spent on it, once finished
 module Comfy
   class Client
     NETWORK_ERRORS = [ SystemCallError, IOError, SocketError, Timeout::Error, OpenSSL::SSL::SSLError ].freeze
@@ -43,6 +45,8 @@ module Comfy
       entry = get_json("/history/#{prompt_id}")[prompt_id]
       return nil unless entry
 
+      (@entries ||= {})[prompt_id] = entry
+
       status = entry["status"] || {}
       if status["status_str"] == "error"
         raise Error, execution_error(status) || "ComfyUI failed to run the workflow"
@@ -50,6 +54,29 @@ module Comfy
       return nil if status.key?("completed") && !status["completed"]
 
       entry.fetch("outputs", {}).values.flat_map { |output| output["images"] || [] }.reject { |image| image["type"] == "temp" }
+    end
+
+    # Seconds from ComfyUI starting a prompt to finishing it, from the
+    # timestamps in its history (after #result has seen it finish).
+    def run_seconds(prompt_id)
+      messages = Array(@entries&.dig(prompt_id, "status", "messages"))
+      started = messages.find { |kind, _| kind == "execution_start" }&.last&.dig("timestamp")
+      ended = messages.find { |kind, _| %w[execution_success execution_error].include?(kind) }&.last&.dig("timestamp")
+      ((ended - started) / 1000.0).round(1) if started && ended
+    end
+
+    # Put an image in ComfyUI's input folder, for a LoadImage node to start
+    # from. Returns the name to give LoadImage.
+    def upload(bytes, name)
+      boundary = "polychrome#{SecureRandom.hex(12)}"
+      body = +""
+      body << "--#{boundary}\r\nContent-Disposition: form-data; name=\"overwrite\"\r\n\r\ntrue\r\n"
+      body << "--#{boundary}\r\nContent-Disposition: form-data; name=\"image\"; filename=\"#{name}\"\r\nContent-Type: image/png\r\n\r\n"
+      body = body.b + bytes.to_s.b + "\r\n--#{boundary}--\r\n".b
+      req = Net::HTTP::Post.new(path("/upload/image"), @headers.merge("Content-Type" => "multipart/form-data; boundary=#{boundary}"))
+      req.body = body
+      answer = parse(request(req))
+      [ answer["subfolder"].presence, answer.fetch("name") { raise Error, "ComfyUI didn't take the image" } ].compact.join("/")
     end
 
     # The bytes of one saved image.

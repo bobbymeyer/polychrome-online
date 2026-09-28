@@ -83,6 +83,26 @@ module Comfy
       [ width, height ].map { |side| [ ((side * scale) / multiple).public_send(round) * multiple, multiple ].max }
     end
 
+    # --- drafts ---------------------------------------------------------------
+
+    def draft_config = Comfy.config.fetch(:draft, {}).to_h.stringify_keys
+
+    # Fewer steps for a quick look; a turbo model already takes few.
+    def draft_steps
+      settings["draft_steps"]&.to_i || [ (steps * draft_config.fetch("steps", 0.5).to_f).ceil, [ steps, 6 ].min ].max
+    end
+
+    # A smaller picture, the same shape, out of the trained range on purpose.
+    def draft_size(width, height)
+      full = size(width, height)
+      scale = Math.sqrt(draft_config.fetch("area", 0.45).to_f.clamp(0.1, 1.0))
+      multiple = settings.fetch("multiple", 8).to_i
+      full.map { |side| [ ((side * scale) / multiple).round * multiple, multiple ].max }
+    end
+
+    # How much a refinement re-noises the draft it starts from.
+    def refine_denoise = draft_config.fetch("denoise", 0.55).to_f.clamp(0.1, 1.0)
+
     # One line for the pages: what running this family means.
     def summary
       [ label, "#{steps} steps", "CFG #{cfg.to_s.delete_suffix('.0')}", ("CLIP skip #{clip_skip}" if clip_skip > 1),
