@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Composing an image recipe (§8)" do
   describe ArtDirection do
@@ -33,7 +32,7 @@ RSpec.describe "Composing an image recipe (§8)" do
   end
 
   describe "an entry's recipe" do
-    let!(:world) { Seeds::BaseWorld.run }
+    let!(:world) { base_world }
     let(:goblin) { world.monsters.find_by!(slug: "goblin") }
 
     it "starts from config defaults for the content type" do

@@ -15,8 +15,6 @@ class FieldUsesController < ApplicationController
 
     FieldUse.request!(character)
     redirect_back_or_to campaign_table_path(@campaign), status: :see_other
-  rescue ArgumentError => e
-    redirect_back_or_to campaign_table_path(@campaign), alert: e.message, status: :see_other
   end
 
   def update
@@ -29,7 +27,5 @@ class FieldUsesController < ApplicationController
       use.approve!(difficulty: params[:difficulty].presence || use.ability.field_difficulty)
     end
     redirect_back_or_to campaign_table_path(@campaign), status: :see_other
-  rescue ArgumentError => e
-    redirect_back_or_to campaign_table_path(@campaign), alert: e.message, status: :see_other
   end
 end

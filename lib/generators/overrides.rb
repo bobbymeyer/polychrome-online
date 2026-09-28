@@ -38,7 +38,7 @@ module Generators
         room.merge!(pinned.slice("name", "decision")) if pinned
       end
       boss = location["rooms"].find { |room| room["key"] == location["boss"] }
-      boss["decision"] = { "kind" => "boss", "monsters" => overrides["boss"] } if boss && overrides["boss"]
+      boss["decision"] = boss["decision"].slice("who").merge("kind" => "boss", "monsters" => overrides["boss"]) if boss && overrides["boss"]
       overrides.fetch("added_rooms", []).each { |room| add_room(location, room) }
     end
 

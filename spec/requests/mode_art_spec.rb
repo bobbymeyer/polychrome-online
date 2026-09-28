@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Pictures for location modes (§8)", type: :request do
   include ActiveJob::TestHelper
 
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
@@ -15,7 +14,7 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
 
   before do
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    post add_mode_location_path(town), params: { mode: { name: "Burning", art: "on fire, thick smoke" } }
+    post location_modes_path(town), params: { mode: { name: "Burning", art: "on fire, thick smoke" } }
   end
 
   def finish(batch)
@@ -41,7 +40,7 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
     expect(town.reload.modes.sole["art"]).to eq("on fire, thick smoke, ash falling")
 
     finish(batch)
-    post pick_world_art_candidate_path(world, batch.candidates.first)
+    post world_art_candidate_pick_path(world, batch.candidates.first)
     expect(response).to redirect_to(location_path(town, anchor: "art"))
     expect(art.reload.image).to be_attached
 
@@ -52,7 +51,7 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
     expect(response.body).to include("location-picture is-mode")
     expect(town.picture.blob).to eq(art.image.blob)
 
-    delete remove_mode_location_path(town), params: { key: "burning" }
+    delete location_mode_path(town, "burning")
     expect(town.reload.mode_arts).to be_empty
   end
 

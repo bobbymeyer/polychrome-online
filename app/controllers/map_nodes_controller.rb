@@ -5,7 +5,7 @@ class MapNodesController < ApplicationController
   include MapGm
 
   before_action :set_campaign, only: %i[new create]
-  before_action :set_node, only: %i[edit update destroy place_party]
+  before_action :set_node, only: %i[edit update destroy]
   before_action :require_gm
 
   def new
@@ -41,11 +41,6 @@ class MapNodesController < ApplicationController
   def destroy
     @node.destroy!
     panel notice: "#{@node.name} was removed from the map."
-  end
-
-  def place_party
-    @campaign.place_party!(@node)
-    panel notice: "The party is at #{@node.name}."
   end
 
   private

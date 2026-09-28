@@ -141,6 +141,19 @@ Test both modules exhaustively with RSpec. Property-style tests on the resolver 
 
 GM controls: reroll, pin, add hand-authored NPC/room, place boss, override stock.
 
+**History and provenance.** Before play, a world can roll a pocket history over its atlas (`Generators::History`, written in by `Chronicle`). It is a seeded simulation, pure like the battle resolver: a few families across the places, over a century or so, in five-year steps. It is written into the existing canon, not a parallel world:
+- codex pages, with the truths in the GM notes;
+- the living heads in the cast;
+- a past on each place;
+- running feuds as fronts.
+
+Every generated place carries where it came from (`Generators::Provenance`):
+- **A dungeon** was something (the Vell manor, sealed after the fire). Its rooms, boss and treasure follow from that, drawn on their own random stream so its layout and decisions never move.
+- **A town** has a founder, old rivals and a running feud.
+- **A shop's made things** have a maker and a previous owner.
+
+The GM keeps families through rerolls and edits a place's past on the atlas; an edited past, like an edited page, is theirs, and the history won't write over it.
+
 **Chat.** Portrait + dialogue box. `messages` broadcast via Turbo Streams. GM has a "speak as" picker for any NPC (possession). Expression tag selects portrait variant. Whispers are scoped broadcasts. Open design question: sequential dialogue box vs simultaneous chat — leaning toward GM/NPC lines in the box and player lines in a side log.
 
 **Books.** Each book is a Rails resource namespace. Each entry has two faces: a form and a rendered "page" (stat block, prose, cross-references, image). Cross-references between entries are the index.
@@ -150,7 +163,7 @@ GM controls: reroll, pin, add hand-authored NPC/room, place boss, override stock
 - Book entries have an image slot (Active Storage) plus variant recipe. Nothing references pixels, so replacing an image is a file replace.
 - Build phase: sprite rips as placeholders. They never enter a shared deploy or an export. Layout decisions made against them are provisional.
 - Later: a ComfyUI pipeline. Entry fields → prompt template per asset class → LoRA-anchored generation → 4–8 candidates → rembg → candidate strip in the book panel → pick → store winner with seed and prompt on the entry. Design the entry columns (`image_seed`, `image_prompt`) now; build the pipeline later.
-  - Built (step 9), with one change: the "prompt template per asset class" became three composed layers (world style, content-type framing, entry specifics), each able to add LoRAs, and the ComfyUI graph is built from the recipe rather than filled into a fixed workflow. The winner also stores its full recipe (`image_recipe`). rembg is a ComfyUI node named in config, skipped when none is set. Every image slot works this way, including speaker portraits (one per expression, with the expression as a last layer). See README "Art".
+  - Built (step 9), with one change: the "prompt template per asset class" became three composed layers (world style, content-type framing, entry specifics), each able to add LoRAs, and the ComfyUI graph is built from the recipe rather than filled into a fixed workflow. The winner also stores its full recipe. Seed, prompt and recipe live with the subject's art notes, LoRAs and model in one polymorphic `Art` per drawn thing, not as columns on every table. rembg is a ComfyUI node named in config, skipped when none is set. Every image slot works this way, including speaker portraits (one per expression, with the expression as a last layer). See README "Art".
   - Rebuilt: each layer can also name a model (the lowest wins) and stack LoRAs in order, each with an on/off switch. How a model runs comes from its family in config (Anima by default; Krea 2, SDXL lineages, SD 1.5). The workflow is built per image against what the ComfyUI server reports installed, with the fewest nodes that do the job (no negative encode at CFG 1, the loader that matches how the model is stored, and so on). ComfyUI is reached over plain HTTP with optional token, headers or basic auth, so it can be anywhere. An optional OpenAI-compatible language model rewrites the subject layer in the style the model family reads best. See README "Art".
 - Later still: human artists. The pipeline output is their brief.
 
@@ -197,3 +210,7 @@ Steps 1–3 are the proof. If the battle isn't fun with a GM in the seat, nothin
 - GM power is never hidden. Overrides are actions and appear in the log.
 - Book entries are descriptions/recipes. Rendering (image variants, generated locations) is derived and cacheable, never the source of truth.
 - Prefer boring Rails. Reach for JS only in the event player and the map.
+- Controllers only do CRUD. A verb is a resource that hasn't been named yet: "reroll a location" is `Locations::RerollsController#create`, "reveal a secret" is `Secrets::RevelationsController#create` (and concealing it is `#destroy`). Nested controllers live in a folder named for their parent, and load it through a concern (`LocationScoped`, `DraftOwned`, `ChoiceScoped`).
+- A model that tells several stories tells them in concerns, one story each, in a folder named for the model (`Campaign::Shopping`, `Location::Exploration`). A slice's constants live in the slice.
+- When the game says no ("the party can't afford that"), a model raises `Refusal`, and the person who asked sees it as an alert. `ArgumentError` means a bug, and crashes.
+- The table hears the game through `Campaign#narrate`.

@@ -86,5 +86,5 @@ end
 # Pages ask what ComfyUI has installed; in specs they get FakeComfy's
 # answer instead of reaching for the network.
 RSpec.configure do |config|
-  config.before { allow(Comfy).to receive(:capabilities).and_return(FakeComfy.capabilities) }
+  config.before { allow(Comfy).to receive(:capabilities).and_return(FakeComfy.capabilities) if defined?(Comfy) }
 end

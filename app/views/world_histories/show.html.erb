@@ -1,0 +1,102 @@
+<% content_for :title, "History · #{@world.name}" %>
+<% history = @chronicle.generated %>
+<% families = history["families"].index_by { |f| f["key"] } %>
+<% place_name = ->(key) { @chronicle.place_for(key)&.name } %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / History</div>
+<div class="book-header">
+  <div>
+    <p class="eyebrow">Seed <%= @chronicle.seed %><%= " · written in" if @chronicle.written_seed == @chronicle.seed %></p>
+    <h1>History</h1>
+  </div>
+  <% if can_edit_world? %>
+    <div class="actions">
+      <%= button_to "Reroll", world_history_path(@world), method: :patch, params: { reroll: 1 }, class: "button button--quiet" %>
+      <%= button_to @chronicle.written? ? "Write it in again" : "Write it into the canon", world_history_path(@world), class: "button",
+                    form: { data: { turbo_confirm: @chronicle.written? ? "Replace what the last history wrote? Anything you've changed since stays." : nil } } %>
+      <% if @chronicle.written? %>
+        <%= button_to "Take it out", world_history_path(@world), method: :delete, class: "button button--danger",
+                      form: { data: { turbo_confirm: "Take the history's pages, people, pasts and fronts out of the canon? Anything you've changed stays." } } %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+<p class="prose">
+  A small history of <%= @world.name %> before the campaign starts, rolled over the <%= link_to "atlas", world_world_places_path(@world) %>:
+  a few families over its places, for <%= @chronicle.years %> years. Reroll it until you like it, keep the families you want to stay,
+  and write it in: a History page and a page per family in the codex, the heads of the families in the cast, a past on every place
+  (so a town knows its founder and a dungeon what it was), and every feud still running as a front.
+</p>
+<% if @chronicle.places.none? { |p| %w[town dungeon].include?(p["kind"]) } %>
+  <p class="hint">The atlas has no towns or dungeons yet, so the families have nothing to found. Add places first.</p>
+<% end %>
+<% if can_edit_world? %>
+  <%= form_with url: world_history_path(@world), method: :patch, class: "book-form inline-form" do |f| %>
+    <div class="field"><%= f.label :years, "Years of history" %><%= f.number_field :years, value: @chronicle.years, min: Chronicle::YEARS.min, max: Chronicle::YEARS.max, step: 10 %></div>
+    <%= f.submit "Set", class: "button button--quiet" %>
+  <% end %>
+<% end %>
+
+<div class="two-up">
+  <section class="window">
+    <h2>What happened</h2>
+    <ol class="history-list">
+      <% history["events"].each do |event| %>
+        <li>
+          <span class="history-list__when"><%= Generators::History.ago(event["ago"]) %></span>
+          <span><%= event["text"] %><% if event["truth"] %> <em class="muted">GM: <%= event["truth"] %></em><% end %></span>
+        </li>
+      <% end %>
+    </ol>
+  </section>
+
+  <div>
+    <section class="window">
+      <h2>Families</h2>
+      <ul class="location-list">
+        <% history["families"].each do |f| %>
+          <li>
+            <div>
+              <strong>The <%= f["name"] %> family</strong>
+              <span class="muted"><%= f["trade"] %><%= " of #{place_name.(f['seat'])}" if f["seat"] && place_name.(f["seat"]) %><%= " · left #{Generators::History.ago(f['gone'])}" if f["gone"] %></span>
+              <% if f["head"] %><p class="hook">Head: <%= f["head"] %><%= " · heir: #{f['heir']}" if f["heir"] %></p><% end %>
+              <% f["grudges"].each do |g| %>
+                <p class="hook">Grudge against the <%= Generators::History.plural(families[g["against"]]&.dig("name")) %>: <%= g["why"] %></p>
+              <% end %>
+            </div>
+            <% if can_edit_world? %>
+              <div class="location-list__tools">
+                <% if @chronicle.kept?(f) %>
+                  <%= button_to "Kept", world_history_path(@world), method: :patch, params: { let_go: f["name"] }, class: "pin is-pinned", title: "Let it go: the next roll may lose it" %>
+                <% else %>
+                  <%= button_to "Keep", world_history_path(@world), method: :patch, params: { keep: f["key"] }, class: "pin", title: "Keep its name, trade and seat through rerolls" %>
+                <% end %>
+              </div>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+
+    <section class="window">
+      <h2>Places</h2>
+      <ul class="refs">
+        <% history["places"].each do |key, past| %>
+          <% lines = Past.new(past).lines %>
+          <% next if lines.empty? %>
+          <li><strong><%= past["name"] %></strong> <span class="muted"><%= lines.join(" ") %></span></li>
+        <% end %>
+      </ul>
+    </section>
+
+    <% if history["feuds"].any? %>
+      <section class="window">
+        <h2>Still running</h2>
+        <ul class="refs">
+          <% history["feuds"].each do |feud| %>
+            <li>The <%= feud["names"].join("–") %> feud <span class="muted">· over <%= feud["cause"] %>, since <%= Generators::History.ago(feud["since"]) %></span></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+  </div>
+</div>

@@ -8,7 +8,7 @@ class ScenesController < ApplicationController
   ENCOUNTER_SLOTS = 3
 
   before_action :set_campaign, only: %i[new create]
-  before_action :set_scene, only: %i[edit update destroy play]
+  before_action :set_scene, only: %i[edit update destroy]
   before_action :require_campaign_gm
 
   # A suggested scene (Drafts::Scene) arrives with its name and script.
@@ -40,13 +40,6 @@ class ScenesController < ApplicationController
     redirect_to campaign_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} was deleted.", status: :see_other
   end
 
-  def play
-    @scene.play!
-    redirect_back_or_to campaign_table_path(@campaign), status: :see_other
-  rescue ArgumentError, ActiveRecord::RecordInvalid => e
-    redirect_back_or_to campaign_table_path(@campaign), alert: e.message, status: :see_other
-  end
-
   private
 
   def set_scene
@@ -62,12 +55,13 @@ class ScenesController < ApplicationController
 
       counts[row["monster"]] = counts.fetch(row["monster"], 0) + row["count"].to_i.clamp(1, 9)
     end
-    # A mode ending names a place and one of its modes ("12|burning"), or the
+    # A mode ending names a place and one of its modes ("12|7"), or the
     # place going back to how it was ("12|").
     choice = raw.delete(:mode_choice)
     if raw[:ending] == "mode"
-      node_id, key = choice.to_s.split("|", 2)
-      raw = raw.merge(map_node_id: node_id, mode_key: key.to_s)
+      node_id, mode_id = choice.to_s.split("|", 2)
+      node = @campaign.map_nodes.find_by(id: node_id)
+      raw = raw.merge(map_node_id: node&.id, location_mode: mode_id.presence && node&.location&.modes&.find_by(id: mode_id))
     end
     raw.merge(encounter: encounter)
   end

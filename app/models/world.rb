@@ -138,6 +138,7 @@ class World < ApplicationRecord
         entries.find_each do |entry|
           copy = entry.dup
           copy.world = self
+          copy.build_art(entry.art.attributes.slice(*Drawn::FIELDS.values.map(&:to_s))) if entry.respond_to?(:art) && entry.art
           copy.encounter_table_id = tables[entry.encounter_table_id] if book == :location_templates
           copy.save!
           copy.image.attach(entry.image.blob) if entry.image.attached?
@@ -149,7 +150,7 @@ class World < ApplicationRecord
         end
       end
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
-      %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar origins].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar origins history].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
       copy_canon_from!(source)
     end
@@ -199,7 +200,7 @@ class World < ApplicationRecord
                                 .merge(from_place: places.fetch(route.from_place_id), to_place: places.fetch(route.to_place_id), encounter_table: table))
     end
     source.world_figures.includes(portraits: { image_attachment: :blob }).find_each do |figure|
-      copy = world_figures.create!(figure.attributes.except(*COPIED, "monster_id", "world_place_id")
+      copy = world_figures.create!(figure.attributes.except(*COPIED, "monster_id", "world_place_id").merge(art_notes: figure.art_notes)
                                          .merge(monster: figure.monster && monsters.find_by(slug: figure.monster.slug),
                                                 world_place: places[figure.world_place_id]))
       figure.portraits.each { |p| copy.portraits.create!(expression: p.expression).image.attach(p.image.blob) if p.image.attached? }
@@ -208,9 +209,12 @@ class World < ApplicationRecord
     # Fronts name places and people by id: point them at the copies.
     figures = source.world_figures.to_h { |f| [ f.id, world_figures.find_by(name: f.name)&.id ] }
     source.world_fronts.find_each do |front|
-      world_fronts.create!(name: front.name, description: front.description,
-                           clocks: front.clocks.map { |c| c.merge("place_id" => places[c["place_id"]]&.id).compact },
-                           secrets: front.secrets.map { |s| s.merge("place_id" => places[s["place_id"]]&.id, "figure_id" => figures[s["figure_id"]]).compact })
+      world_fronts.create!(name: front.name, description: front.description, history_key: front.history_key,
+                           clocks: front.clocks.map { |c|
+                             c.attributes.slice("name", "segments", "triggers", "full_line", "public", "mode_name", "mode_line", "mode_description")
+                              .merge("place_id" => places[c.place_id]&.id)
+                           },
+                           secrets: front.secrets.map { |s| { "body" => s.body, "place_id" => places[s.place_id]&.id, "figure_id" => figures[s.figure_id] } })
     end
   end
 

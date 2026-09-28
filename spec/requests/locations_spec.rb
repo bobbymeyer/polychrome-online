@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Locations", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight")) }
   let(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100) }
@@ -44,9 +43,9 @@ RSpec.describe "Locations", type: :request do
   it "keeps the GM controls to the GM" do
     town = generate("village")
     sit(bartz.id)
-    post reroll_location_path(town)
+    post location_reroll_path(town)
     expect(response).to have_http_status(:forbidden)
-    post pin_location_path(town), params: { key: "npc-0" }
+    post location_pins_path(town), params: { key: "npc-0" }
     expect(response).to have_http_status(:forbidden)
   end
 
@@ -54,23 +53,27 @@ RSpec.describe "Locations", type: :request do
     it "rerolls, pins and makes townsfolk real NPCs" do
       town = generate("village")
       first = town.view["npcs"].first
-      post pin_location_path(town), params: { key: first["key"] }
+      post location_pins_path(town), params: { key: first["key"] }
       expect(campaign.npcs.find_by!(location_key: first["key"]).name).to eq(first["name"])
 
-      post reroll_location_path(town)
+      post location_reroll_path(town)
       follow_redirect!
       expect(response.body).to include("Rerolled", first["name"])
 
-      post add_npc_location_path(town), params: { npc: { name: "Galuf", title: "Old man", description: "Can't remember" } }
+      delete location_pin_path(town, first["key"])
+      expect(flash[:notice]).to eq("Unpinned.")
+      expect(campaign.npcs.where(location_key: first["key"])).to be_empty
+
+      post location_npcs_path(town), params: { npc: { name: "Galuf", title: "Old man", description: "Can't remember" } }
       get location_path(town)
       expect(response.body).to include("Galuf", "Can&#39;t remember")
     end
 
     it "sets and resets the stock, and renames" do
       town = generate("village")
-      patch stock_location_path(town), params: { stock: { items: [ "", "phoenix_down" ] } }
+      patch location_stock_path(town), params: { stock: { items: [ "", "phoenix_down" ] } }
       expect(town.reload.view["stock"]).to eq([ "phoenix_down" ])
-      patch stock_location_path(town), params: { reset: 1 }
+      delete location_stock_path(town)
       expect(town.reload.overrides).not_to have_key("stock")
 
       patch location_path(town), params: { location: { name: "New Tule" } }
@@ -81,22 +84,22 @@ RSpec.describe "Locations", type: :request do
       cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
       cave = generate("goblin_cave", on: cave_node)
       campaign.update!(current_node: cave_node)
-      post enter_location_path(cave)
+      post location_entry_path(cave)
       expect(cave.reload.progress["current"]).to eq(cave.view["entrance"])
 
       entrance = cave.view["entrance"]
       next_room = cave.neighbours(entrance).find { |key| !cave.locked?(cave.path_between(entrance, key)) } # not behind a lock
-      post move_location_path(cave), params: { room: next_room }
+      patch location_position_path(cave), params: { room: next_room }
       expect(cave.reload.visited).to include(next_room)
 
-      post move_location_path(cave), params: { room: "room-99" }
+      patch location_position_path(cave), params: { room: "room-99" }
       follow_redirect!
       expect(response.body).to include("No such room")
 
-      patch boss_location_path(cave), params: { boss: { monster: "ogre", count: "1" } }
+      patch location_boss_path(cave), params: { boss: { monster: "ogre", count: "1" } }
       expect(cave.reload.room(cave.view["boss"])["decision"]["monsters"]).to eq("ogre" => 1)
 
-      post add_room_location_path(cave), params: { room: { name: "Vault", connect: next_room, kind: "treasure", item: "power_ring" } }
+      post location_rooms_path(cave), params: { room: { name: "Vault", connect: next_room, kind: "treasure", item: "power_ring" } }
       expect(cave.reload.view["rooms"].last).to include("name" => "Vault", "added" => true)
     end
 
@@ -116,7 +119,7 @@ RSpec.describe "Locations", type: :request do
       cave = generate("goblin_cave", on: cave_node)
       boss_name = cave.room(cave.view["boss"])["name"]
       campaign.update!(current_node: cave_node)
-      post enter_location_path(cave)
+      post location_entry_path(cave)
       sit(bartz.id)
       get location_path(cave)
       expect(response.body).to include("Entrance")

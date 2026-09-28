@@ -10,15 +10,17 @@
 # replay to it exactly; `battle_events` is the resolver's output log. All
 # rules live in Battle::Resolver: this class only persists, times and
 # broadcasts what the resolver decides.
+#
+# Its rounds and timers, and what it writes back when it ends, are slices
+# (app/models/battle_record/).
 class BattleRecord < ApplicationRecord
   self.table_name = "battles"
+
+  include Rounds, Settlement
 
   SPEEDS = [ 1, 2, 4 ].freeze
   INPUT_TIMERS = [ nil, 30, 60, 120 ].freeze
   DEFAULT_TIMER = 60
-  # Added to the input timer when a round opens, to cover the previous
-  # round's animation before players can act.
-  ANIMATION_GRACE = 8.seconds
 
   def self.model_name
     @model_name ||= ActiveModel::Name.new(self, nil, "Battle")
@@ -41,7 +43,7 @@ class BattleRecord < ApplicationRecord
                   antagonists: [])
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
-    raise ArgumentError, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
+    raise Refusal, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
 
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items,
                                   terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec))
@@ -72,7 +74,7 @@ class BattleRecord < ApplicationRecord
 
   # A system line at the campaign's table, linking back to this battle.
   def announce!(body)
-    campaign&.messages&.create!(kind: "system", battle: self, body: body)
+    campaign&.narrate(body, battle: self)
   end
 
   def over?
@@ -147,42 +149,6 @@ class BattleRecord < ApplicationRecord
     [ before, events ]
   end
 
-  # Units the GM has put on auto: nobody is there to play them, so each
-  # round they take their default command as it opens (§5, "GM auto for an
-  # absent player"). The GM's call, so each one is an override in the log.
-  # If everyone still standing is on auto, nothing is filled: the round
-  # waits for the GM or the timer, so a battle never plays itself out.
-  def auto_fill!
-    return if over?
-
-    standing = party.select { |u| u["hp"].positive? }.map { |u| u["id"] }
-    return if (standing - auto_units).empty?
-
-    units = awaiting_input & auto_units
-    return if units.empty?
-
-    apply!({ "type" => "gm_override", "op" => "auto", "units" => units }, actor: "gm", if_round: round)
-  rescue Battle::InvalidAction
-    nil # someone sat down and chose for one of them first; the timer or the GM covers the rest
-  end
-
-  def set_auto!(unit_id, on)
-    return unless party.any? { |u| u["id"] == unit_id }
-
-    update!(auto_units: on ? (auto_units | [ unit_id ]) : (auto_units - [ unit_id ]))
-    auto_fill! if on
-  end
-
-  def auto?(unit_id) = auto_units.include?(unit_id)
-
-  # Start the input timer for the current round, if this battle has one.
-  def open_round!
-    return unless input_seconds && !over?
-
-    update!(deadline_at: Time.current + input_seconds.seconds + (round > 1 ? ANIMATION_GRACE : 0))
-    BattleTimeoutJob.set(wait_until: deadline_at).perform_later(self, round)
-  end
-
   # The bosses in this fight, for their entrance: the monsters marked as
   # bosses, or, in a dungeon's boss room, the strongest there.
   def boss_monsters
@@ -209,109 +175,6 @@ class BattleRecord < ApplicationRecord
   end
 
   private
-
-  # When the battle ends, what happened is written back to the campaign:
-  # HP/MP always; on victory, EXP split among the standing, ABP to each
-  # standing character's current job, gil, and the dropped items. Runs
-  # once, inside the transaction of the action that ended the battle.
-  # Stolen items are the party's however the battle ends.
-  def take_stolen_items!
-    items = world.items.where(slug: state.fetch("stolen", [])).index_by(&:slug)
-    state.fetch("stolen", []).filter_map do |slug|
-      next unless (item = items[slug])
-
-      campaign.add_item!(item)
-      item.name
-    end
-  end
-
-  def settle!(events)
-    return if settlement
-
-    characters = characters_by_unit
-    party.each do |unit|
-      characters[unit["id"]]&.update!(hp: unit["hp"], mp: unit["mp"])
-    end
-
-    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items!,
-                "stolen" => take_stolen_items!, "antagonists" => settle_antagonists! }.compact
-    victory = events.find { |e| e["type"] == "victory" }
-    if victory
-      rewards = victory["rewards"]
-      standing = party.select { |u| u["hp"].positive? }.filter_map { |u| characters[u["id"]] }
-      exp_share = standing.empty? ? 0 : rewards["exp"].to_i / standing.size
-      standing.each do |character|
-        summary["members"] << { "name" => character.name }.merge(character.gain!(exp: exp_share, abp: rewards["abp"].to_i))
-      end
-
-      campaign.increment!(:gil, rewards["gil"].to_i)
-      summary["gil"] = rewards["gil"].to_i
-      items = world.items.where(slug: victory["drops"]).index_by(&:slug)
-      victory["drops"].each do |slug|
-        next unless (item = items[slug])
-
-        campaign.add_item!(item)
-        summary["drops"] << item.name
-      end
-    end
-    update!(settlement: summary)
-    announce!(settlement_line(summary))
-  end
-
-  # Antagonists who got away come back stronger; the fallen are finished.
-  # Returns [{ "name", "fate" }] for the settlement, or nil if none fought.
-  def settle_antagonists!
-    fates = state["units"].filter_map do |unit|
-      npc = (id = Npc.from_battle_unit(unit["id"])) && campaign.npcs.find_by(id: id)
-      next unless npc
-
-      fate = if unit["gone"] then "escaped"
-      elsif unit["hp"].zero? then "defeated"
-      else "remains"
-      end
-      npc.increment!(:escapes) if fate == "escaped"
-      npc.update!(defeated_at: Time.current) if fate == "defeated"
-      { "name" => npc.name, "fate" => fate }
-    end
-    fates.presence
-  end
-
-  # Items used in battle come out of the bag. Returns { "Potion" => 2 }.
-  def use_up_items!
-    carried = initial_state.fetch("items", {})
-    return {} if carried.empty?
-
-    items = world.items.where(slug: carried.keys).index_by(&:slug)
-    carried.each_with_object({}) do |(slug, item), used|
-      n = item["count"] - state.dig("items", slug, "count").to_i
-      next unless n.positive? && items[slug]
-
-      campaign.use_items!(items[slug], n)
-      used[item["name"]] = n
-    end
-  end
-
-  def settlement_line(summary)
-    parts = [ { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." }.fetch(summary["result"], "It's over.") ]
-    if boss? && summary["result"] == "victory" && summary["antagonists"].blank?
-      parts << "#{boss_monsters.map(&:name).to_sentence} #{boss_monsters.size > 1 ? 'have' : 'has'} fallen!"
-    end
-    Array(summary["antagonists"]).each do |antagonist|
-      case antagonist["fate"]
-      when "escaped" then parts << "#{antagonist['name']} got away, and will be back stronger."
-      when "defeated" then parts << "#{antagonist['name']} is finished."
-      end
-    end
-    parts << "Stole #{summary['stolen'].to_sentence}." if summary["stolen"].present?
-    parts << "Used #{summary['used'].map { |name, n| "#{n} × #{name}" }.to_sentence}." if summary["used"].present?
-    parts << "#{summary['gil']} gil." if summary["gil"].positive?
-    parts << "Found #{summary['drops'].to_sentence}." if summary["drops"].any?
-    summary["members"].each do |member|
-      parts << "#{member['name']} reached level #{member['level'].last}." if member["level"]
-      parts << "#{member['name']} learned #{member['learned'].to_sentence}." if member["learned"].any?
-    end
-    "#{name}: #{parts.join(' ')}"
-  end
 
   # The table's "… is on" button follows the current battle for everyone.
   def refresh_table_header

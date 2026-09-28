@@ -155,8 +155,8 @@
               <td>
                 <div class="flag-tools">
                 <% if flag.counter? %>
-                  <%= button_to "−1", bump_campaign_flag_path(@campaign, flag), params: { by: -1 }, class: "pin", "aria-label": "Decrease #{flag.key}" %>
-                  <%= button_to "+1", bump_campaign_flag_path(@campaign, flag), params: { by: 1 }, class: "pin", "aria-label": "Increase #{flag.key}" %>
+                  <%= button_to "−1", campaign_flag_bumps_path(@campaign, flag), params: { by: -1 }, class: "pin", "aria-label": "Decrease #{flag.key}" %>
+                  <%= button_to "+1", campaign_flag_bumps_path(@campaign, flag), params: { by: 1 }, class: "pin", "aria-label": "Increase #{flag.key}" %>
                 <% end %>
                 <%= button_to "Clear", campaign_flag_path(@campaign, flag), method: :delete, class: "link-button" %>
                 </div>
@@ -222,7 +222,7 @@
           <li>
             <%= link_to battle.name, battle_path(battle) %> <span class="muted">· <%= battle.status_label %> · <%= time_ago_in_words(battle.updated_at) %> ago</span>
             <% if !battle.over? && can_gm?(@campaign) %>
-              <%= button_to "Call off", call_off_battle_path(battle), class: "link-button", form: { class: "inline", data: { turbo_confirm: "Call off #{battle.name}? Nothing that happened in it counts." } } %>
+              <%= button_to "Call off", battle_call_off_path(battle), class: "link-button", form: { class: "inline", data: { turbo_confirm: "Call off #{battle.name}? Nothing that happened in it counts." } } %>
             <% end %>
           </li>
         <% end %>

@@ -20,7 +20,7 @@
   <div class="actions">
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--quiet" %>
     <% if @gm %>
-      <%= button_to "Reroll", reroll_location_path(@location), class: "button button--quiet",
+      <%= button_to "Reroll", location_reroll_path(@location), class: "button button--quiet",
                     form: { data: { turbo_confirm: "Reroll #{view['name']}? Pinned things stay; everything else changes#{', and exploration starts over' if @location.dungeon?}." } } %>
     <% end %>
   </div>
@@ -28,7 +28,7 @@
 
 <% if (picture = @location.picture) %>
   <figure class="location-picture<%= " is-mode" if @location.current_mode %>">
-    <%= image_tag url_for(picture), alt: [ view["name"], @location.current_mode&.dig("name") ].compact.join(": ") %>
+    <%= image_tag url_for(picture), alt: [ view["name"], @location.current_mode&.name ].compact.join(": ") %>
   </figure>
 <% end %>
 
@@ -56,3 +56,19 @@
 <% end %>
 
 <%= render(@location.town? ? "locations/town" : "locations/dungeon", location: @location, view: view, gm: @gm) %>
+
+<% if (past = Past.new(view["past"])).lines.any? %>
+  <section class="window past" aria-label="Its past">
+    <h2>Its past</h2>
+    <% past.lines.each do |line| %><p><%= line %></p><% end %>
+    <% if @gm %>
+      <p class="hint">
+        <% if (place = @location.map_node&.world_place) && Past.new(place.past).present? %>
+          From <%= place.name %> in the <%= link_to "atlas", edit_world_world_place_path(@world, place) %>, where you can change it.
+        <% else %>
+          Rolled with the place, from its seed. Written from the world's <%= link_to "history", world_history_path(@world) %> when it's in the atlas.
+        <% end %>
+      </p>
+    <% end %>
+  </section>
+<% end %>

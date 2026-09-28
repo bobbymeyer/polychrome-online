@@ -16,8 +16,8 @@
           </div>
           <%= render "clocks/dial", clock: clock %>
           <div class="flag-tools">
-            <%= button_to "−1", tick_campaign_clock_path(campaign, clock), params: { by: -1 }, class: "pin", "aria-label": "Wind back #{clock.name}" %>
-            <%= button_to "+1", tick_campaign_clock_path(campaign, clock), params: { by: 1 }, class: "pin", "aria-label": "Tick #{clock.name}", disabled: clock.full? %>
+            <%= button_to "−1", campaign_clock_ticks_path(campaign, clock), params: { by: -1 }, class: "pin", "aria-label": "Wind back #{clock.name}" %>
+            <%= button_to "+1", campaign_clock_ticks_path(campaign, clock), params: { by: 1 }, class: "pin", "aria-label": "Tick #{clock.name}", disabled: clock.full? %>
             <%= button_to "Remove", campaign_clock_path(campaign, clock), method: :delete, class: "link-button",
                           form: { data: { turbo_confirm: "Take away the clock “#{clock.name}”?" } } %>
           </div>
@@ -43,7 +43,7 @@
       </fieldset>
       <div class="field"><%= f.label :full_line, "When it fills, the table hears", for: "clock_full_line_#{campaign.id}" %><%= f.text_field :full_line, id: "clock_full_line_#{campaign.id}", placeholder: "Smoke over the harbour: the Syndicate holds the docks." %></div>
       <% modes = campaign.map_nodes.includes(:location).order(:name).select { |n| n.location&.modes.present? }.map do |n|
-           [ n.name, n.location.modes.map { |m| [ m["name"], "#{n.location.id}|#{m['key']}" ] } ]
+           [ n.name, n.location.modes.map { |m| [ m.name, m.id ] } ]
          end %>
       <% if modes.any? %>
         <div class="field">

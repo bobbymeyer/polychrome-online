@@ -22,7 +22,7 @@ RSpec.describe Flag do
 
     mood = campaign.flags.create!(key: "mood", value: "grim")
     expect(mood).not_to be_counter
-    expect { mood.bump!(1) }.to raise_error(ArgumentError, /isn't a number/)
+    expect { mood.bump!(1) }.to raise_error(Refusal, /isn't a number/)
   end
 
   it "separates what the players may see" do

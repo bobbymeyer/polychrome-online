@@ -4,6 +4,9 @@ require "rails_helper"
 require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe Seeds::BaseWorld do
+  # From nothing, not the suite's ready-made world (spec/support/base_world.rb).
+  before { World.where(slug: "base").destroy_all }
+
   let!(:world) { described_class.run }
 
   it "seeds every book" do

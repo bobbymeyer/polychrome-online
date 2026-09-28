@@ -1,16 +1,15 @@
 # frozen_string_literal: true
 
 # A setting's pressure, written once: "The Brass Syndicate's grab for the
-# docks", as its clocks and the secrets behind it. Dealt into a campaign,
-# it becomes that campaign's own clocks and secrets, tied to the places and
-# people the campaign brought in from the atlas and cast. A clock can say
-# what one of those places becomes when it fills (a mode, made there).
-#
-#   clocks:  [{ "name", "segments", "triggers", "full_line", "public",
-#               "place_id", "mode_name", "mode_line", "mode_description" }]
-#   secrets: [{ "body", "place_id", "figure_id" }]
+# docks", as its clocks and the secrets behind it (FrontClock,
+# FrontSecret). Dealt into a campaign, it becomes that campaign's own
+# clocks and secrets, tied to the places and people the campaign brought in
+# from the atlas and cast. A clock can say what one of those places becomes
+# when it fills (a mode, made there).
 class WorldFront < ApplicationRecord
   belongs_to :world
+  has_many :clocks, -> { order(:id) }, class_name: "FrontClock", dependent: :destroy, autosave: true, inverse_of: :world_front
+  has_many :secrets, -> { order(:id) }, class_name: "FrontSecret", dependent: :destroy, autosave: true, inverse_of: :world_front
   has_many :dealt_clocks, class_name: "Clock", dependent: :nullify
   has_many :dealt_secrets, class_name: "Secret", dependent: :nullify
 
@@ -21,26 +20,29 @@ class WorldFront < ApplicationRecord
 
   scope :in_order, -> { order(:name) }
 
+  # From the form's rows (or plain hashes): the clocks it has now. The old
+  # ones go when the front is saved, so a front that doesn't save keeps them.
+  #   { "name", "segments", "triggers", "full_line", "public", "place_id",
+  #     "mode_name", "mode_line", "mode_description" }
   def clocks=(rows)
-    super(Array(rows.is_a?(Hash) ? rows.values : rows).filter_map do |row|
-      row = row.to_h.stringify_keys
-      name = row["name"].to_s.strip
-      next if name.empty?
+    clocks.each(&:mark_for_destruction)
+    rows_from(rows).each do |row|
+      next if row["name"].to_s.strip.empty?
 
-      { "name" => name, "segments" => (row["segments"].to_i.nonzero? || 6).clamp(2, 12),
-        "triggers" => Array(row["triggers"]).map(&:to_s) & Clock::TRIGGERS.keys,
-        "full_line" => row["full_line"].to_s.strip.presence, "public" => ActiveModel::Type::Boolean.new.cast(row["public"]) || false,
-        "place_id" => row["place_id"].presence&.to_i, "mode_name" => row["mode_name"].to_s.strip.presence,
-        "mode_line" => row["mode_line"].to_s.strip.presence, "mode_description" => row["mode_description"].to_s.strip.presence }.compact
-    end)
+      clocks.build(row.slice("name", "full_line", "mode_name", "mode_line", "mode_description", "triggers")
+                      .merge("segments" => (row["segments"].to_i.nonzero? || 6).clamp(2, 12), "public" => ActiveModel::Type::Boolean.new.cast(row["public"]) || false,
+                             "place_id" => row["place_id"].presence))
+    end
   end
 
+  #   { "body", "place_id", "figure_id" }
   def secrets=(rows)
-    super(Array(rows.is_a?(Hash) ? rows.values : rows).filter_map do |row|
-      row = row.to_h.stringify_keys
-      body = row["body"].to_s.strip
-      { "body" => body, "place_id" => row["place_id"].presence&.to_i, "figure_id" => row["figure_id"].presence&.to_i }.compact unless body.empty?
-    end)
+    secrets.each(&:mark_for_destruction)
+    rows_from(rows).each do |row|
+      next if row["body"].to_s.strip.empty?
+
+      secrets.build(body: row["body"], place_id: row["place_id"].presence, figure_id: row["figure_id"].presence)
+    end
   end
 
   def dealt_into?(campaign)
@@ -51,16 +53,16 @@ class WorldFront < ApplicationRecord
   # are linked if the campaign has them (Atlas); a clock's mode is made on
   # its place's location when there is one.
   def deal!(campaign)
-    raise ArgumentError, "#{name} is already in #{campaign.name}" if dealt_into?(campaign)
+    raise Refusal, "#{name} is already in #{campaign.name}" if dealt_into?(campaign)
 
     nodes = campaign.map_nodes.where.not(world_place_id: nil).includes(:location).index_by(&:world_place_id)
     npcs = campaign.npcs.where.not(world_figure_id: nil).index_by(&:world_figure_id)
     transaction do
       clocks.each do |row|
         location = nodes[row["place_id"]]&.location
-        mode_key = add_mode(location, row) if location && row["mode_name"]
+        mode = add_mode(location, row) if location && row["mode_name"]
         campaign.clocks.create!(name: row["name"], segments: row["segments"], triggers: row["triggers"], full_line: row["full_line"],
-                                public: row["public"], location: (location if mode_key), mode_key: mode_key, world_front: self)
+                                public: row["public"], location_mode: mode, world_front: self)
       end
       secrets.each do |row|
         campaign.secrets.create!(body: row["body"], location: nodes[row["place_id"]]&.location, npc: npcs[row["figure_id"]], world_front: self)
@@ -70,15 +72,18 @@ class WorldFront < ApplicationRecord
 
   private
 
+  # The place's mode by that name, made if it hasn't one yet.
   def add_mode(location, row)
-    key = row["mode_name"].parameterize(separator: "_")
-    unless location.modes.any? { |m| m["key"] == key }
+    location.modes.find_by(key: row["mode_name"].parameterize(separator: "_")) ||
       location.add_mode!("name" => row["mode_name"], "line" => row["mode_line"], "description" => row["mode_description"])
-    end
-    key
+  end
+
+  def rows_from(rows)
+    Array(rows.is_a?(Hash) ? rows.values : rows).map { |row| row.to_h.stringify_keys }
   end
 
   def has_something
-    errors.add(:base, "A front needs a clock or a secret") if clocks.empty? && secrets.empty?
+    kept = ->(rows) { rows.reject(&:marked_for_destruction?) }
+    errors.add(:base, "A front needs a clock or a secret") if kept.(clocks).empty? && kept.(secrets).empty?
   end
 end

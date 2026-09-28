@@ -21,11 +21,10 @@ class Clock < ApplicationRecord
 
   belongs_to :campaign
   belongs_to :world_front, optional: true
-  belongs_to :location, optional: true
+  belongs_to :location_mode, optional: true
 
   normalizes :name, with: ->(name) { name.to_s.strip }
   normalizes :full_line, with: ->(line) { line.to_s.strip.presence }
-  normalizes :mode_key, with: ->(key) { key.to_s.strip.presence }
 
   validates :name, presence: true, length: { maximum: 120 }
   validates :segments, numericality: { only_integer: true, in: 2..12 }
@@ -64,24 +63,25 @@ class Clock < ApplicationRecord
       if full? && !was_full
         fill!
       elsif public? && by.positive?
-        campaign.messages.create!(kind: "system", body: "#{name}: #{filled} of #{segments}#{" (#{reason})" if reason}.")
+        campaign.narrate("#{name}: #{filled} of #{segments}#{" (#{reason})" if reason}.")
       end
     end
     self
   end
 
-  # A mode to switch to, named for the pages.
-  def mode_name
-    location&.modes&.find { |m| m["key"] == mode_key }&.dig("name")
-  end
+  # The place whose mode it sets off when it fills.
+  def location = location_mode&.location
+
+  # The mode it sets off, named for the pages.
+  def mode_name = location_mode&.name
 
   private
 
   def fill!
     line = full_line || ("#{name}: it has happened." if public?)
     # Full when the table heard it, so the recap finds it in that session.
-    update!(full_at: campaign.messages.create!(kind: "system", body: line).created_at) if line
-    location.switch_mode!(mode_key) if location && mode_key && location.mode != mode_key
+    update!(full_at: campaign.narrate(line).created_at) if line
+    location.switch_mode!(location_mode.key) if location_mode && location.current_mode != location_mode
   end
 
   def triggers_known
@@ -90,15 +90,7 @@ class Clock < ApplicationRecord
   end
 
   def mode_is_the_locations
-    return unless mode_key
-
-    if !location
-      errors.add(:mode_key, "needs a location")
-    elsif location.campaign_id != campaign_id
-      errors.add(:location, "isn't in this campaign")
-    elsif location.modes.none? { |m| m["key"] == mode_key }
-      errors.add(:mode_key, "isn't one of #{location.name}'s modes")
-    end
+    errors.add(:location_mode, "isn't in this campaign") if location_mode && location.campaign_id != campaign_id
   end
 
   # The GM's list everywhere it's open, and the players' view of the public

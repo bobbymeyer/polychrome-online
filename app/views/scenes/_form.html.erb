@@ -43,9 +43,9 @@
     <div class="field" data-show-for="mode">
       <%= label_tag "scene_mode_choice", "Place and mode" %>
       <% options = @campaign.map_nodes.includes(:location).order(:name).select { |n| n.location&.modes.present? }.flat_map do |n|
-           n.location.modes.map { |t| [ "#{n.name}: #{t['name']}", "#{n.id}|#{t['key']}" ] } + [ [ "#{n.name}: back to how it was", "#{n.id}|" ] ]
+           n.location.modes.map { |t| [ "#{n.name}: #{t.name}", "#{n.id}|#{t.id}" ] } + [ [ "#{n.name}: back to how it was", "#{n.id}|" ] ]
          end %>
-      <%= select_tag "scene[mode_choice]", options_for_select(options, scene.ending == "mode" ? "#{scene.map_node_id}|#{scene.mode_key}" : nil),
+      <%= select_tag "scene[mode_choice]", options_for_select(options, scene.ending == "mode" ? "#{scene.map_node_id}|#{scene.location_mode_id}" : nil),
                      include_blank: "(choose)", id: "scene_mode_choice" %>
       <p class="hint">Modes are prepared on the place's page. The mode is set off when the last line has been said.</p>
     </div>

@@ -22,12 +22,12 @@
         <% if candidate.image.attached? %>
           <%# The whole page, since the new image shows outside this frame too. %>
           <% if batch.draft? %>
-            <%= button_to "Make this one properly", refine_world_art_candidate_path(world, candidate), class: "button",
+            <%= button_to "Make this one properly", world_art_candidate_refinements_path(world, candidate), class: "button",
                           form: { data: { turbo_frame: "_top", turbo_action: "advance" } } %>
-            <%= button_to "Use the draft", pick_world_art_candidate_path(world, candidate), class: "link-button",
+            <%= button_to "Use the draft", world_art_candidate_pick_path(world, candidate), class: "link-button",
                           form: { data: { turbo_frame: "_top", turbo_action: "advance" } } %>
           <% else %>
-            <%= button_to "Use this", pick_world_art_candidate_path(world, candidate), class: "button",
+            <%= button_to "Use this", world_art_candidate_pick_path(world, candidate), class: "button",
                           form: { data: { turbo_frame: "_top", turbo_action: "advance" } } %>
           <% end %>
         <% end %>

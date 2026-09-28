@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Suggestions from the language model (Draft)", type: :request do
   include ActiveJob::TestHelper
 
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
@@ -30,7 +29,7 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
 
   def keep(draft, index = 0)
     owner = draft.owner
-    post(owner.is_a?(Campaign) ? keep_campaign_draft_path(owner, draft, item: index) : keep_world_draft_path(owner, draft, item: index))
+    post(owner.is_a?(Campaign) ? campaign_draft_keeps_path(owner, draft, item: index) : world_draft_keeps_path(owner, draft, item: index))
   end
 
   it "suggests secrets from what's in the campaign, and keeps the one the GM wants" do
@@ -83,7 +82,7 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
     closed = draft.items.sole["closed"]
     expect(closed).not_to include("casino")
     keep(draft)
-    expect(town.reload.modes.sole).to include("name" => "Plague", "music" => "dungeon", "art" => "empty streets, chalk marks on doors")
+    expect(town.reload.modes.sole).to have_attributes(name: "Plague", music: "dungeon", art: "empty streets, chalk marks on doors")
   end
 
   it "keeps prep drafts to the campaign's GM" do

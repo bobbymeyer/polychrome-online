@@ -22,7 +22,7 @@ class Flag < ApplicationRecord
   end
 
   def bump!(by)
-    raise ArgumentError, "#{key} isn't a number" unless counter?
+    raise Refusal, "#{key} isn't a number" unless counter?
 
     update!(value: (value.to_i + by).to_s)
   end

@@ -1,6 +1,7 @@
 <%# A shop's panel (locations/_town): its stock, and selling from the bag and off the party. %>
 <div id="shop">
   <% items = location.stock_items %>
+  <% stories = view.fetch("stock_stories", {}) %>
   <% if items.empty? %>
     <p class="empty">The shelves are bare.</p>
   <% else %>
@@ -8,12 +9,17 @@
       <tbody>
         <% items.each do |item| %>
           <tr>
-            <td><%= link_to item.name, world_armory_item_path(@world, item) %></td>
+            <td>
+              <%= link_to item.name, world_armory_item_path(@world, item) %>
+              <% if (story = stories[item.slug]) %>
+                <span class="shop-table__story muted"><%= [ ("Made by #{story['maker']}" if story["maker"]), story["owner"] ].compact.join(". ") %>.</span>
+              <% end %>
+            </td>
             <td class="muted"><%= term(item.category) %></td>
             <td class="num"><%= money(item.price) %></td>
             <% if shopping %>
               <td class="shop-table__buy">
-                <%= form_with url: buy_location_shop_path(location), class: "inline-form shop-form" do |f| %>
+                <%= form_with url: location_purchases_path(location), class: "inline-form shop-form" do |f| %>
                   <%= hidden_field_tag :item, item.slug, id: nil %>
                   <%= number_field_tag :quantity, 1, min: 1, max: 99, id: "buy_#{item.slug}", "aria-label": "How many #{item.name}" %>
                   <%= f.submit "Buy", class: "button play", disabled: item.price > @campaign.gil %>
@@ -35,7 +41,7 @@
             <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span></td>
             <td class="num"><%= money(row.item.resale_price) %></td>
             <td class="shop-table__buy">
-              <%= form_with url: sell_location_shop_path(location), class: "inline-form shop-form" do |f| %>
+              <%= form_with url: location_sales_path(location), class: "inline-form shop-form" do |f| %>
                 <%= hidden_field_tag :item, row.item.slug, id: nil %>
                 <%= number_field_tag :quantity, 1, min: 1, max: row.quantity, id: "sell_#{row.item.slug}", "aria-label": "How many #{row.item.name} to sell" %>
                 <%= f.submit "Sell", class: "button play" %>
@@ -57,7 +63,7 @@
             <td><%= slot.item.name %> <span class="muted"><%= character.name %>, <%= term(slot.slot).downcase %></span></td>
             <td class="num"><%= money(slot.item.resale_price) %></td>
             <td class="shop-table__buy">
-              <%= button_to "Sell", sell_worn_location_shop_path(location), params: { character_id: character.id, slot: slot.slot },
+              <%= button_to "Sell", location_sales_path(location), params: { character_id: character.id, slot: slot.slot },
                             class: "button play", form: { data: { turbo_confirm: "Take #{slot.item.name} off #{character.name} and sell it for #{money(slot.item.resale_price)}?" } } %>
             </td>
           </tr>
@@ -70,7 +76,7 @@
 <% if gm %>
   <details>
     <summary>GM: set the stock</summary>
-    <%= form_with url: stock_location_path(location), method: :patch, scope: :stock, class: "book-form" do |f| %>
+    <%= form_with url: location_stock_path(location), method: :patch, scope: :stock, class: "book-form" do |f| %>
       <%= hidden_field_tag "stock[items][]", "", id: nil %>
       <div class="checks checks--columns">
         <% chosen = view["stock"] %>
@@ -83,7 +89,7 @@
       </div>
     <% end %>
     <% if location.overrides.key?("stock") %>
-      <%= button_to "Back to the rolled stock", stock_location_path(location), method: :patch, params: { reset: 1 }, class: "link-button" %>
+      <%= button_to "Back to the rolled stock", location_stock_path(location), method: :delete, class: "link-button" %>
     <% end %>
   </details>
 <% end %>

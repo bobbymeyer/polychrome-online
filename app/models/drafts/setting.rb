@@ -54,7 +54,7 @@ module Drafts
       when "type"
         rows = world.damage_types + [ { "slug" => slug, "name" => item["name"], "colour" => item["colour"], "shrugs_off" => [], "against" => {} } ]
         change = TypeChange.new(world, rows: rows)
-        raise ArgumentError, world.errors.full_messages.to_sentence unless change.save
+        raise Refusal, world.errors.full_messages.to_sentence unless change.save
 
         { notice: "#{item['name']} is one of #{world.name}'s types. Chart it on the Types page." }
       when "skill"
@@ -62,12 +62,12 @@ module Drafts
         { notice: "#{item['name']} is one of #{world.name}'s skills." }
       when "origin"
         skill = world.skills.find { |sk| sk["name"].casecmp?(item["skill"].to_s) }
-        raise ArgumentError, "Keep the #{item['skill']} skill first" if item["skill"] && !skill
+        raise Refusal, "Keep the #{item['skill']} skill first" if item["skill"] && !skill
 
         world.update!(origins: Array(world.origins) + [ { "slug" => slug, "name" => item["name"], "description" => item["description"], "skill" => skill&.dig("slug") }.compact ])
         { notice: "#{item['name']} is one of #{world.name}'s origins." }
       else
-        raise ArgumentError, "A job needs its numbers: make it in the Compendium"
+        raise Refusal, "A job needs its numbers: make it in the Compendium"
       end
     end
   end

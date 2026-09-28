@@ -94,8 +94,8 @@ class Message < ApplicationRecord
   # The GM settles it: the outcome is said, and set as a flag the party
   # knows, for the GM's next scene to follow.
   def settle!(option)
-    raise ArgumentError, "That isn't one of the options" unless options.include?(option)
-    raise ArgumentError, "This was settled already" unless open_choice?
+    raise Refusal, "That isn't one of the options" unless options.include?(option)
+    raise Refusal, "This was settled already" unless open_choice?
 
     transaction do
       update!(settled: option)
@@ -103,7 +103,7 @@ class Message < ApplicationRecord
         flag = campaign.flags.find_or_initialize_by(key: Flag.new(key: flag_key).key)
         flag.update!(value: option, public: true)
       end
-      campaign.messages.create!(kind: "system", body: "The party chose: #{option}.")
+      campaign.narrate("The party chose: #{option}.")
     end
     broadcast_choice
     streams.each { |stream| broadcast_replace_to(*stream, target: self, partial: "messages/message", locals: { message: self }) }

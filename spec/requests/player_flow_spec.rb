@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 require "turbo/broadcastable/test_helper"
 
 # What a player runs into, from signing in to the end of a battle.
 RSpec.describe "The player's way through", type: :request do
   include Turbo::Broadcastable::TestHelper
 
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
   let(:knight) { world.jobs.find_by!(slug: "knight") }
   let(:white_mage) { world.jobs.find_by!(slug: "white_mage") }
@@ -125,11 +124,11 @@ RSpec.describe "The player's way through", type: :request do
     expect(response.body[%r{<div id="table_battle">.*?</div>}m]).to include("/battles/#{@new.id}")
     expect(response.body.scan("Join the battle").size).to eq(1) # only the current battle's line invites you
 
-    post call_off_battle_path(@new)
+    post battle_call_off_path(@new)
     expect(@new.reload.status).to eq("abandoned")
     get campaign_table_path(campaign)
     expect(response.body[%r{<div id="table_battle">.*?</div>}m]).to include("/battles/#{old.id}")
-    post call_off_battle_path(old)
+    post battle_call_off_path(old)
     get campaign_table_path(campaign)
     expect(response.body).not_to include("is on →")
   end
@@ -139,7 +138,7 @@ RSpec.describe "The player's way through", type: :request do
     bartz.update!(hp: 50)
     campaign.add_item!(world.items.find_by!(slug: "potion"), 2)
     battle = battle_with(bartz)
-    post call_off_battle_path(battle)
+    post battle_call_off_path(battle)
     expect(battle.reload.settlement).to be_nil
     expect(bartz.reload.hp).to eq(50)
     expect(campaign.quantity_of(world.items.find_by!(slug: "potion"))).to eq(2)
@@ -153,7 +152,7 @@ RSpec.describe "The player's way through", type: :request do
   it "only lets the GM call a battle off" do
     battle = battle_with(campaign.characters.create!(name: "Krile", job: white_mage, user: krile))
     sign_in_as(krile)
-    post call_off_battle_path(battle)
+    post battle_call_off_path(battle)
     expect(battle.reload.status).to eq("input")
   end
 

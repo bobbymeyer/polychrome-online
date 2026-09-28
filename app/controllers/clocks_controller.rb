@@ -7,7 +7,7 @@ class ClocksController < ApplicationController
 
   before_action :set_campaign
   before_action :require_gm
-  before_action :set_clock, only: %i[update destroy tick]
+  before_action :set_clock, only: %i[update destroy]
 
   def create
     clock = @campaign.clocks.new(clock_params)
@@ -16,11 +16,6 @@ class ClocksController < ApplicationController
 
   def update
     @clock.update(clock_params) ? back(notice: "Clock “#{@clock.name}” saved.") : back(alert: @clock.errors.full_messages.to_sentence)
-  end
-
-  def tick
-    @clock.tick!(params[:by].to_i.clamp(-12, 12))
-    back
   end
 
   def destroy
@@ -38,11 +33,12 @@ class ClocksController < ApplicationController
     @clock = @campaign.clocks.find(params[:id])
   end
 
-  # The mode to switch to comes as "location id|mode key", from one picker.
+  # The mode it sets off when full, from one picker: one of the campaign's
+  # places' modes, or nothing.
   def clock_params
     attrs = params.expect(clock: [ :name, :segments, :public, :full_line, :when_full, { triggers: [] } ])
-    location_id, mode_key = attrs.delete(:when_full).to_s.split("|", 2)
-    attrs.merge(location: location_id.presence && @campaign.locations.find_by(id: location_id), mode_key: mode_key)
+    mode_id = attrs.delete(:when_full).presence
+    attrs.merge(location_mode: mode_id && LocationMode.joins(:location).where(locations: { campaign_id: @campaign.id }).find_by(id: mode_id))
   end
 
   def back(notice: nil, alert: nil)

@@ -36,7 +36,7 @@ RSpec.describe "Choices for the table" do
     expect(campaign.messages.last.body).to eq("The party chose: Trust Cid.")
     expect(campaign.open_choice).to be_nil
     expect { choice.picks.find_by(character: bartz).update!(option: "Refuse") }.to raise_error(ActiveRecord::RecordInvalid)
-    expect { choice.settle!("Refuse") }.to raise_error(ArgumentError, /settled already/)
+    expect { choice.settle!("Refuse") }.to raise_error(Refusal, /settled already/)
   end
 
   it "can end a scene, and only end it" do

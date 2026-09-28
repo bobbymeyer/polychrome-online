@@ -69,7 +69,7 @@
       <p class="hint">Pinning someone makes them a real NPC: they join the cast and you can speak as them at the table.</p>
       <details>
         <summary>GM: write someone in</summary>
-        <%= form_with url: add_npc_location_path(location), scope: :npc, class: "book-form" do |f| %>
+        <%= form_with url: location_npcs_path(location), scope: :npc, class: "book-form" do |f| %>
           <div class="field-row">
             <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
             <div class="field"><%= f.label :title %><%= f.text_field :title %></div>

@@ -11,6 +11,7 @@ class GeneratorTable < ApplicationRecord
     "town_names" => %w[text],
     "dungeon_names" => %w[text],
     "names" => %w[text],
+    "families" => %w[text],
     "hooks" => %w[text],
     "service_names" => %w[text service],
     "buildings" => %w[text service width height roof],
@@ -30,7 +31,7 @@ class GeneratorTable < ApplicationRecord
   # fiddly to paste. Any line can end in "| 3" for a weight.
   PASTE_FORMATS = {
     "town_names" => "a town's name", "dungeon_names" => "a dungeon's name", "names" => "a name",
-    "hooks" => "a hook", "rooms" => "a room's name", "room_events" => "what happens there",
+    "families" => "a family's name (Vell)", "hooks" => "a hook", "rooms" => "a room's name", "room_events" => "what happens there",
     "forks" => "what the costly way costs", "locks" => "the lock, then | and its key (Portal | Blue crystal)",
     "service_names" => "a name, then | and the service (inn, shop, guild or temple)",
     "stock" => "an item's name", "treasure" => "an item's name, or an amount like 150 gil"

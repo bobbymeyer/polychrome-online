@@ -216,17 +216,17 @@ RSpec.describe "The table", type: :request do
       get campaign_table_path(campaign)
       expect(response.body).to include('data-seat="gm"', "What will the party do?", "Settle on this")
 
-      post pick_choice_path(choice), params: { option: "Refuse" }
+      post choice_picks_path(choice), params: { option: "Refuse" }
       expect(choice.picks).to be_empty # the GM doesn't pick
 
       sit(bartz.id)
-      post pick_choice_path(choice), params: { option: "Refuse" }
+      post choice_picks_path(choice), params: { option: "Refuse" }
       expect(choice.reload.tally["Refuse"]).to eq([ "Bartz" ])
-      post settle_choice_path(choice), params: { option: "Refuse" }
+      post choice_settlement_path(choice), params: { option: "Refuse" }
       expect(choice.reload.settled).to be_nil # players don't settle
 
       sit("gm")
-      post settle_choice_path(choice), params: { option: "Refuse" }
+      post choice_settlement_path(choice), params: { option: "Refuse" }
       expect(choice.reload.settled).to eq("Refuse")
       expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Refuse")
     end

@@ -7,7 +7,7 @@ class FlagsController < ApplicationController
 
   before_action :set_campaign
   before_action :require_gm
-  before_action :set_flag, only: %i[update destroy bump]
+  before_action :set_flag, only: %i[update destroy]
 
   def create
     flag = @campaign.flags.new(flag_params)
@@ -20,13 +20,6 @@ class FlagsController < ApplicationController
 
   def update
     @flag.update(flag_params) ? back(notice: "Flag #{@flag.key} updated.") : back(alert: @flag.errors.full_messages.to_sentence)
-  end
-
-  def bump
-    @flag.bump!(params[:by].to_i.clamp(-100, 100))
-    back
-  rescue ArgumentError => e
-    back alert: e.message
   end
 
   def destroy

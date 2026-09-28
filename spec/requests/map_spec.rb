@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Map pages", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let!(:tule) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true) }
   let!(:ruins) { campaign.map_nodes.create!(name: "Secret Ruins", kind: "dungeon", x: 400, y: 300) }
@@ -81,7 +80,7 @@ RSpec.describe "Map pages", type: :request do
 
     it "places the party, travels, and deals with the encounter" do
       campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "dangerous", encounter_table: world.encounter_tables.find_by!(slug: "grasslands"))
-      post place_party_map_node_path(tule)
+      post map_node_party_path(tule)
       get campaign_map_panel_path(campaign)
       expect(response.body).to include("The party is at Tule", "To Secret Ruins", "dangerous · Grasslands")
 

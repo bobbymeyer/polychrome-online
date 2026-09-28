@@ -7,11 +7,11 @@
       <ol class="choice__options">
         <% choice.tally.each do |option, names| %>
           <li class="choice__option">
-            <%= button_to option, pick_choice_path(choice), params: { option: option }, class: "menu__item choice__pick",
+            <%= button_to option, choice_picks_path(choice), params: { option: option }, class: "menu__item choice__pick",
                           form: { class: "choice__pick-form" } %>
             <span class="choice__settle-label"><%= option %></span>
             <span class="choice__who"><%= names.any? ? names.to_sentence : "" %></span>
-            <%= button_to "Settle on this", settle_choice_path(choice), params: { option: option }, class: "link-button choice__settle",
+            <%= button_to "Settle on this", choice_settlement_path(choice), params: { option: option }, class: "link-button choice__settle",
                           form: { class: "choice__settle-form", data: { turbo_confirm: "The party chooses “#{option}”?" } } %>
           </li>
         <% end %>

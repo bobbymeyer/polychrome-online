@@ -38,9 +38,7 @@ module ArtTargets
   # The picture for one of a location's modes, made when first asked for.
   def art_mode
     location = Location.joins(:campaign).where(campaigns: { world_id: @world.id }).find(params[:location_id])
-    key = params[:mode].to_s
-    raise ActiveRecord::RecordNotFound unless location.modes.any? { |m| m["key"] == key }
-
-    location.mode_arts.find_or_create_by!(mode_key: key)
+    mode = location.modes.find_by!(key: params[:mode].to_s)
+    location.mode_arts.find_or_create_by!(location_mode: mode)
   end
 end

@@ -13,7 +13,7 @@ class ItemUsesController < ApplicationController
     target = @campaign.characters.find(params[:target_id].presence || @character.id)
     @campaign.use_item!(item, user: @character, target: target)
     redirect_to character_path(@character, anchor: "items"), notice: @campaign.messages.last.body, status: :see_other
-  rescue ArgumentError => e
+  rescue Refusal => e
     sheet_error(e.message)
   end
 end

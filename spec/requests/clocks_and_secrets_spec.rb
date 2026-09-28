@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 require "turbo/broadcastable/test_helper"
 
 RSpec.describe "Clocks and secrets", type: :request do
   include Turbo::Broadcastable::TestHelper
 
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
   let!(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true, location: town) }
   let(:road) { campaign.map_nodes.create!(name: "Road", kind: "field", x: 300, y: 100, visible: true) }
+  let(:burning) { town.modes.find_by!(key: "burning") }
   let(:hero) { campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), starting_level: 10) }
 
   def sit(seat)
@@ -21,15 +21,15 @@ RSpec.describe "Clocks and secrets", type: :request do
 
   before do
     sit("gm")
-    town.update!(modes: [ { "key" => "burning", "name" => "Burning", "line" => "Smoke over the rooftops: Tule is burning." } ])
+    town.add_mode!("name" => "Burning", "line" => "Smoke over the rooftops: Tule is burning.")
   end
 
   describe "clocks" do
     it "fills on what the party does, and a full clock sets a place burning" do
       post campaign_clocks_path(campaign), params: { clock: { name: "The Syndicate torches Tule", segments: "3", public: "1",
-                                                              triggers: [ "", "rest", "travel" ], when_full: "#{town.id}|burning" } }
+                                                              triggers: [ "", "rest", "travel" ], when_full: burning.id } }
       clock = campaign.clocks.sole
-      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], location: town, mode_key: "burning", public: true)
+      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], location: town, location_mode: burning, public: true)
 
       campaign.rest!
       expect(clock.reload.filled).to eq(1)
@@ -40,7 +40,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       campaign.reload.travel!(edge)
       expect(clock.reload.filled).to eq(2)
 
-      post tick_campaign_clock_path(campaign, clock), params: { by: 1 }
+      post campaign_clock_ticks_path(campaign, clock), params: { by: 1 }
       expect(clock.reload).to be_full
       expect(town.reload.current_mode["name"]).to eq("Burning")
       expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The Syndicate torches Tule: it has happened.", "Smoke over the rooftops: Tule is burning." ])
@@ -48,7 +48,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       campaign.rest!
       expect(clock.reload.filled).to eq(3) # a full clock stays full
 
-      post tick_campaign_clock_path(campaign, clock), params: { by: -1 }
+      post campaign_clock_ticks_path(campaign, clock), params: { by: -1 }
       expect(clock.reload).to have_attributes(filled: 2, full_at: nil)
       expect(town.reload.mode).to eq("burning") # winding back doesn't put the fire out
     end
@@ -91,10 +91,13 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(response).to have_http_status(:forbidden)
     end
 
-    it "only switches a place to one of its own modes" do
-      clock = campaign.clocks.new(name: "x", segments: 4, location: town, mode_key: "flooded")
-      expect(clock).not_to be_valid
-      expect(clock.errors[:mode_key].sole).to include("isn't one of")
+    it "only switches one of the campaign's own places, whatever the form sends" do
+      elsewhere = world.campaigns.create!(name: "Elsewhere", gm: @admin).locations.create!(location_template: village, seed: 3)
+      flooded = elsewhere.add_mode!("name" => "Flooded")
+      expect(campaign.clocks.new(name: "x", segments: 4, location_mode: flooded)).not_to be_valid
+
+      post campaign_clocks_path(campaign), params: { clock: { name: "Rain", segments: "4", when_full: flooded.id } }
+      expect(campaign.clocks.find_by!(name: "Rain").location_mode).to be_nil
     end
   end
 
@@ -123,7 +126,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(response.body).not_to include("The mayor pays the goblins.")
 
       sit("gm")
-      post reveal_campaign_secret_path(campaign, secret)
+      post campaign_secret_revelation_path(campaign, secret)
       expect(secret.reload).to be_revealed
       expect(campaign.messages.last.body).to eq("The party learns: The mayor pays the goblins.")
 
@@ -133,7 +136,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(Recap.for(campaign).learned).to include("The mayor pays the goblins.")
 
       sit("gm")
-      post conceal_campaign_secret_path(campaign, secret)
+      delete campaign_secret_revelation_path(campaign, secret)
       expect(secret.reload).not_to be_revealed
     end
 

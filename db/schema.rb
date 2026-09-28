@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_060000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -22,20 +22,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.string "gesture"
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
     t.integer "hp_cost", default: 0, null: false
     t.integer "charge", default: 0, null: false
     t.string "field_skill"
     t.string "field_outcome"
     t.string "field_difficulty", default: "normal", null: false
     t.integer "field_power", default: 0, null: false
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_abilities_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_abilities_on_world_id"
   end
@@ -120,6 +114,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.string "model"
     t.index ["world_id", "kind"], name: "index_art_types_on_world_id_and_kind", unique: true
     t.index ["world_id"], name: "index_art_types_on_world_id"
+  end
+
+  create_table "arts", force: :cascade do |t|
+    t.string "subject_type", null: false
+    t.integer "subject_id", null: false
+    t.text "notes"
+    t.json "loras", default: [], null: false
+    t.string "model"
+    t.integer "seed"
+    t.text "prompt"
+    t.json "recipe"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["subject_type", "subject_id"], name: "index_arts_on_subject", unique: true
   end
 
   create_table "battle_actions", force: :cascade do |t|
@@ -213,13 +221,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.integer "mp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
     t.integer "user_id"
     t.string "colour"
     t.string "motive"
     t.boolean "field_used", default: false, null: false
-    t.string "art_model"
     t.string "origin"
     t.integer "home_node_id"
     t.json "ties", default: [], null: false
@@ -248,14 +253,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.boolean "public", default: false, null: false
     t.json "triggers", default: [], null: false
     t.text "full_line"
-    t.integer "location_id"
-    t.string "mode_key"
     t.datetime "full_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "world_front_id"
+    t.integer "location_mode_id"
     t.index ["campaign_id"], name: "index_clocks_on_campaign_id"
-    t.index ["location_id"], name: "index_clocks_on_location_id"
+    t.index ["location_mode_id"], name: "index_clocks_on_location_mode_id"
     t.index ["world_front_id"], name: "index_clocks_on_world_front_id"
   end
 
@@ -268,6 +272,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.boolean "public", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "history_key"
     t.index ["world_id", "title"], name: "index_codex_entries_on_world_id_and_title", unique: true
     t.index ["world_id"], name: "index_codex_entries_on_world_id"
   end
@@ -296,14 +301,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.json "entries", default: [], null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_encounter_tables_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_encounter_tables_on_world_id"
   end
@@ -345,6 +344,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.index ["campaign_id"], name: "index_flags_on_campaign_id"
   end
 
+  create_table "front_clocks", force: :cascade do |t|
+    t.integer "world_front_id", null: false
+    t.string "name", null: false
+    t.integer "segments", default: 6, null: false
+    t.json "triggers", default: [], null: false
+    t.text "full_line"
+    t.boolean "public", default: false, null: false
+    t.integer "place_id"
+    t.string "mode_name"
+    t.text "mode_line"
+    t.text "mode_description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["place_id"], name: "index_front_clocks_on_place_id"
+    t.index ["world_front_id"], name: "index_front_clocks_on_world_front_id"
+  end
+
+  create_table "front_secrets", force: :cascade do |t|
+    t.integer "world_front_id", null: false
+    t.text "body", null: false
+    t.integer "place_id"
+    t.integer "figure_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["figure_id"], name: "index_front_secrets_on_figure_id"
+    t.index ["place_id"], name: "index_front_secrets_on_place_id"
+    t.index ["world_front_id"], name: "index_front_secrets_on_world_front_id"
+  end
+
   create_table "generator_tables", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -353,14 +381,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.json "entries", default: [], null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_generator_tables_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_generator_tables_on_world_id"
   end
@@ -387,14 +409,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.json "effects", default: [], null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_items_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_items_on_world_id"
   end
@@ -419,14 +435,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.json "innates", default: [], null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "ability_slots", default: 1, null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
     t.string "colour"
     t.string "desperation"
     t.string "signature"
@@ -434,9 +445,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.string "base_type", default: "normal", null: false
     t.json "skills", default: [], null: false
     t.string "field_ability"
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
+  end
+
+  create_table "location_modes", force: :cascade do |t|
+    t.integer "location_id", null: false
+    t.string "key", null: false
+    t.string "name", null: false
+    t.text "line"
+    t.text "description"
+    t.json "closed", default: [], null: false
+    t.string "music"
+    t.integer "encounter_table_id"
+    t.text "art"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["encounter_table_id"], name: "index_location_modes_on_encounter_table_id"
+    t.index ["location_id", "key"], name: "index_location_modes_on_location_id_and_key", unique: true
+    t.index ["location_id"], name: "index_location_modes_on_location_id"
   end
 
   create_table "location_templates", force: :cascade do |t|
@@ -448,14 +475,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.integer "encounter_table_id"
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
-    t.string "art_model"
     t.index ["encounter_table_id"], name: "index_location_templates_on_encounter_table_id"
     t.index ["world_id", "slug"], name: "index_location_templates_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_location_templates_on_world_id"
@@ -469,9 +490,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.json "progress", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.json "modes", default: [], null: false
-    t.string "mode"
+    t.integer "current_mode_id"
     t.index ["campaign_id"], name: "index_locations_on_campaign_id"
+    t.index ["current_mode_id"], name: "index_locations_on_current_mode_id"
     t.index ["location_template_id"], name: "index_locations_on_location_template_id"
   end
 
@@ -537,14 +558,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
 
   create_table "mode_arts", force: :cascade do |t|
     t.integer "location_id", null: false
-    t.string "mode_key", null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
-    t.json "image_recipe"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["location_id", "mode_key"], name: "index_mode_arts_on_location_id_and_mode_key", unique: true
+    t.integer "location_mode_id", null: false
     t.index ["location_id"], name: "index_mode_arts_on_location_id"
+    t.index ["location_mode_id"], name: "index_mode_arts_on_location_mode_id", unique: true
   end
 
   create_table "monsters", force: :cascade do |t|
@@ -562,19 +580,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.integer "abp", default: 0, null: false
     t.text "description"
     t.json "variant", default: {}, null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
-    t.json "image_recipe"
     t.string "colour"
     t.boolean "boss", default: false, null: false
     t.text "boss_line"
     t.string "base_type", default: "normal", null: false
     t.boolean "undead", default: false, null: false
-    t.string "art_model"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end
@@ -588,13 +600,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.datetime "updated_at", null: false
     t.integer "location_id"
     t.string "location_key"
-    t.text "art_notes"
-    t.json "art_loras", default: [], null: false
     t.string "colour"
     t.integer "monster_id"
     t.integer "escapes", default: 0, null: false
     t.datetime "defeated_at"
-    t.string "art_model"
     t.integer "world_figure_id"
     t.index ["campaign_id"], name: "index_npcs_on_campaign_id"
     t.index ["location_id"], name: "index_npcs_on_location_id"
@@ -608,9 +617,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.string "expression", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "image_seed"
-    t.text "image_prompt"
-    t.json "image_recipe"
     t.index ["owner_type", "owner_id", "expression"], name: "index_portraits_on_owner_type_and_owner_id_and_expression", unique: true
     t.index ["owner_type", "owner_id"], name: "index_portraits_on_owner"
   end
@@ -625,8 +631,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.datetime "played_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "mode_key"
+    t.integer "location_mode_id"
     t.index ["campaign_id"], name: "index_scenes_on_campaign_id"
+    t.index ["location_mode_id"], name: "index_scenes_on_location_mode_id"
     t.index ["map_node_id"], name: "index_scenes_on_map_node_id"
   end
 
@@ -686,12 +693,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.string "title"
     t.text "blurb"
     t.text "description"
-    t.text "art_notes"
     t.string "colour"
     t.integer "monster_id"
     t.integer "world_place_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "history_key"
     t.index ["monster_id"], name: "index_world_figures_on_monster_id"
     t.index ["world_id"], name: "index_world_figures_on_world_id"
     t.index ["world_place_id"], name: "index_world_figures_on_world_place_id"
@@ -701,10 +708,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.integer "world_id", null: false
     t.string "name", null: false
     t.text "description"
-    t.json "clocks", default: [], null: false
-    t.json "secrets", default: [], null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "history_key"
     t.index ["world_id"], name: "index_world_fronts_on_world_id"
   end
 
@@ -721,6 +727,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.integer "seed"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "past", default: {}, null: false
     t.index ["location_template_id"], name: "index_world_places_on_location_template_id"
     t.index ["world_id"], name: "index_world_places_on_world_id"
   end
@@ -762,6 +769,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.json "terms", default: {}, null: false
     t.json "calendar", default: {}, null: false
     t.json "origins", default: [], null: false
+    t.json "history", default: {}, null: false
     t.index ["owner_id"], name: "index_worlds_on_owner_id"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end
@@ -791,7 +799,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
   add_foreign_key "choice_picks", "characters", on_delete: :cascade
   add_foreign_key "choice_picks", "messages", on_delete: :cascade
   add_foreign_key "clocks", "campaigns"
-  add_foreign_key "clocks", "locations"
+  add_foreign_key "clocks", "location_modes"
   add_foreign_key "clocks", "world_fronts"
   add_foreign_key "codex_entries", "worlds"
   add_foreign_key "encounter_tables", "worlds"
@@ -801,6 +809,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
   add_foreign_key "field_uses", "campaigns"
   add_foreign_key "field_uses", "characters"
   add_foreign_key "flags", "campaigns"
+  add_foreign_key "front_clocks", "world_fronts"
+  add_foreign_key "front_clocks", "world_places", column: "place_id", on_delete: :nullify
+  add_foreign_key "front_secrets", "world_figures", column: "figure_id", on_delete: :nullify
+  add_foreign_key "front_secrets", "world_fronts"
+  add_foreign_key "front_secrets", "world_places", column: "place_id", on_delete: :nullify
   add_foreign_key "generator_tables", "worlds"
   add_foreign_key "inventories", "campaigns"
   add_foreign_key "inventories", "items"
@@ -808,9 +821,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
   add_foreign_key "job_levels", "abilities"
   add_foreign_key "job_levels", "jobs"
   add_foreign_key "jobs", "worlds"
+  add_foreign_key "location_modes", "encounter_tables"
+  add_foreign_key "location_modes", "locations"
   add_foreign_key "location_templates", "encounter_tables"
   add_foreign_key "location_templates", "worlds"
   add_foreign_key "locations", "campaigns"
+  add_foreign_key "locations", "location_modes", column: "current_mode_id"
   add_foreign_key "locations", "location_templates"
   add_foreign_key "map_edges", "campaigns"
   add_foreign_key "map_edges", "encounter_tables"
@@ -823,6 +839,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
   add_foreign_key "messages", "battles"
   add_foreign_key "messages", "campaigns"
   add_foreign_key "messages", "characters", column: "recipient_id"
+  add_foreign_key "mode_arts", "location_modes"
   add_foreign_key "mode_arts", "locations"
   add_foreign_key "monsters", "worlds"
   add_foreign_key "npcs", "campaigns"
@@ -830,6 +847,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
   add_foreign_key "npcs", "monsters"
   add_foreign_key "npcs", "world_figures"
   add_foreign_key "scenes", "campaigns"
+  add_foreign_key "scenes", "location_modes"
   add_foreign_key "scenes", "map_nodes", on_delete: :nullify
   add_foreign_key "secrets", "campaigns"
   add_foreign_key "secrets", "locations"

@@ -1,0 +1,161 @@
+# frozen_string_literal: true
+
+# A dungeon is a nested pointcrawl: #progress records the party's room,
+# what they've seen and dealt with, and the keys they've found. Moving into
+# a room plays its decision at the table.
+module Location::Exploration
+  extend ActiveSupport::Concern
+
+  def room(key)
+    view.fetch("rooms", []).find { |r| r["key"] == key }
+  end
+
+  def current_room
+    room(progress["current"])
+  end
+
+  def visited
+    progress.fetch("visited", [])
+  end
+
+  def resolved?(key)
+    progress.fetch("resolved", []).include?(key)
+  end
+
+  # --- locks and keys ----------------------------------------------------------
+
+  # Lock ids whose keys the party has found here.
+  def keys_found
+    progress.fetch("keys", [])
+  end
+
+  def unlocked?(lock)
+    progress.fetch("unlocked", []).include?(lock["id"])
+  end
+
+  # A path that's locked and still shut.
+  def locked?(path)
+    path&.dig("lock") && !unlocked?(path["lock"])
+  end
+
+  def has_key?(lock)
+    keys_found.include?(lock["id"])
+  end
+
+  # What the party carries: the keys found and not yet used.
+  def keys_in_hand
+    view.fetch("paths", []).filter_map { |p| p["lock"] }.uniq { |l| l["id"] }
+        .select { |lock| has_key?(lock) && !unlocked?(lock) }
+  end
+
+  def neighbours(key)
+    view.fetch("paths", []).filter_map do |path|
+      (path["to"] if path["from"] == key) || (path["from"] if path["to"] == key)
+    end
+  end
+
+  def path_between(a, b)
+    view.fetch("paths", []).find { |p| [ p["from"], p["to"] ].sort == [ a, b ].sort }
+  end
+
+  # Players see rooms they've been in, and the exits leading out of them.
+  def seen_by_players?(key)
+    visited.include?(key) || visited.any? { |v| neighbours(v).include?(key) }
+  end
+
+  # Only the place the party stands on the map can be explored.
+  def party_here?
+    map_node&.party_here? || false
+  end
+
+  # The party went back out onto the map: next time, they come in at the entrance.
+  def leave!
+    update!(progress: progress.except("current")) if progress["current"]
+  end
+
+  def enter!
+    move_to!(view["entrance"], from: nil)
+  end
+
+  # Move the party to a room next to the one they're in, and play out its
+  # decision at the table: an event is narrated; an encounter or the boss
+  # waits for the GM to fight or wave off (like on the map); treasure waits
+  # to be handed over; a fork shows its visible cost.
+  def move_to!(key, from: progress["current"])
+    raise Refusal, "The party isn't at #{name}. Take them there on the map first." unless party_here?
+
+    target = room(key) or raise Refusal, "No such room"
+    raise Refusal, "That room isn't next to this one" if from && !neighbours(from).include?(key)
+
+    path = from && path_between(from, key)
+    lock = path && locked?(path) ? path["lock"] : nil
+    raise Refusal, "#{lock['name']} bars the way. It needs #{lock['key_name']}." if lock && !has_key?(lock)
+
+    transaction do
+      if lock
+        update!(progress: progress.merge("unlocked" => progress.fetch("unlocked", []) | [ lock["id"] ]))
+        campaign.narrate("#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.", cue: "door")
+      end
+      update!(progress: progress.merge("current" => key, "visited" => (visited | [ key ])))
+      campaign.narrate("#{name}: the party enters #{target['name']}.")
+      campaign.narrate("The cost of that way: #{path['cost']}") if path&.dig("cost")
+      announce(target) unless resolved?(key)
+    end
+  end
+
+  # Hand a room's treasure to the party (once).
+  def take_treasure!(key)
+    target = room(key)
+    raise Refusal, "No treasure there" unless target && target["decision"]["kind"] == "treasure" && !resolved?(key)
+
+    decision = target["decision"]
+    item = campaign.world.items.find_by(slug: decision["item"]) if decision["item"]
+    transaction do
+      campaign.add_item!(item) if item
+      campaign.increment!(:gil, decision["gil"].to_i) if decision["gil"]
+      resolve!(key)
+      campaign.narrate("Found #{describe_treasure(decision)} in #{target['name']}.", cue: "treasure")
+    end
+  end
+
+  # "Potion", "150 gil", "150 gil, in the Vell signet (made for Aldo Vell)".
+  def describe_treasure(decision)
+    found = decision["gil"] ? "#{decision['gil']} gil" : campaign.world.items.find_by(slug: decision["item"])&.name || decision["item"]
+    heirloom = decision["heirloom"]
+    return found unless heirloom
+
+    made = [ ("made by #{heirloom['maker']}" if heirloom["maker"]), ("for #{heirloom['made_for']}" if heirloom["made_for"]) ].compact.join(" ")
+    "#{found}, with #{heirloom['name']}#{" (#{made})" if made.present?}"
+  end
+
+  def resolve!(key)
+    update!(progress: progress.merge("resolved" => (progress.fetch("resolved", []) | [ key ])))
+  end
+
+  private
+
+  def announce(target)
+    decision = target["decision"]
+    case decision["kind"]
+    when "event"
+      campaign.messages.create!(body: decision["text"])
+      resolve!(target["key"])
+    when "encounter", "boss"
+      label = decision["kind"] == "boss" ? "The master of #{name}" : "#{name}: #{target['name']}"
+      campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => decision["kind"] == "boss",
+                                            "terrain" => location_template.encounter_table&.terrain_type }.compact)
+      campaign.narrate("#{decision['kind'] == 'boss' ? 'Boss' : 'Encounter'}! #{campaign.describe_encounter(decision['monsters'])}.")
+      resolve!(target["key"])
+    when "treasure"
+      campaign.narrate("There is treasure in #{target['name']}.")
+    when "fork"
+      campaign.narrate("The way splits. One path has a cost: #{decision['text']}")
+      resolve!(target["key"])
+    when "key"
+      update!(progress: progress.merge("keys" => keys_found | [ decision["lock"] ]))
+      lock = view.fetch("paths", []).find { |p| p.dig("lock", "id") == decision["lock"] }&.dig("lock")
+      campaign.narrate("Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}", cue: "key")
+      resolve!(target["key"])
+    end
+  end
+end

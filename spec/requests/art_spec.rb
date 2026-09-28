@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 require "turbo/broadcastable/test_helper"
 
 RSpec.describe "The asset pipeline (§8)", type: :request do
   include ActiveJob::TestHelper
   include Turbo::Broadcastable::TestHelper
 
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:goblin) { world.monsters.find_by!(slug: "goblin") }
   let(:comfy) { FakeComfy.new }
 
@@ -71,7 +70,7 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
     expect(response.body).to include("Candidates", "Use this", "Seed #{batch.candidates.first.seed}")
 
     winner = batch.candidates.last
-    post pick_world_art_candidate_path(world, winner)
+    post world_art_candidate_pick_path(world, winner)
     goblin.reload
     expect(goblin.image).to be_attached
     expect(goblin.image_seed).to eq(winner.seed)
@@ -95,7 +94,7 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
 
   it "won't pick a candidate that isn't finished" do
     generate
-    post pick_world_art_candidate_path(world, goblin.art_batch.candidates.first)
+    post world_art_candidate_pick_path(world, goblin.art_batch.candidates.first)
     expect(flash[:alert]).to eq("That candidate has no image")
     expect(goblin.reload.image).not_to be_attached
   end
@@ -103,7 +102,7 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
   it "forgets the seed and recipe when an image is uploaded by hand" do
     generate
     finish(goblin.art_batch)
-    post pick_world_art_candidate_path(world, goblin.art_batch.candidates.first)
+    post world_art_candidate_pick_path(world, goblin.art_batch.candidates.first)
     expect(goblin.reload.image_seed).to be_present
 
     upload = Rack::Test::UploadedFile.new(StringIO.new(FakeComfy.png), "image/png", original_filename: "goblin.png")
@@ -171,7 +170,7 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
 end
 
 RSpec.describe "Generated portraits (§8)", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let(:cid) { campaign.npcs.create!(name: "Cid", title: "Engineer", description: "An old airship engineer") }
   let(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight")) }
@@ -213,7 +212,7 @@ RSpec.describe "Generated portraits (§8)", type: :request do
     get edit_npc_path(cid)
     expect(response.body).to include("Generate portraits", "Candidates for Neutral", "Use this")
 
-    post pick_world_art_candidate_path(world, batch.candidates.first)
+    post world_art_candidate_pick_path(world, batch.candidates.first)
     expect(response).to redirect_to(edit_npc_path(cid, anchor: "art"))
     neutral = cid.portraits.find_by!(expression: "neutral")
     expect(neutral.image).to be_attached
@@ -224,7 +223,7 @@ RSpec.describe "Generated portraits (§8)", type: :request do
   it "starts other expressions from the neutral portrait's seed" do
     batch = generate(cid, "neutral")
     finish(batch)
-    post pick_world_art_candidate_path(world, batch.candidates.last)
+    post world_art_candidate_pick_path(world, batch.candidates.last)
     seed = cid.portraits.find_by!(expression: "neutral").image_seed
 
     sad = generate(cid, "sad")

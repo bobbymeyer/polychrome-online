@@ -25,8 +25,7 @@ RSpec.describe "Books", type: :request do
     end
 
     it "starts a world from another world's books, copies and all" do
-      require Rails.root.join("db/seeds/base_world")
-      base = Seeds::BaseWorld.run
+      base = base_world
       base.monsters.find_by!(slug: "goblin").image.attach(io: StringIO.new("png"), filename: "goblin.png", content_type: "image/png")
       post worlds_path, params: { world: { name: "Ashfall", slug: "ashfall" }, copy_from: "base" }
       ashfall = World.find_by!(slug: "ashfall")

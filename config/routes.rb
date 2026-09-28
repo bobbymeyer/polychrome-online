@@ -51,6 +51,8 @@ Rails.application.routes.draw do
     resources :world_figures, path: "cast", except: :show
     resources :codex_entries, path: "codex"
     resources :world_fronts, path: "fronts", except: :show
+    # Its pocket history, rolled over the atlas and written into the canon.
+    resource :history, only: %i[show update create destroy], controller: "world_histories"
 
     # The asset pipeline (§8): the world's art direction, and generating
     # candidates for an entry's image with ComfyUI.
@@ -58,13 +60,15 @@ Rails.application.routes.draw do
     resources :art_batches, only: %i[create destroy], path: "art/batches"
     resource :art_panel, only: :show, path: "art/panel"
     resources :art_candidates, only: [], path: "art/candidates" do
-      post :pick, on: :member
-      post :refine, on: :member
+      scope module: :art_candidates do
+        resource :pick, only: :create
+        resources :refinements, only: :create
+      end
     end
 
     # The language model's suggestions for world building (Draft).
     resources :drafts, only: %i[create destroy] do
-      post :keep, on: :member
+      resources :keeps, only: :create, module: :drafts
     end
 
     # The campaign layer (§2): a party's run through the world.
@@ -81,14 +85,13 @@ Rails.application.routes.draw do
 
     # The table (§7): the live session page with the dialogue box and log.
     resources :flags, only: %i[create update destroy] do
-      post :bump, on: :member
+      resources :bumps, only: :create, module: :flags
     end
     resources :clocks, only: %i[create update destroy] do
-      post :tick, on: :member
+      resources :ticks, only: :create, module: :clocks
     end
     resources :secrets, only: %i[create destroy] do
-      post :reveal, on: :member
-      post :conceal, on: :member
+      resource :revelation, only: %i[create destroy], module: :secrets
     end
     # The world's atlas and cast, brought into the campaign (Atlas).
     resource :canon, only: :create
@@ -96,7 +99,7 @@ Rails.application.routes.draw do
     resource :time, only: :update
     # The language model's suggestions for prep (Draft).
     resources :drafts, only: %i[create destroy] do
-      post :keep, on: :member
+      resources :keeps, only: :create, module: :drafts
     end
     # Every GM diff on this campaign's locations, with reverts (§7).
     resource :changes, only: :show
@@ -122,36 +125,30 @@ Rails.application.routes.draw do
   end
 
   resources :map_nodes, only: %i[edit update destroy], path: "map/nodes" do
-    post :place_party, on: :member
+    resource :party, only: :create, module: :map_nodes
     resources :map_edges, only: :create, path: "paths"
     resource :location, only: :create, controller: "node_locations"
   end
 
-  # Towns and dungeons (§7). Everything but viewing is a GM control.
+  # Towns and dungeons (§7). Everything but viewing is a GM control, each a
+  # resource of its own; the shop and services are for whoever is in town.
   resources :locations, only: %i[show update] do
-    member do
-      post :reroll
-      post :pin
-      post :unpin
-      patch :stock
-      patch :boss
-      post :add_npc
-      post :add_room
-      post :enter
-      post :move
-      post :take_treasure
-      post :revert
-      post :add_mode
-      post :switch_mode
-      post :clear_mode
-      delete :remove_mode
-    end
-    # A town's shop: buy from its stock, sell from the bag.
-    resources :services, only: :create
-    resource :shop, only: [] do
-      post :buy
-      post :sell
-      post :sell_worn
+    scope module: :locations do
+      resource :reroll, only: :create
+      resources :pins, only: %i[create destroy]
+      resource :stock, only: %i[update destroy]
+      resource :boss, only: :update
+      resources :npcs, only: :create
+      resources :rooms, only: :create
+      resource :entry, only: :create
+      resource :position, only: :update
+      resources :treasures, only: :create
+      resources :reversions, only: :create
+      resources :modes, only: %i[create destroy]
+      resource :current_mode, only: %i[update destroy]
+      resources :services, only: :create
+      resources :purchases, only: :create
+      resources :sales, only: :create
     end
   end
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"
@@ -159,13 +156,13 @@ Rails.application.routes.draw do
   resources :npcs, only: %i[edit update destroy]
   resources :messages, only: :destroy
   resources :choices, only: [] do
-    member do
-      post :pick
-      post :settle
+    scope module: :choices do
+      resources :picks, only: :create
+      resource :settlement, only: :create
     end
   end
   resources :scenes, only: %i[edit update destroy] do
-    post :play, on: :member
+    resource :play, only: :create, module: :scenes
   end
 
   resources :characters, only: %i[show edit update destroy] do
@@ -179,7 +176,7 @@ Rails.application.routes.draw do
   # The battle screen (§6): one long-lived page fed by Turbo Streams. The
   # command panel is a Turbo Frame reloaded after each beat plays.
   resources :battles, only: :show do
-    post :call_off, on: :member
+    resource :call_off, only: :create, module: :battles
     resource :seat, only: %i[create destroy]
     resource :panel, only: :show
     resources :actions, only: :create, controller: "battle_actions"

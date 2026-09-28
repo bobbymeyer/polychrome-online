@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Recurring antagonists" do
-  let(:world) { Seeds::BaseWorld.run }
+  let(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Pulp") }
   let(:hero) { campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), starting_level: 10) }
   let(:gorn) { campaign.npcs.create!(name: "Gorn the Red", monster: world.monsters.find_by!(slug: "goblin_chief")) }
@@ -45,7 +44,7 @@ RSpec.describe "Recurring antagonists" do
     expect(battle.reload.settlement["antagonists"]).to eq([ { "name" => "Gorn the Red", "fate" => "defeated" } ])
     expect(gorn.reload).to be_defeated
     expect(campaign.npcs.at_large).to be_empty
-    expect { fight }.to raise_error(ArgumentError, /defeated for good/)
+    expect { fight }.to raise_error(Refusal, /defeated for good/)
   end
 
   it "must fight as one of the campaign world's monsters" do

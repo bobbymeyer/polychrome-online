@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe Location do
-  let(:world) { Seeds::BaseWorld.run }
+  let(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:cave) { world.location_templates.find_by!(slug: "goblin_cave") }
@@ -137,12 +136,12 @@ RSpec.describe Location do
     it "lets the GM place the boss and add rooms" do
       dungeon.place_boss!("ogre" => "2")
       boss_room = dungeon.room(dungeon.view["boss"])
-      expect(boss_room["decision"]).to eq("kind" => "boss", "monsters" => { "ogre" => 2 })
+      expect(boss_room["decision"]).to include("kind" => "boss", "monsters" => { "ogre" => 2 })
 
       key = dungeon.add_room!(name: "Secret Library", connect: entrance, decision: { "kind" => "treasure", "item" => "power_ring" })
       expect(dungeon.neighbours(entrance)).to include(key)
       expect { dungeon.add_room!(name: "X", connect: entrance, decision: { "kind" => "encounter", "monsters" => { "dragon" => 1 } }) }
-        .to raise_error(ArgumentError, /Bestiary/)
+        .to raise_error(Refusal, /Bestiary/)
     end
 
     it "can only be explored while the party is there, and is left when they travel on" do
@@ -151,7 +150,7 @@ RSpec.describe Location do
       campaign.travel!(campaign.map_edges.create!(from_node: campaign.current_node, to_node: road))
       expect(dungeon.reload.progress["current"]).to be_nil
       expect(dungeon.visited).to include(entrance)
-      expect { dungeon.enter! }.to raise_error(ArgumentError, /isn't at/)
+      expect { dungeon.enter! }.to raise_error(Refusal, /isn't at/)
     end
 
     it "is explored room by room, each room playing its decision at the table" do
@@ -160,7 +159,7 @@ RSpec.describe Location do
       expect(campaign.messages.first.body).to include("the party enters Entrance")
 
       far = dungeon.view["rooms"].find { |r| !dungeon.neighbours(entrance).include?(r["key"]) && r["key"] != entrance }
-      expect { dungeon.move_to!(far["key"]) }.to raise_error(ArgumentError, /isn't next to/)
+      expect { dungeon.move_to!(far["key"]) }.to raise_error(Refusal, /isn't next to/)
 
       next_key = dungeon.neighbours(entrance).first
       dungeon.move_to!(next_key)
@@ -188,7 +187,7 @@ RSpec.describe Location do
           dungeon.take_treasure!(key)
           expect(campaign.quantity_of(world.items.find_by!(slug: "potion"))).to eq(1)
           expect(campaign.messages.last.cue).to eq("treasure")
-          expect { dungeon.take_treasure!(key) }.to raise_error(ArgumentError)
+          expect { dungeon.take_treasure!(key) }.to raise_error(Refusal)
         end
       end
       expect(rooms).to be_present
@@ -240,7 +239,7 @@ RSpec.describe Location do
       dungeon.update!(progress: dungeon.progress.merge("current" => near))
       without = dungeon.progress.merge("keys" => [])
       dungeon.update!(progress: without)
-      expect { dungeon.move_to!(far) }.to raise_error(ArgumentError, /#{Regexp.escape(lock['name'])} bars the way/)
+      expect { dungeon.move_to!(far) }.to raise_error(Refusal, /#{Regexp.escape(lock['name'])} bars the way/)
       dungeon.update!(progress: without.merge("keys" => [ lock["id"] ]))
       dungeon.move_to!(far)
       expect(dungeon.unlocked?(lock)).to be(true)

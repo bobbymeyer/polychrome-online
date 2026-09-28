@@ -32,7 +32,7 @@ module Timekeeping
       update!(day: day + new_days, time_of_day: TIMES[index % TIMES.size])
       if announce == true || (announce == :new_day && new_days.positive?)
         line = new_days.positive? ? "#{new_days > 1 ? "#{new_days} days pass. " : ''}#{world.date(day)}: #{time_of_day}." : "#{time_of_day.capitalize}."
-        messages.create!(kind: "system", body: line)
+        narrate(line)
       end
       new_days.times { tick_clocks!("dawn") }
     end

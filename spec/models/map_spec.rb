@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "The pointcrawl map" do
-  let(:world) { Seeds::BaseWorld.run }
+  let(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
   let(:tule) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true) }
   let(:ruins) { campaign.map_nodes.create!(name: "Ruins", kind: "dungeon", x: 400, y: 300) }
@@ -63,10 +62,10 @@ RSpec.describe "The pointcrawl map" do
 
     it "refuses blocked paths and paths that don't start here" do
       connect(tule, ruins, state: "blocked")
-      expect { campaign.travel!(tule.edges.first) }.to raise_error(ArgumentError, /blocked/)
+      expect { campaign.travel!(tule.edges.first) }.to raise_error(Refusal, /blocked/)
       far = campaign.map_nodes.create!(name: "Far", x: 900, y: 600)
       path = connect(ruins, far)
-      expect { campaign.travel!(path) }.to raise_error(ArgumentError, /doesn't start here/)
+      expect { campaign.travel!(path) }.to raise_error(Refusal, /doesn't start here/)
       expect(campaign.reload.current_node).to eq(tule)
     end
 

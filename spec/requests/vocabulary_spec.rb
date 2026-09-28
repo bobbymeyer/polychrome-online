@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "A setting's own words (Vocabulary)", type: :request do
-  let!(:world) { Seeds::BaseWorld.run }
+  let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Rust", gm: @admin, gil: 500) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
 

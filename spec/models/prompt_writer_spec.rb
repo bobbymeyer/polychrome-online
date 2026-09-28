@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe "Writing prompts with a language model (§8)" do
   # A language model that answers from a script and remembers what it was asked.
@@ -84,7 +83,7 @@ RSpec.describe "Writing prompts with a language model (§8)" do
   describe "in a batch" do
     include ActiveJob::TestHelper
 
-    let!(:world) { Seeds::BaseWorld.run }
+    let!(:world) { base_world }
     let(:goblin) { world.monsters.find_by!(slug: "goblin") }
 
     it "writes the subject once, before anything is queued, and every candidate shares it" do
