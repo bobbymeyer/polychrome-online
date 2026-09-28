@@ -57,5 +57,12 @@ group :development, :test do
   gem "rspec-rails", "~> 8.0"
 end
 
+# System tests: the live pages (streams, refreshes, the battle player) in a
+# real browser [https://guides.rubyonrails.org/testing.html#system-testing].
+group :test do
+  gem "capybara"
+  gem "selenium-webdriver"
+end
+
 # QR codes on the shared screen, so players join local co-op from their phones.
 gem "rqrcode", "~> 3.2"
