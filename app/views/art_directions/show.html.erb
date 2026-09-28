@@ -11,6 +11,24 @@
   and what ComfyUI has installed.
 </p>
 
+<details class="window" id="connection" <%= "open" if params[:check] %>>
+  <summary>Connection</summary>
+  <% if params[:check] %>
+    <p class="hint">In a container: <%= Comfy::Doctor.in_container? ? "yes" : "no" %>.</p>
+    <% [ Comfy::Doctor.comfy, Comfy::Doctor.llm ].compact.each do |doctor| %>
+      <dl class="facts connection-steps">
+        <% doctor.steps.each do |step| %>
+          <dt><%= step.ok ? "✓" : "✗" %> <%= step.label %></dt><dd class="<%= 'error' unless step.ok %>"><%= step.detail %></dd>
+        <% end %>
+      </dl>
+    <% end %>
+    <p><%= link_to "Check again", world_art_direction_path(@world, check: 1, anchor: "connection") %></p>
+  <% else %>
+    <p class="hint">Can't see ComfyUI or the language model? Each step of reaching them, checked in turn, with what a failure usually means.</p>
+    <p><%= link_to "Check the connection", world_art_direction_path(@world, check: 1, anchor: "connection"), class: "button button--quiet" %></p>
+  <% end %>
+</details>
+
 <%= form_with url: world_art_direction_path(@world), method: :patch, class: "book-form" do |f| %>
   <%= render "art_directions/installed" %>
 
@@ -55,10 +73,13 @@
     </fieldset>
   <% end %>
 
-  <% if Comfy.config[:rembg_node].blank? %>
-    <p class="hint">No background-removal node is set (<code>COMFY_REMBG_NODE</code>), so backgrounds are kept for now.</p>
-  <% elsif Comfy.capabilities.reachable? && !Comfy.capabilities.node?(Comfy.config[:rembg_node]) %>
-    <p class="hint">ComfyUI has no <code><%= Comfy.config[:rembg_node] %></code> node installed, so backgrounds are kept for now.</p>
+  <% caps = Comfy.capabilities %>
+  <% if caps.reachable? %>
+    <% removal = Comfy::BackgroundRemoval.pick(caps) %>
+    <p class="hint">
+      <%= removal ? "Backgrounds are removed with #{removal[:node]} for the types marked to remove them." :
+                    "This ComfyUI has no background-removal node, so backgrounds are kept. Install one of: #{Comfy::BackgroundRemoval.node_names.to_sentence(last_word_connector: ' or ')}." %>
+    </p>
   <% end %>
   <div class="actions"><%= f.submit "Save art direction", class: "button" %></div>
 <% end %>

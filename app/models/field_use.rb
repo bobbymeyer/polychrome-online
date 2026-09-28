@@ -22,14 +22,15 @@ class FieldUse < ApplicationRecord
     "find" => "An item worth up to its power in gil, into the bag",
     "restore" => "Everyone standing gets its power% of HP and MP back",
     "learn" => "The waiting encounter's weaknesses are known before the fight",
-    "safe_road" => "The next dangerous path rolls no encounter"
+    "safe_road" => "The next dangerous path rolls no encounter",
+    "uncover" => "One of the GM's secrets comes out, one about where the party is if there is one"
   }.freeze
   # What success does, with the ability's own numbers.
   def self.describe(ability)
     power = ability.field_power
     case ability.field_outcome
-    when "find" then "An item worth up to #{power.positive? ? power : 100} gil, into the bag"
-    when "restore" then "Everyone standing gets #{power.positive? ? power : 25}% of HP and MP back"
+    when "find" then "An item worth up to #{power.positive? ? power : 100} #{ability.world.word('currency')}, into the bag"
+    when "restore" then "Everyone standing gets #{power.positive? ? power : 25}% of #{ability.world.word('hp')} and #{ability.world.word('mp')} back"
     else OUTCOMES[ability.field_outcome]
     end
   end
@@ -91,6 +92,7 @@ class FieldUse < ApplicationRecord
                                                  "skill" => skill&.fetch("name"), "bonus" => bonus).compact)
       line = roll["success"] ? apply_outcome : nil
       campaign.messages.create!(kind: "system", body: line) if line
+      campaign.tick_clocks!("failed_check") unless roll["success"]
       character.update!(field_used: true)
       update!(status: "done", difficulty: difficulty, result: roll.merge("line" => line).compact)
     end
@@ -129,6 +131,10 @@ class FieldUse < ApplicationRecord
     when "safe_road"
       campaign.update!(safe_road: true)
       "#{name} finds a way through: the next dangerous path is safe."
+    when "uncover"
+      secret = Secret.next_for(campaign) or return "#{name} digs, but there's nothing more to find out."
+      secret.reveal!(by: "#{name}'s #{ability.name}")
+      nil
     else "#{name} manages it. What happens is the GM's to tell."
     end
   end
@@ -160,7 +166,7 @@ class FieldUse < ApplicationRecord
       c.update!(hp: [ c.current_hp + (c.stats["max_hp"] * share / 100), c.stats["max_hp"] ].min,
                 mp: [ c.current_mp + (c.stats["max_mp"] * share / 100), c.stats["max_mp"] ].min)
     end
-    "#{name} sees to everyone: #{share}% of HP and MP back."
+    "#{name} sees to everyone: #{share}% of #{campaign.world.word('hp')} and #{campaign.world.word('mp')} back."
   end
 
   def learn(name)

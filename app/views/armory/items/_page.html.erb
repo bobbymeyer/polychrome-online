@@ -5,7 +5,7 @@
     <h1><%= entry.name %></h1>
     <dl class="facts">
       <% if entry.slot %><dt>Slot</dt><dd><%= term(entry.slot) %></dd><% end %>
-      <dt>Price</dt><dd><%= number_with_delimiter(entry.price) %> gil</dd>
+      <dt>Price</dt><dd><%= money(entry.price) %></dd>
       <% if entry.consumable? %><dt>Target</dt><dd><%= term(entry.target) %></dd><% end %>
     </dl>
   </div>

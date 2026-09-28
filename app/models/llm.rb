@@ -17,4 +17,30 @@ module Llm
   def self.client
     Client.new
   end
+
+  # The first JSON object in a reply, or nil: code fences and chatter
+  # around it are ignored.
+  def self.parse_json(text)
+    text = text.to_s
+    start = text.index("{") or return nil
+    depth = 0
+    in_string = false
+    escaped = false
+    text[start..].each_char.with_index do |char, i|
+      if in_string
+        if escaped then escaped = false
+        elsif char == "\\" then escaped = true
+        elsif char == '"' then in_string = false
+        end
+      elsif char == '"' then in_string = true
+      elsif char == "{" then depth += 1
+      elsif char == "}"
+        depth -= 1
+        return JSON.parse(text[start, i + 1]) if depth.zero?
+      end
+    end
+    nil
+  rescue JSON::ParserError
+    nil
+  end
 end

@@ -20,6 +20,7 @@ class Npc < ApplicationRecord
   belongs_to :campaign
   belongs_to :location, optional: true
   belongs_to :monster, optional: true
+  belongs_to :world_figure, optional: true
   has_many :messages, as: :speaker, dependent: :nullify
 
   validates :name, presence: true

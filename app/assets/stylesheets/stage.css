@@ -375,8 +375,10 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 .floorplan__name { font-style: italic; }
 .skyline__sign { font-style: italic; font-weight: 900; }
 
-/* Places in their colours: towns orange, dungeons wine, fields green, events blue. */
+/* Places in their colours: towns orange, dungeons wine, landmarks steel, wilds dark green, fields green, events blue. */
 .map-node--town .map-node__shape { fill: var(--orange); }
+.map-node--landmark .map-node__shape { fill: var(--steel-grey); }
+.map-node--wilds .map-node__shape { fill: var(--dark-green); }
 .map-node--dungeon .map-node__shape { fill: var(--wine-red); }
 .map-node--field .map-node__shape { fill: var(--green); }
 .map-node--event .map-node__shape { fill: var(--blue); }
@@ -388,6 +390,8 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 .map-legend .map-node--dungeon .map-node__shape { fill: var(--wine-red); }
 .map-legend .map-node--field .map-node__shape { fill: var(--green); }
 .map-legend .map-node--event .map-node__shape { fill: var(--blue); }
+.map-legend .map-node--landmark .map-node__shape { fill: var(--steel-grey); }
+.map-legend .map-node--wilds .map-node__shape { fill: var(--dark-green); }
 .map-legend .map-party__flag path, .map-legend svg path.map-party__flag { fill: var(--signal); }
 
 /* Rooms: fights red, the boss wine, treasure yellow, events blue, forks orange. */

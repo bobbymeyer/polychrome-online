@@ -12,15 +12,22 @@ module Comfy
                CLIPSetLastLayer CLIPTextEncode ConditioningZeroOut KSampler EmptyLatentImage EmptySD3LatentImage
                VAEDecode SaveImage].freeze
 
-    def self.unreachable = new({}, reachable: false)
+    def self.unreachable(error = nil) = new({}, reachable: false, error: error)
 
     # info: { node class => its /object_info definition }
-    def initialize(info, reachable: true)
+    def initialize(info, reachable: true, error: nil)
       @info = info.to_h
       @reachable = reachable
+      @error = error
     end
 
     def reachable? = @reachable
+
+    # Why it isn't, when it isn't.
+    attr_reader :error
+
+    # How ComfyUI describes a node, or nil.
+    def info(name) = @info[name.to_s]
 
     def node?(name) = @info.key?(name.to_s)
 

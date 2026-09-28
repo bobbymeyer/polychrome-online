@@ -22,6 +22,7 @@
     <%= hidden_field_tag :entry_type, entry.art_kind %>
     <%= hidden_field_tag :entry_slug, entry.slug %>
     <%= render "art_batches/subject_fields", subject: entry %>
+    <%= render "art_batches/background_field", art: entry %>
     <div class="inline-form">
       <div class="field"><%= label_tag :count, "Candidates" %><%= number_field_tag :count, Comfy.config[:candidates], min: 1, max: 8 %></div>
       <%= submit_tag "Generate", class: "button", disabled: !Comfy.capabilities.reachable?, title: ("ComfyUI isn't answering" unless Comfy.capabilities.reachable?) %>

@@ -41,6 +41,14 @@ Rails.application.routes.draw do
     # The setting's damage types and chart, and the skills its checks use.
     resource :types, only: %i[show edit update], controller: "world_types"
     resource :skills, only: %i[show edit update], controller: "world_skills"
+    resource :origins, only: %i[show edit update], controller: "world_origins"
+
+    # The setting's canon: its atlas, its cast, its lore.
+    resources :world_places, path: "atlas", except: :show
+    resources :world_routes, path: "atlas/roads", only: %i[create destroy]
+    resources :world_figures, path: "cast", except: :show
+    resources :codex_entries, path: "codex"
+    resources :world_fronts, path: "fronts", except: :show
 
     # The asset pipeline (§8): the world's art direction, and generating
     # candidates for an entry's image with ComfyUI.
@@ -49,6 +57,11 @@ Rails.application.routes.draw do
     resource :art_panel, only: :show, path: "art/panel"
     resources :art_candidates, only: [], path: "art/candidates" do
       post :pick, on: :member
+    end
+
+    # The language model's suggestions for world building (Draft).
+    resources :drafts, only: %i[create destroy] do
+      post :keep, on: :member
     end
 
     # The campaign layer (§2): a party's run through the world.
@@ -66,6 +79,21 @@ Rails.application.routes.draw do
     # The table (§7): the live session page with the dialogue box and log.
     resources :flags, only: %i[create update destroy] do
       post :bump, on: :member
+    end
+    resources :clocks, only: %i[create update destroy] do
+      post :tick, on: :member
+    end
+    resources :secrets, only: %i[create destroy] do
+      post :reveal, on: :member
+      post :conceal, on: :member
+    end
+    # The world's atlas and cast, brought into the campaign (Atlas).
+    resource :canon, only: :create
+    resources :front_deals, only: :create
+    resource :time, only: :update
+    # The language model's suggestions for prep (Draft).
+    resources :drafts, only: %i[create destroy] do
+      post :keep, on: :member
     end
     # Every GM diff on this campaign's locations, with reverts (§7).
     resource :changes, only: :show

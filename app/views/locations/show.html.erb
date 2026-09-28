@@ -4,6 +4,7 @@
   <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
 <% end %>
 <%= turbo_stream_from @location %>
+<%= turbo_stream_from @location, :art if @gm %>
 <%= render "shared/stage_stream", campaign: @campaign %>
 <% view = @location.view %>
 
@@ -25,18 +26,25 @@
   </div>
 </div>
 
+<% if (picture = @location.picture) %>
+  <figure class="location-picture<%= " is-mode" if @location.current_mode %>">
+    <%= image_tag url_for(picture), alt: [ view["name"], @location.current_mode&.dig("name") ].compact.join(": ") %>
+  </figure>
+<% end %>
+
 <% if (in_mode = @location.current_mode) %>
   <section class="window location-mode" aria-label="What's happening here">
     <p class="location-mode__name"><%= in_mode["name"] %></p>
     <% if in_mode["description"] %><p><%= in_mode["description"] %></p><% end %>
     <% if in_mode["closed"].present? %>
-      <p class="muted">Shut: <%= in_mode["closed"].map(&:humanize).to_sentence %>.</p>
+      <p class="muted">Shut: <%= in_mode["closed"].map { |k| term(k) }.to_sentence %>.</p>
     <% end %>
   </section>
 <% end %>
 
 <% if @gm %>
   <%= render "locations/modes", location: @location, view: view %>
+  <%= render "art_batches/mode_art", location: @location if @location.modes.any? %>
   <details class="window gm-tools">
     <summary>GM: rename</summary>
     <%= form_with model: @location, url: location_path(@location), class: "book-form inline-form" do |f| %>

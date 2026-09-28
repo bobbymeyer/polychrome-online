@@ -62,7 +62,7 @@ module Comfy
     # (a full /object_info can run to megabytes); a node it doesn't have
     # answers empty.
     def capabilities
-      nodes = (Capabilities::NODES + [ Comfy.config[:rembg_node].presence ]).compact.uniq
+      nodes = (Capabilities::NODES + BackgroundRemoval.node_names).uniq
       info = session do
         nodes.each_with_object({}) do |node, found|
           definition = get_json("/object_info/#{ERB::Util.url_encode(node)}")[node]
@@ -70,8 +70,10 @@ module Comfy
         end
       end
       Capabilities.new(info)
-    rescue Error, *NETWORK_ERRORS
-      Capabilities.unreachable
+    rescue Error => e
+      Capabilities.unreachable(e.message)
+    rescue *NETWORK_ERRORS => e
+      Capabilities.unreachable("ComfyUI isn't reachable at #{@base} (#{e.class.name.demodulize}: #{e.message})")
     end
 
     def reachable?
@@ -126,7 +128,7 @@ module Comfy
 
       raise Error, rejection(response)
     rescue *NETWORK_ERRORS => e
-      raise Error, "ComfyUI isn't reachable at #{@base} (#{e.class.name.demodulize})"
+      raise Error, "ComfyUI isn't reachable at #{@base} (#{e.class.name.demodulize}: #{e.message})"
     end
 
     # ComfyUI explains a rejected graph in "error" and per-node "node_errors".

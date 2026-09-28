@@ -13,10 +13,13 @@ class ArtBatchesController < ApplicationController
     entry, subject = target
     return forbid unless can_generate?(entry)
 
-    subject.update!(params.fetch(:entry, {}).permit(:art_notes, :art_model, art_loras: {}))
+    subject&.update!(params.fetch(:entry, {}).permit(:art_notes, :art_model, art_loras: {}))
+    entry.location.set_mode_art!(entry.mode_key, params[:mode_art]) if entry.is_a?(ModeArt) && params.key?(:mode_art)
     # A speaker shows one strip at a time, whichever expression it is for.
     ArtBatch.where(entry: subject.portraits).destroy_all if entry.is_a?(Portrait)
-    ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0")
+    ArtBatch.where(entry: entry.location.mode_arts).destroy_all if entry.is_a?(ModeArt)
+    transparent = { "1" => true, "0" => false }[params[:transparent]]
+    ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0", transparent: transparent)
     redirect_to entry_page(entry, anchor: "art")
   end
 
@@ -32,8 +35,11 @@ class ArtBatchesController < ApplicationController
 
   private
 
-  # [what gets the image, whose layer the params edit]
+  # [what gets the image, whose layer the params edit (none for a mode: its
+  # subject is the Gazetteer entry, edited in the book)]
   def target
+    return [ art_mode, nil ] if mode_request?
+
     if speaker_request?
       owner = art_speaker
       expression = Portrait::EXPRESSIONS.include?(params[:expression]) ? params[:expression] : "neutral"

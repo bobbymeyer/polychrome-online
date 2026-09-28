@@ -8,6 +8,7 @@ require "net/http"
 #
 # The interface the app uses; anything answering it can stand in:
 #   chat(system:, user:) → the reply's text
+#   json(system:, user:) → the reply parsed as a JSON object
 module Llm
   class Client
     NETWORK_ERRORS = [ SystemCallError, IOError, SocketError, Timeout::Error, OpenSSL::SSL::SSLError ].freeze
@@ -23,6 +24,16 @@ module Llm
       @headers["Authorization"] = "Bearer #{token}" if token.present?
       @timeout = timeout.to_i.positive? ? timeout.to_i : 120
       @http = http
+    end
+
+    # A reply that is JSON, parsed. Local models wrap it in prose or code
+    # fences often enough that the first object in the reply is taken; if
+    # there's none, they're asked once more, plainly.
+    def json(system:, user:, temperature: 0.7, max_tokens: 1500)
+      reply = chat(system: system, user: user, temperature: temperature, max_tokens: max_tokens)
+      Llm.parse_json(reply) || Llm.parse_json(chat(system: system, temperature: temperature, max_tokens: max_tokens,
+                                                   user: "#{user}\n\nReply with one JSON object and nothing else.")) ||
+        raise(Error, "The language model didn't answer in JSON")
     end
 
     # One exchange. Reasoning models' <think> blocks are left out of the reply.

@@ -8,7 +8,12 @@ class ArtPanelsController < ApplicationController
   before_action :set_world
 
   def show
-    if speaker_request?
+    if mode_request?
+      art = art_mode
+      return head :forbidden unless can_gm?(art.location.campaign)
+
+      render partial: "art_batches/mode_art", locals: { location: art.location, chosen: art.mode_key }
+    elsif speaker_request?
       owner = art_speaker
       return head :forbidden unless can_gm?(owner.campaign)
 

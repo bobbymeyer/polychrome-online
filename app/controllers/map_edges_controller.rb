@@ -51,6 +51,6 @@ class MapEdgesController < ApplicationController
   end
 
   def edge_params
-    params.expect(map_edge: %i[to_node_id state encounter_table_id travel_event])
+    params.expect(map_edge: %i[to_node_id state encounter_table_id travel_event duration])
   end
 end

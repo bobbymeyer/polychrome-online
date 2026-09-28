@@ -705,3 +705,45 @@ details[open] summary { margin-bottom: 16px; }
 .shop-table__buy { width: 1%; white-space: nowrap; }
 .shop-purse { font-size: 18px; }
 
+
+/* ---------------------------------------------------------------------------
+ * Clocks and secrets: a clock is a row of squares, filled black, red when full.
+ * ------------------------------------------------------------------------- */
+
+.clock-dial { display: inline-flex; gap: 3px; vertical-align: middle; }
+.clock-dial i { width: 12px; height: 12px; border: 2px solid var(--ink); background: var(--paper); }
+.clock-dial i.is-filled { background: var(--ink); }
+.clock-dial.is-full i { border-color: var(--signal); background: var(--signal); }
+.clock-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.clock-list li { display: flex; gap: 12px; align-items: center; }
+.clock-rows, .secret-rows { list-style: none; margin: 0 0 12px; padding: 0; }
+.clock-row, .secret-rows li { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.clock-row > div:first-child, .secret-rows li > div:first-child { flex: 1 1 240px; }
+.clock-row p { margin: 2px 0 0; }
+.clock-row .label { margin-left: 8px; }
+.secret-rows li.is-revealed { color: var(--grey); }
+.secret-list li { font-style: italic; }
+
+/* A place's picture, and its modes' pictures for the GM. */
+.location-picture { margin: 0 0 var(--gutter); max-width: 720px; }
+.location-picture img { display: block; width: 100%; height: auto; border: 2px solid var(--ink); }
+.location-picture.is-mode img { border-color: var(--signal); }
+.mode-pictures { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 12px; }
+.mode-pictures li { display: grid; gap: 4px; font-size: 13px; }
+.mode-pictures img, .mode-pictures .candidate__empty { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border: 1px solid var(--rule); }
+.mode-pictures .candidate__empty { display: grid; place-items: center; font-size: 13px; font-weight: 400; }
+
+/* The language model's suggestions (Draft). */
+.draft-panel { margin: 12px 0; }
+.draft-panel > summary { cursor: pointer; font-weight: 700; }
+.draft-results__status { color: var(--grey); }
+.draft-items { list-style: none; margin: 12px 0; padding: 0; }
+.draft-items li { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.draft-items li.is-kept { color: var(--grey); }
+.draft-item { flex: 1; }
+.draft-script { white-space: pre-wrap; font-size: 13px; margin: 4px 0; }
+.draft-tiers { margin: 0; padding-left: 20px; }
+.type-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--ink); vertical-align: middle; }
+.front-row { padding: 8px 0 12px; border-bottom: 1px solid var(--rule); }
+.table-time { margin: 0 0 12px; font-weight: 700; }
+.table-time .label { margin-right: 8px; }

@@ -14,4 +14,4 @@
     </li>
   <% end %>
 </ol>
-<p class="hint"><%= link_to "Edit the world and type layers", world_art_direction_path(art.art_world) %></p>
+<% if admin? %><p class="hint"><%= link_to "Edit the world and type layers", world_art_direction_path(art.art_world) %></p><% end %>

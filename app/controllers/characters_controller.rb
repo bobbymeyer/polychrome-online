@@ -13,11 +13,14 @@ class CharactersController < ApplicationController
                                           job: @campaign.available_jobs.first)
   end
 
+  # Where they're from, their home on the map, who they're tied to.
+  ORIGIN_FIELDS = [ :origin, :home_node_id, { ties: [ %i[npc_id text] ] } ].freeze
+
   def create
     # A player's new character is theirs and starts at the party's lowest
     # level. The GM's are unclaimed, for players to sit as, at any level.
     fields = can_gm?(@campaign) ? %i[name motive player_name job_id starting_level starting_job_level] : %i[name motive player_name job_id]
-    @character = @campaign.characters.new(params.expect(character: fields).merge(user: (current_user unless can_gm?(@campaign))))
+    @character = @campaign.characters.new(params.expect(character: [ *fields, *ORIGIN_FIELDS ]).merge(user: (current_user unless can_gm?(@campaign))))
     unless can_gm?(@campaign)
       @character.starting_level ||= @campaign.characters.minimum(:level)
       @character.starting_job_level = nil # follows their level
@@ -34,7 +37,8 @@ class CharactersController < ApplicationController
   def edit; end
 
   def update
-    if @character.update(params.expect(character: can_gm?(@campaign) ? %i[name motive player_name user_id colour] : %i[name motive player_name colour]))
+    fields = can_gm?(@campaign) ? %i[name motive player_name user_id colour] : %i[name motive player_name colour]
+    if @character.update(params.expect(character: [ *fields, *ORIGIN_FIELDS ]))
       @character.update_portraits!(**portrait_params)
       redirect_to character_path(@character), notice: "#{@character.name} was updated."
     else

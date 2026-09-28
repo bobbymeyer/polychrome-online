@@ -11,9 +11,9 @@
         <tr>
           <td>
             <%= character.name %>
-            <span class="muted">HP <%= character.current_hp %>/<%= character.stats["max_hp"] %> · MP <%= character.current_mp %>/<%= character.stats["max_mp"] %></span>
+            <span class="muted"><%= word("hp") %> <%= character.current_hp %>/<%= character.stats["max_hp"] %> · <%= word("mp") %> <%= character.current_mp %>/<%= character.stats["max_mp"] %></span>
           </td>
-          <td class="num"><%= number_with_delimiter(price) %> gil</td>
+          <td class="num"><%= money(price) %></td>
           <td class="shop-table__buy">
             <% if why_not %>
               <span class="muted"><%= why_not %></span>

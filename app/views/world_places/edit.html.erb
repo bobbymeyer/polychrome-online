@@ -1,0 +1,4 @@
+<% content_for :title, "#{@place.name} · Atlas" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Atlas", world_world_places_path(@world) %> / <%= @place.name %></div>
+<h1><%= @place.name %></h1>
+<%= render "form", place: @place %>

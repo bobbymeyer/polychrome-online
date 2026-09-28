@@ -13,7 +13,7 @@
 <% if unit["hp"].zero? %>
   <p>You're down. Hope someone has a Raise.</p>
 <% elsif !Battle::State.able_to_act(state).include?(unit["id"]) %>
-  <p>You can't act this round (<%= unit["statuses"].map { |s| s["kind"].humanize }.to_sentence %>).</p>
+  <p>You can't act this round (<%= unit["statuses"].map { |s| term(s["kind"]) }.to_sentence %>).</p>
 <% elsif @choosing %>
   <% item = @choosing["kind"] == "item" %>
   <div data-choosing>
@@ -84,7 +84,7 @@
     <% unit["abilities"].map { |id| state["abilities"][id] }.each do |ability| %>
       <% usable = Battle::State.usable?(unit, ability) %>
       <% cost = Battle::State.ability_cost(ability) %>
-      <% label = safe_join([ ability["name"], (tag.span("#{cost} MP", class: "menu__cost") if cost.positive?) ].compact, " ") %>
+      <% label = safe_join([ ability["name"], (tag.span("#{cost} #{word('mp')}", class: "menu__cost") if cost.positive?) ].compact, " ") %>
       <% help = ability_help(unit, ability) %>
       <% if !usable %>
         <button type="button" class="menu__item" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= ability['name'] %>"><%= label %></button>

@@ -4,7 +4,7 @@
   <div class="field-row">
     <div class="field"><%= f.label :level %><%= f.number_field :level, min: 1 %></div>
     <div class="field"><%= f.label :exp, "EXP" %><%= f.number_field :exp, min: 0 %></div>
-    <div class="field"><%= f.label :gil %><%= f.number_field :gil, min: 0 %></div>
+    <div class="field"><%= f.label :gil, word("currency").upcase_first %><%= f.number_field :gil, min: 0 %></div>
     <div class="field"><%= f.label :abp, "ABP" %><%= f.number_field :abp, min: 0 %></div>
     <% if types_matter? %>
       <div class="field">
@@ -21,7 +21,7 @@
   </div>
   <div class="field">
     <%= f.label :boss_line, "What it says before the fight" %>
-    <%= f.text_area :boss_line, rows: 2, placeholder: "You came for the crystal. So did the last ones." %>
+    <%= f.text_area :boss_line, rows: 2, placeholder: "You came for the ledger. So did the last ones." %>
   </div>
 
   <fieldset class="panel">

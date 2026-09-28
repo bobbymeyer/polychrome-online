@@ -1,0 +1,11 @@
+<span class="label"><%= item["section"] %></span>
+<% case item["section"] %>
+<% when "type" %>
+  <span class="type-swatch" style="background: <%= item['colour'] %>"></span> <strong><%= item["name"] %></strong>
+<% when "origin" %>
+  <strong><%= item["name"] %></strong> <span class="muted">· <%= item["description"] %><%= " · better at #{item['skill']}" if item["skill"] %></span>
+<% when "skill" %>
+  <strong><%= item["name"] %></strong> <span class="muted">· <%= item["stat"].upcase %> · <%= item["description"] %></span>
+<% else %>
+  <strong><%= item["name"] %></strong> <span class="muted">· <%= item["description"] %><%= " · #{item['type']}" if item["type"] %> · make it in the Compendium</span>
+<% end %>

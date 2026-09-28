@@ -55,15 +55,8 @@
       <%= render "tables/coop_join", campaign: @campaign %>
       <%= render "tables/party", campaign: @campaign %>
     <% end %>
-    <% known = @campaign.flags.shown_to_players.order(:key) %>
-    <% if known.any? %>
-      <section class="window party-knows" aria-label="What the party knows">
-        <h2>The party knows</h2>
-        <dl class="facts">
-          <% known.each do |flag| %><dt><%= flag.label %></dt><dd><%= flag.value.presence || "yes" %></dd><% end %>
-        </dl>
-      </section>
-    <% end %>
+    <%= render "tables/time", campaign: @campaign %>
+    <%= render "tables/party_knows", campaign: @campaign %>
     </div>
   </div>
 
@@ -94,6 +87,26 @@
     <% if @seat == "gm" %>
       <%= render "field_uses/requests", campaign: @campaign %>
       <%= render "tables/coop_setup", campaign: @campaign unless view %>
+      <details class="window table-scenes">
+        <summary>Time</summary>
+        <div class="inline-form">
+          <%= button_to "A part of the day passes", campaign_time_path(@campaign), method: :patch, params: { parts: 1 }, class: "button button--quiet" %>
+          <%= button_to "Until dawn", campaign_time_path(@campaign), method: :patch, params: { until: "dawn" }, class: "button button--quiet" %>
+          <%= form_with url: campaign_time_path(@campaign), method: :patch, class: "inline-form" do |f| %>
+            <%= number_field_tag :parts, 4, min: 1, max: 28, "aria-label": "Parts of the day" %>
+            <%= f.submit "Pass", class: "button button--quiet" %>
+          <% end %>
+        </div>
+        <p class="hint">A day has four parts: dawn, day, dusk and night. Journeys take their road's time; a rest sleeps until dawn. Each new day ticks the clocks that tick on dawn.</p>
+      </details>
+      <details class="window table-scenes" <%= "open" if @campaign.clocks.running.exists? %>>
+        <summary>Clocks</summary>
+        <%= render "clocks/gm", campaign: @campaign %>
+      </details>
+      <details class="window table-scenes">
+        <summary>Secrets</summary>
+        <%= render "secrets/gm", campaign: @campaign %>
+      </details>
       <% locked = @campaign.locked_jobs.to_a %>
       <% if locked.any? %>
         <details class="window table-scenes">
@@ -104,7 +117,7 @@
                 <label><%= check_box_tag "jobs[]", job.slug, false, id: "grant_#{job.slug}" %> <%= job.name %></label>
               <% end %>
             </div>
-            <div class="field"><%= label_tag :line, "The moment" %><%= text_field_tag :line, nil, placeholder: "The Wind Crystal shatters, and its shards settle on you." %></div>
+            <div class="field"><%= label_tag :line, "The moment" %><%= text_field_tag :line, nil, placeholder: "The old master finally nods, and shows you how." %></div>
             <%= f.submit "Grant", class: "button play" %>
           <% end %>
         </details>

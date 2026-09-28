@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # "Previously on…": what happened last session, for a table coming back
-# after a break. Built from the table's own record: the log, the battles
-# and the flags the party knows. Whispers are never in it.
+# after a break. Built from the table's own record: the log, the battles,
+# the flags and secrets the party knows and the clocks that filled. Whispers are never in it.
 #
 # A session is a run of log lines with no gap longer than BREAK. The recap
 # is of the last session that has ended; while the first session is still
@@ -69,8 +69,11 @@ class Recap
     lines.select { |m| %w[key treasure].include?(m.cue) }.map(&:body)
   end
 
+  # Public flags set, secrets found out, and clocks that filled.
   def learned
-    campaign.flags.shown_to_players.where(updated_at: window).order(:key).map { |f| f.value.present? ? "#{f.label}: #{f.value}" : f.label }
+    campaign.flags.shown_to_players.where(updated_at: window).order(:key).map { |f| f.value.present? ? "#{f.label}: #{f.value}" : f.label } +
+      campaign.secrets.where(revealed_at: window).order(:revealed_at).map(&:body) +
+      campaign.clocks.shown_to_players.where(full_at: window).order(:full_at).map { |c| "#{c.name}: it happened" }
   end
 
   # The last thing said to the table: where it was left.

@@ -1,0 +1,27 @@
+<%= form_with model: figure, url: figure.persisted? ? world_world_figure_path(@world, figure) : world_world_figures_path(@world), class: "book-form", multipart: true do |f| %>
+  <%= render "book_entries/errors", entry: figure %>
+  <div class="field-row">
+    <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
+    <div class="field"><%= f.label :title %><%= f.text_field :title, placeholder: "Boss of the Brass Syndicate" %></div>
+    <div class="field"><%= f.label :colour, "Colour (until they have a portrait)" %><%= f.select :colour, colour_options(f.object.colour) %></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><%= f.label :world_place_id, "Found at" %><%= f.select :world_place_id, @world.world_places.in_order.map { |p| [ p.name, p.id ] }, include_blank: "Anywhere" %></div>
+    <div class="field">
+      <%= f.label :monster_id, "Fights as" %>
+      <%= f.select :monster_id, @world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.id ] }, include_blank: "Doesn't fight" %>
+    </div>
+  </div>
+  <div class="field"><%= f.label :blurb, "What people say about them" %><%= f.text_field :blurb, placeholder: "Never raises her voice. Never needs to." %></div>
+  <div class="field"><%= f.label :description, "Notes (GM only)" %><%= f.text_area :description, rows: 3 %></div>
+  <div class="field"><%= f.label :art_notes, "What they look like" %><%= f.text_field :art_notes, placeholder: "grey braid, brass rings on every finger, a docker's coat" %></div>
+  <%= render "portraits/fields", owner: figure %>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", world_world_figures_path(@world), class: "button button--quiet" %>
+  </div>
+<% end %>
+<% if figure.persisted? %>
+  <%= button_to "Take them out of the cast", world_world_figure_path(@world, figure), method: :delete, class: "button button--danger",
+                form: { data: { turbo_confirm: "Take #{figure.name} out of the cast? Campaigns keep theirs." } } %>
+<% end %>

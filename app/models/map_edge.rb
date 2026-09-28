@@ -7,6 +7,7 @@ class MapEdge < ApplicationRecord
   STATES = %w[open dangerous blocked].freeze
 
   belongs_to :campaign
+  belongs_to :world_route, optional: true
   belongs_to :from_node, class_name: "MapNode", inverse_of: :outgoing_edges
   belongs_to :to_node, class_name: "MapNode", inverse_of: :incoming_edges
   belongs_to :encounter_table, optional: true
@@ -14,6 +15,7 @@ class MapEdge < ApplicationRecord
   normalizes :travel_event, with: ->(text) { text.presence }
 
   validates :state, inclusion: { in: STATES }
+  validates :duration, numericality: { only_integer: true, in: 1..28 }
   validate :joins_two_nodes_of_this_campaign
   validate :one_path_per_pair
   validate :encounter_table_from_this_world

@@ -1,0 +1,34 @@
+<%# Ask the language model for suggestions (Draft), and what came back. Only when one is set up (config/llm.yml).
+    owner: the campaign or world; kind: a Draft kind; target: what it's for, if anything; title. %>
+<% if Llm.enabled? %>
+  <% target = local_assigns[:target] %>
+  <details class="draft-panel" <%= "open" if Draft.latest(owner, kind, target) %>>
+    <summary><%= title %></summary>
+    <%= turbo_stream_from owner, :drafts %>
+    <%= form_with url: (owner.is_a?(Campaign) ? campaign_drafts_path(owner) : world_drafts_path(owner)), class: "book-form draft-form" do |f| %>
+      <%= hidden_field_tag :kind, kind, id: nil %>
+      <%= hidden_field_tag :target, Draft.gid(target), id: nil if target %>
+      <% slot = Draft.slot_id(kind, target) %>
+      <% case kind %>
+      <% when "family" %>
+        <div class="field-row">
+          <div class="field"><%= label_tag "#{slot}_root", "Root, if you have one" %><%= text_field_tag "draft[root]", nil, id: "#{slot}_root", placeholder: "Frost" %></div>
+          <div class="field"><%= label_tag "#{slot}_shape", "Shape" %><%= select_tag "draft[shape]", options_for_select(AbilityFamily::SHAPE_LABELS.map { |k, l| [ l, k ] }), id: "#{slot}_shape" %></div>
+          <div class="field"><%= label_tag "#{slot}_type", "Type" %><%= select_tag "draft[type]", options_for_select(owner.type_chart.types.map { |t| [ t.name, t.slug ] }), include_blank: true, id: "#{slot}_type" %></div>
+          <div class="field"><%= label_tag "#{slot}_status", "Status" %><%= select_tag "draft[status]", options_for_select((Battle::HARMFUL_STATUSES - Battle::PRIMITIVE_STATUSES).map { |s| [ s.humanize, s ] }), include_blank: true, id: "#{slot}_status" %></div>
+        </div>
+        <div class="field"><%= label_tag "#{slot}_idea", "Anything else" %><%= text_field_tag "draft[idea]", nil, id: "#{slot}_idea", placeholder: "sea witches' curses" %></div>
+      <% when "setting" %>
+        <div class="field"><%= label_tag "#{slot}_pitch", "The pitch" %><%= text_area_tag "draft[pitch]", owner.description, rows: 3, id: "#{slot}_pitch", placeholder: "Rain-soaked port cities, clockwork saints, smugglers and debt." %></div>
+      <% else %>
+        <div class="field">
+          <%= label_tag "#{slot}_idea", "An idea, if you have one" %>
+          <%= text_field_tag "draft[idea]", nil, id: "#{slot}_idea", placeholder: local_assigns[:placeholder] || "Leave blank to let it work from what's here" %>
+        </div>
+      <% end %>
+      <%= f.submit "Suggest", class: "button button--quiet" %>
+      <p class="hint">The language model drafts; nothing is used until you keep it. It reads what's already here, your notes included.</p>
+    <% end %>
+    <%= render "drafts/results", draft: Draft.latest(owner, kind, target), kind: kind, target: target %>
+  </details>
+<% end %>

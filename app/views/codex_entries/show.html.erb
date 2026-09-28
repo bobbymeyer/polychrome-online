@@ -1,0 +1,20 @@
+<% content_for :title, "#{@entry.title} · Codex" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Codex", world_codex_entries_path(@world) %> / <%= @entry.title %></div>
+<article class="book-page codex-page">
+  <p class="eyebrow"><%= @entry.category || "Codex" %><%= " · GM only" unless @entry.public? %></p>
+  <h1><%= @entry.title %></h1>
+  <div class="prose"><%= simple_format(@entry.body) %></div>
+  <% if knows_the_lore? && @entry.gm_notes.present? %>
+    <aside class="window gm-tools">
+      <h2>GM notes</h2>
+      <div class="prose"><%= simple_format(@entry.gm_notes) %></div>
+    </aside>
+  <% end %>
+</article>
+<% if can_edit_world? %>
+  <div class="actions">
+    <%= link_to "Edit", edit_world_codex_entry_path(@world, @entry), class: "button" %>
+    <%= button_to "Delete", world_codex_entry_path(@world, @entry), method: :delete, class: "button button--danger",
+                  form: { data: { turbo_confirm: "Delete #{@entry.title}?" } } %>
+  </div>
+<% end %>

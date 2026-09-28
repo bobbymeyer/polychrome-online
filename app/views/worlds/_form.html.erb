@@ -13,6 +13,62 @@
   </div>
   <div class="field"><%= f.label :description %><%= f.text_area :description, rows: 4 %></div>
   <% if world.persisted? %>
+    <fieldset class="panel">
+      <legend>Voice</legend>
+      <p class="hint">How the setting sounds. The language model writes in this voice when it drafts for you, and keeps clear of what you rule out.</p>
+      <div class="field"><%= f.label :voice, "Tone and touchstones" %><%= f.text_area :voice, rows: 3, placeholder: "Wet noir with a kind heart. Dashiell Hammett by way of Studio Ghibli. Short sentences; people say less than they mean." %></div>
+      <div class="field"><%= f.label :avoid, "Words and tropes to avoid" %><%= f.text_area :avoid, rows: 2, placeholder: "chosen ones, prophecies, 'ancient evil', elves" %></div>
+    </fieldset>
+    <fieldset class="panel words-fields">
+      <legend>Words</legend>
+      <p class="hint">The setting's names for the game's fixed things. The rules underneath stay the same; blank keeps the game's word.</p>
+      <div class="field-row">
+        <div class="field"><%= label_tag "world_terms_currency", "Money" %><%= text_field_tag "world[terms][currency]", world.terms["currency"], id: "world_terms_currency", placeholder: "gil", maxlength: 30 %></div>
+        <div class="field"><%= label_tag "world_terms_hp", "HP" %><%= text_field_tag "world[terms][hp]", world.terms["hp"], id: "world_terms_hp", placeholder: "HP", maxlength: 30 %></div>
+        <div class="field"><%= label_tag "world_terms_mp", "MP" %><%= text_field_tag "world[terms][mp]", world.terms["mp"], id: "world_terms_mp", placeholder: "MP", maxlength: 30 %></div>
+      </div>
+      <div class="field-row">
+        <% Vocabulary::STATS.each do |stat| %>
+          <div class="field"><%= label_tag "world_terms_stats_#{stat}", Vocabulary::DEFAULTS["stats"][stat] %><%= text_field_tag "world[terms][stats][#{stat}]", world.terms.dig("stats", stat), id: "world_terms_stats_#{stat}", placeholder: Vocabulary::DEFAULTS["stats"][stat], maxlength: 30 %></div>
+        <% end %>
+      </div>
+      <fieldset class="field">
+        <legend>Town services</legend>
+        <div class="field-row">
+          <% Vocabulary::SERVICES.each do |kind| %>
+            <div class="field">
+              <%= label_tag "world_terms_services_#{kind}", Vocabulary::DEFAULTS["services"][kind] %>
+              <%= text_field_tag "world[terms][services][#{kind}]", world.terms.dig("services", kind), id: "world_terms_services_#{kind}", placeholder: Vocabulary::DEFAULTS["services"][kind], maxlength: 30 %>
+              <label class="inline"><%= check_box_tag "world[terms][services_off][]", kind, world.services_off.include?(kind), id: "world_terms_off_#{kind}" %> Not in this setting</label>
+            </div>
+          <% end %>
+        </div>
+        <p class="hint">The inn rests the party, the shop sells the Armory, the guild sells a rumour, the temple raises the fallen. A service not in the setting never appears in its towns.</p>
+      </fieldset>
+      <details>
+        <summary>Statuses</summary>
+        <div class="field-row field-row--wrap">
+          <% Battle::STATUSES.each do |status| %>
+            <div class="field"><%= label_tag "world_terms_statuses_#{status}", status.humanize %><%= text_field_tag "world[terms][statuses][#{status}]", world.terms.dig("statuses", status), id: "world_terms_statuses_#{status}", placeholder: status.humanize, maxlength: 30 %></div>
+          <% end %>
+        </div>
+      </details>
+    </fieldset>
+    <fieldset class="panel">
+      <legend>Calendar</legend>
+      <p class="hint">How campaigns here count their days. Blank counts them plainly: Day 1, Day 2.</p>
+      <div class="field"><%= label_tag "world_calendar_weekdays", "Days of the week" %><%= text_field_tag "world[calendar][weekdays]", Array(world.calendar["weekdays"]).join(", "), id: "world_calendar_weekdays", placeholder: "Moonsday, Tidesday, Ashday, Bellday, Restday" %></div>
+      <div class="field-row">
+        <div class="field"><%= label_tag "world_calendar_months", "Months" %><%= text_field_tag "world[calendar][months]", Array(world.calendar["months"]).join(", "), id: "world_calendar_months", placeholder: "Thaw, Rainfall, Highsun, Harvest, Frost" %></div>
+        <div class="field"><%= label_tag "world_calendar_month_length", "Days in a month" %><%= number_field_tag "world[calendar][month_length]", world.calendar["month_length"], min: 0, max: 400, id: "world_calendar_month_length", placeholder: "30" %></div>
+      </div>
+    </fieldset>
+    <fieldset class="panel">
+      <legend>Lines and veils</legend>
+      <p class="hint">Shown to everyone who plays here, and the language model never writes them. Lines never happen in this setting; veils can happen, but off-screen.</p>
+      <div class="field"><%= f.label :lines %><%= f.text_area :lines, rows: 2, placeholder: "harm to children, sexual violence" %></div>
+      <div class="field"><%= f.label :veils %><%= f.text_area :veils, rows: 2, placeholder: "torture, the details of a plague" %></div>
+    </fieldset>
     <fieldset class="field music-fields">
       <legend>Music</legend>
       <p class="hint">A track for each kind of scene, looped while the party is there. Every page at the table plays its scene's track; the GM can switch it from the table. A scene without a track is quiet. Audio files up to <%= World::MUSIC_MAX_BYTES / 1.megabyte %> MB, and only music you have the rights to.</p>

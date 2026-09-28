@@ -19,7 +19,8 @@ class ArtBatch < ApplicationRecord
   # The first candidate tries the entry's seed hint when it has one (a
   # portrait's neutral seed), so a face stays closer across expressions.
   # write: let the language model (if there is one) rewrite the subject.
-  def self.start!(entry, count: Comfy.config[:candidates], write: true)
+  # transparent: remove the background, or keep it, whatever the type says.
+  def self.start!(entry, count: Comfy.config[:candidates], write: true, transparent: nil)
     count = count.to_i.clamp(1, 8)
     base = Random.rand(2**31)
     seeds = Array.new(count) { |i| (base + i) % 2**31 }
@@ -27,6 +28,7 @@ class ArtBatch < ApplicationRecord
     batch = transaction do
       entry.art_batches.destroy_all
       recipe = entry.art_recipe.merge("write" => write && Llm.enabled?)
+      recipe["transparent"] = transparent unless transparent.nil?
       create!(world: entry.art_world, entry: entry, recipe: recipe).tap do |b|
         seeds.each_with_index { |seed, i| b.candidates.create!(position: i, seed: seed) }
       end
@@ -49,7 +51,7 @@ class ArtBatch < ApplicationRecord
   def write_prompt!(llm)
     return unless recipe["write"] && !recipe.dig("parts", "written") && !recipe["writer_error"]
 
-    update!(recipe: PromptWriter.rewrite(recipe, client: llm))
+    update!(recipe: PromptWriter.rewrite(recipe, client: llm, world: world))
   end
 
   # Queue every candidate with ComfyUI, each graph built against what this
@@ -64,7 +66,10 @@ class ArtBatch < ApplicationRecord
 
       prefix = "polychrome/#{entry.art_filename(candidate.seed).delete_suffix('.png')}"
       graph = Comfy::Workflow.build(recipe, seed: candidate.seed, prefix: prefix, capabilities: capabilities)
-      update!(recipe: recipe.merge("workflow" => Comfy::Workflow.outline(graph))) unless recipe["workflow"]
+      unless recipe["workflow"]
+        removal = Comfy::BackgroundRemoval.pick(capabilities) if recipe["transparent"]
+        update!(recipe: recipe.merge("workflow" => Comfy::Workflow.outline(graph), "background_node" => removal&.dig(:node)).compact)
+      end
       candidate.update!(comfy_prompt_id: client.submit(graph), status: "running")
     end
     update!(status: "running")

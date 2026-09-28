@@ -9,6 +9,9 @@
 <% if @entry.respond_to?(:art_recipe) && can_generate?(@entry) %>
   <%= render "art_batches/studio", entry: @entry %>
 <% end %>
+<% if can_edit_world? && @entry.has_attribute?(:description) %>
+  <%= render "drafts/panel", owner: @world, kind: "description", target: @entry, title: "Suggest a description", placeholder: "grimmer, or funnier" %>
+<% end %>
 <% if can_edit_world? %>
 <div class="actions">
   <%= link_to "Edit", polymorphic_path([:edit, @world, book_key, @entry]), class: "button" %>

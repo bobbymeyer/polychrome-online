@@ -4,7 +4,15 @@
 # base world is seed data (db/seeds). A second author's world is just
 # another row (§1, §9.1).
 class World < ApplicationRecord
+  include Vocabulary
+
   belongs_to :owner, class_name: "User", optional: true
+  # The setting's canon, first: it points into the books below.
+  has_many :world_figures, dependent: :destroy
+  has_many :world_routes, dependent: :destroy
+  has_many :world_places, dependent: :destroy
+  has_many :codex_entries, dependent: :destroy
+  has_many :world_fronts, dependent: :destroy
   has_many :abilities, dependent: :destroy
   has_many :items, dependent: :destroy
   has_many :jobs, dependent: :destroy
@@ -51,6 +59,7 @@ class World < ApplicationRecord
   validate :types_make_a_chart
   validate :terrain_types_are_types
   validate :skills_are_skills
+  validate :origins_are_origins
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true, format: { with: BookEntry::SLUG_FORMAT }
@@ -140,8 +149,68 @@ class World < ApplicationRecord
         end
       end
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
-      %w[art_style art_negative art_loras art_model].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar origins].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
+      copy_canon_from!(source)
+    end
+  end
+
+  COPIED = %w[id world_id created_at updated_at].freeze
+
+  # Where characters can come from: [{ "slug", "name", "description",
+  # "skill" }]. An origin's skill (one of the world's) gets a bonus.
+  ORIGIN_BONUS = 10
+
+  def origin(slug)
+    Array(origins).find { |o| o["slug"] == slug.to_s }
+  end
+
+  # A campaign's day as the setting names it: "Moonsday, 12 Rainfall", or
+  # "Day 12" for a world with no calendar.
+  #   calendar: { "weekdays" => [...], "months" => [...], "month_length" => 30 }
+  def date(day)
+    weekdays = Array(calendar["weekdays"]).compact_blank
+    months = Array(calendar["months"]).compact_blank
+    length = calendar["month_length"].to_i
+    index = day.to_i - 1
+    [ (weekdays[index % weekdays.size] if weekdays.any?),
+      (months.any? && length.positive? ? "#{(index % length) + 1} #{months[(index / length) % months.size]}" : "day #{day}") ]
+      .compact.join(", ").upcase_first
+  end
+
+  # From the form: names as comma-separated text.
+  def calendar=(value)
+    value = value.to_h.stringify_keys
+    split = ->(v) { (v.is_a?(Array) ? v : v.to_s.split(",")).map { |n| n.to_s.strip }.reject(&:empty?).first(24) }
+    super({ "weekdays" => split.(value["weekdays"]), "months" => split.(value["months"]),
+            "month_length" => value["month_length"].to_i.clamp(0, 400) }.reject { |_, v| v.blank? })
+  end
+
+  # The atlas, cast and codex, pointing at this world's copies of the books.
+  def copy_canon_from!(source)
+    places = {}
+    source.world_places.find_each do |place|
+      template = place.location_template && location_templates.find_by(slug: place.location_template.slug)
+      places[place.id] = world_places.create!(place.attributes.except(*COPIED, "location_template_id").merge(location_template: template, seed: place.seed))
+    end
+    source.world_routes.find_each do |route|
+      table = route.encounter_table && encounter_tables.find_by(slug: route.encounter_table.slug)
+      world_routes.create!(route.attributes.except(*COPIED, "from_place_id", "to_place_id", "encounter_table_id")
+                                .merge(from_place: places.fetch(route.from_place_id), to_place: places.fetch(route.to_place_id), encounter_table: table))
+    end
+    source.world_figures.includes(portraits: { image_attachment: :blob }).find_each do |figure|
+      copy = world_figures.create!(figure.attributes.except(*COPIED, "monster_id", "world_place_id")
+                                         .merge(monster: figure.monster && monsters.find_by(slug: figure.monster.slug),
+                                                world_place: places[figure.world_place_id]))
+      figure.portraits.each { |p| copy.portraits.create!(expression: p.expression).image.attach(p.image.blob) if p.image.attached? }
+    end
+    source.codex_entries.find_each { |entry| codex_entries.create!(entry.attributes.except(*COPIED)) }
+    # Fronts name places and people by id: point them at the copies.
+    figures = source.world_figures.to_h { |f| [ f.id, world_figures.find_by(name: f.name)&.id ] }
+    source.world_fronts.find_each do |front|
+      world_fronts.create!(name: front.name, description: front.description,
+                           clocks: front.clocks.map { |c| c.merge("place_id" => places[c["place_id"]]&.id).compact },
+                           secrets: front.secrets.map { |s| s.merge("place_id" => places[s["place_id"]]&.id, "figure_id" => figures[s["figure_id"]]).compact })
     end
   end
 
@@ -184,6 +253,16 @@ class World < ApplicationRecord
   def terrain_types_are_types
     bad = terrain_types.to_h.reject { |place, type| EncounterTable::TERRAINS.include?(place) && type_chart.include?(type) }
     errors.add(:terrain_types, "names unknown places or types: #{bad.keys.join(', ')}") if bad.any?
+  end
+
+  def origins_are_origins
+    Array(origins).each do |origin|
+      errors.add(:origins, "#{origin['slug'].inspect} isn't a usable id") unless origin["slug"].to_s.match?(TypeChart::SLUG)
+      errors.add(:origins, "#{origin['slug']} needs a name") if origin["name"].blank?
+      errors.add(:origins, "#{origin['name']}: #{origin['skill']} isn't one of the skills") if origin["skill"].present? && !skill(origin["skill"])
+    end
+    dupes = Array(origins).map { |o| o["slug"] }.tally.select { |_, n| n > 1 }.keys
+    errors.add(:origins, "#{dupes.join(', ')} appear more than once") if dupes.any?
   end
 
   def skills_are_skills

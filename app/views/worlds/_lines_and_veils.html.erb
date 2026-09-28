@@ -1,0 +1,10 @@
+<%# What this setting never does, and keeps off-screen, for everyone who plays in it. world. %>
+<% if world.lines.present? || world.veils.present? %>
+  <section class="window lines-and-veils" aria-label="Lines and veils">
+    <h2>Lines and veils</h2>
+    <dl class="facts">
+      <% if world.lines.present? %><dt>Never</dt><dd><%= world.lines %></dd><% end %>
+      <% if world.veils.present? %><dt>Off-screen</dt><dd><%= world.veils %></dd><% end %>
+    </dl>
+  </section>
+<% end %>

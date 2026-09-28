@@ -50,7 +50,18 @@ module GlossaryHelper
   # The word, with its definition on hover, or on tap on a phone.
   def gloss(key, text = nil)
     label, definition = GLOSSARY.fetch(key.to_s) { return text || key.to_s.humanize }
+    label = worlds_label(key.to_s) || label
     tag.span(text || label, class: "gloss", tabindex: 0, data: { gloss: definition }, aria: { label: "#{text || label}: #{definition}" })
+  end
+
+  # The world's own word for a glossary term, if it has one (Vocabulary).
+  def worlds_label(key)
+    case key
+    when "gil" then word("currency").upcase_first
+    when "max_hp" then word("hp")
+    when "max_mp" then word("mp")
+    when *Vocabulary::STATS then word("stat.#{key}")
+    end
   end
 
   # A stat's short name, explained.

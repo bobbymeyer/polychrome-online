@@ -65,7 +65,7 @@ module BooksHelper
   end
 
   def stat_label(name)
-    STAT_LABELS.fetch(name.to_s, name.to_s.humanize)
+    worlds_label(name.to_s) || STAT_LABELS.fetch(name.to_s, name.to_s.humanize)
   end
 
   # The entry's image with its variant recipe applied, or a placeholder

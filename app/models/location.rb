@@ -11,6 +11,7 @@
 class Location < ApplicationRecord
   belongs_to :campaign
   belongs_to :location_template
+  has_many :mode_arts, dependent: :destroy
   has_one :map_node, dependent: :nullify
   has_many :npcs, dependent: :nullify
 
@@ -39,7 +40,7 @@ class Location < ApplicationRecord
 
   def generated
     @generated ||= if town?
-      Generators::Town.generate(seed: seed, template: location_template.settings, tables: location_template.table_entries)
+      in_the_worlds_words(Generators::Town.generate(seed: seed, template: town_settings, tables: location_template.table_entries))
     else
       Generators::Dungeon.generate(seed: seed, template: location_template.settings,
                                    encounters: location_template.encounter_table&.entries || [],
@@ -49,6 +50,24 @@ class Location < ApplicationRecord
 
   def view
     @view ||= Generators::Overrides.apply(generated, overrides)
+  end
+
+  # The template's settings, less the services this world doesn't have.
+  def town_settings
+    settings = location_template.settings
+    off = campaign.world.services_off
+    return settings if off.empty?
+
+    settings.merge("services" => settings.fetch("services", {}).merge(off.index_with(0)))
+  end
+
+  # A keeper is named for the world's word for their service.
+  def in_the_worlds_words(town)
+    world = campaign.world
+    town.merge("npcs" => town["npcs"].map do |npc|
+      kind = npc["service"]
+      kind && world.terms.dig("services", kind) ? npc.merge("title" => "#{world.word("service.#{kind}")} keeper") : npc
+    end)
   end
 
   def reload(*)
@@ -89,12 +108,32 @@ class Location < ApplicationRecord
 
     entry = { "key" => key, "name" => name, "line" => attrs["line"].to_s.strip.presence, "description" => attrs["description"].to_s.strip.presence,
              "closed" => Array(attrs["closed"]).compact_blank, "music" => attrs["music"].presence,
-             "encounters" => attrs["encounters"].presence }.compact
+             "encounters" => attrs["encounters"].presence, "art" => attrs["art"].to_s.strip.presence }.compact
     update!(modes: modes + [ entry ])
   end
 
   def remove_mode!(key)
-    update!(modes: modes.reject { |t| t["key"] == key }, mode: (mode unless mode == key))
+    transaction do
+      mode_arts.where(mode_key: key).destroy_all
+      update!(modes: modes.reject { |t| t["key"] == key }, mode: (mode unless mode == key))
+    end
+  end
+
+  # How a mode changes the place's picture (§8): words after the rest of
+  # the prompt ("on fire, thick smoke, ash falling").
+  def set_mode_art!(key, words)
+    raise ArgumentError, "#{name} has no mode called #{key}" unless modes.any? { |t| t["key"] == key }
+
+    update!(modes: modes.map { |t| t["key"] == key ? t.merge("art" => words.to_s.strip.presence).compact : t })
+  end
+
+  # The place's picture as it is now: the mode's own, if it has one, else
+  # the Gazetteer entry's. nil when neither has been made.
+  def picture
+    in_mode = current_mode && mode_arts.find_by(mode_key: mode)
+    return in_mode.image if in_mode&.image&.attached?
+
+    location_template.image if location_template.image.attached?
   end
 
   # Sets the mode off, and tells the table.
@@ -171,7 +210,7 @@ class Location < ApplicationRecord
     unknown = Array(decision["monsters"]&.keys) - world.monsters.pluck(:slug)
     raise ArgumentError, "Pick a monster from the Bestiary" if decision["kind"] == "encounter" && (unknown.any? || decision["monsters"].empty?)
     if decision["kind"] == "treasure" && !decision["gil"].to_i.positive? && !world.items.exists?(slug: decision["item"])
-      raise ArgumentError, "Pick an item from the Armory, or an amount of gil"
+      raise ArgumentError, "Pick an item from the Armory, or an amount of #{world.word('currency')}"
     end
 
     added = overrides.fetch("added_rooms", [])

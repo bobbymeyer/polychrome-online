@@ -1,0 +1,4 @@
+<% content_for :title, "New front · #{@world.name}" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Fronts", world_world_fronts_path(@world) %> / New</div>
+<h1>New front</h1>
+<%= render "form", front: @front %>

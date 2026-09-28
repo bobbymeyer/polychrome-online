@@ -1,0 +1,2 @@
+<strong><%= item["name"] %></strong> <span class="muted">· <%= item["segments"] %> segments<%= " · ticks on #{item['triggers'].map { |t| Clock::TRIGGERS[t] }.to_sentence}" if item["triggers"].present? %> · <%= item["public"] ? "everyone sees it" : "GM only" %></span>
+<% if item["full_line"] %><br><span class="muted">When it fills: “<%= item["full_line"] %>”</span><% end %>

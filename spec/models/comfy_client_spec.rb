@@ -61,7 +61,8 @@ RSpec.describe Comfy::Client do
         "clip_name" => [ "COMBO", { "options" => [ "qwen_3_06b_base.safetensors" ] } ], "type" => [ [ "stable_diffusion", "anima" ] ]
       } } } } ]
     }
-    http = FakeHttp.new(Comfy::Capabilities::NODES.to_h { |node| [ "/object_info/#{node}", [ 200, {} ] ] }.merge(routes))
+    asked = Comfy::Capabilities::NODES + Comfy::BackgroundRemoval.node_names
+    http = FakeHttp.new(asked.to_h { |node| [ "/object_info/#{ERB::Util.url_encode(node)}", [ 200, {} ] ] }.merge(routes))
     caps = described_class.new(url: "http://comfy.test", http: http).capabilities
     expect(caps).to be_reachable
     expect(caps.diffusion_models).to eq([ "anima-preview.safetensors" ])

@@ -43,6 +43,12 @@ class User < ApplicationRecord
     world.owner_id == id || world.campaigns.exists?(gm_id: id)
   end
 
+  # Who may read a setting's GM side (atlas notes, the cast's secrets, the
+  # codex's GM notes): its editors and the GMs running it.
+  def knows_the_lore?(world)
+    can_edit_world?(world) || world.campaigns.exists?(gm_id: id)
+  end
+
   def can_gm?(campaign)
     admin? || (campaign.gm_id.present? && campaign.gm_id == id)
   end

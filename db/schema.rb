@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_28_234000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -101,6 +101,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.text "error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "transparent"
     t.index ["art_batch_id"], name: "index_art_candidates_on_art_batch_id"
   end
 
@@ -180,6 +181,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.string "join_code"
     t.boolean "safe_road", default: false, null: false
     t.json "open_jobs"
+    t.integer "day", default: 1, null: false
+    t.string "time_of_day", default: "dawn", null: false
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true
@@ -216,7 +219,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.string "motive"
     t.boolean "field_used", default: false, null: false
     t.string "art_model"
+    t.string "origin"
+    t.integer "home_node_id"
+    t.json "ties", default: [], null: false
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
+    t.index ["home_node_id"], name: "index_characters_on_home_node_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
     t.index ["user_id"], name: "index_characters_on_user_id"
   end
@@ -230,6 +237,53 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.index ["character_id"], name: "index_choice_picks_on_character_id"
     t.index ["message_id", "character_id"], name: "index_choice_picks_on_message_id_and_character_id", unique: true
     t.index ["message_id"], name: "index_choice_picks_on_message_id"
+  end
+
+  create_table "clocks", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.string "name", null: false
+    t.integer "segments", default: 6, null: false
+    t.integer "filled", default: 0, null: false
+    t.boolean "public", default: false, null: false
+    t.json "triggers", default: [], null: false
+    t.text "full_line"
+    t.integer "location_id"
+    t.string "mode_key"
+    t.datetime "full_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "world_front_id"
+    t.index ["campaign_id"], name: "index_clocks_on_campaign_id"
+    t.index ["location_id"], name: "index_clocks_on_location_id"
+    t.index ["world_front_id"], name: "index_clocks_on_world_front_id"
+  end
+
+  create_table "codex_entries", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "title", null: false
+    t.string "category"
+    t.text "body"
+    t.text "gm_notes"
+    t.boolean "public", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id", "title"], name: "index_codex_entries_on_world_id_and_title", unique: true
+    t.index ["world_id"], name: "index_codex_entries_on_world_id"
+  end
+
+  create_table "drafts", force: :cascade do |t|
+    t.string "owner_type", null: false
+    t.integer "owner_id", null: false
+    t.string "kind", null: false
+    t.string "target"
+    t.json "request", default: {}, null: false
+    t.string "status", default: "queued", null: false
+    t.json "items", default: [], null: false
+    t.text "error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["owner_type", "owner_id", "kind", "target"], name: "index_drafts_on_owner_type_and_owner_id_and_kind_and_target"
+    t.index ["owner_type", "owner_id"], name: "index_drafts_on_owner"
   end
 
   create_table "encounter_tables", force: :cascade do |t|
@@ -429,10 +483,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.text "travel_event"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "world_route_id"
+    t.integer "duration", default: 1, null: false
     t.index ["campaign_id"], name: "index_map_edges_on_campaign_id"
     t.index ["encounter_table_id"], name: "index_map_edges_on_encounter_table_id"
     t.index ["from_node_id"], name: "index_map_edges_on_from_node_id"
     t.index ["to_node_id"], name: "index_map_edges_on_to_node_id"
+    t.index ["world_route_id"], name: "index_map_edges_on_world_route_id"
   end
 
   create_table "map_nodes", force: :cascade do |t|
@@ -446,8 +503,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "location_id"
+    t.integer "world_place_id"
+    t.text "description"
     t.index ["campaign_id"], name: "index_map_nodes_on_campaign_id"
     t.index ["location_id"], name: "index_map_nodes_on_location_id"
+    t.index ["world_place_id"], name: "index_map_nodes_on_world_place_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -472,6 +532,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.index ["campaign_id"], name: "index_messages_on_campaign_id"
     t.index ["recipient_id"], name: "index_messages_on_recipient_id"
     t.index ["speaker_type", "speaker_id"], name: "index_messages_on_speaker"
+  end
+
+  create_table "mode_arts", force: :cascade do |t|
+    t.integer "location_id", null: false
+    t.string "mode_key", null: false
+    t.integer "image_seed"
+    t.text "image_prompt"
+    t.json "image_recipe"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id", "mode_key"], name: "index_mode_arts_on_location_id_and_mode_key", unique: true
+    t.index ["location_id"], name: "index_mode_arts_on_location_id"
   end
 
   create_table "monsters", force: :cascade do |t|
@@ -522,9 +594,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.integer "escapes", default: 0, null: false
     t.datetime "defeated_at"
     t.string "art_model"
+    t.integer "world_figure_id"
     t.index ["campaign_id"], name: "index_npcs_on_campaign_id"
     t.index ["location_id"], name: "index_npcs_on_location_id"
     t.index ["monster_id"], name: "index_npcs_on_monster_id"
+    t.index ["world_figure_id"], name: "index_npcs_on_world_figure_id"
   end
 
   create_table "portraits", force: :cascade do |t|
@@ -555,6 +629,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.index ["map_node_id"], name: "index_scenes_on_map_node_id"
   end
 
+  create_table "secrets", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.text "body", null: false
+    t.integer "location_id"
+    t.integer "npc_id"
+    t.datetime "revealed_at"
+    t.string "revealed_by"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "world_front_id"
+    t.index ["campaign_id"], name: "index_secrets_on_campaign_id"
+    t.index ["location_id"], name: "index_secrets_on_location_id"
+    t.index ["npc_id"], name: "index_secrets_on_npc_id"
+    t.index ["world_front_id"], name: "index_secrets_on_world_front_id"
+  end
+
   create_table "sessions", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "ip_address"
@@ -575,6 +665,67 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
+  create_table "world_figures", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "name", null: false
+    t.string "title"
+    t.text "blurb"
+    t.text "description"
+    t.text "art_notes"
+    t.string "colour"
+    t.integer "monster_id"
+    t.integer "world_place_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["monster_id"], name: "index_world_figures_on_monster_id"
+    t.index ["world_id"], name: "index_world_figures_on_world_id"
+    t.index ["world_place_id"], name: "index_world_figures_on_world_place_id"
+  end
+
+  create_table "world_fronts", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "name", null: false
+    t.text "description"
+    t.json "clocks", default: [], null: false
+    t.json "secrets", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id"], name: "index_world_fronts_on_world_id"
+  end
+
+  create_table "world_places", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "name", null: false
+    t.string "kind", default: "town", null: false
+    t.integer "x", null: false
+    t.integer "y", null: false
+    t.boolean "known", default: false, null: false
+    t.text "description"
+    t.text "notes"
+    t.integer "location_template_id"
+    t.integer "seed"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_template_id"], name: "index_world_places_on_location_template_id"
+    t.index ["world_id"], name: "index_world_places_on_world_id"
+  end
+
+  create_table "world_routes", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.integer "from_place_id", null: false
+    t.integer "to_place_id", null: false
+    t.string "state", default: "open", null: false
+    t.integer "encounter_table_id"
+    t.text "travel_event"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "duration", default: 1, null: false
+    t.index ["encounter_table_id"], name: "index_world_routes_on_encounter_table_id"
+    t.index ["from_place_id"], name: "index_world_routes_on_from_place_id"
+    t.index ["to_place_id"], name: "index_world_routes_on_to_place_id"
+    t.index ["world_id"], name: "index_world_routes_on_world_id"
+  end
+
   create_table "worlds", force: :cascade do |t|
     t.string "name", null: false
     t.string "slug", null: false
@@ -589,6 +740,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
     t.json "damage_types", default: [], null: false
     t.json "terrain_types", default: {}, null: false
     t.json "skills", default: [], null: false
+    t.text "voice"
+    t.text "avoid"
+    t.text "lines"
+    t.text "veils"
+    t.json "terms", default: {}, null: false
+    t.json "calendar", default: {}, null: false
+    t.json "origins", default: [], null: false
     t.index ["owner_id"], name: "index_worlds_on_owner_id"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end
@@ -613,9 +771,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
   add_foreign_key "character_jobs", "jobs"
   add_foreign_key "characters", "campaigns"
   add_foreign_key "characters", "jobs"
+  add_foreign_key "characters", "map_nodes", column: "home_node_id"
   add_foreign_key "characters", "users", on_delete: :nullify
   add_foreign_key "choice_picks", "characters", on_delete: :cascade
   add_foreign_key "choice_picks", "messages", on_delete: :cascade
+  add_foreign_key "clocks", "campaigns"
+  add_foreign_key "clocks", "locations"
+  add_foreign_key "clocks", "world_fronts"
+  add_foreign_key "codex_entries", "worlds"
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"
@@ -638,17 +801,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_170000) do
   add_foreign_key "map_edges", "encounter_tables"
   add_foreign_key "map_edges", "map_nodes", column: "from_node_id"
   add_foreign_key "map_edges", "map_nodes", column: "to_node_id"
+  add_foreign_key "map_edges", "world_routes"
   add_foreign_key "map_nodes", "campaigns"
   add_foreign_key "map_nodes", "locations"
+  add_foreign_key "map_nodes", "world_places"
   add_foreign_key "messages", "battles"
   add_foreign_key "messages", "campaigns"
   add_foreign_key "messages", "characters", column: "recipient_id"
+  add_foreign_key "mode_arts", "locations"
   add_foreign_key "monsters", "worlds"
   add_foreign_key "npcs", "campaigns"
   add_foreign_key "npcs", "locations"
   add_foreign_key "npcs", "monsters"
+  add_foreign_key "npcs", "world_figures"
   add_foreign_key "scenes", "campaigns"
   add_foreign_key "scenes", "map_nodes", on_delete: :nullify
+  add_foreign_key "secrets", "campaigns"
+  add_foreign_key "secrets", "locations"
+  add_foreign_key "secrets", "npcs"
+  add_foreign_key "secrets", "world_fronts"
   add_foreign_key "sessions", "users"
+  add_foreign_key "world_figures", "monsters"
+  add_foreign_key "world_figures", "world_places"
+  add_foreign_key "world_figures", "worlds"
+  add_foreign_key "world_fronts", "worlds"
+  add_foreign_key "world_places", "location_templates"
+  add_foreign_key "world_places", "worlds"
+  add_foreign_key "world_routes", "encounter_tables"
+  add_foreign_key "world_routes", "world_places", column: "from_place_id"
+  add_foreign_key "world_routes", "world_places", column: "to_place_id"
+  add_foreign_key "world_routes", "worlds"
   add_foreign_key "worlds", "users", column: "owner_id", on_delete: :nullify
 end

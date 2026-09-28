@@ -10,7 +10,7 @@
           <tr>
             <td><%= link_to item.name, world_armory_item_path(@world, item) %></td>
             <td class="muted"><%= term(item.category) %></td>
-            <td class="num"><%= number_with_delimiter(item.price) %> gil</td>
+            <td class="num"><%= money(item.price) %></td>
             <% if shopping %>
               <td class="shop-table__buy">
                 <%= form_with url: buy_location_shop_path(location), class: "inline-form shop-form" do |f| %>
@@ -33,7 +33,7 @@
         <% bag.each do |row| %>
           <tr>
             <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span></td>
-            <td class="num"><%= number_with_delimiter(row.item.resale_price) %> gil</td>
+            <td class="num"><%= money(row.item.resale_price) %></td>
             <td class="shop-table__buy">
               <%= form_with url: sell_location_shop_path(location), class: "inline-form shop-form" do |f| %>
                 <%= hidden_field_tag :item, row.item.slug, id: nil %>
@@ -55,10 +55,10 @@
         <% worn.each do |character, slot| %>
           <tr>
             <td><%= slot.item.name %> <span class="muted"><%= character.name %>, <%= term(slot.slot).downcase %></span></td>
-            <td class="num"><%= number_with_delimiter(slot.item.resale_price) %> gil</td>
+            <td class="num"><%= money(slot.item.resale_price) %></td>
             <td class="shop-table__buy">
               <%= button_to "Sell", sell_worn_location_shop_path(location), params: { character_id: character.id, slot: slot.slot },
-                            class: "button play", form: { data: { turbo_confirm: "Take #{slot.item.name} off #{character.name} and sell it for #{slot.item.resale_price} gil?" } } %>
+                            class: "button play", form: { data: { turbo_confirm: "Take #{slot.item.name} off #{character.name} and sell it for #{money(slot.item.resale_price)}?" } } %>
             </td>
           </tr>
         <% end %>

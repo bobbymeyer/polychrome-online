@@ -7,7 +7,7 @@
         <td><%= link_to table.name, entry_path(table) %></td>
         <td><%= table.kind.humanize %></td>
         <td class="num"><%= table.entries.size %></td>
-        <td class="muted"><%= table.entries.first(3).map { |e| e["text"] || (e["gil"] && "#{e['gil']} gil") || item_names[e["item"]] || e["item"] }.join(" · ").truncate(80) %></td>
+        <td class="muted"><%= table.entries.first(3).map { |e| e["text"] || (e["gil"] && money(e['gil'])) || item_names[e["item"]] || e["item"] }.join(" · ").truncate(80) %></td>
       </tr>
     <% end %>
   </tbody>

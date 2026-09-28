@@ -302,7 +302,8 @@ three hours, or ever), a title card opens: the last session in brief
 recap is of the last one that has ended, so it still recaps last week once
 tonight has started. It covers the road the party took (read from the travel
 and dungeon lines), the battles and level-ups, keys and treasure found, the
-flags the party knows that changed, and the last line said to the table.
+flags the party knows that changed, secrets found out and public clocks that
+filled, and the last line said to the table.
 Whispers are never in it. "Previously on …" under the table's title opens it
 again at any time.
 
@@ -455,6 +456,133 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   current tables, so editing a table changes places already rolled, except
   what's pinned. To fork a world instead, start a new one from its books.
 
+## The setting: canon, voice, words, time and origins
+
+A world is a setting, not only rulebooks. Its editors write these once, and
+every campaign in it uses them.
+
+- **Atlas** (`/worlds/:slug/atlas`): named places and the roads between them.
+  - **Place kinds:** a town or dungeon can be rolled from a Gazetteer
+    template with a fixed seed, so Varn is the same Varn in every campaign.
+    Landmarks (a lighthouse, a manor) and wilds (a marsh, a sea) are places
+    with no generator.
+  - **What a place carries:** a description players read on the map, GM
+    notes, and whether players know it from the start.
+  - **Roads** have a state, what waits on them, what the table hears on the
+    way, and how long they take.
+- **Cast** (`/cast`): the setting's people, with portraits, what people say
+  about them, GM notes, a home, and optionally a Bestiary entry that makes
+  them an antagonist.
+- **Codex** (`/codex`): lore pages by category (faction, faith, history…).
+  Each page is public or GM only, and its GM notes are never shown to
+  players. Players can read the public pages from the campaign page.
+- **A new campaign starts with the atlas on its map and the cast as its
+  NPCs,** unless the GM chooses to start from nothing. Places and people
+  the world gains later can be brought in from the campaign page, never
+  twice. What's brought in is the campaign's to change.
+- **Fronts** (`/fronts`): the setting's pressures, written once.
+  - A front has clocks and the secrets behind them, naming atlas places and
+    cast.
+  - A GM deals one into a campaign, where it becomes that campaign's own
+    clocks and secrets, linked to what it brought in.
+  - A front's clock can say what a place becomes when it fills, and dealing
+    it in prepares that mode.
+- **Voice** (on the world's edit page): tone and touchstones, and words or
+  tropes to avoid. The language model writes in it.
+- **Lines and veils:** lines never happen in the setting; veils happen
+  off-screen. They are shown on the world and campaign pages, and the model
+  never writes them, image prompts included.
+- **Words** (on the world's edit page): the setting's names for the game's
+  fixed things.
+  - **What can be renamed:** money, HP and MP, the five stats, the four town
+    services and every status. The rules don't change.
+  - **Services can be left out:** a secular setting has no temple in its
+    towns.
+  - **Blank keeps the game's word.** The words reach the table, towns,
+    shops, messages, the battle board and its animations.
+- **Time:** each campaign keeps a day and a part of it (dawn, day, dusk,
+  night).
+  - **What moves it:** journeys take their road's time, a rest sleeps until
+    dawn, and the GM can pass time from the table.
+  - **Clocks** can tick on each new day, so "the festival is in three days"
+    is a three-segment clock.
+  - **A world's calendar** names its weekdays and months.
+- **Origins** (`/origins`): where characters come from, each optionally
+  better at one skill (+10 to its checks).
+  - A character picks an origin, a home on the campaign's map, and ties to
+    people in the cast ("owes her money").
+  - These show on the sheet, and the language model sees the party this
+    way.
+- **Copying a world** copies all of this with its books.
+
+## Pressure and prep: modes, clocks, secrets
+
+- **Location modes** are another state for a place, prepared ahead and set
+  off at the table: the city burns, the mine floods, the festival starts.
+  - **While it lasts:** services can be shut, the music changes, and
+    arriving can mean trouble. The rest of the world stays as it is.
+  - **A picture of its own.** A mode can have "art words" ("on fire, thick
+    smoke") and a generated picture: the place's Gazetteer image, with those
+    words added as one more layer. It starts from the same seed, so the
+    place stays recognisable. While the mode lasts, the location page shows
+    that picture instead.
+  - Made on the location page ("GM: modes", "Pictures for modes").
+- **Clocks** are things that happen if the party doesn't stop them: "The
+  Brass Syndicate takes the docks", in 2–12 segments.
+  - **Ticking:** the GM ticks them by hand, or they tick on their own on a
+    rest, a journey or a failed check (a GM-called check or a field
+    ability).
+  - **Filling:** the table hears the clock's line, and it can set off one of
+    a location's modes. The city burns because the party took too long.
+    Winding a full clock back doesn't put the fire out; clear the mode on
+    the location.
+  - **Visibility:** public clocks show at the table under "The party knows"
+    as a row of squares, filled black, red when full. Hidden clocks are the
+    GM's alone and are never sent to players; nothing is said when they
+    tick, and only their line when they fill.
+- **Secrets** are things that are true ("the mayor pays the goblins"),
+  written in prep and not tied to a scene, so the party finds them out
+  however it gets there.
+  - **About:** each can be about a place or someone.
+  - **Revealing:** the GM reveals one at the table. It is announced, listed
+    under "The party knows", and in the next recap. "Put back" undoes a
+    slip.
+  - **Field abilities:** a field ability with the `uncover` outcome brings
+    one out on a success, preferring one about where the party stands.
+- **Where:** clocks and secrets are on the campaign page for prep, and in
+  the GM's panels at the table for play. Both update live.
+
+## Suggestions from a language model
+
+With a language model set up (`LLM_URL`, see "Art"), the GM can ask it for
+drafts while preparing and world building. It drafts and the GM decides:
+nothing it writes is used until it is kept, and keeping goes through the same
+forms and checks as writing by hand. Without one, none of this shows.
+
+- **Prep** (the campaign page and location pages, for the GM):
+  - **Secrets:** they tie together the cast and places already there.
+  - **Clocks:** each has segments, triggers and the line the table hears
+    when it fills.
+  - **A scene:** its script goes onto the new scene form, with lines to fix
+    flagged, for the GM to pick an ending and save.
+  - **Modes for a place:** each has its line, what players read, services
+    shut, music and art words.
+- **World building** (for whoever can edit the world):
+  - **An entry's description,** in the voice of the rest of its book (the
+    entry's page). Only words: the numbers stay the author's.
+  - **An ability family's four tier names and descriptions:** they go onto
+    the family form.
+  - **A setting's types, skills and jobs,** from a pitch (the world's page).
+    Types and skills can be kept straight in; jobs need numbers, so they are
+    ideas for the Compendium.
+- **How:** each ask runs in the background (`DraftJob`), and the
+  suggestions land on the page as they come. A new ask replaces the last
+  one.
+- **What the model is told:** a few compact lines about the setting and the
+  campaign, the GM's notes included, so they go to the configured server.
+  It is asked for JSON, and chatter or code fences around the JSON are
+  ignored.
+
 ## Accounts
 
 Everything needs an account, except signing in, making an account,
@@ -570,6 +698,33 @@ Every image slot can be uploaded or generated with
   "Use this" makes one the entry's image and stores its `image_seed`,
   `image_prompt` and full `image_recipe`, including the workflow's outline,
   so it can be regenerated exactly. Uploading an image by hand clears them.
+- **Background removal** is an optional step for any batch, on by default
+  for content types marked to remove it.
+  - **Which node:** ComfyUI has no removal node of its own, so the first
+    installed one from `background_removal` in `config/comfy.yml` is used:
+    InspyrenetRembg, RMBG or BiRefNetRMBG (ComfyUI-RMBG), WAS's rembg
+    node, or Easy-Use's.
+  - **Wiring:** each is wired from ComfyUI's own description of it. The
+    image goes in its IMAGE input, other inputs take their defaults (or
+    what config says), and its IMAGE output goes on. A node that needs
+    something else plugged in is passed over.
+  - **Checking:** every image that should have lost its background is
+    checked for real transparency, and the strip says "background kept"
+    when it didn't.
+  - **No node installed:** backgrounds stay, and the pages say which to
+    install.
+- **Can't see ComfyUI?** Use "Connection" on the Art direction page, or
+  `bin/rails comfy:doctor` inside the app's container. It checks, in turn:
+  - the address: in a container, 127.0.0.1 is the container itself;
+  - the name: `host.docker.internal` needs `extra_hosts`, and MagicDNS
+    names don't resolve in containers;
+  - the connection: a refusal usually means ComfyUI only listens on
+    127.0.0.1, and a timeout on a 100.x address means the container isn't
+    on the tailnet;
+  - the answer: TLS trouble, or what's installed.
+
+  It does the same for the language model, and never prints a token or
+  password.
 - **Optional: a language model writes the subject** (`PromptWriter`,
   `config/llm.yml`).
   - When `LLM_URL` is set, each batch first has the subject layer rewritten
@@ -594,8 +749,8 @@ Every image slot can be uploaded or generated with
   | `COMFY_TOKEN` | blank | Sent as `Authorization: Bearer …` |
   | `COMFY_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
   | `COMFY_MODEL` | `anima-preview.safetensors` | The model when no layer names one |
-  | `COMFY_REMBG_NODE` | blank (keeps backgrounds) | A background-removal node |
-  | `COMFY_REMBG_INPUT` | `image` | That node's image input |
+  | `COMFY_REMBG_NODE` | blank | A background-removal node to try before the listed ones |
+  | `COMFY_REMBG_INPUT` | blank | That node's image input, if it has more than one |
   | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1` |
   | `LLM_MODEL` | blank | The model to ask for, as the server names it |
   | `LLM_TOKEN`, `LLM_HEADERS` | blank | As for ComfyUI |

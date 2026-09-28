@@ -4,6 +4,8 @@
 # now it holds the characters, the shared bag and party funds; flags, GM
 # diffs and edition pins arrive with build step 8.
 class Campaign < ApplicationRecord
+  include Timekeeping
+
   belongs_to :world
   belongs_to :gm, class_name: "User", optional: true
   has_many :characters, dependent: :destroy
@@ -17,6 +19,8 @@ class Campaign < ApplicationRecord
   has_many :flags, dependent: :delete_all
   has_many :scenes, dependent: :destroy
   has_many :field_uses, dependent: :destroy
+  has_many :clocks, dependent: :delete_all
+  has_many :secrets, dependent: :delete_all
   belongs_to :current_node, class_name: "MapNode", optional: true
 
   # Travel encounters use their own seeded RNG, stored here like a battle's.
@@ -61,11 +65,11 @@ class Campaign < ApplicationRecord
     cost = item.price * quantity
     transaction do
       reload
-      raise ArgumentError, "The party has #{gil} gil; #{quantity} × #{item.name} costs #{cost}" if cost > gil
+      raise ArgumentError, "The party has #{money(gil)}; #{quantity} × #{item.name} costs #{cost}" if cost > gil
 
       update!(gil: gil - cost)
       add_item!(item, quantity)
-      messages.create!(kind: "system", body: "#{by} bought #{quantity} × #{item.name} in #{at.name} for #{cost} gil.")
+      messages.create!(kind: "system", body: "#{by} bought #{quantity} × #{item.name} in #{at.name} for #{money(cost)}.")
     end
   end
 
@@ -80,7 +84,7 @@ class Campaign < ApplicationRecord
       row.update!(quantity: row.quantity - quantity)
       earned = item.resale_price * quantity
       update!(gil: gil + earned)
-      messages.create!(kind: "system", body: "#{by} sold #{quantity} × #{item.name} in #{at.name} for #{earned} gil.")
+      messages.create!(kind: "system", body: "#{by} sold #{quantity} × #{item.name} in #{at.name} for #{money(earned)}.")
     end
   end
 
@@ -125,7 +129,7 @@ class Campaign < ApplicationRecord
     cost = service_price(kind, character)
     transaction do
       reload
-      raise ArgumentError, "The party has #{gil} gil; #{SERVICE_OFFERS.fetch(kind)} for #{character.name} costs #{cost}" if cost > gil
+      raise ArgumentError, "The party has #{money(gil)}; #{SERVICE_OFFERS.fetch(kind)} for #{character.name} costs #{cost}" if cost > gil
 
       update!(gil: gil - cost)
       character.update!(hp: nil, mp: nil) if %w[inn temple].include?(kind)
@@ -140,9 +144,13 @@ class Campaign < ApplicationRecord
     raise ArgumentError, "Everyone standing is already rested" if tired.empty?
 
     cost = tired.sum { |c| service_price("inn", c) }
-    raise ArgumentError, "The party has #{gil} gil; rooms for everyone cost #{cost}" if cost > gil
+    raise ArgumentError, "The party has #{money(gil)}; rooms for everyone cost #{cost}" if cost > gil
 
-    transaction { tired.each { |c| use_service!("inn", c, at: at, by: by) } }
+    transaction do
+      tired.each { |c| use_service!("inn", c, at: at, by: by) }
+      tick_clocks!("rest")
+      pass_time!(until_dawn, announce: :new_day)
+    end
   end
 
   def rested?(character)
@@ -248,6 +256,8 @@ class Campaign < ApplicationRecord
       messages.create!(body: edge.travel_event) if edge.travel_event
       messages.create!(kind: "system", body: "The way is safe: nothing troubles the party on the road.") if safe
       messages.create!(kind: "system", body: "Encounter! #{describe_encounter(rolled)}.") if rolled
+      tick_clocks!("travel")
+      pass_time!(edge.duration, announce: :new_day)
     end
     broadcast_map
     rolled
@@ -371,8 +381,16 @@ class Campaign < ApplicationRecord
         [ body, result.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty, "skill" => skill&.fetch("name"), "bonus" => bonus).compact ]
       end
       update!(rng: rolling.state)
-      lines.map { |body, data| messages.create!(kind: "system", cue: "check", body: body, data: data) }
+      created = lines.map { |body, data| messages.create!(kind: "system", cue: "check", body: body, data: data) }
+      tick_clocks!("failed_check") if lines.any? { |_, data| !data["success"] }
+      created
     end
+  end
+
+  # Every running clock that ticks on this (Clock::TRIGGERS) goes on a segment.
+  def tick_clocks!(trigger)
+    clocks.running.order(:id).select { |clock| clock.ticks_on?(trigger) }
+          .each { |clock| clock.tick!(1, reason: Clock::REASONS[trigger]) }
   end
 
   # The code behind the shared screen's QR code (local co-op): made when
@@ -400,10 +418,15 @@ class Campaign < ApplicationRecord
   def service_line(kind, character, service, by, cost)
     payer = by == character.name ? character.name : "#{by}, for #{character.name},"
     case kind
-    when "inn" then "#{payer} takes a room at #{service['name']} (#{cost} gil). #{character.name} is rested: full HP and MP."
-    when "temple" then "#{payer} pays #{cost} gil at #{service['name']}. #{character.name} is raised, whole again."
-    when "guild" then "#{payer} buys a rumour at #{service['name']} (#{cost} gil). The GM owes #{character.name} something true."
+    when "inn" then "#{payer} takes a room at #{service['name']} (#{money(cost)}). #{character.name} is rested: full #{world.word('hp')} and #{world.word('mp')}."
+    when "temple" then "#{payer} pays #{money(cost)} at #{service['name']}. #{character.name} is raised, whole again."
+    when "guild" then "#{payer} buys a rumour at #{service['name']} (#{money(cost)}). The GM owes #{character.name} something true."
     end
+  end
+
+  # An amount in the world's money: "150 gil", "150 crowns".
+  def money(amount)
+    "#{amount} #{world.word('currency')}"
   end
 
   # --- jobs as story rewards --------------------------------------------------
@@ -442,7 +465,9 @@ class Campaign < ApplicationRecord
 
     transaction do
       characters.update_all(hp: nil, mp: nil, field_used: false)
-      messages.create!(kind: "system", body: "The party rests. Everyone is back to full HP and MP.")
+      messages.create!(kind: "system", body: "The party rests. Everyone is back to full #{world.word('hp')} and #{world.word('mp')}.")
+      tick_clocks!("rest")
+      pass_time!(until_dawn, announce: :new_day)
     end
   end
 

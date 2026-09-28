@@ -17,9 +17,10 @@
   </div>
   <div class="field">
     <%= f.label :motive, "Why they're here" %>
-    <%= f.text_field :motive, maxlength: Character::MOTIVE_LENGTH, placeholder: "“I owe the Crystal a life. Mine.”" %>
+    <%= f.text_field :motive, maxlength: Character::MOTIVE_LENGTH, placeholder: "“My sister's debt is mine now.”" %>
     <p class="hint">One line, in their own words. It's on their card, and it's what they shout when their back is to the wall.</p>
   </div>
+  <%= render "characters/origin_fields", f: f, character: @character %>
   <%= render "portraits/fields", owner: @character %>
   <div class="actions">
     <%= f.submit class: "button" %>

@@ -1,0 +1,50 @@
+<%= form_with model: front, url: front.persisted? ? world_world_front_path(@world, front) : world_world_fronts_path(@world), class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: front %>
+  <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, placeholder: "The Brass Syndicate's grab for the docks" %></div>
+  <div class="field"><%= f.label :description, "What's going on (GM only)" %><%= f.text_area :description, rows: 2 %></div>
+  <% places = @world.world_places.in_order.map { |p| [ p.name, p.id ] } %>
+  <fieldset class="panel">
+    <legend>Clocks</legend>
+    <% (front.clocks + Array.new(2) { {} }).each_with_index do |c, i| %>
+      <% n = "world_front[clocks][#{i}]" %>
+      <div class="front-row">
+        <div class="field-row">
+          <div class="field"><%= label_tag "#{n}_name", "What happens" %><%= text_field_tag "#{n}[name]", c["name"], id: "front_clock_#{i}_name" %></div>
+          <div class="field"><%= label_tag "front_clock_#{i}_segments", "Segments" %><%= number_field_tag "#{n}[segments]", c["segments"] || 6, min: 2, max: 12, id: "front_clock_#{i}_segments" %></div>
+          <div class="field field--check"><%= hidden_field_tag "#{n}[public]", "0", id: nil %><%= check_box_tag "#{n}[public]", "1", c["public"], id: "front_clock_#{i}_public" %><%= label_tag "front_clock_#{i}_public", "Players see it" %></div>
+        </div>
+        <div class="checks">
+          <% Clock::TRIGGERS.each do |key, label| %>
+            <label><%= check_box_tag "#{n}[triggers][]", key, Array(c["triggers"]).include?(key), id: "front_clock_#{i}_#{key}" %> <%= label.capitalize %></label>
+          <% end %>
+        </div>
+        <div class="field"><%= label_tag "front_clock_#{i}_full_line", "When it fills, the table hears" %><%= text_field_tag "#{n}[full_line]", c["full_line"], id: "front_clock_#{i}_full_line" %></div>
+        <div class="field-row">
+          <div class="field"><%= label_tag "front_clock_#{i}_place", "And this place changes" %><%= select_tag "#{n}[place_id]", options_for_select(places, c["place_id"]), include_blank: "Nowhere", id: "front_clock_#{i}_place" %></div>
+          <div class="field"><%= label_tag "front_clock_#{i}_mode_name", "Into" %><%= text_field_tag "#{n}[mode_name]", c["mode_name"], id: "front_clock_#{i}_mode_name", placeholder: "Syndicate town" %></div>
+          <div class="field"><%= label_tag "front_clock_#{i}_mode_line", "Its line" %><%= text_field_tag "#{n}[mode_line]", c["mode_line"], id: "front_clock_#{i}_mode_line" %></div>
+        </div>
+        <div class="field"><%= label_tag "front_clock_#{i}_mode_description", "What players read there meanwhile" %><%= text_field_tag "#{n}[mode_description]", c["mode_description"], id: "front_clock_#{i}_mode_description" %></div>
+      </div>
+    <% end %>
+  </fieldset>
+  <fieldset class="panel">
+    <legend>Secrets</legend>
+    <% figures = @world.world_figures.in_order.map { |p| [ p.name, p.id ] } %>
+    <% (front.secrets + Array.new(3) { {} }).each_with_index do |s, i| %>
+      <% n = "world_front[secrets][#{i}]" %>
+      <div class="field-row">
+        <div class="field"><%= label_tag "front_secret_#{i}_body", "What's true" %><%= text_field_tag "#{n}[body]", s["body"], id: "front_secret_#{i}_body" %></div>
+        <div class="field"><%= label_tag "front_secret_#{i}_place", "About a place" %><%= select_tag "#{n}[place_id]", options_for_select(places, s["place_id"]), include_blank: "Anywhere", id: "front_secret_#{i}_place" %></div>
+        <div class="field"><%= label_tag "front_secret_#{i}_figure", "About someone" %><%= select_tag "#{n}[figure_id]", options_for_select(figures, s["figure_id"]), include_blank: "No one", id: "front_secret_#{i}_figure" %></div>
+      </div>
+    <% end %>
+  </fieldset>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", world_world_fronts_path(@world), class: "button button--quiet" %>
+  </div>
+<% end %>
+<% if front.persisted? %>
+  <%= button_to "Delete the front", world_world_front_path(@world, front), method: :delete, class: "button button--danger", form: { data: { turbo_confirm: "Delete #{front.name}?" } } %>
+<% end %>
