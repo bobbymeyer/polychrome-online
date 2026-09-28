@@ -8,10 +8,10 @@
     </div>
   </div>
   <% show_for = ->(field) { GeneratorTable::KINDS.select { |_, fields| field == "weight" || fields.include?(field) }.keys.join(" ") } %>
-  <% columns = { "text" => "Text", "key" => "Key", "item" => "Item", "gil" => "Gil", "service" => "Service", "width" => "Width", "height" => "Height", "roof" => "Roof", "weight" => "Weight" } %>
+  <% columns = { "text" => "Text", "key" => "Key", "item" => "Item", "gil" => word("currency").upcase_first, "service" => "Service", "width" => "Width", "height" => "Height", "roof" => "Roof", "weight" => "Weight" } %>
   <fieldset class="panel">
     <legend>Rows</legend>
-    <p class="hint" data-show-for="treasure">Each row is an item or an amount of gil.</p>
+    <p class="hint" data-show-for="treasure">Each row is an item or an amount of <%= word("currency") %>.</p>
     <p class="hint" data-show-for="locks">Each row is a lock and the key that opens it, in any flavour: Portal and Blue crystal, Altar and Goat's skull.</p>
     <p class="hint"><strong>Worlds are live:</strong> towns and dungeons already rolled from this table change with it, except the people and rooms a GM has pinned.</p>
     <p class="hint">Weight defaults to 1: a row with weight 3 comes up three times as often. Clear a row to remove it.</p>

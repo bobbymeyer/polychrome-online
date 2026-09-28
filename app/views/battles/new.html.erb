@@ -54,7 +54,7 @@
         <% characters.each do |character| %>
           <label class="<%= 'muted' unless character.conscious? %>">
             <%= check_box_tag "battle[characters][]", character.id, @setup[:characters].include?(character.id), id: "battle_character_#{character.id}" %>
-            <%= character.name %> <span class="muted">Lv <%= character.level %> <%= character.job.name %>, HP <%= character.current_hp %>/<%= character.stats["max_hp"] %></span>
+            <%= character.name %> <span class="muted">Lv <%= character.level %> <%= character.job.name %>, <%= word("hp") %> <%= character.current_hp %>/<%= character.stats["max_hp"] %></span>
           </label>
         <% end %>
       </div>

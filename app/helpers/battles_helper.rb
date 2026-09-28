@@ -267,7 +267,7 @@ module BattlesHelper
 
   def victory_line(event)
     rewards = event["rewards"].to_h.slice("exp", "gil", "abp").select { |_, v| v.to_i.positive? }
-    spoils = rewards.map { |k, v| "#{v} #{k == 'gil' ? 'gil' : k.upcase}" }.to_sentence
+    spoils = rewards.map { |k, v| "#{v} #{k == 'gil' ? word('currency') : k.upcase}" }.to_sentence
     spoils.present? ? "Victory! #{spoils}." : "Victory!"
   end
 

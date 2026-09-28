@@ -36,7 +36,7 @@ module Drafts
       when Monster then [ "Level #{target.level}.", ("Type: #{world.type_chart.name(target.base_type)}." if world.type_chart.matter?) ]
       when Ability then [ "A #{target.kind} that aims at #{target.target.to_s.humanize.downcase}.",
                           "Effects: #{Array(target.effects).map { |e| e.slice('primitive', 'type', 'kind').values.join(' ') }.join('; ')}." ]
-      when Item then [ "A #{target.category}, #{target.price} gil." ]
+      when Item then [ "A #{target.category}, #{target.price} #{world.word('currency')}." ]
       when Job then [ ("Type: #{world.type_chart.name(target.base_type)}." if world.type_chart.matter?) ]
       else []
       end.compact

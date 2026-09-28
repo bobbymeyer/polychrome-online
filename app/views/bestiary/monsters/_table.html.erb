@@ -1,5 +1,5 @@
 <table class="book-table">
-  <thead><tr><th class="num">Lv</th><th>Name</th><th class="num">HP</th><% if types_matter? %><th>Type</th><th>Weak to</th><% end %><th class="num">EXP</th><th class="num">Gil</th></tr></thead>
+  <thead><tr><th class="num">Lv</th><th>Name</th><th class="num">HP</th><% if types_matter? %><th>Type</th><th>Weak to</th><% end %><th class="num">EXP</th><th class="num"><%= word("currency").upcase_first %></th></tr></thead>
   <tbody>
     <% entries.each do |monster| %>
       <tr>

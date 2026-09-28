@@ -5,7 +5,7 @@
 <div class="book-header">
   <div>
     <h1><%= @campaign.name %></h1>
-    <p class="muted"><%= number_with_delimiter(@campaign.gil) %> gil</p>
+    <p class="muted"><%= money(@campaign.gil) %></p>
   </div>
   <div class="actions">
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
@@ -14,7 +14,7 @@
     <% if can_gm?(@campaign) %>
     <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" %>
     <%= button_to "Rest at an inn", campaign_rest_path(@campaign), class: "button button--quiet",
-                  form: { data: { turbo_confirm: "Restore everyone to full HP and MP?" } } %>
+                  form: { data: { turbo_confirm: "Restore everyone to full #{word('hp')} and #{word('mp')}?" } } %>
     <%= link_to "Edit", edit_campaign_path(@campaign), class: "button button--quiet" %>
     <% end %>
   </div>
@@ -46,7 +46,7 @@
               <% end %>
             </p>
             <p>Lv <%= character.level %> <%= character.job.name %> <span class="muted">(job Lv <%= character.character_job.level %>)</span></p>
-            <p>HP <%= character.current_hp %>/<%= character.stats["max_hp"] %> · MP <%= character.current_mp %>/<%= character.stats["max_mp"] %></p>
+            <p><%= word("hp") %> <%= character.current_hp %>/<%= character.stats["max_hp"] %> · <%= word("mp") %> <%= character.current_mp %>/<%= character.stats["max_mp"] %></p>
             <% if character.motive %><p class="motive motive--card"><%= character.motive %></p><% end %>
           </div>
         <% end %>

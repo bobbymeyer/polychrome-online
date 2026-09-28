@@ -12,7 +12,7 @@
       <% shopping = may_shop?(location) %>
       <% keepers = location.roster.filter_map { |slot| (g = slot["generated"]) && g["service"] && [ g["service"], g["name"] ] }.to_h %>
       <% if shopping %>
-        <p class="shop-purse">The party has <strong><%= number_with_delimiter(@campaign.gil) %> gil</strong>.</p>
+        <p class="shop-purse">The party has <strong><%= money(@campaign.gil) %></strong>.</p>
       <% elsif @campaign.current_node&.location_id != location.id %>
         <p class="hint">The party has to be here to use them.</p>
       <% end %>
@@ -21,7 +21,7 @@
           <details class="service service--<%= service["kind"] %>" id="service-<%= service["kind"] %>">
             <summary>
               <span class="service__name"><%= service["name"] %></span>
-              <span class="service__kind"><%= service["kind"].humanize %><%= " · #{keepers[service['kind']]}" if keepers[service["kind"]] %></span>
+              <span class="service__kind"><%= term(service["kind"]) %><%= " · #{keepers[service['kind']]}" if keepers[service["kind"]] %></span>
             </summary>
             <div class="service__body">
               <% if location.service_closed?(service["kind"]) %>

@@ -10,7 +10,7 @@
         <dt>Uses</dt><dd>Once per rest, outside battle</dd>
       <% else %>
       <dt>Target</dt><dd><%= term(entry.target) %></dd>
-      <dt>Cost</dt><dd><%= [ ("#{entry.mp_cost} MP" if entry.mp_cost.positive?), ("#{entry.hp_cost}% of max HP" if entry.hp_cost.positive?) ].compact.join(" and ").presence || "Free" %></dd>
+      <dt>Cost</dt><dd><%= [ ("#{entry.mp_cost} #{word('mp')}" if entry.mp_cost.positive?), ("#{entry.hp_cost}% of max #{word('hp')}" if entry.hp_cost.positive?) ].compact.join(" and ").presence || "Free" %></dd>
       <% if entry.charge.positive? %><dt>Charge</dt><dd><%= pluralize(entry.charge, "turn") %> to go off</dd><% end %>
       <% if entry.gesture.present? %><dt>Gesture</dt><dd><%= term(entry.gesture) %></dd><% end %>
       <% end %>

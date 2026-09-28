@@ -3,7 +3,7 @@
   <div class="field-row">
     <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
     <% if campaign.persisted? %>
-      <div class="field"><%= f.label :gil, "Party gil" %><%= f.number_field :gil, min: 0 %></div>
+      <div class="field"><%= f.label :gil, "Party #{word('currency')}" %><%= f.number_field :gil, min: 0 %></div>
       <% if admin? %>
         <div class="field">
           <%= f.label :gm_id, "GM" %>
@@ -15,7 +15,7 @@
   <% chosen = campaign.open_jobs %>
   <fieldset class="panel">
     <legend>Jobs open from the start</legend>
-    <p class="hint">The rest are yours to grant at the table, as story rewards: a crystal shatters, a master takes them on.</p>
+    <p class="hint">The rest are yours to grant at the table, as story rewards: a relic wakes, a master takes them on.</p>
     <label class="inline"><%= check_box_tag "campaign[every_job]", "1", chosen.nil?, id: "campaign_every_job" %> <strong>Every job</strong> (nothing to grant)</label>
     <div class="checks">
       <%= hidden_field_tag "campaign[open_jobs][]", "", id: nil %>

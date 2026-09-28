@@ -94,7 +94,7 @@
         <li><strong><%= room["name"] %></strong> <span class="muted"><%= d["kind"] %></span>:
           <%= case d["kind"]
               when "encounter", "boss" then d["monsters"].map { |slug, n| "#{n} × #{monster_names[slug] || slug}" }.to_sentence
-              when "treasure" then d["gil"] ? "#{d['gil']} gil" : item_names[d["item"]] || d["item"]
+              when "treasure" then d["gil"] ? money(d['gil']) : item_names[d["item"]] || d["item"]
               when "key"
                 lock = example["paths"].find { |p| p.dig("lock", "id") == d["lock"] }&.dig("lock")
                 "#{d['name']}, which opens #{lock ? lock['name'] : 'a lock'}"

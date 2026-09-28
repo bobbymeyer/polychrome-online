@@ -63,11 +63,11 @@ class Campaign < ApplicationRecord
     cost = item.price * quantity
     transaction do
       reload
-      raise ArgumentError, "The party has #{gil} gil; #{quantity} × #{item.name} costs #{cost}" if cost > gil
+      raise ArgumentError, "The party has #{money(gil)}; #{quantity} × #{item.name} costs #{cost}" if cost > gil
 
       update!(gil: gil - cost)
       add_item!(item, quantity)
-      messages.create!(kind: "system", body: "#{by} bought #{quantity} × #{item.name} in #{at.name} for #{cost} gil.")
+      messages.create!(kind: "system", body: "#{by} bought #{quantity} × #{item.name} in #{at.name} for #{money(cost)}.")
     end
   end
 
@@ -82,7 +82,7 @@ class Campaign < ApplicationRecord
       row.update!(quantity: row.quantity - quantity)
       earned = item.resale_price * quantity
       update!(gil: gil + earned)
-      messages.create!(kind: "system", body: "#{by} sold #{quantity} × #{item.name} in #{at.name} for #{earned} gil.")
+      messages.create!(kind: "system", body: "#{by} sold #{quantity} × #{item.name} in #{at.name} for #{money(earned)}.")
     end
   end
 
@@ -127,7 +127,7 @@ class Campaign < ApplicationRecord
     cost = service_price(kind, character)
     transaction do
       reload
-      raise ArgumentError, "The party has #{gil} gil; #{SERVICE_OFFERS.fetch(kind)} for #{character.name} costs #{cost}" if cost > gil
+      raise ArgumentError, "The party has #{money(gil)}; #{SERVICE_OFFERS.fetch(kind)} for #{character.name} costs #{cost}" if cost > gil
 
       update!(gil: gil - cost)
       character.update!(hp: nil, mp: nil) if %w[inn temple].include?(kind)
@@ -142,7 +142,7 @@ class Campaign < ApplicationRecord
     raise ArgumentError, "Everyone standing is already rested" if tired.empty?
 
     cost = tired.sum { |c| service_price("inn", c) }
-    raise ArgumentError, "The party has #{gil} gil; rooms for everyone cost #{cost}" if cost > gil
+    raise ArgumentError, "The party has #{money(gil)}; rooms for everyone cost #{cost}" if cost > gil
 
     transaction do
       tired.each { |c| use_service!("inn", c, at: at, by: by) }
@@ -414,10 +414,15 @@ class Campaign < ApplicationRecord
   def service_line(kind, character, service, by, cost)
     payer = by == character.name ? character.name : "#{by}, for #{character.name},"
     case kind
-    when "inn" then "#{payer} takes a room at #{service['name']} (#{cost} gil). #{character.name} is rested: full HP and MP."
-    when "temple" then "#{payer} pays #{cost} gil at #{service['name']}. #{character.name} is raised, whole again."
-    when "guild" then "#{payer} buys a rumour at #{service['name']} (#{cost} gil). The GM owes #{character.name} something true."
+    when "inn" then "#{payer} takes a room at #{service['name']} (#{money(cost)}). #{character.name} is rested: full #{world.word('hp')} and #{world.word('mp')}."
+    when "temple" then "#{payer} pays #{money(cost)} at #{service['name']}. #{character.name} is raised, whole again."
+    when "guild" then "#{payer} buys a rumour at #{service['name']} (#{money(cost)}). The GM owes #{character.name} something true."
     end
+  end
+
+  # An amount in the world's money: "150 gil", "150 crowns".
+  def money(amount)
+    "#{amount} #{world.word('currency')}"
   end
 
   # --- jobs as story rewards --------------------------------------------------
@@ -456,7 +461,7 @@ class Campaign < ApplicationRecord
 
     transaction do
       characters.update_all(hp: nil, mp: nil, field_used: false)
-      messages.create!(kind: "system", body: "The party rests. Everyone is back to full HP and MP.")
+      messages.create!(kind: "system", body: "The party rests. Everyone is back to full #{world.word('hp')} and #{world.word('mp')}.")
       tick_clocks!("rest")
     end
   end

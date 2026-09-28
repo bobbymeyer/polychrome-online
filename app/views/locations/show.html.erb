@@ -37,7 +37,7 @@
     <p class="location-mode__name"><%= in_mode["name"] %></p>
     <% if in_mode["description"] %><p><%= in_mode["description"] %></p><% end %>
     <% if in_mode["closed"].present? %>
-      <p class="muted">Shut: <%= in_mode["closed"].map(&:humanize).to_sentence %>.</p>
+      <p class="muted">Shut: <%= in_mode["closed"].map { |k| term(k) }.to_sentence %>.</p>
     <% end %>
   </section>
 <% end %>

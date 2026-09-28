@@ -55,8 +55,13 @@ module ApplicationHelper
   end
 
   # Human label for a closed-vocabulary token: "single_enemy" -> "Single enemy".
-  def term(token)
-    token.to_s.humanize
+  # A status and a service go by the world's word for it (Vocabulary).
+  def term(token, world = vocabulary_world)
+    token = token.to_s
+    return word("status.#{token}", world) if Battle::STATUSES.include?(token)
+    return word("service.#{token}", world) if Vocabulary::SERVICES.include?(token)
+
+    token.humanize
   end
 
   # What a check can be made with: the world's skills first, then the bare

@@ -26,7 +26,7 @@ const FAST_KEY = "polychrome.fastBattles"
 
 export default class extends Controller {
   static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "fast"]
-  static values = { panelUrl: String, next: Number, cries: Object }
+  static values = { panelUrl: String, next: Number, cries: Object, words: Object }
 
   connect() {
     this.queue = []
@@ -178,14 +178,14 @@ export default class extends Controller {
         if (e.target) this.popup(tl, e.actor, "CONFUSED", "status", at)
         return 220
       case "hp_paid":
-        this.popup(tl, e.actor, `−${e.amount} HP`, "status", at)
+        this.popup(tl, e.actor, `−${e.amount} ${this.word("hp")}`, "status", at)
         return 240
       case "charging":
         this.popup(tl, e.actor, "CHARGING", "status", at)
         gesture(tl, this.sprite(e.actor), "shake", at)
         return 360
       case "mp_lost":
-        this.popup(tl, e.target, `−${e.amount} MP`, "status", at)
+        this.popup(tl, e.target, `−${e.amount} ${this.word("mp")}`, "status", at)
         return 260
       case "back":
         tl.add(this.sprite(e.unit), { opacity: [0, 1], scale: [0.8, 1], duration: 300, ease: "outQuad" }, at)
@@ -209,7 +209,7 @@ export default class extends Controller {
         return 700
       case "mp_restored":
         tl.call(() => this.addMp(e.target, e.amount), at)
-        this.popup(tl, e.target, `+${e.amount} MP`, "status", at)
+        this.popup(tl, e.target, `+${e.amount} ${this.word("mp")}`, "status", at)
         return 250
       case "custom_action":
         // A player's own idea, in their words.
@@ -282,13 +282,13 @@ export default class extends Controller {
       case "status_applied":
         this.die(tl, e.target, e, at)
         tl.call(() => this.setStatus(e.target, e.status, true), at)
-        this.popup(tl, e.target, this.humanize(e.status), "status", at, `status-${e.status}`)
+        this.popup(tl, e.target, this.statusName(e.status), "status", at, `status-${e.status}`)
         gesture(tl, this.sprite(e.target), "tint", at)
         return 450
       case "status_expired":
         tl.call(() => this.setStatus(e.target, e.status, false), at)
         if (e.reason === "cured") {
-          this.popup(tl, e.target, `${this.humanize(e.status)} cured`, "status", at, `status-${e.status}`)
+          this.popup(tl, e.target, `${this.statusName(e.status)} cured`, "status", at, `status-${e.status}`)
           return 380
         }
         return 250
@@ -318,7 +318,7 @@ export default class extends Controller {
         this.popup(tl, e.unit, e.reason === "sleep" ? "Zzz" : e.reason === "paralyze" ? "…" : "?", "miss", at)
         return 420
       case "action_failed":
-        this.popup(tl, e.actor, e.reason === "silenced" ? "SILENCED" : "NO MP", "miss", at)
+        this.popup(tl, e.actor, e.reason === "silenced" ? this.statusName("silence").toUpperCase() : `NO ${this.word("mp").toUpperCase()}`, "miss", at)
         return 420
       case "flee":
         this.die(tl, e.actor, e, at)
@@ -427,7 +427,7 @@ export default class extends Controller {
         const badge = document.createElement("li")
         badge.className = `badge badge--${status}`
         badge.dataset.status = status
-        badge.textContent = this.humanize(status)
+        badge.textContent = this.statusName(status)
         badges.append(badge)
       } else if (!on) {
         existing?.remove()
@@ -453,6 +453,15 @@ export default class extends Controller {
     if (!e.roll) return
     const cameIn = e.roll <= e.needed
     this.popup(tl, id, String(e.roll), "die", at, cameIn ? "is-in" : "is-out")
+  }
+
+  // The world's words (Vocabulary), with the game's as a fallback.
+  word(key) {
+    return (this.hasWordsValue && this.wordsValue[key]) || key.toUpperCase()
+  }
+
+  statusName(status) {
+    return (this.hasWordsValue && this.wordsValue.statuses?.[status]) || this.humanize(status)
   }
 
   popup(tl, id, text, kind, at, extra = "") {

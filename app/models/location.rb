@@ -40,7 +40,7 @@ class Location < ApplicationRecord
 
   def generated
     @generated ||= if town?
-      Generators::Town.generate(seed: seed, template: location_template.settings, tables: location_template.table_entries)
+      in_the_worlds_words(Generators::Town.generate(seed: seed, template: town_settings, tables: location_template.table_entries))
     else
       Generators::Dungeon.generate(seed: seed, template: location_template.settings,
                                    encounters: location_template.encounter_table&.entries || [],
@@ -50,6 +50,24 @@ class Location < ApplicationRecord
 
   def view
     @view ||= Generators::Overrides.apply(generated, overrides)
+  end
+
+  # The template's settings, less the services this world doesn't have.
+  def town_settings
+    settings = location_template.settings
+    off = campaign.world.services_off
+    return settings if off.empty?
+
+    settings.merge("services" => settings.fetch("services", {}).merge(off.index_with(0)))
+  end
+
+  # A keeper is named for the world's word for their service.
+  def in_the_worlds_words(town)
+    world = campaign.world
+    town.merge("npcs" => town["npcs"].map do |npc|
+      kind = npc["service"]
+      kind && world.terms.dig("services", kind) ? npc.merge("title" => "#{world.word("service.#{kind}")} keeper") : npc
+    end)
   end
 
   def reload(*)
@@ -192,7 +210,7 @@ class Location < ApplicationRecord
     unknown = Array(decision["monsters"]&.keys) - world.monsters.pluck(:slug)
     raise ArgumentError, "Pick a monster from the Bestiary" if decision["kind"] == "encounter" && (unknown.any? || decision["monsters"].empty?)
     if decision["kind"] == "treasure" && !decision["gil"].to_i.positive? && !world.items.exists?(slug: decision["item"])
-      raise ArgumentError, "Pick an item from the Armory, or an amount of gil"
+      raise ArgumentError, "Pick an item from the Armory, or an amount of #{world.word('currency')}"
     end
 
     added = overrides.fetch("added_rooms", [])

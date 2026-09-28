@@ -29,8 +29,8 @@ class FieldUse < ApplicationRecord
   def self.describe(ability)
     power = ability.field_power
     case ability.field_outcome
-    when "find" then "An item worth up to #{power.positive? ? power : 100} gil, into the bag"
-    when "restore" then "Everyone standing gets #{power.positive? ? power : 25}% of HP and MP back"
+    when "find" then "An item worth up to #{power.positive? ? power : 100} #{ability.world.word('currency')}, into the bag"
+    when "restore" then "Everyone standing gets #{power.positive? ? power : 25}% of #{ability.world.word('hp')} and #{ability.world.word('mp')} back"
     else OUTCOMES[ability.field_outcome]
     end
   end
@@ -166,7 +166,7 @@ class FieldUse < ApplicationRecord
       c.update!(hp: [ c.current_hp + (c.stats["max_hp"] * share / 100), c.stats["max_hp"] ].min,
                 mp: [ c.current_mp + (c.stats["max_mp"] * share / 100), c.stats["max_mp"] ].min)
     end
-    "#{name} sees to everyone: #{share}% of HP and MP back."
+    "#{name} sees to everyone: #{share}% of #{campaign.world.word('hp')} and #{campaign.world.word('mp')} back."
   end
 
   def learn(name)

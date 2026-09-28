@@ -4,6 +4,8 @@
 # base world is seed data (db/seeds). A second author's world is just
 # another row (§1, §9.1).
 class World < ApplicationRecord
+  include Vocabulary
+
   belongs_to :owner, class_name: "User", optional: true
   # The setting's canon, first: it points into the books below.
   has_many :world_figures, dependent: :destroy
@@ -145,7 +147,7 @@ class World < ApplicationRecord
         end
       end
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
-      %w[art_style art_negative art_loras art_model].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      %w[art_style art_negative art_loras art_model voice avoid lines veils terms].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
       copy_canon_from!(source)
     end
