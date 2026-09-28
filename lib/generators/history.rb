@@ -298,7 +298,7 @@ module Generators
         relation(a, b)["score"] -= 3
         b["standing"] = [ b["standing"] - 1, 0 ].max
         a["standing"] += 1
-        b["grudges"] << { "against" => a["key"], "why" => how, "ago" => @now }
+        b["grudges"] << { "against" => a["key"], "why" => "the time they #{how}", "ago" => @now }
         record("betrayal", "The #{plural(b['name'])} lost their standing; nobody could say how.", families: [ a, b ],
                truth: "#{a['head']['name']} #{how}.")
       end
@@ -353,7 +353,7 @@ module Generators
         text += "; #{lost['name']} was never found" if lost
         record(kind, "#{text}. It was #{fall['sealed']}.", places: [ place ], families: [ holder ].compact,
                truth: ("#{suspect['head']['name']} had a hand in it." if blamed))
-        holder["grudges"] << { "against" => suspect["key"], "why" => place["name"], "ago" => @now } if blamed
+        holder["grudges"] << { "against" => suspect["key"], "why" => "what happened at #{place['name']}", "ago" => @now } if blamed
       end
 
       def feud_enemy(family)
@@ -376,7 +376,7 @@ module Generators
         die(family, who, "drowned")
         text = "#{who['name']} drowned in #{where}."
         text += " Folk say a #{enemy['name']} held them under." if rumour
-        family["grudges"] << { "against" => enemy["key"], "why" => "#{who['name']}, drowned", "ago" => @now } if rumour
+        family["grudges"] << { "against" => enemy["key"], "why" => "#{who['name']}'s drowning", "ago" => @now } if rumour
         truth = if true_rumour then "#{enemy['head']['name']} did it."
         elsif rumour then "It was an accident. The #{plural(enemy['name'])} have never known what they're blamed for."
         end
@@ -418,7 +418,7 @@ module Generators
         family["gone"] = @now
         family["lineage"].last["to"] = @now
         family["lineage"].last["fate"] = "fled"
-        why = family["grudges"].last ? " after #{family['grudges'].last['why'].sub(/\A./, &:downcase)}" : ""
+        why = family["grudges"].last ? " after #{family['grudges'].last['why']}" : ""
         @history.values.select { |p| p["holder"] == family["key"] && p["kind"] == "dungeon" && !p["fall"] }.each do |place|
           place["fall"] = { "kind" => "abandoned", "ago" => @now }
         end

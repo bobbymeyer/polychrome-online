@@ -1,0 +1,23 @@
+<%# A family's page in the codex: their trade and seat, their heads, their grudges, what happened to them. %>
+<% plural = Generators::History.plural(family["name"]) %>
+<% trade = family["trade"].to_s.capitalize.sub(/man\z/, "men").sub(/(?<!men)\z/, "s") %>
+<%= trade %><%= " of #{seat.name}" if seat %>.<%= " They left the region #{Generators::History.ago(family['gone'])}." if family["gone"] %>
+
+<% if family["head"] %>
+<%= family["head"] %> is the head of the house<%= "; #{family['heir']} is the heir" if family["heir"] %>.
+
+<% end %>
+<% heads = family["lineage"].map do |head|
+     span = [ head["from"], head["to"] ].compact.map { |y| y.zero? ? "now" : y }.join("–")
+     "#{head['name']} (#{span} years ago#{", #{head['fate']}" if head['fate'] && head['fate'] != 'old age'})"
+   end %>
+Heads of the house: <%= heads.to_sentence %>.
+
+<% family["grudges"].each do |grudge| %>
+The <%= plural %> have not forgiven the <%= Generators::History.plural(chronicle.family(grudge["against"])&.dig("name")) %> for <%= grudge["why"] %>.
+
+<% end %>
+<% events.each do |event| %>
+<%= Generators::History.ago(event["ago"]).upcase_first %>: <%= event["text"] %>
+
+<% end %>
