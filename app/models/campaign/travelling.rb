@@ -43,6 +43,7 @@ module Campaign::Travelling
       narrate("Encounter! #{describe_encounter(rolled)}.") if rolled
       tick_clocks!("travel")
       pass_time!(edge.duration, announce: :new_day)
+      hear_rumours!(destination)
     end
     broadcast_map
     rolled
@@ -55,6 +56,7 @@ module Campaign::Travelling
       current_node&.location&.leave! unless current_node == node
       update!(current_node: node)
       narrate("The party is at #{node.name}.")
+      hear_rumours!(node)
     end
     broadcast_map
   end
@@ -81,15 +83,6 @@ module Campaign::Travelling
   def describe_encounter(monsters)
     names = world.monsters.where(slug: monsters.keys).index_by(&:slug)
     monsters.map { |slug, count| "#{count} × #{names[slug]&.name || slug}" }.to_sentence
-  end
-
-  # Re-render the map for each audience. Players get a separately rendered
-  # map without hidden places, on their own stream, so a hidden node never
-  # reaches their browser.
-  def broadcast_map
-    { false => :map, true => :map_gm }.each do |gm, stream|
-      broadcast_replace_to self, stream, target: "map_canvas", partial: "maps/canvas", locals: { campaign: self, gm: gm }
-    end
   end
 
   # The dungeon the party is inside right now, if any.

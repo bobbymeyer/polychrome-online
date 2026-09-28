@@ -100,10 +100,6 @@ RSpec.describe "The pointcrawl map" do
   end
 
   describe "broadcasts" do
-    def stream(*streamables)
-      Turbo::StreamsChannel.send(:stream_name_from, streamables)
-    end
-
     it "re-renders the map per audience, leaving hidden places out of the players' copy" do
       tule
       expect { ruins }.to have_broadcasted_to(stream(campaign, :map_gm)).with(a_string_including("Ruins"))

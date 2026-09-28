@@ -1,0 +1,8 @@
+<section id="scenes">
+  <div class="book-header">
+    <h2>Scenes</h2>
+    <%= link_to "New scene", new_campaign_scene_path(campaign), class: "button button--quiet" %>
+  </div>
+  <%= render "scenes/list", campaign: campaign %>
+  <%= render "drafts/panel", owner: campaign, kind: "scene", title: "Suggest a scene", placeholder: "Cid confesses he sold the airship; the party chooses" if table_gm? %>
+</section>

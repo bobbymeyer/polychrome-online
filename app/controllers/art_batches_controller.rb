@@ -13,7 +13,11 @@ class ArtBatchesController < ApplicationController
     entry, subject = target
     return forbid unless can_generate?(entry)
 
-    subject&.update!(params.fetch(:entry, {}).permit(:art_notes, :art_model, art_loras: {}))
+    if subject && params.key?(:entry)
+      changes = params.fetch(:entry, {}).permit(:art_notes, :art_model, art_loras: {})
+      # A history-written figure whose looks the GM writes is theirs now.
+      subject.update!(subject.has_attribute?(:edited) ? changes.merge(edited: true) : changes)
+    end
     entry.mode.update!(art: params[:mode_art]) if entry.is_a?(ModeArt) && params.key?(:mode_art)
     # A speaker shows one strip at a time, whichever expression it is for.
     ArtBatch.where(entry: subject.portraits).destroy_all if entry.is_a?(Portrait)

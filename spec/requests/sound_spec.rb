@@ -18,10 +18,6 @@ RSpec.describe "Sound", type: :request do
     Nokogiri::HTML(response.body).at('meta[name="polychrome-music"]')
   end
 
-  def stream(*streamables)
-    Turbo::StreamsChannel.send(:stream_name_from, streamables)
-  end
-
   it "takes a world's tracks from its form, refuses what isn't audio, and removes them" do
     patch world_path(world), params: { world: { music_field: wav, music_battle: wav("battle.wav") } }
     expect(world.reload.music_track("field")).to be_present

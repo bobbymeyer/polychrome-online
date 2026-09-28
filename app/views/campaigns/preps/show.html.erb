@@ -1,0 +1,39 @@
+<% content_for :title, "Prep · #{@campaign.name}" %>
+<%= render "shared/stage_stream", campaign: @campaign %>
+<% content_for :head do %>
+  <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
+<% end %>
+<%= turbo_stream_from @campaign, :pages %>
+<div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / Prep</div>
+<div class="book-header">
+  <div>
+    <p class="eyebrow"><%= @world.name %> · <%= @campaign.when_it_is %></p>
+    <h1>Prep</h1>
+  </div>
+  <div class="actions">
+    <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
+    <%= link_to "Legends", campaign_legends_path(@campaign), class: "button button--quiet" %>
+  </div>
+</div>
+<nav class="prep-nav" aria-label="Prep">
+  <% { "scenes" => "Scenes", "clocks" => "Clocks", "secrets" => "Secrets", "deeds" => "Deeds", "rumours" => "Rumours", "flags" => "Flags" }.each do |anchor, label| %>
+    <a href="#<%= anchor %>"><%= label %></a>
+  <% end %>
+</nav>
+
+<%= render "campaigns/preps/scenes", campaign: @campaign %>
+
+<% if table_gm? %>
+  <div class="two-up">
+    <%= render "campaigns/preps/clocks", campaign: @campaign %>
+    <%= render "campaigns/preps/secrets", campaign: @campaign %>
+  </div>
+  <%= render "campaigns/preps/deeds", campaign: @campaign %>
+  <%= render "campaigns/preps/rumours", campaign: @campaign %>
+  <%= render "campaigns/preps/flags", campaign: @campaign %>
+<% else %>
+  <section class="window">
+    <p>You're sitting as a character at this table. Clocks, secrets, deeds, rumours and flags are changed from the GM's seat.</p>
+    <%= button_to "Take the GM's seat", campaign_table_seat_path(@campaign), params: { seat: "gm" }, class: "button" %>
+  </section>
+<% end %>

@@ -154,6 +154,10 @@ Every generated place carries where it came from (`Generators::Provenance`):
 
 The GM keeps families through rerolls and edits a place's past on the atlas; an edited past, like an edited page, is theirs, and the history won't write over it.
 
+**The world moves overnight.** Each new day, a pure step over the campaign's map (`Pointcrawl::Overnight`, RNG in state like the resolver) decides what moved: clocks that tick now and then, rumours travelling a road a day, antagonists who got away wandering, caravans lost on dangerous roads and the prices that follow. The campaign applies it (`Campaign::Overnight`). The GM gets a private note; players only learn what reaches them as rumours. Kept secrets about a place sometimes leak there as rumours.
+
+**Deeds and legends.** What the party does is history too. A deed (recorded by itself for an antagonist beaten or a dungeon cleared, or by the GM) starts a rumour carrying its sway, and each town the story reaches moves its view of the party, which sets its prices and, far enough down, whether it trades with them at all. The legends page puts the written history the party can know together with their own story.
+
 **Chat.** Portrait + dialogue box. `messages` broadcast via Turbo Streams. GM has a "speak as" picker for any NPC (possession). Expression tag selects portrait variant. Whispers are scoped broadcasts. Open design question: sequential dialogue box vs simultaneous chat — leaning toward GM/NPC lines in the box and player lines in a side log.
 
 **Books.** Each book is a Rails resource namespace. Each entry has two faces: a form and a rendered "page" (stat block, prose, cross-references, image). Cross-references between entries are the index.
@@ -214,3 +218,5 @@ Steps 1–3 are the proof. If the battle isn't fun with a GM in the seat, nothin
 - A model that tells several stories tells them in concerns, one story each, in a folder named for the model (`Campaign::Shopping`, `Location::Exploration`). A slice's constants live in the slice.
 - When the game says no ("the party can't afford that"), a model raises `Refusal`, and the person who asked sees it as an alert. `ArgumentError` means a bug, and crashes.
 - The table hears the game through `Campaign#narrate`.
+- A migration that removes or changes a column runs outside a transaction (`disable_ddl_transaction!`). SQLite rebuilds the table to do it, and inside a transaction it can't switch foreign keys off, so the rebuild fires ON DELETE actions on other tables. `spec/migrations_spec.rb` checks. New foreign keys stay plain; the models clean up (`dependent:`).
+

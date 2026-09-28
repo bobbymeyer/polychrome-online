@@ -31,7 +31,7 @@ class WorldFiguresController < ApplicationController
   def edit; end
 
   def update
-    if @figure.update(figure_params)
+    if @figure.update(figure_params.merge(edited: true))
       @figure.update_portraits!(**portrait_params)
       redirect_to world_world_figures_path(@world), notice: "#{@figure.name} saved.", status: :see_other
     else

@@ -36,6 +36,32 @@ module Location::Town
     end
   end
 
+  # How the town sees the party, -5 to 5: the sway of every deed whose
+  # story has got here (Campaign::Deeds), struck deeds not included.
+  def reputation
+    @reputation ||= map_node ? campaign.rumours.about_deeds.at(map_node).sum(:sway).clamp(-5, 5) : 0
+  end
+
+  def reload(*)
+    @reputation = nil
+    super
+  end
+
+  STANDINGS = { -5..-3 => "Unwelcome", -2..-1 => "Wary", 0..0 => "Strangers", 1..2 => "Welcome", 3..5 => "Heroes" }.freeze
+  REPUTATION_PRICE = 5 # percent off for each point in the party's favour
+
+  def standing = STANDINGS.find { |range, _| range.cover?(reputation) }.last
+
+  # Nobody here will trade with them, or give them a bed.
+  def shuns_party? = reputation <= -3
+
+  # What the shop asks today: dearer after a caravan is lost on the road,
+  # easing back day by day (Campaign::Overnight), and cheaper for friends.
+  def price_of(item) = (item.price * (100 + prices - (REPUTATION_PRICE * reputation)).clamp(10, 300) / 100.0).round
+
+  # Shops pay half.
+  def resale_price_of(item) = price_of(item) / 2
+
   def stock_items
     slugs = view.fetch("stock", [])
     items = campaign.world.items.where(slug: slugs).index_by(&:slug)

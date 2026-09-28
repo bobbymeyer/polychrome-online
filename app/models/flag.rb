@@ -6,6 +6,8 @@
 class Flag < ApplicationRecord
   KEY_FORMAT = /\A[a-z][a-z0-9_]*\z/
 
+  include CampaignPages
+
   belongs_to :campaign
 
   normalizes :key, with: ->(key) { key.to_s.strip.downcase.gsub(/[^a-z0-9]+/, "_").gsub(/\A_+|_+\z/, "") }
@@ -16,6 +18,9 @@ class Flag < ApplicationRecord
   validates :value, length: { maximum: 500 }
 
   scope :shown_to_players, -> { where(public: true) }
+
+  # Public flags are part of what the party knows.
+  after_commit { campaign.broadcast_party_knows }
 
   def counter?
     value.match?(/\A-?\d+\z/)

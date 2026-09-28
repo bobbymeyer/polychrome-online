@@ -11,6 +11,11 @@
     <% else %>
       <% shopping = may_shop?(location) %>
       <% keepers = location.roster.filter_map { |slot| (g = slot["generated"]) && g["service"] && [ g["service"], g["name"] ] }.to_h %>
+      <% if location.reputation.nonzero? %>
+        <p class="standing standing--<%= location.reputation.positive? ? 'good' : 'bad' %>">
+          <%= location.name %> sees the party as <strong><%= location.standing.downcase %></strong><%= location.shuns_party? ? ": nobody here will trade with them." : "." %>
+        </p>
+      <% end %>
       <% if shopping %>
         <p class="shop-purse">The party has <strong><%= money(@campaign.gil) %></strong>.</p>
       <% elsif @campaign.current_node&.location_id != location.id %>

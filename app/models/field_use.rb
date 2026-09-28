@@ -186,7 +186,7 @@ class FieldUse < ApplicationRecord
 
   # The GM's list of requests, and the player's own button.
   def broadcast
-    broadcast_replace_to(campaign, :map_gm, target: "field_requests", partial: "field_uses/requests", locals: { campaign: campaign })
-    broadcast_replace_to(character, :whispers, target: "field_ability", partial: "field_uses/ability", locals: { character: character.reload })
+    broadcast_replace_to(campaign, :map_gm, target: "field_requests", partial: "campaigns/field_uses/requests", locals: { campaign: campaign })
+    broadcast_replace_to(character, :whispers, target: "field_ability", partial: "campaigns/field_uses/ability", locals: { character: character.reload })
   end
 end

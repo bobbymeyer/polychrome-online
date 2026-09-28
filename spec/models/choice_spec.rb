@@ -8,10 +8,6 @@ RSpec.describe "Choices for the table" do
   let!(:lenna) { create_character(campaign, name: "Lenna") }
   let!(:cid) { campaign.npcs.create!(name: "Cid") }
 
-  def stream(*streamables)
-    Turbo::StreamsChannel.send(:stream_name_from, streamables)
-  end
-
   it "reads “? A | B -> flag”, and nothing less" do
     expect(Message.parse_choice("? Trust Cid | Refuse -> trusted cid")).to eq(options: [ "Trust Cid", "Refuse" ], flag: "trusted cid")
     expect(Message.parse_choice("?Left|Right|Back")).to eq(options: %w[Left Right Back], flag: nil)

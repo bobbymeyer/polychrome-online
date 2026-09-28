@@ -3,7 +3,8 @@
 # Time in a campaign: the day, and the part of it (dawn, day, dusk, night).
 # A journey takes its road's time; a rest sleeps until the next dawn; the GM
 # can pass time by hand. Each new day ticks the clocks that tick on dawn, so
-# "the festival is in three days" is a three-segment clock.
+# "the festival is in three days" is a three-segment clock, and the world
+# moves on a little (Campaign::Overnight).
 module Timekeeping
   extend ActiveSupport::Concern
 
@@ -12,7 +13,6 @@ module Timekeeping
   included do
     validates :time_of_day, inclusion: { in: TIMES }
     validates :day, numericality: { only_integer: true, greater_than: 0 }
-    after_update_commit :broadcast_time, if: -> { saved_change_to_day? || saved_change_to_time_of_day? }
   end
 
   # "Moonsday, 12 Rainfall · dusk", or "Day 12 · dusk".
@@ -34,7 +34,10 @@ module Timekeeping
         line = new_days.positive? ? "#{new_days > 1 ? "#{new_days} days pass. " : ''}#{world.date(day)}: #{time_of_day}." : "#{time_of_day.capitalize}."
         narrate(line)
       end
-      new_days.times { tick_clocks!("dawn") }
+      new_days.times do
+        tick_clocks!("dawn")
+        overnight!
+      end
     end
     new_days
   end
@@ -42,11 +45,5 @@ module Timekeeping
   # Sleep until the next dawn.
   def until_dawn
     TIMES.size - TIMES.index(time_of_day)
-  end
-
-  private
-
-  def broadcast_time
-    %i[map map_gm].each { |stream| broadcast_replace_to self, stream, target: "table_time", partial: "tables/time", locals: { campaign: self } }
   end
 end

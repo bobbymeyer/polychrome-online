@@ -44,6 +44,7 @@
       <p class="chat-line__head">
         <strong><%= message.speaker_name %></strong>
         <% if message.whisper? %><span class="chat-line__tag"><%= whisper_label(message) %></span><% end %>
+        <% if message.gm_only? %><span class="chat-line__tag">GM only</span><% end %>
         <% if message.expression.present? && message.expression != "neutral" %><span class="muted">(<%= message.expression %>)</span><% end %>
         <time class="muted" datetime="<%= message.created_at.iso8601 %>"><%= message.created_at.strftime("%H:%M") %></time>
       </p>

@@ -10,8 +10,9 @@ module Campaign::Shopping
     quantity = quantity.to_i.clamp(1, 99)
     raise Refusal, "The shop is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
     raise Refusal, "#{at.name} doesn't sell #{item.name}" unless at.stock_items.include?(item)
+    refuse_if_shunned!(at)
 
-    cost = item.price * quantity
+    cost = (at.respond_to?(:price_of) ? at.price_of(item) : item.price) * quantity
     transaction do
       reload
       raise Refusal, "The party has #{money(gil)}; #{quantity} × #{item.name} costs #{cost}" if cost > gil
@@ -26,12 +27,13 @@ module Campaign::Shopping
   def sell!(item, quantity, at:, by:)
     quantity = quantity.to_i.clamp(1, 99)
     raise Refusal, "The shop is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
+    refuse_if_shunned!(at)
     transaction do
       row = inventories.find_by(item: item)
       raise Refusal, "The bag has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
 
       row.update!(quantity: row.quantity - quantity)
-      earned = item.resale_price * quantity
+      earned = (at.respond_to?(:resale_price_of) ? at.resale_price_of(item) : item.resale_price) * quantity
       update!(gil: gil + earned)
       narrate("#{by} sold #{quantity} × #{item.name} in #{at.name} for #{money(earned)}.")
     end
@@ -44,5 +46,11 @@ module Campaign::Shopping
       character.unequip!(slot)
       sell!(item, 1, at: at, by: by)
     end
+  end
+
+  private
+
+  def refuse_if_shunned!(at)
+    raise Refusal, "Nobody in #{at.name} will deal with the party." if at.respond_to?(:shuns_party?) && at.shuns_party?
   end
 end

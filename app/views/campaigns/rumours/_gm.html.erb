@@ -1,0 +1,28 @@
+<%# The GM's view of the campaign's rumours (Rumour): how far each has travelled, and a new one. %>
+<% travelling = campaign.rumours.travelling.includes(:places).order(created_at: :desc) %>
+<% names = campaign.map_nodes.pluck(:id, :name).to_h %>
+<% if travelling.any? %>
+  <ul class="secret-rows">
+    <% travelling.each do |rumour| %>
+      <li class="<%= 'is-revealed' if rumour.heard? %>">
+        <div>
+          <%= rumour.body %>
+          <span class="muted"> · <%= rumour.places.map(&:name).sort.to_sentence %><%= " · the party has heard it" if rumour.heard? %></span>
+        </div>
+        <%= button_to "Hush", campaign_rumour_path(campaign, rumour), method: :delete, class: "link-button", form: { class: "inline" } %>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="empty">Nobody's talking about anything yet.</p>
+<% end %>
+<% if names.any? %>
+  <details id="new_rumour" data-turbo-permanent>
+    <summary>Start a rumour</summary>
+    <%= form_with model: Rumour.new, url: campaign_rumours_path(campaign), class: "book-form" do |f| %>
+      <div class="field"><%= f.label :body, "What people are saying" %><%= f.text_field :body, required: true, placeholder: "The mill has been grinding at night." %></div>
+      <div class="field"><%= f.label :origin_id, "Starting in" %><%= f.select :origin_id, names.sort_by(&:last).map(&:reverse) %></div>
+      <%= f.submit "Let it loose", class: "button" %>
+    <% end %>
+  </details>
+<% end %>

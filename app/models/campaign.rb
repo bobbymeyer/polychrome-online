@@ -25,7 +25,7 @@ class Campaign < ApplicationRecord
   has_many :secrets, dependent: :delete_all
   belongs_to :current_node, class_name: "MapNode", optional: true
 
-  include Bag, Shopping, Services, Travelling, Checks, MonsterNotes, JobRewards
+  include Bag, Shopping, Services, Travelling, Checks, MonsterNotes, JobRewards, Overnight, Deeds, Broadcasts
 
   # Travel encounters use their own seeded RNG, stored here like a battle's.
   before_create { self.rng = Random.new_seed % 2**32 if rng.zero? }
@@ -35,7 +35,6 @@ class Campaign < ApplicationRecord
   MUSIC_CHOICES = (World::MUSIC + %w[silence]).freeze
   normalizes :music, with: ->(value) { value.presence }
   validates :music, inclusion: { in: MUSIC_CHOICES }, allow_nil: true
-  after_update_commit :broadcast_music, if: :saved_change_to_music?
 
   validates :name, presence: true
   validates :gil, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
@@ -66,13 +65,6 @@ class Campaign < ApplicationRecord
     return moded if moded
 
     current_node&.location&.town? ? "town" : "field"
-  end
-
-  # Every game page of the campaign changes track with the GM (stage.js);
-  # a battle keeps its own.
-  def broadcast_music
-    Turbo::StreamsChannel.broadcast_action_to(self, :stage, action: :music, target: "stage",
-                                              attributes: { follow: music.nil?, url: world.music_path(music).to_s })
   end
 
   # The code behind the shared screen's QR code (local co-op): made when

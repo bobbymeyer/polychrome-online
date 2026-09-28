@@ -38,7 +38,7 @@
 
     <% if gm %>
       <% if (encounter = @campaign.pending_encounter) %>
-        <%= render "encounters/call", encounter: encounter, return_to: location_path(location) %>
+        <%= render "campaigns/encounters/call", encounter: encounter, return_to: location_path(location) %>
       <% end %>
 
       <% if !location.party_here? %>

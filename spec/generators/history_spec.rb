@@ -85,6 +85,12 @@ RSpec.describe Generators::History do
     lost = (1..80).flat_map { |s| history(s)["places"].values.flat_map { |p| Array(p["heirlooms"]) } }
     expect(lost).to all(include("lost_at"))
   end
+
+  it "gives every grudge a reason that reads after “for”" do
+    whys = (1..80).flat_map { |s| history(s)["families"].flat_map { |f| f["grudges"].map { |g| g["why"] } } }
+    expect(whys).not_to be_empty
+    expect(whys).to all(match(/\Athe time they |\Awhat happened at |'s drowning\z/))
+  end
 end
 
 RSpec.describe Generators::Provenance do

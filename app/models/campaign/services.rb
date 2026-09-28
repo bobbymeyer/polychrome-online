@@ -18,12 +18,13 @@ module Campaign::Services
   # A character pays for a service in the town the party is in:
   #   inn    — a night's rest: full HP and MP (the fallen need a temple)
   #   temple — a fallen character raised, at full HP and MP
-  #   guild  — a rumour: the GM owes them one
+  #   guild  — a rumour: one the party hasn't heard yet, or the GM owes them one
   def use_service!(kind, character, at:, by:)
     raise Refusal, "Not while a battle is on" if battle_on?
     raise Refusal, "#{character.name} isn't in this party" unless character.campaign_id == id
     service = at.view.fetch("services", []).find { |s| s["kind"] == kind } or raise Refusal, "#{at.name} has no #{kind}"
     raise Refusal, "The #{service['name']} is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?(kind)
+    refuse_if_shunned!(at)
     case kind
     when "inn"
       raise Refusal, "#{character.name} is down: an inn can't help the fallen. A temple can." unless character.conscious?
@@ -82,7 +83,14 @@ module Campaign::Services
     case kind
     when "inn" then "#{payer} takes a room at #{service['name']} (#{money(cost)}). #{character.name} is rested: full #{world.word('hp')} and #{world.word('mp')}."
     when "temple" then "#{payer} pays #{money(cost)} at #{service['name']}. #{character.name} is raised, whole again."
-    when "guild" then "#{payer} buys a rumour at #{service['name']} (#{money(cost)}). The GM owes #{character.name} something true."
+    when "guild"
+      bought = "#{payer} buys a rumour at #{service['name']} (#{money(cost)})."
+      if (rumour = rumour_for_sale)
+        rumour.update!(heard: true)
+        "#{bought} “#{rumour.body}”"
+      else
+        "#{bought} The GM owes #{character.name} something true."
+      end
     end
   end
 end

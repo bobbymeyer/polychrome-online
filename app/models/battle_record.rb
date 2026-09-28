@@ -176,12 +176,15 @@ class BattleRecord < ApplicationRecord
 
   private
 
-  # The table's "… is on" button follows the current battle for everyone.
+  # The table's "… is on" button follows the current battle for everyone,
+  # and the campaign's documents list it. Only when it starts or ends: a
+  # battle's own beats have their own stream.
   def refresh_table_header
     return unless campaign
 
     Turbo::StreamsChannel.broadcast_replace_to(campaign, :table, target: "table_battle",
-                                               partial: "tables/current_battle", locals: { campaign: campaign })
+                                               partial: "campaigns/tables/current_battle", locals: { campaign: campaign })
+    campaign.refresh_pages
   end
 
   def next_position(association)

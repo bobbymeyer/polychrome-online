@@ -46,7 +46,7 @@ class BattlesController < ApplicationController
     seat = current_seat
     @chat_seat = seat == "gm" ? "gm" : (seat && seat_character(seat))
     @chat_seat = nil if coop_view(@battle.campaign) == "screen" # the shared screen sees what everyone sees
-    @messages = Message.visible_to(@battle.campaign, @chat_seat).last(TablesController::LOG_LENGTH)
+    @messages = Message.visible_to(@battle.campaign, @chat_seat).last(Campaigns::TablesController::LOG_LENGTH)
   end
 
   private

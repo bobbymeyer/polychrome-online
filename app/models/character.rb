@@ -19,6 +19,8 @@ class Character < ApplicationRecord
 
   SLOTS = %w[weapon shield head body accessory].freeze
 
+  include CampaignPages
+
   belongs_to :campaign
   belongs_to :user, optional: true
   belongs_to :job

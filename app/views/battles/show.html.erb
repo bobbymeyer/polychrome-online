@@ -57,7 +57,7 @@
       <% end %>
     <% end %>
 
-    <%= render "tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
+    <%= render "campaigns/tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
   </div>
 
   <% if view == "controller" %>
@@ -84,7 +84,7 @@
         <% end %>
       </ol>
     </section>
-    <%= render "tables/chat_log", messages: @messages, seat: @chat_seat if @battle.campaign %>
+    <%= render "campaigns/tables/chat_log", messages: @messages, seat: @chat_seat if @battle.campaign %>
   <% end %>
 
   <% if (boss = bosses.first) %>

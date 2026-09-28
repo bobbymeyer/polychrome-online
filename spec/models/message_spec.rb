@@ -75,10 +75,6 @@ RSpec.describe Message do
   end
 
   describe "broadcasts (scoped, §7)" do
-    def stream(*streamables)
-      Turbo::StreamsChannel.send(:stream_name_from, streamables)
-    end
-
     it "sends table lines to the table stream" do
       expect { say(speaker: cid) }.to have_broadcasted_to(stream(campaign, :table)).with(a_string_including("Hello."))
     end

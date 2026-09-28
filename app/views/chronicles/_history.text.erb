@@ -1,0 +1,5 @@
+<%# The History page the chronicle writes into the codex: every event, oldest first. %>
+<% events.each do |event| %>
+<%= Generators::History.ago(event["ago"]).upcase_first %>: <%= event["text"] %>
+
+<% end %>

@@ -14,10 +14,13 @@ class Clock < ApplicationRecord
     "rest" => "each rest",
     "travel" => "each journey",
     "failed_check" => "each failed check",
-    "dawn" => "each new day"
+    "dawn" => "each new day",
+    "now_and_then" => "now and then, overnight"
   }.freeze
   # What ticked it, as the table hears it.
-  REASONS = { "rest" => "the party rested", "travel" => "time on the road", "failed_check" => "a failed check", "dawn" => "a new day" }.freeze
+  REASONS = { "rest" => "the party rested", "travel" => "time on the road", "failed_check" => "a failed check", "dawn" => "a new day", "now_and_then" => "time passing" }.freeze
+
+  include CampaignPages
 
   belongs_to :campaign
   belongs_to :world_front, optional: true
@@ -96,9 +99,7 @@ class Clock < ApplicationRecord
   # The GM's list everywhere it's open, and the players' view of the public
   # clocks (on their own stream, so a hidden clock never reaches them).
   def broadcast
-    { false => :map, true => :map_gm }.each do |gm, stream|
-      broadcast_replace_to campaign, stream, target: "party_knows", partial: "tables/party_knows", locals: { campaign: campaign, gm: gm }
-    end
-    broadcast_replace_to campaign, :map_gm, target: "gm_clocks", partial: "clocks/gm", locals: { campaign: campaign }
+    campaign.broadcast_party_knows
+    broadcast_replace_to campaign, :map_gm, target: "gm_clocks", partial: "campaigns/clocks/gm", locals: { campaign: campaign }
   end
 end

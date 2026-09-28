@@ -66,7 +66,8 @@ module Drafts
     def places
       campaign.map_nodes.includes(:location).order(:name).limit(20).map do |node|
         modes = node.location&.modes.to_a.map { |m| m["name"] }
-        "- #{node.name} (#{node.kind})#{"; can become: #{modes.join(', ')}" if modes.any?}"
+        seen = node.location&.town? && node.location.reputation.nonzero? ? "; sees the party as #{node.location.standing.downcase}" : ""
+        "- #{node.name} (#{node.kind})#{"; can become: #{modes.join(', ')}" if modes.any?}#{seen}"
       end
     end
 
@@ -74,6 +75,10 @@ module Drafts
       [ *campaign.secrets.order(:id).limit(15).map { |s| "- secret: #{clip(s.body)}" },
         *campaign.clocks.order(:id).limit(10).map { |c| "- clock: #{c.name}" },
         *campaign.flags.order(:key).limit(15).map { |f| "- flag: #{f.key} = #{clip(f.value, 60)}" } ]
+    end
+
+    def deeds
+      campaign.deeds.in_order.last(10).map { |d| "- day #{d.day}: #{clip(d.body)}" }
     end
 
     # The party, as people: job, origin, home and ties.
@@ -90,7 +95,8 @@ module Drafts
         "Party:\n#{party.join("\n").presence || '(no one yet)'}",
         "Cast:\n#{cast.join("\n").presence || '(none yet)'}",
         "Places:\n#{places.join("\n").presence || '(none yet)'}",
-        "Already prepared:\n#{already.join("\n").presence || '(nothing yet)'}" ].join("\n\n")
+        "Already prepared:\n#{already.join("\n").presence || '(nothing yet)'}",
+        ("What the party has done:\n#{deeds.join("\n")}" if deeds.any?) ].compact.join("\n\n")
     end
 
     # A place or person the model named, found in the campaign by name.

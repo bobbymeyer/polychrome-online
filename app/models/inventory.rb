@@ -2,6 +2,8 @@
 
 # One row of the party bag: how many of an item the party carries.
 class Inventory < ApplicationRecord
+  include CampaignPages
+
   belongs_to :campaign
   belongs_to :item
 

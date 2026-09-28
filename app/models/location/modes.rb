@@ -65,7 +65,9 @@ module Location::Modes
     chosen = mode_called(key)
     transaction do
       update!(current_mode: chosen)
-      campaign.narrate(chosen.line || "#{view['name']}: #{chosen.name}.")
+      line = chosen.line || "#{view['name']}: #{chosen.name}."
+      campaign.narrate(line)
+      campaign.start_rumour!(line, at: map_node, seen: campaign.current_node == map_node) if map_node
     end
     campaign.broadcast_map
     campaign.broadcast_music
