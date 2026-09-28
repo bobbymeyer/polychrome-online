@@ -33,8 +33,19 @@ module Comfy
         caps = client.capabilities
         raise Error, caps.error unless caps.reachable?
 
-        removal = BackgroundRemoval.pick(caps)
-        "answers. #{caps.models.size} models, #{caps.loras.size} LoRAs; background removal: #{removal ? removal[:node] : 'no node installed'}."
+        "answers. #{caps.models.size} models, #{caps.loras.size} LoRAs."
+      })
+    end
+
+    # A real cut-out of a tiny picture, so the model is there and loads.
+    def self.cutout
+      return nil unless ::Cutout.enabled?
+
+      new(url: ::Cutout.config[:url], name: "The background remover", token: ::Cutout.config[:token].present?, probe: lambda {
+        require "vips"
+        started = Time.current
+        png = ::Cutout.client.remove(Vips::Image.black(8, 8, bands: 3).pngsave_buffer)
+        "cuts out with #{::Cutout.label} (#{(Time.current - started).round(1)}s#{', no transparency back' unless ::Cutout.png_alpha?(png)})."
       })
     end
 
@@ -104,7 +115,7 @@ module Comfy
 
       begin
         steps << Step.new(true, "Answer", "#{@name} #{@probe.call}")
-      rescue Comfy::Error, Llm::Error, OpenSSL::SSL::SSLError => e
+      rescue Comfy::Error, Cutout::Error, Llm::Error, OpenSSL::SSL::SSLError => e
         steps << Step.new(false, "Answer", "#{e.message}#{' · the certificate for this name isn\'t trusted from here' if e.is_a?(OpenSSL::SSL::SSLError)}")
       end
       steps

@@ -3,7 +3,7 @@
   <h2>Connection</h2>
   <% if params[:check] %>
     <p class="hint">In a container: <%= Comfy::Doctor.in_container? ? "yes" : "no" %>.</p>
-    <% [ Comfy::Doctor.comfy, Comfy::Doctor.llm ].compact.each do |doctor| %>
+    <% [ Comfy::Doctor.comfy, Comfy::Doctor.cutout, Comfy::Doctor.llm ].compact.each do |doctor| %>
       <dl class="facts connection-steps">
         <% doctor.steps.each do |step| %>
           <dt><%= step.ok ? "✓" : "✗" %> <%= step.label %></dt><dd class="<%= 'error' unless step.ok %>"><%= step.detail %></dd>

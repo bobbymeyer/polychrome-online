@@ -1,21 +1,19 @@
-<%# How this batch is made: drafts first or not, and the background off or not (Comfy::BackgroundRemoval). art: what's being made. %>
+<%# How this batch is made: drafts first or not, and the background off or not (Cutout). art: what's being made. %>
 <div class="field field--check">
   <%= hidden_field_tag :draft, "0", id: nil %>
   <%= check_box_tag :draft, "1", true, id: "art_draft" %>
   <%= label_tag "art_draft", "Drafts first" %>
   <p class="hint">Rough previews, about 512 × 512 in 16 steps; then “Make this one properly” renders the one you like at full quality, from the draft, so it stays the same picture.</p>
 </div>
-<% caps = Comfy.capabilities %>
-<% removal = Comfy::BackgroundRemoval.pick(caps) if caps.reachable? %>
 <div class="field field--check">
   <%= hidden_field_tag :transparent, "0", id: nil %>
   <%= check_box_tag :transparent, "1", art.art_type.transparent, id: "art_transparent" %>
   <%= label_tag "art_transparent", "Remove the background" %>
   <p class="hint">
-    <% if removal %>
-      With <code><%= removal[:node] %></code>. Each image is checked for real transparency.
-    <% elsif caps.reachable? %>
-      This ComfyUI has no background-removal node, so backgrounds stay. Install one of: <%= Comfy::BackgroundRemoval.node_names.to_sentence(last_word_connector: " or ") %>.
+    <% if Cutout.enabled? %>
+      With <code><%= Cutout.label %></code>, after ComfyUI renders it; white inside the subject is kept. Each image is checked for real transparency.
+    <% else %>
+      No background remover is set up (Settings), so backgrounds stay.
     <% end %>
   </p>
 </div>

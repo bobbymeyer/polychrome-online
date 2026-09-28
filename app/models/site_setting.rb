@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 # The app's own settings, one row, set by an admin on the Settings page:
-# where ComfyUI and the language model answer, and their default models.
-# Anything left blank falls back to the environment (config/comfy.yml,
-# config/llm.yml). Only addresses and names live here: a token, a header
+# where ComfyUI, the background remover and the language model answer, and
+# their default models. Anything left blank falls back to the environment
+# (config/comfy.yml, config/cutout.yml, config/llm.yml). Only addresses and names live here: a token, a header
 # or a password in a URL stays in the environment, never in the database.
 class SiteSetting < ApplicationRecord
-  URLS = %i[comfy_url llm_url].freeze
-  TEXT = %i[comfy_url comfy_model rembg_node llm_url llm_model].freeze
+  URLS = %i[comfy_url cutout_url llm_url].freeze
+  TEXT = %i[comfy_url comfy_model cutout_url cutout_model llm_url llm_model].freeze
   NUMBERS = %i[draft_size draft_steps draft_denoise candidates].freeze
   FIELDS = (TEXT + NUMBERS).freeze
 
@@ -37,8 +37,12 @@ class SiteSetting < ApplicationRecord
   # The settings that override the environment's, for Comfy.config.
   def comfy_overrides
     draft = { pixels: draft_size && draft_size**2, steps: draft_steps, denoise: draft_denoise }.compact
-    overrides = { url: comfy_url, model: comfy_model, rembg_node: rembg_node, candidates: candidates }.compact
+    overrides = { url: comfy_url, model: comfy_model, candidates: candidates }.compact
     draft.empty? ? overrides : overrides.merge(draft: Rails.configuration.x.comfy.fetch(:draft, {}).to_h.symbolize_keys.merge(draft))
+  end
+
+  def cutout_overrides
+    { url: cutout_url, model: cutout_model }.compact
   end
 
   def llm_overrides
@@ -54,7 +58,7 @@ class SiteSetting < ApplicationRecord
       if !uri.is_a?(URI::HTTP) || uri.host.blank?
         errors.add(field, "must be an http:// or https:// address")
       elsif uri.userinfo
-        errors.add(field, "can't hold a user or password: put those in the environment (COMFY_URL or LLM_URL), which never goes in the database")
+        errors.add(field, "can't hold a user or password: put those in the environment (COMFY_URL, CUTOUT_URL or LLM_URL), which never goes in the database")
       end
     end
   end

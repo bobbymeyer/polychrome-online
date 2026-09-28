@@ -79,32 +79,16 @@ RSpec.describe Comfy::Workflow do
     expect { build(capabilities: FakeComfy.capabilities(text_encoders: [])) }.to raise_error(Comfy::Error, /Anima needs its text encoder/)
   end
 
-  it "removes the background only when asked, with the first removal node the server has, wired from its description" do
-    expect(nodes(build({ "transparent" => true }), "InspyrenetRembg")).to be_empty # none installed: kept
-
-    rmbg = FakeComfy.capabilities(extra: FakeComfy::REMOVAL_NODES.slice("RMBG", "NeedsAModel"))
-    graph = build({ "transparent" => true }, capabilities: rmbg)
-    removal = nodes(graph, "RMBG")
-    expect(removal.values.sole["inputs"]).to eq("image" => [ nodes(graph, "VAEDecode").keys.sole, 0 ], "model" => "RMBG-2.0",
-                                                "sensitivity" => 1.0, "background" => "Alpha")
-    saves = nodes(graph, "SaveImage").values.to_h { |node| [ node["inputs"]["filename_prefix"], node["inputs"]["images"] ] }
-    expect(saves).to eq("polychrome/goblin-42" => [ removal.keys.sole, 0 ],                         # the picture, cut out
-                        "polychrome/goblin-42-plain" => [ nodes(graph, "VAEDecode").keys.sole, 0 ]) # and as rendered, to mend it from
-    expect(nodes(build({ "transparent" => false }, capabilities: rmbg), "RMBG")).to be_empty
-
-    both = FakeComfy.capabilities(extra: FakeComfy::REMOVAL_NODES)
-    expect(nodes(build({ "transparent" => true }, capabilities: both), "InspyrenetRembg").values.sole["inputs"]).to include("torchscript_jit" => "default")
-
-    only_unwireable = FakeComfy.capabilities(extra: FakeComfy::REMOVAL_NODES.slice("NeedsAModel"))
-    allow(Comfy).to receive(:config).and_return(Comfy.config.merge(rembg_node: "NeedsAModel"))
-    expect(Comfy::BackgroundRemoval.pick(only_unwireable)).to be_nil # it needs a model plugged in: passed over
+  it "leaves the background to the background remover (Cutout): the picture is saved as rendered" do
+    graph = build({ "transparent" => true })
+    expect(sole(graph, "SaveImage")["images"]).to eq([ nodes(graph, "VAEDecode").keys.sole, 0 ])
   end
 
   it "reads whether an image really lost its background" do
-    expect(Comfy::BackgroundRemoval.png_alpha?(FakeComfy.png)).to be(true)
+    expect(Cutout.png_alpha?(FakeComfy.png)).to be(true)
     rgb = FakeComfy.png.dup.tap { |png| png.setbyte(25, 2) }
-    expect(Comfy::BackgroundRemoval.png_alpha?(rgb)).to be(false)
-    expect(Comfy::BackgroundRemoval.png_alpha?("not a png")).to be(false)
+    expect(Cutout.png_alpha?(rgb)).to be(false)
+    expect(Cutout.png_alpha?("not a png")).to be(false)
   end
 
   describe Comfy::Family do

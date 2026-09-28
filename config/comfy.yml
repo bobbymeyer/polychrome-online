@@ -22,27 +22,6 @@ shared: &shared
   # The model used when no world, content type or entry names one: a file
   # name as ComfyUI lists it, from models/checkpoints or models/diffusion_models.
   model: <%= ENV.fetch("COMFY_MODEL", "anima-preview.safetensors") %>
-  # Background removal, for content types marked transparent (and any
-  # batch asked for it). ComfyUI has no removal node of its own, so the
-  # first of these that's installed is used (Comfy::BackgroundRemoval),
-  # wired from ComfyUI's own description of it. `inputs` sets any required
-  # input whose default isn't right. None installed: the background stays.
-  # COMFY_REMBG_NODE puts another node first (COMFY_REMBG_INPUT: its image input).
-  rembg_node: <%= ENV.fetch("COMFY_REMBG_NODE", "") %>
-  rembg_input: <%= ENV.fetch("COMFY_REMBG_INPUT", "") %>
-  background_removal:
-    # ComfyUI-Inspyrenet-Rembg: good edges on hair and fur.
-    - node: InspyrenetRembg
-    # ComfyUI-RMBG (RMBG-2.0, BiRefNet, and others).
-    - node: RMBG
-      inputs: { background: Alpha }
-    - node: BiRefNetRMBG
-      inputs: { background: Alpha }
-    # was-node-suite-comfyui.
-    - node: Image Remove Background (rembg)
-    # ComfyUI-Easy-Use.
-    - node: easy imageRemBg
-      inputs: { image_output: Hide, add_background: none }
   candidates: 4
   # Drafts: rough, quick previews, about 512 × 512 (the same number of
   # pixels, keeping the shape) in 16 steps; a family can set its own
@@ -224,6 +203,5 @@ test:
   token: ""
   headers: "{}"
   model: anima-preview.safetensors
-  rembg_node: ""
 production:
   <<: *shared
