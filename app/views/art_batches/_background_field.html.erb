@@ -3,7 +3,7 @@
   <%= hidden_field_tag :draft, "0", id: nil %>
   <%= check_box_tag :draft, "1", true, id: "art_draft" %>
   <%= label_tag "art_draft", "Drafts first" %>
-  <p class="hint">Quick previews, smaller and in fewer steps; then “Make this one properly” renders the one you like at full quality, from the draft, so it stays the same picture.</p>
+  <p class="hint">Rough previews, about 512 × 512 in 16 steps; then “Make this one properly” renders the one you like at full quality, from the draft, so it stays the same picture.</p>
 </div>
 <% caps = Comfy.capabilities %>
 <% removal = Comfy::BackgroundRemoval.pick(caps) if caps.reachable? %>

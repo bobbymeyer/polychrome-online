@@ -17,13 +17,13 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
     post world_art_batches_path(world), params: { entry_type: "monster", entry_slug: "goblin", count: 2, draft: "1", transparent: "1" }
     drafts = goblin.art_batch
     expect(drafts).to be_draft
-    expect(drafts.recipe).to include("steps" => 15, "width" => 688, "height" => 688, "transparent" => false)
+    expect(drafts.recipe).to include("steps" => 16, "width" => 512, "height" => 512, "transparent" => false)
     expect(drafts.recipe["full"]).to include("width" => 1024, "height" => 1024, "transparent" => true)
 
     run(drafts)
     graph = comfy.submitted.first
-    expect(node(graph, "KSampler")["inputs"]).to include("steps" => 15, "denoise" => 1)
-    expect(node(graph, "EmptyLatentImage")["inputs"]).to include("width" => 688, "height" => 688)
+    expect(node(graph, "KSampler")["inputs"]).to include("steps" => 16, "denoise" => 1)
+    expect(node(graph, "EmptyLatentImage")["inputs"]).to include("width" => 512, "height" => 512)
     expect(node(graph, "InspyrenetRembg")).to be_nil # the background waits for the full render
     comfy.finish!("prompt-1", "prompt-2")
     run(drafts)
@@ -35,7 +35,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
 
     post refine_world_art_candidate_path(world, chosen)
     refinement = goblin.reload.art_batch
-    expect(refinement.recipe).to include("width" => 1024, "height" => 1024, "transparent" => true, "denoise" => 0.55)
+    expect(refinement.recipe).to include("width" => 1024, "height" => 1024, "transparent" => true, "denoise" => 0.6)
     expect(refinement.candidates.sole.seed).to eq(chosen.seed)
     expect(refinement.drafts).to eq(drafts)
 
@@ -44,7 +44,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
     graph = comfy.submitted.last
     expect(node(graph, "LoadImage")["inputs"]).to eq("image" => "polychrome-draft-#{chosen.id}-#{chosen.seed}.png")
     expect(node(graph, "ImageScale")["inputs"]).to include("width" => 1024, "height" => 1024)
-    expect(node(graph, "KSampler")["inputs"]).to include("steps" => 30, "denoise" => 0.55, "seed" => chosen.seed)
+    expect(node(graph, "KSampler")["inputs"]).to include("steps" => 30, "denoise" => 0.6, "seed" => chosen.seed)
     expect(node(graph, "EmptyLatentImage")).to be_nil
     expect(node(graph, "InspyrenetRembg")).to be_present
 

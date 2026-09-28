@@ -89,19 +89,21 @@ module Comfy
 
     # Fewer steps for a quick look; a turbo model already takes few.
     def draft_steps
-      settings["draft_steps"]&.to_i || [ (steps * draft_config.fetch("steps", 0.5).to_f).ceil, [ steps, 6 ].min ].max
+      settings["draft_steps"]&.to_i || [ draft_config.fetch("steps", 16).to_i, steps ].min
     end
 
-    # A smaller picture, the same shape, out of the trained range on purpose.
+    # A rough picture of about draft.pixels (512 × 512), the same shape as
+    # the full one, below the trained range on purpose.
     def draft_size(width, height)
       full = size(width, height)
-      scale = Math.sqrt(draft_config.fetch("area", 0.45).to_f.clamp(0.1, 1.0))
+      target = draft_config.fetch("pixels", 262_144).to_f
+      scale = [ Math.sqrt(target / (full[0] * full[1])), 1.0 ].min
       multiple = settings.fetch("multiple", 8).to_i
       full.map { |side| [ ((side * scale) / multiple).round * multiple, multiple ].max }
     end
 
     # How much a refinement re-noises the draft it starts from.
-    def refine_denoise = draft_config.fetch("denoise", 0.55).to_f.clamp(0.1, 1.0)
+    def refine_denoise = draft_config.fetch("denoise", 0.6).to_f.clamp(0.1, 1.0)
 
     # One line for the pages: what running this family means.
     def summary
