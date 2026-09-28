@@ -6,7 +6,7 @@
 
     <% if @battle.over? %>
       <%= render "panels/over" %>
-    <% elsif current_seat.nil? %>
+    <% elsif !current_seat.seated? %>
       <%= render "panels/seats" %>
     <% elsif gm_seat? %>
       <%= render "panels/gm" %>
@@ -14,7 +14,7 @@
       <%= render "panels/player", unit: seat_unit %>
     <% end %>
 
-    <% if current_seat %>
+    <% if current_seat.seated? %>
       <footer class="command-panel__footer">
         Seated as <strong><%= gm_seat? ? "GM" : seat_unit["name"] %></strong>
         <%= button_to "Change seat", battle_seat_path(@battle), method: :delete, class: "link-button" %>

@@ -5,7 +5,7 @@ class Choices::SettlementsController < ApplicationController
   include ChoiceScoped
 
   def create
-    return forbid("Only the GM settles a choice.") unless table_seat == "gm"
+    return forbid("Only the GM settles a choice.") unless table_gm?
 
     @choice.settle!(params[:option])
     head :no_content

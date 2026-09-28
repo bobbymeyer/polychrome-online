@@ -4,7 +4,7 @@
                 data: { controller: "composer", action: "keydown->composer#key" } do |f| %>
     <%= render "book_entries/errors", entry: @message %>
     <div class="composer__controls">
-      <% if seat == "gm" %>
+      <% if seat.gm? %>
         <div class="field">
           <label for="message_speaker">Speak as</label>
           <%= select_tag "message[speaker]",
@@ -31,7 +31,7 @@
       </div>
     </div>
     <div class="composer__row">
-      <%= f.text_area :body, rows: 2, placeholder: seat == "gm" ? "Say something as them… (Enter to send; “? A | B” asks the table)" : "Say something… (Enter to send)", autofocus: @refocus,
+      <%= f.text_area :body, rows: 2, placeholder: seat.gm? ? "Say something as them… (Enter to send; “? A | B” asks the table)" : "Say something… (Enter to send)", autofocus: @refocus,
                       data: { composer_target: "body" }, "aria-label": "Message" %>
       <%= f.submit "Send", class: "button play" %>
     </div>

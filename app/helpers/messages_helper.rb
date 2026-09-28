@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
 module MessagesHelper
+  # The signed stream for what's said privately to this seat (Seat#private_stream).
+  def seat_stream_from(seat, campaign)
+    stream = seat.private_stream(campaign)
+    turbo_stream_from(*stream) if stream
+  end
+
   # A speaker's portrait for an expression: their image for it, their
   # neutral image, their fallback book entry's image, or a lettered plate.
   def speaker_portrait(speaker, expression, size: :small)

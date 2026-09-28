@@ -128,15 +128,6 @@ class Message < ApplicationRecord
     speaker&.name || "Narrator"
   end
 
-  # seat: "gm", a Character, or nil for someone just watching.
-  def visible_to?(seat)
-    return true if seat == "gm"
-    return false if gm_only?
-    return true unless whisper?
-
-    seat.is_a?(Character) && seat == whisper_character
-  end
-
   # Every stream this message goes to.
   def streams
     return [ [ campaign, :gm ] ] if gm_only?
@@ -144,14 +135,14 @@ class Message < ApplicationRecord
     whisper? ? [ [ campaign, :gm ], [ whisper_character, :whispers ] ] : [ [ campaign, :table ] ]
   end
 
-  # Messages a seat may see, oldest first.
+  # Messages a seat may see, oldest first (the query for Seat#sees?).
   def self.visible_to(campaign, seat)
     lines = campaign.messages.includes(:speaker, :recipient, :battle)
-    lines = if seat == "gm" then lines
-    elsif seat.is_a?(Character)
+    lines = if seat.gm? then lines
+    elsif seat.character?
       lines.where(scope: "table")
-           .or(lines.where(scope: "whisper", speaker_type: "Character", speaker_id: seat.id))
-           .or(lines.where(scope: "whisper", recipient_id: seat.id))
+           .or(lines.where(scope: "whisper", speaker_type: "Character", speaker_id: seat.character.id))
+           .or(lines.where(scope: "whisper", recipient_id: seat.character.id))
     else lines.where(scope: "table")
     end
     lines.chronological

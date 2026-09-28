@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-# Who is sitting where at a battle: "gm", a party unit id, or nobody.
+# Who is sitting where at a battle (Seat): the GM, a party unit (and the
+# character behind it, if any), or nobody.
 #
-# A seat is a choice remembered in the session, checked against the account
+# A seat is a choice remembered in the session ("gm" or a unit id), checked against the account
 # on every request: the GM seat is the campaign's GM's (a campaign-less
 # battle's is an admin's), and a party unit's seat its character's player's.
 # Without a battle seat, the seat at the campaign's table carries over: the
@@ -24,9 +25,12 @@ module BattleSeat
 
   def current_seat
     seat = session.dig(:seats, seat_key(@battle)) || seat_from_table
-    seat if may_sit?(seat)
+    return Seat.nobody unless may_sit?(seat)
+
+    seat == "gm" ? Seat.gm : Seat.of(seat_character(seat), unit_id: seat)
   end
 
+  # Whether this account may take a seat ("gm" or a unit id).
   def may_sit?(seat)
     return battle_gm? if seat == "gm"
     return false unless @battle.unit(seat)&.dig("side") == "party"
@@ -48,7 +52,7 @@ module BattleSeat
     return unless @battle.campaign
 
     seat = table_seat(@battle.campaign)
-    seat == "gm" ? "gm" : seat&.battle_unit_id
+    seat.gm? ? "gm" : seat.character&.battle_unit_id
   end
 
   def take_seat(seat)
@@ -62,10 +66,10 @@ module BattleSeat
   end
 
   def gm_seat?
-    current_seat == "gm"
+    current_seat.gm?
   end
 
   def seat_unit
-    @battle.unit(current_seat) unless gm_seat?
+    @battle.unit(current_seat.unit_id) if current_seat.unit_id
   end
 end

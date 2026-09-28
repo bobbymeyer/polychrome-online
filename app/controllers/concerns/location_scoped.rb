@@ -37,8 +37,7 @@ module LocationScoped
 
   # Who's paying: the player's character, or the GM by name.
   def payer_name
-    seat = table_seat(@campaign)
-    seat.is_a?(Character) ? seat.name : current_user.name
+    table_seat(@campaign).character&.name || current_user.name
   end
 
   def back(notice = nil, alert: nil, anchor: back_anchor)

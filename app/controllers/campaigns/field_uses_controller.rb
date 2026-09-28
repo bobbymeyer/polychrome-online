@@ -10,15 +10,15 @@ class Campaigns::FieldUsesController < ApplicationController
 
   def create
     seat = table_seat
-    character = seat == "gm" ? @campaign.characters.find(params[:character_id]) : seat
-    return forbid("Sit as your character to use their field ability.") unless character.is_a?(Character)
+    character = seat.gm? ? @campaign.characters.find(params[:character_id]) : seat.character
+    return forbid("Sit as your character to use their field ability.") unless character
 
     FieldUse.request!(character)
     redirect_back_or_to campaign_table_path(@campaign), status: :see_other
   end
 
   def update
-    return forbid("Only the GM says yes or no.") unless table_seat == "gm"
+    return forbid("Only the GM says yes or no.") unless table_gm?
 
     use = @campaign.field_uses.find(params[:id])
     if params[:verdict] == "veto"

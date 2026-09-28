@@ -11,13 +11,13 @@ class MessagesController < ApplicationController
 
   def create
     seat = table_seat
-    return head :forbidden unless seat
+    return head :forbidden unless seat.seated?
 
     fields = params.expect(message: %i[body expression speaker whisper_to])
     @message = @campaign.messages.new(body: fields[:body], expression: fields[:expression])
-    seat == "gm" ? as_gm(fields) : as_player(seat, fields)
+    seat.gm? ? as_gm(fields) : as_player(seat.character, fields)
     # The GM can put a choice to the table: "? Trust Cid | Refuse -> trusted_cid".
-    if seat == "gm" && (choice = Message.parse_choice(fields[:body]))
+    if seat.gm? && (choice = Message.parse_choice(fields[:body]))
       @message = Message.choice(@campaign, **choice)
     end
 
@@ -37,9 +37,7 @@ class MessagesController < ApplicationController
   def destroy
     @message = Message.find(params[:id])
     @campaign = @message.campaign
-    seat = table_seat
-    allowed = !@message.system? && (seat == "gm" || (seat.is_a?(Character) && @message.speaker == seat))
-    return forbid("That line isn't yours to take back.") unless allowed
+    return forbid("That line isn't yours to take back.") unless table_seat.may_retract?(@message)
 
     @message.destroy!
     respond_to do |format|

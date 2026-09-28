@@ -19,11 +19,7 @@
   <%# What's said at the table reaches the battle too (the same signed streams as the table). %>
   <% if @battle.campaign %>
     <%= turbo_stream_from @battle.campaign, :table %>
-    <% if @chat_seat == "gm" %>
-      <%= turbo_stream_from @battle.campaign, :gm %>
-    <% elsif @chat_seat %>
-      <%= turbo_stream_from @chat_seat, :whispers %>
-    <% end %>
+    <%= seat_stream_from @seat, @battle.campaign %>
   <% end %>
 
   <header class="battle__header">
@@ -64,10 +60,10 @@
     <p class="coop-links"><%= link_to "Leave controller view", battle_path(@battle, view: "off"), class: "link-button" %></p>
   <% elsif view == "screen" %>
     <p class="hint coop-leave"><%= link_to "Leave the shared screen", battle_path(@battle, view: "off") %></p>
-  <% elsif @battle.campaign && @chat_seat %>
+  <% elsif @battle.campaign && (@seat.gm? || @seat.character?) %>
     <%# Talk without leaving the fight: a monster's taunt, a cry across the field. Open for the GM. %>
-    <details class="battle-composer" <%= "open" if @chat_seat == "gm" %>>
-      <summary><%= @chat_seat == "gm" ? "Speak (as the narrator or an NPC)" : "Speak" %></summary>
+    <details class="battle-composer" <%= "open" if @seat.gm? %>>
+      <summary><%= @seat.gm? ? "Speak (as the narrator or an NPC)" : "Speak" %></summary>
       <%= turbo_frame_tag "composer", src: campaign_composer_path(@battle.campaign), loading: "lazy" do %>
         <div class="window"><p class="muted">Loading…</p></div>
       <% end %>
@@ -84,7 +80,7 @@
         <% end %>
       </ol>
     </section>
-    <%= render "campaigns/tables/chat_log", messages: @messages, seat: @chat_seat if @battle.campaign %>
+    <%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat if @battle.campaign %>
   <% end %>
 
   <% if (boss = bosses.first) %>
