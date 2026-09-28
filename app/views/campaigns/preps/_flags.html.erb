@@ -1,7 +1,7 @@
 <section class="window" id="flags">
   <div class="book-header">
     <h2>Flags</h2>
-    <% changes = campaign.locations.sum { |location| location.changes.size } %>
+    <% changes = campaign.locations.includes(:npcs, *Location::ROLLING).sum { |location| location.changes.size } %>
     <%= link_to "GM changes to locations (#{changes})", campaign_changes_path(campaign), class: "button button--quiet" %>
   </div>
   <p class="hint">The GM's campaign state. Public flags show at the table as what the party knows; the rest are yours alone.</p>

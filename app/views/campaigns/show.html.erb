@@ -66,7 +66,7 @@
     <h2>Cast</h2>
     <%= link_to "New NPC", new_campaign_npc_path(@campaign), class: "button button--quiet" if can_gm?(@campaign) %>
   </div>
-  <% npcs = @campaign.npcs.order(:name) %>
+  <% npcs = @campaign.npcs.includes(portraits: { image_attachment: :blob }).order(:name) %>
   <% if npcs.empty? %>
     <p class="empty">No NPCs yet. The GM speaks as them at the table.</p>
   <% else %>

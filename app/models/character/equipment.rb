@@ -9,7 +9,7 @@ module Character::Equipment
   end
 
   def equipped_items
-    equipment_slots.includes(:item).map(&:item)
+    (equipment_slots.loaded? ? equipment_slots : equipment_slots.includes(:item)).map(&:item)
   end
 
   # Put an item from the bag into its slot; whatever was there goes back.

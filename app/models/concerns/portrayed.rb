@@ -12,7 +12,7 @@ module Portrayed
 
   # The image attachment for an expression, or nil.
   def portrait_image(expression = "neutral")
-    by_expression = portraits.includes(image_attachment: :blob).index_by(&:expression)
+    by_expression = (portraits.loaded? ? portraits : portraits.includes(image_attachment: :blob)).index_by(&:expression)
     [ expression, "neutral" ].each do |key|
       image = by_expression[key.to_s]&.image
       return image if image&.attached?

@@ -35,7 +35,7 @@ module Location::Generation
     world = campaign.world
     Generators::Provenance.past_for(seed: seed, name: name, kind: kind,
                                     given_names: location_template.table_entries.fetch("names", []).filter_map { |e| e["text"] },
-                                    family_names: world.generator_tables.of_kind("families").flat_map { |t| t.entries.filter_map { |e| e["text"] } })
+                                    family_names: world.family_names)
   end
 
   def past = Past.new(generated["past"])

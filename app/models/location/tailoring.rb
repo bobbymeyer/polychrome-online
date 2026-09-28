@@ -75,7 +75,7 @@ module Location::Tailoring
     overrides.fetch("pins", {}).each do |key, element|
       list << change("pin", key, "Pinned #{element['name']}")
     end
-    npcs.order(:id).each do |npc|
+    npcs.sort_by(&:id).each do |npc|
       list << change("npc", npc.id.to_s,
                      npc.location_key ? "Pinned #{npc.name} (now a real NPC)" : "Wrote in #{npc.name}#{", #{npc.title}" if npc.title.present?}")
     end

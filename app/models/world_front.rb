@@ -45,6 +45,13 @@ class WorldFront < ApplicationRecord
     end
   end
 
+  # The world's fronts not yet dealt into a campaign, with their rows.
+  def self.undealt_in(campaign)
+    dealt = campaign.clocks.where.not(world_front_id: nil).distinct.pluck(:world_front_id) |
+            campaign.secrets.where.not(world_front_id: nil).distinct.pluck(:world_front_id)
+    where.not(id: dealt).includes(:clocks, :secrets)
+  end
+
   def dealt_into?(campaign)
     campaign.clocks.exists?(world_front_id: id) || campaign.secrets.exists?(world_front_id: id)
   end

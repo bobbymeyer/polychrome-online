@@ -38,6 +38,11 @@ class World < ApplicationRecord
     super(ArtDirection.loras(value))
   end
 
+  # The surnames its generator tables offer (families of a place's past).
+  def family_names
+    @family_names ||= generator_tables.of_kind("families").flat_map { |t| t.entries.filter_map { |e| e["text"] } }
+  end
+
   # A content type's framing (§8), made from config/comfy.yml the first time.
   def art_type(kind)
     art_types.find_by(kind: kind) || art_types.create!(kind: kind, **ArtType.defaults_for(kind).symbolize_keys)
