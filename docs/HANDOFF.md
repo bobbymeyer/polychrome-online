@@ -218,3 +218,5 @@ Steps 1–3 are the proof. If the battle isn't fun with a GM in the seat, nothin
 - A model that tells several stories tells them in concerns, one story each, in a folder named for the model (`Campaign::Shopping`, `Location::Exploration`). A slice's constants live in the slice.
 - When the game says no ("the party can't afford that"), a model raises `Refusal`, and the person who asked sees it as an alert. `ArgumentError` means a bug, and crashes.
 - The table hears the game through `Campaign#narrate`.
+- A migration that removes or changes a column runs outside a transaction (`disable_ddl_transaction!`). SQLite rebuilds the table to do it, and inside a transaction it can't switch foreign keys off, so the rebuild fires ON DELETE actions on other tables. `spec/migrations_spec.rb` checks. New foreign keys stay plain; the models clean up (`dependent:`).
+

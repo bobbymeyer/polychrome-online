@@ -5,6 +5,12 @@
 # FrontSecret), and a place or person taken off the atlas or out of the cast
 # lets go of them.
 class CreateFrontClocksAndSecrets < ActiveRecord::Migration[8.1]
+  # Removing a column rebuilds the table in SQLite, and inside a transaction
+  # SQLite can't switch foreign keys off: the rebuild would fire ON DELETE
+  # actions elsewhere (a character's choice picks cascade away). Outside
+  # one, Rails switches them off for the rebuild.
+  disable_ddl_transaction!
+
   class Front < ActiveRecord::Base
     self.table_name = "world_fronts"
   end

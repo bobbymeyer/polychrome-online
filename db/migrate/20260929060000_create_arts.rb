@@ -5,6 +5,12 @@
 # were the same columns on eleven tables. Generator tables had them too,
 # unused: they're raw material, with no art of their own.
 class CreateArts < ActiveRecord::Migration[8.1]
+  # Removing a column rebuilds the table in SQLite, and inside a transaction
+  # SQLite can't switch foreign keys off: the rebuild would fire ON DELETE
+  # actions elsewhere (a character's choice picks cascade away). Outside
+  # one, Rails switches them off for the rebuild.
+  disable_ddl_transaction!
+
   SUBJECTS = {
     "abilities" => "Ability", "encounter_tables" => "EncounterTable", "items" => "Item", "jobs" => "Job",
     "location_templates" => "LocationTemplate", "monsters" => "Monster", "characters" => "Character", "npcs" => "Npc",
