@@ -4,8 +4,11 @@
 module Comfy
   class Error < StandardError; end
 
+  # The settings: config/comfy.yml (from the environment), with what an
+  # admin set on the Settings page (SiteSetting) taking precedence.
   def self.config
-    Rails.configuration.x.comfy
+    overrides = SiteSetting.current.comfy_overrides
+    overrides.empty? ? Rails.configuration.x.comfy : Rails.configuration.x.comfy.merge(overrides)
   end
 
   # The backend the pipeline talks to (see Comfy::Client for its interface).
@@ -18,6 +21,8 @@ module Comfy
   # a few seconds, so starting it shows up on the next reload.
   def self.capabilities
     @capabilities = nil if @capabilities && @capabilities_at < (@capabilities.reachable? ? 1.minute : 5.seconds).ago
+    @capabilities = nil if @capabilities_url && @capabilities_url != config[:url] # moved to another server
+    @capabilities_url = config[:url]
     @capabilities ||= client(timeout: 3).capabilities.tap { @capabilities_at = Time.current }
   end
 

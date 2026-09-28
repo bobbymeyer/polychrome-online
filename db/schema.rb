@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_28_234000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_000000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -652,6 +652,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_28_234000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
+  create_table "site_settings", force: :cascade do |t|
+    t.string "comfy_url"
+    t.string "comfy_model"
+    t.string "rembg_node"
+    t.string "llm_url"
+    t.string "llm_model"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "users", force: :cascade do |t|

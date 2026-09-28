@@ -739,9 +739,17 @@ Every image slot can be uploaded or generated with
 - **ComfyUI and the language model can be anywhere the app can reach over
   HTTP.** They can run on the same machine, on a LAN or tailnet, or behind a
   proxy. Nothing assumes a particular machine or file layout.
-- **Settings** are environment variables, read by `config/comfy.yml` and
-  `config/llm.yml`. Secrets go in the environment, never in git; error
-  messages never repeat them.
+- **Settings:** an admin sets them on the Settings page (`/settings`):
+  - ComfyUI's address, its default model, and a background-removal node
+    to try first;
+  - the language model's address and model;
+  - a check that the app can reach both.
+
+  A blank field falls back to the environment variables below, which
+  `config/comfy.yml` and `config/llm.yml` read. Only addresses and names go
+  in the app. A token, a header or a password in a URL stays in the
+  environment, never in the database or git, and error messages never
+  repeat them.
 
   | Variable | Default | What |
   | --- | --- | --- |

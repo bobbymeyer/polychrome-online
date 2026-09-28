@@ -4,6 +4,8 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
   resource :registration, only: %i[new create]
   resources :users, only: %i[index update destroy]
+  # Where ComfyUI and the language model are (SiteSetting), for admins.
+  resource :settings, only: %i[show update]
   get "up" => "rails/health#show", as: :rails_health_check
 
   root "worlds#index"
