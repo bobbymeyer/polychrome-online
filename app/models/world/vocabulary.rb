@@ -8,7 +8,7 @@
 #     "statuses" => { "petrify" => "Rust-lock" }, "services_off" => ["temple"] }
 #
 # Anything not named keeps the game's word.
-module Vocabulary
+module World::Vocabulary
   extend ActiveSupport::Concern
 
   STATS = %w[str mag vit spr agi].freeze
@@ -25,7 +25,7 @@ module Vocabulary
 
   # "currency", "hp", "mp", "stat.str", "service.inn", "status.poison".
   def word(key)
-    Vocabulary.word(terms, key)
+    World::Vocabulary.word(terms, key)
   end
 
   # The word from a set of terms, or the game's own when they don't say.

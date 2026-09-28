@@ -60,7 +60,7 @@ module GlossaryHelper
     when "gil" then word("currency").upcase_first
     when "max_hp" then word("hp")
     when "max_mp" then word("mp")
-    when *Vocabulary::STATS then word("stat.#{key}")
+    when *World::Vocabulary::STATS then word("stat.#{key}")
     end
   end
 

@@ -5,7 +5,7 @@
 # can pass time by hand. Each new day ticks the clocks that tick on dawn, so
 # "the festival is in three days" is a three-segment clock, and the world
 # moves on a little (Campaign::Overnight).
-module Timekeeping
+module Campaign::Timekeeping
   extend ActiveSupport::Concern
 
   TIMES = %w[dawn day dusk night].freeze

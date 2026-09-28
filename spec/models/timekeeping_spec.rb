@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe Timekeeping do
+RSpec.describe Campaign::Timekeeping do
   let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Rust") }
 
