@@ -5,8 +5,9 @@
 <div class="board">
   <div class="battlefield">
     <% %w[enemy party].each do |side| %>
-      <div class="battlefield__side battlefield__side--<%= side %>">
-        <% state["units"].select { |u| u["side"] == side && !u["gone"] }.each do |unit| %>
+      <% units = state["units"].select { |u| u["side"] == side && !u["gone"] } %>
+      <div class="battlefield__side battlefield__side--<%= side %>" style="--count: <%= [ units.size, 1 ].max %>">
+        <% units.each do |unit| %>
           <div class="unit unit--<%= side %> <%= 'is-ko' if unit['hp'].zero? %>" data-unit="<%= unit['id'] %>">
             <div class="sprite" data-sprite><%= unit_sprite(battle, unit) %></div>
             <div class="unit__label"><%= unit["name"] %></div>

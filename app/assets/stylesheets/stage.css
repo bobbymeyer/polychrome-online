@@ -223,7 +223,7 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 /* Stacked on a phone, the party's yellow slab cuts across the bottom instead. */
 @media (max-width: 640px) {
   .battlefield {
-    --sprite: 120px; --sprite-party: 72px;
+    --sprite: 120px; --sprite-min: 120px; --sprite-party: 72px;
     background:
       linear-gradient(174deg, transparent 0 54%, var(--sun-yellow) 54% 100%),
       radial-gradient(circle, rgba(255, 255, 255, .2) 1.2px, transparent 1.6px) 0 0 / 10px 10px,
