@@ -78,53 +78,58 @@ Rails.application.routes.draw do
   resources :campaigns, only: %i[show edit update] do
     resources :characters, only: %i[new create]
     resources :battles, only: %i[new create]
-    resources :inventories, only: %i[create update], path: "bag"
-    resource :rest, only: :create
     resources :npcs, only: %i[new create]
     resources :scenes, only: %i[new create]
-
-    # The table (§7): the live session page with the dialogue box and log.
-    resources :flags, only: %i[create update destroy] do
-      resources :bumps, only: :create, module: :flags
-    end
-    resources :clocks, only: %i[create update destroy] do
-      resources :ticks, only: :create, module: :clocks
-    end
-    resources :rumours, only: %i[create destroy]
-    resources :deeds, only: %i[create destroy]
-    resource :legends, only: :show
-    resources :secrets, only: %i[create destroy] do
-      resource :revelation, only: %i[create destroy], module: :secrets
-    end
-    # The world's atlas and cast, brought into the campaign (Atlas).
-    resource :canon, only: :create
-    resources :front_deals, only: :create
-    resource :time, only: :update
+    resources :map_nodes, only: %i[new create], path: "map/nodes"
+    resources :messages, only: :create
     # The language model's suggestions for prep (Draft).
     resources :drafts, only: %i[create destroy] do
       resources :keeps, only: :create, module: :drafts
     end
-    # Every GM diff on this campaign's locations, with reverts (§7).
-    resource :changes, only: :show
 
-    resource :table, only: :show
-    resource :music, only: :update, controller: "music"
-    resources :checks, only: :create
-    resources :field_uses, only: %i[create update]
-    resources :job_grants, only: :create
-    resource :join_code, only: :create
-    resource :forecast, only: :show
-    resource :table_seat, only: %i[create destroy]
-    resource :composer, only: :show
-    resources :messages, only: :create
+    # Everything that belongs to the campaign alone (app/controllers/campaigns/).
+    scope module: :campaigns do
+      resources :inventories, only: %i[create update], path: "bag"
+      resource :rest, only: :create
 
-    # The pointcrawl map (§7). The side panel is a Turbo Frame; the SVG
-    # updates by broadcast for every viewer.
-    resource :map, only: :show
-    resource :map_panel, only: :show
-    resources :map_nodes, only: %i[new create], path: "map/nodes"
-    resource :travel, only: :create
-    resource :encounter, only: %i[create destroy]
+      # Prep: pressure, secrets, what's being said and done.
+      resources :flags, only: %i[create update destroy] do
+        resources :bumps, only: :create, module: :flags
+      end
+      resources :clocks, only: %i[create update destroy] do
+        resources :ticks, only: :create, module: :clocks
+      end
+      resources :secrets, only: %i[create destroy] do
+        resource :revelation, only: %i[create destroy], module: :secrets
+      end
+      resources :rumours, only: %i[create destroy]
+      resources :deeds, only: %i[create destroy]
+      resource :legends, only: :show
+      # The world's atlas and cast, brought into the campaign (Atlas).
+      resource :canon, only: :create
+      resources :front_deals, only: :create
+      # Every GM diff on this campaign's locations, with reverts (§7).
+      resource :changes, only: :show
+
+      # The table (§7): the live session page with the dialogue box and log.
+      resource :table, only: :show
+      resource :time, only: :update
+      resource :music, only: :update, controller: "music"
+      resources :checks, only: :create
+      resources :field_uses, only: %i[create update]
+      resources :job_grants, only: :create
+      resource :join_code, only: :create
+      resource :forecast, only: :show
+      resource :table_seat, only: %i[create destroy]
+      resource :composer, only: :show
+
+      # The pointcrawl map (§7). The side panel is a Turbo Frame; the SVG
+      # updates by broadcast for every viewer.
+      resource :map, only: :show
+      resource :map_panel, only: :show
+      resource :travel, only: :create
+      resource :encounter, only: %i[create destroy]
+    end
   end
 
   resources :map_nodes, only: %i[edit update destroy], path: "map/nodes" do

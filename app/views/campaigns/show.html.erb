@@ -108,7 +108,7 @@
     <section class="window" id="clocks">
       <h2>Clocks</h2>
       <p class="hint">Things that happen if the party doesn't stop them. They tick by hand, or on their own as the party rests, travels or fails.</p>
-      <%= render "clocks/gm", campaign: @campaign %>
+      <%= render "campaigns/clocks/gm", campaign: @campaign %>
       <% fronts = @world.world_fronts.in_order.reject { |front| front.dealt_into?(@campaign) } %>
       <% if fronts.any? %>
         <details class="draft-panel">
@@ -126,7 +126,7 @@
     <section class="window" id="secrets">
       <h2>Secrets</h2>
       <p class="hint">Things that are true. Reveal them at the table as the party finds them out, whichever way that happens.</p>
-      <%= render "secrets/gm", campaign: @campaign %>
+      <%= render "campaigns/secrets/gm", campaign: @campaign %>
       <%= render "drafts/panel", owner: @campaign, kind: "secrets", title: "Suggest secrets", placeholder: "Something rotten at the mill" %>
     </section>
   </div>
@@ -141,7 +141,7 @@
       better or worse of the party: friends sell cheaper, and a town that thinks badly enough of them won't trade at all.
       Beating an antagonist for good and clearing a dungeon are recorded by themselves.
     </p>
-    <%= render "deeds/gm", campaign: @campaign %>
+    <%= render "campaigns/deeds/gm", campaign: @campaign %>
   </section>
 
   <section class="window" id="rumours">
@@ -151,7 +151,7 @@
       or buys it at a guild. The world starts its own overnight: a caravan lost on a dangerous road, someone who got away seen somewhere new,
       a place changing mode.
     </p>
-    <%= render "rumours/gm", campaign: @campaign %>
+    <%= render "campaigns/rumours/gm", campaign: @campaign %>
   </section>
 
   <section class="window" id="flags">

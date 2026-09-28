@@ -68,8 +68,8 @@ class Secret < ApplicationRecord
 
   def broadcast
     { false => :map, true => :map_gm }.each do |gm, stream|
-      broadcast_replace_to campaign, stream, target: "party_knows", partial: "tables/party_knows", locals: { campaign: campaign, gm: gm }
+      broadcast_replace_to campaign, stream, target: "party_knows", partial: "campaigns/tables/party_knows", locals: { campaign: campaign, gm: gm }
     end
-    broadcast_replace_to campaign, :map_gm, target: "gm_secrets", partial: "secrets/gm", locals: { campaign: campaign }
+    broadcast_replace_to campaign, :map_gm, target: "gm_secrets", partial: "campaigns/secrets/gm", locals: { campaign: campaign }
   end
 end

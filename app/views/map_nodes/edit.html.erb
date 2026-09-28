@@ -1,6 +1,6 @@
 <%= turbo_frame_tag "map_panel", class: "map-panel" do %>
   <div class="window">
-    <%= render "maps/panel_flash" %>
+    <%= render "campaigns/maps/panel_flash" %>
     <h2><%= @node.name_in_database %> <span class="muted">· <%= @node.kind %><%= ", hidden" unless @node.visible_in_database %></span></h2>
     <%= render "form", node: @node %>
 

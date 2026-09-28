@@ -1,6 +1,6 @@
 <%= turbo_frame_tag "map_panel", class: "map-panel" do %>
   <div class="window">
-    <%= render "maps/panel_flash" %>
+    <%= render "campaigns/maps/panel_flash" %>
     <h2><%= @edge.from_node.name %> – <%= @edge.to_node.name %></h2>
     <%= form_with model: @edge, url: map_edge_path(@edge), class: "book-form" do |f| %>
       <%= render "book_entries/errors", entry: @edge %>

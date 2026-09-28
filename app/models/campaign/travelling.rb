@@ -90,7 +90,7 @@ module Campaign::Travelling
   # reaches their browser.
   def broadcast_map
     { false => :map, true => :map_gm }.each do |gm, stream|
-      broadcast_replace_to self, stream, target: "map_canvas", partial: "maps/canvas", locals: { campaign: self, gm: gm }
+      broadcast_replace_to self, stream, target: "map_canvas", partial: "campaigns/maps/canvas", locals: { campaign: self, gm: gm }
     end
   end
 

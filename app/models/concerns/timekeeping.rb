@@ -51,6 +51,6 @@ module Timekeeping
   private
 
   def broadcast_time
-    %i[map map_gm].each { |stream| broadcast_replace_to self, stream, target: "table_time", partial: "tables/time", locals: { campaign: self } }
+    %i[map map_gm].each { |stream| broadcast_replace_to self, stream, target: "table_time", partial: "campaigns/tables/time", locals: { campaign: self } }
   end
 end

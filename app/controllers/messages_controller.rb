@@ -26,9 +26,9 @@ class MessagesController < ApplicationController
       # Keep who's speaking and how; a whisper is one line, so "To" goes
       # back to everyone rather than silently staying private.
       @message = @campaign.messages.new(speaker: @message.speaker, expression: @message.expression)
-      render "composers/show", layout: false
+      render "campaigns/composers/show", layout: false
     else
-      render "composers/show", layout: false, status: :unprocessable_content
+      render "campaigns/composers/show", layout: false, status: :unprocessable_content
     end
   end
 

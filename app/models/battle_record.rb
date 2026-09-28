@@ -181,7 +181,7 @@ class BattleRecord < ApplicationRecord
     return unless campaign
 
     Turbo::StreamsChannel.broadcast_replace_to(campaign, :table, target: "table_battle",
-                                               partial: "tables/current_battle", locals: { campaign: campaign })
+                                               partial: "campaigns/tables/current_battle", locals: { campaign: campaign })
   end
 
   def next_position(association)
