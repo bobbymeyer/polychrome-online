@@ -45,7 +45,7 @@ RSpec.describe "Recurring antagonists" do
     expect(battle.reload.settlement["antagonists"]).to eq([ { "name" => "Gorn the Red", "fate" => "defeated" } ])
     expect(gorn.reload).to be_defeated
     expect(campaign.npcs.at_large).to be_empty
-    expect { fight }.to raise_error(ArgumentError, /defeated for good/)
+    expect { fight }.to raise_error(Refusal, /defeated for good/)
   end
 
   it "must fight as one of the campaign world's monsters" do

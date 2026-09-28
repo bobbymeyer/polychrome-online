@@ -56,8 +56,8 @@ class ArtBatch < ApplicationRecord
   # new batch of one; the drafts stay on the page beside it.
   def self.refine!(candidate)
     batch = candidate.art_batch
-    raise ArgumentError, "Only a draft can be made properly" unless batch.draft?
-    raise ArgumentError, "That draft has no image yet" unless candidate.status == "done" && candidate.image.attached?
+    raise Refusal, "Only a draft can be made properly" unless batch.draft?
+    raise Refusal, "That draft has no image yet" unless candidate.status == "done" && candidate.image.attached?
 
     family = Comfy::Family.new(batch.recipe["family"], batch.recipe["model"])
     recipe = batch.recipe.except("draft", "steps", "full", "workflow", "background_node").merge(batch.recipe["full"])

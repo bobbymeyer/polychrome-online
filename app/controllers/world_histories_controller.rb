@@ -29,7 +29,7 @@ class WorldHistoriesController < ApplicationController
       "#{chronicle.years} years of history."
     end
     redirect_to world_history_path(@world), notice: notice, status: :see_other
-  rescue ArgumentError => e
+  rescue Refusal => e
     redirect_to world_history_path(@world), alert: e.message, status: :see_other
   end
 

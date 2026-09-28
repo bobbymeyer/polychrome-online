@@ -10,6 +10,15 @@ class ApplicationController < ActionController::Base
 
   helper_method :entry_page
 
+  # The game said no: tell whoever asked, back where they were. Controllers
+  # that know a better place to say it rescue it themselves.
+  rescue_from Refusal do |refusal|
+    respond_to do |format|
+      format.html { redirect_back_or_to root_path, alert: refusal.message, status: :see_other }
+      format.any { head :unprocessable_content }
+    end
+  end
+
   private
 
   # Where something with generated art is edited, from the thing alone (the

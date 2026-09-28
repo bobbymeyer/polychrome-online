@@ -54,7 +54,7 @@ class Chronicle
 
   # Keep a family through rerolls: its name, trade and seat.
   def keep!(family_key)
-    family = generated["families"].find { |f| f["key"] == family_key } or raise ArgumentError, "No family called #{family_key}"
+    family = generated["families"].find { |f| f["key"] == family_key } or raise Refusal, "No family called #{family_key}"
     return if kept.any? { |f| f["name"] == family["name"] }
 
     save!({ "families" => kept + [ family.slice("name", "trade", "seat").compact ] })

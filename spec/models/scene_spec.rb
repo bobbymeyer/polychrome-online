@@ -67,7 +67,7 @@ RSpec.describe Scene do
 
   it "won't start a battle with nobody standing, and says nothing" do
     s = scene(script: "Cid: Here they come!", ending: "battle", encounter: { "goblin" => 2 }).tap(&:save!)
-    expect { s.play! }.to raise_error(ArgumentError, /Nobody is standing/)
+    expect { s.play! }.to raise_error(Refusal, /Nobody is standing/)
     expect(campaign.messages).to be_empty
   end
 end

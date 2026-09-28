@@ -66,8 +66,8 @@ class Draft < ApplicationRecord
   # Keep one suggestion. Returns what the writer says happened:
   # { notice:, path: } (path: somewhere to go to finish it, if anywhere).
   def keep!(index)
-    item = items.fetch(index) { raise ArgumentError, "There's no suggestion #{index + 1}" }
-    raise ArgumentError, "Already kept" if item["kept"]
+    item = items.fetch(index) { raise Refusal, "There's no suggestion #{index + 1}" }
+    raise Refusal, "Already kept" if item["kept"]
 
     result = transaction do
       writer.keep!(item).tap do

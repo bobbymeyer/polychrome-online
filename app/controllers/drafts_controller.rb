@@ -22,7 +22,7 @@ class DraftsController < ApplicationController
   def keep
     result = @draft.keep!(params[:item].to_i)
     result[:path] ? redirect_to(result[:path], notice: result[:notice]) : back(notice: result[:notice])
-  rescue ArgumentError, ActiveRecord::RecordInvalid => e
+  rescue Refusal, ActiveRecord::RecordInvalid => e
     back alert: e.message
   end
 

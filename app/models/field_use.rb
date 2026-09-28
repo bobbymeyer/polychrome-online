@@ -45,17 +45,17 @@ class FieldUse < ApplicationRecord
 
   after_commit :broadcast
 
-  # The player (or the GM for them) asks. Raises ArgumentError with the
+  # The player (or the GM for them) asks. Raises Refusal with the
   # reason when it can't be asked for now.
   def self.request!(character)
     campaign = character.campaign
-    ability = character.job.field_ability_entry or raise ArgumentError, "#{character.job.name} has no field ability"
-    raise ArgumentError, "#{character.name} has used #{ability.name} since the last rest" if character.field_used?
-    raise ArgumentError, "#{character.name} is down" unless character.conscious?
-    raise ArgumentError, "Not while a battle is on" if campaign.battle_on?
-    raise ArgumentError, "#{character.name} is already waiting on the GM" if campaign.field_uses.pending.exists?(character: character)
-    raise ArgumentError, "There's no encounter on the road to #{ability.name.downcase} against" if NEEDS_ENCOUNTER.include?(ability.field_outcome) && !campaign.pending_encounter
-    raise ArgumentError, "The party isn't on the map" if ability.field_outcome == "reveal" && !campaign.current_node
+    ability = character.job.field_ability_entry or raise Refusal, "#{character.job.name} has no field ability"
+    raise Refusal, "#{character.name} has used #{ability.name} since the last rest" if character.field_used?
+    raise Refusal, "#{character.name} is down" unless character.conscious?
+    raise Refusal, "Not while a battle is on" if campaign.battle_on?
+    raise Refusal, "#{character.name} is already waiting on the GM" if campaign.field_uses.pending.exists?(character: character)
+    raise Refusal, "There's no encounter on the road to #{ability.name.downcase} against" if NEEDS_ENCOUNTER.include?(ability.field_outcome) && !campaign.pending_encounter
+    raise Refusal, "The party isn't on the map" if ability.field_outcome == "reveal" && !campaign.current_node
 
     transaction do
       use = campaign.field_uses.create!(character: character, ability: ability)
@@ -74,8 +74,8 @@ class FieldUse < ApplicationRecord
 
   # The GM's yes: roll, and on a success, the outcome.
   def approve!(difficulty: ability.field_difficulty)
-    raise ArgumentError, "Already settled" unless pending?
-    raise ArgumentError, "Pick a difficulty" unless Stats::Check::DIFFICULTIES.key?(difficulty)
+    raise Refusal, "Already settled" unless pending?
+    raise Refusal, "Pick a difficulty" unless Stats::Check::DIFFICULTIES.key?(difficulty)
 
     transaction do
       campaign.lock!
@@ -101,7 +101,7 @@ class FieldUse < ApplicationRecord
 
   # The GM's no: nothing is spent.
   def veto!(line = nil)
-    raise ArgumentError, "Already settled" unless pending?
+    raise Refusal, "Already settled" unless pending?
 
     transaction do
       update!(status: "vetoed", result: { "line" => line.to_s.strip.presence }.compact)

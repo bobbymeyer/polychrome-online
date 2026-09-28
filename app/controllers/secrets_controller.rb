@@ -17,7 +17,7 @@ class SecretsController < ApplicationController
   def reveal
     @secret.reveal!
     back
-  rescue ArgumentError => e
+  rescue Refusal => e
     back alert: e.message
   end
 

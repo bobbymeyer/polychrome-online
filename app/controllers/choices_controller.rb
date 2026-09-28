@@ -21,7 +21,7 @@ class ChoicesController < ApplicationController
 
     @choice.settle!(params[:option])
     head :no_content
-  rescue ArgumentError => e
+  rescue Refusal => e
     forbid(e.message)
   end
 

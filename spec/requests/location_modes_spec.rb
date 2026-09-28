@@ -42,8 +42,8 @@ RSpec.describe "Location modes", type: :request do
     town.reload.switch_mode!("burning")
     campaign.place_party!(node)
     expect(campaign.reload.scene).to eq("battle")
-    expect { campaign.use_service!("inn", hero.tap { |h| h.update!(hp: 1) }, at: town, by: "Rook") }.to raise_error(ArgumentError, /shut: burning/)
-    expect { campaign.buy!(world.items.find_by!(slug: "potion"), 1, at: town, by: "Rook") }.to raise_error(ArgumentError, /shop is shut/)
+    expect { campaign.use_service!("inn", hero.tap { |h| h.update!(hp: 1) }, at: town, by: "Rook") }.to raise_error(Refusal, /shut: burning/)
+    expect { campaign.buy!(world.items.find_by!(slug: "potion"), 1, at: town, by: "Rook") }.to raise_error(Refusal, /shop is shut/)
 
     campaign.place_party!(road)
     edge = campaign.map_edges.create!(from_node: road, to_node: node)

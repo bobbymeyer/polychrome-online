@@ -63,10 +63,10 @@ RSpec.describe "The pointcrawl map" do
 
     it "refuses blocked paths and paths that don't start here" do
       connect(tule, ruins, state: "blocked")
-      expect { campaign.travel!(tule.edges.first) }.to raise_error(ArgumentError, /blocked/)
+      expect { campaign.travel!(tule.edges.first) }.to raise_error(Refusal, /blocked/)
       far = campaign.map_nodes.create!(name: "Far", x: 900, y: 600)
       path = connect(ruins, far)
-      expect { campaign.travel!(path) }.to raise_error(ArgumentError, /doesn't start here/)
+      expect { campaign.travel!(path) }.to raise_error(Refusal, /doesn't start here/)
       expect(campaign.reload.current_node).to eq(tule)
     end
 

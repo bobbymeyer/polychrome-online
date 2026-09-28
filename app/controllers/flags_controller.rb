@@ -25,7 +25,7 @@ class FlagsController < ApplicationController
   def bump
     @flag.bump!(params[:by].to_i.clamp(-100, 100))
     back
-  rescue ArgumentError => e
+  rescue Refusal => e
     back alert: e.message
   end
 

@@ -51,7 +51,7 @@ class WorldFront < ApplicationRecord
   # are linked if the campaign has them (Atlas); a clock's mode is made on
   # its place's location when there is one.
   def deal!(campaign)
-    raise ArgumentError, "#{name} is already in #{campaign.name}" if dealt_into?(campaign)
+    raise Refusal, "#{name} is already in #{campaign.name}" if dealt_into?(campaign)
 
     nodes = campaign.map_nodes.where.not(world_place_id: nil).includes(:location).index_by(&:world_place_id)
     npcs = campaign.npcs.where.not(world_figure_id: nil).index_by(&:world_figure_id)

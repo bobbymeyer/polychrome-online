@@ -43,7 +43,7 @@ class ScenesController < ApplicationController
   def play
     @scene.play!
     redirect_back_or_to campaign_table_path(@campaign), status: :see_other
-  rescue ArgumentError, ActiveRecord::RecordInvalid => e
+  rescue Refusal, ActiveRecord::RecordInvalid => e
     redirect_back_or_to campaign_table_path(@campaign), alert: e.message, status: :see_other
   end
 

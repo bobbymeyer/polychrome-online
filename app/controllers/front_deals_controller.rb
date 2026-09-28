@@ -13,7 +13,7 @@ class FrontDealsController < ApplicationController
     front = @world.world_fronts.find(params.expect(:front_id))
     front.deal!(@campaign)
     redirect_to campaign_path(@campaign, anchor: "clocks"), notice: "#{front.name} is in play.", status: :see_other
-  rescue ArgumentError => e
+  rescue Refusal => e
     redirect_to campaign_path(@campaign, anchor: "clocks"), alert: e.message, status: :see_other
   end
 end

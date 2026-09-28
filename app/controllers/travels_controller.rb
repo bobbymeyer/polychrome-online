@@ -10,7 +10,7 @@ class TravelsController < ApplicationController
     edge = @campaign.map_edges.find(params.expect(:edge_id))
     rolled = @campaign.travel!(edge)
     panel notice: rolled ? "Encounter! #{@campaign.describe_encounter(rolled)}." : "The party arrives safely."
-  rescue ArgumentError => e
+  rescue Refusal => e
     panel alert: e.message
   end
 end

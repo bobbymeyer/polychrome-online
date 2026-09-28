@@ -34,7 +34,7 @@ class Secret < ApplicationRecord
 
   # Out at the table. by: how it came out ("Vivi's Scry"), if not the GM's telling.
   def reveal!(by: nil)
-    raise ArgumentError, "The party already knows that" if revealed?
+    raise Refusal, "The party already knows that" if revealed?
 
     transaction do
       said = campaign.messages.create!(kind: "system", body: "#{by ? "#{by}: the" : 'The'} party learns: #{body.sub(/\.\z/, '')}.")

@@ -47,7 +47,7 @@ class Campaign < ApplicationRecord
   end
 
   def add_item!(item, count = 1)
-    raise ArgumentError, "#{item.name} is not from #{world.name}" unless item.world_id == world_id
+    raise Refusal, "#{item.name} is not from #{world.name}" unless item.world_id == world_id
 
     row = inventories.find_or_create_by!(item: item)
     row.update!(quantity: row.quantity + count)
@@ -55,17 +55,17 @@ class Campaign < ApplicationRecord
 
   # --- shopping ------------------------------------------------------------
 
-  # Buy from a town's stock with party gil. Raises ArgumentError with a
+  # Buy from a town's stock with party gil. Raises Refusal with a
   # reason the table can read.
   def buy!(item, quantity, at:, by:)
     quantity = quantity.to_i.clamp(1, 99)
-    raise ArgumentError, "The shop is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
-    raise ArgumentError, "#{at.name} doesn't sell #{item.name}" unless at.stock_items.include?(item)
+    raise Refusal, "The shop is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
+    raise Refusal, "#{at.name} doesn't sell #{item.name}" unless at.stock_items.include?(item)
 
     cost = item.price * quantity
     transaction do
       reload
-      raise ArgumentError, "The party has #{money(gil)}; #{quantity} × #{item.name} costs #{cost}" if cost > gil
+      raise Refusal, "The party has #{money(gil)}; #{quantity} × #{item.name} costs #{cost}" if cost > gil
 
       update!(gil: gil - cost)
       add_item!(item, quantity)
@@ -76,10 +76,10 @@ class Campaign < ApplicationRecord
   # Sell from the bag, for half the price.
   def sell!(item, quantity, at:, by:)
     quantity = quantity.to_i.clamp(1, 99)
-    raise ArgumentError, "The shop is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
+    raise Refusal, "The shop is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
     transaction do
       row = inventories.find_by(item: item)
-      raise ArgumentError, "The bag has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
+      raise Refusal, "The bag has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
 
       row.update!(quantity: row.quantity - quantity)
       earned = item.resale_price * quantity
@@ -90,7 +90,7 @@ class Campaign < ApplicationRecord
 
   # Sell something a party member is wearing: it comes off, then sells.
   def sell_worn!(character, slot, at:, by:)
-    item = character.equipment_slots.find_by(slot: slot)&.item or raise ArgumentError, "#{character.name} isn't wearing anything there"
+    item = character.equipment_slots.find_by(slot: slot)&.item or raise Refusal, "#{character.name} isn't wearing anything there"
     transaction do
       character.unequip!(slot)
       sell!(item, 1, at: at, by: by)
@@ -114,22 +114,22 @@ class Campaign < ApplicationRecord
   #   temple — a fallen character raised, at full HP and MP
   #   guild  — a rumour: the GM owes them one
   def use_service!(kind, character, at:, by:)
-    raise ArgumentError, "Not while a battle is on" if battle_on?
-    raise ArgumentError, "#{character.name} isn't in this party" unless character.campaign_id == id
-    service = at.view.fetch("services", []).find { |s| s["kind"] == kind } or raise ArgumentError, "#{at.name} has no #{kind}"
-    raise ArgumentError, "The #{service['name']} is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?(kind)
+    raise Refusal, "Not while a battle is on" if battle_on?
+    raise Refusal, "#{character.name} isn't in this party" unless character.campaign_id == id
+    service = at.view.fetch("services", []).find { |s| s["kind"] == kind } or raise Refusal, "#{at.name} has no #{kind}"
+    raise Refusal, "The #{service['name']} is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?(kind)
     case kind
     when "inn"
-      raise ArgumentError, "#{character.name} is down: an inn can't help the fallen. A temple can." unless character.conscious?
-      raise ArgumentError, "#{character.name} is already rested" if rested?(character)
+      raise Refusal, "#{character.name} is down: an inn can't help the fallen. A temple can." unless character.conscious?
+      raise Refusal, "#{character.name} is already rested" if rested?(character)
     when "temple"
-      raise ArgumentError, "#{character.name} is still on their feet" if character.conscious?
+      raise Refusal, "#{character.name} is still on their feet" if character.conscious?
     end
 
     cost = service_price(kind, character)
     transaction do
       reload
-      raise ArgumentError, "The party has #{money(gil)}; #{SERVICE_OFFERS.fetch(kind)} for #{character.name} costs #{cost}" if cost > gil
+      raise Refusal, "The party has #{money(gil)}; #{SERVICE_OFFERS.fetch(kind)} for #{character.name} costs #{cost}" if cost > gil
 
       update!(gil: gil - cost)
       character.update!(hp: nil, mp: nil) if %w[inn temple].include?(kind)
@@ -141,10 +141,10 @@ class Campaign < ApplicationRecord
   # Everyone who needs it takes a room, in one payment.
   def rest_at_inn!(at:, by:)
     tired = characters.order(:created_at).select { |c| c.conscious? && !rested?(c) }
-    raise ArgumentError, "Everyone standing is already rested" if tired.empty?
+    raise Refusal, "Everyone standing is already rested" if tired.empty?
 
     cost = tired.sum { |c| service_price("inn", c) }
-    raise ArgumentError, "The party has #{money(gil)}; rooms for everyone cost #{cost}" if cost > gil
+    raise Refusal, "The party has #{money(gil)}; rooms for everyone cost #{cost}" if cost > gil
 
     transaction do
       tired.each { |c| use_service!("inn", c, at: at, by: by) }
@@ -176,12 +176,12 @@ class Campaign < ApplicationRecord
   # One party member uses an item from the bag on another (or themselves),
   # through the engine's own formulas (Battle::Field) and the campaign's RNG.
   def use_item!(item, user:, target:)
-    raise ArgumentError, "Not while a battle is on: use it from the battle's Item menu" if battle_on?
-    raise ArgumentError, "#{target.name} isn't in this party" unless target.campaign_id == id
+    raise Refusal, "Not while a battle is on: use it from the battle's Item menu" if battle_on?
+    raise Refusal, "#{target.name} isn't in this party" unless target.campaign_id == id
 
     transaction do
       reload
-      raise ArgumentError, "There's no #{item.name} in the bag" unless quantity_of(item).positive?
+      raise Refusal, "There's no #{item.name} in the bag" unless quantity_of(item).positive?
 
       before = target.current_hp
       hp, _events, next_rng = Battle::Field.use_item(item.to_engine(1), user: user.battle_spec, target: target.battle_spec, rng: rng,
@@ -193,7 +193,7 @@ class Campaign < ApplicationRecord
       messages.create!(kind: "system", body: "#{user.name} uses #{item.name}#{on}: HP #{before} → #{hp}.")
     end
   rescue Battle::InvalidAction => e
-    raise ArgumentError, e.message
+    raise Refusal, e.message
   end
 
   # The consumables a battle can use, as the engine wants them.
@@ -227,9 +227,9 @@ class Campaign < ApplicationRecord
   def travel!(edge)
     rolled = nil
     with_lock do
-      raise ArgumentError, "The party isn't on the map" unless current_node
-      raise ArgumentError, "That path doesn't start here" unless edge.touches?(current_node)
-      raise ArgumentError, "That path is blocked" if edge.blocked?
+      raise Refusal, "The party isn't on the map" unless current_node
+      raise Refusal, "That path doesn't start here" unless edge.touches?(current_node)
+      raise Refusal, "That path is blocked" if edge.blocked?
 
       origin = current_node
       destination = edge.other_end(origin)
@@ -275,9 +275,9 @@ class Campaign < ApplicationRecord
   end
 
   def start_pending_encounter!(input_seconds: nil)
-    encounter = pending_encounter or raise ArgumentError, "No encounter is waiting"
+    encounter = pending_encounter or raise Refusal, "No encounter is waiting"
     standing = characters.order(:created_at).select(&:conscious?)
-    raise ArgumentError, "Nobody is standing to fight" if standing.empty?
+    raise Refusal, "Nobody is standing to fight" if standing.empty?
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
@@ -365,9 +365,9 @@ class Campaign < ApplicationRecord
   def check!(characters:, stat:, difficulty:, reason: nil)
     skill = world.skill(stat.to_s.delete_prefix("skill:")) if stat.to_s.start_with?("skill:")
     stat = skill["stat"] if skill
-    raise ArgumentError, "Pick who's trying" if characters.empty?
-    raise ArgumentError, "Pick a skill or a stat" unless Stats::Check::STATS.include?(stat)
-    raise ArgumentError, "Pick a difficulty" unless Stats::Check::DIFFICULTIES.key?(difficulty)
+    raise Refusal, "Pick who's trying" if characters.empty?
+    raise Refusal, "Pick a skill or a stat" unless Stats::Check::STATS.include?(stat)
+    raise Refusal, "Pick a difficulty" unless Stats::Check::DIFFICULTIES.key?(difficulty)
 
     transaction do
       rolling = Battle::Rng.new(rng)
@@ -450,7 +450,7 @@ class Campaign < ApplicationRecord
   # shatters"). The table sees a card for each.
   def grant_jobs!(jobs, line = nil)
     jobs = jobs.reject { |job| job_open?(job) }
-    raise ArgumentError, "Pick a job that isn't open yet" if jobs.empty?
+    raise Refusal, "Pick a job that isn't open yet" if jobs.empty?
 
     transaction do
       update!(open_jobs: (open_jobs || []) + jobs.map(&:slug))
@@ -461,7 +461,7 @@ class Campaign < ApplicationRecord
   end
 
   def rest!
-    raise ArgumentError, "Not while a battle is on" if battle_on?
+    raise Refusal, "Not while a battle is on" if battle_on?
 
     transaction do
       characters.update_all(hp: nil, mp: nil, field_used: false)

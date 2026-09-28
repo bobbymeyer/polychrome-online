@@ -41,7 +41,7 @@ class BattleRecord < ApplicationRecord
                   antagonists: [])
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
-    raise ArgumentError, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
+    raise Refusal, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
 
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items,
                                   terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec))

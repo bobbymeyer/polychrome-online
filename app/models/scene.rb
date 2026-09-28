@@ -45,7 +45,7 @@ class Scene < ApplicationRecord
   # starts last, so everyone reads the scene before the stage takes them
   # there (stage.js waits for the dialogue box).
   def play!
-    raise ArgumentError, "Nobody is standing to fight" if ending == "battle" && campaign.characters.none?(&:conscious?)
+    raise Refusal, "Nobody is standing to fight" if ending == "battle" && campaign.characters.none?(&:conscious?)
 
     transaction do
       lines.each do |line|

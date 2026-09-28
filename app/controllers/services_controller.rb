@@ -10,7 +10,7 @@ class ServicesController < ApplicationController
   before_action :set_location
   before_action :require_customer
 
-  rescue_from ArgumentError do |error|
+  rescue_from Refusal do |error|
     redirect_to location_path(@location, anchor: anchor), alert: error.message, status: :see_other
   end
 

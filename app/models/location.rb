@@ -128,10 +128,10 @@ class Location < ApplicationRecord
 
   def add_mode!(attrs)
     name = attrs["name"].to_s.strip
-    raise ArgumentError, "A mode needs a name" if name.empty?
+    raise Refusal, "A mode needs a name" if name.empty?
 
     key = name.parameterize(separator: "_")
-    raise ArgumentError, "#{view['name']} already has a mode called #{name}" if modes.any? { |t| t["key"] == key }
+    raise Refusal, "#{view['name']} already has a mode called #{name}" if modes.any? { |t| t["key"] == key }
 
     entry = { "key" => key, "name" => name, "line" => attrs["line"].to_s.strip.presence, "description" => attrs["description"].to_s.strip.presence,
              "closed" => Array(attrs["closed"]).compact_blank, "music" => attrs["music"].presence,
@@ -149,7 +149,7 @@ class Location < ApplicationRecord
   # How a mode changes the place's picture (§8): words after the rest of
   # the prompt ("on fire, thick smoke, ash falling").
   def set_mode_art!(key, words)
-    raise ArgumentError, "#{name} has no mode called #{key}" unless modes.any? { |t| t["key"] == key }
+    raise Refusal, "#{name} has no mode called #{key}" unless modes.any? { |t| t["key"] == key }
 
     update!(modes: modes.map { |t| t["key"] == key ? t.merge("art" => words.to_s.strip.presence).compact : t })
   end
@@ -165,7 +165,7 @@ class Location < ApplicationRecord
 
   # Sets the mode off, and tells the table.
   def switch_mode!(key)
-    chosen = modes.find { |t| t["key"] == key } or raise ArgumentError, "#{view['name']} has no mode called #{key}"
+    chosen = modes.find { |t| t["key"] == key } or raise Refusal, "#{view['name']} has no mode called #{key}"
     transaction do
       update!(mode: key)
       campaign.messages.create!(kind: "system", body: chosen["line"] || "#{view['name']}: #{chosen['name']}.")
@@ -176,7 +176,7 @@ class Location < ApplicationRecord
 
   # Back to how it was.
   def clear_mode!(line = nil)
-    was = current_mode or raise ArgumentError, "#{view['name']} is as it always was"
+    was = current_mode or raise Refusal, "#{view['name']} is as it always was"
     transaction do
       update!(mode: nil)
       campaign.messages.create!(kind: "system", body: line.to_s.strip.presence || "#{view['name']} is itself again: #{was['name'].downcase} no more.")
@@ -209,7 +209,7 @@ class Location < ApplicationRecord
       touch
     else
       element = (view.fetch("services", []) + view.fetch("rooms", [])).find { |e| e["key"] == key }
-      raise ArgumentError, "Nothing called #{key} here" unless element
+      raise Refusal, "Nothing called #{key} here" unless element
 
       update!(overrides: overrides.merge("pins" => overrides.fetch("pins", {}).merge(key => element)))
     end
@@ -231,13 +231,13 @@ class Location < ApplicationRecord
   end
 
   def add_room!(name:, connect:, decision:)
-    raise ArgumentError, "No room #{connect} to connect to" unless room(connect)
+    raise Refusal, "No room #{connect} to connect to" unless room(connect)
 
     world = campaign.world
     unknown = Array(decision["monsters"]&.keys) - world.monsters.pluck(:slug)
-    raise ArgumentError, "Pick a monster from the Bestiary" if decision["kind"] == "encounter" && (unknown.any? || decision["monsters"].empty?)
+    raise Refusal, "Pick a monster from the Bestiary" if decision["kind"] == "encounter" && (unknown.any? || decision["monsters"].empty?)
     if decision["kind"] == "treasure" && !decision["gil"].to_i.positive? && !world.items.exists?(slug: decision["item"])
-      raise ArgumentError, "Pick an item from the Armory, or an amount of #{world.word('currency')}"
+      raise Refusal, "Pick an item from the Armory, or an amount of #{world.word('currency')}"
     end
 
     added = overrides.fetch("added_rooms", [])
@@ -286,14 +286,14 @@ class Location < ApplicationRecord
     when "stock" then set_stock!(nil)
     when "boss" then place_boss!({})
     when "room" then remove_room!(key)
-    else raise ArgumentError, "Unknown change #{kind}"
+    else raise Refusal, "Unknown change #{kind}"
     end
   end
 
   # Remove a hand-authored room, and any rooms added off it.
   def remove_room!(key)
     added = overrides.fetch("added_rooms", [])
-    raise ArgumentError, "No added room #{key}" unless added.any? { |r| r["key"] == key }
+    raise Refusal, "No added room #{key}" unless added.any? { |r| r["key"] == key }
 
     doomed = [ key ]
     loop do
@@ -426,14 +426,14 @@ class Location < ApplicationRecord
   # waits for the GM to fight or wave off (like on the map); treasure waits
   # to be handed over; a fork shows its visible cost.
   def move_to!(key, from: progress["current"])
-    raise ArgumentError, "The party isn't at #{name}. Take them there on the map first." unless party_here?
+    raise Refusal, "The party isn't at #{name}. Take them there on the map first." unless party_here?
 
-    target = room(key) or raise ArgumentError, "No such room"
-    raise ArgumentError, "That room isn't next to this one" if from && !neighbours(from).include?(key)
+    target = room(key) or raise Refusal, "No such room"
+    raise Refusal, "That room isn't next to this one" if from && !neighbours(from).include?(key)
 
     path = from && path_between(from, key)
     lock = path && locked?(path) ? path["lock"] : nil
-    raise ArgumentError, "#{lock['name']} bars the way. It needs #{lock['key_name']}." if lock && !has_key?(lock)
+    raise Refusal, "#{lock['name']} bars the way. It needs #{lock['key_name']}." if lock && !has_key?(lock)
 
     transaction do
       if lock
@@ -450,7 +450,7 @@ class Location < ApplicationRecord
   # Hand a room's treasure to the party (once).
   def take_treasure!(key)
     target = room(key)
-    raise ArgumentError, "No treasure there" unless target && target["decision"]["kind"] == "treasure" && !resolved?(key)
+    raise Refusal, "No treasure there" unless target && target["decision"]["kind"] == "treasure" && !resolved?(key)
 
     decision = target["decision"]
     item = campaign.world.items.find_by(slug: decision["item"]) if decision["item"]

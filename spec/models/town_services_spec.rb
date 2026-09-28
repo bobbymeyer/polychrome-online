@@ -22,8 +22,8 @@ RSpec.describe "Town services" do
   it "rests the standing at the inn, raises the fallen at the temple, and sells rumours at the guild" do
     bartz.update!(hp: 0)
     lenna.update!(hp: 5, mp: 1)
-    expect { campaign.use_service!("inn", bartz, at: town, by: "Bartz") }.to raise_error(ArgumentError, /A temple can/)
-    expect { campaign.use_service!("temple", lenna, at: town, by: "Lenna") }.to raise_error(ArgumentError, /on their feet/)
+    expect { campaign.use_service!("inn", bartz, at: town, by: "Bartz") }.to raise_error(Refusal, /A temple can/)
+    expect { campaign.use_service!("temple", lenna, at: town, by: "Lenna") }.to raise_error(Refusal, /on their feet/)
 
     campaign.use_service!("temple", bartz, at: town, by: "Lenna")
     expect(bartz.reload).to be_conscious
@@ -38,19 +38,19 @@ RSpec.describe "Town services" do
     bartz.update!(hp: 5)
     lenna.update!(mp: 0)
     campaign.update!(gil: 30)
-    expect { campaign.rest_at_inn!(at: town, by: "The GM") }.to raise_error(ArgumentError, /rooms for everyone cost 50/)
+    expect { campaign.rest_at_inn!(at: town, by: "The GM") }.to raise_error(Refusal, /rooms for everyone cost 50/)
     campaign.update!(gil: 60)
     campaign.rest_at_inn!(at: town, by: "The GM")
     expect([ bartz.reload, lenna.reload ].map { |c| campaign.rested?(c) }).to eq([ true, true ])
     expect(campaign.reload.gil).to eq(10)
-    expect { campaign.rest_at_inn!(at: town, by: "The GM") }.to raise_error(ArgumentError, /already rested/)
+    expect { campaign.rest_at_inn!(at: town, by: "The GM") }.to raise_error(Refusal, /already rested/)
   end
 
   it "needs the service to be here, and no battle on" do
     bartz.update!(hp: 5)
     empty = Struct.new(:name, :view).new("Nowhere", "services" => [])
-    expect { campaign.use_service!("inn", bartz, at: empty, by: "Bartz") }.to raise_error(ArgumentError, /has no inn/)
+    expect { campaign.use_service!("inn", bartz, at: empty, by: "Bartz") }.to raise_error(Refusal, /has no inn/)
     start_battle(campaign: campaign)
-    expect { campaign.use_service!("inn", bartz, at: town, by: "Bartz") }.to raise_error(ArgumentError, /battle/)
+    expect { campaign.use_service!("inn", bartz, at: town, by: "Bartz") }.to raise_error(Refusal, /battle/)
   end
 end

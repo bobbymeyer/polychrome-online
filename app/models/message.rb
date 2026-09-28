@@ -94,8 +94,8 @@ class Message < ApplicationRecord
   # The GM settles it: the outcome is said, and set as a flag the party
   # knows, for the GM's next scene to follow.
   def settle!(option)
-    raise ArgumentError, "That isn't one of the options" unless options.include?(option)
-    raise ArgumentError, "This was settled already" unless open_choice?
+    raise Refusal, "That isn't one of the options" unless options.include?(option)
+    raise Refusal, "This was settled already" unless open_choice?
 
     transaction do
       update!(settled: option)

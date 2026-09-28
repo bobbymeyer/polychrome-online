@@ -9,7 +9,7 @@ class LocationsController < ApplicationController
   before_action :set_location
   before_action :require_gm, except: :show
 
-  rescue_from ArgumentError do |error|
+  rescue_from Refusal do |error|
     redirect_to location_path(@location), alert: error.message, status: :see_other
   end
 

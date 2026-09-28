@@ -37,7 +37,7 @@ class ArtCandidate < ApplicationRecord
 
   # Use this one: it becomes the entry's image, and the batch is cleared.
   def pick!
-    raise ArgumentError, "That candidate has no image" unless status == "done" && image.attached?
+    raise Refusal, "That candidate has no image" unless status == "done" && image.attached?
 
     entry.adopt_art!(self)
     art_batch.drafts&.destroy!

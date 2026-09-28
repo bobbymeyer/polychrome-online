@@ -10,7 +10,7 @@ class ArtCandidatesController < ApplicationController
 
     candidate.pick!
     redirect_to entry_page(entry, anchor: "art"), notice: "#{entry.art_title.upcase_first} has a new image (seed #{entry.image_seed})."
-  rescue ArgumentError => e
+  rescue Refusal => e
     redirect_to entry_page(entry, anchor: "art"), alert: e.message
   end
 
@@ -22,7 +22,7 @@ class ArtCandidatesController < ApplicationController
 
     ArtBatch.refine!(candidate)
     redirect_to entry_page(entry, anchor: "art"), notice: "Making seed #{candidate.seed} properly."
-  rescue ArgumentError => e
+  rescue Refusal => e
     redirect_to entry_page(entry, anchor: "art"), alert: e.message
   end
 
