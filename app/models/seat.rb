@@ -22,15 +22,14 @@ Seat = Data.define(:gm, :character, :unit_id) do
 
   def name = gm? ? "GM" : character&.name
 
-  # The map as this seat may see it: the GM's shows what's hidden.
-  def map_stream = gm? ? :map_gm : :map
-
-  # Where what's said privately to this seat arrives: the GM's notes and
-  # every whisper, or this character's whispers.
-  def private_stream(campaign)
-    if gm? then [ campaign, :gm ]
-    elsif character? then [ character, :whispers ]
-    end
+  # What a page at this seat listens on (Campaign::Broadcasts):
+  #   [campaign, :table]    what everyone at the table sees
+  #   [campaign, :gm]       the GM's own copy of the map, clocks, secrets and
+  #                         requests, and every GM note and whisper
+  #   [campaign, :players]  the players' copy (what's hidden left out)
+  #   [character, :whispers] a character's whispers
+  def streams(campaign)
+    [ [ campaign, :table ], [ campaign, gm? ? :gm : :players ], ([ character, :whispers ] if character?) ].compact
   end
 
   def sees?(message)

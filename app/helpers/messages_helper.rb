@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 module MessagesHelper
-  # The signed stream for what's said privately to this seat (Seat#private_stream).
-  def seat_stream_from(seat, campaign)
-    stream = seat.private_stream(campaign)
-    turbo_stream_from(*stream) if stream
+  # The signed streams a page at this seat listens on (Seat#streams).
+  def seat_streams_from(seat, campaign)
+    safe_join(seat.streams(campaign).map { |stream| turbo_stream_from(*stream) })
   end
 
   # A speaker's portrait for an expression: their image for it, their

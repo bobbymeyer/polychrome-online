@@ -9,10 +9,8 @@
      data-recap-campaign-value="<%= @campaign.id %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
-  <%= turbo_stream_from @campaign, :table %>
+  <%= seat_streams_from @seat, @campaign %>
   <%= render "shared/stage_stream", campaign: @campaign %>
-  <%= turbo_stream_from @campaign, @seat.map_stream %>
-  <%= seat_stream_from @seat, @campaign %>
 
   <header class="battle__header">
     <div>

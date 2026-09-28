@@ -102,8 +102,8 @@ RSpec.describe "The pointcrawl map" do
   describe "broadcasts" do
     it "re-renders the map per audience, leaving hidden places out of the players' copy" do
       tule
-      expect { ruins }.to have_broadcasted_to(stream(campaign, :map_gm)).with(a_string_including("Ruins"))
-      expect { ruins.update!(notes: "trap") }.to have_broadcasted_to(stream(campaign, :map)).with(satisfy { |html| !html.include?("Ruins") && html.include?("Tule") })
+      expect { ruins }.to have_broadcasted_to(stream(campaign, :gm)).with(a_string_including("Ruins"))
+      expect { ruins.update!(notes: "trap") }.to have_broadcasted_to(stream(campaign, :players)).with(satisfy { |html| !html.include?("Ruins") && html.include?("Tule") })
     end
   end
 end

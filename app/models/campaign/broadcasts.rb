@@ -5,7 +5,8 @@
 # The table and the map are live pages where people are typing and the
 # dialogue box is mid-line, so they get targeted streams: one element
 # replaced, rendered once for the GM and once for the players, so what's
-# hidden never reaches a player's browser (the :map and :map_gm streams).
+# hidden never reaches a player's browser (the :players and :gm streams;
+# Seat#streams says who listens on what).
 #
 # Everything else is a document (the campaign page, prep, legends): it
 # listens on [campaign, :pages] and refreshes, each viewer fetching their
@@ -13,7 +14,7 @@
 module Campaign::Broadcasts
   extend ActiveSupport::Concern
 
-  AUDIENCES = { false => :map, true => :map_gm }.freeze
+  AUDIENCES = { false => :players, true => :gm }.freeze
 
   included do
     after_update_commit :broadcast_music, if: :saved_change_to_music?

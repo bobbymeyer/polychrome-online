@@ -7,7 +7,7 @@
   <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--quiet" %>
 </div>
 
-<%= turbo_stream_from @campaign, (@gm ? :map_gm : :map) %>
+<%= turbo_stream_from @campaign, (@gm ? :gm : :players) %>
 <%= render "shared/stage_stream", campaign: @campaign %>
 <div class="map-layout" <% if @gm %>data-controller="map-editor" data-map-editor-new-url-value="<%= new_campaign_map_node_path(@campaign) %>"<% end %>>
   <div class="window map-window">
