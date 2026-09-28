@@ -21,6 +21,9 @@ class Scene < ApplicationRecord
 
   belongs_to :campaign
   belongs_to :map_node, optional: true
+  # A "mode" ending sets this mode off; without one, the place goes back
+  # to how it was.
+  belongs_to :location_mode, optional: true
 
   normalizes :name, with: ->(name) { name.to_s.strip }
 
@@ -59,7 +62,7 @@ class Scene < ApplicationRecord
       end
       # A place changes mode (Location#switch_mode!), or goes back to how it was.
       if ending == "mode" && (location = map_node&.location)
-        mode_key.present? ? location.switch_mode!(mode_key) : (location.clear_mode! if location.current_mode)
+        location_mode ? location.switch_mode!(location_mode.key) : (location.clear_mode! if location.current_mode)
       end
       update!(played_at: Time.current)
     end
@@ -76,8 +79,7 @@ class Scene < ApplicationRecord
     parts << "then a battle: #{campaign.describe_encounter(encounter)}" if ending == "battle"
     parts << "then #{map_node&.name || 'a place'} appears on the map" if ending == "reveal"
     if ending == "mode"
-      in_mode = map_node&.location&.modes&.find { |t| t["key"] == mode_key }
-      parts << (in_mode ? "then #{map_node.name}: #{in_mode['name']}" : "then #{map_node&.name} goes back to how it was")
+      parts << (location_mode ? "then #{map_node&.name}: #{location_mode.name}" : "then #{map_node&.name} goes back to how it was")
     end
     parts.join(", ")
   end
@@ -131,8 +133,8 @@ class Scene < ApplicationRecord
       location = map_node&.campaign_id == campaign_id && map_node.location
       if !location
         errors.add(:map_node, "must be a town or dungeon on this campaign's map")
-      elsif mode_key.present? && location.modes.none? { |t| t["key"] == mode_key }
-        errors.add(:mode_key, "isn't one of #{map_node.name}'s modes")
+      elsif location_mode && location_mode.location_id != location.id
+        errors.add(:location_mode, "isn't one of #{map_node.name}'s modes")
       end
     end
   end

@@ -13,7 +13,7 @@
           <strong><%= t["name"] %></strong>
           <span class="muted">
             <%= [ ("shuts #{t['closed'].map { |k| term(k) }.to_sentence.downcase}" if t["closed"].present?), ("#{t['music']} music" if t["music"]),
-                  ("trouble from #{@world.encounter_tables.find_by(slug: t['encounters'])&.name}" if t["encounters"]) ].compact.join(" · ") %>
+                  ("trouble from #{t.encounter_table.name}" if t.encounter_table) ].compact.join(" · ") %>
           </span>
           <% if location.mode == t["key"] %>
             <%= form_with url: location_current_mode_path(location), method: :delete, class: "inline-form" do |f| %>

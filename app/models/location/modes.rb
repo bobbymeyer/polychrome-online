@@ -1,66 +1,60 @@
 # frozen_string_literal: true
 
-# Modes: the place's other states. A mode is prepared by the GM and set off
-# at the table: the city burns, the mine floods, the festival starts. While
-# it lasts, some services are shut, the music changes, there can be trouble
-# on arrival (an encounter table), and players read a line about it. The
-# world doesn't change.
-#
-#   { "key" => "burning", "name" => "Burning", "line" => "Smoke over the rooftops: Tule is burning.",
-#     "description" => "Half the market is ash.", "closed" => ["shop"], "music" => "battle",
-#     "encounters" => "town_riot" }
+# A place's modes (LocationMode): its other states, prepared by the GM and
+# set off at the table. The world doesn't change; the place does, for a
+# while.
 module Location::Modes
   extend ActiveSupport::Concern
 
   included do
-    validate :modes_are_modes
+    # The two point at each other: let go of the current one before the modes go.
+    before_destroy(prepend: true) { update_columns(current_mode_id: nil) if current_mode_id }
+    has_many :modes, -> { order(:id) }, class_name: "LocationMode", dependent: :destroy, inverse_of: :location
+    belongs_to :current_mode, class_name: "LocationMode", optional: true
+    validate :current_mode_is_ours
   end
 
-  def current_mode
-    modes.find { |t| t["key"] == mode } if mode
-  end
+  # The key of the mode it's in, or nil.
+  def mode = current_mode&.key
 
   def service_closed?(kind)
-    Array(current_mode&.dig("closed")).include?(kind.to_s)
+    current_mode&.shuts?(kind) || false
   end
 
   def encounter_table_for_mode
-    slug = current_mode&.dig("encounters")
-    slug && campaign.world.encounter_tables.find_by(slug: slug)
+    current_mode&.encounter_table
   end
 
+  # Prepares a mode. attrs: "name", "line", "description", "closed",
+  # "music", "art", and "encounters" (an encounter table's slug).
   def add_mode!(attrs)
+    attrs = attrs.to_h.stringify_keys
     name = attrs["name"].to_s.strip
     raise Refusal, "A mode needs a name" if name.empty?
+    raise Refusal, "#{view['name']} already has a mode called #{name}" if modes.exists?(key: name.parameterize(separator: "_"))
 
-    key = name.parameterize(separator: "_")
-    raise Refusal, "#{view['name']} already has a mode called #{name}" if modes.any? { |t| t["key"] == key }
-
-    entry = { "key" => key, "name" => name, "line" => attrs["line"].to_s.strip.presence, "description" => attrs["description"].to_s.strip.presence,
-             "closed" => Array(attrs["closed"]).compact_blank, "music" => attrs["music"].presence,
-             "encounters" => attrs["encounters"].presence, "art" => attrs["art"].to_s.strip.presence }.compact
-    update!(modes: modes + [ entry ])
+    table = attrs["encounters"].presence && campaign.world.encounter_tables.find_by(slug: attrs["encounters"])
+    modes.create!(attrs.slice("line", "description", "closed", "music", "art").merge("name" => name, "encounter_table" => table))
   end
 
   def remove_mode!(key)
     transaction do
-      mode_arts.where(mode_key: key).destroy_all
-      update!(modes: modes.reject { |t| t["key"] == key }, mode: (mode unless mode == key))
+      chosen = mode_called(key)
+      update!(current_mode: nil) if current_mode == chosen
+      chosen.destroy!
     end
   end
 
   # How a mode changes the place's picture (§8): words after the rest of
   # the prompt ("on fire, thick smoke, ash falling").
   def set_mode_art!(key, words)
-    raise Refusal, "#{name} has no mode called #{key}" unless modes.any? { |t| t["key"] == key }
-
-    update!(modes: modes.map { |t| t["key"] == key ? t.merge("art" => words.to_s.strip.presence).compact : t })
+    mode_called(key).update!(art: words)
   end
 
   # The place's picture as it is now: the mode's own, if it has one, else
   # the Gazetteer entry's. nil when neither has been made.
   def picture
-    in_mode = current_mode && mode_arts.find_by(mode_key: mode)
+    in_mode = current_mode&.mode_art
     return in_mode.image if in_mode&.image&.attached?
 
     location_template.image if location_template.image.attached?
@@ -68,10 +62,10 @@ module Location::Modes
 
   # Sets the mode off, and tells the table.
   def switch_mode!(key)
-    chosen = modes.find { |t| t["key"] == key } or raise Refusal, "#{view['name']} has no mode called #{key}"
+    chosen = mode_called(key)
     transaction do
-      update!(mode: key)
-      campaign.narrate(chosen["line"] || "#{view['name']}: #{chosen['name']}.")
+      update!(current_mode: chosen)
+      campaign.narrate(chosen.line || "#{view['name']}: #{chosen.name}.")
     end
     campaign.broadcast_map
     campaign.broadcast_music
@@ -81,21 +75,20 @@ module Location::Modes
   def clear_mode!(line = nil)
     was = current_mode or raise Refusal, "#{view['name']} is as it always was"
     transaction do
-      update!(mode: nil)
-      campaign.narrate(line.to_s.strip.presence || "#{view['name']} is itself again: #{was['name'].downcase} no more.")
+      update!(current_mode: nil)
+      campaign.narrate(line.to_s.strip.presence || "#{view['name']} is itself again: #{was.name.downcase} no more.")
     end
     campaign.broadcast_map
     campaign.broadcast_music
   end
 
+  def mode_called(key)
+    modes.find_by(key: key.to_s) or raise Refusal, "#{view['name']} has no mode called #{key}"
+  end
+
   private
 
-  def modes_are_modes
-    world = campaign&.world or return
-    Array(modes).each do |t|
-      errors.add(:modes, "#{t['name']}: music must be one of #{Campaign::MUSIC_CHOICES.join(', ')}") if t["music"] && !Campaign::MUSIC_CHOICES.include?(t["music"])
-      errors.add(:modes, "#{t['name']}: #{t['encounters']} isn't an encounter table") if t["encounters"] && !world.encounter_tables.exists?(slug: t["encounters"])
-    end
-    errors.add(:mode, "isn't one of this place's modes") if mode && Array(modes).none? { |t| t["key"] == mode }
+  def current_mode_is_ours
+    errors.add(:current_mode, "isn't one of this place's modes") if current_mode && current_mode.location_id != id
   end
 end

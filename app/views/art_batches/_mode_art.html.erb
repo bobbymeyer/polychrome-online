@@ -1,11 +1,11 @@
 <%# Pictures for a location's modes (§8), on its page, for the GM. Each mode is one more layer after the place's
     Gazetteer entry. location; chosen: the mode key the form starts on. %>
 <% world = location.campaign.world %>
-<% arts = location.mode_arts.includes(image_attachment: :blob).index_by(&:mode_key) %>
+<% arts = location.mode_arts.includes(:location_mode, image_attachment: :blob).index_by(&:mode_key) %>
 <% batch = ArtBatch.where(entry: location.mode_arts).order(:id).last %>
 <% chosen = batch&.entry&.mode_key || local_assigns[:chosen].presence || location.mode || location.modes.first["key"] %>
 <% mode = location.modes.find { |m| m["key"] == chosen } || location.modes.first %>
-<% sample = arts[mode["key"]] || location.mode_arts.new(mode_key: mode["key"]) %>
+<% sample = arts[mode["key"]] || location.mode_arts.new(location_mode: mode) %>
 <%= turbo_frame_tag "art_panel", data: { src: world_art_panel_path(world, entry_type: "location_mode", location_id: location.id, mode: chosen) } do %>
 <section class="window art-studio" id="art" aria-label="Pictures for modes">
   <h2>Pictures for modes</h2>

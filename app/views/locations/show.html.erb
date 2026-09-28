@@ -28,7 +28,7 @@
 
 <% if (picture = @location.picture) %>
   <figure class="location-picture<%= " is-mode" if @location.current_mode %>">
-    <%= image_tag url_for(picture), alt: [ view["name"], @location.current_mode&.dig("name") ].compact.join(": ") %>
+    <%= image_tag url_for(picture), alt: [ view["name"], @location.current_mode&.name ].compact.join(": ") %>
   </figure>
 <% end %>
 

@@ -62,7 +62,7 @@ class Campaign < ApplicationRecord
     return "dungeon" if dungeon_in_progress
 
     # A place in a mode has its own music (Location#switch_mode!).
-    moded = current_node&.location&.current_mode&.dig("music")
+    moded = current_node&.location&.current_mode&.music
     return moded if moded
 
     current_node&.location&.town? ? "town" : "field"

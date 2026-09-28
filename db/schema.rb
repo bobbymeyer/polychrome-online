@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_040000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -248,14 +248,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
     t.boolean "public", default: false, null: false
     t.json "triggers", default: [], null: false
     t.text "full_line"
-    t.integer "location_id"
-    t.string "mode_key"
     t.datetime "full_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "world_front_id"
+    t.integer "location_mode_id"
     t.index ["campaign_id"], name: "index_clocks_on_campaign_id"
-    t.index ["location_id"], name: "index_clocks_on_location_id"
+    t.index ["location_mode_id"], name: "index_clocks_on_location_mode_id"
     t.index ["world_front_id"], name: "index_clocks_on_world_front_id"
   end
 
@@ -440,6 +439,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
 
+  create_table "location_modes", force: :cascade do |t|
+    t.integer "location_id", null: false
+    t.string "key", null: false
+    t.string "name", null: false
+    t.text "line"
+    t.text "description"
+    t.json "closed", default: [], null: false
+    t.string "music"
+    t.integer "encounter_table_id"
+    t.text "art"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["encounter_table_id"], name: "index_location_modes_on_encounter_table_id"
+    t.index ["location_id", "key"], name: "index_location_modes_on_location_id_and_key", unique: true
+    t.index ["location_id"], name: "index_location_modes_on_location_id"
+  end
+
   create_table "location_templates", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -470,9 +486,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
     t.json "progress", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.json "modes", default: [], null: false
-    t.string "mode"
+    t.integer "current_mode_id"
     t.index ["campaign_id"], name: "index_locations_on_campaign_id"
+    t.index ["current_mode_id"], name: "index_locations_on_current_mode_id"
     t.index ["location_template_id"], name: "index_locations_on_location_template_id"
   end
 
@@ -538,14 +554,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
 
   create_table "mode_arts", force: :cascade do |t|
     t.integer "location_id", null: false
-    t.string "mode_key", null: false
     t.integer "image_seed"
     t.text "image_prompt"
     t.json "image_recipe"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["location_id", "mode_key"], name: "index_mode_arts_on_location_id_and_mode_key", unique: true
+    t.integer "location_mode_id", null: false
     t.index ["location_id"], name: "index_mode_arts_on_location_id"
+    t.index ["location_mode_id"], name: "index_mode_arts_on_location_mode_id", unique: true
   end
 
   create_table "monsters", force: :cascade do |t|
@@ -626,8 +642,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
     t.datetime "played_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "mode_key"
+    t.integer "location_mode_id"
     t.index ["campaign_id"], name: "index_scenes_on_campaign_id"
+    t.index ["location_mode_id"], name: "index_scenes_on_location_mode_id"
     t.index ["map_node_id"], name: "index_scenes_on_map_node_id"
   end
 
@@ -796,7 +813,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
   add_foreign_key "choice_picks", "characters", on_delete: :cascade
   add_foreign_key "choice_picks", "messages", on_delete: :cascade
   add_foreign_key "clocks", "campaigns"
-  add_foreign_key "clocks", "locations"
+  add_foreign_key "clocks", "location_modes"
   add_foreign_key "clocks", "world_fronts"
   add_foreign_key "codex_entries", "worlds"
   add_foreign_key "encounter_tables", "worlds"
@@ -813,9 +830,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
   add_foreign_key "job_levels", "abilities"
   add_foreign_key "job_levels", "jobs"
   add_foreign_key "jobs", "worlds"
+  add_foreign_key "location_modes", "encounter_tables"
+  add_foreign_key "location_modes", "locations"
   add_foreign_key "location_templates", "encounter_tables"
   add_foreign_key "location_templates", "worlds"
   add_foreign_key "locations", "campaigns"
+  add_foreign_key "locations", "location_modes", column: "current_mode_id"
   add_foreign_key "locations", "location_templates"
   add_foreign_key "map_edges", "campaigns"
   add_foreign_key "map_edges", "encounter_tables"
@@ -828,6 +848,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
   add_foreign_key "messages", "battles"
   add_foreign_key "messages", "campaigns"
   add_foreign_key "messages", "characters", column: "recipient_id"
+  add_foreign_key "mode_arts", "location_modes"
   add_foreign_key "mode_arts", "locations"
   add_foreign_key "monsters", "worlds"
   add_foreign_key "npcs", "campaigns"
@@ -835,6 +856,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
   add_foreign_key "npcs", "monsters"
   add_foreign_key "npcs", "world_figures"
   add_foreign_key "scenes", "campaigns"
+  add_foreign_key "scenes", "location_modes"
   add_foreign_key "scenes", "map_nodes", on_delete: :nullify
   add_foreign_key "secrets", "campaigns"
   add_foreign_key "secrets", "locations"

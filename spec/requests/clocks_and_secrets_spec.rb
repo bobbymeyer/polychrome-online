@@ -12,6 +12,7 @@ RSpec.describe "Clocks and secrets", type: :request do
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
   let!(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true, location: town) }
   let(:road) { campaign.map_nodes.create!(name: "Road", kind: "field", x: 300, y: 100, visible: true) }
+  let(:burning) { town.modes.find_by!(key: "burning") }
   let(:hero) { campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), starting_level: 10) }
 
   def sit(seat)
@@ -20,15 +21,15 @@ RSpec.describe "Clocks and secrets", type: :request do
 
   before do
     sit("gm")
-    town.update!(modes: [ { "key" => "burning", "name" => "Burning", "line" => "Smoke over the rooftops: Tule is burning." } ])
+    town.add_mode!("name" => "Burning", "line" => "Smoke over the rooftops: Tule is burning.")
   end
 
   describe "clocks" do
     it "fills on what the party does, and a full clock sets a place burning" do
       post campaign_clocks_path(campaign), params: { clock: { name: "The Syndicate torches Tule", segments: "3", public: "1",
-                                                              triggers: [ "", "rest", "travel" ], when_full: "#{town.id}|burning" } }
+                                                              triggers: [ "", "rest", "travel" ], when_full: burning.id } }
       clock = campaign.clocks.sole
-      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], location: town, mode_key: "burning", public: true)
+      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], location: town, location_mode: burning, public: true)
 
       campaign.rest!
       expect(clock.reload.filled).to eq(1)
@@ -90,10 +91,13 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(response).to have_http_status(:forbidden)
     end
 
-    it "only switches a place to one of its own modes" do
-      clock = campaign.clocks.new(name: "x", segments: 4, location: town, mode_key: "flooded")
-      expect(clock).not_to be_valid
-      expect(clock.errors[:mode_key].sole).to include("isn't one of")
+    it "only switches one of the campaign's own places, whatever the form sends" do
+      elsewhere = world.campaigns.create!(name: "Elsewhere", gm: @admin).locations.create!(location_template: village, seed: 3)
+      flooded = elsewhere.add_mode!("name" => "Flooded")
+      expect(campaign.clocks.new(name: "x", segments: 4, location_mode: flooded)).not_to be_valid
+
+      post campaign_clocks_path(campaign), params: { clock: { name: "Rain", segments: "4", when_full: flooded.id } }
+      expect(campaign.clocks.find_by!(name: "Rain").location_mode).to be_nil
     end
   end
 

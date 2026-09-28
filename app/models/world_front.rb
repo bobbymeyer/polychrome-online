@@ -58,9 +58,9 @@ class WorldFront < ApplicationRecord
     transaction do
       clocks.each do |row|
         location = nodes[row["place_id"]]&.location
-        mode_key = add_mode(location, row) if location && row["mode_name"]
+        mode = add_mode(location, row) if location && row["mode_name"]
         campaign.clocks.create!(name: row["name"], segments: row["segments"], triggers: row["triggers"], full_line: row["full_line"],
-                                public: row["public"], location: (location if mode_key), mode_key: mode_key, world_front: self)
+                                public: row["public"], location_mode: mode, world_front: self)
       end
       secrets.each do |row|
         campaign.secrets.create!(body: row["body"], location: nodes[row["place_id"]]&.location, npc: npcs[row["figure_id"]], world_front: self)
@@ -70,12 +70,10 @@ class WorldFront < ApplicationRecord
 
   private
 
+  # The place's mode by that name, made if it hasn't one yet.
   def add_mode(location, row)
-    key = row["mode_name"].parameterize(separator: "_")
-    unless location.modes.any? { |m| m["key"] == key }
+    location.modes.find_by(key: row["mode_name"].parameterize(separator: "_")) ||
       location.add_mode!("name" => row["mode_name"], "line" => row["mode_line"], "description" => row["mode_description"])
-    end
-    key
   end
 
   def has_something

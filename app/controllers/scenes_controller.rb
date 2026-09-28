@@ -55,12 +55,13 @@ class ScenesController < ApplicationController
 
       counts[row["monster"]] = counts.fetch(row["monster"], 0) + row["count"].to_i.clamp(1, 9)
     end
-    # A mode ending names a place and one of its modes ("12|burning"), or the
+    # A mode ending names a place and one of its modes ("12|7"), or the
     # place going back to how it was ("12|").
     choice = raw.delete(:mode_choice)
     if raw[:ending] == "mode"
-      node_id, key = choice.to_s.split("|", 2)
-      raw = raw.merge(map_node_id: node_id, mode_key: key.to_s)
+      node_id, mode_id = choice.to_s.split("|", 2)
+      node = @campaign.map_nodes.find_by(id: node_id)
+      raw = raw.merge(map_node_id: node&.id, location_mode: mode_id.presence && node&.location&.modes&.find_by(id: mode_id))
     end
     raw.merge(encounter: encounter)
   end

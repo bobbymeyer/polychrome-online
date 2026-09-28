@@ -82,7 +82,7 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
     closed = draft.items.sole["closed"]
     expect(closed).not_to include("casino")
     keep(draft)
-    expect(town.reload.modes.sole).to include("name" => "Plague", "music" => "dungeon", "art" => "empty streets, chalk marks on doors")
+    expect(town.reload.modes.sole).to have_attributes(name: "Plague", music: "dungeon", art: "empty streets, chalk marks on doors")
   end
 
   it "keeps prep drafts to the campaign's GM" do
