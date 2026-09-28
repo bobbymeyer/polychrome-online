@@ -62,17 +62,6 @@ class FakeComfy
     Comfy::Capabilities.new(info.merge(extra))
   end
 
-  # How two real background-removal packs describe their nodes.
-  REMOVAL_NODES = {
-    "InspyrenetRembg" => { "input" => { "required" => { "image" => [ "IMAGE" ], "torchscript_jit" => [ %w[default on] ] } },
-                           "output" => %w[IMAGE MASK] },
-    "RMBG" => { "input" => { "required" => { "image" => [ "IMAGE" ], "model" => [ [ "RMBG-2.0", "BEN2" ] ],
-                                             "sensitivity" => [ "FLOAT", { "default" => 1.0 } ],
-                                             "background" => [ "COMBO", { "options" => %w[Alpha Color] } ] } },
-                "output" => %w[IMAGE MASK IMAGE] },
-    "NeedsAModel" => { "input" => { "required" => { "model" => [ "BG_MODEL" ], "image" => [ "IMAGE" ] } }, "output" => [ "IMAGE" ] }
-  }.freeze
-
   # A 1×1 PNG, built by hand so specs need no image library.
   def self.png
     chunk = ->(type, data) { [ data.bytesize ].pack("N") + type + data + [ Zlib.crc32(type + data) ].pack("N") }

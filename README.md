@@ -764,7 +764,7 @@ Every image slot can be uploaded or generated with
     encoder on CPU, that encoding can cost more than the image.
   - **Only what the family and server call for:** CLIP skip only when the
     family wants it, the first sampler and scheduler the server has,
-    background removal only if the node is installed.
+    and no background removal (that comes after, outside ComfyUI).
   - **A missing file stops the batch before anything is queued**, whether a
     model, text encoder, VAE or LoRA, with a message naming what is
     missing. The entry's page previews the workflow ("UNETLoader →
@@ -796,20 +796,28 @@ Every image slot can be uploaded or generated with
     `draft` in `config/comfy.yml`; a family can also set its own
     `draft_steps`.
 - **Background removal** is an optional step for any batch, on by default
-  for content types marked to remove it.
-  - **Which node:** ComfyUI has no removal node of its own, so the first
-    installed one from `background_removal` in `config/comfy.yml` is used:
-    InspyrenetRembg, RMBG or BiRefNetRMBG (ComfyUI-RMBG), WAS's rembg
-    node, or Easy-Use's.
-  - **Wiring:** each is wired from ComfyUI's own description of it. The
-    image goes in its IMAGE input, other inputs take their defaults (or
-    what config says), and its IMAGE output goes on. A node that needs
-    something else plugged in is passed over.
+  for content types marked to remove it. It happens outside ComfyUI, with a
+  background-removal service of its own (`Cutout`, `config/cutout.yml`),
+  called on each image once ComfyUI has rendered it.
+  - **Which service:** rembg's HTTP server works as it is
+    (`pip install "rembg[gpu,cli]"`, then `rembg s --host 0.0.0.0 --port 7000`),
+    with its choice of models: `birefnet-general` (the default),
+    `isnet-anime` for flat illustrated art, `bria-rmbg` and others. Anything
+    that takes the image as a multipart `file` (and `model`) and answers
+    with a PNG works too. Set the address and model on the Settings page,
+    or with `CUTOUT_URL` and `CUTOUT_MODEL`.
+  - **White inside the subject is kept:** a removal model takes whatever
+    looks like the background, which on flat art drawn on white includes
+    the white inside a creature. Only what's clear and connected to the edge
+    of the picture is background; a clear patch closed in by the subject is
+    put back from the picture as rendered (with libvips). A gap that really
+    is background but is closed in, like an arm on a hip, is filled too.
   - **Checking:** every image that should have lost its background is
     checked for real transparency, and the strip says "background kept"
-    when it didn't.
-  - **No node installed:** backgrounds stay, and the pages say which to
-    install.
+    when it didn't, or when the remover turned it down (the picture is kept
+    either way).
+  - **Not reachable:** the batch waits and tries again, as it does for
+    ComfyUI. **Not set up:** backgrounds stay, and the pages say so.
 - **Can't see ComfyUI?** Use "Connection" on the Art direction page, or
   `bin/rails comfy:doctor` inside the app's container. It checks, in turn:
   - the address: in a container, 127.0.0.1 is the container itself;
@@ -854,8 +862,10 @@ Every image slot can be uploaded or generated with
   | `COMFY_TOKEN` | blank | Sent as `Authorization: Bearer …` |
   | `COMFY_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
   | `COMFY_MODEL` | `anima-preview.safetensors` | The model when no layer names one |
-  | `COMFY_REMBG_NODE` | blank | A background-removal node to try before the listed ones |
-  | `COMFY_REMBG_INPUT` | blank | That node's image input, if it has more than one |
+  | `CUTOUT_URL` | blank (off) | A background-removal service (rembg's `rembg s`, or alike) |
+  | `CUTOUT_MODEL` | `birefnet-general` | The model it should use |
+  | `CUTOUT_PATH` | `/api/remove` | Where on it the image goes |
+  | `CUTOUT_TOKEN` | blank | Sent as a bearer token |
   | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1` |
   | `LLM_MODEL` | blank | The model to ask for, as the server names it |
   | `LLM_TOKEN`, `LLM_HEADERS` | blank | As for ComfyUI |

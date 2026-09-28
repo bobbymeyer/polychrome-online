@@ -1,8 +1,8 @@
 <% content_for :title, "Settings" %>
 <h1>Settings</h1>
 <p class="prose">
-  Where this app finds ComfyUI (for images) and a language model (for drafts and prompts). Leave a field blank to use the server's
-  environment (<code>COMFY_URL</code>, <code>LLM_URL</code> and so on). Only addresses and names go here: if ComfyUI or the model needs a
+  Where this app finds ComfyUI (for images), a background remover and a language model (for drafts and prompts). Leave a field blank to use the server's
+  environment (<code>COMFY_URL</code>, <code>CUTOUT_URL</code>, <code>LLM_URL</code> and so on). Only addresses and names go here: if ComfyUI or the model needs a
   token, a header or a password, set it in the environment, where it never reaches the database.
 </p>
 
@@ -29,13 +29,26 @@
       <% end %>
       <p class="hint">Used when no world, content type or entry names a model.</p>
     </div>
-    <div class="field">
-      <%= f.label :rembg_node, "Background-removal node to try first" %>
-      <%= f.text_field :rembg_node, placeholder: env[:rembg_node].presence || "Found by itself: #{Comfy::BackgroundRemoval.node_names.first(3).join(', ')}…" %>
-      <p class="hint">
-        Usually blank: the first installed of <%= Comfy::BackgroundRemoval.node_names.to_sentence(last_word_connector: " or ") %> is used.
-        <% if caps.reachable? && (removal = Comfy::BackgroundRemoval.pick(caps)) %>Right now: <code><%= removal[:node] %></code>.<% end %>
-      </p>
+  </fieldset>
+
+  <% cutout = Rails.configuration.x.cutout %>
+  <fieldset class="panel">
+    <legend>Background removal</legend>
+    <p class="hint">
+      A service of its own, called on each image after ComfyUI renders it, for the content types marked to lose their background.
+      rembg's server works (<code>rembg s --port 7000</code>), or anything that takes the image as a multipart <code>file</code> and answers with a PNG.
+      Blank leaves backgrounds on.
+    </p>
+    <div class="field-row">
+      <div class="field">
+        <%= f.label :cutout_url, "Address" %>
+        <%= f.url_field :cutout_url, placeholder: cutout[:url].presence || "http://host.docker.internal:7000" %>
+      </div>
+      <div class="field">
+        <%= f.label :cutout_model, "Model" %>
+        <%= f.text_field :cutout_model, placeholder: cutout[:model] %>
+        <p class="hint">rembg: <code>birefnet-general</code>, <code>isnet-anime</code> for flat illustrated art, <code>bria-rmbg</code>…</p>
+      </div>
     </div>
   </fieldset>
 

@@ -89,7 +89,7 @@ module Comfy
     # (a full /object_info can run to megabytes); a node it doesn't have
     # answers empty.
     def capabilities
-      nodes = (Capabilities::NODES + BackgroundRemoval.node_names).uniq
+      nodes = Capabilities::NODES
       info = session do
         nodes.each_with_object({}) do |node, found|
           definition = get_json("/object_info/#{ERB::Util.url_encode(node)}")[node]

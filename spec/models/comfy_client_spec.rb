@@ -3,22 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Comfy::Client do
-  # Answers requests from a table of path => [status, body], recording them.
-  class FakeHttp
-    attr_reader :requests
-
-    def initialize(routes) = (@routes = routes) && (@requests = [])
-
-    def request(req)
-      @requests << req
-      status, body = @routes.fetch(req.path.split("?").first) { raise Errno::ECONNREFUSED }
-      Net::HTTPResponse::CODE_TO_OBJ.fetch(status.to_s).new("1.1", status.to_s, "").tap do |response|
-        response.instance_variable_set(:@body, body.is_a?(String) ? body : JSON.generate(body))
-        response.instance_variable_set(:@read, true)
-      end
-    end
-  end
-
   def client(routes) = described_class.new(url: "http://comfy.test", http: FakeHttp.new(routes))
 
   it "queues a graph and returns ComfyUI's prompt id" do
@@ -61,7 +45,7 @@ RSpec.describe Comfy::Client do
         "clip_name" => [ "COMBO", { "options" => [ "qwen_3_06b_base.safetensors" ] } ], "type" => [ [ "stable_diffusion", "anima" ] ]
       } } } } ]
     }
-    asked = Comfy::Capabilities::NODES + Comfy::BackgroundRemoval.node_names
+    asked = Comfy::Capabilities::NODES
     http = FakeHttp.new(asked.to_h { |node| [ "/object_info/#{ERB::Util.url_encode(node)}", [ 200, {} ] ] }.merge(routes))
     caps = described_class.new(url: "http://comfy.test", http: http).capabilities
     expect(caps).to be_reachable

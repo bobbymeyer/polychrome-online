@@ -32,6 +32,7 @@ class ArtBatch < ApplicationRecord
       entry.art_batches.destroy_all
       recipe = entry.art_recipe.merge("write" => write && Llm.enabled?)
       recipe["transparent"] = transparent unless transparent.nil?
+      recipe["cutout"] = Cutout.label if recipe["transparent"] && Cutout.enabled?
       recipe = draft_of(recipe) if draft
       create!(world: entry.art_world, entry: entry, recipe: recipe).tap do |b|
         seeds.each_with_index { |seed, i| b.candidates.create!(position: i, seed: seed) }
@@ -61,7 +62,7 @@ class ArtBatch < ApplicationRecord
     raise Refusal, "That draft has no image yet" unless candidate.status == "done" && candidate.image.attached?
 
     family = Comfy::Family.new(batch.recipe["family"], batch.recipe["model"])
-    recipe = batch.recipe.except("draft", "steps", "full", "workflow", "background_node").merge(batch.recipe["full"])
+    recipe = batch.recipe.except("draft", "steps", "full", "workflow").merge(batch.recipe["full"])
                   .merge("write" => false, "refines" => { "batch_id" => batch.id, "candidate_id" => candidate.id }, "denoise" => family.refine_denoise)
     refinement = transaction do
       batch.entry.art_batches.where.not(id: batch.id).destroy_all
@@ -118,18 +119,15 @@ class ArtBatch < ApplicationRecord
 
       prefix = "polychrome/#{entry.art_filename(candidate.seed).delete_suffix('.png')}"
       graph = Comfy::Workflow.build(recipe, seed: candidate.seed, prefix: prefix, capabilities: capabilities)
-      unless recipe["workflow"]
-        removal = Comfy::BackgroundRemoval.pick(capabilities) if recipe["transparent"]
-        update!(recipe: recipe.merge("workflow" => Comfy::Workflow.outline(graph), "background_node" => removal&.dig(:node)).compact)
-      end
+      update!(recipe: recipe.merge("workflow" => Comfy::Workflow.outline(graph))) unless recipe["workflow"]
       candidate.update!(comfy_prompt_id: client.submit(graph), status: "running")
     end
     update!(status: "running", error: nil, submitted_at: submitted_at || Time.current)
   end
 
   # Collect whatever has finished. Returns true once every candidate has.
-  def collect!(client)
-    candidates.reject(&:finished?).each { |candidate| candidate.collect!(client) }
+  def collect!(client, cutout: Cutout.client)
+    candidates.reject(&:finished?).each { |candidate| candidate.collect!(client, cutout: cutout) }
     return false if candidates.reload.any? { |c| !c.finished? }
 
     if candidates.all? { |c| c.status == "failed" }

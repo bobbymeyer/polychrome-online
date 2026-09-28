@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_120000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -713,7 +713,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_110000) do
   create_table "site_settings", force: :cascade do |t|
     t.string "comfy_url"
     t.string "comfy_model"
-    t.string "rembg_node"
     t.string "llm_url"
     t.string "llm_model"
     t.datetime "created_at", null: false
@@ -722,6 +721,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_110000) do
     t.integer "draft_steps"
     t.float "draft_denoise"
     t.integer "candidates"
+    t.string "cutout_url"
+    t.string "cutout_model"
   end
 
   create_table "users", force: :cascade do |t|

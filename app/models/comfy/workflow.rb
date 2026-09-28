@@ -12,8 +12,7 @@
 # - No negative encode when the sampler would ignore it (cfg 1): the empty
 #   conditioning is made from the positive one instead.
 # - Sampler and scheduler are the family's first preference the server has.
-# - Background removal when asked for, with whichever removal node the
-#   server has (Comfy::BackgroundRemoval); without one, the background stays.
+# - No background removal: that happens after, outside ComfyUI (Cutout).
 #
 # Raises Comfy::Error, saying what's missing, when the server can't make it.
 module Comfy
@@ -98,13 +97,6 @@ module Comfy
         "denoise" => denoise, "model" => model, "positive" => positive, "negative" => negative, "latent_image" => [ latent, 0 ]
       })
       image = [ add.("VAEDecode", { "samples" => [ sampler, 0 ], "vae" => vae }), 0 ]
-
-      if recipe["transparent"] && (removal = BackgroundRemoval.pick(caps))
-        # The picture as rendered too, to put back what the removal takes
-        # from inside the subject (BackgroundRemoval.keep_interior).
-        add.("SaveImage", { "filename_prefix" => "#{prefix}#{BackgroundRemoval::PLAIN}", "images" => image })
-        image = BackgroundRemoval.wire(add, image, removal)
-      end
 
       add.("SaveImage", { "filename_prefix" => prefix, "images" => image })
       graph

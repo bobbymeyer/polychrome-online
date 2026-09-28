@@ -57,13 +57,9 @@
     </fieldset>
   <% end %>
 
-  <% caps = Comfy.capabilities %>
-  <% if caps.reachable? %>
-    <% removal = Comfy::BackgroundRemoval.pick(caps) %>
-    <p class="hint">
-      <%= removal ? "Backgrounds are removed with #{removal[:node]} for the types marked to remove them." :
-                    "This ComfyUI has no background-removal node, so backgrounds are kept. Install one of: #{Comfy::BackgroundRemoval.node_names.to_sentence(last_word_connector: ' or ')}." %>
-    </p>
-  <% end %>
+  <p class="hint">
+    <%= Cutout.enabled? ? "Backgrounds are removed with #{Cutout.label} for the types marked to remove them." :
+                          "No background remover is set up (Settings), so backgrounds are kept." %>
+  </p>
   <div class="actions"><%= f.submit "Save art direction", class: "button" %></div>
 <% end %>
