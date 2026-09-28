@@ -18,6 +18,34 @@
   <div class="field field--check"><%= f.check_box :known %><%= f.label :known, "The players know it from the start" %></div>
   <div class="field"><%= f.label :description, "What players read about it" %><%= f.text_area :description, rows: 3 %></div>
   <div class="field"><%= f.label :notes, "GM notes" %><%= f.text_area :notes, rows: 3 %></div>
+  <fieldset class="panel past-fields">
+    <legend>Its past</legend>
+    <p class="hint">
+      Who founded it and who they're at odds with; for a dungeon, what it was and how it fell (its rooms, boss and treasure follow from that).
+      The world's <%= link_to "history", world_history_path(@world) %> writes this; once you change it, it's yours and the history leaves it alone.
+      <% if place.past.present? && !Past.new(place.past).edited? %>Written by the history.<% end %>
+    </p>
+    <% was = place.past_form %>
+    <%= f.fields_for :past_form do |p| %>
+      <div class="field-row">
+        <div class="field"><%= p.label :founder, "Founded by" %><%= p.text_field :founder, value: was["founder"], placeholder: "Aldo Vell" %></div>
+        <div class="field"><%= p.label :founded, "Years ago" %><%= p.number_field :founded, value: was["founded"], min: 0 %></div>
+        <div class="field"><%= p.label :family, "Their family" %><%= p.text_field :family, value: was["family"], placeholder: "Vell" %></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><%= p.label :rival, "Old rivals" %><%= p.text_field :rival, value: was["rival"], placeholder: "Marrow" %></div>
+        <div class="field"><%= p.label :feud_with, "Feud still running with" %><%= p.text_field :feud_with, value: was["feud_with"] %></div>
+        <div class="field"><%= p.label :feud_cause, "Over" %><%= p.text_field :feud_cause, value: was["feud_cause"], placeholder: "a horse sold lame" %></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><%= p.label :was, "Once (a dungeon)" %><%= p.select :was, Generators::History::PASTS.keys.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing in particular", selected: was["was"] } %></div>
+        <div class="field"><%= p.label :fall_kind, "Until" %><%= p.select :fall_kind, WorldPlace::PAST_FALLS.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing happened", selected: was["fall_kind"] } %></div>
+        <div class="field"><%= p.label :fall_ago, "Years ago" %><%= p.number_field :fall_ago, value: was["fall_ago"], min: 0 %></div>
+        <div class="field"><%= p.label :holder, "Owned now by" %><%= p.text_field :holder, value: was["holder"] %></div>
+      </div>
+      <div class="field"><%= p.label :lost, "Who never came out (names, with commas)" %><%= p.text_field :lost, value: was["lost"] %></div>
+    <% end %>
+  </fieldset>
   <div class="actions">
     <%= f.submit class: "button" %>
     <%= link_to "Cancel", world_world_places_path(@world), class: "button button--quiet" %>

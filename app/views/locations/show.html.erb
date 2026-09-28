@@ -56,3 +56,19 @@
 <% end %>
 
 <%= render(@location.town? ? "locations/town" : "locations/dungeon", location: @location, view: view, gm: @gm) %>
+
+<% if (past = Past.new(view["past"])).lines.any? %>
+  <section class="window past" aria-label="Its past">
+    <h2>Its past</h2>
+    <% past.lines.each do |line| %><p><%= line %></p><% end %>
+    <% if @gm %>
+      <p class="hint">
+        <% if (place = @location.map_node&.world_place) && Past.new(place.past).present? %>
+          From <%= place.name %> in the <%= link_to "atlas", edit_world_world_place_path(@world, place) %>, where you can change it.
+        <% else %>
+          Rolled with the place, from its seed. Written from the world's <%= link_to "history", world_history_path(@world) %> when it's in the atlas.
+        <% end %>
+      </p>
+    <% end %>
+  </section>
+<% end %>

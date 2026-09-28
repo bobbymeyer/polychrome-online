@@ -487,6 +487,47 @@ every campaign in it uses them.
     clocks and secrets, linked to what it brought in.
   - A front's clock can say what a place becomes when it fills, and dealing
     it in prepares that mode.
+- **History** (`/history`): a small history of the setting, rolled over its
+  atlas before play.
+  - **What it rolls:** a few families over the atlas's places, for a
+    century or so (40 to 300 years). They found towns, build manors, mines
+    and abbeys, marry, quarrel, feud, betray each other, drown, sell up and
+    flee. Places burn, flood and get sealed. It stays local and pulp.
+  - **What the table hears and what happened:** some events have a truth
+    only the GM sees. "The Ashers lost their standing; nobody could say how"
+    comes with who did it.
+  - **Rerolling:** the history comes from a seed, so a reroll gives a new
+    one. Families the GM keeps stay through rerolls, with their name, trade
+    and seat. The world's `families` generator tables supply surnames, and
+    its `names` tables given names.
+  - **Writing it in:** it goes into the canon the GM already edits:
+    - a History page and a page per family in the codex, with the truths in
+      the GM notes;
+    - the living head of each family in the cast;
+    - a past on every place in the atlas;
+    - each feud still running as a front, with its clock and its secrets.
+  - **Writing it in again** replaces what it wrote before, except what the
+    GM has changed since. **Taking it out** removes it, with the same
+    exception.
+- **Where things came from (provenance):** every town and dungeon has a
+  past.
+  - **Where it comes from:** the atlas place's past when the history wrote
+    one or the GM gave it one. Otherwise the place rolls a small past of its
+    own from its seed, not stored.
+  - **Towns** have a founder, their old rivals and the feud still running.
+  - **Dungeons** were something before: the Vell manor, the Pike mine,
+    usually what their name says. So:
+    - about half their rooms are that thing's rooms (a manor has a Nursery
+      and a Wine Cellar);
+    - the boss room is its heart, and whoever died there waits in it;
+    - one event room shows how it fell;
+    - the treasure comes with what the family lost there, and who made it
+      for whom.
+  - **What doesn't change:** the rooms' places and decisions.
+  - **Shops:** a shop's made things (not its potions) can say who made them
+    and who had them before.
+  - **Editing a past:** it can be edited on the atlas place. Once edited,
+    it's the GM's, and the history leaves it alone.
 - **Voice** (on the world's edit page): tone and touchstones, and words or
   tropes to avoid. The language model writes in it.
 - **Lines and veils:** lines never happen in the setting; veils happen

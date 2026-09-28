@@ -51,6 +51,8 @@ Rails.application.routes.draw do
     resources :world_figures, path: "cast", except: :show
     resources :codex_entries, path: "codex"
     resources :world_fronts, path: "fronts", except: :show
+    # Its pocket history, rolled over the atlas and written into the canon.
+    resource :history, only: %i[show update create destroy], controller: "world_histories"
 
     # The asset pipeline (§8): the world's art direction, and generating
     # candidates for an entry's image with ComfyUI.

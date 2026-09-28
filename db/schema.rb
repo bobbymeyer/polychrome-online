@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_030000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -268,6 +268,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.boolean "public", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "history_key"
     t.index ["world_id", "title"], name: "index_codex_entries_on_world_id_and_title", unique: true
     t.index ["world_id"], name: "index_codex_entries_on_world_id"
   end
@@ -692,6 +693,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.integer "world_place_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "history_key"
     t.index ["monster_id"], name: "index_world_figures_on_monster_id"
     t.index ["world_id"], name: "index_world_figures_on_world_id"
     t.index ["world_place_id"], name: "index_world_figures_on_world_place_id"
@@ -705,6 +707,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.json "secrets", default: [], null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "history_key"
     t.index ["world_id"], name: "index_world_fronts_on_world_id"
   end
 
@@ -721,6 +724,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.integer "seed"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "past", default: {}, null: false
     t.index ["location_template_id"], name: "index_world_places_on_location_template_id"
     t.index ["world_id"], name: "index_world_places_on_world_id"
   end
@@ -762,6 +766,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_020000) do
     t.json "terms", default: {}, null: false
     t.json "calendar", default: {}, null: false
     t.json "origins", default: [], null: false
+    t.json "history", default: {}, null: false
     t.index ["owner_id"], name: "index_worlds_on_owner_id"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end

@@ -137,7 +137,7 @@ RSpec.describe Location do
     it "lets the GM place the boss and add rooms" do
       dungeon.place_boss!("ogre" => "2")
       boss_room = dungeon.room(dungeon.view["boss"])
-      expect(boss_room["decision"]).to eq("kind" => "boss", "monsters" => { "ogre" => 2 })
+      expect(boss_room["decision"]).to include("kind" => "boss", "monsters" => { "ogre" => 2 })
 
       key = dungeon.add_room!(name: "Secret Library", connect: entrance, decision: { "kind" => "treasure", "item" => "power_ring" })
       expect(dungeon.neighbours(entrance)).to include(key)

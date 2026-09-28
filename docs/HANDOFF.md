@@ -141,6 +141,19 @@ Test both modules exhaustively with RSpec. Property-style tests on the resolver 
 
 GM controls: reroll, pin, add hand-authored NPC/room, place boss, override stock.
 
+**History and provenance.** Before play, a world can roll a pocket history over its atlas (`Generators::History`, written in by `Chronicle`). It is a seeded simulation, pure like the battle resolver: a few families across the places, over a century or so, in five-year steps. It is written into the existing canon, not a parallel world:
+- codex pages, with the truths in the GM notes;
+- the living heads in the cast;
+- a past on each place;
+- running feuds as fronts.
+
+Every generated place carries where it came from (`Generators::Provenance`):
+- **A dungeon** was something (the Vell manor, sealed after the fire). Its rooms, boss and treasure follow from that, drawn on their own random stream so its layout and decisions never move.
+- **A town** has a founder, old rivals and a running feud.
+- **A shop's made things** have a maker and a previous owner.
+
+The GM keeps families through rerolls and edits a place's past on the atlas; an edited past, like an edited page, is theirs, and the history won't write over it.
+
 **Chat.** Portrait + dialogue box. `messages` broadcast via Turbo Streams. GM has a "speak as" picker for any NPC (possession). Expression tag selects portrait variant. Whispers are scoped broadcasts. Open design question: sequential dialogue box vs simultaneous chat — leaning toward GM/NPC lines in the box and player lines in a side log.
 
 **Books.** Each book is a Rails resource namespace. Each entry has two faces: a form and a rendered "page" (stat block, prose, cross-references, image). Cross-references between entries are the index.

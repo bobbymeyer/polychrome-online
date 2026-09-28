@@ -38,18 +38,45 @@ class Location < ApplicationRecord
 
   # --- generation --------------------------------------------------------------
 
+  # Rolled, then given its past (Generators::Provenance): a dungeon's rooms,
+  # boss and treasure follow from what it was.
   def generated
-    @generated ||= if town?
-      in_the_worlds_words(Generators::Town.generate(seed: seed, template: town_settings, tables: location_template.table_entries))
-    else
-      Generators::Dungeon.generate(seed: seed, template: location_template.settings,
-                                   encounters: location_template.encounter_table&.entries || [],
-                                   tables: location_template.table_entries)
+    @generated ||= begin
+      rolled = if town?
+        in_the_worlds_words(Generators::Town.generate(seed: seed, template: town_settings, tables: location_template.table_entries))
+      else
+        Generators::Dungeon.generate(seed: seed, template: location_template.settings,
+                                     encounters: location_template.encounter_table&.entries || [],
+                                     tables: location_template.table_entries)
+      end
+      Generators::Provenance.apply(rolled, past_for(rolled["name"]), seed: seed)
     end
   end
 
   def view
-    @view ||= Generators::Overrides.apply(generated, overrides)
+    @view ||= with_stock_stories(Generators::Overrides.apply(generated, overrides))
+  end
+
+  # Its past: the atlas place's, written by the world's history (Chronicle)
+  # or the GM; else a small one of its own, rolled from its seed.
+  def past_for(name)
+    written = map_node&.world_place&.past
+    return written.except("edited") if Past.new(written).present?
+
+    world = campaign.world
+    Generators::Provenance.past_for(seed: seed, name: name, kind: kind,
+                                    given_names: location_template.table_entries.fetch("names", []).filter_map { |e| e["text"] },
+                                    family_names: world.generator_tables.of_kind("families").flat_map { |t| t.entries.filter_map { |e| e["text"] } })
+  end
+
+  def past = Past.new(generated["past"])
+
+  # Who made the shop's made things (not its potions), and who had them.
+  def with_stock_stories(view)
+    return view unless view["kind"] == "town" && view["stock"].present?
+
+    made = campaign.world.items.where(slug: view["stock"]).where.not(category: "consumable").pluck(:slug)
+    view.merge("stock_stories" => Generators::Provenance.stock(made.sort, view["past"], seed: seed))
   end
 
   # The template's settings, less the services this world doesn't have.
@@ -435,11 +462,14 @@ class Location < ApplicationRecord
     end
   end
 
-  # "Potion", "150 gil".
+  # "Potion", "150 gil", "150 gil, in the Vell signet (made for Aldo Vell)".
   def describe_treasure(decision)
-    return "#{decision['gil']} gil" if decision["gil"]
+    found = decision["gil"] ? "#{decision['gil']} gil" : campaign.world.items.find_by(slug: decision["item"])&.name || decision["item"]
+    heirloom = decision["heirloom"]
+    return found unless heirloom
 
-    campaign.world.items.find_by(slug: decision["item"])&.name || decision["item"]
+    made = [ ("made by #{heirloom['maker']}" if heirloom["maker"]), ("for #{heirloom['made_for']}" if heirloom["made_for"]) ].compact.join(" ")
+    "#{found}, with #{heirloom['name']}#{" (#{made})" if made.present?}"
   end
 
   def resolve!(key)

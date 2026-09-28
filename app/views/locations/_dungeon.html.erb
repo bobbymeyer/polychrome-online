@@ -4,7 +4,7 @@
 <% describe = lambda do |room|
      d = room["decision"]
      case d["kind"]
-     when "encounter", "boss" then "#{glyph_names[d['kind']]}: #{@campaign.describe_encounter(d['monsters'])}"
+     when "encounter", "boss" then "#{glyph_names[d['kind']]}: #{@campaign.describe_encounter(d['monsters'])}#{" (#{d['who']})" if d['who']}"
      when "treasure"
        "Treasure: #{location.describe_treasure(d)}#{' (taken)' if location.resolved?(room['key'])}"
      when "key"

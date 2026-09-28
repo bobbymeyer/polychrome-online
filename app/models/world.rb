@@ -149,7 +149,7 @@ class World < ApplicationRecord
         end
       end
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
-      %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar origins].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar origins history].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
       copy_canon_from!(source)
     end
@@ -208,7 +208,7 @@ class World < ApplicationRecord
     # Fronts name places and people by id: point them at the copies.
     figures = source.world_figures.to_h { |f| [ f.id, world_figures.find_by(name: f.name)&.id ] }
     source.world_fronts.find_each do |front|
-      world_fronts.create!(name: front.name, description: front.description,
+      world_fronts.create!(name: front.name, description: front.description, history_key: front.history_key,
                            clocks: front.clocks.map { |c| c.merge("place_id" => places[c["place_id"]]&.id).compact },
                            secrets: front.secrets.map { |s| s.merge("place_id" => places[s["place_id"]]&.id, "figure_id" => figures[s["figure_id"]]).compact })
     end
