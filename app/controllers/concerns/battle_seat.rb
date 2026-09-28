@@ -24,6 +24,10 @@ module BattleSeat
   end
 
   def current_seat
+    @current_seat ||= find_current_seat
+  end
+
+  def find_current_seat
     seat = session.dig(:seats, seat_key(@battle)) || seat_from_table
     return Seat.nobody unless may_sit?(seat)
 
@@ -56,12 +60,14 @@ module BattleSeat
   end
 
   def take_seat(seat)
+    @current_seat = nil
     session[:seats] = (session[:seats] || {}).merge(seat_key(@battle) => seat)
   end
 
   # Recorded as an empty seat (not deleted) so the table seat doesn't
   # silently take over again.
   def leave_seat
+    @current_seat = nil
     session[:seats] = (session[:seats] || {}).merge(seat_key(@battle) => "")
   end
 

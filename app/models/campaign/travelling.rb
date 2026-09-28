@@ -22,7 +22,7 @@ module Campaign::Travelling
       # dangerous path rolls nothing.
       safe = edge.encounter_table && safe_road
       if edge.encounter_table && !safe
-        self.rng, rolled = Pointcrawl::Encounters.roll(rng, edge.encounter_table.entries, edge.state)
+        rolled = roll_with { |state| Pointcrawl::Encounters.roll(state, edge.encounter_table.entries, edge.state) }
       end
       self.safe_road = false if safe
       destination.update!(visible: true)
@@ -31,7 +31,7 @@ module Campaign::Travelling
       self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled, "terrain" => edge.encounter_table.terrain_type }
       # A place in a mode can have trouble waiting.
       if !rolled && (trouble = destination.location&.encounter_table_for_mode)
-        self.rng, rolled = Pointcrawl::Encounters.roll(rng, trouble.entries, "dangerous")
+        rolled = roll_with { |state| Pointcrawl::Encounters.roll(state, trouble.entries, "dangerous") }
         self.pending_encounter = rolled && { "table" => "#{destination.name}: #{destination.location.current_mode['name']}", "monsters" => rolled,
                                              "terrain" => trouble.terrain_type }
       end

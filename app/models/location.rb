@@ -30,8 +30,13 @@ class Location < ApplicationRecord
     Random.new_seed % 2**31
   end
 
+  # What rolling a place reads, to preload with a list of them:
+  #   clocks.includes(location_mode: { location: Location::ROLLING })
+  ROLLING = [ :campaign, { map_node: :world_place }, { location_template: %i[world encounter_table] } ].freeze
+
+  # Its name without the whole view: the GM's, else the rolled one.
   def name
-    view["name"]
+    overrides["name"].to_s.strip.empty? ? generated["name"] : overrides["name"]
   end
 
   private

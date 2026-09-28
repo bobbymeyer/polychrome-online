@@ -22,6 +22,10 @@ module TableSeat
   # yet, the obvious one: the GM seat if it's your campaign, otherwise your
   # only character here.
   def table_seat(campaign = @campaign)
+    (@table_seats ||= {})[campaign.id] ||= find_table_seat(campaign)
+  end
+
+  def find_table_seat(campaign)
     seat = session.dig(:table_seats, seat_key(campaign))
     return default_table_seat(campaign) if seat.nil?
     return Seat.nobody if seat == "" # stood up on purpose
@@ -64,12 +68,14 @@ module TableSeat
   end
 
   def take_table_seat(campaign, seat)
+    @table_seats = nil
     session[:table_seats] = (session[:table_seats] || {}).merge(seat_key(campaign) => seat.to_s)
   end
 
   # Recorded as an empty seat (not deleted) so the obvious seat doesn't
   # silently take over again.
   def leave_table_seat(campaign)
+    @table_seats = nil
     session[:table_seats] = (session[:table_seats] || {}).merge(seat_key(campaign) => "")
   end
 end

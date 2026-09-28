@@ -100,6 +100,6 @@ class Clock < ApplicationRecord
   # clocks (on their own stream, so a hidden clock never reaches them).
   def broadcast
     campaign.broadcast_party_knows
-    broadcast_replace_to campaign, :map_gm, target: "gm_clocks", partial: "campaigns/clocks/gm", locals: { campaign: campaign }
+    broadcast_replace_to campaign, :gm, target: "gm_clocks", partial: "campaigns/clocks/gm", locals: { campaign: campaign }
   end
 end

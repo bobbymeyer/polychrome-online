@@ -9,10 +9,8 @@
      data-recap-campaign-value="<%= @campaign.id %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
-  <%= turbo_stream_from @campaign, :table %>
+  <%= seat_streams_from @seat, @campaign %>
   <%= render "shared/stage_stream", campaign: @campaign %>
-  <%= turbo_stream_from @campaign, @seat.map_stream %>
-  <%= seat_stream_from @seat, @campaign %>
 
   <header class="battle__header">
     <div>
@@ -123,7 +121,7 @@
         <%= form_with url: campaign_checks_path(@campaign), scope: :check, class: "book-form check-form" do |f| %>
           <fieldset class="field">
             <legend>Who tries</legend>
-            <% @campaign.characters.order(:created_at).select(&:conscious?).each do |character| %>
+            <% @campaign.characters.includes(:job, :character_jobs, equipment_slots: :item).order(:created_at).select(&:conscious?).each do |character| %>
               <label class="inline"><%= check_box_tag "check[characters][]", character.id, false, id: "check_character_#{character.id}" %> <%= character.name %></label>
             <% end %>
           </fieldset>

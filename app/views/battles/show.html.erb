@@ -18,8 +18,7 @@
   <%= turbo_stream_from @battle %>
   <%# What's said at the table reaches the battle too (the same signed streams as the table). %>
   <% if @battle.campaign %>
-    <%= turbo_stream_from @battle.campaign, :table %>
-    <%= seat_stream_from @seat, @battle.campaign %>
+    <%= seat_streams_from @seat, @battle.campaign %>
   <% end %>
 
   <header class="battle__header">

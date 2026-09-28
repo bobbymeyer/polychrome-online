@@ -20,6 +20,21 @@ module SystemHelpers
     expect(page).to have_no_current_path(new_session_path)
   end
 
+  # Sign in and sit down at the example's campaign, in this person's own
+  # browser (a Capybara session per person).
+  def seat(user, seat)
+    Capybara.using_session(user.name) do
+      sign_in_through_the_page(user)
+      sit_at(campaign, seat)
+    end
+  end
+
+  # Look through this person's browser.
+  def as(user, &) = Capybara.using_session(user.name, &)
+
+  # A line in the table's log (in the drawer, so maybe not on screen).
+  def logged?(text) = have_css("#chat_log li", text: text, visible: :all)
+
   # Sit at a campaign's table: "gm", a character, or nil to stand up.
   def sit_at(campaign, seat)
     visit campaign_table_path(campaign)

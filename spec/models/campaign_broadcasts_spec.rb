@@ -12,7 +12,7 @@ RSpec.describe Campaign::Broadcasts do
   it "tells the players' table what the party knows when a flag goes public" do
     flag = campaign.flags.create!(key: "met_the_king", value: "yes")
     expect { flag.update!(public: true) }
-      .to have_broadcasted_to(stream(campaign, :map)).with(a_string_including("party_knows", "Met the king"))
+      .to have_broadcasted_to(stream(campaign, :players)).with(a_string_including("party_knows", "Met the king"))
   end
 
   it "refreshes the campaign's documents when something on them changes" do

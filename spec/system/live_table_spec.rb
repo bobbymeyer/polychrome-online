@@ -10,18 +10,6 @@ RSpec.describe "The live table", type: :system do
   let(:campaign) { create_campaign.tap { |c| c.update!(gm_id: gm.id) } }
   let!(:rook) { create_character(campaign, name: "Rook", user: player) }
 
-  # Sign in and sit down, in this person's own browser.
-  def seat(user, seat)
-    Capybara.using_session(user.name) do
-      sign_in_through_the_page(user)
-      sit_at(campaign, seat)
-    end
-  end
-
-  def as(user, &) = Capybara.using_session(user.name, &)
-
-  def logged?(text) = have_css("#chat_log li", text: text, visible: :all)
-
   it "tells the players what the party knows when the GM makes a flag public" do
     seat(player, rook)
     as(player) { expect(page).to have_no_css("#party_knows", text: "Met the king", visible: :all) }

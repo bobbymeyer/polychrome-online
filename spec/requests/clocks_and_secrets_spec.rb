@@ -80,7 +80,7 @@ RSpec.describe "Clocks and secrets", type: :request do
 
     it "sends players only public clocks when one changes" do
       hidden = campaign.clocks.create!(name: "The traitor acts", segments: 4)
-      streams = capture_turbo_stream_broadcasts([ campaign, :map ]) { hidden.tick! }
+      streams = capture_turbo_stream_broadcasts([ campaign, :players ]) { hidden.tick! }
       expect(streams.map { |s| s["target"] }).to include("party_knows")
       expect(streams.map(&:to_html).join).not_to include("The traitor acts")
     end

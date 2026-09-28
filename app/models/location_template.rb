@@ -62,9 +62,11 @@ class LocationTemplate < ApplicationRecord
     chosen.any? ? world.generator_tables.where(slug: chosen) : world.generator_tables
   end
 
-  # { kind => pooled entries } for the generator.
+  # { kind => pooled entries } for the generator. Read once per template
+  # (every place made from it asks).
   def table_entries
-    generator_tables.group_by(&:kind).transform_values { |tables| tables.flat_map(&:entries) }
+    @table_entries = nil if @table_entries && changed?
+    @table_entries ||= generator_tables.group_by(&:kind).transform_values { |tables| tables.flat_map(&:entries) }
   end
 
   private

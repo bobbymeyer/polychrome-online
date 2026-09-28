@@ -1,6 +1,6 @@
 <%# The GM's record of the party's deeds (Deed), and how each town sees them. %>
 <% deeds = campaign.deeds.includes(:map_node).in_order.reverse %>
-<% towns = campaign.map_nodes.includes(:location).select { |n| n.location&.town? }.sort_by(&:name) %>
+<% towns = Location.preload_reputations(campaign.map_nodes.includes(location: :location_template).select { |n| n.location&.town? }.sort_by(&:name)) %>
 <% if deeds.any? %>
   <ul class="secret-rows">
     <% deeds.each do |deed| %>

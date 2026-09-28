@@ -223,6 +223,7 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 /* Stacked on a phone, the party's yellow slab cuts across the bottom instead. */
 @media (max-width: 640px) {
   .battlefield {
+    --sprite: 120px; --sprite-party: 72px;
     background:
       linear-gradient(174deg, transparent 0 54%, var(--sun-yellow) 54% 100%),
       radial-gradient(circle, rgba(255, 255, 255, .2) 1.2px, transparent 1.6px) 0 0 / 10px 10px,
@@ -249,7 +250,7 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
   content: ""; position: absolute; left: -10%; right: -10%; bottom: -6px; height: 6px; background: var(--signal);
   clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); animation: slash-in .18s ease-out both;
 }
-.unit--party.is-active::after { left: auto; width: 64px; right: -4px; }
+.unit--party.is-active::after { left: auto; width: calc(var(--sprite-party, 48px) + 16px); right: -4px; }
 .unit.is-active .unit__label { border-bottom-color: transparent; }
 .unit--enemy.is-active::after { background: var(--sun-yellow); }
 .unit--party.is-active .sprite__plate { box-shadow: 0 0 0 3px var(--paper), 0 0 0 6px var(--signal); }

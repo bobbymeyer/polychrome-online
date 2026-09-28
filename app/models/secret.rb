@@ -70,6 +70,6 @@ class Secret < ApplicationRecord
 
   def broadcast
     campaign.broadcast_party_knows
-    broadcast_replace_to campaign, :map_gm, target: "gm_secrets", partial: "campaigns/secrets/gm", locals: { campaign: campaign }
+    broadcast_replace_to campaign, :gm, target: "gm_secrets", partial: "campaigns/secrets/gm", locals: { campaign: campaign }
   end
 end

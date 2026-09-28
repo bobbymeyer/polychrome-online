@@ -47,6 +47,19 @@ module Location::Town
     super
   end
 
+  class_methods do
+    # The reputation of every town on a list of map nodes, in one query.
+    def preload_reputations(nodes)
+      nodes = nodes.select(&:location)
+      return nodes if nodes.empty?
+
+      sways = RumourPlace.where(map_node_id: nodes.map(&:id)).joins(:rumour)
+                         .merge(Rumour.about_deeds.where(campaign_id: nodes.first.campaign_id))
+                         .group(:map_node_id).sum("rumours.sway")
+      nodes.each { |node| node.location.instance_variable_set(:@reputation, sways.fetch(node.id, 0).clamp(-5, 5)) }
+    end
+  end
+
   STANDINGS = { -5..-3 => "Unwelcome", -2..-1 => "Wary", 0..0 => "Strangers", 1..2 => "Welcome", 3..5 => "Heroes" }.freeze
   REPUTATION_PRICE = 5 # percent off for each point in the party's favour
 

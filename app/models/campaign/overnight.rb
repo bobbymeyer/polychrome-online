@@ -43,10 +43,10 @@ module Campaign::Overnight
   def overnight!
     nodes = map_nodes.includes(:location).to_a
     by_id = nodes.index_by(&:id)
-    next_rng, happenings = Pointcrawl::Overnight.run(overnight_world(nodes), rng)
     notes = []
+    happenings = nil
     transaction do
-      update!(rng: next_rng)
+      happenings = roll_with { |state| Pointcrawl::Overnight.run(overnight_world(nodes), state) }
       rumours.travelling.update_all("age = age + 1")
       happenings.each do |event|
         case event["kind"]

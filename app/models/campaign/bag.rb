@@ -37,11 +37,13 @@ module Campaign::Bag
       raise Refusal, "There's no #{item.name} in the bag" unless quantity_of(item).positive?
 
       before = target.current_hp
-      hp, _events, next_rng = Battle::Field.use_item(item.to_engine(1), user: user.battle_spec, target: target.battle_spec, rng: rng,
-                                                                                     types: world.type_chart.to_engine)
+      hp = roll_with do |state|
+        healed, _events, next_state = Battle::Field.use_item(item.to_engine(1), user: user.battle_spec, target: target.battle_spec, rng: state,
+                                                                                          types: world.type_chart.to_engine)
+        [ next_state, healed ]
+      end
       take_item!(item)
       target.update!(hp: hp)
-      update!(rng: next_rng)
       on = target == user ? "" : " on #{target.name}"
       narrate("#{user.name} uses #{item.name}#{on}: HP #{before} → #{hp}.")
     end
