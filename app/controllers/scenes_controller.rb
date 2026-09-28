@@ -19,7 +19,7 @@ class ScenesController < ApplicationController
   def create
     @scene = @campaign.scenes.new(scene_params)
     if @scene.save
-      redirect_to campaign_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} is ready to play.", status: :see_other
+      redirect_to campaign_prep_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} is ready to play.", status: :see_other
     else
       render :new, status: :unprocessable_content
     end
@@ -29,7 +29,7 @@ class ScenesController < ApplicationController
 
   def update
     if @scene.update(scene_params)
-      redirect_to campaign_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} was updated.", status: :see_other
+      redirect_to campaign_prep_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} was updated.", status: :see_other
     else
       render :edit, status: :unprocessable_content
     end
@@ -37,7 +37,7 @@ class ScenesController < ApplicationController
 
   def destroy
     @scene.destroy!
-    redirect_to campaign_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} was deleted.", status: :see_other
+    redirect_to campaign_prep_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} was deleted.", status: :see_other
   end
 
   private

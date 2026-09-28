@@ -118,7 +118,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       post campaign_secrets_path(campaign), params: { secret: { body: "The mayor pays the goblins.", location_id: town.id, npc_id: "" } }
       secret = campaign.secrets.sole
       expect(secret).to have_attributes(location: town, revealed_at: nil)
-      get campaign_path(campaign)
+      get campaign_prep_path(campaign)
       expect(response.body).to include("The mayor pays the goblins.", "Reveal")
 
       sit(hero)

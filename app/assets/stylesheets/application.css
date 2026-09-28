@@ -639,6 +639,7 @@ details[open] summary { margin-bottom: 16px; }
 .past { margin: 0 0 24px; }
 .history-list li.is-unknown { color: var(--grey); }
 .standing { margin: 0 0 12px; }
+.prep-nav { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 24px; }
 .standing--bad strong { color: var(--signal); }
 .past p { margin: 0 0 4px; }
 .shop-table__story { display: block; font-size: 0.85em; }

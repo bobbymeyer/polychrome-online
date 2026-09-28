@@ -282,7 +282,7 @@ everything outside battle.
 
 ## Scenes
 
-The GM writes scenes before the session, on the campaign page, and plays
+The GM writes scenes before the session, on the campaign's Prep page, and plays
 them from the table with one press (`Scene#play!`). A script reads like a
 play, one line each: `Cid (worried): The airship won't hold.` speaks as
 the NPC with that expression, and anything else is narration (a name that
@@ -551,7 +551,7 @@ every campaign in it uses them.
   - **Clocks** can tick on each new day, so "the festival is in three days"
     is a three-segment clock.
   - **A world's calendar** names its weekdays and months.
-  - **Deeds and reputation** (campaign page, "Deeds"): what the party did
+  - **Deeds and reputation** (the campaign's Prep page, "Deeds"): what the party did
     that people will talk about.
     - **Recorded by themselves:** beating an antagonist for good, and
       clearing a dungeon by winning its boss fight. The GM records the rest,
@@ -562,6 +562,9 @@ every campaign in it uses them.
       from Unwelcome to Heroes. Friends sell 5% cheaper per point, wary
       towns dearer, and at −3 nobody will trade or give the party a bed.
       Striking a deed takes it back. The language model sees it too.
+  - **Prep** (`/campaigns/:id/prep`, the GM's): scenes, clocks and fronts,
+    secrets, deeds, rumours and flags on one page of their own; the campaign
+    page links to it.
   - **Legends** (`/campaigns/:id/legends`): the party's story by day (their
     deeds and the rumours they heard), what they found out, and the world's
     written history as far as it touches places they know. The GM's page
@@ -573,7 +576,7 @@ every campaign in it uses them.
     - **Rumours** travel one road from wherever they've got to, and fade
       after six days. They start when a place changes mode, when an
       antagonist is seen, when a caravan is lost, or when the GM lets one
-      loose from the campaign page.
+      loose from the Prep page.
     - **Antagonists who got away** wander to a town or dungeon nearby,
       across wild country if need be, about half the nights.
     - **Caravans** are lost on dangerous roads between two towns, and prices
@@ -628,7 +631,7 @@ every campaign in it uses them.
     slip.
   - **Field abilities:** a field ability with the `uncover` outcome brings
     one out on a success, preferring one about where the party stands.
-- **Where:** clocks and secrets are on the campaign page for prep, and in
+- **Where:** clocks and secrets are on the campaign's Prep page, and in
   the GM's panels at the table for play. Both update live.
 
 ## Suggestions from a language model
@@ -638,7 +641,7 @@ drafts while preparing and world building. It drafts and the GM decides:
 nothing it writes is used until it is kept, and keeping goes through the same
 forms and checks as writing by hand. Without one, none of this shows.
 
-- **Prep** (the campaign page and location pages, for the GM):
+- **Prep** (the campaign's Prep page and location pages, for the GM):
   - **Secrets:** they tie together the cast and places already there.
   - **Clocks:** each has segments, triggers and the line the table hears
     when it fills.

@@ -27,7 +27,7 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     post world_campaigns_path(world), params: { campaign: { name: "Rust" } }
     campaign = world.campaigns.find_by!(name: "Rust")
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    get campaign_path(campaign)
+    get campaign_prep_path(campaign)
     expect(response.body).to include("Fronts from #{world.name}", "The Syndicate&#39;s grab")
 
     post campaign_front_deals_path(campaign), params: { front_id: front.id }

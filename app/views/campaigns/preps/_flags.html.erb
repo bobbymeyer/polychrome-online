@@ -1,0 +1,46 @@
+<section class="window" id="flags">
+  <div class="book-header">
+    <h2>Flags</h2>
+    <% changes = campaign.locations.sum { |location| location.changes.size } %>
+    <%= link_to "GM changes to locations (#{changes})", campaign_changes_path(campaign), class: "button button--quiet" %>
+  </div>
+  <p class="hint">The GM's campaign state. Public flags show at the table as what the party knows; the rest are yours alone.</p>
+  <% flags = campaign.flags.order(:key) %>
+  <% if flags.any? %>
+    <table class="book-table book-table--plain flag-table">
+      <thead><tr><th>Flag</th><th>Value</th><th>Seen by</th><th></th></tr></thead>
+      <tbody>
+        <% flags.each do |flag| %>
+          <tr>
+            <td><code><%= flag.key %></code><% if flag.note.present? %><br><span class="muted"><%= flag.note %></span><% end %></td>
+            <td>
+              <%= form_with model: flag, url: campaign_flag_path(campaign, flag), class: "inline-form flag-value" do |f| %>
+                <%= f.text_field :value, id: "flag_#{flag.id}_value", "aria-label": "Value of #{flag.key}" %>
+                <%= f.submit "Save", class: "button button--quiet" %>
+              <% end %>
+            </td>
+            <td><%= flag.public? ? "Everyone" : "GM" %></td>
+            <td>
+              <div class="flag-tools">
+              <% if flag.counter? %>
+                <%= button_to "−1", campaign_flag_bumps_path(campaign, flag), params: { by: -1 }, class: "pin", "aria-label": "Decrease #{flag.key}" %>
+                <%= button_to "+1", campaign_flag_bumps_path(campaign, flag), params: { by: 1 }, class: "pin", "aria-label": "Increase #{flag.key}" %>
+              <% end %>
+              <%= button_to "Clear", campaign_flag_path(campaign, flag), method: :delete, class: "link-button" %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="empty">No flags yet.</p>
+  <% end %>
+  <%= form_with model: Flag.new, url: campaign_flags_path(campaign), class: "book-form inline-form" do |f| %>
+    <div class="field"><%= f.label :key, "New flag" %><%= f.text_field :key, placeholder: "met_the_king", required: true %></div>
+    <div class="field"><%= f.label :value %><%= f.text_field :value, placeholder: "yes, 2, the old road…" %></div>
+    <div class="field"><%= f.label :note %><%= f.text_field :note, placeholder: "optional" %></div>
+    <div class="field field--check"><%= f.check_box :public %><%= f.label :public, "Players see it" %></div>
+    <%= f.submit "Set flag", class: "button" %>
+  <% end %>
+</section>

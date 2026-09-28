@@ -10,6 +10,6 @@ class Campaigns::Clocks::TicksController < ApplicationController
 
   def create
     @campaign.clocks.find(params[:clock_id]).tick!(params[:by].to_i.clamp(-12, 12))
-    redirect_back_or_to campaign_path(@campaign, anchor: "clocks"), status: :see_other
+    redirect_back_or_to campaign_prep_path(@campaign, anchor: "clocks"), status: :see_other
   end
 end

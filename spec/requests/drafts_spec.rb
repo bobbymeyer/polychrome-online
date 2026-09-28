@@ -45,7 +45,7 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
     expect(draft.items.first).to eq("text" => "Cid sold the mill's deed twice.", "place" => town.name, "person" => "Cid")
     expect(draft.items.second).to eq("text" => "The miller is alive.")
 
-    get campaign_path(campaign)
+    get campaign_prep_path(campaign)
     expect(response.body).to include("Suggest secrets", "Cid sold the mill&#39;s deed twice.")
 
     keep(draft)

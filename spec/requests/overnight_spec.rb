@@ -28,7 +28,7 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
     expect(rumour.reload).to have_attributes(reached: [ varn.id, tule.id ], heard: true, age: 1)
     expect(campaign.messages.where(body: "In Tule, people are saying: “The mill grinds at night.”")).to exist
 
-    get campaign_path(campaign)
+    get campaign_prep_path(campaign)
     expect(response.body).to include("Rumours", "The mill grinds at night.", "the party has heard it")
     delete campaign_rumour_path(campaign, rumour)
     expect(rumour.reload).to be_faded

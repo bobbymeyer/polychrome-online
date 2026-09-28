@@ -92,7 +92,8 @@ Rails.application.routes.draw do
       resources :inventories, only: %i[create update], path: "bag"
       resource :rest, only: :create
 
-      # Prep: pressure, secrets, what's being said and done.
+      # Prep: pressure, secrets, what's being said and done (one page).
+      resource :prep, only: :show
       resources :flags, only: %i[create update destroy] do
         resources :bumps, only: :create, module: :flags
       end

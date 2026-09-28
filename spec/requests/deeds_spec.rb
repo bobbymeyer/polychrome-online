@@ -38,7 +38,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
 
     get location_path(tule_town)
     expect(response.body).to include("Tule sees the party as <strong>welcome</strong>")
-    get campaign_path(campaign)
+    get campaign_prep_path(campaign)
     expect(response.body).to include("Deeds", "Rook pulled the miller&#39;s child from the weir.", "Tule: Welcome (+2)")
 
     campaign.start_rumour!("Wolves at the ford.", at: varn)
@@ -78,7 +78,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     expect(campaign.messages.where(body: "In Varn, someone whispers: “The miller pays the goblins.”")).to exist
     expect(secret).not_to be_revealed
 
-    get campaign_path(campaign)
+    get campaign_prep_path(campaign)
     expect(response.body).to include("got out: it's going round as a rumour, and the party has heard it")
   end
 

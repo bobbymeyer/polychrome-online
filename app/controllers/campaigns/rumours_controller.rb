@@ -25,6 +25,6 @@ class Campaigns::RumoursController < ApplicationController
   private
 
   def back(notice: nil, alert: nil)
-    redirect_to campaign_path(@campaign, anchor: "rumours"), notice: notice, alert: alert, status: :see_other
+    redirect_to campaign_prep_path(@campaign, anchor: "rumours"), notice: notice, alert: alert, status: :see_other
   end
 end

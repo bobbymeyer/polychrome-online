@@ -10,8 +10,8 @@ class Campaigns::Flags::BumpsController < ApplicationController
 
   def create
     @campaign.flags.find(params[:flag_id]).bump!(params[:by].to_i.clamp(-100, 100))
-    redirect_to campaign_path(@campaign, anchor: "flags"), status: :see_other
+    redirect_to campaign_prep_path(@campaign, anchor: "flags"), status: :see_other
   rescue Refusal => e
-    redirect_to campaign_path(@campaign, anchor: "flags"), alert: e.message, status: :see_other
+    redirect_to campaign_prep_path(@campaign, anchor: "flags"), alert: e.message, status: :see_other
   end
 end

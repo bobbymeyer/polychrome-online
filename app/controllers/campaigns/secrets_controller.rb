@@ -36,6 +36,6 @@ class Campaigns::SecretsController < ApplicationController
   end
 
   def back(notice: nil, alert: nil)
-    redirect_back_or_to campaign_path(@campaign, anchor: "secrets"), notice: notice, alert: alert, status: :see_other
+    redirect_back_or_to campaign_prep_path(@campaign, anchor: "secrets"), notice: notice, alert: alert, status: :see_other
   end
 end

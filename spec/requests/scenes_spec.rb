@@ -15,10 +15,10 @@ RSpec.describe "Scenes", type: :request do
       encounter: { "0" => { monster: "goblin", count: "2" }, "1" => { monster: "goblin", count: "1" }, "2" => { monster: "", count: "1" } }
     } }
     scene = campaign.scenes.last
-    expect(response).to redirect_to(campaign_path(campaign, anchor: "scenes"))
+    expect(response).to redirect_to(campaign_prep_path(campaign, anchor: "scenes"))
     expect(scene.encounter).to eq("goblin" => 3)
 
-    get campaign_path(campaign)
+    get campaign_prep_path(campaign)
     expect(response.body).to include("Ambush", "1 line, then a battle")
 
     create_character(campaign, name: "Bartz")
@@ -44,6 +44,8 @@ RSpec.describe "Scenes", type: :request do
     post scene_play_path(scene)
     expect(campaign.messages).to be_empty
     get campaign_path(campaign)
-    expect(response.body).not_to include("Secret")
+    expect(response.body).not_to include("Secret", "Prep")
+    get campaign_prep_path(campaign)
+    expect(response).to redirect_to(root_path)
   end
 end
