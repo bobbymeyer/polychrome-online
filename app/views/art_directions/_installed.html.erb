@@ -3,6 +3,6 @@
   <p class="hint">
     ComfyUI at <code><%= Comfy.client.base %></code> isn't answering<%= ": #{Comfy.capabilities.error}" if Comfy.capabilities.error %>.
     Nothing can be generated, and model and LoRA names can't be picked from a list (type them instead). Uploading an image on the edit page still works.
-    <%= link_to "Check the connection step by step", world_art_direction_path(vocabulary_world || World.first, check: 1, anchor: "connection") if admin? %>
+    <%= link_to "Check the connection step by step", settings_path(check: 1, anchor: "connection") if admin? %>
   </p>
 <% end %>

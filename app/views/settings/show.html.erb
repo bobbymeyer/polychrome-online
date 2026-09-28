@@ -1,0 +1,59 @@
+<% content_for :title, "Settings" %>
+<h1>Settings</h1>
+<p class="prose">
+  Where this app finds ComfyUI (for images) and a language model (for drafts and prompts). Leave a field blank to use the server's
+  environment (<code>COMFY_URL</code>, <code>LLM_URL</code> and so on). Only addresses and names go here: if ComfyUI or the model needs a
+  token, a header or a password, set it in the environment, where it never reaches the database.
+</p>
+
+<%= form_with model: @setting, url: settings_path, method: :patch, class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: @setting %>
+  <% env = Rails.configuration.x.comfy %>
+  <fieldset class="panel">
+    <legend>ComfyUI</legend>
+    <div class="field">
+      <%= f.label :comfy_url, "Address" %>
+      <%= f.url_field :comfy_url, placeholder: env[:url] %>
+      <p class="hint">
+        Blank uses <code><%= env[:url].to_s.sub(%r{//[^@/]*@}, "//") %></code>.
+        From inside a container, ComfyUI on the same machine is usually <code>http://host.docker.internal:8188</code>.
+      </p>
+    </div>
+    <% caps = Comfy.capabilities %>
+    <div class="field">
+      <%= f.label :comfy_model, "Default model" %>
+      <% if caps.reachable? %>
+        <%= grouped_picker "site_setting[comfy_model]", @setting.comfy_model, model_groups(caps), blank: "From the environment: #{env[:model]}", id: "site_setting_comfy_model" %>
+      <% else %>
+        <%= f.text_field :comfy_model, placeholder: env[:model] %>
+      <% end %>
+      <p class="hint">Used when no world, content type or entry names a model.</p>
+    </div>
+    <div class="field">
+      <%= f.label :rembg_node, "Background-removal node to try first" %>
+      <%= f.text_field :rembg_node, placeholder: env[:rembg_node].presence || "Found by itself: #{Comfy::BackgroundRemoval.node_names.first(3).join(', ')}…" %>
+      <p class="hint">
+        Usually blank: the first installed of <%= Comfy::BackgroundRemoval.node_names.to_sentence(last_word_connector: " or ") %> is used.
+        <% if caps.reachable? && (removal = Comfy::BackgroundRemoval.pick(caps)) %>Right now: <code><%= removal[:node] %></code>.<% end %>
+      </p>
+    </div>
+  </fieldset>
+
+  <% llm_env = Rails.configuration.x.llm %>
+  <fieldset class="panel">
+    <legend>Language model</legend>
+    <div class="field">
+      <%= f.label :llm_url, "Address" %>
+      <%= f.url_field :llm_url, placeholder: llm_env[:url].presence || "http://host.docker.internal:8090/v1" %>
+      <p class="hint">An OpenAI-compatible API, up to and including <code>/v1</code>: llama.cpp, llama-swap, Ollama, LM Studio, vLLM or a hosted one. Blank everywhere turns the language model off.</p>
+    </div>
+    <div class="field">
+      <%= f.label :llm_model, "Model" %>
+      <%= f.text_field :llm_model, placeholder: llm_env[:model].presence || "as the server names it" %>
+    </div>
+  </fieldset>
+
+  <div class="actions"><%= f.submit "Save and check", class: "button" %></div>
+<% end %>
+
+<%= render "settings/connection" %>

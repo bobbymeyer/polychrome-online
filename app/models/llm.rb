@@ -6,8 +6,11 @@
 module Llm
   class Error < StandardError; end
 
+  # config/llm.yml (from the environment), with the Settings page's
+  # address and model taking precedence (SiteSetting).
   def self.config
-    Rails.configuration.x.llm
+    overrides = SiteSetting.current.llm_overrides
+    overrides.empty? ? Rails.configuration.x.llm : Rails.configuration.x.llm.merge(overrides)
   end
 
   def self.enabled?

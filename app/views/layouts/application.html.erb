@@ -33,7 +33,7 @@
           <button type="button" class="link-button" data-controller="mute" data-action="mute#toggle" aria-pressed="false"
                   title="Sound on this device">Sound on</button>
           <span><%= current_user.name %><%= tag.span(" · admin", class: "muted") if admin? %></span>
-          <% if admin? %><%= link_to "Accounts", users_path %><% end %>
+          <% if admin? %><%= link_to "Accounts", users_path %> <%= link_to "Settings", settings_path %><% end %>
           <%= button_to "Sign out", session_path, method: :delete, class: "link-button", form: { class: "inline" } %>
         </nav>
       <% end %>
