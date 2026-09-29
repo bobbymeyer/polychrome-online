@@ -3,6 +3,7 @@
 require "rails_helper"
 
 RSpec.describe BattleRecord do
+  include SignIn
   include ActiveJob::TestHelper
 
   let(:battle) { start_battle }
@@ -104,6 +105,46 @@ RSpec.describe BattleRecord do
 
     it "ignores a timer that fires early" do
       expect { BattleTimeoutJob.perform_now(battle, 1) }.not_to change(BattleAction, :count)
+    end
+
+    describe "never running out on someone who isn't there" do
+      let(:campaign) { create_campaign }
+      let(:battle) do
+        create_character(campaign, name: "Bartz", user: make_user("Kim"))
+        create_character(campaign, name: "Faris", user: make_user("Sam"))
+        start_battle(campaign: campaign, input_seconds: 30)
+      end
+
+      it "starts the first round's clock once every player has reached the battle" do
+        expect(battle.deadline_at).to be_nil
+        expect(battle.still_coming).to eq([ bartz, faris ])
+
+        battle.arrive!(bartz)
+        expect(battle.deadline_at).to be_nil
+        expect { battle.arrive!(faris) }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_countdown"))
+        expect(battle.deadline_at).to be_within(2.seconds).of(30.seconds.from_now)
+        expect(BattleTimeoutJob).to have_been_enqueued.with(battle, 1)
+      end
+
+      it "doesn't wait for someone the GM has put on auto" do
+        battle.arrive!(bartz)
+        battle.set_auto!(faris, true)
+        expect(battle.deadline_at).to be_within(2.seconds).of(30.seconds.from_now)
+      end
+
+      it "stops the clock while the GM rules on an idea, and gives time to choose after" do
+        [ bartz, faris ].each { |id| battle.arrive!(id) }
+        battle.apply!({ "type" => "command", "actor" => bartz, "command" => { "kind" => "custom", "text" => "Kick the brazier", "target" => "goblin_a" } }, actor: bartz)
+        expect(battle.reload).to be_ruling_pending
+
+        travel_to(battle.deadline_at + 1.second) do
+          expect { BattleTimeoutJob.perform_now(battle.reload, 1) }.not_to change(BattleAction, :count)
+          battle.apply!({ "type" => "gm_override", "op" => "rule", "unit" => bartz, "stat" => "str", "difficulty" => "normal",
+                          "success" => "It topples.", "failure" => "It won't budge." }, actor: "gm")
+          expect(battle.reload.deadline_at).to be_within(2.seconds).of(BattleRecord::AFTER_RULING.from_now)
+          expect(battle.round).to eq(1)
+        end
+      end
     end
   end
 

@@ -791,3 +791,4 @@ details[open] summary { margin-bottom: 16px; }
 .first-steps__list { margin: 0; padding-left: 24px; display: grid; gap: 8px; }
 .first-steps__list li.is-done { color: var(--grey); text-decoration: line-through; }
 .first-steps__list li.is-done .muted { display: none; }
+.countdown.is-paused { font-size: 14px; font-weight: 600; color: var(--grey); }

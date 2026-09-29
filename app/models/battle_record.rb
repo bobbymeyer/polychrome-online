@@ -145,7 +145,7 @@ class BattleRecord < ApplicationRecord
     end
     campaign&.learn_from!(events, state)
     new_round = !over? && round != before["round"]
-    open_round! if new_round
+    new_round ? open_round! : resume_clock!
     broadcast_beat(before, events, record.position)
     auto_fill! if new_round
     [ before, events ]

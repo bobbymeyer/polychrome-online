@@ -2,7 +2,7 @@
 <% awaiting = @battle.awaiting_input %>
 <div class="command-panel__head">
   <h2>Game Master · Round <%= @battle.round %></h2>
-  <%= render "battles/panels/countdown" %>
+  <%= render "battles/panels/countdown", battle: @battle %>
 </div>
 
 <% ideas = state["inputs"].select { |_, c| c["kind"] == "custom" && !c["ruling"] } %>

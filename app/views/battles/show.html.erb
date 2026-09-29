@@ -19,6 +19,8 @@
   <%# What's said at the table reaches the battle too (the same signed streams as the table). %>
   <% if @battle.campaign %>
     <%= seat_streams_from @seat, @battle.campaign %>
+    <%# The next battle pulls in whoever is still looking at this one's results. %>
+    <%= render "shared/stage_stream", campaign: @battle.campaign %>
   <% end %>
 
   <header class="battle__header">

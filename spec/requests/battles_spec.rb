@@ -184,7 +184,7 @@ RSpec.describe "Battle screen", type: :request do
 
     it "never shows enemy HP on the shared board" do
       get battle_path(battle)
-      board = response.body[/<div class="board">.*?<ol class="roster/m]
+      board = response.body[/<div class="board"[^>]*>.*?<ol class="roster/m]
       expect(board).not_to include("data-hp")
     end
   end
