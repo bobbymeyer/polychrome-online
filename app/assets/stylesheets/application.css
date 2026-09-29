@@ -805,3 +805,14 @@ details[open] summary { margin-bottom: 16px; }
 .party-down { margin: 0 0 8px; font-weight: 700; color: var(--signal); }
 .table:not(.table--screen) .coop-party .portrait--small { width: 56px; height: 56px; }
 .table:not(.table--screen) .coop-party .portrait--small .portrait__initial { font-size: 28px; line-height: 28px; }
+.shop-table__fits { display: block; font-size: 0.85em; font-weight: 600; }
+.shop-table__fits.is-none { font-weight: 400; color: var(--grey); }
+/* On a phone, each thing on the shelf is a card: name, then kind and price, then buying. */
+@media (max-width: 640px) {
+  .shop-table, .shop-table tbody { display: block; }
+  .shop-table tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .shop-table td { display: block; padding: 0; border: 0; }
+  .shop-table td:first-child { grid-column: 1 / -1; }
+  .shop-table .shop-table__buy { grid-column: 1 / -1; width: auto; }
+  .shop-form input[type=number] { width: 64px; }
+}
