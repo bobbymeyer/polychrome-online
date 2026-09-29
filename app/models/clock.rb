@@ -25,6 +25,9 @@ class Clock < ApplicationRecord
   belongs_to :campaign
   belongs_to :world_front, optional: true
   belongs_to :location_mode, optional: true
+  # The place behind it (a dungeon the goblins raid from): clearing the place
+  # stops the clock (Campaign#clear_place!).
+  belongs_to :map_node, optional: true
 
   normalizes :name, with: ->(name) { name.to_s.strip }
   normalizes :full_line, with: ->(line) { line.to_s.strip.presence }
@@ -34,8 +37,9 @@ class Clock < ApplicationRecord
   validates :filled, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :triggers_known
   validate :mode_is_the_locations
+  validate :place_is_the_campaigns
 
-  scope :running, -> { where(full_at: nil) }
+  scope :running, -> { where(full_at: nil, stopped_at: nil) }
   scope :shown_to_players, -> { where(public: true) }
 
   after_commit :broadcast
@@ -48,6 +52,18 @@ class Clock < ApplicationRecord
     !full_at.nil?
   end
 
+  # Stopped for good: the party dealt with what was behind it.
+  def stopped?
+    !stopped_at.nil?
+  end
+
+  def stop!
+    return if stopped? || full?
+
+    update!(stopped_at: Time.current)
+    campaign.narrate("#{name}: not any more.") if public?
+  end
+
   def ticks_on?(trigger)
     triggers.include?(trigger.to_s)
   end
@@ -57,6 +73,8 @@ class Clock < ApplicationRecord
   # clock back leaves the mode as it is (the GM can clear that on the
   # location). reason: what ticked it, for the table's line.
   def tick!(by = 1, reason: nil)
+    return self if stopped?
+
     was_full = full?
     now = (filled + by).clamp(0, segments)
     return self if now == filled
@@ -85,6 +103,10 @@ class Clock < ApplicationRecord
     # Full when the table heard it, so the recap finds it in that session.
     update!(full_at: campaign.narrate(line).created_at) if line
     location.switch_mode!(location_mode.key) if location_mode && location.current_mode != location_mode
+  end
+
+  def place_is_the_campaigns
+    errors.add(:map_node, "isn't on this campaign's map") if map_node && map_node.campaign_id != campaign_id
   end
 
   def triggers_known

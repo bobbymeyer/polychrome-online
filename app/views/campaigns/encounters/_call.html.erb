@@ -8,6 +8,13 @@
     <p class="hint">Weighing the odds…</p>
   <% end %>
   <%= form_with url: campaign_encounter_path(@campaign), class: "encounter-call__fight", data: { turbo_frame: "_top" } do |f| %>
+    <% if encounter["prelude"].present? %>
+      <div class="field">
+        <%= f.label :prelude, "Before the fight" %>
+        <%= f.text_area :prelude, value: Array(encounter["prelude"]).join("\n"), rows: 4 %>
+        <p class="hint">Said to the table one line at a time, in the dialogue box, before everyone is pulled into the fight. From the place's past: rewrite it, or clear it to go straight in.</p>
+      </div>
+    <% end %>
     <div class="field">
       <%= f.label :input_seconds, "Input timer" %>
       <%= f.select :input_seconds, BattleRecord::INPUT_TIMERS.map { |s| [ s ? "#{s} seconds" : "None", s ] }, selected: BattleRecord::DEFAULT_TIMER %>

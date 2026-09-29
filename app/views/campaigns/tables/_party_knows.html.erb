@@ -1,5 +1,5 @@
 <%# What the party knows and can see coming: public clocks, public flags, revealed secrets. Replaced live as they change. %>
-<% clocks = campaign.clocks.shown_to_players.order(:full_at, :id) %>
+<% clocks = campaign.clocks.shown_to_players.where(stopped_at: nil).order(:full_at, :id) %>
 <% known = campaign.flags.shown_to_players.order(:key) %>
 <% secrets = campaign.secrets.revealed.order(:revealed_at) %>
 <section class="window party-knows" id="party_knows" aria-label="What the party knows" <%= "hidden" if clocks.none? && known.none? && secrets.none? %>>

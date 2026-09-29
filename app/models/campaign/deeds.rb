@@ -17,6 +17,15 @@ module Campaign::Deeds
     end
   end
 
+  # A dungeon's boss is beaten: the table hears it, with a fanfare, and the
+  # clocks the place was behind stop.
+  def clear_place!(node)
+    return unless node
+
+    narrate("#{node.name} is cleared!", cue: "cleared")
+    node.clocks.running.each(&:stop!)
+  end
+
   # The names of those who did it: "Rook, Lenna and Faris".
   def party_names(characters = self.characters.order(:created_at))
     names = characters.map(&:name)

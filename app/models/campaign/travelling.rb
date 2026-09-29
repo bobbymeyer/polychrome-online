@@ -72,10 +72,17 @@ module Campaign::Travelling
     broadcast_map
   end
 
-  def start_pending_encounter!(input_seconds: nil)
+  # The most a boss's prelude says before the fight.
+  PRELUDE_LINES = 8
+
+  # prelude: lines said in the dialogue box first (a boss's entrance); the
+  # battle's pull waits for them (stage.js).
+  def start_pending_encounter!(input_seconds: nil, prelude: [])
     encounter = pending_encounter or raise Refusal, "No encounter is waiting"
     standing = characters.order(:created_at).select(&:conscious?)
     raise Refusal, "Nobody is standing to fight" if standing.empty?
+
+    prelude.first(PRELUDE_LINES).each { |line| messages.create!(body: line.to_s.first(500)) }
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,

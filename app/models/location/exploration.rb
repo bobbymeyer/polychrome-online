@@ -146,9 +146,11 @@ module Location::Exploration
       # the table fights: the strongest of them takes that name.
       who = decision["who"].to_s.split(",").first.presence
       leader = who && campaign.world.monsters.where(slug: decision["monsters"].keys).order(level: :desc).first
-      campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => decision["kind"] == "boss",
+      boss = decision["kind"] == "boss"
+      campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => boss,
                                             "terrain" => location_template.encounter_table&.terrain_type,
-                                            "names" => ({ leader.slug => who } if leader) }.compact)
+                                            "names" => ({ leader.slug => who } if leader),
+                                            "prelude" => (boss_prelude(target, who) if boss) }.compact)
       campaign.narrate("#{decision['kind'] == 'boss' ? 'Boss' : 'Encounter'}! #{"#{who}: " if leader}#{campaign.describe_encounter(decision['monsters'])}.")
       resolve!(target["key"])
     when "treasure"
@@ -162,5 +164,24 @@ module Location::Exploration
       campaign.narrate("Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}", cue: "key")
       resolve!(target["key"])
     end
+  end
+
+  # What the GM might say as the party walks in on the boss, from the
+  # place's past (Generators::Provenance): the room, what happened here, who
+  # waits, and the boss's own line. The GM reads it out as it is, rewrites
+  # it or clears it before the fight.
+  def boss_prelude(target, who)
+    past = view.fetch("past", {})
+    fall = Generators::History::FALLS[past.dig("fall", "kind")]
+    leader = campaign.world.monsters.where(slug: target.dig("decision", "monsters").to_h.keys).order(level: :desc).first
+    lines = [ "#{target['name']}. #{fall ? fall['trace'] : 'The air is still, and something is waiting.'}" ]
+    lost = Array(past["lost"]).last if fall
+    if fall && past["was"]
+      ago = past.dig("fall", "ago")
+      lines << "#{ago ? Generators::History.ago(ago).upcase_first : 'Long ago'}, the #{[ past['family'], past['was'] ].compact.join(' ')} #{fall['did']}."
+    end
+    lines << (lost && lost == who ? "#{lost}, #{fall['dead']}, turns to face you." : "#{who || leader&.name || 'It'} turns to face you.")
+    lines << "“#{leader.boss_line.strip}”" if leader&.boss_line.present?
+    lines
   end
 end

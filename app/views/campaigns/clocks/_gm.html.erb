@@ -1,23 +1,25 @@
 <%# The GM's clocks (Clock): tick them, see what fills them, make new ones. Replaced live as they change. %>
-<% clocks = campaign.clocks.includes(location_mode: { location: Location::ROLLING }).order(:full_at, :id) %>
+<% clocks = campaign.clocks.includes(:map_node, location_mode: { location: Location::ROLLING }).order(:stopped_at, :full_at, :id) %>
 <div id="gm_clocks" class="gm-clocks">
   <% if clocks.any? %>
     <ul class="clock-rows">
       <% clocks.each do |clock| %>
-        <li class="clock-row<%= " is-full" if clock.full? %>">
+        <li class="clock-row<%= " is-full" if clock.full? || clock.stopped? %>">
           <div>
             <strong><%= clock.name %></strong>
             <span class="label"><%= clock.public? ? "Everyone sees it" : "GM only" %></span>
             <p class="muted">
               <%= [ ("Ticks on #{clock.triggers.map { |t| Clock::TRIGGERS[t] }.to_sentence}" if clock.triggers.any?),
                     ("then #{clock.location.name}: #{clock.mode_name}" if clock.mode_name),
-                    ("“#{clock.full_line}”" if clock.full_line) ].compact.join(" · ").presence || "Ticked by hand" %>
+                    ("“#{clock.full_line}”" if clock.full_line),
+                    ("stops when #{clock.map_node.name} is cleared" if clock.map_node && !clock.stopped?),
+                    ("Stopped#{": #{clock.map_node.name} was cleared" if clock.map_node}" if clock.stopped?) ].compact.join(" · ").presence || "Ticked by hand" %>
             </p>
           </div>
           <%= render "campaigns/clocks/dial", clock: clock %>
           <div class="flag-tools">
             <%= button_to "−1", campaign_clock_ticks_path(campaign, clock), params: { by: -1 }, class: "pin", "aria-label": "Wind back #{clock.name}" %>
-            <%= button_to "+1", campaign_clock_ticks_path(campaign, clock), params: { by: 1 }, class: "pin", "aria-label": "Tick #{clock.name}", disabled: clock.full? %>
+            <%= button_to "+1", campaign_clock_ticks_path(campaign, clock), params: { by: 1 }, class: "pin", "aria-label": "Tick #{clock.name}", disabled: clock.full? || clock.stopped? %>
             <%= button_to "Remove", campaign_clock_path(campaign, clock), method: :delete, class: "link-button",
                           form: { data: { turbo_confirm: "Take away the clock “#{clock.name}”?" } } %>
           </div>
@@ -49,6 +51,13 @@
         <div class="field">
           <%= label_tag "clock_when_full_#{campaign.id}", "And a place changes" %>
           <%= select_tag "clock[when_full]", grouped_options_for_select(modes), include_blank: "Nothing changes", id: "clock_when_full_#{campaign.id}" %>
+        </div>
+      <% end %>
+      <% dungeons = campaign.map_nodes.where(kind: "dungeon").order(:name).pluck(:name, :id) %>
+      <% if dungeons.any? %>
+        <div class="field">
+          <%= f.label :map_node_id, "Stops when the party clears", for: "clock_map_node_#{campaign.id}" %>
+          <%= f.select :map_node_id, dungeons, { include_blank: "Nothing: only the GM stops it" }, id: "clock_map_node_#{campaign.id}" %>
         </div>
       <% end %>
       <div class="field field--check"><%= f.check_box :public, id: "clock_public_#{campaign.id}" %><%= f.label :public, "Players see it", for: "clock_public_#{campaign.id}" %></div>

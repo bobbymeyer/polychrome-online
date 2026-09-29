@@ -119,6 +119,9 @@ module BattleRecord::Settlement
       campaign.record_deed!("#{party} defeated #{antagonist['name']} for good.", sway: 1, kind: "antagonist")
     end
     dungeon = campaign.dungeon_in_progress
-    campaign.record_deed!("#{party} cleared #{dungeon.name}.", sway: 1, kind: "cleared") if boss? && dungeon
+    return unless boss? && dungeon
+
+    campaign.record_deed!("#{party} cleared #{dungeon.name}.", sway: 1, kind: "cleared")
+    campaign.clear_place!(campaign.current_node)
   end
 end
