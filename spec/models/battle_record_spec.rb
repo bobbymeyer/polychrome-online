@@ -124,7 +124,7 @@ RSpec.describe BattleRecord do
         expect(battle.deadline_at).to be_nil
         expect(battle.still_coming).to eq([ bartz, faris ])
 
-        battle.arrive!(bartz)
+        expect { battle.arrive!(bartz) }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("when Faris gets here"))
         expect(battle.deadline_at).to be_nil
         expect { battle.arrive!(faris) }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_countdown"))
         expect(battle.deadline_at).to be_within(2.seconds).of(30.seconds.from_now)
@@ -171,6 +171,13 @@ RSpec.describe BattleRecord do
 
       boss_battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
       expect(boss_battle.campaign.messages.last.body).to include("Victory!", "Goblin has fallen!")
+    end
+
+    it "holds the first clock for the boss's entrance" do
+      campaign = create_campaign
+      boss_battle = start_battle(campaign: campaign, boss: true, input_seconds: 30)
+      boss_battle.open_round!
+      expect(boss_battle.deadline_at).to be_within(2.seconds).of((30.seconds + BattleRecord::BOSS_ENTRANCE).from_now)
     end
 
     it "is a boss fight when started from a boss room, with its strongest monster as the boss" do

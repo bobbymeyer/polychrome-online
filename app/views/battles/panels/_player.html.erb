@@ -117,7 +117,7 @@
     <%= button_to "Defend", battle_actions_path(@battle), class: "menu__item", data: { help: "Halve the damage you take this round." },
                   params: { command: { kind: "defend" } } %>
     <% if state["escapable"] %>
-      <%= button_to "Flee", battle_actions_path(@battle), class: "menu__item", data: { help: "Try to get the whole party away. It can fail." },
+      <%= button_to "Flee", battle_actions_path(@battle), class: "menu__item", data: { help: "Try to get the whole party away. It can fail.", menu_forget: true },
                     params: { command: { kind: "flee" } } %>
     <% end %>
   </div>

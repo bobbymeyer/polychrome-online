@@ -112,7 +112,9 @@ export default class extends Controller {
 
   choose(item) {
     if (this.disabled(item)) return this.flashHelp()
-    remember(this.label(item))
+    // A one-off (Flee) isn't where the cursor should wait next round.
+    if ("menuForget" in item.dataset) remembered = null
+    else remember(this.label(item))
     item.click()
   }
 
