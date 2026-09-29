@@ -308,9 +308,23 @@ by road.
 
 ### Phones
 
-On a phone the battlefield is compact (enemies three abreast), the commands are pinned to the
-bottom of the screen while the fight plays above them, and the site's navigation steps aside on
-a battle. The log's tab sits in the top corner instead of over the play. Shop rows stack as cards.
+Phones are where most players are, so every page is checked at 390×844, 360×640 and on its side.
+
+- **The top bar is one line**: the name, a Menu button, and the log's tab. The links open from
+  Menu at 44px, with Sign out set apart at the end, where a guest won't tap it by mistake. The
+  log's tab scrolls away with the bar instead of floating over what you're reading.
+- **In battle, the commands are pinned to the bottom** while the fight plays above them. The
+  pinned panel carries a strip of everyone's HP and, above it, the last lines of what just
+  happened, so nobody has to open the log mid-fight. The page title steps aside and enemies size
+  to the room that's left. Results and "Try something" let go of the bottom edge, with the way on
+  first. Commands are 48px, everything else tappable at least 44px.
+- **On its side**, a phone shows the field and the commands next to each other.
+- **At the table**, the composer sits under "Where next?", where the story is, not below the map.
+  "Where next?" is one column. Notices ("Bought.") float over the page as toasts wherever you've
+  scrolled to.
+- **Long pages** (the character sheet, How to play) have shortcuts to their sections; tables stack
+  as cards where their columns won't fit. Glossary definitions open as a sheet along the bottom.
+- **The map** grows its place names on a phone, and a player can tap a place to look at it.
 
 ## Divergences
 
@@ -331,6 +345,10 @@ Record each place where the game needed more than the Swiss defaults: what chang
   HP. Players can already read these in the Bestiary, so the battle doesn't hide them.
 - **The table leads with the dialogue box** and mirrors the last few lines under it (above). The
   Swiss start put the map first and everything said in a closed drawer; players missed the story.
+- **Struck through, not faded.** A fallen unit's name is struck through in full-strength ink
+  (white on the enemies' side). Fading it to grey, as Swiss would, took it below a readable
+  contrast on the battlefield's colours. The targeted enemy's name is ink on yellow for the same
+  reason.
 - **Grey controls, red moves.** The starting point made every interactive thing red, so
   navigation and admin drowned out the game. Controls are now grey, and red is kept for game
   moves (`.play`).
