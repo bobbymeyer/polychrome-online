@@ -55,7 +55,7 @@ class Recap
     battles.map do |battle|
       result = { "victory" => "Won", "defeat" => "Lost", "fled" => "Fled" }.fetch(battle.status, battle.status.humanize)
       fates = Array(battle.settlement&.dig("antagonists")).filter_map do |a|
-        { "escaped" => "#{a['name']} got away", "defeated" => "#{a['name']} fell" }[a["fate"]]
+        { "escaped" => "#{a['name']} got away", "slipped_away" => "#{a['name']} slipped away", "defeated" => "#{a['name']} fell" }[a["fate"]]
       end
       fates = battle.boss_monsters.map { |m| "#{m.name} fell" } if fates.empty? && battle.status == "victory"
       "#{result}: #{battle.name}#{" (#{fates.to_sentence})" if fates.any?}"

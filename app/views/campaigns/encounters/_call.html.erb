@@ -2,10 +2,12 @@
 <% campaign = local_assigns[:campaign] || @campaign %>
 <section class="encounter-call">
   <h3>Encounter!</h3>
-  <p><%= campaign.describe_encounter(encounter["monsters"]) %> <span class="muted">(<%= encounter["table"] %>)</span></p>
+  <% villains = campaign.npcs.where(id: encounter.fetch("antagonists", [])) %>
+  <p><%= (villains.map(&:name) + [ (campaign.describe_encounter(encounter["monsters"]) if encounter["monsters"].present?) ]).compact.to_sentence %>
+    <span class="muted">(<%= encounter["table"] %>)</span></p>
   <%# How it's likely to go for whoever is standing, as on the battle form. %>
   <% rows = encounter["monsters"].each_with_index.to_h { |(slug, count), i| [ i, { monster: slug, count: count } ] } %>
-  <%= turbo_frame_tag "forecast", src: campaign_forecast_path(campaign, battle: { encounter: rows }), loading: "lazy" do %>
+  <%= turbo_frame_tag "forecast", src: campaign_forecast_path(campaign, battle: { encounter: rows, antagonists: villains.map(&:id) }), loading: "lazy" do %>
     <p class="hint">Weighing the odds…</p>
   <% end %>
   <%= form_with url: campaign_encounter_path(campaign), class: "encounter-call__fight", data: { turbo_frame: "_top" } do |f| %>

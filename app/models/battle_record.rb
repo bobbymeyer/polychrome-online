@@ -166,9 +166,13 @@ class BattleRecord < ApplicationRecord
     marked.exists? ? marked : world.monsters.where(slug: slugs).order(level: :desc).limit(1)
   end
 
-  # What the bosses are called in this fight: a named boss (Roz Tennant, who
-  # never came out) by their own name, not their kind's.
+  # What the bosses are called in this fight: the antagonists in it, or a
+  # named boss (Roz Tennant, who never came out) by their own name, not
+  # their kind's.
   def boss_names
+    villains = enemies.select { |u| Npc.from_battle_unit(u["id"]) }
+    return villains.map { |u| u["name"] } if villains.any?
+
     boss_monsters.map do |monster|
       units = enemies.select { |u| u.dig("image", "slug") == monster.slug }
       units.map { |u| u["name"] }.find { |name| !name.start_with?(monster.name) } || monster.name

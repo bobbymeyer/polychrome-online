@@ -491,7 +491,9 @@ every campaign in it uses them.
     way, and how long they take.
 - **Cast** (`/cast`): the setting's people, with portraits, what people say
   about them, GM notes, a home, and optionally a Bestiary entry that makes
-  them an antagonist.
+  them an antagonist. An antagonist whose home is a dungeon waits in its boss
+  room, with their own entrance, and slips away the first time they're
+  knocked out: they come back stronger, and their clocks keep running.
 - **Codex** (`/codex`): lore pages by category (faction, faith, history…).
   Each page is public or GM only, and its GM notes are never shown to
   players. Players can read the public pages from the campaign page.
@@ -574,6 +576,9 @@ every campaign in it uses them.
       each with a sway from −2 to +2.
     - **The story travels:** each deed starts a rumour where it happened, so
       the party hears about themselves on reaching the next town.
+    - **A cleared place changes things:** its dangerous roads go quiet, the
+      secrets it kept come out, and the nearest town welcomes the party back
+      with a hook and rooms on the house while they stay.
     - **Reputation:** every town the story reaches moves by the deed's sway,
       from Unwelcome to Heroes. Friends sell 5% cheaper per point, wary
       towns dearer, and at −3 nobody will trade or give the party a bed.

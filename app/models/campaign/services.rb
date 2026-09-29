@@ -11,6 +11,8 @@ module Campaign::Services
   SERVICE_OFFERS = { "inn" => "a room for the night", "temple" => "a raising", "guild" => "a rumour" }.freeze
 
   def service_price(kind, character)
+    return 0 if kind == "inn" && free_rooms? # a town's thanks (Campaign::Deeds#welcome_back!)
+
     per_level, floor = SERVICE_PRICES.fetch(kind)
     [ per_level * character.level, floor ].max
   end
@@ -86,7 +88,7 @@ module Campaign::Services
   def service_line(kind, character, service, by, cost, rumour = nil)
     payer = by == character.name ? character.name : "#{by}, for #{character.name},"
     case kind
-    when "inn" then "#{payer} takes a room at #{service['name']} (#{money(cost)}). #{character.name} is rested: full #{world.word('hp')} and #{world.word('mp')}."
+    when "inn" then "#{payer} takes a room at #{service['name']} (#{cost.zero? ? 'on the house' : money(cost)}). #{character.name} is rested: full #{world.word('hp')} and #{world.word('mp')}."
     when "temple" then "#{payer} pays #{money(cost)} at #{service['name']}. #{character.name} is raised, whole again."
     when "guild"
       bought = "#{payer} buys a rumour at #{service['name']} (#{money(cost)})."
