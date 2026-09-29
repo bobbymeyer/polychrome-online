@@ -1,11 +1,20 @@
 <%# Where the party can go from here (Campaign::Ways): players suggest a way (it goes to a vote in the choice panel);
     the GM can put it to the table or just go, and calls a waiting encounter here too. Replaced live, for each audience. %>
 <% ways = campaign.battle_on? ? [] : campaign.ways_on %>
+<% locked = campaign.battle_on? ? [] : campaign.locked_ways %>
+<% dungeon = !campaign.battle_on? && campaign.dungeon_in_progress %>
+<% here = dungeon && dungeon.room(dungeon.progress["current"]) %>
+<% treasure = here && here.dig("decision", "kind") == "treasure" && !dungeon.resolved?(here["key"]) %>
 <% encounter = gm && campaign.pending_encounter %>
 <% deciding = ways.any? && !gm && (choice = campaign.open_choice) && !choice.where_next? %>
 <section class="window table-ways" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter %>>
   <% if encounter %>
     <%= render "campaigns/encounters/call", campaign: campaign, encounter: encounter, return_to: campaign_table_path(campaign) %>
+  <% end %>
+  <% if treasure %>
+    <%# Anyone at the table picks it up: it's lying right there. %>
+    <p class="table-ways__treasure"><strong>There's treasure in <%= here["name"] %>.</strong>
+      <%= button_to "Take it", location_treasures_path(dungeon), params: { room: here["key"], return_to: "table" }, class: "button play", form: { class: "inline", data: { turbo_frame: "_top" } } %></p>
   <% end %>
   <% if ways.any? %>
     <h2>Where next?</h2>
@@ -20,6 +29,9 @@
         <% end %>
       <% end %>
     </div>
+    <% if locked.any? %>
+      <p class="hint">Locked: <%= locked.to_sentence %>.</p>
+    <% end %>
     <% if gm %>
       <%= button_to "Put it to the table", campaign_ways_path(campaign), class: "button button--quiet" %>
       <p class="hint">Go straight there, or let the party vote: settling the vote takes them where they chose.</p>

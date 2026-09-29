@@ -182,7 +182,8 @@ RSpec.describe Location do
           expect(campaign.messages.last).to have_attributes(body: "The floor tilts.", speaker: nil)
           expect(campaign.messages.last).to be_dialogue
         when "encounter"
-          expect(campaign.reload.pending_encounter).to eq("table" => "#{dungeon.name}: Test 1", "monsters" => { "goblin" => 2 }, "boss" => false, "terrain" => "rock")
+          expect(campaign.reload.pending_encounter).to eq("table" => "#{dungeon.name}: Test 1", "monsters" => { "goblin" => 2 }, "boss" => false, "terrain" => "rock",
+                                                          "location" => dungeon.id, "room" => key)
         when "treasure"
           dungeon.take_treasure!(key)
           expect(campaign.quantity_of(world.items.find_by!(slug: "potion"))).to eq(1)
@@ -191,6 +192,44 @@ RSpec.describe Location do
         end
       end
       expect(rooms).to be_present
+    end
+
+    it "leaves a fight the party walked away from in its room, waiting for them" do
+      dungeon.enter!
+      key = dungeon.add_room!(name: "Guardroom", connect: entrance, decision: { "kind" => "encounter", "monsters" => { "goblin" => 2 } })
+      dungeon.move_to!(key)
+      expect(campaign.reload.pending_encounter).to include("room" => key)
+
+      dungeon.move_to!(entrance)
+      expect(campaign.reload.pending_encounter).to be_nil
+      expect(dungeon.resolved?(key)).to be(false)
+
+      dungeon.move_to!(key)
+      expect(campaign.reload.pending_encounter).to include("room" => key, "monsters" => { "goblin" => 2 })
+    end
+
+    it "offers the way out at the entrance, and names the doors still locked" do
+      dungeon.enter!
+      out = campaign.ways_on.find { |way| way["label"] == "Leave #{dungeon.name}" }
+      expect(out).to be_present
+      campaign.make_move!(out["move"])
+      expect(dungeon.reload.progress["current"]).to be_nil
+      expect(campaign.reload.dungeon_in_progress).to be_nil
+
+      lock = dungeon.view["paths"].find { |p| p["lock"] }
+      dungeon.update!(progress: { "current" => lock["from"], "visited" => [ lock["from"] ] })
+      campaign.reload
+      expect(campaign.locked_ways).to include("#{lock['lock']['name']} (needs #{lock['lock']['key_name']})")
+      expect(campaign.ways_on.map { |way| way["move"]["room"] }).not_to include(lock["to"])
+    end
+
+    it "says who can use gear found as treasure" do
+      bartz = create_character(campaign, name: "Bartz") # a Knight
+      sword = world.items.select(&:equipment?).find { |item| !bartz.job.equips?(item) }
+      dungeon.enter!
+      key = dungeon.add_room!(name: "Armoury", connect: entrance, decision: { "kind" => "treasure", "item" => sword.slug })
+      dungeon.move_to!(key)
+      expect(dungeon.take_treasure!(key)).to match(/Found #{sword.name} in Armoury\. Nobody can use it as they are; a .+ could\./)
     end
 
     it "makes the boss room's fight a boss fight" do

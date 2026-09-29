@@ -6,9 +6,10 @@
 <% end %>
 
 <% bosses = @battle.boss_monsters.to_a %>
+<% boss_names = bosses.any? ? @battle.boss_names : [] %>
 <% view = @battle.campaign && coop_view(@battle.campaign) %>
 <div class="battle<%= " battle--#{view}" if view %><%= " battle--boss" if bosses.any? %>" data-controller="battle-player dialogue<%= " recap" if @battle.campaign %>" <%= tag.attributes(data: { recap_campaign_value: @battle.campaign_id }) if @battle.campaign %>
-     <%= tag.attributes(data: { boss_down: ("#{bosses.map(&:name).to_sentence} #{bosses.size > 1 ? 'fall' : 'falls'}!" if bosses.any?) }) %>
+     <%= tag.attributes(data: { boss_down: ("#{boss_names.to_sentence} #{boss_names.size > 1 ? 'fall' : 'falls'}!" if bosses.any?) }) %>
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
      data-battle-player-words-value="<%= battle_words(@battle.campaign.world).to_json %>"
      data-battle-player-next-value="<%= @battle.battle_actions.count %>"
@@ -106,12 +107,12 @@
     <div class="boss-intro" hidden data-controller="boss-intro" data-action="click->boss-intro#skip"
          data-boss-intro-key-value="battle-<%= @battle.id %>"
          data-boss-intro-fresh-value="<%= @battle.round <= 1 && !@battle.over? %>"
-         data-boss-intro-name-value="<%= boss.name %>"
+         data-boss-intro-name-value="<%= boss_names.first %>"
          data-boss-intro-line-value="<%= boss.boss_line %>"
          data-boss-intro-plate-value="<%= plate_style(boss.slug, boss.colour) %>">
       <div class="boss-card" data-boss-intro-target="card" style="<%= plate_style(boss.slug, boss.colour) %>">
         <span class="boss-card__tag">Boss</span>
-        <span class="boss-card__name"><%= bosses.map(&:name).to_sentence %></span>
+        <span class="boss-card__name"><%= boss_names.to_sentence %></span>
       </div>
     </div>
   <% end %>

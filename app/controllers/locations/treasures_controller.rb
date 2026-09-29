@@ -1,13 +1,23 @@
 # frozen_string_literal: true
 
-# A room's treasure, handed to the party.
+# A room's treasure, taken by the party: the GM hands it over, or anyone at
+# the table picks it up in the room they're standing in.
 class Locations::TreasuresController < ApplicationController
   include LocationScoped
 
-  before_action :require_gm
+  before_action :require_seat
 
   def create
-    @location.take_treasure!(params.expect(:room))
-    back "Added to the party bag."
+    room = params.expect(:room)
+    raise Refusal, "The party isn't in that room" unless table_gm? || @location.progress["current"] == room
+
+    line = @location.take_treasure!(room)
+    params[:return_to] == "table" ? redirect_to(campaign_table_path(@campaign), notice: line, status: :see_other) : back(line)
+  end
+
+  private
+
+  def require_seat
+    head :forbidden unless table_seat(@campaign).seated?
   end
 end
