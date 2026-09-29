@@ -37,8 +37,7 @@ module Campaign::Defeat
         narrate("The party has fallen. Their story ends here.")
       end
     end
-    broadcast_party
-    broadcast_map
+    table_changed # the party got up, or moved: some changes skip callbacks
   end
 
   private

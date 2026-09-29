@@ -121,7 +121,7 @@ class Clock < ApplicationRecord
   # The GM's list everywhere it's open, and the players' view of the public
   # clocks (on their own stream, so a hidden clock never reaches them).
   def broadcast
-    campaign.broadcast_party_knows
+    campaign.table_changed
     broadcast_replace_to campaign, :gm, target: "gm_clocks", partial: "campaigns/clocks/gm", locals: { campaign: campaign }
   end
 end

@@ -4,6 +4,7 @@ require "rails_helper"
 require "turbo/broadcastable/test_helper"
 
 RSpec.describe "Clocks and secrets", type: :request do
+  include ActiveJob::TestHelper
   include Turbo::Broadcastable::TestHelper
 
   let!(:world) { base_world }
@@ -80,7 +81,7 @@ RSpec.describe "Clocks and secrets", type: :request do
 
     it "sends players only public clocks when one changes" do
       hidden = campaign.clocks.create!(name: "The traitor acts", segments: 4)
-      streams = capture_turbo_stream_broadcasts([ campaign, :players ]) { hidden.tick! }
+      streams = capture_turbo_stream_broadcasts([ campaign, :players ]) { refreshing_the_table { hidden.tick! } }
       expect(streams.map { |s| s["target"] }).to include("party_knows")
       expect(streams.map(&:to_html).join).not_to include("The traitor acts")
     end

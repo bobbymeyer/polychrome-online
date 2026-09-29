@@ -46,7 +46,6 @@ module Campaign::Travelling
       hear_rumours!(destination)
       drop_stale_where_next!
     end
-    broadcast_map
     rolled
   end
 
@@ -112,7 +111,6 @@ module Campaign::Travelling
       hear_rumours!(node)
       drop_stale_where_next!
     end
-    broadcast_map
   end
 
   # The most a boss's prelude says before the fight.

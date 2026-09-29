@@ -40,7 +40,6 @@ module Campaign::Overnight
 
     place.update!(visible: true)
     narrate("#{place.name} is on the map now.")
-    broadcast_map
   end
 
   # A rumour nobody at the table has heard yet (the guild sells one).

@@ -69,7 +69,7 @@ class Secret < ApplicationRecord
   end
 
   def broadcast
-    campaign.broadcast_party_knows
+    campaign.table_changed
     broadcast_replace_to campaign, :gm, target: "gm_secrets", partial: "campaigns/secrets/gm", locals: { campaign: campaign }
   end
 end

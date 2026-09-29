@@ -40,7 +40,7 @@ class Character < ApplicationRecord
   before_validation { self.level = Stats::Growth.level_for_exp(exp.to_i) }
   after_create :start_in_job, :outfit
   # The table's party panel follows HP, MP and levels as they change.
-  after_commit -> { campaign.broadcast_party }, if: -> { destroyed? || previously_new_record? || (saved_changes.keys & %w[hp mp exp job_id name user_id]).any? }
+  after_commit -> { campaign.table_changed }, if: -> { destroyed? || previously_new_record? || (saved_changes.keys & %w[hp mp exp job_id name user_id]).any? }
 
   # Why they're here, in their own words: one line, on their card, and
   # their battle cry when a desperation move comes (Battle::Resolver).
