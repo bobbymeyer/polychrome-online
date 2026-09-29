@@ -133,6 +133,8 @@ Rails.application.routes.draw do
       resource :map, only: :show
       resource :map_panel, only: :show
       resource :travel, only: :create
+      # Where next: a player's suggestion (a vote), or the GM going (Campaign::Ways).
+      resources :ways, only: :create
       resource :encounter, only: %i[create destroy]
     end
   end

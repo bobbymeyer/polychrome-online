@@ -37,6 +37,7 @@
       <ol data-recent-lines-target="list"></ol>
     </section>
     <%= render "choices/panel", choice: @campaign.open_choice %>
+    <%= render "campaigns/tables/ways", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
     </div>
 
     <div class="table__side">

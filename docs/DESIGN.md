@@ -284,6 +284,28 @@ When the whole party is down, the GM chooses what the story does with it, on the
 results and at the table: retreat to the nearest town by road (rested, with half the party's
 money gone, as in Dragon Quest), everyone gets up where they fell with 1 HP, or game over.
 
+### Players steer
+
+Where the party goes next is the table's to decide as well as the GM's. Under the choice panel,
+"Where next?" lists the ways on: the open paths from where the party stands, a dungeon's door,
+or, inside, the ways on from the room they're in (a room the players haven't seen is only "An
+unexplored way"). A player's "suggest" puts the question to a vote with their pick in it; the
+GM settling the vote takes the party there. The GM can also just go, from the same panel, and
+calls a waiting encounter there too, so a session can run from the table without the map page.
+
+### A boss, and a place cleared
+
+Walking in on a dungeon's boss, the GM gets a few lines for its entrance, written from the
+place's past, to say as they are, rewrite or clear; the battle waits for them. Beating the boss
+is cheered at the table with a fanfare of its own, and the clocks that place was behind stop.
+
+### Talk that leads somewhere
+
+A place the party doesn't know yet can come with its lead: what people say about it. The talk
+starts in the nearest town by road, and hearing it (arriving there, or buying it at a guild)
+puts the place on the map. Townsfolk hooks name real places too: the nearest town or dungeon
+by road.
+
 ### Phones
 
 On a phone the battlefield is compact (enemies three abreast), the commands are pinned to the

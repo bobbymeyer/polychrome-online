@@ -31,7 +31,7 @@
         </ul>
       <% end %>
       <%= render "campaigns/maps/legend" %>
-      <p class="hint"><%= can_gm?(@campaign) ? "Sit at the table as GM to edit the map and move the party." : "The GM moves the party." %></p>
+      <p class="hint"><%= can_gm?(@campaign) ? "Sit at the table as GM to edit the map and move the party." : safe_join([ "Say where you'd go under “Where next?” at ", link_to("the table", campaign_table_path(@campaign)), ": it goes to a vote, and the GM settles it." ]) %></p>
     </aside>
   <% end %>
 </div>

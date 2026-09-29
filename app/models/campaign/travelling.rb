@@ -44,6 +44,7 @@ module Campaign::Travelling
       tick_clocks!("travel")
       pass_time!(edge.duration, announce: :new_day)
       hear_rumours!(destination)
+      drop_stale_where_next!
     end
     broadcast_map
     rolled
@@ -105,6 +106,7 @@ module Campaign::Travelling
       update!(current_node: node)
       narrate("The party is at #{node.name}.")
       hear_rumours!(node)
+      drop_stale_where_next!
     end
     broadcast_map
   end

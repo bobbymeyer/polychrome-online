@@ -100,7 +100,9 @@ module Location::Exploration
       campaign.narrate("#{name}: the party enters #{target['name']}.")
       campaign.narrate("The cost of that way: #{path['cost']}") if path&.dig("cost")
       announce(target) unless resolved?(key)
+      campaign.drop_stale_where_next!
     end
+    campaign.broadcast_ways
   end
 
   # Hand a room's treasure to the party (once).

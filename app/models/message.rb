@@ -90,6 +90,11 @@ class Message < ApplicationRecord
     choice? && settled.nil?
   end
 
+  # A "Where next?" (Campaign::Ways): its options carry the party's moves.
+  def where_next?
+    choice? && data.key?("moves")
+  end
+
   # { option => [character names] }, in the options' order.
   def tally
     names = picks.includes(:character).group_by(&:option).transform_values { |ps| ps.map { |p| p.character.name } }
@@ -104,6 +109,7 @@ class Message < ApplicationRecord
 
     transaction do
       update!(settled: option)
+      campaign.make_move!(data.dig("moves", option)) if where_next? && data.dig("moves", option)
       if flag_key
         flag = campaign.flags.find_or_initialize_by(key: Flag.new(key: flag_key).key)
         flag.update!(value: option, public: true)

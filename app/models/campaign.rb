@@ -31,7 +31,7 @@ class Campaign < ApplicationRecord
   has_many :map_nodes, dependent: :destroy # at locations
   has_many :locations, dependent: :destroy
 
-  include Bag, Shopping, Services, Travelling, Checks, MonsterNotes, JobRewards, Overnight, Deeds, Defeat, Broadcasts
+  include Bag, Shopping, Services, Travelling, Ways, Checks, MonsterNotes, JobRewards, Overnight, Deeds, Defeat, Broadcasts
 
   # The campaign's dice: one seeded RNG, stored here like a battle's, for
   # everything outside a battle (encounters on the road, checks, what

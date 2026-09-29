@@ -42,6 +42,15 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   starting town with roads and potions, the story on screen instead of in the log,
   a fair battle clock, the GM's call after a wipe, and phone layouts. See "Play"
   in `docs/DESIGN.md`.
+- **Third play pass (the game):** a boss's entrance written from the place's
+  past and a fanfare for a cleared dungeon that stops the clocks it drove; a
+  Base World with a thread (the Barrow Lord's silver), places found by what
+  towns are saying, and roads to open later; four-step gear ladders, a point
+  per level in every stat, lessons to job level 100 with a capstone, and
+  "next" on the sheet and results; and players voting on where next. See
+  "Play" in `docs/DESIGN.md`. After a deploy, `bin/rails db:seed` adds the new
+  Base World entries; `bin/rails base_world:update` also rewrites the learn
+  tables and stock (and overwrites edits).
 
 ```
 bundle install

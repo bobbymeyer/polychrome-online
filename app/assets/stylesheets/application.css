@@ -816,3 +816,5 @@ details[open] summary { margin-bottom: 16px; }
   .shop-table .shop-table__buy { grid-column: 1 / -1; width: auto; }
   .shop-form input[type=number] { width: 64px; }
 }
+.table-ways h2 { margin-top: 0; }
+.table-ways .encounter-call { margin-bottom: 16px; }

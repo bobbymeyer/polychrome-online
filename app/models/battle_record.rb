@@ -191,6 +191,7 @@ class BattleRecord < ApplicationRecord
 
     Turbo::StreamsChannel.broadcast_replace_to(campaign, :table, target: "table_battle",
                                                partial: "campaigns/tables/current_battle", locals: { campaign: campaign })
+    campaign.broadcast_ways
     campaign.refresh_pages
   end
 

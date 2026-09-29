@@ -20,6 +20,7 @@ module Campaign::Broadcasts
     after_update_commit :broadcast_music, if: :saved_change_to_music?
     after_update_commit :broadcast_time, if: -> { saved_change_to_day? || saved_change_to_time_of_day? }
     after_update_commit :refresh_pages
+    after_update_commit :broadcast_ways, if: -> { saved_change_to_pending_encounter? || saved_change_to_current_node_id? }
   end
 
   # The map, for each audience: players' without hidden places.
@@ -43,6 +44,14 @@ module Campaign::Broadcasts
   def broadcast_music
     Turbo::StreamsChannel.broadcast_action_to(self, :stage, action: :music, target: "stage",
                                               attributes: { follow: music.nil?, url: world.music_path(music).to_s })
+  end
+
+  # Where next, for each audience: the GM's with go buttons and the call on
+  # a waiting encounter, the players' with suggestions (Campaign::Ways).
+  def broadcast_ways
+    AUDIENCES.each do |gm, stream|
+      broadcast_replace_to self, stream, target: "table_ways", partial: "campaigns/tables/ways", locals: { campaign: self, gm: gm }
+    end
   end
 
   # The party's HP and MP on the table: after a battle, a rest, a potion.
