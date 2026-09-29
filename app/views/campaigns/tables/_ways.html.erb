@@ -2,6 +2,7 @@
     the GM can put it to the table or just go, and calls a waiting encounter here too. Replaced live, for each audience. %>
 <% ways = campaign.battle_on? ? [] : campaign.ways_on %>
 <% encounter = gm && campaign.pending_encounter %>
+<% deciding = ways.any? && !gm && (choice = campaign.open_choice) && !choice.where_next? %>
 <section class="window table-ways" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter %>>
   <% if encounter %>
     <%= render "campaigns/encounters/call", campaign: campaign, encounter: encounter, return_to: campaign_table_path(campaign) %>
@@ -13,7 +14,7 @@
         <% if gm %>
           <%= button_to way["label"], campaign_ways_path(campaign), params: { way: way["label"], go: 1 }, class: "menu__item", form: { data: { turbo_frame: "_top" } } %>
         <% else %>
-          <%= button_to campaign_ways_path(campaign), params: { way: way["label"] }, class: "menu__item" do %>
+          <%= button_to campaign_ways_path(campaign), params: { way: way["label"] }, class: "menu__item", disabled: deciding do %>
             <%= way["label"] %> <span class="menu__cost">suggest</span>
           <% end %>
         <% end %>
@@ -22,6 +23,8 @@
     <% if gm %>
       <%= button_to "Put it to the table", campaign_ways_path(campaign), class: "button button--quiet" %>
       <p class="hint">Go straight there, or let the party vote: settling the vote takes them where they chose.</p>
+    <% elsif deciding %>
+      <p class="hint">The table is deciding something else first: settle that, then say where you'd go.</p>
     <% else %>
       <p class="hint">Say where you'd go: it goes to a vote, and the GM settles it.</p>
     <% end %>

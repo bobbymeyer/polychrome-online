@@ -61,6 +61,14 @@ RSpec.describe "Where next", type: :request do
     expect { campaign.ask_where_next! }.to raise_error(Refusal, /nowhere to go/)
   end
 
+  it "holds players' suggestions while the table decides something else, and says so" do
+    sign_in_as(kim)
+    Message.choice(campaign, options: %w[Yes No]).save!
+    get campaign_table_path(campaign)
+    expect(response.body).to match(/<button class="menu__item" disabled="disabled" type="submit">\s*To Greymere/)
+    expect(response.body).to include("The table is deciding something else first")
+  end
+
   it "offers a dungeon's door, then its ways on, naming only rooms the players have seen" do
     cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
     post map_node_location_path(cave_node), params: { location_template_id: world.location_templates.find_by!(slug: "goblin_cave").id }

@@ -106,6 +106,7 @@ RSpec.describe "Items and shops", type: :request do
       expect(campaign.reload.gil).to eq(200 - price)
       expect(lenna_character.reload.current_hp).to eq(lenna_character.stats["max_hp"])
       expect(campaign.messages.last.body).to include("Lenna takes a room", "#{price} gil")
+      expect(flash[:notice]).to eq(campaign.messages.last.body) # said where you are, not only in the log
 
       post location_services_path(town), params: { kind: "inn", character_id: lenna_character.id }
       expect(flash[:alert]).to include("already rested")

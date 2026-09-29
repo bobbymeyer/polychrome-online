@@ -42,8 +42,10 @@ module Campaign::Services
       character.update!(hp: nil, mp: nil) if %w[inn temple].include?(kind)
       character.update!(field_used: false) if kind == "inn" # a night's rest: field abilities are back
       bought = rumour_for_sale if kind == "guild"
-      narrate(service_line(kind, character, service, by, cost, bought))
+      line = service_line(kind, character, service, by, cost, bought)
+      narrate(line)
       hear_of!(bought) if bought
+      line
     end
   end
 

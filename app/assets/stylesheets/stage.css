@@ -892,6 +892,4 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .battle .battle__header { margin-bottom: 8px; }
   .battle:not(.battle--controller):not(.battle--screen) .battle__header > div:first-child { display: none; }
   .unit--enemy { --sprite: clamp(56px, min(calc(100cqi / min(var(--count, 1), 3) - 24px), 18vh), 160px); }
-  /* A battle is a game screen: the site's own navigation steps aside. */
-  body:has(.battle) .topbar__account, body:has(.battle) .topbar__books { display: none; }
 }

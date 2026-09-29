@@ -83,7 +83,7 @@
     </details>
   <% end %>
 
-  <%= render layout: "shared/log_drawer" do %>
+  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name } do %>
     <section class="battle-log log-drawer__section" aria-label="Battle">
       <h3>Battle</h3>
       <ol data-battle-player-target="log" data-log-drawer-target="list" aria-live="polite">

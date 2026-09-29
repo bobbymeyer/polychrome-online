@@ -121,9 +121,24 @@ a.play:hover { color: var(--signal-dark); }
   .topbar__books { margin-top: var(--unit); }
 }
 
+/* The links sit in the grid as if the menu weren't there; on a phone they fold behind it. */
+.topbar__menu { display: contents; }
+.topbar__toggle { display: none; }
+
 .page { max-width: var(--measure); margin: 0 auto; padding: 40px var(--gutter) 96px; }
 @media (max-width: 640px) {
-  .topbar { padding: 16px; }
+  .topbar { padding: 16px; grid-template-columns: 1fr auto; align-items: center; }
+  .topbar__brand { grid-column: 1; }
+  .topbar__toggle { display: inline-flex; align-items: center; grid-column: 2; min-height: 44px; padding: 0 14px;
+                    border: 2px solid currentColor; background: none; color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
+  .topbar__menu { display: none; grid-column: 1 / -1; }
+  .topbar.is-open .topbar__menu { display: block; }
+  .topbar__books, .topbar__account { flex-direction: column; align-items: stretch; margin-top: var(--unit); font-size: 16px; }
+  .topbar__books a, .topbar__account a, .topbar__account .link-button, .topbar__account > span { display: flex; align-items: center; min-height: 44px; }
+  .topbar__account form { display: block; }
+  /* Signing out is a long way back for a guest: it sits apart, last. */
+  .topbar__sign-out { margin-top: 16px; }
+  .topbar.is-open .topbar__book { display: flex; }
   .page { padding: 24px 16px 64px; }
 }
 
@@ -144,6 +159,9 @@ a.play:hover { color: var(--signal-dark); }
   font-weight: 600; background: var(--wash);
 }
 .form-errors h2 { font-size: 16px; line-height: 24px; }
+.flashes { position: fixed; z-index: 70; top: 12px; left: 50%; translate: -50% 0; width: min(520px, calc(100vw - 32px));
+           display: grid; justify-items: center; gap: 8px; pointer-events: none; }
+.flashes .flash { margin: 0; pointer-events: auto; cursor: pointer; }
 .form-errors ul { margin: 0; padding-left: 20px; font-weight: 400; }
 
 /* ---------------------------------------------------------------------------
@@ -552,6 +570,8 @@ details[open] summary { margin-bottom: 16px; }
 .composer { margin-top: 0; }
 .composer__controls { display: flex; flex-wrap: wrap; gap: 0 var(--gutter); }
 .composer__controls .field { flex: 0 1 224px; }
+.composer__expression summary { cursor: pointer; font-size: 13px; font-weight: 700; padding: 10px 0; }
+.composer__expression[open] summary { padding-bottom: 4px; }
 .composer__row { display: flex; gap: 16px; align-items: flex-end; }
 .composer__row textarea { flex: 1; resize: vertical; }
 

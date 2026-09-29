@@ -6,6 +6,8 @@ import { Controller } from "@hotwired/stimulus"
 // so nothing happens unseen.
 export default class extends Controller {
   static targets = ["panel", "tab", "count", "list"]
+  // Your own lines aren't news to you: they don't count.
+  static values = { self: String }
 
   connect() {
     this.unread = 0
@@ -59,7 +61,7 @@ export default class extends Controller {
   }
 
   arrived(mutations) {
-    const added = mutations.reduce((n, m) => n + [...m.addedNodes].filter((node) => node.nodeType === Node.ELEMENT_NODE).length, 0)
+    const added = mutations.reduce((n, m) => n + [...m.addedNodes].filter((node) => node.nodeType === Node.ELEMENT_NODE && !this.mine(node)).length, 0)
     if (!added) return
     if (this.isOpen) return this.scrollToEnd()
 
@@ -68,6 +70,10 @@ export default class extends Controller {
     this.tabTarget.classList.remove("is-pulsing")
     void this.tabTarget.offsetWidth // restart the pulse
     this.tabTarget.classList.add("is-pulsing")
+  }
+
+  mine(node) {
+    return this.selfValue !== "" && node.dataset?.chatLineSpeakerValue === this.selfValue
   }
 
   showCount() {
