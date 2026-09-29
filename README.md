@@ -62,7 +62,7 @@ bin/rspec               # all specs; bin/ci also runs RuboCop, Brakeman and audi
 No database server needed: it's SQLite, with databases stored in `storage/`.
 
 After a deploy, `bin/rails db:seed` adds any Base World entries that are new in
-`db/seeds/base_world.rb` and leaves existing ones alone, so a GM's edits
+`db/seeds/base_world/` and leaves existing ones alone, so a GM's edits
 survive. To put every Base World entry back to the seed data (after a
 rebalance, say), run `bin/rails base_world:update`. It overwrites edits.
 
@@ -931,7 +931,7 @@ Every image slot can be uploaded or generated with
 | `app/javascript/controllers/battle_player_controller.js`, `app/javascript/battle/gestures.js` | The event player and the motion gestures (§3.2) |
 | `app/models/comfy/`, `app/models/art_*.rb`, `app/models/concerns/artwork.rb`, `app/jobs/art_batch_job.rb` | The asset pipeline: the ComfyUI client, model families, the workflow builder, layered recipes, batches and candidates |
 | `app/models/llm/`, `app/models/prompt_writer.rb` | The optional language model that writes image subjects |
-| `db/seeds/base_world.rb` | The base world's first entries (idempotent) |
+| `db/seeds/base_world.rb`, `db/seeds/base_world/` | The base world's first entries, one file per book (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |
 | `lib/battle/resolver.rb` | `Battle::Resolver.apply(state, action) -> [new_state, events]` |
 | `lib/battle/effects.rb` | The mechanic primitives (§3.1) and their formulas |
