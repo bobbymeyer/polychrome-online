@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "net/http"
-
 # ComfyUI over the network, through its plain HTTP API: queue a prompt (a
 # workflow graph), ask its history whether it has finished, download the
 # images it saved, and ask what it has installed. It assumes nothing about
@@ -16,26 +14,17 @@ require "net/http"
 #   run_seconds(prompt id) → how long ComfyUI spent on it, once finished
 module Comfy
   class Client
-    NETWORK_ERRORS = [ SystemCallError, IOError, SocketError, Timeout::Error, OpenSSL::SSL::SSLError ].freeze
-
     def initialize(url: Comfy.config[:url], token: Comfy.config[:token], headers: Comfy.config[:headers], http: nil, timeout: 30)
-      given = URI(url.to_s.chomp("/"))
-      @user = given.user && URI.decode_www_form_component(given.user)
-      @password = given.password && URI.decode_www_form_component(given.password)
-      @base = URI(given.to_s.sub(%r{//[^@/]*@}, "//"))
-      @headers = parse_headers(headers)
-      @headers["Authorization"] = "Bearer #{token}" if token.present?
-      @http = http
-      @injected = !http.nil?
-      @timeout = timeout
+      @remote = Remote::Connection.new(service: Comfy, name: "ComfyUI", url: url, token: token, headers: headers,
+                                       headers_setting: "COMFY_HEADERS", timeout: timeout, rejection: method(:rejection), http: http)
     end
 
     # The address, without any credentials in it: safe to show.
-    attr_reader :base
+    def base = @remote.base
 
     # Queue a graph. Returns ComfyUI's prompt id.
     def submit(graph, client_id: SecureRandom.uuid)
-      body = post_json("/prompt", { prompt: graph, client_id: client_id })
+      body = parse(@remote.post_json("/prompt", { prompt: graph, client_id: client_id }))
       body.fetch("prompt_id") { raise Error, "ComfyUI didn't return a prompt id" }
     end
 
@@ -68,30 +57,23 @@ module Comfy
     # Put an image in ComfyUI's input folder, for a LoadImage node to start
     # from. Returns the name to give LoadImage.
     def upload(bytes, name)
-      boundary = "polychrome#{SecureRandom.hex(12)}"
-      body = +""
-      body << "--#{boundary}\r\nContent-Disposition: form-data; name=\"overwrite\"\r\n\r\ntrue\r\n"
-      body << "--#{boundary}\r\nContent-Disposition: form-data; name=\"image\"; filename=\"#{name}\"\r\nContent-Type: image/png\r\n\r\n"
-      body = body.b + bytes.to_s.b + "\r\n--#{boundary}--\r\n".b
-      req = Net::HTTP::Post.new(path("/upload/image"), @headers.merge("Content-Type" => "multipart/form-data; boundary=#{boundary}"))
-      req.body = body
-      answer = parse(request(req))
+      answer = parse(@remote.post_form("/upload/image", [ [ "overwrite", "true" ],
+                                                         [ "image", StringIO.new(bytes.to_s.b), { filename: name, content_type: "image/png" } ] ]))
       [ answer["subfolder"].presence, answer.fetch("name") { raise Error, "ComfyUI didn't take the image" } ].compact.join("/")
     end
 
     # The bytes of one saved image.
     def fetch(image)
       query = URI.encode_www_form(filename: image["filename"], subfolder: image["subfolder"].to_s, type: image["type"] || "output")
-      request(Net::HTTP::Get.new(path("/view?#{query}"), @headers)).body
+      @remote.get("/view?#{query}").body
     end
 
     # What this ComfyUI has installed. Each node is asked about on its own
     # (a full /object_info can run to megabytes); a node it doesn't have
     # answers empty.
     def capabilities
-      nodes = Capabilities::NODES
-      info = session do
-        nodes.each_with_object({}) do |node, found|
+      info = @remote.session do
+        Capabilities::NODES.each_with_object({}) do |node, found|
           definition = get_json("/object_info/#{ERB::Util.url_encode(node)}")[node]
           found[node] = definition if definition
         end
@@ -101,8 +83,8 @@ module Comfy
       Capabilities.unreachable(e.message, offline: true)
     rescue Error => e
       Capabilities.unreachable(e.message)
-    rescue *NETWORK_ERRORS => e
-      Capabilities.unreachable(unreachable_message(e), offline: true)
+    rescue *Remote::NETWORK_ERRORS => e # starting the session
+      Capabilities.unreachable(@remote.unreachable(e), offline: true)
     end
 
     def reachable?
@@ -114,54 +96,13 @@ module Comfy
 
     private
 
-    # One connection for a run of requests, when the connection is ours.
-    def session
-      return yield if @http
+    def get_json(path) = parse(@remote.get(path))
 
-      @http = connection
-      @http.start { yield }
-    ensure
-      @http = nil unless @injected
-    end
-
-    def parse_headers(headers)
-      value = headers.is_a?(String) ? (headers.strip.empty? ? {} : JSON.parse(headers)) : headers.to_h
-      value.to_h.transform_keys(&:to_s).transform_values(&:to_s)
-    rescue JSON::ParserError
-      raise Error, "COMFY_HEADERS isn't a JSON object"
-    end
+    def parse(response) = @remote.json(response)
 
     def execution_error(status)
       message = Array(status["messages"]).find { |kind, _| kind == "execution_error" }&.last
       message && [ message["node_type"], message["exception_message"] ].compact.join(": ").strip.presence
-    end
-
-    def get_json(path)
-      parse(request(Net::HTTP::Get.new(path(path), @headers)))
-    end
-
-    def post_json(path, payload)
-      req = Net::HTTP::Post.new(path(path), @headers.merge("Content-Type" => "application/json"))
-      req.body = JSON.generate(payload)
-      parse(request(req))
-    end
-
-    def path(path)
-      "#{@base.path}#{path}"
-    end
-
-    def request(req)
-      req.basic_auth(@user, @password.to_s) if @user
-      response = (@http || connection).request(req)
-      return response if response.is_a?(Net::HTTPSuccess)
-
-      raise Error, rejection(response)
-    rescue *NETWORK_ERRORS => e
-      raise Unreachable, unreachable_message(e)
-    end
-
-    def unreachable_message(error)
-      "ComfyUI isn't reachable at #{@base} (#{error.class.name.demodulize}: #{error.message})"
     end
 
     # ComfyUI explains a rejected graph in "error" and per-node "node_errors".
@@ -171,20 +112,6 @@ module Comfy
         Array(node["errors"]).map { |e| "#{node['class_type']}: #{e['details'].presence || e['message']}" }
       end
       [ body.dig("error", "message") || "ComfyUI answered #{response.code}", *nodes ].join(" · ")
-    end
-
-    def parse(response)
-      JSON.parse(response.body.to_s)
-    rescue JSON::ParserError
-      raise Error, "ComfyUI sent something that isn't JSON"
-    end
-
-    def connection
-      Net::HTTP.new(@base.host, @base.port).tap do |http|
-        http.use_ssl = @base.scheme == "https"
-        http.open_timeout = [ @timeout, 5 ].min
-        http.read_timeout = @timeout
-      end
     end
   end
 end

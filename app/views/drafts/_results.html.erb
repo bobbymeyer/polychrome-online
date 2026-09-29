@@ -6,6 +6,8 @@
     <% case draft.status %>
     <% when "queued", "running" %>
       <p class="draft-results__status" role="status">Thinking…</p>
+    <% when "waiting" %>
+      <p class="draft-results__status" role="status">Waiting: the language model can't be reached right now, so this will carry on by itself when it's back. <span class="muted">(<%= draft.error %>)</span></p>
     <% when "failed" %>
       <p class="form-errors" role="alert"><%= draft.error %></p>
     <% else %>

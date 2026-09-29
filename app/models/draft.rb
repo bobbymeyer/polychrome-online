@@ -12,7 +12,8 @@
 # location's modes, an entry's description).
 class Draft < ApplicationRecord
   KINDS = %w[secrets clocks scene mode description family setting].freeze
-  STATUSES = %w[queued running done failed].freeze
+  # waiting: the model couldn't be reached; DraftJob tries again later.
+  STATUSES = %w[queued waiting running done failed].freeze
 
   belongs_to :owner, polymorphic: true
 
@@ -59,6 +60,9 @@ class Draft < ApplicationRecord
     raise Llm::Error, "The language model suggested nothing usable" if found.empty?
 
     update!(status: "done", items: found)
+  rescue Llm::Unreachable => e
+    update!(status: "waiting", error: e.message)
+    raise
   rescue Llm::Error => e
     update!(status: "failed", error: e.message)
   end

@@ -95,8 +95,13 @@ RSpec.describe Cutout do
     end
 
     it "waits when the remover can't be reached, and carries on once it's back" do
-      batch = render(FakeCutout.new(raises: Cutout::Unreachable.new("The background remover isn't reachable at http://cutout.test")))
-      expect(batch).to have_attributes(status: "waiting", error: /background remover isn't reachable/)
+      allow(Comfy).to receive(:client).and_return(comfy)
+      allow(Cutout).to receive(:client).and_return(FakeCutout.new(raises: Cutout::Unreachable.new("The background remover isn't reachable at http://cutout.test")))
+      batch = ArtBatch.start!(goblin, count: 1, transparent: true)
+      ArtBatchJob.perform_now(batch)
+      comfy.finish!("prompt-1")
+      ArtBatchJob.perform_now(batch.reload)
+      expect(batch.reload).to have_attributes(status: "waiting", error: /background remover isn't reachable/)
       ArtBatchJob.new.perform(batch.reload, client: comfy, cutout: FakeCutout.new)
       expect(batch.reload.status).to eq("done")
       expect(batch.candidates.sole.transparent).to be(true)

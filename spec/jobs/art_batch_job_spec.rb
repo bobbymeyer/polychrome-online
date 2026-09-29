@@ -60,23 +60,23 @@ RSpec.describe ArtBatchJob, type: :job do
   describe "when ComfyUI can't be reached" do
     let(:down) { "ComfyUI isn't reachable at http://comfy.test (OpenTimeout: execution expired)" }
 
-    def retries = enqueued_jobs.select { |j| j["job_class"] == "ArtBatchJob" && j["arguments"].last.is_a?(Hash) && j["arguments"].last.key?("unreachable_since") }
+    # Through Active Job, so its retrying runs (the job finds ComfyUI itself).
+    def run_as_queued(batch) = described_class.perform_now(batch.reload)
+
+    before { allow(Comfy).to receive(:client).and_return(comfy) }
 
     it "waits and tries again later, less often the longer it's down, then carries on when it's back" do
       batch = ArtBatch.start!(goblin, count: 2)
       clear_enqueued_jobs
       allow(comfy).to receive(:submit).and_raise(Comfy::Unreachable, down)
-      run(batch)
+      expect { run_as_queued(batch) }.to have_enqueued_job(described_class).with(batch).at(a_value_within(1.second).of(30.seconds.from_now))
       expect(batch.reload).to have_attributes(status: "waiting", error: down)
       expect(batch.candidates.map(&:status).uniq).to eq([ "queued" ]) # nothing lost
-      expect(retries.size).to eq(1)
-      expect(retries.first["scheduled_at"].to_time).to be_within(2.seconds).of(30.seconds.from_now)
 
-      expect(described_class.retry_in(20.minutes)).to eq(10.minutes)
-      expect(described_class.retry_in(4.minutes)).to eq(2.minutes)
+      expect((1..7).map { |n| ApplicationJob.service_retry_wait(n) }).to eq([ 30, 60, 120, 240, 480, 600, 600 ].map(&:seconds))
 
       allow(comfy).to receive(:submit).and_call_original
-      described_class.new.perform(batch.reload, client: comfy, unreachable_since: 5.minutes.ago)
+      run_as_queued(batch)
       expect(batch.reload).to have_attributes(status: "running", error: nil)
       expect(comfy.submitted.size).to eq(2)
       comfy.finish!("prompt-1", "prompt-2")
@@ -88,7 +88,7 @@ RSpec.describe ArtBatchJob, type: :job do
       batch = ArtBatch.start!(goblin, count: 2)
       run(batch)
       allow(comfy).to receive(:result).and_raise(Comfy::Unreachable, down)
-      run(batch)
+      run_as_queued(batch)
       expect(batch.reload.status).to eq("waiting")
       expect(batch.candidates.map(&:status).uniq).to eq([ "running" ])
 
@@ -99,10 +99,12 @@ RSpec.describe ArtBatchJob, type: :job do
       expect(comfy.submitted.size).to eq(2) # nothing resubmitted
     end
 
-    it "gives up after a day" do
+    it "gives up after a day of trying" do
       batch = ArtBatch.start!(goblin, count: 1)
       allow(comfy).to receive(:submit).and_raise(Comfy::Unreachable, down)
-      described_class.new.perform(batch, client: comfy, unreachable_since: 25.hours.ago)
+      job = described_class.new(batch)
+      job.exception_executions = { "[Remote::Unreachable]" => ApplicationJob::SERVICE_RETRY_ATTEMPTS - 1 } # this is the last try
+      job.perform_now
       expect(batch.reload.status).to eq("failed")
       expect(batch.error).to include("Tried for a day")
     end

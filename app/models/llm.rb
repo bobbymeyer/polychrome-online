@@ -5,6 +5,8 @@
 # everything works without one.
 module Llm
   class Error < StandardError; end
+  # The model couldn't be reached at all: worth trying again later (Remote).
+  class Unreachable < Error; include Remote::Unreachable; end
 
   # config/llm.yml (from the environment), with the Settings page's
   # address and model taking precedence (SiteSetting).

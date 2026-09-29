@@ -4,8 +4,8 @@
 module Comfy
   class Error < StandardError; end
   # ComfyUI couldn't be reached at all (down, asleep, off the network), as
-  # opposed to answering and refusing: worth trying again later.
-  class Unreachable < Error; end
+  # opposed to answering and refusing: worth trying again later (Remote).
+  class Unreachable < Error; include Remote::Unreachable; end
 
   # The settings: config/comfy.yml (from the environment), with what an
   # admin set on the Settings page (SiteSetting) taking precedence.
