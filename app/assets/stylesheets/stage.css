@@ -722,6 +722,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* A player on auto: the toggle under their commands lights up. */
 .auto-toggle-form { margin: 12px 0 0; }
 .auto-toggle { font-size: 14px; }
+.command-panel__extras { margin: 8px 0 0; font-size: 14px; }
 .auto-toggle.is-on { padding: 4px calc(12px + var(--slant)) 4px 10px; background: var(--sun-yellow); color: var(--ink); text-decoration: none; font-weight: 800;
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
 
@@ -868,7 +869,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
   }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .window { margin: 0; border-top: 0; padding-top: 0; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu { gap: 6px; margin: 6px 0 8px; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu__item { min-height: 40px; padding: 4px 10px; font-size: 16px; }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu__item { min-height: 48px; padding: 4px 12px; font-size: 16px; }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame .link-button { min-height: 44px; display: inline-flex; align-items: center; }
   /* A battle is a game screen: the site's own navigation steps aside. */
   body:has(.battle) .topbar__account, body:has(.battle) .topbar__books { display: none; }
 }

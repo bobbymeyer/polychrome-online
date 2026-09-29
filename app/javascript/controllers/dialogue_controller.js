@@ -49,8 +49,12 @@ export default class extends Controller {
 
   arrive(event) {
     const line = event.detail.line
-    // No box on this page (a local co-op controller: the screen has it).
-    if (!line.dialogueValue || !this.hasBoxTarget) return this.scrollLog()
+    // No box on this page (a local co-op controller: the screen has it), so
+    // nothing holds the line back: it's readable in the log straight away.
+    if (!line.dialogueValue || !this.hasBoxTarget) {
+      line.element.classList.remove("is-pending")
+      return this.scrollLog()
+    }
 
     this.queue.push(line)
     this.queue.sort((a, b) => a.idValue - b.idValue)
