@@ -17,13 +17,12 @@ class CharactersController < ApplicationController
   ORIGIN_FIELDS = [ :origin, :home_node_id, { ties: [ %i[npc_id text] ] } ].freeze
 
   def create
-    # A player's new character is theirs and starts at the party's lowest
-    # level. The GM's are unclaimed, for players to sit as, at any level.
-    fields = can_gm?(@campaign) ? %i[name motive player_name job_id starting_level starting_job_level] : %i[name motive player_name job_id]
-    @character = @campaign.characters.new(params.expect(character: [ *fields, *ORIGIN_FIELDS ]).merge(user: (current_user unless can_gm?(@campaign))))
-    unless can_gm?(@campaign)
-      @character.starting_level = @campaign.newcomer_level
-      @character.starting_job_level = nil # follows their level
+    # A player's new character is theirs (Campaign#newcomer). The GM's are
+    # unclaimed, for players to sit as, at any level.
+    if can_gm?(@campaign)
+      @character = @campaign.characters.new(params.expect(character: [ :name, :motive, :player_name, :job_id, :starting_level, :starting_job_level, *ORIGIN_FIELDS ]))
+    else
+      @character = @campaign.newcomer(params.expect(character: [ :name, :motive, :job_id, *ORIGIN_FIELDS ]), user: current_user)
     end
     if @character.save
       redirect_to character_path(@character), notice: "#{@character.name} joins the party."

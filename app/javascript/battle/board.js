@@ -117,11 +117,14 @@ export class Board {
     const el = document.createElement("span")
     el.className = `popup popup--${kind} ${extra}`.trim()
     el.textContent = text
-    el.style.left = `${box.left - stage.left + box.width / 2}px`
     el.style.top = `${box.top - stage.top + box.height * 0.3}px`
     // Numbers land at a slight tilt, never the same twice (decoration, not outcome).
     if (["damage", "heal", "poison"].includes(kind)) el.style.rotate = `${(Math.random() * 12 - 6).toFixed(1)}deg`
     this.fx.append(el)
+    // Centred on the sprite, but never past the stage's edge ("SUPER EFFECTIVE!" on the end of a row).
+    const half = el.offsetWidth / 2
+    const centre = box.left - stage.left + box.width / 2
+    el.style.left = `${Math.min(Math.max(centre, half + 4), Math.max(half + 4, stage.width - half - 4))}px`
     tl.add(el, { opacity: [0, 1, 1, 0], translateY: [8, -30, -34, -44], scale: [1.6, 1, 1, 0.9], duration: 900, ease: "outQuad" }, at)
     tl.call(() => el.remove(), at + 900)
   }

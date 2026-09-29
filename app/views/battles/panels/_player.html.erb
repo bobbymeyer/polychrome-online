@@ -9,6 +9,16 @@
   </span>
   <%= render "battles/panels/countdown", battle: @battle %>
 </div>
+<%# Everyone's HP at a glance, for a phone whose pinned panel covers the roster. %>
+<ol class="party-strip" aria-label="Party">
+  <% @battle.party.reject { |u| u["gone"] }.each do |member| %>
+    <li class="party-strip__member <%= 'is-ko' if member['hp'].zero? %> <%= 'is-you' if member['id'] == unit['id'] %>">
+      <span class="party-strip__name"><%= member["name"] %></span>
+      <span class="party-strip__hp"><%= member["hp"] %><span class="muted">/<%= member["stats"]["max_hp"] %></span></span>
+      <span class="bar"><span class="bar__fill bar__fill--<%= hp_band(member) %>" style="width: <%= hp_percent(member) %>%"></span></span>
+    </li>
+  <% end %>
+</ol>
 
 <% if unit["hp"].zero? %>
   <p>You're down. Hope someone has a Raise.</p>
@@ -76,8 +86,7 @@
       Ready to try: <strong>“<%= command["text"] %>”</strong>.
       <%= command["ruling"] ? "The GM has ruled: #{stat_label(command['ruling']['stat'])}, #{command['ruling']['difficulty']}." : "Waiting for the GM to rule on it." %>
     <% else %>
-      Ready: <strong><%= case command["kind"] when "ability" then ability_name(state, command["ability"]) when "item" then item_name(state, command["item"]) else command["kind"].humanize end %></strong>
-      <% if command["target"] %>→ <%= unit_name(state, command["target"]) %><% end %>.
+      Ready: <strong><%= case command["kind"] when "ability" then ability_name(state, command["ability"]) when "item" then item_name(state, command["item"]) else command["kind"].humanize end %></strong><%= " → #{unit_name(state, command['target'])}" if command["target"] %>.
     <% end %>
     Waiting for <%= (@battle.awaiting_input.map { |id| unit_name(state, id) }.to_sentence.presence || "the round to run") %>.
   </p>
@@ -108,7 +117,7 @@
     <%= button_to "Defend", battle_actions_path(@battle), class: "menu__item", data: { help: "Halve the damage you take this round." },
                   params: { command: { kind: "defend" } } %>
     <% if state["escapable"] %>
-      <%= button_to "Flee", battle_actions_path(@battle), class: "menu__item", data: { help: "Try to get the whole party away. It can fail." },
+      <%= button_to "Flee", battle_actions_path(@battle), class: "menu__item", data: { help: "Try to get the whole party away. It can fail.", menu_forget: true },
                     params: { command: { kind: "flee" } } %>
     <% end %>
   </div>
@@ -125,7 +134,9 @@
     <p class="hint">Everyone is on auto, so each round waits for the timer or the GM: a fight never plays itself out.</p>
   <% end %>
 <% end %>
-<p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick ·
+<p class="command-panel__extras">
   <button type="button" class="link-button" data-timing-meter-target="toggle" data-action="timing-meter#toggle"
-          title="Stop the needle on the mark for a Perfect: the move lands a quarter harder">Timing meter</button></p>
+          title="Stop the needle on the mark for a Perfect: the move lands a quarter harder">Timing meter</button>
+</p>
+<p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick</p>
 </div>

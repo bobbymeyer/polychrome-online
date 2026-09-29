@@ -22,6 +22,8 @@ class Location < ApplicationRecord
   # Rails 8 page refreshes: each viewer re-fetches their own page, so a
   # player's copy never contains what only the GM may see.
   after_update_commit :broadcast_refresh
+  # A mode on the map, the party moving room to room.
+  after_update_commit -> { campaign.table_changed }
   after_save { @generated = @view = nil }
 
   delegate :town?, :dungeon?, :kind, to: :location_template

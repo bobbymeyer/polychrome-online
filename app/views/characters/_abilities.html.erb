@@ -1,4 +1,4 @@
-<section class="window">
+<section class="window" id="abilities">
   <h2>Abilities</h2>
   <% if (own = @character.job.signature_ability) %>
     <p class="signature-line"><%= gloss(:signature, "Signature") %>: <%= link_to own.name, world_grimoire_ability_path(@world, own) %>

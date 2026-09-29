@@ -20,7 +20,7 @@ class Flag < ApplicationRecord
   scope :shown_to_players, -> { where(public: true) }
 
   # Public flags are part of what the party knows.
-  after_commit { campaign.broadcast_party_knows }
+  after_commit { campaign.table_changed }
 
   def counter?
     value.match?(/\A-?\d+\z/)

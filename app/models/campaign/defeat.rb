@@ -27,18 +27,18 @@ module Campaign::Defeat
     raise Refusal, "Not while a battle is on" if battle_on?
     raise Refusal, "Someone is still standing" unless wiped_out?
 
-    transaction do
+    line = transaction do
       case how
       when "retreat" then retreat!
       when "get_up"
         characters.each { |character| character.update!(hp: 1) }
-        narrate("Somehow, one by one, everyone gets back up.")
+        narrate("Somehow, one by one, everyone gets back up.").body
       when "game_over"
-        narrate("The party has fallen. Their story ends here.")
+        narrate("The party has fallen. Their story ends here.").body
       end
     end
-    broadcast_party
-    broadcast_map
+    battles.where(status: "defeat").order(:id).last&.aftermath!(line)
+    table_changed # the party got up, or moved: some changes skip callbacks
   end
 
   private
@@ -49,7 +49,8 @@ module Campaign::Defeat
     current_node&.location&.leave! unless current_node == town
     update!(current_node: town, gil: gil - lost, pending_encounter: nil)
     characters.update_all(hp: nil, mp: nil, field_used: false)
-    narrate("The party comes to in #{town.name}, bruised but alive#{", #{money(lost)} lighter" if lost.positive?}.")
+    line = narrate("The party comes to in #{town.name}, bruised but alive#{", #{money(lost)} lighter" if lost.positive?}.").body
     pass_time!(until_dawn, announce: :new_day)
+    line
   end
 end

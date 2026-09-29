@@ -52,7 +52,7 @@ class Atlas
   def start_leads!(places)
     nodes = campaign.map_nodes.where(world_place: places.select(&:lead), visible: false).includes(:world_place)
     nodes.each do |node|
-      town = campaign.nearest_town(node) or next
+      town = campaign.nearest_town(node, through_blocked: true) or next # word gets over a blocked road
       campaign.start_rumour!(node.world_place.lead, at: town, about: node)
     end
   end

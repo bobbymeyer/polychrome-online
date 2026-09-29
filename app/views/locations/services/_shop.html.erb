@@ -24,10 +24,14 @@
             <td class="num"><%= money(location.price_of(item)) %></td>
             <% if shopping %>
               <td class="shop-table__buy">
-                <%= form_with url: location_purchases_path(location), class: "inline-form shop-form" do |f| %>
-                  <%= hidden_field_tag :item, item.slug, id: nil %>
-                  <%= number_field_tag :quantity, 1, min: 1, max: 99, id: "buy_#{item.slug}", "aria-label": "How many #{item.name}" %>
-                  <%= f.submit "Buy", class: "button play", disabled: location.price_of(item) > @campaign.gil %>
+                <% if location.price_of(item) > @campaign.gil %>
+                  <span class="muted">Can't afford</span>
+                <% else %>
+                  <%= form_with url: location_purchases_path(location), class: "inline-form shop-form" do |f| %>
+                    <%= hidden_field_tag :item, item.slug, id: nil %>
+                    <%= number_field_tag :quantity, 1, min: 1, max: 99, id: "buy_#{item.slug}", "aria-label": "How many #{item.name}" %>
+                    <%= f.submit "Buy", class: "button play" %>
+                  <% end %>
                 <% end %>
               </td>
             <% end %>

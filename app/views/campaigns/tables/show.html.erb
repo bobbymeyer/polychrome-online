@@ -38,6 +38,13 @@
     </section>
     <%= render "choices/panel", choice: @campaign.open_choice %>
     <%= render "campaigns/tables/ways", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
+    <% if @seat.seated? && !view %>
+      <%# Talk where the story is: right under it, not below the map. %>
+      <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
+        <div class="window"><p class="muted">Loading…</p></div>
+      <% end %>
+      <%= render "campaigns/field_uses/ability", character: @seat.character if @seat.character? %>
+    <% end %>
     </div>
 
     <div class="table__side">
@@ -60,7 +67,7 @@
     </div>
   </div>
 
-  <%= render layout: "shared/log_drawer" do %>
+  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name } do %>
     <%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %>
   <% end %>
 
@@ -72,12 +79,8 @@
         <%= link_to "My sheet", character_path(@seat.character), class: "button button--quiet" if @seat.character? %>
         <%= link_to "Leave controller view", campaign_table_path(@campaign, view: "off"), class: "link-button" %>
       </p>
-    <% else %>
-      <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
-        <div class="window"><p class="muted">Loading…</p></div>
-      <% end %>
     <% end %>
-    <% if @seat.character? %>
+    <% if view == "controller" && @seat.character? %>
       <%= render "campaigns/field_uses/ability", character: @seat.character %>
     <% end %>
     <p class="hint">

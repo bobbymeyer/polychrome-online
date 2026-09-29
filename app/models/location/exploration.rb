@@ -102,7 +102,6 @@ module Location::Exploration
       announce(target) unless resolved?(key)
       campaign.drop_stale_where_next!
     end
-    campaign.broadcast_ways
   end
 
   # Hand a room's treasure to the party (once).

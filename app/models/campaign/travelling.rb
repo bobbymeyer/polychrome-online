@@ -46,18 +46,23 @@ module Campaign::Travelling
       hear_rumours!(destination)
       drop_stale_where_next!
     end
-    broadcast_map
     rolled
   end
 
   # What a new party has to spend.
   STARTING_GIL = 150
 
-  # A new campaign: the party starts in the setting's first town it knows
-  # that has a road out (Atlas), with money and the starting bag, and hears
-  # what people there are saying (which may put somewhere on the map).
-  def set_out!
+  # A new campaign begins. From the setting (unless the GM starts from
+  # nothing): its places and people (Atlas) and its trouble, the fronts,
+  # dealt in. Then the party sets out, from the first town it knows with a
+  # road out, with money and the starting bag, and hears what people there
+  # are saying (which may put somewhere on the map).
+  def set_out!(from_the_setting: true)
     transaction do
+      if from_the_setting
+        Atlas.new(self).bring_in_all!
+        WorldFront.undealt_in(self).each { |front| front.deal!(self) }
+      end
       pack_starting_bag!
       increment!(:gil, STARTING_GIL)
       start = starting_town
@@ -75,27 +80,25 @@ module Campaign::Travelling
   end
 
   # The known town nearest a place by road (the place itself if it's one),
-  # or nil if no road leads to one.
-  def nearest_town(from)
-    nearest(from, map_nodes.where(visible: true, kind: "town"))
+  # or nil if no open road leads to one.
+  def nearest_town(from, **options)
+    nearest(from, map_nodes.where(visible: true, kind: "town"), **options)
   end
 
   # The nearest by road of some places (the place itself if it's one of
-  # them), or nil if no road leads to any.
-  def nearest(from, among)
+  # them), or nil. Blocked roads don't count unless asked: talk gets over a
+  # snowed-in pass, people don't (Pointcrawl::Roads).
+  def nearest(from, among, through_blocked: false, roads: self.roads)
     return unless from
 
-    wanted = among.pluck(:id)
-    roads = map_edges.pluck(:from_node_id, :to_node_id)
-    seen = Set[from.id]
-    frontier = [ from.id ]
-    until frontier.empty?
-      found = frontier.find { |id| wanted.include?(id) }
-      return map_nodes.find(found) if found
+    roads = Pointcrawl::Roads.passable(roads) unless through_blocked
+    found = Pointcrawl::Roads.nearest(roads, from.id, among.pluck(:id))
+    found && map_nodes.find(found)
+  end
 
-      frontier = roads.flat_map { |a, b| (frontier.include?(a) ? [ b ] : []) + (frontier.include?(b) ? [ a ] : []) }.uniq.reject { |id| seen.include?(id) }
-      seen.merge(frontier)
-    end
+  # The map's roads as plain data (Pointcrawl::Roads).
+  def roads
+    map_edges.pluck(:from_node_id, :to_node_id, :state).map { |from, to, state| { "from" => from, "to" => to, "state" => state } }
   end
 
   # GM: put the party somewhere directly (and reveal it).
@@ -108,7 +111,6 @@ module Campaign::Travelling
       hear_rumours!(node)
       drop_stale_where_next!
     end
-    broadcast_map
   end
 
   # The most a boss's prelude says before the fight.

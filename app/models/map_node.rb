@@ -26,7 +26,7 @@ class MapNode < ApplicationRecord
   validates :y, numericality: { only_integer: true, in: 0..HEIGHT }
 
   before_destroy { campaign.update_columns(current_node_id: nil) if campaign.current_node_id == id }
-  after_commit { campaign.broadcast_map }
+  after_commit { campaign.table_changed }
 
   def edges
     campaign.map_edges.where(from_node: self).or(campaign.map_edges.where(to_node: self))

@@ -106,6 +106,7 @@ RSpec.describe "Items and shops", type: :request do
       expect(campaign.reload.gil).to eq(200 - price)
       expect(lenna_character.reload.current_hp).to eq(lenna_character.stats["max_hp"])
       expect(campaign.messages.last.body).to include("Lenna takes a room", "#{price} gil")
+      expect(flash[:notice]).to eq(campaign.messages.last.body) # said where you are, not only in the log
 
       post location_services_path(town), params: { kind: "inn", character_id: lenna_character.id }
       expect(flash[:alert]).to include("already rested")
@@ -144,6 +145,12 @@ RSpec.describe "Items and shops", type: :request do
       get character_path(lenna)
       expect(response.body).to include('id="items"', "Potion", "Bartz (HP 20/")
       expect(response.body).not_to include("Antidote <span") # cures only work in battle
+      expect(response.body).not_to include("Lenna (HP") # unhurt: nothing to heal
+
+      bartz.update!(hp: bartz.stats["max_hp"])
+      get character_path(lenna)
+      expect(response.body).to include("Nobody is hurt")
+      bartz.update!(hp: 20)
 
       rng = campaign.rng
       post character_item_use_path(lenna), params: { item: "potion", target_id: bartz.id }

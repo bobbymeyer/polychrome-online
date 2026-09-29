@@ -69,7 +69,6 @@ module Location::Modes
       campaign.narrate(line)
       campaign.start_rumour!(line, at: map_node, seen: campaign.current_node == map_node) if map_node
     end
-    campaign.broadcast_map
     campaign.broadcast_music
   end
 
@@ -80,7 +79,6 @@ module Location::Modes
       update!(current_mode: nil)
       campaign.narrate(line.to_s.strip.presence || "#{view['name']} is itself again: #{was.name.downcase} no more.")
     end
-    campaign.broadcast_map
     campaign.broadcast_music
   end
 

@@ -20,7 +20,7 @@ class MapEdge < ApplicationRecord
   validate :one_path_per_pair
   validate :encounter_table_from_this_world
 
-  after_commit { campaign.broadcast_map }
+  after_commit { campaign.table_changed }
 
   def touches?(node)
     [ from_node_id, to_node_id ].include?(node.id)

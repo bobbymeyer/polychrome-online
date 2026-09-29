@@ -95,7 +95,6 @@ class FieldUse < ApplicationRecord
       character.update!(field_used: true)
       update!(status: "done", difficulty: difficulty, result: roll.merge("line" => line).compact)
     end
-    campaign.broadcast_map if roll_revealed?
   end
 
   # The GM's no: nothing is spent.
@@ -109,10 +108,6 @@ class FieldUse < ApplicationRecord
   end
 
   private
-
-  def roll_revealed?
-    ability.field_outcome == "reveal" && result["success"]
-  end
 
   # Applies the outcome; returns the line the table sees.
   def apply_outcome

@@ -49,8 +49,7 @@ class JoinsController < ApplicationController
   # A character of your own, at the party's lowest level. It's yours as
   # soon as it's made, so nobody else can sit in it.
   def new_character
-    character = @campaign.characters.new(params.expect(character: %i[name job_id motive]))
-    character.starting_level = @campaign.newcomer_level
+    character = @campaign.newcomer(params.expect(character: %i[name job_id motive]))
     return character unless character.valid?
 
     sign_in_as_guest(character.name)

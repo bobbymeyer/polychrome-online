@@ -1,5 +1,5 @@
 <%# The GM's way to bring players in (JoinsController): a link to send, its code and QR, and who has sat down so far. %>
-<% url = join_url(campaign.join_code!) %>
+<% url = join_url(campaign.join_code) %>
 <section class="window invite" id="invite" aria-label="Invite players">
   <div class="invite__qr"><%= qr_svg(url) %></div>
   <div>

@@ -1,0 +1,24 @@
+<%# The shared screen's part of the fight (LocalCoop): read from across the room. The clock and who it waits on
+    while the party chooses; what they won when it's over. Nobody plays from here: the phones do. %>
+<% state = @battle.state %>
+<div class="screen-status">
+  <% if @battle.over? %>
+    <% settlement = @battle.settlement || {} %>
+    <h2><%= { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away.", "abandoned" => "Called off." }.fetch(@battle.status, @battle.status.humanize) %></h2>
+    <% if settlement["result"] == "victory" %>
+      <ul class="screen-status__rewards">
+        <% if settlement["gil"].to_i.positive? %><li><%= money(settlement["gil"]) %></li><% end %>
+        <% if settlement["drops"].present? %><li>Found <%= settlement["drops"].to_sentence %></li><% end %>
+        <% settlement["members"].each do |member| %>
+          <li><strong><%= member["name"] %></strong> <%= member["exp"] %> EXP<% if member["level"] %> · <span class="level-up">Level <%= member["level"].last %>!</span><% end %><% if member["learned"].present? %> · <span class="level-up">Learned <%= member["learned"].to_sentence %>!</span><% end %></li>
+        <% end %>
+      </ul>
+    <% end %>
+    <%= render "battles/panels/aftermath", battle: @battle %>
+  <% else %>
+    <h2>Round <%= @battle.round %></h2>
+    <%= render "battles/panels/countdown", battle: @battle %>
+    <% waiting = @battle.awaiting_input.map { |id| unit_name(state, id) } %>
+    <p class="screen-status__waiting"><%= waiting.any? ? "Waiting for #{waiting.to_sentence}" : "Everyone's ready" %></p>
+  <% end %>
+</div>

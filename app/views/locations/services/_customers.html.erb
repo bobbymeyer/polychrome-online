@@ -17,9 +17,10 @@
           <td class="shop-table__buy">
             <% if why_not %>
               <span class="muted"><%= why_not %></span>
+            <% elsif shopping && price > @campaign.gil %>
+              <span class="muted">Can't afford</span>
             <% elsif shopping %>
-              <%= button_to action, location_services_path(location), params: { kind: kind, character_id: character.id },
-                            class: "button play", disabled: price > @campaign.gil %>
+              <%= button_to action, location_services_path(location), params: { kind: kind, character_id: character.id }, class: "button play" %>
             <% end %>
           </td>
         </tr>

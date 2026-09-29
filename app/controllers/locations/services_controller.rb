@@ -11,13 +11,13 @@ class Locations::ServicesController < ApplicationController
   def create
     if params[:everyone].present?
       @campaign.rest_at_inn!(at: @location, by: payer_name)
+      back "Everyone takes a room for the night."
     else
       character = @campaign.characters.find(params.expect(:character_id))
       return forbid("#{character.name} isn't yours to pay for.") unless can_manage?(character)
 
-      @campaign.use_service!(params.expect(:kind), character, at: @location, by: payer_name)
+      back @campaign.use_service!(params.expect(:kind), character, at: @location, by: payer_name)
     end
-    back
   end
 
   private

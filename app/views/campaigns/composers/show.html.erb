@@ -25,10 +25,11 @@
                          id: "message_whisper_to" %>
         </div>
       <% end %>
-      <div class="field">
-        <%= f.label :expression %>
-        <%= f.select :expression, Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] } %>
-      </div>
+      <%# How it's said: optional, so it waits behind a word until wanted. %>
+      <details class="field composer__expression" <%= "open" if @message.expression.present? && @message.expression != Portrait::EXPRESSIONS.first %>>
+        <summary>Expression</summary>
+        <%= f.select :expression, Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] }, {}, "aria-label": "Expression" %>
+      </details>
     </div>
     <div class="composer__row">
       <%= f.text_area :body, rows: 2, placeholder: seat.gm? ? "Say something as them… (Enter to send; “? A | B” asks the table)" : "Say something… (Enter to send)", autofocus: @refocus,

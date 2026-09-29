@@ -9,6 +9,13 @@
 module BattleRecord::Settlement
   extend ActiveSupport::Concern
 
+  # What the GM made of a wipe (Campaign::Defeat#recover!), told to
+  # everyone still looking at the results.
+  def aftermath!(line)
+    update!(settlement: (settlement || {}).merge("aftermath" => line))
+    broadcast_replace_to self, target: "battle_aftermath", partial: "battles/panels/aftermath", locals: { battle: self }
+  end
+
   private
 
   def settle!(events)

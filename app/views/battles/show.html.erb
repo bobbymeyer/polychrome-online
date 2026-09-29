@@ -16,6 +16,9 @@
      data-dialogue-auto-hide-value="true"
      data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
   <%= turbo_stream_from @battle %>
+  <% if @seat.unit_id && @battle.waiting_for_arrivals? %>
+    <span hidden data-controller="arrival" data-arrival-url-value="<%= battle_arrival_path(@battle) %>"></span>
+  <% end %>
   <%# What's said at the table reaches the battle too (the same signed streams as the table). %>
   <% if @battle.campaign %>
     <%= seat_streams_from @seat, @battle.campaign %>
@@ -47,19 +50,25 @@
   </div>
 
   <div class="battle__lower">
-    <% if view == "controller" %>
-      <ol class="battle-ticker" data-battle-player-target="ticker" aria-label="What just happened">
-        <% @log.last(3).each do |event| %>
-          <% line = battle_log_line(event.payload, @battle.state) %>
-          <% if line %><li><%= line %></li><% end %>
-        <% end %>
-      </ol>
-    <% end %>
-    <% unless view == "screen" %>
+    <% if view == "screen" %>
       <%= turbo_frame_tag "command_panel", src: battle_panel_path(@battle), class: "command-frame",
                           data: { battle_player_target: "panel" } do %>
         <div class="window"><p class="muted">Loading…</p></div>
       <% end %>
+    <% else %>
+      <%# Commands, and above them what just happened (on a phone the stage may be off-screen, or under your thumb). Pinned on a phone. %>
+      <div class="battle__dock">
+        <ol class="battle-ticker" data-battle-player-target="ticker" aria-label="What just happened">
+          <% @log.last(3).each do |event| %>
+            <% line = battle_log_line(event.payload, @battle.state) %>
+            <% if line %><li><%= line %></li><% end %>
+          <% end %>
+        </ol>
+        <%= turbo_frame_tag "command_panel", src: battle_panel_path(@battle), class: "command-frame",
+                            data: { battle_player_target: "panel" } do %>
+          <div class="window"><p class="muted">Loading…</p></div>
+        <% end %>
+      </div>
     <% end %>
 
     <%= render "campaigns/tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
@@ -79,7 +88,7 @@
     </details>
   <% end %>
 
-  <%= render layout: "shared/log_drawer" do %>
+  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name } do %>
     <section class="battle-log log-drawer__section" aria-label="Battle">
       <h3>Battle</h3>
       <ol data-battle-player-target="log" data-log-drawer-target="list" aria-live="polite">

@@ -32,7 +32,7 @@ RSpec.describe "Local co-op", type: :request do
   end
 
   it "lets a player join from the code with just a name, and makes their phone a controller", :signed_out do
-    code = campaign.join_code!
+    code = campaign.join_code
     get join_path(code.downcase, view: "controller")
     expect(response.body).to include("Bartz", "Lenna", "Your name", "This phone becomes your controller")
 
@@ -53,7 +53,7 @@ RSpec.describe "Local co-op", type: :request do
 
   it "won't let someone join as a character that's taken, or with an old code", :signed_out do
     bartz.update!(user: make_user("Someone"))
-    code = campaign.join_code!
+    code = campaign.join_code
     get join_path(code)
     expect(response.body).not_to include(">Bartz<")
     post join_path(code), params: { name: "Sneaky", character_id: bartz.id }
@@ -65,10 +65,17 @@ RSpec.describe "Local co-op", type: :request do
   end
 
   it "shows the battle without commands on the screen, and commands without the show on a controller" do
-    battle = start_battle(campaign: campaign)
+    battle = start_battle(campaign: campaign, input_seconds: 30)
     get battle_path(battle, view: "screen")
     expect(response.body).to include("battle--screen", "dialogue--battle")
-    expect(response.body).not_to include('id="command_panel"')
+    get battle_panel_path(battle)
+    expect(response.body).to include("screen-status", "Round 1", "data-countdown-deadline-value", "Waiting for Bartz and Lenna")
+    expect(response.body).not_to include("menu__item", "Take a seat")
+
+    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+    get battle_panel_path(battle)
+    expect(response.body).to include("Victory!")
+    expect(response.body).not_to include("Back to the table")
 
     get battle_path(battle, view: "controller")
     expect(response.body).to include("battle--controller", 'id="command_panel"', "Leave controller view")
@@ -76,7 +83,7 @@ RSpec.describe "Local co-op", type: :request do
   end
 
   it "lets the GM shut old links out with a new code" do
-    old = campaign.join_code!
+    old = campaign.join_code
     post campaign_join_code_path(campaign)
     expect(campaign.reload.join_code).not_to eq(old)
     expect(response).to redirect_to(campaign_path(campaign, anchor: "invite"))
@@ -91,7 +98,7 @@ RSpec.describe "Local co-op", type: :request do
 
     it "lets a friend make their own character when there's nobody to pick, and sits them at the table", :signed_out do
       empty = campaign.world.campaigns.create!(name: "Empty")
-      code = empty.join_code!
+      code = empty.join_code
       get join_path(code)
       expect(response.body).to include("You&#39;re invited", "Make your character", "Starts with")
       expect(response.body).not_to include("Everyone here is taken")
@@ -108,7 +115,7 @@ RSpec.describe "Local co-op", type: :request do
     end
 
     it "joins a new character at the party's lowest level, and says what's missing", :signed_out do
-      code = campaign.join_code!
+      code = campaign.join_code
       bartz.update!(exp: Stats::Growth.exp_for_level(3))
       post join_path(code), params: { character: { name: "", job_id: campaign.available_jobs.first.id } }
       expect(response).to have_http_status(:unprocessable_content)

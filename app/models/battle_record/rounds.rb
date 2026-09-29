@@ -15,6 +15,8 @@ module BattleRecord::Rounds
   ANIMATION_GRACE = 8.seconds
   # At least this long to choose once the GM has ruled on an idea.
   AFTER_RULING = 15.seconds
+  # Added to a boss fight's first clock, for the boss's entrance.
+  BOSS_ENTRANCE = 6.seconds
 
   # Units the GM has put on auto: nobody is there to play them, so each
   # round they take their default command as it opens (§5, "GM auto for an
@@ -51,7 +53,8 @@ module BattleRecord::Rounds
     return unless input_seconds && !over?
     return if round == 1 && still_coming.any?
 
-    update!(deadline_at: Time.current + input_seconds.seconds + (round > 1 ? ANIMATION_GRACE : 0))
+    grace = round > 1 ? ANIMATION_GRACE : (boss? ? BOSS_ENTRANCE : 0)
+    update!(deadline_at: Time.current + input_seconds.seconds + grace)
     BattleTimeoutJob.set(wait_until: deadline_at).perform_later(self, round)
   end
 
@@ -60,7 +63,8 @@ module BattleRecord::Rounds
     return if arrived_units.include?(unit_id) || party.none? { |u| u["id"] == unit_id }
 
     update!(arrived_units: arrived_units | [ unit_id ])
-    start_first_clock!
+    # The clock starts, or the list of who it's waiting for is one shorter.
+    still_coming.empty? ? start_first_clock! : broadcast_countdown
   end
 
   # The players the first round's clock is waiting for: in the fight and
@@ -74,6 +78,10 @@ module BattleRecord::Rounds
     return unless waiting_for_arrivals?
 
     open_round!
+    broadcast_countdown
+  end
+
+  def broadcast_countdown
     broadcast_replace_to self, target: "battle_countdown", partial: "battles/panels/countdown", locals: { battle: self }
   end
 

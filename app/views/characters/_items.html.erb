@@ -12,19 +12,26 @@
       <tbody>
         <% usable.each do |row| %>
           <% revive = Battle::State.revives?(row.item.to_engine(1)) %>
+          <%# Only whoever it would help: the fallen for a revive, the hurt for a heal (Battle::Field). %>
+          <% helps = ->(c) { revive ? !c.conscious? : c.conscious? && c.current_hp < c.stats["max_hp"] } %>
+          <% targets = row.item.target == "self" ? [ @character ].select(&helps) : party.select(&helps) %>
           <tr>
             <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span><br><span class="hint"><%= row.item.effects.map { |e| describe_effect(e) }.join(" · ") %></span></td>
             <td class="shop-table__buy">
-              <%= form_with url: character_item_use_path(@character), class: "inline-form shop-form" do |f| %>
-                <%= hidden_field_tag :item, row.item.slug, id: nil %>
-                <% if row.item.target == "self" %>
-                  <span class="muted"><%= @character.name %></span>
-                <% else %>
-                  <%= select_tag :target_id, options_for_select(party.map { |c| [ "#{c.name} (HP #{c.current_hp}/#{c.stats['max_hp']})", c.id ] },
-                                                               (revive ? party.find { |c| !c.conscious? } : party.min_by { |c| c.current_hp.fdiv(c.stats["max_hp"]) })&.id),
-                                 id: "use_#{row.item.slug}_target", "aria-label": "Use #{row.item.name} on" %>
+              <% if targets.empty? %>
+                <span class="muted"><%= revive ? "Nobody is down" : (row.item.target == "self" ? "#{@character.name} is unhurt" : "Nobody is hurt") %></span>
+              <% else %>
+                <%= form_with url: character_item_use_path(@character), class: "inline-form shop-form" do |f| %>
+                  <%= hidden_field_tag :item, row.item.slug, id: nil %>
+                  <% if row.item.target == "self" %>
+                    <span class="muted"><%= @character.name %></span>
+                  <% else %>
+                    <%= select_tag :target_id, options_for_select(targets.map { |c| [ "#{c.name} (HP #{c.current_hp}/#{c.stats['max_hp']})", c.id ] },
+                                                                 targets.min_by { |c| c.current_hp.fdiv(c.stats["max_hp"]) }&.id),
+                                   id: "use_#{row.item.slug}_target", "aria-label": "Use #{row.item.name} on" %>
+                  <% end %>
+                  <%= f.submit "Use", class: "button play" %>
                 <% end %>
-                <%= f.submit "Use", class: "button play" %>
               <% end %>
             </td>
           </tr>

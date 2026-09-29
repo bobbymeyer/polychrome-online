@@ -5,7 +5,7 @@
   <ol class="coop-setup__steps">
     <li><%= link_to "Open the shared screen", campaign_table_path(campaign, view: "screen"), class: "button play", target: "_blank", rel: "noopener" %>
       on the device that drives the TV or the stream.</li>
-    <li>Players scan its QR code, or open <strong><%= join_url(campaign.join_code!, view: "controller") %></strong>, and pick their character. No account needed.</li>
+    <li>Players scan its QR code, or open <strong><%= join_url(campaign.join_code, view: "controller") %></strong>, and pick their character. No account needed.</li>
     <li>Want your phone as a GM remote? <%= link_to "Use this device as a controller", campaign_table_path(campaign, view: "controller") %>.</li>
   </ol>
   <p class="hint">Players somewhere else join with the invite link on <%= link_to "the campaign page", campaign_path(campaign, anchor: "invite") %>.</p>
