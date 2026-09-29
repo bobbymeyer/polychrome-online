@@ -15,7 +15,17 @@
   <body data-book="<%= current_book %>" style="<%= accent_style %>" <%= tag.attributes(data: { view: coop_view(@campaign || @battle&.campaign) }) %>>
     <header class="topbar">
       <%= link_to "Polychrome", root_path, class: "topbar__brand" %>
-      <% if @world&.persisted? %>
+      <% if @campaign&.persisted? && current_user %>
+        <%# In a campaign, the way around the game; the world's books are one link away. %>
+        <nav class="topbar__books" aria-label="Campaign">
+          <%= link_to @campaign.name, campaign_path(@campaign), class: "topbar__world" %>
+          <%= link_to "Table", campaign_table_path(@campaign) %>
+          <%= link_to "Map", campaign_map_path(@campaign) %>
+          <%= link_to "Prep", campaign_prep_path(@campaign) if can_gm?(@campaign) %>
+          <%= link_to "Legends", campaign_legends_path(@campaign) %>
+          <%= link_to "#{@campaign.world.name}'s books", world_path(@campaign.world), class: "muted" %>
+        </nav>
+      <% elsif @world&.persisted? %>
         <nav class="topbar__books" aria-label="Books">
           <%= link_to @world.name, world_path(@world), class: "topbar__world" %>
           <%= book_nav_link "Bestiary", world_bestiary_monsters_path(@world), :bestiary %>

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# A new local co-op join code: the old QR code and link stop working.
+# A new invite code: the old link and QR code stop working.
 class Campaigns::JoinCodesController < ApplicationController
   include CampaignScoped
 
@@ -9,6 +9,6 @@ class Campaigns::JoinCodesController < ApplicationController
 
   def create
     @campaign.new_join_code!
-    redirect_to campaign_table_path(@campaign), notice: "New join code: #{@campaign.join_code}.", status: :see_other
+    redirect_to campaign_path(@campaign, anchor: "invite"), notice: "New invite code: #{@campaign.join_code}. The old link and QR code no longer work.", status: :see_other
   end
 end

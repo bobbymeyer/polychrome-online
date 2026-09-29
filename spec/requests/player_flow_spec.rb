@@ -20,21 +20,25 @@ RSpec.describe "The player's way through", type: :request do
     expect(response.body).to include("New campaign", "you run it as its GM")
   end
 
-  it "lists your campaigns on the home page, then the ones to join" do
+  it "lists only your campaigns on the home page; an admin sees the rest too" do
     campaign.characters.create!(name: "Krile", job: white_mage, user: krile)
     world.campaigns.create!(name: "Someone else's")
     sign_in_as(krile)
     get root_path
-    mine, others = response.body.split("<h2>Other campaigns</h2>")
-    expect(mine).to include("Your campaigns", "Crystal Road", "You play Krile", "Table →")
-    expect(others).to include("Someone else&#39;s")
+    expect(response.body).to include("Your campaigns", "Crystal Road", "You play Krile", "Table →")
+    expect(response.body).not_to include("Someone else&#39;s")
+
+    sign_out
+    sign_in_as(@admin)
+    get root_path
+    expect(response.body).to include("Everyone else's campaigns", "Someone else&#39;s")
   end
 
   it "starts a player's new character knowing their job's first ability" do
     sign_in_as(krile)
     post campaign_characters_path(campaign), params: { character: { name: "Krile", job_id: white_mage.id } }
     character = campaign.characters.find_by!(name: "Krile")
-    expect(character.character_job.level).to eq(2) # two job levels per level
+    expect(character.character_job.level).to eq(Character.job_level_for(Campaign::FIRST_LEVEL)) # an empty party starts at the first level
     expect(character.battle_abilities.map(&:slug)).to include("cure")
   end
 

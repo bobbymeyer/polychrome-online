@@ -94,8 +94,16 @@ class Campaign < ApplicationRecord
     current_node&.location&.town? ? "town" : "field"
   end
 
-  # The code behind the shared screen's QR code (local co-op): made when
-  # first asked for, and replaced when the GM wants to shut old links out.
+  # The level a party starts at, and a new player's character joins at: the
+  # party's lowest, so nobody walks in ahead of the others.
+  FIRST_LEVEL = 5
+
+  def newcomer_level
+    characters.minimum(:level) || FIRST_LEVEL
+  end
+
+  # The code behind the invite link and the shared screen's QR code: made
+  # when first asked for, and replaced when the GM wants to shut old links out.
   def join_code!
     join_code || new_join_code!
   end
