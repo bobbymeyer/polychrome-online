@@ -121,6 +121,9 @@
                 battle_auto_path(@battle), method: :patch, params: { unit: unit["id"], on: on ? "0" : "1" },
                 class: [ "link-button", "auto-toggle", ("is-on" if on) ], form: { class: "auto-toggle-form" },
                 aria: { pressed: on }, title: "Picking a command yourself takes you off auto" %>
+  <% if on && (@battle.party.select { |u| u["hp"].positive? }.map { |u| u["id"] } - @battle.auto_units).empty? %>
+    <p class="hint">Everyone is on auto, so each round waits for the timer or the GM: a fight never plays itself out.</p>
+  <% end %>
 <% end %>
 <p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick ·
   <button type="button" class="link-button" data-timing-meter-target="toggle" data-action="timing-meter#toggle"

@@ -119,7 +119,7 @@
       </table>
     <% end %>
     <% if can_gm?(@campaign) %>
-    <details id="add_items" data-turbo-permanent>
+    <details id="add_items" data-turbo-permanent data-controller="fresh-form" data-action="turbo:submit-end->fresh-form#done">
       <summary>GM: add items</summary>
       <%= form_with url: campaign_inventories_path(@campaign), scope: :inventory, class: "book-form" do |f| %>
         <div class="field-row">

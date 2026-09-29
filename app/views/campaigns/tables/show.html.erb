@@ -6,7 +6,7 @@
 
 <% view = coop_view %>
 <div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
-     data-recap-campaign-value="<%= @campaign.id %>">
+     data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= seat_streams_from @seat, @campaign %>

@@ -26,6 +26,13 @@ RSpec.describe Scene do
     ])
   end
 
+  it "says plainly why a choice can't end in a battle too" do
+    fight = scene(script: "Cid: Well?\n? Charge them | Sneak around -> dock_approach", ending: "battle", encounter: { "goblin" => 2 })
+    expect(fight).not_to be_valid
+    expect(fight.errors[:ending].join).to include("can't follow a choice")
+    expect(fight.errors[:script]).to be_empty
+  end
+
   it "says who isn't in the cast, and which expressions there are" do
     bad = scene(script: "Gilgamesh: En garde!\nCid (smug): Heh.")
     expect(bad).not_to be_valid

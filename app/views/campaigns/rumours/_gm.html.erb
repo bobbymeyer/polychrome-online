@@ -17,7 +17,7 @@
   <p class="empty">Nobody's talking about anything yet.</p>
 <% end %>
 <% if names.any? %>
-  <details id="new_rumour" data-turbo-permanent>
+  <details id="new_rumour" data-turbo-permanent data-controller="fresh-form" data-action="turbo:submit-end->fresh-form#done">
     <summary>Start a rumour</summary>
     <%= form_with model: Rumour.new, url: campaign_rumours_path(campaign), class: "book-form" do |f| %>
       <div class="field"><%= f.label :body, "What people are saying" %><%= f.text_field :body, required: true, placeholder: "The mill has been grinding at night." %></div>

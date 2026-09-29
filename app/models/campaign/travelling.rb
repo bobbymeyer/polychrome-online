@@ -79,7 +79,7 @@ module Campaign::Travelling
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
-                                 terrain: encounter["terrain"])
+                                 terrain: encounter["terrain"], names: encounter.fetch("names", {}))
     update!(pending_encounter: nil)
     battle
   end

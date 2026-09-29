@@ -7,7 +7,7 @@
 
 <% bosses = @battle.boss_monsters.to_a %>
 <% view = @battle.campaign && coop_view(@battle.campaign) %>
-<div class="battle<%= " battle--#{view}" if view %><%= " battle--boss" if bosses.any? %>" data-controller="battle-player dialogue"
+<div class="battle<%= " battle--#{view}" if view %><%= " battle--boss" if bosses.any? %>" data-controller="battle-player dialogue<%= " recap" if @battle.campaign %>" <%= tag.attributes(data: { recap_campaign_value: @battle.campaign_id }) if @battle.campaign %>
      <%= tag.attributes(data: { boss_down: ("#{bosses.map(&:name).to_sentence} #{bosses.size > 1 ? 'fall' : 'falls'}!" if bosses.any?) }) %>
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
      data-battle-player-words-value="<%= battle_words(@battle.campaign.world).to_json %>"

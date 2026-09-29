@@ -173,7 +173,14 @@ RSpec.describe "The table", type: :request do
 
     campaign.messages.create!(speaker: cid, body: "The crystal is cracking.", created_at: 2.days.ago)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap"', "The crystal is cracking.")
+    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap"', "The crystal is cracking.",
+                                     'data-recap-auto-value="true"')
+  end
+
+  it "keeps the recap of the session still going to its link, never popping up by itself" do
+    campaign.messages.create!(speaker: cid, body: "The crystal is cracking.", created_at: 10.minutes.ago)
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Previously on The Crystal Road…", 'data-recap-auto-value="false"')
   end
 
   describe "taking a line back" do

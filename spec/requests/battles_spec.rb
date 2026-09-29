@@ -159,7 +159,7 @@ RSpec.describe "Battle screen", type: :request do
     it "renders the board from the current state, with a lazily loaded command panel" do
       get battle_path(battle)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('data-controller="battle-player dialogue"', "turbo-cable-stream-source",
+      expect(response.body).to include('data-controller="battle-player dialogue recap"', "turbo-cable-stream-source",
                                         'data-unit="goblin_a"', %(data-roster="#{bartz}"), 'id="command_panel"')
     end
 

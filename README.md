@@ -37,6 +37,11 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
 - **Play pass:** the menus play like a game. There's a keyboard cursor, a help
   line, targets highlighted on the field (and clickable), a "You" marker, and
   keys to skip playback and advance dialogue. See "Play" in `docs/DESIGN.md`.
+- **Second play pass (the first hour):** invites that let friends make their own
+  characters, only your own campaigns at home, a first-session checklist, a
+  starting town with roads and potions, the story on screen instead of in the log,
+  a fair battle clock, the GM's call after a wipe, and phone layouts. See "Play"
+  in `docs/DESIGN.md`.
 
 ```
 bundle install
@@ -316,13 +321,15 @@ For a table around a TV, or a call with one shared stream: one **shared
 screen** everyone watches, and phones as **controllers**. People talk out
 loud (or on voice chat), so the app doesn't need to carry the talking.
 
-- **The GM starts it** from the table ("Local co-op"): open the shared screen
-  on whatever drives the TV or the stream. It shows a QR code, a link and a
-  six-letter code.
-- **Players scan and pick a character.** No account needed: someone not
-  signed in gives a name and gets a guest account (`users.guest`), which
-  plays like any other. The code can be replaced ("New join code") to shut
-  old links out.
+- **The GM starts it** from the table ("Play around one screen"): open the
+  shared screen on whatever drives the TV or the stream. It shows a QR code,
+  a link and a six-letter code.
+- **Players scan and pick a character, or make one.** No account needed:
+  someone not signed in gives a name and gets a guest account
+  (`users.guest`), which plays like any other. The QR code is the campaign's
+  invite link with `?view=controller`; the same link without it (the campaign
+  page's "Invite players") brings a remote player to the table. The code can
+  be replaced ("New link") to shut old links out.
 - **Views, not new pages** (`LocalCoop`). The table and battle pages render
   as `?view=screen` or `?view=controller` (`?view=off` to leave). The view is
   kept per campaign in the browser session, so it survives being pulled into
@@ -689,7 +696,8 @@ generator (email and password, with `bcrypt`), plus a sign-up page.
   play nobody in it. Standing up ("Change seat") sticks. Seats belong to
   the account, so two people on one browser never share one.
 - **The home page** lists your campaigns (ones you play in or GM), then the
-  rest to join, then the worlds.
+  worlds. Players come into someone else's campaign by its invite link; an
+  admin also sees everyone else's campaigns.
 - **Claiming.** A character with no owner, such as one made before
   accounts existed, becomes yours when you sit as them. Campaigns made
   before accounts have no GM until an admin picks one; admins run them

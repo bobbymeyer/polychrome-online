@@ -114,8 +114,11 @@ class Scene < ApplicationRecord
   def script_reads
     lines.each do |line|
       errors.add(:script, line["problem"]) if line["problem"]
-      if line["choice"] && (line != lines.last || ending != "none")
+      if line["choice"] && line != lines.last
         errors.add(:script, "can only end on a choice, with nothing after it: the next scene can follow what the party chose")
+      elsif line["choice"] && ending != "none"
+        errors.add(:ending, "can't follow a choice: a scene that ends on a choice leaves what happens next to the party. " \
+                            "Set “When the last line is said” to Nothing, or make the fight a scene of its own")
       end
       if line["expression"] && !Portrait::EXPRESSIONS.include?(line["expression"])
         errors.add(:script, "“#{line['expression']}” isn't an expression. Use one of #{Portrait::EXPRESSIONS.to_sentence(last_word_connector: ' or ')}.")

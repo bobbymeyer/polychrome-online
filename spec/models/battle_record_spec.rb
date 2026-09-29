@@ -72,6 +72,11 @@ RSpec.describe BattleRecord do
     end
   end
 
+  it "gives the first of a kind a name of its own: who the place's past says waits there" do
+    named = start_battle(names: { "goblin" => "Sten Pike" })
+    expect(named.enemies.map { |u| u["name"] }).to eq([ "Sten Pike", "Goblin B" ])
+  end
+
   describe "input timer" do
     let(:battle) { start_battle(input_seconds: 30) }
 

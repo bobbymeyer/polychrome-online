@@ -142,9 +142,14 @@ module Location::Exploration
       resolve!(target["key"])
     when "encounter", "boss"
       label = decision["kind"] == "boss" ? "The master of #{name}" : "#{name}: #{target['name']}"
+      # Who the place's past says waits here (Generators::Provenance) is who
+      # the table fights: the strongest of them takes that name.
+      who = decision["who"].to_s.split(",").first.presence
+      leader = who && campaign.world.monsters.where(slug: decision["monsters"].keys).order(level: :desc).first
       campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => decision["kind"] == "boss",
-                                            "terrain" => location_template.encounter_table&.terrain_type }.compact)
-      campaign.narrate("#{decision['kind'] == 'boss' ? 'Boss' : 'Encounter'}! #{campaign.describe_encounter(decision['monsters'])}.")
+                                            "terrain" => location_template.encounter_table&.terrain_type,
+                                            "names" => ({ leader.slug => who } if leader) }.compact)
+      campaign.narrate("#{decision['kind'] == 'boss' ? 'Boss' : 'Encounter'}! #{"#{who}: " if leader}#{campaign.describe_encounter(decision['monsters'])}.")
       resolve!(target["key"])
     when "treasure"
       campaign.narrate("There is treasure in #{target['name']}.")
