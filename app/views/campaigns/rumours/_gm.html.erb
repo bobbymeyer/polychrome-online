@@ -22,6 +22,13 @@
     <%= form_with model: Rumour.new, url: campaign_rumours_path(campaign), class: "book-form" do |f| %>
       <div class="field"><%= f.label :body, "What people are saying" %><%= f.text_field :body, required: true, placeholder: "The mill has been grinding at night." %></div>
       <div class="field"><%= f.label :origin_id, "Starting in" %><%= f.select :origin_id, names.sort_by(&:last).map(&:reverse) %></div>
+      <% hidden = campaign.map_nodes.where(visible: false).order(:name).pluck(:name, :id) %>
+      <% if hidden.any? %>
+        <div class="field">
+          <%= f.label :about_id, "It leads to" %><%= f.select :about_id, hidden, include_blank: "Nowhere in particular" %>
+          <p class="hint">Hearing it puts that place on the map.</p>
+        </div>
+      <% end %>
       <%= f.submit "Let it loose", class: "button" %>
     <% end %>
   </details>

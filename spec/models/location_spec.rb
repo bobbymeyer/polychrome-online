@@ -261,4 +261,19 @@ RSpec.describe Location do
       expect(dungeon.progress).to eq({})
     end
   end
+
+  it "points a townsfolk hook at real places: the nearest of each kind by road" do
+    tule = campaign.map_nodes.create!(name: "Tule", kind: "town", x: 1, y: 1, location: town)
+    near = campaign.map_nodes.create!(name: "Walse", kind: "town", x: 2, y: 2)
+    far = campaign.map_nodes.create!(name: "Karnak", kind: "town", x: 3, y: 3)
+    cave = campaign.map_nodes.create!(name: "Goblin Hollow", kind: "dungeon", x: 4, y: 4)
+    campaign.map_edges.create!(from_node: tule, to_node: near)
+    campaign.map_edges.create!(from_node: near, to_node: far)
+    campaign.map_edges.create!(from_node: cave, to_node: tule)
+    expect(town.fill_in("Needs medicine from {town} before the week is out.")).to eq("Needs medicine from Walse before the week is out.")
+    expect(town.fill_in("Knows the old way into {dungeon}.")).to eq("Knows the old way into Goblin Hollow.")
+    expect(town.fill_in("Plain as day.")).to eq("Plain as day.")
+    cave.destroy!
+    expect(town.fill_in("Knows the old way into {dungeon}.")).to eq("Knows the old way into somewhere far off.")
+  end
 end

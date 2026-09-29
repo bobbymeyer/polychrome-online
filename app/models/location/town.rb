@@ -80,4 +80,18 @@ module Location::Town
     items = campaign.world.items.where(slug: slugs).index_by(&:slug)
     slugs.filter_map { |slug| items[slug] }
   end
+
+  # A townsfolk hook that names the map ({town}, {dungeon}, {place}): the
+  # nearest of each by road from here, so the hook points somewhere real.
+  PLACE_TOKENS = { "town" => { kind: "town" }, "dungeon" => { kind: "dungeon" }, "place" => {} }.freeze
+
+  def fill_in(text)
+    return text unless text.to_s.include?("{")
+
+    here = map_node
+    text.gsub(/\{(#{PLACE_TOKENS.keys.join('|')})\}/) do
+      among = campaign.map_nodes.where(PLACE_TOKENS.fetch(Regexp.last_match(1))).where.not(id: here&.id)
+      campaign.nearest(here, among)&.name || "somewhere far off"
+    end
+  end
 end

@@ -6,6 +6,8 @@
 class FrontClock < ApplicationRecord
   belongs_to :world_front
   belongs_to :place, class_name: "WorldPlace", optional: true
+  # The place behind it: clearing it stops the dealt clock (Clock#map_node).
+  belongs_to :source, class_name: "WorldPlace", optional: true
 
   normalizes :name, with: ->(name) { name.to_s.strip }
   normalizes :full_line, :mode_name, :mode_line, :mode_description, with: ->(text) { text.to_s.strip.presence }

@@ -25,7 +25,7 @@
 
 <%= render "worlds/lines_and_veils", world: @world %>
 
-<%= render "campaigns/first_steps", campaign: @campaign if can_gm?(@campaign) && !@campaign.messages.exists? %>
+<%= render "campaigns/first_steps", campaign: @campaign if can_gm?(@campaign) && !@campaign.messages.where(kind: "say").exists? %>
 
 <section>
   <div class="book-header">

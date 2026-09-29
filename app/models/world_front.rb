@@ -23,7 +23,7 @@ class WorldFront < ApplicationRecord
   # From the form's rows (or plain hashes): the clocks it has now. The old
   # ones go when the front is saved, so a front that doesn't save keeps them.
   #   { "name", "segments", "triggers", "full_line", "public", "place_id",
-  #     "mode_name", "mode_line", "mode_description" }
+  #     "mode_name", "mode_line", "mode_description", "source_id" }
   def clocks=(rows)
     clocks.each(&:mark_for_destruction)
     rows_from(rows).each do |row|
@@ -31,7 +31,7 @@ class WorldFront < ApplicationRecord
 
       clocks.build(row.slice("name", "full_line", "mode_name", "mode_line", "mode_description", "triggers")
                       .merge("segments" => (row["segments"].to_i.nonzero? || 6).clamp(2, 12), "public" => ActiveModel::Type::Boolean.new.cast(row["public"]) || false,
-                             "place_id" => row["place_id"].presence))
+                             "place_id" => row["place_id"].presence, "source_id" => row["source_id"].presence))
     end
   end
 
@@ -69,7 +69,7 @@ class WorldFront < ApplicationRecord
         location = nodes[row["place_id"]]&.location
         mode = add_mode(location, row) if location && row["mode_name"]
         campaign.clocks.create!(name: row["name"], segments: row["segments"], triggers: row["triggers"], full_line: row["full_line"],
-                                public: row["public"], location_mode: mode, world_front: self)
+                                public: row["public"], location_mode: mode, world_front: self, map_node: nodes[row["source_id"]])
       end
       secrets.each do |row|
         campaign.secrets.create!(body: row["body"], location: nodes[row["place_id"]]&.location, npc: npcs[row["figure_id"]], world_front: self)

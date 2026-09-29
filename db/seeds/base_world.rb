@@ -68,6 +68,23 @@ module Seeds
         table = attrs[:encounters] && world.encounter_tables.find_by!(slug: attrs[:encounters])
         world.world_routes.create!(from_place: a, to_place: b, encounter_table: table, **attrs.except(:encounters))
       end
+      figures = FIGURES.to_h do |name, attrs|
+        figure = world.world_figures.find_or_initialize_by(name: name)
+        if figure.new_record? || @overwrite
+          figure.update!(attrs.except(:monster, :place).merge(monster: world.monsters.find_by!(slug: attrs[:monster]), world_place: places.fetch(attrs[:place])))
+        end
+        [ name, figure ]
+      end
+      FRONTS.each do |name, attrs|
+        front = world.world_fronts.find_or_initialize_by(name: name)
+        next unless front.new_record? || @overwrite
+
+        clocks = attrs[:clocks].map do |c|
+          c.except(:place, :source).merge(place_id: places[c[:place]]&.id, source_id: places[c[:source]]&.id).transform_keys(&:to_s)
+        end
+        secrets = attrs[:secrets].map { |x| { "body" => x[:body], "place_id" => places[x[:place]]&.id, "figure_id" => figures[x[:figure]]&.id } }
+        front.update!(description: attrs[:description], clocks: clocks, secrets: secrets)
+      end
     end
 
     # Create the entry if it's missing; only rewrite an existing one when
@@ -561,16 +578,16 @@ module Seeds
                                     "Wim", "Yara", "Zeb", "Anselm", "Brin", "Calla", "Doro", "Emrys", "Faye", "Gideon", "Hanne", "Ilse",
                                     "Jonah", "Kit", "Liesl", "Marek", "Noor", "Otto", "Pim", "Runa", "Sten", "Tilde", "Varro", "Wenna") },
       town_hooks: { name: "Townsfolk hooks", kind: "hooks",
-                    entries: texts("Owes the guild more than they'll say.", "Saw green lights on the hill three nights running.",
-                                   "Lost a brother to the mountain pass.", "Sells maps that are mostly right.",
-                                   "Wants an escort north and can't pay yet.", "Is hiding a runaway in the cellar.",
+                    entries: texts("Owes the guild more than they'll say.", "Saw green lights over {place} three nights running.",
+                                   "Lost a brother on the road to {place}.", "Sells maps that are mostly right.",
+                                   "Wants an escort to {town} and can't pay yet.", "Is hiding a runaway in the cellar.",
                                    "Swears the wind stopped last week, then started again.", "Collects crystal shards. Asks about them.",
-                                   "Knows the old way into the shrine.", "Wants their stolen ring back, no questions asked.",
+                                   "Knows the old way into {dungeon}.", "Wants their stolen ring back, no questions asked.",
                                    "Was a soldier once. Won't say for which side.", "Keeps a chocobo that bites everyone but them.",
                                    "Has a letter for someone who never came back.", "Is certain the mayor is a monster in disguise.",
                                    "Pays well for goblin ears, and doesn't say why.", "Dreams of the sea, though they've never seen it.",
                                    "Heard singing from the old well.", "Is saving for a sword they'll never be able to lift.",
-                                   "Their crops died overnight in a perfect circle.", "Needs medicine from the next town before the week is out.",
+                                   "Their crops died overnight in a perfect circle.", "Needs medicine from {town} before the week is out.",
                                    "Was robbed on the road by someone polite.", "Knows a song about the heroes that isn't flattering.",
                                    "Runs a card game with a marked deck.", "Is looking for a missing apprentice.",
                                    "Found a key they can't find a lock for.", "Remembers when the crystal still sang.",
@@ -656,17 +673,29 @@ module Seeds
     }.freeze
 
     # The first is where a party starts.
+    # The first town with a road is where a party starts. A place nobody
+    # knows yet comes with its lead: the talk, started in the nearest town,
+    # that puts it on the map when the party hears it.
     PLACES = {
       "Tule" => { kind: "town", template: "village", x: 420, y: 380, known: true, seed: 11,
                   description: "A market village at the crossroads, the kind of place stories start from." },
-      "Goblin Hollow" => { kind: "dungeon", template: "goblin_cave", x: 250, y: 250, known: true, seed: 12,
-                           description: "A cave in the hills above Tule. The goblins have been bold lately." },
+      "Goblin Hollow" => { kind: "dungeon", template: "goblin_cave", x: 250, y: 250, known: false, seed: 12,
+                           description: "A cave in the hills above Tule. The goblins have been bold lately.",
+                           lead: "Goblins have been coming down at night from a cave in the hills above the village. Three sheep gone this week." },
       "Greymere" => { kind: "wilds", x: 600, y: 230, known: true, description: "A grey lake in an old forest. Nobody fishes it now." },
       "Port Carwen" => { kind: "town", template: "port_town", x: 760, y: 500, known: true, seed: 13,
                          description: "Ships, sailors and more rumours than anyone can use." },
       "The Old Barrow" => { kind: "dungeon", template: "barrow", x: 720, y: 110, known: false, seed: 14,
-                            description: "Graves dug deep into a hill past Greymere. Something down there won't stay buried." },
-      "Stonepass" => { kind: "landmark", x: 900, y: 320, known: false, description: "The one road over the mountains." }
+                            description: "Graves dug deep into a hill past Greymere. Something down there won't stay buried.",
+                            lead: "Nobody fishes Greymere any more. There are lights under the barrow hill past the lake again, like in grandmother's day." },
+      "Stonepass" => { kind: "landmark", x: 900, y: 320, known: false,
+                       description: "The one road over the mountains, and a warden's hut at the top.",
+                       notes: "Snowed in, the warden says, and the road is blocked until the GM opens it: a thaw, a guide, or the warden's price.",
+                       lead: "The pass is snowed in, they say. But a man in the harbour swears he came over it last week, and there was no snow at all." },
+      "The Isle of Vell" => { kind: "wilds", x: 960, y: 640, known: false,
+                              description: "An island of standing stones, a day's sail out. Nobody lives there, and yet the stones are kept clean.",
+                              notes: "The crossing is blocked until the party pays Captain Maren (500 gil) and the GM opens the way.",
+                              lead: "Captain Maren of the Gull's Wing will sail anyone out to the Isle of Vell, if they can pay what she asks." }
     }.freeze
 
     ROUTES = [
@@ -674,8 +703,43 @@ module Seeds
       [ "Tule", "Greymere", { state: "dangerous", encounters: "old_forest", duration: 1 } ],
       [ "Tule", "Port Carwen", { state: "open", duration: 2, travel_event: "The coast road is busy and safe: carts, pilgrims, a tinker singing." } ],
       [ "Greymere", "The Old Barrow", { state: "dangerous", encounters: "old_forest", duration: 1 } ],
-      [ "Port Carwen", "Stonepass", { state: "dangerous", encounters: "mountain_pass", duration: 2 } ]
+      [ "Port Carwen", "Stonepass", { state: "blocked", encounters: "mountain_pass", duration: 2,
+                                      travel_event: "Snow to the knee, then to the waist, and then, at the warden's hut, none at all." } ],
+      [ "Port Carwen", "The Isle of Vell", { state: "blocked", duration: 1,
+                                             travel_event: "The Gull's Wing leans into a grey swell. Maren sings the whole way and won't say why." } ]
     ].freeze
+
+    # Who the setting's trouble belongs to (World#world_figures): brought into
+    # a campaign's cast, and able to fight as the monster named.
+    FIGURES = {
+      "Grol Tusk" => { title: "Chief of the Goblin Hollow goblins", monster: "goblin_chief", place: "Goblin Hollow",
+                       blurb: "Bigger than a goblin should be, and wearing a hat that was a crown once.",
+                       description: "Raids Tule for silver, not food: he's paid in grave-coin by something under the Barrow." },
+      "Morrow" => { title: "The Barrow Lord", monster: "dark_mage", place: "The Old Barrow",
+                    blurb: "Tule's reeve, a hundred years dead, and not finished.",
+                    description: "Buried with the village charter. Whoever holds it rules Tule; he means to, again." }
+    }.freeze
+
+    # The setting's main thread (World#world_fronts), dealt into every new
+    # campaign: the goblins are the symptom, the Barrow is the cause.
+    FRONTS = {
+      "The Barrow Lord's silver" => {
+        description: "Something under the Barrow wants Tule back, and pays the goblins to soften it up.",
+        clocks: [
+          { name: "The goblins raid Tule", segments: 4, public: true, triggers: %w[dawn], place: "Tule", source: "Goblin Hollow",
+            full_line: "The goblins burn Tule's granary. The village will go hungry this winter.",
+            mode_name: "Raided", mode_line: "Smoke over Tule: the granary is ash.", mode_description: "Boarded windows and short tempers." },
+          { name: "The Barrow Lord wakes", segments: 6, public: false, triggers: %w[now_and_then], source: "The Old Barrow",
+            full_line: "Greymere freezes over in a night, and the dead walk its shore." }
+        ],
+        secrets: [
+          { body: "The goblins raid for silver, not food: something under the Barrow pays them in grave-coin.", place: "Goblin Hollow", figure: "Grol Tusk" },
+          { body: "Morrow was Tule's reeve a hundred years ago, buried with the village charter. Whoever holds it rules Tule.",
+            place: "The Old Barrow", figure: "Morrow" },
+          { body: "The warden at Stonepass is paid to say the pass is snowed in.", place: "Stonepass" }
+        ]
+      }
+    }.freeze
 
     LOCATION_TEMPLATES = {
       village: { name: "Village", kind: "town", description: "A small town on the road: an inn, a shop, a handful of worried people.",

@@ -12,6 +12,12 @@ class WorldPlace < ApplicationRecord
   has_many :incoming_routes, class_name: "WorldRoute", foreign_key: :to_place_id, dependent: :destroy, inverse_of: :to_place
   has_many :world_figures, dependent: :nullify
   has_many :map_nodes, dependent: :nullify
+  has_many :front_clocks_from, class_name: "FrontClock", foreign_key: :source_id, dependent: :nullify, inverse_of: :source
+
+  # What people say that leads to it ("Goblins come down from a cave in the
+  # hills."), for a place the party hasn't found: it starts as a rumour in
+  # the nearest town, and hearing it puts the place on the map (Atlas).
+  normalizes :lead, with: ->(lead) { lead.to_s.strip.presence }
 
   normalizes :name, with: ->(name) { name.to_s.strip }
 

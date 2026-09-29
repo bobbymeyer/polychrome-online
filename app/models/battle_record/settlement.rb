@@ -67,7 +67,10 @@ module BattleRecord::Settlement
       elsif unit["hp"].zero? then "defeated"
       else "remains"
       end
-      npc.increment!(:escapes) if fate == "escaped"
+      if fate == "escaped"
+        # Gone from here, to turn up somewhere near (Campaign::Overnight).
+        npc.update!(escapes: npc.escapes + 1, location: campaign.current_node&.location || npc.location)
+      end
       npc.update!(defeated_at: Time.current) if fate == "defeated"
       { "name" => npc.name, "fate" => fate }
     end

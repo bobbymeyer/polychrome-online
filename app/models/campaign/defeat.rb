@@ -19,27 +19,7 @@ module Campaign::Defeat
   # The town the party wakes up in: the nearest by road from where they
   # fell, or any town on the map. Nil if there isn't one.
   def refuge
-    towns = map_nodes.where(visible: true, kind: "town").order(:id).to_a
-    return if towns.empty?
-    return towns.first unless current_node
-
-    roads = map_edges.to_a
-    seen = { current_node.id => true }
-    frontier = [ current_node.id ]
-    until frontier.empty?
-      town = towns.find { |node| frontier.include?(node.id) }
-      return town if town
-
-      frontier = frontier.flat_map do |id|
-        roads.filter_map do |road|
-          if road.from_node_id == id then road.to_node_id
-          elsif road.to_node_id == id then road.from_node_id
-          end
-        end
-      end.uniq.reject { |id| seen[id] }
-      frontier.each { |id| seen[id] = true }
-    end
-    towns.first
+    nearest_town(current_node) || map_nodes.where(visible: true, kind: "town").order(:id).first
   end
 
   def recover!(how)

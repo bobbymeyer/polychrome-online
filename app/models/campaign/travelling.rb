@@ -49,14 +49,51 @@ module Campaign::Travelling
     rolled
   end
 
-  # A new campaign: the party starts in the map's first town it knows (the
-  # setting's first, Atlas), with the starting bag.
+  # What a new party has to spend.
+  STARTING_GIL = 150
+
+  # A new campaign: the party starts in the setting's first town it knows
+  # that has a road out (Atlas), with money and the starting bag, and hears
+  # what people there are saying (which may put somewhere on the map).
   def set_out!
     transaction do
       pack_starting_bag!
-      towns = map_nodes.where(visible: true, kind: "town")
-      start = towns.where.not(world_place_id: nil).order(:world_place_id).first || towns.order(:id).first
-      update!(current_node: start) if start && current_node.nil?
+      increment!(:gil, STARTING_GIL)
+      start = starting_town
+      next unless start && current_node.nil?
+
+      update!(current_node: start)
+      hear_rumours!(start)
+    end
+  end
+
+  def starting_town
+    towns = map_nodes.where(visible: true, kind: "town").order(Arel.sql("world_place_id IS NULL"), :world_place_id, :id).to_a
+    roads = map_edges.pluck(:from_node_id, :to_node_id).flatten.to_set
+    towns.find { |town| roads.include?(town.id) } || towns.first
+  end
+
+  # The known town nearest a place by road (the place itself if it's one),
+  # or nil if no road leads to one.
+  def nearest_town(from)
+    nearest(from, map_nodes.where(visible: true, kind: "town"))
+  end
+
+  # The nearest by road of some places (the place itself if it's one of
+  # them), or nil if no road leads to any.
+  def nearest(from, among)
+    return unless from
+
+    wanted = among.pluck(:id)
+    roads = map_edges.pluck(:from_node_id, :to_node_id)
+    seen = Set[from.id]
+    frontier = [ from.id ]
+    until frontier.empty?
+      found = frontier.find { |id| wanted.include?(id) }
+      return map_nodes.find(found) if found
+
+      frontier = roads.flat_map { |a, b| (frontier.include?(a) ? [ b ] : []) + (frontier.include?(b) ? [ a ] : []) }.uniq.reject { |id| seen.include?(id) }
+      seen.merge(frontier)
     end
   end
 

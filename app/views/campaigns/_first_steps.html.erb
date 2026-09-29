@@ -1,4 +1,4 @@
-<%# A new GM's way to a first session: shown until the table has heard its first line. %>
+<%# A new GM's way to a first session: shown until someone has said something at the table. %>
 <% steps = [
      [ campaign.characters.exists?, "Make characters", "Make the party yourself, or leave it to the players: the invite lets them make their own." ],
      [ campaign.characters.where.not(user_id: [ nil, campaign.gm_id ]).exists?, "Invite your players", link_to("Send them the invite link", "#invite") + " below." ],

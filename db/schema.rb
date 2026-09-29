@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_150000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -376,7 +376,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_140000) do
     t.text "mode_description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "source_id"
     t.index ["place_id"], name: "index_front_clocks_on_place_id"
+    t.index ["source_id"], name: "index_front_clocks_on_source_id"
     t.index ["world_front_id"], name: "index_front_clocks_on_world_front_id"
   end
 
@@ -666,6 +668,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_140000) do
     t.integer "secret_id"
     t.integer "heard_day"
     t.integer "heard_at_id"
+    t.integer "about_id"
+    t.index ["about_id"], name: "index_rumours_on_about_id"
     t.index ["campaign_id"], name: "index_rumours_on_campaign_id"
     t.index ["deed_id"], name: "index_rumours_on_deed_id"
     t.index ["heard_at_id"], name: "index_rumours_on_heard_at_id"
@@ -783,6 +787,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_140000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "past", default: {}, null: false
+    t.text "lead"
     t.index ["location_template_id"], name: "index_world_places_on_location_template_id"
     t.index ["world_id"], name: "index_world_places_on_world_id"
   end

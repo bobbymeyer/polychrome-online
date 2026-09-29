@@ -49,7 +49,7 @@ class Worlds::FrontsController < ApplicationController
 
   def front_params
     params.expect(world_front: [ :name, :description,
-                                 { clocks: [ [ :name, :segments, :full_line, :public, :place_id, :mode_name, :mode_line, :mode_description, { triggers: [] } ] ],
+                                 { clocks: [ [ :name, :segments, :full_line, :public, :place_id, :source_id, :mode_name, :mode_line, :mode_description, { triggers: [] } ] ],
                                    secrets: [ %i[body place_id figure_id] ] } ]).to_h
   end
 end

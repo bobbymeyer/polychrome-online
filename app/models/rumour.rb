@@ -12,6 +12,9 @@ class Rumour < ApplicationRecord
   belongs_to :deed, optional: true
   belongs_to :secret, optional: true
   belongs_to :heard_at, class_name: "MapNode", optional: true
+  # The place it's about, if it points somewhere: hearing it puts the place
+  # on the map (Campaign#hear_of!).
+  belongs_to :about, class_name: "MapNode", optional: true
   has_many :rumour_places, -> { order(:id) }, dependent: :delete_all
   has_many :places, through: :rumour_places, source: :map_node
 

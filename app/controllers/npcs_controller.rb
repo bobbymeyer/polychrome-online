@@ -47,7 +47,11 @@ class NpcsController < ApplicationController
     @world = @campaign.world
   end
 
+  # Where they are: one of this campaign's places, or nowhere in particular.
   def npc_params
-    params.expect(npc: %i[name title description colour monster_id])
+    attrs = params.expect(npc: %i[name title description colour monster_id location_id])
+    return attrs unless attrs.key?(:location_id)
+
+    attrs.merge(location_id: @campaign.locations.find_by(id: attrs[:location_id])&.id)
   end
 end

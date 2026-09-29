@@ -15,6 +15,7 @@ class MapNode < ApplicationRecord
   has_many :incoming_edges, class_name: "MapEdge", foreign_key: :to_node_id, dependent: :destroy, inverse_of: :to_node
   # What's being said here, and the rumours the party heard here.
   has_many :rumour_places, dependent: :delete_all
+  has_many :rumours_about, class_name: "Rumour", foreign_key: :about_id, dependent: :nullify, inverse_of: :about
   # Clocks this place is behind: clearing it stops them (Campaign#clear_place!).
   has_many :clocks, dependent: :nullify
   has_many :heard_rumours, class_name: "Rumour", foreign_key: :heard_at_id, dependent: :nullify, inverse_of: :heard_at

@@ -42,7 +42,25 @@ RSpec.describe "The player's way through", type: :request do
     expect(roads.map(&:state)).to include("open", "dangerous")
     expect(roads.find { |edge| edge.state == "dangerous" }&.encounter_table).to be_present
     expect(started.bag.to_h { |row| [ row.item.slug, row.quantity ] }).to eq("phoenix_down" => 1, "potion" => 3)
-    expect(started.messages).to be_empty # the first line is the GM's
+    expect(started.gil).to eq(Campaign::STARTING_GIL)
+
+    # What Tule is talking about puts the places it points to on the map; the rest wait to be heard of.
+    said = started.messages.pluck(:body)
+    expect(said).to include(a_string_starting_with("In Tule, people are saying: “Goblins have been coming down"),
+                            "Goblin Hollow is on the map now.", "The Old Barrow is on the map now.")
+    expect(started.map_nodes.where(visible: true).pluck(:name)).to include("Goblin Hollow", "The Old Barrow")
+    expect(started.map_nodes.where(visible: false).pluck(:name)).to contain_exactly("Stonepass", "The Isle of Vell")
+    expect(started.rumours.unheard.map { |r| [ r.origin.name, r.about.name ] }).to contain_exactly(%w[Port\ Carwen Stonepass], [ "Port Carwen", "The Isle of Vell" ])
+
+    # The setting's main thread is dealt in: the goblins raid Tule until the Hollow is cleared.
+    raid = started.clocks.find_by!(name: "The goblins raid Tule")
+    expect(raid).to have_attributes(public: true, map_node: started.map_nodes.find_by!(name: "Goblin Hollow"))
+    expect(started.npcs.pluck(:name)).to include("Grol Tusk", "Morrow")
+    expect(started.npcs.find_by!(name: "Morrow")).to be_antagonist
+    expect(started.map_edges.find { |e| [ e.from_node.name, e.to_node.name ].include?("Stonepass") }.state).to eq("blocked")
+
+    get campaign_path(started)
+    expect(response.body).to include("Your first session")
   end
 
   it "starts a player's new character knowing their job's first ability" do

@@ -24,7 +24,7 @@ module Location::Tailoring
   # pinning makes them a real NPC of the campaign.
   def pin!(key)
     if (npc = townsfolk.find { |n| n["key"] == key })
-      campaign.npcs.create!(name: npc["name"], title: npc["title"], description: npc["hook"], location: self, location_key: key)
+      campaign.npcs.create!(name: npc["name"], title: npc["title"], description: fill_in(npc["hook"]), location: self, location_key: key)
       touch
     else
       element = (view.fetch("services", []) + view.fetch("rooms", [])).find { |e| e["key"] == key }
