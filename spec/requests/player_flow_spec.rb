@@ -34,6 +34,17 @@ RSpec.describe "The player's way through", type: :request do
     expect(response.body).to include("Everyone else's campaigns", "Someone else&#39;s")
   end
 
+  it "sets a new campaign out in the base world's first town, with roads out of it and potions in the bag" do
+    post world_campaigns_path(world), params: { campaign: { name: "First Night" } }
+    started = world.campaigns.find_by!(name: "First Night")
+    expect(started.current_node.name).to eq("Tule")
+    roads = started.map_edges.select { |edge| edge.touches?(started.current_node) }
+    expect(roads.map(&:state)).to include("open", "dangerous")
+    expect(roads.find { |edge| edge.state == "dangerous" }&.encounter_table).to be_present
+    expect(started.bag.to_h { |row| [ row.item.slug, row.quantity ] }).to eq("phoenix_down" => 1, "potion" => 3)
+    expect(started.messages).to be_empty # the first line is the GM's
+  end
+
   it "starts a player's new character knowing their job's first ability" do
     sign_in_as(krile)
     post campaign_characters_path(campaign), params: { character: { name: "Krile", job_id: white_mage.id } }

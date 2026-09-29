@@ -49,6 +49,17 @@ module Campaign::Travelling
     rolled
   end
 
+  # A new campaign: the party starts in the map's first town it knows (the
+  # setting's first, Atlas), with the starting bag.
+  def set_out!
+    transaction do
+      pack_starting_bag!
+      towns = map_nodes.where(visible: true, kind: "town")
+      start = towns.where.not(world_place_id: nil).order(:world_place_id).first || towns.order(:id).first
+      update!(current_node: start) if start && current_node.nil?
+    end
+  end
+
   # GM: put the party somewhere directly (and reveal it).
   def place_party!(node)
     transaction do

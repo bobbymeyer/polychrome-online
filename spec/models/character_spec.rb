@@ -171,6 +171,12 @@ RSpec.describe Character do
       expect(spec).to include("types" => %w[steel], "attack_type" => "steel", "immune_as_resist" => true, "signature" => "cover")
       expect(create(name: "Butz", job_slug: "freelancer").battle_spec).not_to have_key("attack_type")
     end
+
+    it "gives a caster a plain Attack, so it's never useless against what its type can't touch" do
+      spec = create(name: "Krile", job_slug: "summoner").battle_spec
+      expect(spec).to include("types" => %w[ghost])
+      expect(spec).not_to have_key("attack_type")
+    end
   end
 
   describe "equipment" do

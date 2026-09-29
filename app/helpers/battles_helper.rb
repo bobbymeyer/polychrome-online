@@ -86,6 +86,33 @@ module BattlesHelper
     facts
   end
 
+  # "Won't affect Wolf A": what the party knows of a target says this move
+  # can't hurt it (the chart's no effect, or it drinks the type up). Only
+  # from what's been found out, so it never gives a weakness away.
+  def futile_note(battle, state, actor, move, target)
+    return unless target["side"] == "enemy" && target["hp"].positive?
+
+    type = move_type(state, actor, move) or return
+    known = battle&.campaign&.known_affinities&.fetch(target.dig("image", "slug").to_s, {})
+    seen = known ? { "types" => Array(known["types"]), "affinities" => known.select { |_, v| %w[immune absorb].include?(v) } } : target
+    percent = Battle::Types.effectiveness(type, seen, state["types"] || Battle::Types::DEFAULT)
+    if percent == 0 then "Won't affect #{target['name']}" # rubocop:disable Style/NumericPredicate -- may be :absorb
+    elsif percent == :absorb then "#{target['name']} absorbs it"
+    end
+  end
+
+  # The type a move deals damage with, as the resolver will: its own, or
+  # for Attack and the signature, the unit's (Battle::Resolver#own).
+  def move_type(state, actor, move)
+    effect = move.fetch("effects", []).find { |e| %w[physical elemental jump].include?(e["primitive"]) } or return
+    return (effect["type"] == "terrain" ? state["terrain"] : effect["type"]) if effect["type"]
+    return unless move["id"] == "attack" || move["id"] == actor["signature"]
+    return if effect["primitive"] == "elemental"
+
+    imbued = actor["statuses"].find { |s| s["kind"] == "imbued" }&.dig("type") if move["id"] == "attack"
+    imbued || actor["attack_type"]
+  end
+
   def hp_percent(unit)
     (100.0 * unit["hp"] / unit["stats"]["max_hp"]).round
   end

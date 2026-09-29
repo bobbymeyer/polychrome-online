@@ -7,6 +7,14 @@
 # it roll back with the example.
 module BaseWorldHelper
   def base_world = World.find_by!(slug: "base")
+
+  # The base world with its map cleared, for specs that draw their own.
+  def base_world_without_atlas
+    base_world.tap do |world|
+      world.world_routes.destroy_all
+      world.world_places.destroy_all
+    end
+  end
 end
 
 RSpec.configure do |config|

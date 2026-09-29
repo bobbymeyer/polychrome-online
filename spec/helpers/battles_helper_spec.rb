@@ -19,6 +19,19 @@ RSpec.describe BattlesHelper, type: :helper do
       expect(helper.ability_help(vivi, fire)).to start_with("Silenced")
     end
 
+    it "warns when a move can't touch the target, from what's known" do
+      goblin = unit(state, "goblin_a") # normal type
+      attack = state["abilities"]["attack"]
+      vivi["attack_type"] = "ghost"
+      expect(helper.futile_note(nil, state, vivi, attack, goblin)).to eq("Won't affect #{goblin['name']}")
+      vivi.delete("attack_type")
+      expect(helper.futile_note(nil, state, vivi, attack, goblin)).to be_nil
+      expect(helper.futile_note(nil, state, vivi, fire, goblin)).to be_nil
+
+      goblin["affinities"] = { "fire" => "absorb" }
+      expect(helper.futile_note(nil, state, vivi, fire, goblin)).to eq("#{goblin['name']} absorbs it")
+    end
+
     it "shows an ally's HP and MP but never an enemy's" do
       expect(helper.target_help(nil, state, "vivi")).to start_with("HP #{vivi['hp']}/#{vivi['stats']['max_hp']} · MP #{vivi['mp']}")
       expect(helper.target_help(nil, state, "goblin_a")).to eq("Enemy · Normal type · Weak to Fire and Fighting · Immune to Ghost")

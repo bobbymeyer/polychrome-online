@@ -841,3 +841,4 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .battle-ticker li { padding: 2px 0; border-bottom: 1px solid var(--rule); }
 .battle-ticker li:last-child { font-weight: 700; border-bottom: 0; }
 .battle-ticker:empty { display: none; }
+.menu__item.is-futile { color: var(--grey); border-color: var(--rule); }

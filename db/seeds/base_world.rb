@@ -36,6 +36,7 @@ module Seeds
         table = attrs[:encounter_table] && world.encounter_tables.find_by!(slug: attrs[:encounter_table])
         upsert(world.location_templates, slug, attrs.except(:encounter_table).merge(encounter_table: table))
       end
+      seed_atlas(world)
       JOBS.each do |slug, attrs|
         levels = attrs.fetch(:levels)
         fresh = !world.jobs.exists?(slug: slug.to_s)
@@ -48,6 +49,25 @@ module Seeds
         end
       end
       world
+    end
+
+    # The setting's map (World#world_places, #world_routes): where a new
+    # campaign starts (the first town) and the roads out of it, a safe one
+    # and dangerous ones with their encounters. Places are known by name.
+    def seed_atlas(world)
+      places = PLACES.to_h do |name, attrs|
+        template = attrs[:template] && world.location_templates.find_by!(slug: attrs[:template])
+        place = world.world_places.find_or_initialize_by(name: name)
+        place.update!(attrs.except(:template).merge(location_template: template)) if place.new_record? || @overwrite
+        [ name, place ]
+      end
+      ROUTES.each do |from, to, attrs|
+        a, b = places.fetch(from), places.fetch(to)
+        next if world.world_routes.where(from_place: a, to_place: b).or(world.world_routes.where(from_place: b, to_place: a)).exists?
+
+        table = attrs[:encounters] && world.encounter_tables.find_by!(slug: attrs[:encounters])
+        world.world_routes.create!(from_place: a, to_place: b, encounter_table: table, **attrs.except(:encounters))
+      end
     end
 
     # Create the entry if it's missing; only rewrite an existing one when
@@ -634,6 +654,28 @@ module Seeds
                              { item: "antidote", weight: 2 }, { item: "remedy" }, { item: "power_ring" }, { item: "bronze_armor" },
                              { gil: 50, weight: 3 }, { gil: 120, weight: 2 }, { gil: 300 } ] }
     }.freeze
+
+    # The first is where a party starts.
+    PLACES = {
+      "Tule" => { kind: "town", template: "village", x: 420, y: 380, known: true, seed: 11,
+                  description: "A market village at the crossroads, the kind of place stories start from." },
+      "Goblin Hollow" => { kind: "dungeon", template: "goblin_cave", x: 250, y: 250, known: true, seed: 12,
+                           description: "A cave in the hills above Tule. The goblins have been bold lately." },
+      "Greymere" => { kind: "wilds", x: 600, y: 230, known: true, description: "A grey lake in an old forest. Nobody fishes it now." },
+      "Port Carwen" => { kind: "town", template: "port_town", x: 760, y: 500, known: true, seed: 13,
+                         description: "Ships, sailors and more rumours than anyone can use." },
+      "The Old Barrow" => { kind: "dungeon", template: "barrow", x: 720, y: 110, known: false, seed: 14,
+                            description: "Graves dug deep into a hill past Greymere. Something down there won't stay buried." },
+      "Stonepass" => { kind: "landmark", x: 900, y: 320, known: false, description: "The one road over the mountains." }
+    }.freeze
+
+    ROUTES = [
+      [ "Tule", "Goblin Hollow", { state: "dangerous", encounters: "grasslands", duration: 1 } ],
+      [ "Tule", "Greymere", { state: "dangerous", encounters: "old_forest", duration: 1 } ],
+      [ "Tule", "Port Carwen", { state: "open", duration: 2, travel_event: "The coast road is busy and safe: carts, pilgrims, a tinker singing." } ],
+      [ "Greymere", "The Old Barrow", { state: "dangerous", encounters: "old_forest", duration: 1 } ],
+      [ "Port Carwen", "Stonepass", { state: "dangerous", encounters: "mountain_pass", duration: 2 } ]
+    ].freeze
 
     LOCATION_TEMPLATES = {
       village: { name: "Village", kind: "town", description: "A small town on the road: an inn, a shop, a handful of worried people.",

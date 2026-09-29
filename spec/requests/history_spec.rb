@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "A setting's pocket history (Chronicle) and where things came from", type: :request do
-  let!(:world) { base_world }
+  let!(:world) { base_world_without_atlas } # draws its own map
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:crypt) { world.location_templates.find_by!(kind: "dungeon") }
   let!(:varn) { world.world_places.create!(name: "Varn", kind: "town", x: 200, y: 200, known: true, location_template: village) }
