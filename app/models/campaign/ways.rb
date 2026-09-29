@@ -11,7 +11,7 @@ module Campaign::Ways
 
   STAY = "Stay here"
 
-  # [{ "label" => "To Greymere (dangerous)", "move" => { "edge" => id } }],
+  # [{ "label" => "To Greymere (by a dangerous road)", "move" => { "edge" => id } }],
   # at a dungeon's door also { "label" => "Into Goblin Hollow", "move" => { "location" => id, "enter" => true } },
   # or, inside, [{ "label" => "The Ossuary", "move" => { "location" => id, "room" => key } }].
   # A room the players haven't seen is only "An unexplored way".
@@ -23,7 +23,7 @@ module Campaign::Ways
       way_in = inside&.dungeon? ? [ { "label" => "Into #{inside.name}", "move" => { "location" => inside.id, "enter" => true } } ] : []
       way_in + current_node.edges.includes(:from_node, :to_node).reject(&:blocked?).map do |edge|
         there = edge.other_end(current_node)
-        { "label" => "To #{there.name}#{' (dangerous)' if edge.state == 'dangerous'}", "move" => { "edge" => edge.id } }
+        { "label" => "To #{there.name}#{' (by a dangerous road)' if edge.state == 'dangerous'}", "move" => { "edge" => edge.id } }
       end
     else
       []

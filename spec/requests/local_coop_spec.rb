@@ -65,10 +65,17 @@ RSpec.describe "Local co-op", type: :request do
   end
 
   it "shows the battle without commands on the screen, and commands without the show on a controller" do
-    battle = start_battle(campaign: campaign)
+    battle = start_battle(campaign: campaign, input_seconds: 30)
     get battle_path(battle, view: "screen")
     expect(response.body).to include("battle--screen", "dialogue--battle")
-    expect(response.body).not_to include('id="command_panel"')
+    get battle_panel_path(battle)
+    expect(response.body).to include("screen-status", "Round 1", "data-countdown-deadline-value", "Waiting for Bartz and Lenna")
+    expect(response.body).not_to include("menu__item", "Take a seat")
+
+    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+    get battle_panel_path(battle)
+    expect(response.body).to include("Victory!")
+    expect(response.body).not_to include("Back to the table")
 
     get battle_path(battle, view: "controller")
     expect(response.body).to include("battle--controller", 'id="command_panel"', "Leave controller view")

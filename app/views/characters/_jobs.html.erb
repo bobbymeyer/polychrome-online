@@ -1,6 +1,6 @@
-<section class="window">
+<section class="window" id="jobs">
   <h2>Jobs</h2>
-  <table class="book-table book-table--plain">
+  <table class="book-table book-table--plain jobs-table">
     <thead><tr><th>Job</th><th class="num">Lv</th><th class="num">ABP</th><th>Learned</th><th>Next</th></tr></thead>
     <tbody>
       <% @character.character_jobs.includes(job: { job_levels: :ability }).sort_by { |j| j.job.name }.each do |job_progress| %>
@@ -8,9 +8,9 @@
           <td><%= link_to job_progress.job.name, world_compendium_job_path(@world, job_progress.job) %><%= " (current)" if job_progress.job_id == @character.job_id %></td>
           <td class="num"><%= job_progress.level %>/<%= Stats::Growth::MAX_JOB_LEVEL %><%= tag.span(" ★", title: "Mastered", class: "mastered-star") if job_progress.mastered? %></td>
           <td class="num"><%= job_progress.abp %></td>
-          <td><%= job_progress.learned_abilities.map(&:name).join(", ").presence || "—" %></td>
+          <td data-label="Learned"><%= job_progress.learned_abilities.map(&:name).join(", ").presence || "—" %></td>
           <% lesson = job_progress.next_lesson %>
-          <td><%= lesson ? "#{lesson[:ability].name} at Lv #{lesson[:level]} (#{lesson[:abp]} ABP to go)" : "Everything" %></td>
+          <td data-label="Next"><%= lesson ? "#{lesson[:ability].name} at Lv #{lesson[:level]} (#{lesson[:abp]} ABP to go)" : "Everything" %></td>
         </tr>
       <% end %>
     </tbody>

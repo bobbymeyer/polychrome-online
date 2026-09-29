@@ -6,6 +6,9 @@
 <% tired = @campaign.characters.select { |c| c.conscious? && !@campaign.rested?(c) } %>
 <% if shopping && tired.size > 1 %>
   <% total = tired.sum { |c| @campaign.service_price("inn", c) } %>
-  <%= button_to "Rooms for everyone (#{money(total)})", location_services_path(location), params: { kind: "inn", everyone: 1 },
-                class: "button", disabled: total > @campaign.gil %>
+  <% if total > @campaign.gil %>
+    <p class="muted">Rooms for everyone cost <%= money(total) %>: more than the party has.</p>
+  <% else %>
+    <%= button_to "Rooms for everyone (#{money(total)})", location_services_path(location), params: { kind: "inn", everyone: 1 }, class: "button" %>
+  <% end %>
 <% end %>

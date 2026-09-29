@@ -38,9 +38,18 @@ export default class extends Controller {
   }
 
   render() {
-    const lines = [...this.log.children].filter((li) => !li.classList.contains("is-pending") && !li.hidden).slice(-this.countValue)
+    const lines = [...this.log.children].filter((li) => !li.classList.contains("is-pending") && !li.hidden && li !== this.inTheBox()).slice(-this.countValue)
     this.listTarget.replaceChildren(...lines.map(quiet))
     this.element.hidden = lines.length === 0
+  }
+
+  // The line the dialogue box is still showing, if any: said once is
+  // enough. Once another is being typed, the one before is only here.
+  inTheBox() {
+    if (!document.querySelector("section.dialogue:not([hidden])")) return null
+    const said = [...this.log.children].filter((li) => li.dataset.chatLineDialogueValue === "true")
+    if (said.some((li) => li.classList.contains("is-pending"))) return null
+    return said.at(-1) || null
   }
 }
 

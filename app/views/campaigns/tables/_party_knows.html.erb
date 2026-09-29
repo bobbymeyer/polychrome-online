@@ -7,9 +7,10 @@
   <% if clocks.any? %>
     <ul class="clock-list">
       <% clocks.each do |clock| %>
-        <li><%= render "campaigns/clocks/dial", clock: clock %> <span><%= clock.name %></span></li>
+        <li><%= render "campaigns/clocks/dial", clock: clock %> <span><%= clock.name %> <span class="muted">(<%= clock.filled %> of <%= clock.segments %>)</span></span></li>
       <% end %>
     </ul>
+    <p class="hint">Trouble on its way: each box fills as time passes or things go wrong, and when the last one fills, it happens.</p>
   <% end %>
   <% if known.any? %>
     <dl class="facts">

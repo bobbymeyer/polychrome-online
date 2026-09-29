@@ -145,6 +145,12 @@ RSpec.describe "Items and shops", type: :request do
       get character_path(lenna)
       expect(response.body).to include('id="items"', "Potion", "Bartz (HP 20/")
       expect(response.body).not_to include("Antidote <span") # cures only work in battle
+      expect(response.body).not_to include("Lenna (HP") # unhurt: nothing to heal
+
+      bartz.update!(hp: bartz.stats["max_hp"])
+      get character_path(lenna)
+      expect(response.body).to include("Nobody is hurt")
+      bartz.update!(hp: 20)
 
       rng = campaign.rng
       post character_item_use_path(lenna), params: { item: "potion", target_id: bartz.id }

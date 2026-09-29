@@ -91,7 +91,7 @@ a.play:hover { color: var(--signal-dark); }
 .muted, .hint, .empty { color: var(--grey); }
 .hint { font-size: 13px; line-height: 16px; margin: var(--unit) 0 16px; }
 .eyebrow { font-size: 13px; line-height: 16px; font-weight: 600; color: var(--grey); margin: 0 0 var(--unit); }
-.label { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--grey); }
+.label { font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--grey); }
 .num { text-align: right !important; font-variant-numeric: tabular-nums; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
@@ -223,13 +223,29 @@ button.menu__item--accent:hover:not(:disabled) { background: var(--signal-dark);
 
 .book-table { width: 100%; border-collapse: collapse; margin-bottom: 48px; font-variant-numeric: tabular-nums; }
 .book-table th, .book-table td { text-align: left; padding: 8px 16px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
-.book-table thead th { font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--grey); border-bottom: 2px solid var(--ink); }
+.book-table thead th { font-size: 13px; line-height: 18px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--grey); border-bottom: 2px solid var(--ink); }
 .book-table tbody th { font-weight: 600; }
 .book-table tr.is-current td { font-weight: 700; }
 .book-table tr.is-current td:first-child::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; background: var(--ink); }
 .book-table--plain { margin-bottom: 16px; }
 .stat-table { max-width: 560px; }
-@media (max-width: 640px) { .book-table { display: block; overflow-x: auto; } }
+@media (max-width: 640px) {
+  .book-table { display: block; overflow-x: auto; }
+  /* The jobs table on a phone: a card per job, its long columns under it. */
+  .jobs-table { display: block; overflow: visible; }
+  .jobs-table thead { display: none; }
+  .jobs-table tbody, .jobs-table tr { display: block; }
+  .jobs-table tr { display: grid; grid-template-columns: 1fr auto auto; column-gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+  .jobs-table td { border: 0; padding: 0; }
+  .jobs-table td[data-label] { grid-column: 1 / -1; margin-top: 4px; }
+  .jobs-table td[data-label]::before { content: attr(data-label) ": "; font-weight: 700; }
+}
+/* On any page: sections to jump to, and a danger zone set apart at the end. */
+.sheet-nav { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 24px; font-size: 15px; font-weight: 700; }
+.sheet-nav a { display: inline-flex; align-items: center; min-height: 44px; }
+.character-sheet .window { scroll-margin-top: 16px; }
+.danger-zone { margin-top: 64px; padding-top: 16px; border-top: 2px solid var(--signal); }
+.danger-zone h2 { font-size: 16px; line-height: 24px; margin: 0 0 4px; }
 
 .facts { display: grid; grid-template-columns: max-content 1fr; gap: 0 24px; margin: 0; }
 .facts dt, .facts dd { padding: 4px 0 3px; border-bottom: 1px solid var(--rule); }
@@ -626,6 +642,8 @@ details[open] summary { margin-bottom: 16px; }
 [data-map-node].is-dragging { cursor: grabbing; }
 [data-map-node]:hover .map-node__shape, [data-map-node]:focus-visible .map-node__shape { fill: var(--control); stroke: var(--control); stroke-width: 6; }
 [data-map-node]:hover .map-node__label, [data-map-node]:focus-visible .map-node__label { fill: var(--control); }
+.map-node__target { fill: transparent; }
+.map-node__link:hover .map-node__label, .map-node__link:focus-visible .map-node__label { text-decoration: underline; }
 .map-node.is-error .map-node__shape { stroke: var(--signal); stroke-width: 4; }
 /* The party: a black triangle pointing at where they stand. */
 .map-party__flag path { fill: var(--ink); }
@@ -797,11 +815,14 @@ details[open] summary { margin-bottom: 16px; }
 .job-card__pick { position: absolute; opacity: 0; }
 .job-card__body { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 2px solid var(--control-fill); background: var(--paper); height: 100%; }
 .job-card:hover .job-card__body { border-color: var(--control-line); }
-.job-card__pick:checked + .job-card__body { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.job-card__pick:checked + .job-card__body { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: var(--wash); }
+/* The picked card says so, not only with a heavier border. */
+.job-card__pick:checked + .job-card__body::after { content: "✓ Picked"; position: absolute; top: 0; right: 0; padding: 2px 8px;
+  background: var(--ink); color: var(--paper); font-size: 12px; line-height: 18px; font-weight: 800; }
 .job-card__pick:focus-visible + .job-card__body { outline: 2px solid var(--signal); outline-offset: 2px; }
 .job-card__name { display: block; font-size: 16px; line-height: 20px; }
-.job-card__blurb { display: block; font-size: 13px; line-height: 18px; margin: 2px 0 4px; }
-.job-card__facts { display: grid; font-size: 12px; line-height: 16px; color: var(--grey); }
+.job-card__blurb { display: block; font-size: 14px; line-height: 20px; margin: 2px 0 4px; }
+.job-card__facts { display: grid; font-size: 13px; line-height: 18px; color: var(--grey); }
 
 /* Bringing players in (campaigns/_invite, joins/show), and a new GM's first steps. */
 .invite { display: flex; gap: var(--gutter); align-items: flex-start; }
@@ -841,3 +862,6 @@ details[open] summary { margin-bottom: 16px; }
 }
 .table-ways h2 { margin-top: 0; }
 .table-ways .encounter-call { margin-bottom: 16px; }
+
+/* A long form's one button stays in reach at the bottom of the screen. */
+.sticky-submit { position: sticky; bottom: 0; z-index: 5; margin: 16px -16px 0; padding: 12px 16px; background: var(--paper); border-top: 2px solid var(--ink); }

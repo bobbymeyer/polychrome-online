@@ -687,9 +687,18 @@ body[data-view="screen"] .topbar__books, body[data-view="screen"] .topbar__accou
 body[data-view="screen"] .page { max-width: none; padding-left: 32px; padding-right: 32px; }
 .table--screen .table__stage { grid-column: span 8; }
 .table--screen .table__side { grid-column: span 4; }
-.table--screen .dialogue__body { font-size: 24px; line-height: 34px; }
 .battle--screen .battle__lower > :only-child, .battle--screen .dialogue--battle { grid-column: 1 / -1; }
-.battle--screen .dialogue--battle .dialogue__body { font-size: 24px; line-height: 34px; }
+.battle--screen .dialogue--battle .dialogue__body { font-size: 28px; line-height: 38px; }
+.table--screen .dialogue__body { font-size: 28px; line-height: 38px; }
+.table--screen .recent-lines, .table--screen .table__side { font-size: 20px; line-height: 28px; }
+.battle--screen .unit__label { font-size: 20px; line-height: 24px; }
+.battle--screen .roster { font-size: 20px; line-height: 28px; }
+/* The shared screen's clock, who it waits on, and the spoils: read from the sofa. */
+.screen-status h2 { font: var(--display); font-size: 48px; line-height: 52px; margin: 0 0 8px; }
+.screen-status .countdown { font-size: 32px; line-height: 40px; font-weight: 900; }
+.screen-status__waiting { font-size: 24px; line-height: 32px; margin: 8px 0 0; }
+.screen-status__rewards { list-style: none; padding: 0; margin: 0; font-size: 24px; line-height: 36px; }
+.screen-status .aftermath { font-size: 24px; line-height: 32px; }
 .coop-join { text-align: center; }
 .coop-join__qr svg { display: block; width: min(220px, 100%); height: auto; margin: 0 auto 8px; padding: 10px; background: #fff; border: 3px solid var(--ink); }
 .coop-join__url { font-size: 14px; word-break: break-all; }
@@ -735,6 +744,13 @@ body[data-view="controller"] .page { padding-top: 16px; }
   font: normal 400 13px/18px var(--font); letter-spacing: 0; text-transform: none; white-space: normal; text-align: left;
 }
 .gloss:focus { outline: none; }
+/* On a touch screen, or a narrow one, the definition is a sheet along the bottom: it never runs off the side. */
+@media (hover: none), (max-width: 640px) {
+  .gloss:hover::after, .gloss:focus::after, .gloss:focus-visible::after {
+    position: fixed; left: 16px; right: 16px; top: auto; bottom: 16px; z-index: 80; width: auto; max-width: none;
+    margin: 0; padding: 14px 16px; font-size: 16px; line-height: 22px; box-shadow: 0 -4px 0 var(--accent);
+  }
+}
 .how-to-play h2 { margin-top: 32px; }
 .how-to-play dl.glossary { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
 .how-to-play dl.glossary dt { font-weight: 900; font-style: italic; }
@@ -865,7 +881,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
  * ------------------------------------------------------------------------- */
 @media (max-width: 640px) {
   body:has(.log-drawer) .topbar { padding-right: 96px; }
-  .log-drawer__tab { top: 8px; bottom: auto; right: 8px; writing-mode: horizontal-tb; padding: 6px 12px; clip-path: none; box-shadow: inset 0 -3px 0 var(--ink); }
+  /* In the top bar, and scrolling away with it: never over what you're reading. */
+  .log-drawer__tab { position: absolute; top: 20px; bottom: auto; right: 16px; writing-mode: horizontal-tb; padding: 6px 12px; clip-path: none; box-shadow: inset 0 -3px 0 var(--ink); }
   .log-drawer__tab:hover { translate: 0 0; }
   .log-drawer__count { margin: 0 0 0 6px; }
   @keyframes tab-pulse { 40% { translate: 0 4px; } }
@@ -882,6 +899,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
     padding: 8px 16px 12px; background: var(--paper); border-top: 3px solid var(--ink); box-shadow: 0 -6px 0 var(--accent);
   }
   .battle:not(.battle--controller):not(.battle--screen) .battle__dock .battle-ticker:not(:empty) { display: block; flex: none; margin-bottom: 4px; font-size: 13px; line-height: 18px; }
+  .table-ways .menu { grid-template-columns: 1fr; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .window { margin: 0; border-top: 0; padding-top: 0; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu { gap: 6px; margin: 6px 0 8px; }
@@ -926,4 +944,11 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .battlefield { --sprite: 64px; --sprite-min: 56px; --sprite-party: 44px; min-height: 0; padding: 10px; gap: 6px; }
   .unit--enemy { --sprite: clamp(56px, min(calc(100cqi / min(var(--count, 1), 4) - 24px), 26vh), 120px); }
   .unit__label { font-size: 14px; }
+}
+
+/* On a phone the map and the skyline draw at a third of their size: their words grow to stay readable. */
+@media (max-width: 640px) {
+  .map-node__label { font-size: 38px; stroke-width: 9px; translate: 0 16px; }
+  .map-node__mode { font-size: 24px; translate: 0 30px; }
+  .skyline__sign { font-size: 18px; }
 }

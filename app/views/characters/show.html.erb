@@ -3,8 +3,20 @@
 <%= render "shared/stage_stream", campaign: @character.campaign %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @character.name %></div>
 
-<article class="book-page">
+<article class="book-page character-sheet">
   <%= render "characters/header", cj: @character.character_job %>
+
+  <% masteries = @character.masteries %>
+  <%# A long sheet: jump to what you came for. %>
+  <nav class="sheet-nav" aria-label="On this sheet">
+    <%= link_to "Stats", "#stats" %>
+    <%= link_to "Items", "#items" if can_manage?(@character) %>
+    <%= link_to "Equipment", "#equipment" %>
+    <%= link_to "Abilities", "#abilities" %>
+    <%= link_to "Skills", "#skills" %>
+    <%= link_to "Mastery", "#mastery" if masteries.any? %>
+    <%= link_to "Jobs", "#jobs" %>
+  </nav>
 
   <%= render "characters/stats", stages: @character.stat_stages %>
 
@@ -16,7 +28,6 @@
 
   <%= render "characters/skills" %>
 
-  <% masteries = @character.masteries %>
   <%= render "characters/mastery", masteries: masteries if masteries.any? %>
 
   <%= render "characters/jobs" %>
@@ -27,7 +38,12 @@
 <% if can_manage?(@character) %>
 <div class="actions">
   <%= link_to "Edit", edit_character_path(@character), class: "button" %>
+</div>
+<%# Out of the way of Edit, where nobody taps it by mistake. %>
+<section class="danger-zone" aria-label="Leaving the party">
+  <h2>Leaving the party</h2>
+  <p class="hint"><%= @character.name %> leaves for good; their gear goes back to the bag.</p>
   <%= button_to "Remove from party", character_path(@character), method: :delete, class: "button button--danger",
                 form: { data: { turbo_confirm: "Remove #{@character.name}? Their gear goes back to the bag." } } %>
-</div>
+</section>
 <% end %>

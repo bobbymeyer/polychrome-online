@@ -7,7 +7,15 @@
     different, and they're all explained at the bottom (and wherever they're dotted like <%= gloss(:abp) %>).
   </p>
 
-  <h2>The table</h2>
+  <nav class="sheet-nav" aria-label="Contents">
+    <a href="#the-table">The table</a>
+    <a href="#fights">Fights</a>
+    <a href="#your-character">Your character</a>
+    <a href="#towns-and-the-road">Towns and the road</a>
+    <a href="#the-words">The words</a>
+  </nav>
+
+  <h2 id="the-table">The table</h2>
   <p>
     The table is where the story happens. The GM speaks as the narrator or as the people you meet, and their lines
     appear in the dialogue box. Sometimes the GM puts a <strong>choice</strong> to the party: everyone picks, and the
@@ -19,7 +27,7 @@
     shared screen, you scan its QR code with your phone and pick your character. Your phone becomes your controller.
   </p>
 
-  <h2>Fights</h2>
+  <h2 id="fights">Fights</h2>
   <ul>
     <li><strong>Everyone picks a command, then the round plays out</strong>, fastest first (<%= stat_term("agi") %>).
       There's no waiting for your turn: you choose while everyone else does.</li>
@@ -38,7 +46,7 @@
     <li>At 0 HP you're down, not dead. A Phoenix Down, a Raise or a temple brings you back.</li>
   </ul>
 
-  <h2>Your character</h2>
+  <h2 id="your-character">Your character</h2>
   <ul>
     <li>Winning fights gives <%= gloss(:exp) %> (your level) and <%= gloss(:abp) %> (your job). Levels come often, and
       every stat grows on its own, so there's no paperwork.</li>
@@ -58,14 +66,14 @@
     <li>Gear comes out of the party's bag and goes back into it. The party shares one purse of <%= gloss(:gil) %>.</li>
   </ul>
 
-  <h2>Towns and the road</h2>
+  <h2 id="towns-and-the-road">Towns and the road</h2>
   <p>
     The GM moves the party on the map, and anyone at the table can say where they'd go under "Where next?": it goes to a
     vote, and the GM settling it takes the party there. The same works for the ways on inside a dungeon. In a town, each building's services open under it: an inn to rest, a temple
     to raise the fallen, a shop, a guild for rumours. They're paid from the party's purse.
   </p>
 
-  <h2>The words</h2>
+  <h2 id="the-words">The words</h2>
   <dl class="glossary">
     <% GlossaryHelper::GLOSSARY.each do |key, (label, definition)| %>
       <dt id="term-<%= key %>"><%= label %></dt><dd><%= definition %></dd>

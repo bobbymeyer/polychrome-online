@@ -50,7 +50,12 @@
   </div>
 
   <div class="battle__lower">
-    <% unless view == "screen" %>
+    <% if view == "screen" %>
+      <%= turbo_frame_tag "command_panel", src: battle_panel_path(@battle), class: "command-frame",
+                          data: { battle_player_target: "panel" } do %>
+        <div class="window"><p class="muted">Loading…</p></div>
+      <% end %>
+    <% else %>
       <%# Commands, and above them what just happened (on a phone the stage may be off-screen, or under your thumb). Pinned on a phone. %>
       <div class="battle__dock">
         <ol class="battle-ticker" data-battle-player-target="ticker" aria-label="What just happened">
