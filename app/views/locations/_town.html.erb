@@ -56,7 +56,7 @@
           <div>
             <strong><%= npc&.name || generated["name"] %></strong>
             <span class="muted"><%= npc&.title || generated["title"] %></span>
-            <% hook = npc ? npc.description : generated["hook"] %>
+            <% hook = npc ? npc.description : location.fill_in(generated["hook"]) %>
             <% if hook.present? && gm %><p class="hook"><%= hook %></p><% end %>
           </div>
           <% if gm %>

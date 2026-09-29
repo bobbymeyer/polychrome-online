@@ -43,6 +43,8 @@
   <p class="hint">
     <% if entry.base_type == type_chart.plain %>
       Attack and the signature command are plain blows.
+    <% elsif entry.caster? %>
+      A caster: Attack and the signature command are plain blows. Being <%= type_name(entry.base_type).downcase %> only changes what hurts them.
     <% else %>
       Attack and the signature command strike as <%= type_name(entry.base_type).downcase %>.
     <% end %>

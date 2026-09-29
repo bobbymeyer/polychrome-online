@@ -1,0 +1,23 @@
+<%# The GM's way to bring players in (JoinsController): a link to send, its code and QR, and who has sat down so far. %>
+<% url = join_url(campaign.join_code!) %>
+<section class="window invite" id="invite" aria-label="Invite players">
+  <div class="invite__qr"><%= qr_svg(url) %></div>
+  <div>
+    <h2>Invite players</h2>
+    <p>Send your players this link. They pick a character you've made or make their own, and sit down at the table. No account needed.</p>
+    <p class="invite__link"><input type="text" readonly value="<%= url %>" aria-label="Invite link"> <span class="muted">Code <strong><%= campaign.join_code %></strong></span></p>
+    <% players = campaign.characters.select(&:user) %>
+    <p class="hint">
+      <% if players.any? %>
+        At the table: <%= players.map { |c| "#{c.user.name} as #{c.name}" }.to_sentence %>.
+      <% else %>
+        Nobody has joined yet.
+      <% end %>
+      <% if (open = campaign.characters.reject(&:user)).any? %>
+        Waiting for someone to play them: <%= open.map(&:name).to_sentence %>.
+      <% end %>
+    </p>
+    <%= button_to "New link", campaign_join_code_path(campaign), method: :post, class: "link-button",
+                  form: { data: { turbo_confirm: "Make a new link? The old link and QR code stop working." } } %>
+  </div>
+</section>

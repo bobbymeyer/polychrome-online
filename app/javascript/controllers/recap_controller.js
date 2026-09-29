@@ -1,19 +1,20 @@
 import { Controller } from "@hotwired/stimulus"
 
 // "Previously on…" (app/views/tables/_recap): opens by itself when this
-// device hasn't been at the table for a while, or when the link is pressed.
-// While the table is open, this device keeps saying it's here.
+// device hasn't been at the table for a while and the recap is of a session
+// that's over, or when the link is pressed. While the table (or one of its
+// battles) is open, this device keeps saying it's here.
 const BREAK_MS = 3 * 60 * 60 * 1000
 const HEARTBEAT_MS = 60 * 1000
 
 export default class extends Controller {
   static targets = ["dialog"]
-  static values = { campaign: Number }
+  static values = { campaign: Number, auto: Boolean }
 
   connect() {
     const last = this.lastSeen
     const controller = document.body.dataset.view === "controller" // the shared screen shows it
-    if (this.hasDialogTarget && !controller && (last === null || Date.now() - last > BREAK_MS)) {
+    if (this.hasDialogTarget && this.autoValue && !controller && (last === null || Date.now() - last > BREAK_MS)) {
       // After the dialogue box has had its moment.
       this.timer = setTimeout(() => this.open(), 400)
     }

@@ -26,7 +26,7 @@ const FAST_SPEED = 2
 const FAST_KEY = "polychrome.fastBattles"
 
 export default class extends Controller {
-  static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "fast"]
+  static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "fast", "ticker"]
   static values = { panelUrl: String, next: Number, cries: Object, words: Object }
 
   connect() {
@@ -158,6 +158,11 @@ export default class extends Controller {
     this.logTarget.append(line.cloneNode(true))
     while (this.logTarget.children.length > 60) this.logTarget.firstElementChild.remove()
     this.scrollLog()
+    // A phone controller doesn't show the stage: the last lines say what happened.
+    if (this.hasTickerTarget) {
+      this.tickerTarget.append(line.cloneNode(true))
+      while (this.tickerTarget.children.length > 3) this.tickerTarget.firstElementChild.remove()
+    }
   }
 
   scrollLog() {

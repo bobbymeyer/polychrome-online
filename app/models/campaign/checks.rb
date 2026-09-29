@@ -24,7 +24,8 @@ module Campaign::Checks
         label = "#{skill ? skill['name'] : stat.capitalize} check (#{difficulty}#{", +#{bonus} #{character.job.name}" if bonus.positive?})"
         body = "#{character.name}: #{label}#{" to #{reason.strip.sub(/\.\z/, '')}" if reason.present?}. " \
                "#{result['chance']}% · rolled #{result['roll']} · #{result['success'] ? 'Success!' : 'Failure.'}"
-        [ body, result.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty, "skill" => skill&.fetch("name"), "bonus" => bonus).compact ]
+        [ body, result.merge("name" => character.name, "character_id" => character.id, "stat" => stat, "difficulty" => difficulty,
+                             "skill" => skill&.fetch("name"), "bonus" => bonus, "reason" => reason.to_s.strip.sub(/\.\z/, "").presence).compact ]
         end
       end
       created = lines.map { |body, data| narrate(body, cue: "check", data: data) }

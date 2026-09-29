@@ -20,9 +20,16 @@ const store = (fn) => { try { return fn(window.sessionStorage) } catch { return 
 export function toBattle(url, { boss = false } = {}) {
   const root = document.documentElement
   if (window.location.pathname === new URL(url, window.location.href).pathname || root.dataset.leaving) return
+  // Nobody is pulled out of a fight they're still in (a split party); from
+  // one that's over, the next one takes them.
+  if (document.querySelector(".battle .board")?.dataset.status === "input") return
 
   root.dataset.leaving = "true"
-  store((s) => s.setItem(RETURN_KEY, JSON.stringify({ url: window.location.href, title: document.title.replace(/ · Polychrome$/, "") })))
+  // From one battle's results into the next, the way back stays where the
+  // first one was called from.
+  if (!document.querySelector(".battle")) {
+    store((s) => s.setItem(RETURN_KEY, JSON.stringify({ url: window.location.href, title: document.title.replace(/ · Polychrome$/, "") })))
+  }
   // Nobody is pulled away mid-sentence: a scene's lines finish first.
   setTimeout(() => whenDialogueIdle(() => {
     holdMusic()

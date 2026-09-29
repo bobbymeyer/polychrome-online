@@ -1,0 +1,16 @@
+<%# A new GM's way to a first session: shown until someone has said something at the table. %>
+<% steps = [
+     [ campaign.characters.exists?, "Make characters", "Make the party yourself, or leave it to the players: the invite lets them make their own." ],
+     [ campaign.characters.where.not(user_id: [ nil, campaign.gm_id ]).exists?, "Invite your players", link_to("Send them the invite link", "#invite") + " below." ],
+     [ campaign.current_node_id.present?, "Put the party somewhere", link_to("On the map", campaign_map_path(campaign)) + ", pick where the story starts. Places tell the table where they are, and roads lead to fights." ],
+     [ campaign.scenes.exists?, "Write an opening scene (optional)", link_to("On the Prep page", campaign_prep_path(campaign)) + ", a few lines for your NPCs, ending in a choice or a fight. Play it at the table with one button." ],
+     [ false, "Open the table and say the first line", link_to("Open the table", campaign_table_path(campaign)) + ". Everything the table sees starts there." ]
+   ] %>
+<section class="window first-steps" aria-label="Your first session">
+  <h2>Your first session</h2>
+  <ol class="first-steps__list">
+    <% steps.each do |done, title, how| %>
+      <li class="<%= 'is-done' if done %>"><strong><%= title %></strong> <span class="muted"><%= how %></span></li>
+    <% end %>
+  </ol>
+</section>

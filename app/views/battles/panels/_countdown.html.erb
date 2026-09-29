@@ -1,5 +1,14 @@
-<% if @battle.deadline_at && !@battle.over? %>
-  <p class="countdown" data-controller="countdown" data-countdown-deadline-value="<%= @battle.deadline_at.iso8601 %>">
+<%# The round's input timer, or why it isn't running yet (BattleRecord::Rounds). Replaced by broadcast when the first round's clock starts. %>
+<div id="battle_countdown">
+<% if battle.over? || battle.input_seconds.nil? %>
+<% elsif battle.ruling_pending? %>
+  <p class="countdown is-paused">Clock stopped: the GM is ruling on an idea</p>
+<% elsif battle.waiting_for_arrivals? %>
+  <% coming = battle.still_coming.map { |id| unit_name(battle.state, id) } %>
+  <p class="countdown is-paused">The clock starts when <%= coming.to_sentence %> <%= coming.one? ? "gets" : "get" %> here</p>
+<% elsif battle.deadline_at %>
+  <p class="countdown" data-controller="countdown" data-countdown-deadline-value="<%= battle.deadline_at.iso8601 %>">
     <span data-countdown-target="clock"></span>
   </p>
 <% end %>
+</div>

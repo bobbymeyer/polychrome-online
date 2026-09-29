@@ -18,6 +18,11 @@
   <div class="field field--check"><%= f.check_box :known %><%= f.label :known, "The players know it from the start" %></div>
   <div class="field"><%= f.label :description, "What players read about it" %><%= f.text_area :description, rows: 3 %></div>
   <div class="field"><%= f.label :notes, "GM notes" %><%= f.text_area :notes, rows: 3 %></div>
+  <div class="field">
+    <%= f.label :lead, "What people say that leads to it" %>
+    <%= f.text_area :lead, rows: 2, placeholder: "Goblins have been coming down at night from a cave in the hills." %>
+    <p class="hint">For a place players don't know from the start: a campaign starts this talk in the nearest town by road, and hearing it puts the place on the map.</p>
+  </div>
   <fieldset class="panel past-fields">
     <legend>Its past</legend>
     <p class="hint">

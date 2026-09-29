@@ -5,14 +5,16 @@ class WorldsController < ApplicationController
   before_action :set_world, only: %i[show edit update]
   before_action :require_world_editor, only: %i[edit update]
 
-  # Home: your campaigns first (the ones you play in or GM), then the rest
-  # to join, then the worlds and their books.
+  # Home: your campaigns (the ones you play in or GM), then the worlds and
+  # their books. Other people's games are theirs: players come in by the
+  # GM's invite link. An admin sees the rest too, to look after them.
   def index
     @worlds = World.order(:name)
     campaigns = Campaign.includes(:world, :gm, characters: :user).order(updated_at: :desc)
     @my_campaigns, @other_campaigns = campaigns.partition do |c|
       c.gm_id == current_user.id || c.characters.any? { |ch| ch.user_id == current_user.id }
     end
+    @other_campaigns = [] unless admin?
   end
 
   def show; end

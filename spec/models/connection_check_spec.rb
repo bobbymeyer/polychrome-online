@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe Comfy::Doctor do
+RSpec.describe ConnectionCheck do
   def doctor(url) = described_class.new(url: url, name: "ComfyUI", probe: -> { "answers." })
 
   it "says a loopback address inside a container is the container itself" do

@@ -246,6 +246,71 @@ keyboard, a mouse or a finger.
   When your turn starts below the fold, the menu scrolls into view.
 - **Touch:** menu items are at least 48px tall and buttons at least 44px on coarse pointers. The
   keyboard legend is hidden on devices without hover.
+- **Won't work:** when what the party knows of a target says a move can't touch it (the chart's
+  no effect, or an absorb), the target says "Won't work" and the help line says why. It never
+  tells more than the party has found out.
+- **The clock is fair.** A battle's first round starts its input timer only once every player in
+  the fight has reached its screen, or the GM has put them on auto; until then it says who it's
+  waiting for. A player's idea waiting for the GM's ruling stops the clock. At ten seconds left,
+  a phone buzzes and the page blips once.
+
+### The first hour
+
+- **Invites.** The campaign page has an Invite players panel: a link, its code and QR, and who
+  has sat down. The link lets a friend pick a character the GM made or make their own (name,
+  job from cards, motive) without an account. The shared screen's QR code is the same link with
+  `?view=controller`, so a phone scanned at the table becomes a controller.
+- **Your campaigns only.** The home page lists the campaigns you run or play in. An admin sees
+  everyone else's below.
+- **A first session.** Until the table hears its first line, the GM's campaign page lists the
+  steps to a first session, crossing them off as they're done.
+- **Setting out.** A new campaign starts in its setting's first town, with three Potions and a
+  Phoenix Down. The GM sees how a fight is likely to go beside every Fight button.
+
+### The table
+
+- **Dialogue first.** The table leads with the dialogue box; the map sits to the side with the
+  party's HP and MP, which follow battles and rests live.
+- **The last few lines** said at the table sit under the dialogue box, whoever said them, so
+  nobody opens the log to follow the story. The log drawer is still the record. A whisper to you
+  pops up for a moment.
+- **A phone controller** shows the last two lines, your own character's check and field rolls,
+  and in battle a ticker of what just happened on the screen everyone's watching.
+- **"Previously on…"** opens by itself only for a session that's over, not the one being played.
+
+### Defeat
+
+When the whole party is down, the GM chooses what the story does with it, on the battle's
+results and at the table: retreat to the nearest town by road (rested, with half the party's
+money gone, as in Dragon Quest), everyone gets up where they fell with 1 HP, or game over.
+
+### Players steer
+
+Where the party goes next is the table's to decide as well as the GM's. Under the choice panel,
+"Where next?" lists the ways on: the open paths from where the party stands, a dungeon's door,
+or, inside, the ways on from the room they're in (a room the players haven't seen is only "An
+unexplored way"). A player's "suggest" puts the question to a vote with their pick in it; the
+GM settling the vote takes the party there. The GM can also just go, from the same panel, and
+calls a waiting encounter there too, so a session can run from the table without the map page.
+
+### A boss, and a place cleared
+
+Walking in on a dungeon's boss, the GM gets a few lines for its entrance, written from the
+place's past, to say as they are, rewrite or clear; the battle waits for them. Beating the boss
+is cheered at the table with a fanfare of its own, and the clocks that place was behind stop.
+
+### Talk that leads somewhere
+
+A place the party doesn't know yet can come with its lead: what people say about it. The talk
+starts in the nearest town by road, and hearing it (arriving there, or buying it at a guild)
+puts the place on the map. Townsfolk hooks name real places too: the nearest town or dungeon
+by road.
+
+### Phones
+
+On a phone the battlefield is compact (enemies three abreast), the commands are pinned to the
+bottom of the screen while the fight plays above them, and the site's navigation steps aside on
+a battle. The log's tab sits in the top corner instead of over the play. Shop rows stack as cards.
 
 ## Divergences
 
@@ -264,6 +329,8 @@ Record each place where the game needed more than the Swiss defaults: what chang
 - **Enemy targets show what the Bestiary knows.** The help line gives the enemy's level and its
   affinities (weak to, resists, immune to, absorbs, including status immunities), but never its
   HP. Players can already read these in the Bestiary, so the battle doesn't hide them.
+- **The table leads with the dialogue box** and mirrors the last few lines under it (above). The
+  Swiss start put the map first and everything said in a closed drawer; players missed the story.
 - **Grey controls, red moves.** The starting point made every interactive thing red, so
   navigation and admin drowned out the game. Controls are now grey, and red is kept for game
   moves (`.play`).

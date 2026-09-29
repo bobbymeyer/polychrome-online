@@ -67,7 +67,10 @@ module BattleRecord::Settlement
       elsif unit["hp"].zero? then "defeated"
       else "remains"
       end
-      npc.increment!(:escapes) if fate == "escaped"
+      if fate == "escaped"
+        # Gone from here, to turn up somewhere near (Campaign::Overnight).
+        npc.update!(escapes: npc.escapes + 1, location: campaign.current_node&.location || npc.location)
+      end
       npc.update!(defeated_at: Time.current) if fate == "defeated"
       { "name" => npc.name, "fate" => fate }
     end
@@ -119,6 +122,9 @@ module BattleRecord::Settlement
       campaign.record_deed!("#{party} defeated #{antagonist['name']} for good.", sway: 1, kind: "antagonist")
     end
     dungeon = campaign.dungeon_in_progress
-    campaign.record_deed!("#{party} cleared #{dungeon.name}.", sway: 1, kind: "cleared") if boss? && dungeon
+    return unless boss? && dungeon
+
+    campaign.record_deed!("#{party} cleared #{dungeon.name}.", sway: 1, kind: "cleared")
+    campaign.clear_place!(campaign.current_node)
   end
 end

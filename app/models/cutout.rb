@@ -13,8 +13,8 @@
 # is filled too.
 module Cutout
   class Error < StandardError; end
-  # The service couldn't be reached at all: worth trying again later.
-  class Unreachable < Error; end
+  # The service couldn't be reached at all: worth trying again later (Remote).
+  class Unreachable < Error; include Remote::Unreachable; end
 
   # Alpha under this counts as removed.
   CLEAR = 128

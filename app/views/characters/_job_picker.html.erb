@@ -1,0 +1,26 @@
+<%# Choosing a job as a moment, not a dropdown: one card per open job with what it is good at, its own command and what it wears. f: the form; jobs; selected: the job id. %>
+<fieldset class="field job-picker">
+  <legend>Job</legend>
+  <div class="job-picker__cards">
+    <% jobs.each do |job| %>
+      <% strong = job.stat_multipliers.select { |_, pct| pct > 100 }.sort_by { |_, pct| -pct }.map(&:first) %>
+      <% first = job.job_levels.first&.ability %>
+      <label class="job-card">
+        <%= f.radio_button :job_id, job.id, checked: job.id == selected, class: "job-card__pick" %>
+        <span class="job-card__body">
+          <%= entry_portrait(job, size: :small) %>
+          <span>
+            <strong class="job-card__name"><%= job.name %></strong>
+            <% if job.description.present? %><span class="job-card__blurb"><%= truncate(job.description.to_s.split(/(?<=[.!?])\s/).first, length: 110) %></span><% end %>
+            <span class="job-card__facts">
+              <% if strong.any? %><span>Strong in <%= strong.first(2).map { |s| stat_label(s) }.to_sentence %></span><% end %>
+              <% if (own = job.signature_ability || first) %><span>Starts with <%= own.name %></span><% end %>
+              <% worn = job.equip_categories.map { |c| term(c) } %>
+              <% if worn.any? %><span>Uses <%= worn.first(4).to_sentence.downcase %></span><% end %>
+            </span>
+          </span>
+        </span>
+      </label>
+    <% end %>
+  </div>
+</fieldset>

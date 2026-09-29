@@ -2,7 +2,7 @@
     nothing seat-specific: enemy HP stays hidden (the GM sees it in the command panel). %>
 <% inputs = state["inputs"] || {} %>
 <% battle_world = battle.campaign.world %>
-<div class="board">
+<div class="board" data-status="<%= state["status"] %>">
   <div class="battlefield">
     <% %w[enemy party].each do |side| %>
       <% units = state["units"].select { |u| u["side"] == side && !u["gone"] } %>

@@ -30,6 +30,8 @@ class BattleRecord < ApplicationRecord
   belongs_to :campaign, optional: true
   has_many :battle_actions, -> { order(:position) }, foreign_key: :battle_id, inverse_of: :battle, dependent: :destroy
   has_many :battle_events, -> { order(:position) }, foreign_key: :battle_id, inverse_of: :battle, dependent: :delete_all
+  # The table's lines about it stay, no longer linked.
+  has_many :messages, foreign_key: :battle_id, inverse_of: :battle, dependent: :nullify
 
   validates :name, presence: true
   validates :campaign, presence: true, on: :create
@@ -39,14 +41,19 @@ class BattleRecord < ApplicationRecord
   # Start a battle for some of a campaign's characters.
   #   encounter: { "goblin" => 3, "wolf" => 1 }
   # antagonists: the campaign's NPCs who fight in it (Npc#battle_spec).
+  # names: { "dark_mage" => "Sten Pike" }, a name for the first of a kind.
   def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false, terrain: nil,
-                  antagonists: [])
+                  antagonists: [], names: {})
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
     raise Refusal, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
 
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items,
                                   terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec))
+    names.each do |slug, named|
+      unit = state["units"].find { |u| u["side"] == "enemy" && u.dig("image", "slug") == slug }
+      unit["name"] = named if unit
+    end
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
                      input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id),
                      boss: boss || antagonists.any? || campaign.world.monsters.where(slug: encounter.keys, boss: true).exists?)
@@ -143,7 +150,7 @@ class BattleRecord < ApplicationRecord
     end
     campaign&.learn_from!(events, state)
     new_round = !over? && round != before["round"]
-    open_round! if new_round
+    new_round ? open_round! : resume_clock!
     broadcast_beat(before, events, record.position)
     auto_fill! if new_round
     [ before, events ]
@@ -184,6 +191,7 @@ class BattleRecord < ApplicationRecord
 
     Turbo::StreamsChannel.broadcast_replace_to(campaign, :table, target: "table_battle",
                                                partial: "campaigns/tables/current_battle", locals: { campaign: campaign })
+    campaign.broadcast_ways
     campaign.refresh_pages
   end
 

@@ -11,14 +11,16 @@
     <div class="stat-inputs equipment-inputs">
       <% Character::SLOTS.each do |slot| %>
         <% current = equipped[slot]&.item %>
-        <% options = ([ current ].compact + bag.select { |item| item.slot == slot && @character.job.equips?(item) }).uniq %>
+        <% fits, misfits = bag.select { |item| item.slot == slot }.partition { |item| @character.job.equips?(item) } %>
+        <% options = ([ current ].compact + fits).uniq.map { |item| [ item.name, item.id ] } +
+                     misfits.reject { |item| item == current }.map { |item| [ "#{item.name}: #{term(item.category).downcase}, not for a #{@character.job.name}", item.id, { disabled: true } ] } %>
         <div class="field">
           <%= f.label slot, term(slot) %>
-          <%= f.select slot, options.map { |item| [ item.name, item.id ] }, { include_blank: "—", selected: current&.id } %>
+          <%= f.select slot, options, { include_blank: "—", selected: current&.id } %>
         </div>
       <% end %>
     </div>
-    <p class="hint">Choices come from the party bag, limited to what a <%= @character.job.name %> can use.</p>
+    <p class="hint">Choices come from the party bag. A <%= @character.job.name %> uses <%= @character.job.equip_categories.map { |c| term(c).downcase }.to_sentence %>.</p>
     <%= f.submit "Update equipment", class: "button" %>
   <% end %>
   <% end %>

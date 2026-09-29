@@ -1,22 +1,26 @@
 <% content_for :title, "Join #{@campaign.name}" %>
+<% controller = params[:view] == "controller" %>
 <div class="join">
-  <p class="eyebrow">Local co-op</p>
+  <p class="eyebrow"><%= controller ? "Local co-op" : "You're invited" %></p>
   <h1><%= @campaign.name %></h1>
-  <p>Pick who you're playing. This phone becomes your controller; the game itself plays on the shared screen.</p>
+  <p>
+    <%= controller ? "Pick who you're playing. This phone becomes your controller; the game itself plays on the shared screen." :
+                     "Pick who you're playing, or make someone new, and take your seat at the table." %>
+  </p>
 
-  <% if @characters.empty? %>
-    <p class="empty">Everyone here is taken. Ask the GM to make you a character.</p>
-  <% else %>
+  <% if @characters.any? %>
     <%= form_with url: join_path(@campaign.join_code), class: "book-form join__form" do |f| %>
+      <%= hidden_field_tag :view, "controller" if controller %>
       <% unless current_user %>
         <div class="field">
           <%= label_tag :name, "Your name" %>
-          <%= text_field_tag :name, nil, maxlength: 60, autocomplete: "nickname", placeholder: "So the table knows who's who" %>
+          <%= text_field_tag :name, params[:name], maxlength: 60, autocomplete: "nickname", placeholder: "So the table knows who's who" %>
         </div>
       <% end %>
+      <h2>Play someone the GM made</h2>
       <div class="menu join__characters">
         <% @characters.each do |character| %>
-          <%= button_tag type: "submit", name: "character_id", value: character.id, class: "menu__item join__character" do %>
+          <%= button_tag type: "submit", name: "character_id", value: character.id, class: "menu__item join__character", formnovalidate: true do %>
             <%= entry_portrait(character.job, size: :small) %>
             <span>
               <strong><%= character.name %></strong>
@@ -28,6 +32,30 @@
       </div>
     <% end %>
   <% end %>
+
+  <details class="join__new" <%= "open" if @characters.empty? || @character.errors.any? %>>
+    <summary><h2><%= @characters.any? ? "Or make your own" : "Make your character" %></h2></summary>
+    <%= form_with model: @character, url: join_path(@campaign.join_code), method: :post, class: "book-form" do |f| %>
+      <%= hidden_field_tag :view, "controller" if controller %>
+      <%= render "book_entries/errors", entry: @character %>
+      <% unless current_user %>
+        <div class="field">
+          <%= label_tag :new_name, "Your name" %>
+          <%= text_field_tag :name, params[:name], id: "new_name", maxlength: 60, autocomplete: "nickname", placeholder: "So the table knows who's who" %>
+        </div>
+      <% end %>
+      <div class="field"><%= f.label :name, "Their name" %><%= f.text_field :name, required: true, maxlength: 60 %></div>
+      <%= render "characters/job_picker", f: f, jobs: @campaign.available_jobs.includes(job_levels: :ability), selected: @character.job_id %>
+      <div class="field">
+        <%= f.label :motive, "Why they're here" %>
+        <%= f.text_field :motive, maxlength: Character::MOTIVE_LENGTH, placeholder: "“My sister's debt is mine now.”" %>
+        <p class="hint">One line, in their own words. It's what they shout when their back is to the wall.</p>
+      </div>
+      <p class="hint">They start at level <%= @campaign.newcomer_level %><%= ", with the rest of the party" if @campaign.characters.exists? %>, knowing what their job teaches by then, in the gear it uses. Where they're from and who they know can wait for their sheet.</p>
+      <%= f.submit "Join as them", class: "button play" %>
+    <% end %>
+  </details>
+
   <% if current_user %>
     <p class="hint">Joining as <strong><%= current_user.name %></strong>.</p>
   <% end %>

@@ -27,6 +27,11 @@ RSpec.describe Stats::Growth do
       expect(described_class.base_stats(5)).to include("max_hp" => 150, "max_mp" => 30, "str" => 12, "agi" => 12, "atk" => 0)
     end
 
+    it "gives a point in every core stat for each level past the start" do
+      expect((5..10).map { |level| described_class.base_stats(level)["str"] }).to eq([ 12, 13, 14, 15, 16, 17 ])
+      expect(described_class.base_stats(1)["str"]).to eq(9)
+    end
+
     it "never decreases with level and stays within the derivation caps" do
       (1..98).each do |level|
         now = described_class.base_stats(level)

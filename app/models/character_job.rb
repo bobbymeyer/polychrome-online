@@ -33,6 +33,13 @@ class CharacterJob < ApplicationRecord
     learned_levels.map(&:ability)
   end
 
+  # The next thing the job teaches, and how far off it is:
+  # { ability:, level:, abp: } (ABP still to earn), or nil once all are learned.
+  def next_lesson
+    row = job.job_levels.find { |r| r.level > level } or return
+    { ability: row.ability, level: row.level, abp: Stats::Growth.abp_for_job_level(row.level) - abp }
+  end
+
   # How far along each learned ability is here, 0 to 100 percent.
   def mastery(row)
     Stats::Mastery.percent(level, row.level)

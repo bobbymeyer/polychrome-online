@@ -9,8 +9,9 @@ class Campaigns::RumoursController < ApplicationController
   before_action -> { head :forbidden unless table_gm? }
 
   def create
-    fields = params.expect(rumour: %i[body origin_id])
-    @campaign.start_rumour!(fields[:body], at: @campaign.map_nodes.find(fields[:origin_id]))
+    fields = params.expect(rumour: %i[body origin_id about_id])
+    about = fields[:about_id].presence && @campaign.map_nodes.find(fields[:about_id])
+    @campaign.start_rumour!(fields[:body], at: @campaign.map_nodes.find(fields[:origin_id]), about: about)
     @campaign.hear_rumours!
     back notice: "It's out there now."
   rescue ActiveRecord::RecordInvalid => e

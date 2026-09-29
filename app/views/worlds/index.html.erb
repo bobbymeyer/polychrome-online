@@ -5,7 +5,7 @@
     <%= link_to "New campaign", new_world_campaign_path(@worlds.first), class: "button" if @worlds.one? %>
   </div>
   <% if @my_campaigns.empty? %>
-    <p class="empty">None yet. Start one<%= " in a world below" unless @worlds.one? %> and you run it as its GM<%= ", or make a character in one below to play" if @other_campaigns.any? %>.</p>
+    <p class="empty">None yet. Start one<%= " in a world below" unless @worlds.one? %> and you run it as its GM, or ask your GM for their invite link to play in theirs.</p>
   <% else %>
     <%= render "worlds/campaign_list", campaigns: @my_campaigns %>
   <% end %>
@@ -13,7 +13,7 @@
 
 <% if @other_campaigns.any? %>
   <section class="window" aria-label="Other campaigns">
-    <h2><%= @my_campaigns.empty? ? "Campaigns" : "Other campaigns" %></h2>
+    <h2>Everyone else's campaigns <span class="muted">(you're an admin)</span></h2>
     <%= render "worlds/campaign_list", campaigns: @other_campaigns %>
   </section>
 <% end %>

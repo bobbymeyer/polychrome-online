@@ -2,9 +2,11 @@ import { Controller } from "@hotwired/stimulus"
 import { animate } from "animejs"
 import { play } from "sound"
 
-// A check landing (Campaign#check!): for a line that arrives live, the whole
-// table watches the number spin and stop, then the verdict is stamped.
-// Lines rendered with the page just sit in the log.
+// A check landing (Campaign#check!, FieldUse#approve!): for a line that
+// arrives live, the whole table watches the number spin and stop, then the
+// verdict is stamped. Lines rendered with the page just sit in the log.
+// On a phone controller only your own character's rolls play (the shared
+// screen shows everyone's).
 const SPIN_MS = 1100
 const HOLD_MS = 1500
 
@@ -13,7 +15,7 @@ export default class extends Controller {
 
   connect() {
     if (this.element.dataset.chatLineLiveValue !== "true" || this.element.dataset.rolled) return
-    if (document.body.dataset.view === "controller") return // the shared screen shows it
+    if (document.body.dataset.view === "controller" && !this.mine) return // the shared screen shows it
     this.element.dataset.rolled = "true"
     // Several at once (the whole party rolling) take turns.
     // Broadcasts can land out of order: gather the batch, then go in order.
@@ -25,6 +27,11 @@ export default class extends Controller {
       show(queue)
     }, 150)
   }
+
+  get mine() {
+    const seated = document.querySelector("[data-seat-character]")?.dataset.seatCharacter
+    return seated && String(this.resultValue.character_id) === seated
+  }
 }
 
 function show(queue) {
@@ -35,10 +42,12 @@ function show(queue) {
   el.setAttribute("aria-hidden", "true")
   el.innerHTML = `
     <p class="check-moment__who"></p>
+    <p class="check-moment__why"></p>
     <p class="check-moment__odds"></p>
     <p class="check-moment__roll">0</p>
     <p class="check-moment__verdict"></p>`
-  el.querySelector(".check-moment__who").textContent = `${result.name} · ${result.stat?.toUpperCase()} · ${result.difficulty}`
+  el.querySelector(".check-moment__who").textContent = `${result.name} · ${result.skill || result.stat?.toUpperCase()} · ${result.difficulty}`
+  el.querySelector(".check-moment__why").textContent = result.move || (result.reason ? `to ${result.reason}` : "")
   el.querySelector(".check-moment__odds").textContent = `needs ${result.chance} or under`
   document.body.append(el)
 

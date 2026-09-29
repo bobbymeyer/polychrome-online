@@ -120,6 +120,13 @@ const JINGLES = {
     phrase(t, beat, [ [ "E4", 0, 1 ], [ "G4", 1, 1 ], [ "C5", 2, 1 ], [ "E5", 3, 3 ], [ "G5", 6, 1 ], [ "F5", 7, 1 ], [ "G5", 8, 1 ], [ "F5", 9, 1 ], [ "E5", 10, 6 ] ], { gain: 0.14 })
     phrase(t, beat, [ [ "C3", 0, 3 ], [ "C3", 3, 3 ], [ "G2", 6, 2 ], [ "G2", 8, 2 ], [ "C3", 10, 6 ] ], { wave: "triangle", gain: 0.7 })
   },
+  // A place set right: a brass-like call up the chord, answered, and held.
+  cleared(t) {
+    const beat = 0.14
+    phrase(t, beat, [ [ "G4", 0, 1 ], [ "C5", 1, 1 ], [ "E5", 2, 1 ], [ "G5", 3, 3 ], [ "E5", 6, 1 ], [ "G5", 7, 1 ], [ "C6", 8, 8 ] ], { wave: "sawtooth", gain: 0.12 })
+    phrase(t, beat, [ [ "E4", 0, 1 ], [ "G4", 1, 1 ], [ "C5", 2, 1 ], [ "E5", 3, 3 ], [ "C5", 6, 1 ], [ "E5", 7, 1 ], [ "G5", 8, 8 ] ], { gain: 0.2 })
+    phrase(t, beat, [ [ "C3", 0, 3 ], [ "G2", 3, 3 ], [ "C3", 6, 2 ], [ "C2", 8, 8 ] ], { wave: "triangle", gain: 0.7 })
+  },
   // Down and down, and a long low note.
   defeat(t) {
     phrase(t, 0.24, [ [ "E4", 0, 1 ], [ "D4", 1, 1 ], [ "C4", 2, 1 ], [ "B3", 3, 1 ], [ "A3", 4, 4 ] ], { wave: "triangle", gain: 0.6 })

@@ -9,16 +9,12 @@
 module Campaign::Overnight
   extend ActiveSupport::Concern
 
-  included do
-    has_many :rumours, dependent: :delete_all
-  end
-
   # People start talking about something at a place on the map. seen: the
   # party was there and saw it happen, so there's nothing to hear. sway: a
   # deed's, moving each town's view of the party as the news gets there.
-  def start_rumour!(body, at:, also: [], seen: false, sway: 0, deed: nil, secret: nil)
+  def start_rumour!(body, at:, also: [], seen: false, sway: 0, deed: nil, secret: nil, about: nil)
     rumour = rumours.create!(body: body, origin: at, heard: seen, heard_day: (day if seen), heard_at: (at if seen),
-                             sway: sway, deed: deed, secret: secret)
+                             sway: sway, deed: deed, secret: secret, about: about)
     rumour.reach!(([ at ] + also).compact, day: day)
     rumour
   end
@@ -32,7 +28,19 @@ module Campaign::Overnight
     rumours.travelling.unheard.at(node).where.not(id: rumours.about_deeds.where(origin: node).select(:id)).order(:id).each do |rumour|
       rumour.update!(heard: true, heard_day: day, heard_at: node)
       narrate(rumour.secret_id ? "In #{node.name}, someone whispers: “#{rumour.body}”" : "In #{node.name}, people are saying: “#{rumour.body}”")
+      hear_of!(rumour)
     end
+  end
+
+  # A rumour that points somewhere puts the place on the map once it's heard
+  # (Dragon Quest's townsfolk: "the cave north of here…").
+  def hear_of!(rumour)
+    place = rumour.about
+    return unless place && !place.visible?
+
+    place.update!(visible: true)
+    narrate("#{place.name} is on the map now.")
+    broadcast_map
   end
 
   # A rumour nobody at the table has heard yet (the guild sells one).

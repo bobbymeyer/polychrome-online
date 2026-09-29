@@ -1,8 +1,21 @@
 <%# The GM's call on a rolled encounter, on the map or in a dungeon. %>
+<% campaign = local_assigns[:campaign] || @campaign %>
 <section class="encounter-call">
   <h3>Encounter!</h3>
-  <p><%= @campaign.describe_encounter(encounter["monsters"]) %> <span class="muted">(<%= encounter["table"] %>)</span></p>
-  <%= form_with url: campaign_encounter_path(@campaign), class: "encounter-call__fight", data: { turbo_frame: "_top" } do |f| %>
+  <p><%= campaign.describe_encounter(encounter["monsters"]) %> <span class="muted">(<%= encounter["table"] %>)</span></p>
+  <%# How it's likely to go for whoever is standing, as on the battle form. %>
+  <% rows = encounter["monsters"].each_with_index.to_h { |(slug, count), i| [ i, { monster: slug, count: count } ] } %>
+  <%= turbo_frame_tag "forecast", src: campaign_forecast_path(campaign, battle: { encounter: rows }), loading: "lazy" do %>
+    <p class="hint">Weighing the odds…</p>
+  <% end %>
+  <%= form_with url: campaign_encounter_path(campaign), class: "encounter-call__fight", data: { turbo_frame: "_top" } do |f| %>
+    <% if encounter["prelude"].present? %>
+      <div class="field">
+        <%= f.label :prelude, "Before the fight" %>
+        <%= f.text_area :prelude, value: Array(encounter["prelude"]).join("\n"), rows: 4 %>
+        <p class="hint">Said to the table one line at a time, in the dialogue box, before everyone is pulled into the fight. From the place's past: rewrite it, or clear it to go straight in.</p>
+      </div>
+    <% end %>
     <div class="field">
       <%= f.label :input_seconds, "Input timer" %>
       <%= f.select :input_seconds, BattleRecord::INPUT_TIMERS.map { |s| [ s ? "#{s} seconds" : "None", s ] }, selected: BattleRecord::DEFAULT_TIMER %>
@@ -12,7 +25,7 @@
     </div>
   <% end %>
   <div class="menu menu--row">
-    <%= button_to "Wave it off", campaign_encounter_path(@campaign), method: :delete, params: ({ return_to: return_to } if local_assigns[:return_to]),
+    <%= button_to "Wave it off", campaign_encounter_path(campaign), method: :delete, params: ({ return_to: return_to } if local_assigns[:return_to]),
                   class: "menu__item", form: { data: { turbo_confirm: "Wave off the encounter? The table will see that you did." } } %>
   </div>
 </section>

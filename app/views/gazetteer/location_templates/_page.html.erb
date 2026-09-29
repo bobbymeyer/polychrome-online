@@ -78,7 +78,7 @@
         <h3>People</h3>
         <ul class="refs">
           <% example["npcs"].each do |npc| %>
-            <li><strong><%= npc["name"] %></strong> <span class="muted"><%= npc["title"] %></span><% if npc["hook"] %><br><%= npc["hook"] %><% end %></li>
+            <li><strong><%= npc["name"] %></strong> <span class="muted"><%= npc["title"] %></span><% if npc["hook"] %><br><%= npc["hook"].gsub(/\{(\w+)\}/) { "(the nearest #{Regexp.last_match(1)})" } %><% end %></li>
           <% end %>
         </ul>
       </div>

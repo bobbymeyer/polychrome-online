@@ -32,6 +32,22 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
     post(owner.is_a?(Campaign) ? campaign_draft_keeps_path(owner, draft, item: index) : world_draft_keeps_path(owner, draft, item: index))
   end
 
+  it "waits for a language model that can't be reached, and carries on when it's back" do
+    post campaign_drafts_path(campaign), params: { kind: "secrets", draft: { idea: "the mill" } }
+    draft = Draft.latest(campaign, "secrets", nil)
+    clear_enqueued_jobs
+    asleep = ScriptedLlm.new(Llm::Unreachable.new("The language model isn't reachable at http://llm.test (ECONNREFUSED)"))
+    allow(Llm).to receive(:client).and_return(asleep)
+    expect { DraftJob.perform_now(draft) }.to have_enqueued_job(DraftJob).with(draft)
+    expect(draft.reload).to have_attributes(status: "waiting", error: /isn't reachable/)
+    get campaign_prep_path(campaign)
+    expect(response.body).to include("Waiting: the language model can")
+
+    allow(Llm).to receive(:client).and_return(ScriptedLlm.new('{"secrets": [{"text": "The miller is alive."}]}'))
+    DraftJob.perform_now(draft)
+    expect(draft.reload).to have_attributes(status: "done", items: [ { "text" => "The miller is alive." } ])
+  end
+
   it "suggests secrets from what's in the campaign, and keeps the one the GM wants" do
     draft = suggest(campaign, "secrets", <<~REPLY, idea: "the mill")
       Here you go!

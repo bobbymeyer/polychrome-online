@@ -89,6 +89,12 @@ RSpec.describe "Map pages", type: :request do
       expect(response.body).to include("The party is at Secret Ruins", "Encounter!", "Fight", "Wave it off")
 
       expect(response.body).to include("Input timer")
+      # The odds, as on the battle form, before the GM commits.
+      forecast = response.body[/<turbo-frame[^>]*id="forecast"[^>]*src="([^"]+)"/, 1]
+      expect(forecast).to be_present
+      get CGI.unescapeHTML(forecast)
+      expect(response.body).to match(/forecast--(easy|fair|hard|deadly)/)
+
       post campaign_encounter_path(campaign), params: { input_seconds: "30" }
       battle = campaign.battles.last
       expect(response).to redirect_to(battle_path(battle))

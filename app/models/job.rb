@@ -89,10 +89,21 @@ class Job < ApplicationRecord
     innates
   end
 
-  # What a job's type gives a character in it, in battle (Battle::State):
-  # a job of the world's plain type (the first) keeps a plain Attack.
+  # What a job's type gives a character in it, in battle (Battle::State).
+  # Attack and the signature strike with the job's type, except for a job
+  # of the world's plain type, and a caster's: a mage's staff is only a
+  # staff, and shouldn't do nothing to half of what it meets.
   def battle_type
-    { "types" => [ base_type ], "attack_type" => (base_type unless base_type == world.type_chart.plain), "immune_as_resist" => true }.compact
+    { "types" => [ base_type ], "attack_type" => (base_type unless typeless_attack?), "immune_as_resist" => true }.compact
+  end
+
+  def typeless_attack?
+    base_type == world.type_chart.plain || caster?
+  end
+
+  # Stronger in magic than in strength.
+  def caster?
+    stat_multipliers.fetch("mag", 100) > stat_multipliers.fetch("str", 100)
   end
 
   private

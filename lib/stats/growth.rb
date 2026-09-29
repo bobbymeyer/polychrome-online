@@ -29,10 +29,11 @@ module Stats
     end
 
     # Base stats at a level, before job, equipment and passives. Level 5 is
-    # roughly a fresh adventurer: 150 HP, 30 MP, 12 in each core stat.
+    # roughly a fresh adventurer: 150 HP, 30 MP, 12 in each core stat. From
+    # there each level is a point in every core stat, so a level up is felt.
     def base_stats(level)
       level = level.clamp(1, MAX_LEVEL)
-      core = 9 + (level * 3 / 5)
+      core = [ 9 + (level * 3 / 5), 7 + level ].max
       {
         "max_hp" => 80 + 14 * level, "max_mp" => 15 + 3 * level,
         "str" => core, "mag" => core, "vit" => core, "spr" => core, "agi" => core,

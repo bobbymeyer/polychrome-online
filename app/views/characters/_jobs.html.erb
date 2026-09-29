@@ -1,7 +1,7 @@
 <section class="window">
   <h2>Jobs</h2>
   <table class="book-table book-table--plain">
-    <thead><tr><th>Job</th><th class="num">Lv</th><th class="num">ABP</th><th>Learned</th></tr></thead>
+    <thead><tr><th>Job</th><th class="num">Lv</th><th class="num">ABP</th><th>Learned</th><th>Next</th></tr></thead>
     <tbody>
       <% @character.character_jobs.includes(job: { job_levels: :ability }).sort_by { |j| j.job.name }.each do |job_progress| %>
         <tr class="<%= 'is-current' if job_progress.job_id == @character.job_id %>">
@@ -9,15 +9,21 @@
           <td class="num"><%= job_progress.level %>/<%= Stats::Growth::MAX_JOB_LEVEL %><%= tag.span(" ★", title: "Mastered", class: "mastered-star") if job_progress.mastered? %></td>
           <td class="num"><%= job_progress.abp %></td>
           <td><%= job_progress.learned_abilities.map(&:name).join(", ").presence || "—" %></td>
+          <% lesson = job_progress.next_lesson %>
+          <td><%= lesson ? "#{lesson[:ability].name} at Lv #{lesson[:level]} (#{lesson[:abp]} ABP to go)" : "Everything" %></td>
         </tr>
       <% end %>
     </tbody>
   </table>
   <% if can_manage?(@character) %>
-  <%= form_with url: character_job_path(@character), method: :patch, class: "book-form inline-form" do |f| %>
+  <% worn = @character.equipment_slots.includes(:item).map(&:item) %>
+  <%= form_with url: character_job_path(@character), method: :patch, class: "book-form inline-form",
+                data: { controller: "job-change", action: "change->job-change#pick" } do |f| %>
     <div class="field">
       <%= f.label :job_id, "Change job" %>
-      <%= f.select :job_id, (@campaign.available_jobs.to_a | [ @character.job ]).map { |j| [ j.name, j.id ] }, selected: @character.job_id %>
+      <%= f.select :job_id, (@campaign.available_jobs.to_a | [ @character.job ]).map { |j|
+            [ j.name, j.id, { data: { drops: worn.reject { |item| j.equips?(item) }.map(&:name).to_sentence.presence } } ]
+          }, { selected: @character.job_id }, data: { job_change_target: "select" } %>
     </div>
     <%= f.submit "Change job", class: "button" %>
   <% end %>

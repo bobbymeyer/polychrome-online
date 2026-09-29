@@ -9,7 +9,12 @@ import { Controller } from "@hotwired/stimulus"
 // Only a `primary` menu listens to the whole window; others answer keys only
 // while focus is inside them.
 
-let remembered = null // the label the cursor was on, kept across panel reloads
+// The label the cursor was on, kept across panel reloads on this page (not
+// into the next battle, which starts on its first command).
+let remembered = null
+let rememberedOn = null
+const recall = () => (rememberedOn === window.location.pathname ? remembered : null)
+const remember = (label) => { remembered = label; rememberedOn = window.location.pathname }
 
 const TYPING = "input, textarea, select, [contenteditable]"
 
@@ -31,7 +36,7 @@ export default class extends Controller {
     const items = this.items
     items.forEach((item, i) => item.style.setProperty("--i", i)) // the stage staggers their entrance
     if (!items.length) return
-    const start = items.find((i) => this.label(i) === remembered) || items.find((i) => !this.disabled(i)) || items[0]
+    const start = items.find((i) => this.label(i) === recall()) || items.find((i) => !this.disabled(i)) || items[0]
     const take = this.autofocusValue && this.mayTakeFocus()
     this.moveTo(start, { focus: take })
     if (take) this.bringIntoView()
@@ -107,7 +112,7 @@ export default class extends Controller {
 
   choose(item) {
     if (this.disabled(item)) return this.flashHelp()
-    remembered = this.label(item)
+    remember(this.label(item))
     item.click()
   }
 
@@ -115,7 +120,7 @@ export default class extends Controller {
     this.items.forEach((i) => i.classList.toggle("is-cursor", i === item))
     if (focus && !this.disabled(item)) item.focus({ preventScroll: true })
     else if (focus) item.focus?.({ preventScroll: true })
-    remembered = this.label(item)
+    remember(this.label(item))
     if (this.hasHelpTarget) this.helpTarget.textContent = item.dataset.help || ""
     this.highlight(item.dataset.unitId || null)
   }

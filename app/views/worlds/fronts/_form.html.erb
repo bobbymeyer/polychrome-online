@@ -24,6 +24,7 @@
           <div class="field"><%= label_tag "front_clock_#{i}_mode_name", "Into" %><%= text_field_tag "#{n}[mode_name]", c["mode_name"], id: "front_clock_#{i}_mode_name", placeholder: "Syndicate town" %></div>
           <div class="field"><%= label_tag "front_clock_#{i}_mode_line", "Its line" %><%= text_field_tag "#{n}[mode_line]", c["mode_line"], id: "front_clock_#{i}_mode_line" %></div>
         </div>
+        <div class="field"><%= label_tag "front_clock_#{i}_source", "It stops when the party clears" %><%= select_tag "#{n}[source_id]", options_for_select(places, c["source_id"]), include_blank: "Nothing: only the GM stops it", id: "front_clock_#{i}_source" %></div>
         <div class="field"><%= label_tag "front_clock_#{i}_mode_description", "What players read there meanwhile" %><%= text_field_tag "#{n}[mode_description]", c["mode_description"], id: "front_clock_#{i}_mode_description" %></div>
       </div>
     <% end %>

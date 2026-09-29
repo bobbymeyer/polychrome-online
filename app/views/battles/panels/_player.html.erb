@@ -7,7 +7,7 @@
     <span class="label"><%= gloss(:max_hp) %></span> <strong class="<%= 'is-low' if hp_band(unit) == 'danger' %>"><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
     <span class="label"><%= gloss(:max_mp) %></span> <strong><%= unit["mp"] %></strong><span class="muted">/<%= unit["stats"]["max_mp"] %></span>
   </span>
-  <%= render "battles/panels/countdown" %>
+  <%= render "battles/panels/countdown", battle: @battle %>
 </div>
 
 <% if unit["hp"].zero? %>
@@ -21,8 +21,11 @@
     <div class="menu play">
       <% (Battle::State.target_options(state, unit, @choosing) || []).each do |target_id| %>
         <% command = item ? { kind: "item", item: @choosing["id"], target: target_id } : { kind: "ability", ability: @choosing["id"], target: target_id } %>
-        <%= button_to unit_name(state, target_id), battle_actions_path(@battle), class: "menu__item",
-                      data: { unit_id: target_id, help: target_help(@battle, state, target_id) }, params: { command: command } %>
+        <% futile = !item && futile_note(@battle, state, unit, @choosing, state["units"].find { |u| u["id"] == target_id }) %>
+        <%= button_to battle_actions_path(@battle), class: "menu__item#{' is-futile' if futile}",
+                      data: { unit_id: target_id, help: [ futile, target_help(@battle, state, target_id) ].compact_blank.join(" · ") }, params: { command: command } do %>
+          <%= unit_name(state, target_id) %><% if futile %> <span class="menu__cost">Won't work</span><% end %>
+        <% end %>
       <% end %>
     </div>
     <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
@@ -118,6 +121,9 @@
                 battle_auto_path(@battle), method: :patch, params: { unit: unit["id"], on: on ? "0" : "1" },
                 class: [ "link-button", "auto-toggle", ("is-on" if on) ], form: { class: "auto-toggle-form" },
                 aria: { pressed: on }, title: "Picking a command yourself takes you off auto" %>
+  <% if on && (@battle.party.select { |u| u["hp"].positive? }.map { |u| u["id"] } - @battle.auto_units).empty? %>
+    <p class="hint">Everyone is on auto, so each round waits for the timer or the GM: a fight never plays itself out.</p>
+  <% end %>
 <% end %>
 <p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick ·
   <button type="button" class="link-button" data-timing-meter-target="toggle" data-action="timing-meter#toggle"

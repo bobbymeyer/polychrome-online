@@ -10,7 +10,8 @@ class Campaigns::EncountersController < ApplicationController
 
   def create
     seconds = params[:input_seconds].presence&.to_i
-    battle = @campaign.start_pending_encounter!(input_seconds: (seconds if BattleRecord::INPUT_TIMERS.include?(seconds)))
+    prelude = params[:prelude].to_s.lines.map(&:strip).compact_blank.first(Campaign::PRELUDE_LINES)
+    battle = @campaign.start_pending_encounter!(input_seconds: (seconds if BattleRecord::INPUT_TIMERS.include?(seconds)), prelude: prelude)
     redirect_to battle_path(battle), status: :see_other
   rescue Refusal => e
     panel alert: e.message

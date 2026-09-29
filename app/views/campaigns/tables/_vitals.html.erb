@@ -1,5 +1,5 @@
-<%# A character's HP and MP at a glance (the local co-op controller). %>
-<p class="vitals">
+<%# A character's HP and MP at a glance (the table's party panel, the local co-op controller). %>
+<p class="vitals" id="<%= dom_id(character, :vitals) %>">
   <span class="label"><%= word("hp", character.campaign.world) %></span> <strong><%= character.current_hp %></strong><span class="muted">/<%= character.stats["max_hp"] %></span>
   <span class="bar"><span class="bar__fill bar__fill--<%= hp_band("hp" => character.current_hp, "stats" => character.stats) %>" style="width: <%= (100.0 * character.current_hp / character.stats["max_hp"]).round %>%"></span></span>
   <span class="label"><%= word("mp", character.campaign.world) %></span> <strong><%= character.current_mp %></strong><span class="muted">/<%= character.stats["max_mp"] %></span>

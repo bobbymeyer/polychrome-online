@@ -1,0 +1,17 @@
+<%# The GM's choices once everyone is down (Campaign::Defeat): on the battle's results and at the table. %>
+<% town = campaign.refuge %>
+<section class="window recovery" aria-label="Everyone is down">
+  <h2>Everyone is down. What happens now?</h2>
+  <div class="actions">
+    <% if town %>
+      <%= button_to "Retreat to #{town.name}", campaign_recovery_path(campaign), params: { how: "retreat" }, class: "button play", form: { data: { turbo_frame: "_top" } } %>
+    <% end %>
+    <%= button_to "Everyone gets up", campaign_recovery_path(campaign), params: { how: "get_up" }, class: "button", form: { data: { turbo_frame: "_top" } } %>
+    <%= button_to "Game over", campaign_recovery_path(campaign), params: { how: "game_over" }, class: "button button--quiet",
+                  form: { data: { turbo_frame: "_top", turbo_confirm: "End the story here? The party stays down." } } %>
+  </div>
+  <p class="hint">
+    <%= "Retreat: they come to in #{town.name}, rested, with half the party's #{campaign.world.word('currency')} gone. " if town %>
+    Getting up: everyone stands where they fell, with 1 <%= campaign.world.word("hp") %>. Game over: the story ends here.
+  </p>
+</section>

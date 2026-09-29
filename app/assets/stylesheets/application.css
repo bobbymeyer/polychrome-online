@@ -766,3 +766,55 @@ details[open] summary { margin-bottom: 16px; }
 .front-row { padding: 8px 0 12px; border-bottom: 1px solid var(--rule); }
 .table-time { margin: 0 0 12px; font-weight: 700; }
 .table-time .label { margin-right: 8px; }
+
+/* Picking a job: cards, the chosen one in black (characters/_job_picker). */
+.job-picker { border: 0; padding: 0; margin: 0 0 16px; }
+.job-picker__cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.job-card { position: relative; display: block; cursor: pointer; }
+.job-card__pick { position: absolute; opacity: 0; }
+.job-card__body { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 2px solid var(--control-fill); background: var(--paper); height: 100%; }
+.job-card:hover .job-card__body { border-color: var(--control-line); }
+.job-card__pick:checked + .job-card__body { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.job-card__pick:focus-visible + .job-card__body { outline: 2px solid var(--signal); outline-offset: 2px; }
+.job-card__name { display: block; font-size: 16px; line-height: 20px; }
+.job-card__blurb { display: block; font-size: 13px; line-height: 18px; margin: 2px 0 4px; }
+.job-card__facts { display: grid; font-size: 12px; line-height: 16px; color: var(--grey); }
+
+/* Bringing players in (campaigns/_invite, joins/show), and a new GM's first steps. */
+.invite { display: flex; gap: var(--gutter); align-items: flex-start; }
+.invite__qr svg { display: block; width: 144px; height: auto; padding: 6px; background: #fff; border: 2px solid var(--ink); }
+.invite__link input { width: min(100%, 420px); font: inherit; font-size: 14px; }
+.invite h2 { margin-top: 0; }
+@media (max-width: 600px) { .invite { flex-direction: column; } }
+.join__new > summary { cursor: pointer; }
+.join__new > summary h2 { display: inline; }
+.first-steps__list { margin: 0; padding-left: 24px; display: grid; gap: 8px; }
+.first-steps__list li.is-done { color: var(--grey); text-decoration: line-through; }
+.first-steps__list li.is-done .muted { display: none; }
+.countdown.is-paused { font-size: 14px; font-weight: 600; color: var(--grey); }
+
+/* The last few lines under the dialogue box (recent_lines_controller), and a whisper popping up. */
+.recent-lines { margin: 0 0 24px; }
+.recent-lines ol { list-style: none; margin: 0; padding: 0; }
+.recent-lines .chat-line { padding: 4px 0 3px; font-size: 14px; }
+.recent-lines .speaker-portrait { width: 32px; height: 32px; }
+.recent-lines .chat-line:last-child { border-bottom: 0; }
+.toast { position: fixed; z-index: 60; right: 16px; bottom: 16px; max-width: min(360px, calc(100vw - 32px)); padding: 12px 16px;
+         background: var(--ink); color: var(--paper); cursor: pointer; }
+.toast p { margin: 4px 0 0; font-style: italic; }
+.party-down { margin: 0 0 8px; font-weight: 700; color: var(--signal); }
+.table:not(.table--screen) .coop-party .portrait--small { width: 56px; height: 56px; }
+.table:not(.table--screen) .coop-party .portrait--small .portrait__initial { font-size: 28px; line-height: 28px; }
+.shop-table__fits { display: block; font-size: 0.85em; font-weight: 600; }
+.shop-table__fits.is-none { font-weight: 400; color: var(--grey); }
+/* On a phone, each thing on the shelf is a card: name, then kind and price, then buying. */
+@media (max-width: 640px) {
+  .shop-table, .shop-table tbody { display: block; }
+  .shop-table tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .shop-table td { display: block; padding: 0; border: 0; }
+  .shop-table td:first-child { grid-column: 1 / -1; }
+  .shop-table .shop-table__buy { grid-column: 1 / -1; width: auto; }
+  .shop-form input[type=number] { width: 64px; }
+}
+.table-ways h2 { margin-top: 0; }
+.table-ways .encounter-call { margin-bottom: 16px; }

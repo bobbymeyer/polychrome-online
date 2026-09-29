@@ -2,6 +2,7 @@
 <div id="shop">
   <% items = location.stock_items %>
   <% stories = view.fetch("stock_stories", {}) %>
+  <% party = @campaign.characters.includes(:job).order(:created_at).to_a %>
   <% if items.empty? %>
     <p class="empty">The shelves are bare.</p>
   <% else %>
@@ -13,6 +14,10 @@
               <%= link_to item.name, world_armory_item_path(@world, item) %>
               <% if (story = stories[item.slug]) %>
                 <span class="shop-table__story muted"><%= [ ("Made by #{story['maker']}" if story["maker"]), story["owner"] ].compact.join(". ") %>.</span>
+              <% end %>
+              <% if item.equipment? && party.any? %>
+                <% fits = party.select { |c| c.job.equips?(item) } %>
+                <span class="shop-table__fits <%= 'is-none' if fits.empty? %>"><%= fits.any? ? "#{fits.map(&:name).to_sentence} can use it" : "Nobody in the party can use it" %></span>
               <% end %>
             </td>
             <td class="muted"><%= term(item.category) %></td>

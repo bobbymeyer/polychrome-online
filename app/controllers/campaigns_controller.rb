@@ -15,8 +15,13 @@ class CampaignsController < ApplicationController
     @world = World.find_by!(slug: params[:world_slug])
     @campaign = @world.campaigns.new(params.expect(campaign: %i[name]).merge(gm: current_user, open_jobs: posted_open_jobs))
     if @campaign.save
-      # The setting's places and people, unless the GM starts from nothing.
-      Atlas.new(@campaign).bring_in_all! unless params[:blank_map] == "1"
+      # The setting's places, people and trouble (its fronts), unless the GM
+      # starts from nothing; then the party sets out from its first town.
+      unless params[:blank_map] == "1"
+        Atlas.new(@campaign).bring_in_all!
+        WorldFront.undealt_in(@campaign).each { |front| front.deal!(@campaign) }
+      end
+      @campaign.set_out!
       redirect_to @campaign, notice: "#{@campaign.name} begins."
     else
       render :new, status: :unprocessable_content

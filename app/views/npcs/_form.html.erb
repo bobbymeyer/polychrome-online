@@ -14,6 +14,14 @@
       Knocked out, they're finished<%= npc.defeated? ? ", as they are now" : "" %>.
     </p>
   </div>
+  <% places = @campaign.locations.includes(:map_node).filter_map { |l| [ l.name, l.id ] }.sort %>
+  <% if places.any? %>
+    <div class="field">
+      <%= f.label :location_id, "Where they are" %>
+      <%= f.select :location_id, places, include_blank: "Nowhere in particular" %>
+      <p class="hint">A town's people are listed there. An antagonist who gets away moves on from where they are, overnight.</p>
+    </div>
+  <% end %>
   <div class="field"><%= f.label :description, "Notes (GM only)" %><%= f.text_area :description, rows: 3 %></div>
   <%= render "portraits/fields", owner: npc %>
   <div class="actions">

@@ -6,19 +6,19 @@
 # rather than sleeping, so it never holds a worker while ComfyUI renders.
 #
 # When ComfyUI or the background remover can't be reached at all (asleep,
-# restarting, off the network), nothing is lost: the batch waits and the job
-# tries again, less often the longer it's been, for up to a day. ComfyUI
-# answering with an error (a missing model, a bad graph) still fails the
-# batch, with its reason.
+# restarting, off the network), nothing is lost: the batch says it's
+# waiting, and the job is tried again (ApplicationJob.waits_for_services).
+# ComfyUI answering with an error (a missing model, a bad graph) still fails
+# the batch, with its reason.
 class ArtBatchJob < ApplicationJob
   POLL = 3.seconds
-  RETRY_FIRST = 30.seconds
-  RETRY_MOST = 10.minutes
-  GIVE_UP = 1.day
 
   discard_on ActiveJob::DeserializationError # the batch was discarded or replaced
+  waits_for_services do |job, error|
+    job.arguments.first.fail!("#{error.message}. Tried for a day; start it again once it's back.")
+  end
 
-  def perform(batch, client: Comfy.client, cutout: Cutout.client, llm: Llm.enabled? ? Llm.client : nil, unreachable_since: nil)
+  def perform(batch, client: Comfy.client, cutout: Cutout.client, llm: Llm.enabled? ? Llm.client : nil)
     return if batch.finished?
 
     if batch.status.in?(%w[queued waiting])
@@ -33,26 +33,10 @@ class ArtBatchJob < ApplicationJob
     else
       self.class.set(wait: POLL).perform_later(batch)
     end
-  rescue Comfy::Unreachable, Cutout::Unreachable => e
-    wait_it_out(batch, e.message, unreachable_since || Time.current)
+  rescue Remote::Unreachable => e
+    batch.wait!(e.message)
+    raise
   rescue Comfy::Error => e
     batch.fail!(e.message)
-  end
-
-  # How long until the next try: half the time it's been down so far,
-  # within bounds (30 seconds, then a minute, two... up to ten).
-  def self.retry_in(down_for)
-    (down_for / 2).clamp(RETRY_FIRST, RETRY_MOST)
-  end
-
-  private
-
-  def wait_it_out(batch, message, since)
-    if since < GIVE_UP.ago
-      batch.fail!("#{message}. Tried for a day; start it again once it's back.")
-    else
-      batch.wait!(message)
-      self.class.set(wait: self.class.retry_in(Time.current - since)).perform_later(batch, unreachable_since: since)
-    end
   end
 end

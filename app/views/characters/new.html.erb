@@ -5,7 +5,9 @@
   <%= render "book_entries/errors", entry: @character %>
   <div class="field-row">
     <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
-    <div class="field"><%= f.label :player_name, "Player without an account" %><%= f.text_field :player_name, placeholder: "Optional" %></div>
+    <% if can_gm?(@campaign) %>
+      <div class="field"><%= f.label :player_name, "Player without an account" %><%= f.text_field :player_name, placeholder: "Optional" %></div>
+    <% end %>
   </div>
   <div class="field">
     <%= f.label :motive, "Why they're here" %>
@@ -13,12 +15,9 @@
     <p class="hint">One line, in their own words. It's on their card, and it's what they shout when their back is to the wall.</p>
   </div>
   <%= render "characters/origin_fields", f: f, character: @character %>
+  <%= render "characters/job_picker", f: f, jobs: @campaign.available_jobs.includes(job_levels: :ability), selected: @character.job_id %>
+  <% if can_gm?(@campaign) %>
   <div class="field-row">
-    <div class="field">
-      <%= f.label :job_id, "Starting job" %>
-      <%= f.select :job_id, @campaign.available_jobs.map { |j| [ j.name, j.id ] } %>
-    </div>
-    <% if can_gm?(@campaign) %>
     <div class="field">
       <%= f.label :starting_level, "Level" %>
       <%= f.number_field :starting_level, min: 1, max: Stats::Growth::MAX_LEVEL %>
@@ -26,12 +25,12 @@
     <div class="field">
       <%= f.label :starting_job_level, "Job level" %>
       <%= f.number_field :starting_job_level, min: 0, placeholder: "From their level" %>
-      <p class="hint">Starts with that much of the job's learn table already learned. Blank: about one job level per two levels. New characters also get the cheapest gear their job can use.</p>
+      <p class="hint">Starts with that much of the job's learn table already learned. Blank: two job levels for each level. New characters also get the cheapest gear their job can use.</p>
     </div>
-    <% end %>
   </div>
+  <% end %>
   <% unless can_gm?(@campaign) %>
-    <p class="hint">A new character starts at the party's lowest level, knowing their job's first ability. The GM can grant more.</p>
+    <p class="hint">A new character starts at the party's lowest level, knowing what their job teaches by then.</p>
   <% end %>
   <div class="actions">
     <%= f.submit "Create character", class: "button" %>

@@ -9,7 +9,7 @@ RSpec.describe "Local co-op", type: :request do
 
   it "gives the GM a shared screen with a way to join, and remembers it until they leave" do
     get campaign_table_path(campaign)
-    expect(response.body).to include("Local co-op", "Open the shared screen", "/join/#{campaign.reload.join_code}")
+    expect(response.body).to include("Play around one screen", "Open the shared screen", "/join/#{campaign.reload.join_code}?view=controller")
 
     get campaign_table_path(campaign, view: "screen")
     expect(response.body).to include('data-view="screen"', "table--screen", "<svg", "Code <strong>#{campaign.join_code}</strong>", "coop-party")
@@ -33,10 +33,10 @@ RSpec.describe "Local co-op", type: :request do
 
   it "lets a player join from the code with just a name, and makes their phone a controller", :signed_out do
     code = campaign.join_code!
-    get join_path(code.downcase)
-    expect(response.body).to include("Bartz", "Lenna", "Your name")
+    get join_path(code.downcase, view: "controller")
+    expect(response.body).to include("Bartz", "Lenna", "Your name", "This phone becomes your controller")
 
-    expect { post join_path(code), params: { name: "Sam", character_id: bartz.id } }.to change(User, :count).by(1)
+    expect { post join_path(code), params: { name: "Sam", character_id: bartz.id, view: "controller" } }.to change(User, :count).by(1)
     sam = User.last
     expect(sam).to have_attributes(name: "Sam", guest: true, admin: false)
     expect(bartz.reload.user).to eq(sam)
@@ -79,5 +79,44 @@ RSpec.describe "Local co-op", type: :request do
     old = campaign.join_code!
     post campaign_join_code_path(campaign)
     expect(campaign.reload.join_code).not_to eq(old)
+    expect(response).to redirect_to(campaign_path(campaign, anchor: "invite"))
+  end
+
+  describe "the invite" do
+    it "is on the campaign page for the GM, with who has joined" do
+      bartz.update!(user: make_user("Kim"))
+      get campaign_path(campaign)
+      expect(response.body).to include("Invite players", "/join/#{campaign.reload.join_code}", "Kim as Bartz", "Waiting for someone to play them: Lenna")
+    end
+
+    it "lets a friend make their own character when there's nobody to pick, and sits them at the table", :signed_out do
+      empty = campaign.world.campaigns.create!(name: "Empty")
+      code = empty.join_code!
+      get join_path(code)
+      expect(response.body).to include("You&#39;re invited", "Make your character", "Starts with")
+      expect(response.body).not_to include("Everyone here is taken")
+
+      job = empty.available_jobs.first
+      expect { post join_path(code), params: { name: "Sam", character: { name: "Faris", job_id: job.id, motive: "For my crew." } } }
+        .to change(User, :count).by(1)
+      faris = empty.characters.find_by!(name: "Faris")
+      expect(faris).to have_attributes(user: User.last, level: Campaign::FIRST_LEVEL, motive: "For my crew.")
+      expect(User.last.name).to eq("Sam")
+      expect(response).to redirect_to(campaign_table_path(empty, view: "off"))
+      follow_redirect!
+      expect(response.body).to include("At the table as <strong>Faris</strong>")
+    end
+
+    it "joins a new character at the party's lowest level, and says what's missing", :signed_out do
+      code = campaign.join_code!
+      bartz.update!(exp: Stats::Growth.exp_for_level(3))
+      post join_path(code), params: { character: { name: "", job_id: campaign.available_jobs.first.id } }
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Name can&#39;t be blank")
+      expect(User.count).to eq(User.where(guest: false).count) # nobody signed in for a character that wasn't made
+
+      post join_path(code), params: { name: "Sam", character: { name: "Galuf", job_id: campaign.available_jobs.first.id } }
+      expect(campaign.characters.find_by!(name: "Galuf").level).to eq(campaign.characters.minimum(:level))
+    end
   end
 end

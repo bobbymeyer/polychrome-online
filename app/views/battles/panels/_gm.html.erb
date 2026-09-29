@@ -2,13 +2,13 @@
 <% awaiting = @battle.awaiting_input %>
 <div class="command-panel__head">
   <h2>Game Master · Round <%= @battle.round %></h2>
-  <%= render "battles/panels/countdown" %>
+  <%= render "battles/panels/countdown", battle: @battle %>
 </div>
 
 <% ideas = state["inputs"].select { |_, c| c["kind"] == "custom" && !c["ruling"] } %>
 <% if ideas.any? %>
   <section class="rulings">
-    <h3>Ideas to rule on <span class="muted">(the round waits for you)</span></h3>
+    <h3>Ideas to rule on <span class="muted">(the round, and its clock, wait for you)</span></h3>
     <% ideas.each do |id, idea| %>
       <%= form_with url: battle_actions_path(@battle), scope: :gm, class: "book-form ruling" do |f| %>
         <%= f.hidden_field :op, value: "rule" %>
@@ -63,8 +63,10 @@
   <div class="menu menu--row">
     <% @battle.party.each do |u| %>
       <% on = @battle.auto?(u["id"]) %>
-      <%= button_to unit_name(state, u["id"]), battle_auto_path(@battle), method: :patch, params: { unit: u["id"], on: on ? "0" : "1" },
-                    class: [ "menu__item", ("is-current" if on) ], aria: { pressed: on } %>
+      <%= button_to battle_auto_path(@battle), method: :patch, params: { unit: u["id"], on: on ? "0" : "1" },
+                    class: [ "menu__item", ("is-current" if on) ], aria: { pressed: on } do %>
+        <%= unit_name(state, u["id"]) %> <span class="menu__cost"><%= on ? "auto" : "off" %></span>
+      <% end %>
     <% end %>
   </div>
   <p class="hint">For characters nobody is playing: they take their default command as each round opens. Unclaimed characters start on auto; a player who sits down and chooses takes theirs back.</p>
@@ -83,7 +85,7 @@
           <td><%= (u["statuses"].map { |s| "#{s['kind'].humanize} (#{s['turns']})" } + u["buffs"].map { |b| "#{stat_label(b['stat'])} #{signed(b['amount'])}%" }).join(", ") %></td>
           <td>
             <% if (u["side"] == "enemy" || u["guest"]) && u["hp"].positive? && !@battle.over? %>
-              <%= button_to u["guest"] ? "Leaves" : "Flees", battle_actions_path(@battle), class: "link-button",
+              <%= button_to u["guest"] ? "Send off" : "Make it flee", battle_actions_path(@battle), class: "link-button",
                             params: { gm: { op: "dismiss", unit: u["id"] } },
                             form: { data: { turbo_confirm: u["guest"] ? "#{u['name']} leaves the fight?" : "#{u['name']} runs off? It gives no EXP or drops." } } %>
             <% end %>

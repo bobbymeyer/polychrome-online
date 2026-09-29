@@ -41,8 +41,20 @@ class Atlas
         node.update!(location: location)
       end
       bring_in_routes!
+      start_leads!(places)
     end
     places
+  end
+
+  # The talk that leads to places the party hasn't found (WorldPlace#lead),
+  # started in the nearest town by road: hearing it there puts the place on
+  # the map.
+  def start_leads!(places)
+    nodes = campaign.map_nodes.where(world_place: places.select(&:lead), visible: false).includes(:world_place)
+    nodes.each do |node|
+      town = campaign.nearest_town(node) or next
+      campaign.start_rumour!(node.world_place.lead, at: town, about: node)
+    end
   end
 
   # Roads whose two ends are both on the map now.

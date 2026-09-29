@@ -615,6 +615,8 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .check-moment p { margin: 0; }
 .check-moment__who { font-style: italic; font-weight: 900; }
 .check-moment__odds { color: var(--grey); font-size: 14px; }
+.check-moment__why { font-size: 15px; }
+.check-moment__why:empty { display: none; }
 .check-moment__roll { font: var(--display); font-size: 96px; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
 .check-moment__verdict { font: var(--display); font-size: 32px; min-height: 36px; }
 .check-moment.is-success { box-shadow: 8px 8px 0 var(--green), 16px 16px 0 var(--ink); }
@@ -834,3 +836,39 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .modes .inline-form input[type=text] { width: 240px; }
 .map-node.has-mode .map-node__label { fill: var(--signal); }
 .map-node__mode { font-size: 11px; font-weight: 900; font-style: italic; fill: var(--signal); text-transform: uppercase; letter-spacing: .06em; }
+/* On a phone controller, what just happened on the screen everyone's watching. */
+.battle-ticker { list-style: none; margin: 0 0 8px; padding: 0; font-size: 14px; line-height: 20px; }
+.battle-ticker li { padding: 2px 0; border-bottom: 1px solid var(--rule); }
+.battle-ticker li:last-child { font-weight: 700; border-bottom: 0; }
+.battle-ticker:empty { display: none; }
+.menu__item.is-futile { color: var(--grey); border-color: var(--rule); }
+
+/* ---------------------------------------------------------------------------
+ * On a phone (docs/DESIGN.md, "Phones"): the log's tab moves to the top
+ * corner, out of the way of play; the battlefield is compact, enemies three
+ * abreast; and your commands stay pinned under your thumb while the fight
+ * plays above them.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .log-drawer__tab { top: 8px; bottom: auto; right: 8px; writing-mode: horizontal-tb; padding: 6px 12px; clip-path: none; box-shadow: inset 0 -3px 0 var(--ink); }
+  .log-drawer__tab:hover { translate: 0 0; }
+  .log-drawer__count { margin: 0 0 0 6px; }
+  @keyframes tab-pulse { 40% { translate: 0 4px; } }
+
+  .battle .battle__header h1 { font-size: 28px; line-height: 32px; }
+  .battlefield { --sprite: 76px; --sprite-min: 76px; --sprite-party: 48px; min-height: 0; padding: 12px; gap: 8px; }
+  .battlefield__side--enemy { gap: 8px 12px; }
+  .unit--enemy { --sprite: clamp(var(--sprite-min), calc(100cqi / min(var(--count, 1), 3) - 24px), 160px); }
+  .unit__label { font-size: 12px; }
+
+  .battle:not(.battle--controller):not(.battle--screen) { padding-bottom: 44vh; }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 42vh; overflow-y: auto;
+    padding: 8px 16px 12px; background: var(--paper); border-top: 3px solid var(--ink); box-shadow: 0 -6px 0 var(--accent);
+  }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame .window { margin: 0; border-top: 0; padding-top: 0; }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu { gap: 6px; margin: 6px 0 8px; }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu__item { min-height: 40px; padding: 4px 10px; font-size: 16px; }
+  /* A battle is a game screen: the site's own navigation steps aside. */
+  body:has(.battle) .topbar__account, body:has(.battle) .topbar__books { display: none; }
+}

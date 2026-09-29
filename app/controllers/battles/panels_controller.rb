@@ -9,6 +9,7 @@ class Battles::PanelsController < ApplicationController
   before_action :set_battle
 
   def show
+    @battle.arrive!(current_seat.unit_id) if current_seat.unit_id # the first round's clock waits for everyone
     state = @battle.state
     @choosing = state["abilities"][params[:ability]] if params[:ability]
     @choosing = state.fetch("items", {})[params[:item]]&.merge("kind" => "item") if params[:item]

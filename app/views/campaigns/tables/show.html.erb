@@ -5,8 +5,8 @@
 <% end %>
 
 <% view = coop_view %>
-<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)) }) %> data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
-     data-recap-campaign-value="<%= @campaign.id %>">
+<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+     data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= seat_streams_from @seat, @campaign %>
@@ -29,25 +29,31 @@
   <div class="table__main">
     <div class="table__stage">
     <% unless view == "controller" %>
-    <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
-    <section class="window table__map" aria-label="Map">
-      <%= render "campaigns/maps/canvas", campaign: @campaign, gm: @seat.gm? %>
-      <p class="hint">
-        <%= link_to(@seat.gm? ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %>
-        <% if (here = @campaign.current_node&.location) %>
-          · <%= link_to "#{here.dungeon? ? 'Explore' : 'Visit'} #{here.name} →", location_path(here) %>
-        <% end %>
-      </p>
-    </section>
     <%= render "campaigns/tables/dialogue_box", last_dialogue: @last_dialogue %>
     <% end %>
+    <%# The last few lines said, whoever said them (on a controller, what just happened): the log drawer keeps everything. %>
+    <section class="recent-lines" aria-label="Just said" hidden data-controller="recent-lines"
+             data-recent-lines-seat-value="<%= @seat.character&.name %>" data-recent-lines-count-value="<%= view == "controller" ? 2 : 4 %>">
+      <ol data-recent-lines-target="list"></ol>
+    </section>
     <%= render "choices/panel", choice: @campaign.open_choice %>
+    <%= render "campaigns/tables/ways", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
     </div>
 
     <div class="table__side">
     <% if view == "screen" %>
       <%= render "campaigns/tables/coop_join", campaign: @campaign %>
-      <%= render "campaigns/tables/party", campaign: @campaign %>
+    <% end %>
+    <% unless view == "controller" %>
+    <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
+    <section class="window table__map" aria-label="Map">
+      <%= render "campaigns/maps/canvas", campaign: @campaign, gm: @seat.gm? %>
+      <p class="hint">
+        <%= link_to(@seat.gm? ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %>
+        <%= render "campaigns/tables/here", campaign: @campaign %>
+      </p>
+    </section>
+    <%= render "campaigns/tables/party", campaign: @campaign %>
     <% end %>
     <%= render "campaigns/tables/time", campaign: @campaign %>
     <%= render "campaigns/tables/party_knows", campaign: @campaign %>
@@ -79,6 +85,7 @@
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
     <% if @seat.gm? %>
+      <%= render "campaigns/recovery", campaign: @campaign if @campaign.wiped_out? && !@campaign.battle_on? %>
       <%= render "campaigns/field_uses/requests", campaign: @campaign %>
       <%= render "campaigns/tables/coop_setup", campaign: @campaign unless view %>
       <details class="window table-scenes">

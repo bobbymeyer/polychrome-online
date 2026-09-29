@@ -20,21 +20,54 @@ RSpec.describe "The player's way through", type: :request do
     expect(response.body).to include("New campaign", "you run it as its GM")
   end
 
-  it "lists your campaigns on the home page, then the ones to join" do
+  it "lists only your campaigns on the home page; an admin sees the rest too" do
     campaign.characters.create!(name: "Krile", job: white_mage, user: krile)
     world.campaigns.create!(name: "Someone else's")
     sign_in_as(krile)
     get root_path
-    mine, others = response.body.split("<h2>Other campaigns</h2>")
-    expect(mine).to include("Your campaigns", "Crystal Road", "You play Krile", "Table →")
-    expect(others).to include("Someone else&#39;s")
+    expect(response.body).to include("Your campaigns", "Crystal Road", "You play Krile", "Table →")
+    expect(response.body).not_to include("Someone else&#39;s")
+
+    sign_out
+    sign_in_as(@admin)
+    get root_path
+    expect(response.body).to include("Everyone else's campaigns", "Someone else&#39;s")
+  end
+
+  it "sets a new campaign out in the base world's first town, with roads out of it and potions in the bag" do
+    post world_campaigns_path(world), params: { campaign: { name: "First Night" } }
+    started = world.campaigns.find_by!(name: "First Night")
+    expect(started.current_node.name).to eq("Tule")
+    roads = started.map_edges.select { |edge| edge.touches?(started.current_node) }
+    expect(roads.map(&:state)).to include("open", "dangerous")
+    expect(roads.find { |edge| edge.state == "dangerous" }&.encounter_table).to be_present
+    expect(started.bag.to_h { |row| [ row.item.slug, row.quantity ] }).to eq("phoenix_down" => 1, "potion" => 3)
+    expect(started.gil).to eq(Campaign::STARTING_GIL)
+
+    # What Tule is talking about puts the places it points to on the map; the rest wait to be heard of.
+    said = started.messages.pluck(:body)
+    expect(said).to include(a_string_starting_with("In Tule, people are saying: “Goblins have been coming down"),
+                            "Goblin Hollow is on the map now.", "The Old Barrow is on the map now.")
+    expect(started.map_nodes.where(visible: true).pluck(:name)).to include("Goblin Hollow", "The Old Barrow")
+    expect(started.map_nodes.where(visible: false).pluck(:name)).to contain_exactly("Stonepass", "The Isle of Vell")
+    expect(started.rumours.unheard.map { |r| [ r.origin.name, r.about.name ] }).to contain_exactly(%w[Port\ Carwen Stonepass], [ "Port Carwen", "The Isle of Vell" ])
+
+    # The setting's main thread is dealt in: the goblins raid Tule until the Hollow is cleared.
+    raid = started.clocks.find_by!(name: "The goblins raid Tule")
+    expect(raid).to have_attributes(public: true, map_node: started.map_nodes.find_by!(name: "Goblin Hollow"))
+    expect(started.npcs.pluck(:name)).to include("Grol Tusk", "Morrow")
+    expect(started.npcs.find_by!(name: "Morrow")).to be_antagonist
+    expect(started.map_edges.find { |e| [ e.from_node.name, e.to_node.name ].include?("Stonepass") }.state).to eq("blocked")
+
+    get campaign_path(started)
+    expect(response.body).to include("Your first session")
   end
 
   it "starts a player's new character knowing their job's first ability" do
     sign_in_as(krile)
     post campaign_characters_path(campaign), params: { character: { name: "Krile", job_id: white_mage.id } }
     character = campaign.characters.find_by!(name: "Krile")
-    expect(character.character_job.level).to eq(2) # two job levels per level
+    expect(character.character_job.level).to eq(Character.job_level_for(Campaign::FIRST_LEVEL)) # an empty party starts at the first level
     expect(character.battle_abilities.map(&:slug)).to include("cure")
   end
 

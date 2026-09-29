@@ -23,14 +23,19 @@ class Recap
     return if times.empty?
 
     sessions = times.slice_when { |later, earlier| later - earlier > BREAK }.map { |run| run.last..run.first }
-    window = sessions.find { |s| s.end < now - BREAK } || sessions.first
-    new(campaign, window)
+    ended = sessions.find { |s| s.end < now - BREAK }
+    new(campaign, ended || sessions.first, ended: !ended.nil?)
   end
 
-  def initialize(campaign, window)
+  def initialize(campaign, window, ended: true)
     @campaign = campaign
     @window = window
+    @ended = ended
   end
+
+  # Of a session that's over (not the one being played): worth opening by
+  # itself for someone arriving. The one still going is only a link away.
+  def ended? = @ended
 
   def lines
     @lines ||= campaign.messages.where(scope: "table", created_at: window).chronological.to_a

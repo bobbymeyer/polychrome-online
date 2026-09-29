@@ -44,9 +44,58 @@ module Campaign::Travelling
       tick_clocks!("travel")
       pass_time!(edge.duration, announce: :new_day)
       hear_rumours!(destination)
+      drop_stale_where_next!
     end
     broadcast_map
     rolled
+  end
+
+  # What a new party has to spend.
+  STARTING_GIL = 150
+
+  # A new campaign: the party starts in the setting's first town it knows
+  # that has a road out (Atlas), with money and the starting bag, and hears
+  # what people there are saying (which may put somewhere on the map).
+  def set_out!
+    transaction do
+      pack_starting_bag!
+      increment!(:gil, STARTING_GIL)
+      start = starting_town
+      next unless start && current_node.nil?
+
+      update!(current_node: start)
+      hear_rumours!(start)
+    end
+  end
+
+  def starting_town
+    towns = map_nodes.where(visible: true, kind: "town").order(Arel.sql("world_place_id IS NULL"), :world_place_id, :id).to_a
+    roads = map_edges.pluck(:from_node_id, :to_node_id).flatten.to_set
+    towns.find { |town| roads.include?(town.id) } || towns.first
+  end
+
+  # The known town nearest a place by road (the place itself if it's one),
+  # or nil if no road leads to one.
+  def nearest_town(from)
+    nearest(from, map_nodes.where(visible: true, kind: "town"))
+  end
+
+  # The nearest by road of some places (the place itself if it's one of
+  # them), or nil if no road leads to any.
+  def nearest(from, among)
+    return unless from
+
+    wanted = among.pluck(:id)
+    roads = map_edges.pluck(:from_node_id, :to_node_id)
+    seen = Set[from.id]
+    frontier = [ from.id ]
+    until frontier.empty?
+      found = frontier.find { |id| wanted.include?(id) }
+      return map_nodes.find(found) if found
+
+      frontier = roads.flat_map { |a, b| (frontier.include?(a) ? [ b ] : []) + (frontier.include?(b) ? [ a ] : []) }.uniq.reject { |id| seen.include?(id) }
+      seen.merge(frontier)
+    end
   end
 
   # GM: put the party somewhere directly (and reveal it).
@@ -57,18 +106,26 @@ module Campaign::Travelling
       update!(current_node: node)
       narrate("The party is at #{node.name}.")
       hear_rumours!(node)
+      drop_stale_where_next!
     end
     broadcast_map
   end
 
-  def start_pending_encounter!(input_seconds: nil)
+  # The most a boss's prelude says before the fight.
+  PRELUDE_LINES = 8
+
+  # prelude: lines said in the dialogue box first (a boss's entrance); the
+  # battle's pull waits for them (stage.js).
+  def start_pending_encounter!(input_seconds: nil, prelude: [])
     encounter = pending_encounter or raise Refusal, "No encounter is waiting"
     standing = characters.order(:created_at).select(&:conscious?)
     raise Refusal, "Nobody is standing to fight" if standing.empty?
 
+    prelude.first(PRELUDE_LINES).each { |line| messages.create!(body: line.to_s.first(500)) }
+
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
-                                 terrain: encounter["terrain"])
+                                 terrain: encounter["terrain"], names: encounter.fetch("names", {}))
     update!(pending_encounter: nil)
     battle
   end

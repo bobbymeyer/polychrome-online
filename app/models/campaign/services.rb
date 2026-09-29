@@ -41,7 +41,9 @@ module Campaign::Services
       update!(gil: gil - cost)
       character.update!(hp: nil, mp: nil) if %w[inn temple].include?(kind)
       character.update!(field_used: false) if kind == "inn" # a night's rest: field abilities are back
-      narrate(service_line(kind, character, service, by, cost))
+      bought = rumour_for_sale if kind == "guild"
+      narrate(service_line(kind, character, service, by, cost, bought))
+      hear_of!(bought) if bought
     end
   end
 
@@ -58,6 +60,7 @@ module Campaign::Services
       tick_clocks!("rest")
       pass_time!(until_dawn, announce: :new_day)
     end
+    broadcast_party
   end
 
   def rested?(character)
@@ -78,14 +81,14 @@ module Campaign::Services
   private
 
   # What the table hears when a service is paid for.
-  def service_line(kind, character, service, by, cost)
+  def service_line(kind, character, service, by, cost, rumour = nil)
     payer = by == character.name ? character.name : "#{by}, for #{character.name},"
     case kind
     when "inn" then "#{payer} takes a room at #{service['name']} (#{money(cost)}). #{character.name} is rested: full #{world.word('hp')} and #{world.word('mp')}."
     when "temple" then "#{payer} pays #{money(cost)} at #{service['name']}. #{character.name} is raised, whole again."
     when "guild"
       bought = "#{payer} buys a rumour at #{service['name']} (#{money(cost)})."
-      if (rumour = rumour_for_sale)
+      if rumour
         rumour.update!(heard: true)
         "#{bought} “#{rumour.body}”"
       else

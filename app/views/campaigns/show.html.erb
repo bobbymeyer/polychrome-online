@@ -13,11 +13,8 @@
   </div>
   <div class="actions">
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
-    <%= link_to "Map", campaign_map_path(@campaign), class: "button button--quiet" %>
     <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" if @world.codex_entries.exists? %>
-    <%= link_to "Legends", campaign_legends_path(@campaign), class: "button button--quiet" %>
     <% if can_gm?(@campaign) %>
-    <%= link_to "Prep", campaign_prep_path(@campaign), class: "button" %>
     <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" %>
     <%= button_to "Rest at an inn", campaign_rest_path(@campaign), class: "button button--quiet",
                   form: { data: { turbo_confirm: "Restore everyone to full #{word('hp')} and #{word('mp')}?" } } %>
@@ -28,13 +25,15 @@
 
 <%= render "worlds/lines_and_veils", world: @world %>
 
+<%= render "campaigns/first_steps", campaign: @campaign if can_gm?(@campaign) && !@campaign.messages.where(kind: "say").exists? %>
+
 <section>
   <div class="book-header">
     <h2>Party</h2>
     <%= link_to "New character", new_campaign_character_path(@campaign), class: "button button--quiet" %>
   </div>
   <% if @characters.empty? %>
-    <p class="empty">No characters yet.</p>
+    <p class="empty">No characters yet. <%= can_gm?(@campaign) ? "Make some, or send the invite link below and players make their own." : "Make yours." %></p>
   <% else %>
     <div class="roster-cards">
       <% @characters.each do |character| %>
@@ -60,6 +59,8 @@
     </div>
   <% end %>
 </section>
+
+<%= render "campaigns/invite", campaign: @campaign if can_gm?(@campaign) %>
 
 <section>
   <div class="book-header">
@@ -118,7 +119,7 @@
       </table>
     <% end %>
     <% if can_gm?(@campaign) %>
-    <details id="add_items" data-turbo-permanent>
+    <details id="add_items" data-turbo-permanent data-controller="fresh-form" data-action="turbo:submit-end->fresh-form#done">
       <summary>GM: add items</summary>
       <%= form_with url: campaign_inventories_path(@campaign), scope: :inventory, class: "book-form" do |f| %>
         <div class="field-row">

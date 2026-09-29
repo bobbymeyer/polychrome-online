@@ -14,6 +14,13 @@ module Campaign::Bag
     inventories.find_by(item: item)&.quantity || 0
   end
 
+  # What a new party sets out with, so a bad first fight isn't the end.
+  STARTING_BAG = { "potion" => 3, "phoenix_down" => 1 }.freeze
+
+  def pack_starting_bag!
+    world.items.where(slug: STARTING_BAG.keys).find_each { |item| add_item!(item, STARTING_BAG.fetch(item.slug)) }
+  end
+
   def add_item!(item, count = 1)
     raise Refusal, "#{item.name} is not from #{world.name}" unless item.world_id == world_id
 

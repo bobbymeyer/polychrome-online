@@ -10,22 +10,28 @@ class Campaign < ApplicationRecord
 
   belongs_to :world
   belongs_to :gm, class_name: "User", optional: true
-  has_many :characters, dependent: :destroy
-  has_many :inventories, dependent: :delete_all
-  has_many :battles, class_name: "BattleRecord", dependent: :destroy
-  has_many :npcs, dependent: :destroy
-  has_many :messages, dependent: :delete_all
-  has_many :map_edges, dependent: :destroy
-  has_many :map_nodes, dependent: :destroy
-  has_many :locations, dependent: :destroy
-  has_many :flags, dependent: :delete_all
-  has_many :scenes, dependent: :destroy
-  has_many :field_uses, dependent: :destroy
-  has_many :clocks, dependent: :delete_all
-  has_many :secrets, dependent: :delete_all
   belongs_to :current_node, class_name: "MapNode", optional: true
 
-  include Bag, Shopping, Services, Travelling, Checks, MonsterNotes, JobRewards, Overnight, Deeds, Broadcasts
+  # In the order they go when the campaign does: the foreign keys are plain,
+  # so whatever points at something goes before it (spec/models/deleting_spec.rb).
+  before_destroy(prepend: true) { update_columns(current_node_id: nil) if current_node_id }
+  has_many :messages, dependent: :delete_all # at battles and characters
+  has_many :field_uses, dependent: :destroy # at characters
+  has_many :scenes, dependent: :destroy # at places and their modes
+  has_many :clocks, dependent: :delete_all # at modes
+  has_many :secrets, dependent: :delete_all # at places and NPCs
+  has_many :rumours, dependent: :destroy # at places, deeds and secrets
+  has_many :deeds, dependent: :delete_all
+  has_many :flags, dependent: :delete_all
+  has_many :inventories, dependent: :delete_all
+  has_many :battles, class_name: "BattleRecord", dependent: :destroy
+  has_many :characters, dependent: :destroy # at places (home)
+  has_many :npcs, dependent: :destroy # at places
+  has_many :map_edges, dependent: :destroy
+  has_many :map_nodes, dependent: :destroy # at locations
+  has_many :locations, dependent: :destroy
+
+  include Bag, Shopping, Services, Travelling, Ways, Checks, MonsterNotes, JobRewards, Overnight, Deeds, Defeat, Broadcasts
 
   # The campaign's dice: one seeded RNG, stored here like a battle's, for
   # everything outside a battle (encounters on the road, checks, what
@@ -88,8 +94,16 @@ class Campaign < ApplicationRecord
     current_node&.location&.town? ? "town" : "field"
   end
 
-  # The code behind the shared screen's QR code (local co-op): made when
-  # first asked for, and replaced when the GM wants to shut old links out.
+  # The level a party starts at, and a new player's character joins at: the
+  # party's lowest, so nobody walks in ahead of the others.
+  FIRST_LEVEL = 5
+
+  def newcomer_level
+    characters.minimum(:level) || FIRST_LEVEL
+  end
+
+  # The code behind the invite link and the shared screen's QR code: made
+  # when first asked for, and replaced when the GM wants to shut old links out.
   def join_code!
     join_code || new_join_code!
   end

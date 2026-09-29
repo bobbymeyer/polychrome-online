@@ -36,6 +36,7 @@ module Seeds
         table = attrs[:encounter_table] && world.encounter_tables.find_by!(slug: attrs[:encounter_table])
         upsert(world.location_templates, slug, attrs.except(:encounter_table).merge(encounter_table: table))
       end
+      seed_atlas(world)
       JOBS.each do |slug, attrs|
         levels = attrs.fetch(:levels)
         fresh = !world.jobs.exists?(slug: slug.to_s)
@@ -48,6 +49,42 @@ module Seeds
         end
       end
       world
+    end
+
+    # The setting's map (World#world_places, #world_routes): where a new
+    # campaign starts (the first town) and the roads out of it, a safe one
+    # and dangerous ones with their encounters. Places are known by name.
+    def seed_atlas(world)
+      places = PLACES.to_h do |name, attrs|
+        template = attrs[:template] && world.location_templates.find_by!(slug: attrs[:template])
+        place = world.world_places.find_or_initialize_by(name: name)
+        place.update!(attrs.except(:template).merge(location_template: template)) if place.new_record? || @overwrite
+        [ name, place ]
+      end
+      ROUTES.each do |from, to, attrs|
+        a, b = places.fetch(from), places.fetch(to)
+        next if world.world_routes.where(from_place: a, to_place: b).or(world.world_routes.where(from_place: b, to_place: a)).exists?
+
+        table = attrs[:encounters] && world.encounter_tables.find_by!(slug: attrs[:encounters])
+        world.world_routes.create!(from_place: a, to_place: b, encounter_table: table, **attrs.except(:encounters))
+      end
+      figures = FIGURES.to_h do |name, attrs|
+        figure = world.world_figures.find_or_initialize_by(name: name)
+        if figure.new_record? || @overwrite
+          figure.update!(attrs.except(:monster, :place).merge(monster: world.monsters.find_by!(slug: attrs[:monster]), world_place: places.fetch(attrs[:place])))
+        end
+        [ name, figure ]
+      end
+      FRONTS.each do |name, attrs|
+        front = world.world_fronts.find_or_initialize_by(name: name)
+        next unless front.new_record? || @overwrite
+
+        clocks = attrs[:clocks].map do |c|
+          c.except(:place, :source).merge(place_id: places[c[:place]]&.id, source_id: places[c[:source]]&.id).transform_keys(&:to_s)
+        end
+        secrets = attrs[:secrets].map { |x| { "body" => x[:body], "place_id" => places[x[:place]]&.id, "figure_id" => figures[x[:figure]]&.id } }
+        front.update!(description: attrs[:description], clocks: clocks, secrets: secrets)
+      end
     end
 
     # Create the entry if it's missing; only rewrite an existing one when
@@ -244,6 +281,47 @@ module Seeds
       call_serpent: { name: "Call Serpent", kind: "magic", target: "self", mp_cost: 20, gesture: "pop",
                       effects: [ { primitive: "summon", creature: "river_serpent", duration: 2 } ],
                       description: "A river serpent coils round the fight for two turns, crushing everything in reach." },
+      # Later in each job's learn table, and each job's last lesson (its
+      # capstone, at job level 100).
+      stalwart: { name: "Stalwart", kind: "skill", target: "all_allies", mp_cost: 6, gesture: "shake",
+                  effects: [ { primitive: "buff", stat: "def", amount: 50, duration: 3 } ], description: "Everyone stands a little behind the Knight, and it helps." },
+      oathblade: { name: "Oathblade", kind: "skill", target: "single_enemy", mp_cost: 10, gesture: "lunge",
+                   effects: [ { primitive: "physical", power: 260 } ], description: "The Knight's last lesson: one blow with everything sworn behind it." },
+      pilfer: { name: "Pilfer", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
+                effects: [ { primitive: "steal", chance: 90 } ], description: "Hands so quick the pocket is empty before it's missed." },
+      shadowdance: { name: "Shadowdance", kind: "skill", target: "single_enemy", mp_cost: 8, gesture: "spin",
+                     effects: [ { primitive: "physical", type: "dark", power: 70, hits: 4 } ], description: "Four cuts from four places at once. The Thief's last lesson." },
+      chakra: { name: "Chakra", kind: "skill", target: "self", mp_cost: 0, gesture: "float",
+                effects: [ { primitive: "heal", power: 40 }, { primitive: "cleanse" } ], description: "Breathe in, and the body mends itself." },
+      final_fist: { name: "Final Fist", kind: "skill", target: "single_enemy", mp_cost: 10, gesture: "lunge",
+                    effects: [ { primitive: "physical", type: "fighting", power: 320 } ], description: "Everything the Monk has learned, in one punch." },
+      thundara: { name: "Thundara", kind: "magic", target: "all_enemies", mp_cost: 10, gesture: "flash",
+                  effects: [ { primitive: "elemental", type: "electric", power: 10 } ], description: "Lightning that forks through the whole line." },
+      flare: { name: "Flare", kind: "magic", target: "single_enemy", mp_cost: 24, gesture: "flash",
+               effects: [ { primitive: "elemental", type: "fire", power: 40 } ], description: "The heart of a star, for a moment. The Black Mage's last lesson." },
+      curaga: { name: "Curaga", kind: "magic", target: "all_allies", mp_cost: 16, gesture: "float",
+                effects: [ { primitive: "heal", power: 32 } ], description: "Deep healing for everyone at once." },
+      holy: { name: "Holy", kind: "magic", target: "single_enemy", mp_cost: 24, gesture: "flash",
+              effects: [ { primitive: "elemental", type: "psychic", power: 38 } ], description: "A white light that judges. The White Mage's last lesson." },
+      enblizzard: { name: "Enblizzard", kind: "magic", target: "self", mp_cost: 4, gesture: "flash",
+                    effects: [ { primitive: "imbue", type: "ice", duration: 3 } ], description: "Frost on the blade: your Attack strikes as ice for a while." },
+      crimson_rain: { name: "Crimson Rain", kind: "magic", target: "all_enemies", mp_cost: 18, gesture: "flash",
+                      effects: [ { primitive: "elemental", type: "fire", power: 18 } ], description: "Red sparks falling everywhere at once. The Red Mage's last lesson." },
+      quake: { name: "Quake", kind: "magic", target: "all_enemies", mp_cost: 12, gesture: "shake",
+               effects: [ { primitive: "elemental", type: "ground", power: 16 } ], description: "The ground itself shrugs them off." },
+      lifeblood: { name: "Lifeblood", kind: "magic", target: "all_allies", mp_cost: 8, gesture: "float",
+                   effects: [ { primitive: "heal", power: 20 } ], description: "Green things grow round the party's feet, and the wounds close." },
+      gaias_wrath: { name: "Gaia's Wrath", kind: "magic", target: "all_enemies", mp_cost: 26, gesture: "shake",
+                     effects: [ { primitive: "elemental", type: "ground", power: 30 } ], description: "The land remembers every insult. The Geomancer's last lesson." },
+      wyrm_breath: { name: "Wyrm Breath", kind: "skill", target: "all_enemies", mp_cost: 10, gesture: "flash",
+                     effects: [ { primitive: "elemental", type: "fire", power: 14 } ], description: "Something of the dragon in the Dragoon, breathed out." },
+      skyfall: { name: "Skyfall", kind: "skill", target: "single_enemy", mp_cost: 12, gesture: "lunge",
+                 effects: [ { primitive: "jump", power: 480 } ], description: "Up past the clouds, and down like judgement. The Dragoon's last lesson." },
+      call_wyvern: { name: "Call Wyvern", kind: "magic", target: "self", mp_cost: 30, gesture: "pop",
+                     effects: [ { primitive: "summon", creature: "wyvern", duration: 2 } ],
+                     description: "A wyvern wheels over the fight for two turns, raking everything below. The Summoner's last lesson." },
+      sky_rend: { name: "Sky Rend", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "spin",
+                  effects: [ { primitive: "elemental", type: "flying", power: 26 } ], description: "Wings like knives." },
       # What the creatures do.
       talon_dive: { name: "Talon Dive", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
                     effects: [ { primitive: "physical", type: "flying", power: 180 } ], description: "Out of the sun, talons first." },
@@ -350,7 +428,52 @@ module Seeds
       cotton_robe: { name: "Cotton Robe", category: "robe", price: 120, stats: { def: 2, mdef: 4 },
                      description: "Embroidered with small protective sigils." },
       power_ring: { name: "Power Ring", category: "accessory", price: 1000, stats: { str: 5 },
-                    description: "A ring cut from a single garnet." }
+                    description: "A ring cut from a single garnet." },
+
+      # The ladders: each kind of gear in four steps (Dragon Quest's copper,
+      # iron, steel). The first is what a new character starts in; the
+      # second a village sells; the third a port; the fourth is found.
+      mythril_knife: { name: "Mythril Knife", category: "knife", price: 500, stats: { atk: 16, agi: 3 }, description: "Lighter than it looks, sharper than it should be." },
+      main_gauche: { name: "Main Gauche", category: "knife", price: 1400, stats: { atk: 24, agi: 4, def: 2 }, description: "For the off hand, and the parry." },
+      assassins_dagger: { name: "Assassin's Dagger", category: "knife", price: 3800, stats: { atk: 32, agi: 6 }, description: "Nobody admits to having made it." },
+      longsword: { name: "Longsword", category: "sword", price: 550, stats: { atk: 21 }, description: "A knight's first real sword." },
+      mythril_sword: { name: "Mythril Sword", category: "sword", price: 1500, stats: { atk: 29 }, description: "Pale, cold and very light." },
+      rune_blade: { name: "Rune Blade", category: "sword", price: 4200, stats: { atk: 36, mag: 4 }, description: "The letters on it move when nobody's looking." },
+      battle_axe: { name: "Battle Axe", category: "axe", price: 520, stats: { atk: 22, agi: -1 }, description: "Not for wood." },
+      mythril_axe: { name: "Mythril Axe", category: "axe", price: 1450, stats: { atk: 30 }, description: "Swings like a lighter axe and lands like a heavier one." },
+      ogre_killer: { name: "Ogre Killer", category: "axe", price: 4000, stats: { atk: 40, agi: -2 }, description: "Named for the job, and good at it." },
+      partisan: { name: "Partisan", category: "spear", price: 600, stats: { atk: 22 }, description: "A spear with ideas: a blade, a hook, a spike." },
+      mythril_spear: { name: "Mythril Spear", category: "spear", price: 1600, stats: { atk: 30 }, description: "Long, light, and it hums in the wind." },
+      wind_spear: { name: "Wind Spear", category: "spear", price: 4300, stats: { atk: 38, agi: 3 }, description: "Thrown once, it came back." },
+      oak_staff: { name: "Oak Staff", category: "staff", price: 480, stats: { atk: 7, spr: 7 }, description: "Cut from a tree that was old when the village was new." },
+      healing_staff: { name: "Healing Staff", category: "staff", price: 1300, stats: { atk: 9, spr: 11 }, description: "Warm to hold, even in winter." },
+      sages_staff: { name: "Sage's Staff", category: "staff", price: 3900, stats: { atk: 11, spr: 15, mag: 5 }, description: "Its last owner wrote in the margins of the world." },
+      flame_rod: { name: "Flame Rod", category: "rod", price: 500, stats: { atk: 6, mag: 7 }, description: "The tip is always a little too warm." },
+      mythril_rod: { name: "Mythril Rod", category: "rod", price: 1400, stats: { atk: 8, mag: 11 }, description: "Spells leave it faster." },
+      wizards_rod: { name: "Wizard's Rod", category: "rod", price: 4000, stats: { atk: 10, mag: 16 }, description: "It chose its wizard, not the other way round." },
+      iron_shield: { name: "Iron Shield", category: "shield", price: 380, stats: { def: 6, mdef: 2 }, description: "A proper shield. Heavy, and worth it." },
+      mythril_shield: { name: "Mythril Shield", category: "shield", price: 1100, stats: { def: 9, mdef: 4 }, description: "Spells skid off it." },
+      aegis_shield: { name: "Aegis Shield", category: "shield", price: 3600, stats: { def: 13, mdef: 9 }, description: "The face on it frowns at magic." },
+      horned_helm: { name: "Horned Helm", category: "helmet", price: 420, stats: { def: 5 }, description: "The horns are mostly for show." },
+      mythril_helm: { name: "Mythril Helm", category: "helmet", price: 1150, stats: { def: 8, mdef: 2 }, description: "You forget you're wearing it." },
+      crystal_helm: { name: "Crystal Helm", category: "helmet", price: 3500, stats: { def: 11, mdef: 4 }, description: "Clear as ice and harder." },
+      feathered_hat: { name: "Feathered Hat", category: "hat", price: 300, stats: { def: 2, mdef: 3, agi: 1 }, description: "Jaunty, and it knows it." },
+      wizards_hat: { name: "Wizard's Hat", category: "hat", price: 900, stats: { def: 3, mdef: 5, mag: 2 }, description: "Pointed, of course." },
+      circlet: { name: "Circlet", category: "hat", price: 3000, stats: { def: 4, mdef: 8, mag: 3, spr: 3 }, description: "A thin silver band that makes thinking easier." },
+      iron_armor: { name: "Iron Armor", category: "heavy_armor", price: 900, stats: { def: 12, agi: -2 }, description: "Everything the bronze was, and more of it." },
+      mythril_armor: { name: "Mythril Armor", category: "heavy_armor", price: 2200, stats: { def: 17, agi: -1 }, description: "Plate that moves like cloth." },
+      crystal_armor: { name: "Crystal Armor", category: "heavy_armor", price: 5500, stats: { def: 23, mdef: 5, agi: -1 }, description: "Light passes through it. Blades don't." },
+      leather_armor: { name: "Leather Armor", category: "light_armor", price: 150, stats: { def: 4, agi: 1 }, description: "Boiled, stitched and comfortable." },
+      chain_vest: { name: "Chain Vest", category: "light_armor", price: 450, stats: { def: 7 }, description: "Rings on rings. Quieter than it sounds." },
+      mythril_vest: { name: "Mythril Vest", category: "light_armor", price: 1200, stats: { def: 10, agi: 2 }, description: "Worn under a coat, nobody knows." },
+      ninja_gear: { name: "Ninja Gear", category: "light_armor", price: 3600, stats: { def: 14, agi: 5 }, description: "Dark, close and silent." },
+      silk_robe: { name: "Silk Robe", category: "robe", price: 400, stats: { def: 3, mdef: 7 }, description: "Spun by worms that were paid in songs." },
+      sages_robe: { name: "Sage's Robe", category: "robe", price: 1100, stats: { def: 5, mdef: 10, spr: 2 }, description: "Heavy with pockets, all of them full." },
+      white_robe: { name: "White Robe", category: "robe", price: 3400, stats: { def: 7, mdef: 14, mag: 3, spr: 3 }, description: "It never needs washing." },
+      hermes_sandals: { name: "Hermes Sandals", category: "accessory", price: 800, stats: { agi: 4 }, description: "Little wings at the heel. They flutter when you're late." },
+      silver_bracer: { name: "Silver Bracer", category: "accessory", price: 700, stats: { def: 3, mdef: 3 }, description: "Turns a blade once, then twice." },
+      faerie_earring: { name: "Faerie Earring", category: "accessory", price: 900, stats: { mag: 4 }, description: "Someone tiny whispers spells in your ear." },
+      protect_ring: { name: "Protect Ring", category: "accessory", price: 2400, stats: { def: 4, mdef: 6 }, description: "Warm when danger is near." }
     }.freeze
 
     JOBS = {
@@ -361,51 +484,51 @@ module Seeds
                 stat_multipliers: { max_hp: 130, str: 120, vit: 120, agi: 90, mag: 60 },
                 equip_categories: %w[sword axe spear shield helmet heavy_armor accessory],
                 innates: [ { stat: "def", percent: 10 } ],
-                levels: [ [ "war_cry", 1 ], [ "armor_break", 12 ], [ "double_cut", 30 ], [ "shield_bash", 45 ] ] },
+                levels: [ [ "war_cry", 1 ], [ "armor_break", 12 ], [ "double_cut", 25 ], [ "shield_bash", 40 ], [ "stalwart", 60 ], [ "oathblade", 100 ] ] },
       thief: { name: "Thief", base_type: "dark", skills: %w[stealth thievery], field_ability: "pick_lock", signature: "mug", passive: "first_strike", desperation: "vanishing_cut", description: "Fast hands, faster feet.",
                stat_multipliers: { agi: 140, str: 90, max_hp: 90 },
                equip_categories: %w[knife hat light_armor accessory],
                innates: [ { stat: "agi", add: 5 } ],
-               levels: [ [ "steal", 1 ], [ "smoke_bomb", 12 ], [ "hide", 18 ], [ "double_cut", 25 ] ] },
+               levels: [ [ "steal", 1 ], [ "smoke_bomb", 12 ], [ "hide", 18 ], [ "double_cut", 30 ], [ "pilfer", 55 ], [ "shadowdance", 100 ] ] },
       monk: { name: "Monk", base_type: "fighting", skills: %w[athletics insight], field_ability: "meditate", signature: "focus", passive: "counter", desperation: "hundred_fists", description: "Fists instead of steel.",
               stat_multipliers: { max_hp: 140, str: 130, vit: 110, mag: 50 },
               equip_categories: %w[light_armor accessory],
               innates: [ { stat: "atk", add: 12 } ],
-              levels: [ [ "kick", 1 ], [ "war_cry", 15 ], [ "inner_fury", 35 ], [ "revenge", 50 ] ] },
+              levels: [ [ "kick", 1 ], [ "war_cry", 15 ], [ "inner_fury", 35 ], [ "revenge", 50 ], [ "chakra", 70 ], [ "final_fist", 100 ] ] },
       black_mage: { name: "Black Mage", base_type: "fire", skills: %w[lore insight], field_ability: "appraise", signature: "channel", passive: "mp_regen", desperation: "starfall", description: "Destruction, studied carefully.",
                     stat_multipliers: { max_hp: 70, max_mp: 150, mag: 140, str: 60 },
                     equip_categories: %w[knife rod robe hat accessory],
                     innates: [],
-                    levels: [ [ "fire", 1 ], [ "blizzard", 5 ], [ "thunder", 8 ], [ "sleep", 15 ], [ "osmose", 25 ], [ "fira", 30 ], [ "bio", 45 ], [ "gravity", 50 ], [ "drain", 60 ] ] },
+                    levels: [ [ "fire", 1 ], [ "blizzard", 5 ], [ "thunder", 8 ], [ "sleep", 15 ], [ "osmose", 25 ], [ "fira", 30 ], [ "bio", 45 ], [ "gravity", 50 ], [ "drain", 60 ], [ "thundara", 75 ], [ "flare", 100 ] ] },
       white_mage: { name: "White Mage", base_type: "psychic", skills: %w[insight persuasion], field_ability: "field_dressing", signature: "pray", passive: "regen", desperation: "judgement", description: "Keeps everyone else alive.",
                     stat_multipliers: { max_hp: 80, max_mp: 140, mag: 120, spr: 130, str: 60 },
                     equip_categories: %w[staff robe hat accessory],
                     innates: [ { stat: "mdef", percent: 20 } ],
-                    levels: [ [ "cure", 1 ], [ "silence", 10 ], [ "barrier", 15 ], [ "esuna", 20 ], [ "cura", 30 ], [ "haste", 40 ], [ "raise", 60 ] ] },
+                    levels: [ [ "cure", 1 ], [ "silence", 10 ], [ "barrier", 15 ], [ "esuna", 20 ], [ "cura", 30 ], [ "haste", 40 ], [ "raise", 60 ], [ "curaga", 80 ], [ "holy", 100 ] ] },
       red_mage: { name: "Red Mage", base_type: "normal", skills: %w[lore persuasion], field_ability: "parley", signature: "flame_blade", passive: "regen", desperation: "crimson_flurry",
                   description: "A little of everything, and a sword to put it through.",
                   stat_multipliers: { max_hp: 95, max_mp: 115, str: 105, mag: 110 },
                   equip_categories: %w[sword knife rod light_armor robe hat accessory],
                   innates: [],
-                  levels: [ [ "fire", 1 ], [ "cure", 1 ], [ "blizzard", 8 ], [ "thunder", 8 ], [ "enfire", 15 ], [ "sleep", 20 ], [ "stop", 30 ], [ "haste", 40 ] ] },
+                  levels: [ [ "fire", 1 ], [ "cure", 1 ], [ "blizzard", 8 ], [ "thunder", 8 ], [ "enfire", 15 ], [ "sleep", 20 ], [ "stop", 30 ], [ "haste", 40 ], [ "enblizzard", 55 ], [ "crimson_rain", 100 ] ] },
       summoner: { name: "Summoner", base_type: "ghost", skills: %w[lore survival], field_ability: "familiar", signature: "call_sprite", passive: "mp_regen", desperation: "megaflare",
                   description: "Calls things that should not come when called.",
                   stat_multipliers: { max_hp: 75, max_mp: 160, mag: 135, str: 55 },
                   equip_categories: %w[staff rod robe hat accessory],
                   innates: [],
-                  levels: [ [ "call_eagle", 1 ], [ "call_wisp", 5 ], [ "call_salamander", 8 ], [ "call_turtle", 30 ], [ "call_serpent", 60 ] ] },
+                  levels: [ [ "call_eagle", 1 ], [ "call_wisp", 5 ], [ "call_salamander", 8 ], [ "call_turtle", 30 ], [ "call_serpent", 60 ], [ "call_wyvern", 100 ] ] },
       geomancer: { name: "Geomancer", base_type: "ground", skills: %w[survival endurance], field_ability: "read_the_land", signature: "gaia", passive: "regen", desperation: "cataclysm",
                    description: "Reads the land and borrows its temper.",
                    stat_multipliers: { max_hp: 100, mag: 115, spr: 115, str: 90 },
                    equip_categories: %w[staff axe light_armor hat accessory],
                    innates: [ { stat: "mdef", percent: 10 } ],
-                   levels: [ [ "sinkhole", 1 ], [ "whirlwind", 15 ], [ "riptide", 30 ] ] },
+                   levels: [ [ "sinkhole", 1 ], [ "whirlwind", 15 ], [ "riptide", 30 ], [ "quake", 55 ], [ "lifeblood", 75 ], [ "gaias_wrath", 100 ] ] },
       dragoon: { name: "Dragoon", base_type: "flying", skills: %w[athletics survival], field_ability: "scout", signature: "jump", passive: "first_strike", desperation: "dragon_dive",
                  description: "Fights from above. Mostly from above.",
                  stat_multipliers: { max_hp: 120, str: 125, agi: 105, mag: 50 },
                  equip_categories: %w[spear shield helmet heavy_armor accessory],
                  innates: [ { stat: "atk", add: 4 } ],
-                 levels: [ [ "lance", 1 ], [ "dragon_crest", 15 ], [ "high_jump", 35 ] ] }
+                 levels: [ [ "lance", 1 ], [ "dragon_crest", 15 ], [ "high_jump", 35 ], [ "wyrm_breath", 60 ], [ "skyfall", 100 ] ] }
     }.freeze
 
     MONSTERS = {
@@ -420,6 +543,8 @@ module Seeds
                       exp: 0, gil: 0, abp: 0, ai_script: [ { use: "shell_ward" } ], description: "Older than the road. In no hurry." },
       river_serpent: { name: "River Serpent", level: 15, stats: stats(max_hp: 160, mag: 26, agi: 14, def: 8, mdef: 10), base_type: "water",
                        exp: 0, gil: 0, abp: 0, ai_script: [ { use: "tidal_coil" } ], description: "Lives where the river bends. Owes the Summoner a favour." },
+      wyvern: { name: "Wyvern", level: 25, stats: stats(max_hp: 260, mag: 34, agi: 22, def: 12, mdef: 12), base_type: "flying",
+                exp: 0, gil: 0, abp: 0, ai_script: [ { use: "sky_rend" } ], description: "Answers only a master's call." },
       sprite: { name: "Sprite", level: 1, stats: stats(max_hp: 20, mag: 10, agi: 40), base_type: "psychic",
                 exp: 0, gil: 0, abp: 0, ai_script: [ { use: "quicken" } ], description: "Small, bright and quick, and makes you quick too." },
       goblin: { name: "Goblin", level: 1, stats: stats(max_hp: 45, str: 9, atk: 8, agi: 8, def: 3, mdef: 2),
@@ -541,16 +666,16 @@ module Seeds
                                     "Wim", "Yara", "Zeb", "Anselm", "Brin", "Calla", "Doro", "Emrys", "Faye", "Gideon", "Hanne", "Ilse",
                                     "Jonah", "Kit", "Liesl", "Marek", "Noor", "Otto", "Pim", "Runa", "Sten", "Tilde", "Varro", "Wenna") },
       town_hooks: { name: "Townsfolk hooks", kind: "hooks",
-                    entries: texts("Owes the guild more than they'll say.", "Saw green lights on the hill three nights running.",
-                                   "Lost a brother to the mountain pass.", "Sells maps that are mostly right.",
-                                   "Wants an escort north and can't pay yet.", "Is hiding a runaway in the cellar.",
+                    entries: texts("Owes the guild more than they'll say.", "Saw green lights over {place} three nights running.",
+                                   "Lost a brother on the road to {place}.", "Sells maps that are mostly right.",
+                                   "Wants an escort to {town} and can't pay yet.", "Is hiding a runaway in the cellar.",
                                    "Swears the wind stopped last week, then started again.", "Collects crystal shards. Asks about them.",
-                                   "Knows the old way into the shrine.", "Wants their stolen ring back, no questions asked.",
+                                   "Knows the old way into {dungeon}.", "Wants their stolen ring back, no questions asked.",
                                    "Was a soldier once. Won't say for which side.", "Keeps a chocobo that bites everyone but them.",
                                    "Has a letter for someone who never came back.", "Is certain the mayor is a monster in disguise.",
                                    "Pays well for goblin ears, and doesn't say why.", "Dreams of the sea, though they've never seen it.",
                                    "Heard singing from the old well.", "Is saving for a sword they'll never be able to lift.",
-                                   "Their crops died overnight in a perfect circle.", "Needs medicine from the next town before the week is out.",
+                                   "Their crops died overnight in a perfect circle.", "Needs medicine from {town} before the week is out.",
                                    "Was robbed on the road by someone polite.", "Knows a song about the heroes that isn't flattering.",
                                    "Runs a card game with a marked deck.", "Is looking for a missing apprentice.",
                                    "Found a key they can't find a lock for.", "Remembers when the crystal still sang.",
@@ -576,14 +701,21 @@ module Seeds
                               { text: "Tower", width: 36, height: 125 },
                               { text: "Warehouse", width: 95, height: 55, roof: "flat" },
                               { text: "Windmill", width: 40, height: 100, roof: "peak" } ] },
+      # A port sells the second and third steps of every ladder; a village
+      # the first and second (Item ladders above). The fourth is found.
       shop_stock: { name: "General store stock", kind: "stock",
                     entries: %w[potion hi_potion phoenix_down smoke_pellet antidote eye_drops echo_screen remedy
-                                broadsword dagger iron_spear hand_axe rod staff buckler leather_cap iron_helm cotton_robe]
+                                longsword mythril_sword mythril_knife main_gauche battle_axe mythril_axe partisan mythril_spear
+                                oak_staff healing_staff flame_rod mythril_rod iron_shield mythril_shield horned_helm mythril_helm
+                                feathered_hat wizards_hat iron_armor mythril_armor chain_vest mythril_vest silk_robe sages_robe
+                                hermes_sandals silver_bracer faerie_earring power_ring]
                                .map { |item| { item: item } } },
       village_stock: { name: "Village store stock", kind: "stock",
                        entries: [ { item: "potion", weight: 3 }, { item: "antidote", weight: 2 }, { item: "eye_drops" }, { item: "echo_screen" },
-                                  { item: "smoke_pellet" }, { item: "dagger" }, { item: "rod" }, { item: "leather_cap" },
-                                  { item: "cotton_robe" }, { item: "buckler" } ] },
+                                  { item: "smoke_pellet" }, { item: "longsword" }, { item: "mythril_knife" }, { item: "battle_axe" },
+                                  { item: "partisan" }, { item: "oak_staff" }, { item: "flame_rod" }, { item: "iron_shield" },
+                                  { item: "horned_helm" }, { item: "feathered_hat" }, { item: "chain_vest" }, { item: "silk_robe" },
+                                  { item: "leather_armor" }, { item: "iron_armor" } ] },
       rooms: { name: "Room names", kind: "rooms",
                entries: texts("Flooded Hall", "Ossuary", "Collapsed Stair", "Crystal Chamber", "Guardroom", "Cistern",
                               "Vault", "Crossing", "Chapel", "Kennels", "Forge", "Gallery", "Well Room", "Barracks",
@@ -630,17 +762,89 @@ module Seeds
                           { text: "Goblin gate", key: "Chief's tooth" }, { text: "Weeping statue", key: "Silver tear" },
                           { text: "Bell-rope portcullis", key: "Brass bell" }, { text: "Flooded sluice", key: "Valve wheel" } ] },
       treasure: { name: "Dungeon treasure", kind: "treasure",
-                  entries: [ { item: "potion", weight: 4 }, { item: "hi_potion", weight: 2 }, { item: "phoenix_down", weight: 2 },
-                             { item: "antidote", weight: 2 }, { item: "remedy" }, { item: "power_ring" }, { item: "bronze_armor" },
-                             { gil: 50, weight: 3 }, { gil: 120, weight: 2 }, { gil: 300 } ] }
+                  entries: [ { item: "potion", weight: 8 }, { item: "hi_potion", weight: 4 }, { item: "phoenix_down", weight: 4 },
+                             { item: "antidote", weight: 4 }, { item: "remedy", weight: 2 }, { item: "power_ring", weight: 2 }, { item: "bronze_armor", weight: 2 },
+                             { item: "main_gauche", weight: 2 }, { item: "mythril_sword", weight: 2 }, { item: "healing_staff", weight: 2 },
+                             { item: "mythril_vest", weight: 2 }, { item: "protect_ring", weight: 2 }, { item: "rune_blade" }, { item: "wizards_rod" },
+                             { item: "aegis_shield" }, { item: "ninja_gear" },
+                             { gil: 50, weight: 6 }, { gil: 120, weight: 4 }, { gil: 300, weight: 2 } ] }
+    }.freeze
+
+    # The first is where a party starts.
+    # The first town with a road is where a party starts. A place nobody
+    # knows yet comes with its lead: the talk, started in the nearest town,
+    # that puts it on the map when the party hears it.
+    PLACES = {
+      "Tule" => { kind: "town", template: "village", x: 420, y: 380, known: true, seed: 11,
+                  description: "A market village at the crossroads, the kind of place stories start from." },
+      "Goblin Hollow" => { kind: "dungeon", template: "goblin_cave", x: 250, y: 250, known: false, seed: 12,
+                           description: "A cave in the hills above Tule. The goblins have been bold lately.",
+                           lead: "Goblins have been coming down at night from a cave in the hills above the village. Three sheep gone this week." },
+      "Greymere" => { kind: "wilds", x: 600, y: 230, known: true, description: "A grey lake in an old forest. Nobody fishes it now." },
+      "Port Carwen" => { kind: "town", template: "port_town", x: 760, y: 500, known: true, seed: 13,
+                         description: "Ships, sailors and more rumours than anyone can use." },
+      "The Old Barrow" => { kind: "dungeon", template: "barrow", x: 720, y: 110, known: false, seed: 14,
+                            description: "Graves dug deep into a hill past Greymere. Something down there won't stay buried.",
+                            lead: "Nobody fishes Greymere any more. There are lights under the barrow hill past the lake again, like in grandmother's day." },
+      "Stonepass" => { kind: "landmark", x: 900, y: 320, known: false,
+                       description: "The one road over the mountains, and a warden's hut at the top.",
+                       notes: "Snowed in, the warden says, and the road is blocked until the GM opens it: a thaw, a guide, or the warden's price.",
+                       lead: "The pass is snowed in, they say. But a man in the harbour swears he came over it last week, and there was no snow at all." },
+      "The Isle of Vell" => { kind: "wilds", x: 960, y: 640, known: false,
+                              description: "An island of standing stones, a day's sail out. Nobody lives there, and yet the stones are kept clean.",
+                              notes: "The crossing is blocked until the party pays Captain Maren (500 gil) and the GM opens the way.",
+                              lead: "Captain Maren of the Gull's Wing will sail anyone out to the Isle of Vell, if they can pay what she asks." }
+    }.freeze
+
+    ROUTES = [
+      [ "Tule", "Goblin Hollow", { state: "dangerous", encounters: "grasslands", duration: 1 } ],
+      [ "Tule", "Greymere", { state: "dangerous", encounters: "old_forest", duration: 1 } ],
+      [ "Tule", "Port Carwen", { state: "open", duration: 2, travel_event: "The coast road is busy and safe: carts, pilgrims, a tinker singing." } ],
+      [ "Greymere", "The Old Barrow", { state: "dangerous", encounters: "old_forest", duration: 1 } ],
+      [ "Port Carwen", "Stonepass", { state: "blocked", encounters: "mountain_pass", duration: 2,
+                                      travel_event: "Snow to the knee, then to the waist, and then, at the warden's hut, none at all." } ],
+      [ "Port Carwen", "The Isle of Vell", { state: "blocked", duration: 1,
+                                             travel_event: "The Gull's Wing leans into a grey swell. Maren sings the whole way and won't say why." } ]
+    ].freeze
+
+    # Who the setting's trouble belongs to (World#world_figures): brought into
+    # a campaign's cast, and able to fight as the monster named.
+    FIGURES = {
+      "Grol Tusk" => { title: "Chief of the Goblin Hollow goblins", monster: "goblin_chief", place: "Goblin Hollow",
+                       blurb: "Bigger than a goblin should be, and wearing a hat that was a crown once.",
+                       description: "Raids Tule for silver, not food: he's paid in grave-coin by something under the Barrow." },
+      "Morrow" => { title: "The Barrow Lord", monster: "dark_mage", place: "The Old Barrow",
+                    blurb: "Tule's reeve, a hundred years dead, and not finished.",
+                    description: "Buried with the village charter. Whoever holds it rules Tule; he means to, again." }
+    }.freeze
+
+    # The setting's main thread (World#world_fronts), dealt into every new
+    # campaign: the goblins are the symptom, the Barrow is the cause.
+    FRONTS = {
+      "The Barrow Lord's silver" => {
+        description: "Something under the Barrow wants Tule back, and pays the goblins to soften it up.",
+        clocks: [
+          { name: "The goblins raid Tule", segments: 4, public: true, triggers: %w[dawn], place: "Tule", source: "Goblin Hollow",
+            full_line: "The goblins burn Tule's granary. The village will go hungry this winter.",
+            mode_name: "Raided", mode_line: "Smoke over Tule: the granary is ash.", mode_description: "Boarded windows and short tempers." },
+          { name: "The Barrow Lord wakes", segments: 6, public: false, triggers: %w[now_and_then], source: "The Old Barrow",
+            full_line: "Greymere freezes over in a night, and the dead walk its shore." }
+        ],
+        secrets: [
+          { body: "The goblins raid for silver, not food: something under the Barrow pays them in grave-coin.", place: "Goblin Hollow", figure: "Grol Tusk" },
+          { body: "Morrow was Tule's reeve a hundred years ago, buried with the village charter. Whoever holds it rules Tule.",
+            place: "The Old Barrow", figure: "Morrow" },
+          { body: "The warden at Stonepass is paid to say the pass is snowed in.", place: "Stonepass" }
+        ]
+      }
     }.freeze
 
     LOCATION_TEMPLATES = {
       village: { name: "Village", kind: "town", description: "A small town on the road: an inn, a shop, a handful of worried people.",
-                 config: { services: { inn: 100, shop: 90, guild: 20, temple: 40 }, npcs: [ 3, 5 ], stock: [ 4, 6 ], buildings: [ 8, 11 ],
+                 config: { services: { inn: 100, shop: 90, guild: 20, temple: 40 }, npcs: [ 3, 5 ], stock: [ 6, 9 ], buildings: [ 8, 11 ],
                            tables: %w[town_names given_names town_hooks service_names buildings village_stock] } },
       port_town: { name: "Port town", kind: "town", description: "Busy, crowded, full of rumours from the sea.",
-                   config: { services: { inn: 100, shop: 100, guild: 80, temple: 60 }, npcs: [ 5, 8 ], stock: [ 6, 9 ], buildings: [ 12, 16 ],
+                   config: { services: { inn: 100, shop: 100, guild: 80, temple: 60 }, npcs: [ 5, 8 ], stock: [ 9, 14 ], buildings: [ 12, 16 ],
                              tables: %w[town_names given_names town_hooks service_names buildings shop_stock] } },
       goblin_cave: { name: "Goblin cave", kind: "dungeon", encounter_table: "goblin_cave",
                      description: "A short, twisting cave. A good first dungeon.",

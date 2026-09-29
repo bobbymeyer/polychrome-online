@@ -43,7 +43,8 @@ module Character::Progression
       "abilities" => learned.map { |a| { "name" => a.name, "description" => a.description.to_s } }.presence,
       "mastered_abilities" => mastered.map(&:name).presence,
       "mastered" => (cj.mastered? && !was_mastered ? { "job" => job.name, "passive" => job.passive } : nil),
-      "to_next" => (Stats::Growth.exp_for_level(level + 1) - self.exp if level < Stats::Growth::MAX_LEVEL)
+      "to_next" => (Stats::Growth.exp_for_level(level + 1) - self.exp if level < Stats::Growth::MAX_LEVEL),
+      "next_lesson" => cj.next_lesson&.then { |n| { "name" => n[:ability].name, "job_level" => n[:level], "abp" => n[:abp] } }
     }.compact
   end
 

@@ -29,7 +29,12 @@ RSpec.describe "The live table", type: :system do
     campaign.narrate("Night falls.")
 
     as(gm) { expect(page).to logged?("under the mat").and logged?("Night falls") }
-    as(player) { expect(page).to logged?("under the mat").and logged?("Night falls") }
+    as(player) do
+      expect(page).to logged?("under the mat").and logged?("Night falls")
+      # Out of the drawer: on screen under the dialogue box, and the whisper pops up.
+      expect(page).to have_css(".recent-lines", text: /under the mat.*Night falls/m)
+      expect(page).to have_css(".toast", text: "under the mat")
+    end
     as(watcher) do
       expect(page).to logged?("Night falls")
       expect(page).not_to logged?("under the mat")
@@ -71,5 +76,25 @@ RSpec.describe "The live table", type: :system do
 
     battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
     as(gm) { expect(page).to have_css("[data-battle-player-target=log]", text: "Victory!", visible: :all, wait: 15) }
+  end
+
+  it "takes a player from one battle's results into the next, and starts the clock once they're there" do
+    first = start_battle(campaign: campaign, goblins: 1)
+    seat(player, rook)
+    as(player) do
+      visit battle_path(first)
+      wait_for_streams
+    end
+    first.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+    as(player) { expect(page).to have_css(".board[data-status=victory]", wait: 15) }
+
+    allow(BattleTimeoutJob).to receive(:set).and_return(instance_double(ActiveJob::ConfiguredJob, perform_later: nil)) # jobs run inline here
+    second = start_battle(campaign: campaign, goblins: 1, input_seconds: 60)
+    expect(second.deadline_at).to be_nil # Rook hasn't seen it yet
+    as(player) do
+      expect(page).to have_current_path(battle_path(second), wait: 15)
+      expect(page).to have_css(".countdown[data-controller=countdown]", wait: 10)
+    end
+    expect(second.reload.deadline_at).to be_present
   end
 end
