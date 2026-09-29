@@ -5,7 +5,10 @@
 # An NPC can also fight: linked to a Bestiary entry, they're a recurring
 # antagonist. They come into battle under their own name and face, as a
 # boss. If they get away (the GM sends them off the field), they come back
-# stronger next time; knocked out, they're finished.
+# stronger next time; knocked out, they're finished. A villain from the
+# setting's cast slips away the first time they're knocked out
+# (BattleRecord::Settlement), and a dungeon they call home has them in its
+# boss room (Location::Exploration).
 class Npc < ApplicationRecord
   include Portrayed
   include ArtSubject

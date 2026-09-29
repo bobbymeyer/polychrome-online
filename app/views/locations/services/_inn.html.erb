@@ -9,6 +9,6 @@
   <% if total > @campaign.gil %>
     <p class="muted">Rooms for everyone cost <%= money(total) %>: more than the party has.</p>
   <% else %>
-    <%= button_to "Rooms for everyone (#{money(total)})", location_services_path(location), params: { kind: "inn", everyone: 1 }, class: "button" %>
+    <%= button_to "Rooms for everyone (#{total.zero? ? "on the house" : money(total)})", location_services_path(location), params: { kind: "inn", everyone: 1 }, class: "button" %>
   <% end %>
 <% end %>

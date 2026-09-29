@@ -71,10 +71,11 @@ module BattleRecord::Settlement
       next unless npc
 
       fate = if unit["gone"] then "escaped"
+      elsif unit["hp"].zero? && first_meeting?(npc) then "slipped_away"
       elsif unit["hp"].zero? then "defeated"
       else "remains"
       end
-      if fate == "escaped"
+      if %w[escaped slipped_away].include?(fate)
         # Gone from here, to turn up somewhere near (Campaign::Overnight).
         npc.update!(escapes: npc.escapes + 1, location: campaign.current_node&.location || npc.location)
       end
@@ -82,6 +83,13 @@ module BattleRecord::Settlement
       { "name" => npc.name, "fate" => fate }
     end
     fates.presence
+  end
+
+  # The setting's villains aren't finished the first time the party puts
+  # them down: they slip away, to come back stronger (the story needs them
+  # again). The second time, down is down.
+  def first_meeting?(npc)
+    npc.world_figure_id.present? && npc.escapes.zero?
   end
 
   # Items used in battle come out of the bag. Returns { "Potion" => 2 }.
@@ -108,6 +116,7 @@ module BattleRecord::Settlement
     Array(summary["antagonists"]).each do |antagonist|
       case antagonist["fate"]
       when "escaped" then parts << "#{antagonist['name']} got away, and will be back stronger."
+      when "slipped_away" then parts << "#{antagonist['name']} falls, and when the dust settles is gone. This isn't over."
       when "defeated" then parts << "#{antagonist['name']} is finished."
       end
     end

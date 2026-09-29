@@ -77,6 +77,8 @@ module Battle
   # of its turns (Battle::Effects#away); airborne is the same from battles
   # before Away, landing on its next turn.
   #
+  # haste:   quicker (Agi +50%), and a second go at the end of each round:
+  #          the same move again (Battle::Resolver#quick_turn).
   # aggro:   draws the other side's single-target moves (Taunt, Provoke);
   #          cover is the same, from battles before it had its name.
   # stop:    loses its turns; a blow doesn't break it.

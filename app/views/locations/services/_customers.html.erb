@@ -13,7 +13,7 @@
             <%= character.name %>
             <span class="muted"><%= word("hp") %> <%= character.current_hp %>/<%= character.stats["max_hp"] %> · <%= word("mp") %> <%= character.current_mp %>/<%= character.stats["max_mp"] %></span>
           </td>
-          <td class="num"><%= money(price) %></td>
+          <td class="num"><%= price.zero? ? "On the house" : money(price) %></td>
           <td class="shop-table__buy">
             <% if why_not %>
               <span class="muted"><%= why_not %></span>

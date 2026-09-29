@@ -185,11 +185,14 @@ RSpec.describe "Battle resolver properties" do
     end
   end
 
-  it "gives each unit at most one turn per round" do
-    each_step do |_, _, _, _, events|
+  it "gives each unit at most one turn per round, and a hasted one at most one quick go besides" do
+    each_step do |_, before, _, _, events|
       events.slice_before { |e| e["type"] == "round_start" }.each do |round|
-        starts = of_type(round, :turn_start).map { |e| e["unit"] }
-        expect(starts).to eq(starts.uniq)
+        turns, quick = of_type(round, :turn_start).partition { |e| !e["quick"] }.map { |list| list.map { |e| e["unit"] } }
+        expect(turns).to eq(turns.uniq)
+        expect(quick).to eq(quick.uniq)
+        hasted = before["units"].select { |u| u["statuses"].any? { |s| s["kind"] == "haste" } }.map { |u| u["id"] }
+        expect(quick - hasted).to be_empty
       end
     end
   end

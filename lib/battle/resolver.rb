@@ -382,6 +382,8 @@ module Battle
     # odds as a check at the table), then what the GM said success does. An
     # idea nobody ruled on (the timer ran out) is an Attack instead.
     def try_something(unit, cmd)
+      # Whoever it was aimed at may have left the field since.
+      cmd = cmd.merge("target" => nil) if cmd["target"] && ctx.find_unit(cmd["target"])&.dig("gone")
       ctx.emit(:custom_action, actor: unit["id"], text: cmd["text"], target: cmd["target"])
       ruling = cmd["ruling"]
       unless ruling
@@ -414,10 +416,19 @@ module Battle
 
       order = turn_order
       ctx.emit(:turn_order, order: order)
+      hasted = order.select { |id| ctx.status?(ctx.unit(id), "haste") }
       order.each do |id|
         break if ctx.over?
 
         take_turn(ctx.unit(id), inputs[id])
+        ctx.check_end
+      end
+      # Haste: whoever was quick when the round began has a second go at
+      # its end, the same move again.
+      hasted.each do |id|
+        break if ctx.over?
+
+        quick_turn(ctx.unit(id), inputs[id])
         ctx.check_end
       end
 
@@ -507,6 +518,30 @@ module Battle
       Effects.upkeep(ctx, unit, held: held) if ctx.alive?(unit) && !ctx.over?
       ctx.emit(:turn_end, unit: unit["id"])
       count_down_summon(unit) unless ctx.over?
+    end
+
+    # A hasted unit's second go: the same move again, and nothing else of a
+    # turn (no upkeep, no countdowns). Only a plain move repeats: not an item
+    # (that's the party's to spend), a flight, an idea for the GM, a wind-up,
+    # a leap or a summons.
+    SINGLE_GO = %w[jump away summon escape].freeze
+
+    def quick_turn(unit, cmd)
+      return unless ctx.alive?(unit) && ctx.status?(unit, "haste")
+      return if (DISABLING_STATUSES + %w[airborne away charging confuse]).any? { |kind| ctx.status?(unit, kind) }
+
+      ability = if ctx.status?(unit, "berserk") then ctx.ability("attack")
+      elsif unit["side"] == "enemy" || unit["guest"] then (chosen = AI.choose(ctx, unit)).first
+      elsif cmd && cmd["kind"] == "ability" then ctx.ability(cmd["ability"])
+      end
+      return unless ability && ability.fetch("charge", 0).zero? && ability["effects"].none? { |e| SINGLE_GO.include?(e["primitive"]) }
+
+      ctx.emit(:turn_start, unit: unit["id"], quick: true)
+      if chosen then use_ability(unit, own(unit, ability), chosen.last)
+      elsif ctx.status?(unit, "berserk") then use_ability(unit, own(unit, ability), nil)
+      else perform(unit, cmd)
+      end
+      ctx.emit(:turn_end, unit: unit["id"], quick: true)
     end
 
     # Confused: an Attack at anyone in reach but itself, friend or foe.

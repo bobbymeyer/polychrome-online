@@ -11,6 +11,16 @@ RSpec.describe Battle::Forecast do
     expect(easy["rounds"]).to be_positive
   end
 
+  it "plays a sensible party: the fallen are raised and the badly hurt mended, and everyone else attacks" do
+    state = build_battle(seed: 1)
+    hurt = with_unit(state, "bartz", hp: 10)
+    expect(described_class.sensible(hurt, "rosa")).to eq("kind" => "ability", "ability" => "cure", "target" => "bartz")
+    fallen = with_unit(hurt, "locke", hp: 0)
+    expect(described_class.sensible(fallen, "rosa")).to eq("kind" => "ability", "ability" => "raise", "target" => "locke")
+    expect(described_class.sensible(state, "rosa")).to be_nil
+    expect(described_class.sensible(hurt, "bartz")).to be_nil # nothing to mend with
+  end
+
   it "is the same every time for the same states" do
     states = (1..4).map { |seed| build_battle(seed: seed) }
     expect(described_class.run(states)).to eq(described_class.run(states))

@@ -53,7 +53,8 @@ RSpec.describe "Campaigns and characters", type: :request do
       bartz.update!(hp: 0, mp: 0)
       post campaign_rest_path(campaign)
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
-      expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The party rests. Everyone is back to full HP and MP.", "Day 2: dawn." ])
+      expect(bartz.current_mp).to eq(bartz.stats["max_mp"] / 2) # a bed brings the rest
+      expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The party rests. Everyone is back to full HP, and half their MP.", "Day 2: dawn." ])
 
       bartz.update!(hp: 5)
       BattleRecord.start!(campaign: campaign, characters: [ bartz ], name: "Road", encounter: { "goblin" => 1 }, seed: 1)
@@ -74,7 +75,7 @@ RSpec.describe "Campaigns and characters", type: :request do
       galuf = campaign.characters.find_by!(name: "Galuf")
       expect(response).to redirect_to(character_path(galuf))
       expect(galuf).to have_attributes(level: 8, player_name: "Alex")
-      expect(galuf.native_abilities.map(&:name)).to eq([ "War Cry", "Armor Break", "Double Cut" ])
+      expect(galuf.native_abilities.map(&:name)).to eq([ "War Cry", "Armor Break", "Double Cut", "Shield Bash" ])
     end
 
     it "re-renders with errors" do
@@ -171,8 +172,8 @@ RSpec.describe "Campaigns and characters", type: :request do
       post battle_seat_path(battle), params: { seat: "gm" }
       post battle_actions_path(battle), params: { gm: { op: "end_battle", result: "victory" } }
       get battle_panel_path(battle)
-      expect(response.body).to include("Victory!", "Bartz</strong>: 20 EXP, 2 ABP", "Back to the table")
-      expect(bartz.reload.exp).to eq(Stats::Growth.exp_for_level(5) + 20)
+      expect(response.body).to include("Victory!", "Bartz</strong>: 30 EXP, 2 ABP", "Back to the table")
+      expect(bartz.reload.exp).to eq(Stats::Growth.exp_for_level(5) + 30)
     end
   end
 end

@@ -28,6 +28,7 @@ module Campaign::Travelling
       destination.update!(visible: true)
       origin.location&.leave!
       self.current_node = destination
+      self.free_rooms_node_id = nil # the town's thanks were for while the party was there
       self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled, "terrain" => edge.encounter_table.terrain_type }
       # A place in a mode can have trouble waiting.
       if !rolled && (trouble = destination.location&.encounter_table_for_mode)
@@ -44,6 +45,7 @@ module Campaign::Travelling
       tick_clocks!("travel")
       pass_time!(edge.duration, announce: :new_day)
       hear_rumours!(destination)
+      welcome_back!(destination)
       drop_stale_where_next!
     end
     rolled
@@ -106,9 +108,10 @@ module Campaign::Travelling
     transaction do
       node.update!(visible: true)
       current_node&.location&.leave! unless current_node == node
-      update!(current_node: node)
+      update!(current_node: node, free_rooms_node_id: (free_rooms_node_id if node == current_node))
       narrate("The party is at #{node.name}.")
       hear_rumours!(node)
+      welcome_back!(node)
       drop_stale_where_next!
     end
   end
@@ -127,7 +130,8 @@ module Campaign::Travelling
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
-                                 terrain: encounter["terrain"], names: encounter.fetch("names", {}))
+                                 terrain: encounter["terrain"], names: encounter.fetch("names", {}),
+                                 antagonists: npcs.where(id: encounter.fetch("antagonists", [])).to_a)
     update!(pending_encounter: nil)
     battle
   end

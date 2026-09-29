@@ -105,11 +105,11 @@ RSpec.describe Seeds::BaseWorld do
     expect(world.items.where(slug: port).maximum(:price)).to be > world.items.where(slug: village).maximum(:price)
   end
 
-  it "teaches every job but the Freelancer until job level 100, ending in a capstone" do
-    world.jobs.where.not(slug: "freelancer").find_each do |job|
+  it "teaches every job something new every few fights, to a capstone at job level 50; the climb after is mastery" do
+    world.jobs.find_each do |job|
       levels = job.job_levels.map(&:level)
-      expect(levels.last).to eq(Stats::Growth::MAX_JOB_LEVEL), job.name
-      expect(levels.each_cons(2).map { |a, b| b - a }.max).to be <= 45, "#{job.name} has a long gap"
+      expect(levels.last).to eq(50), job.name
+      expect(levels.each_cons(2).map { |a, b| b - a }.max).to be <= 16, "#{job.name} has a long gap"
     end
   end
 end

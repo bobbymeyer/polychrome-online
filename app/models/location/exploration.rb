@@ -166,20 +166,10 @@ module Location::Exploration
     when "event"
       campaign.messages.create!(body: decision["text"])
       resolve!(target["key"])
-    when "encounter", "boss"
-      label = decision["kind"] == "boss" ? "The master of #{name}" : "#{name}: #{target['name']}"
-      # Who the place's past says waits here (Generators::Provenance) is who
-      # the table fights: the strongest of them takes that name.
-      who = decision["who"].to_s.split(",").first.presence
-      leader = who && campaign.world.monsters.where(slug: decision["monsters"].keys).order(level: :desc).first
-      boss = decision["kind"] == "boss"
-      campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => boss,
-                                            "terrain" => location_template.encounter_table&.terrain_type,
-                                            "names" => ({ leader.slug => who } if leader),
-                                            "location" => id, "room" => target["key"],
-                                            "prelude" => (boss_prelude(target, who) if boss) }.compact)
-      campaign.narrate("#{decision['kind'] == 'boss' ? 'Boss' : 'Encounter'}! #{"#{who}: " if leader}#{campaign.describe_encounter(decision['monsters'])}.")
-      resolve!(target["key"])
+    when "boss"
+      (villain = resident_villain) ? meet_villain(target, villain) : call_encounter(target)
+    when "encounter"
+      call_encounter(target)
     when "treasure"
       campaign.narrate("There is treasure in #{target['name']}.")
     when "fork"
@@ -191,6 +181,60 @@ module Location::Exploration
       campaign.narrate("Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}", cue: "key")
       resolve!(target["key"])
     end
+  end
+
+  # A room's fight waits for the GM to call or wave off (like on the map).
+  def call_encounter(target)
+    decision = target["decision"]
+    boss = decision["kind"] == "boss"
+    label = boss ? "The master of #{name}" : "#{name}: #{target['name']}"
+    # Who the place's past says waits here (Generators::Provenance) is who
+    # the table fights: the strongest of them takes that name.
+    who = decision["who"].to_s.split(",").first.presence
+    leader = who && campaign.world.monsters.where(slug: decision["monsters"].keys).order(level: :desc).first
+    campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => boss,
+                                          "terrain" => location_template.encounter_table&.terrain_type,
+                                          "names" => ({ leader.slug => who } if leader),
+                                          "location" => id, "room" => target["key"],
+                                          "prelude" => (boss_prelude(target, who) if boss) }.compact)
+    campaign.narrate("#{boss ? 'Boss' : 'Encounter'}! #{"#{who}: " if leader}#{campaign.describe_encounter(decision['monsters'])}.")
+    resolve!(target["key"])
+  end
+
+  # The one the story has been about lives here (the setting's cast, brought
+  # in by Atlas, or the GM's own antagonist): the boss room is theirs. They
+  # take the strongest monster's place at the head of what waits there, and
+  # the entrance is theirs too.
+  def meet_villain(target, villain)
+    monsters = target.dig("decision", "monsters").to_h.dup
+    leader = campaign.world.monsters.where(slug: monsters.keys).order(level: :desc).first
+    if leader
+      monsters[leader.slug] -= 1
+      monsters.delete(leader.slug) unless monsters[leader.slug].positive?
+    end
+    campaign.update!(pending_encounter: { "table" => "#{villain.name}, in #{name}", "monsters" => monsters, "boss" => true,
+                                          "terrain" => location_template.encounter_table&.terrain_type,
+                                          "antagonists" => [ villain.id ], "location" => id, "room" => target["key"],
+                                          "prelude" => villain_prelude(target, villain) })
+    with = monsters.any? ? ", with #{campaign.describe_encounter(monsters)}" : ""
+    campaign.narrate("Boss! #{villain.name}#{", #{villain.title}" if villain.title.present?}#{with}.")
+    resolve!(target["key"])
+  end
+
+  # The antagonist who calls this place home and is still at large.
+  def resident_villain
+    campaign.npcs.at_large.where(location_id: id).order(:id).first
+  end
+
+  def villain_prelude(target, villain)
+    past = view.fetch("past", {})
+    fall = Generators::History::FALLS[past.dig("fall", "kind")]
+    lines = [ "#{target['name']}. #{fall ? fall['trace'] : 'The air is still, and something is waiting.'}" ]
+    lines << "#{villain.name}#{", #{villain.title.downcase_first}," if villain.title.present?} turns to face you."
+    said = villain.world_figure&.blurb.presence || villain.description.presence
+    lines << said if said
+    lines << "“#{villain.monster.boss_line.strip}”" if villain.monster&.boss_line.present?
+    lines
   end
 
   # What the GM might say as the party walks in on the boss, from the
