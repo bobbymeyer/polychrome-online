@@ -18,6 +18,7 @@
       <li>
         <strong><%= member["name"] %></strong>: <%= member["exp"] %> EXP, <%= member["abp"] %> ABP.
         <% if member["to_next"] %><span class="muted"><%= member["to_next"] %> to the next level.</span><% end %>
+        <% if (lesson = member["next_lesson"]) %><span class="muted">Next: <%= lesson["name"] %> at job level <%= lesson["job_level"] %> (<%= lesson["abp"] %> ABP to go).</span><% end %>
         <% if member["level"] %><span class="level-up">Level <%= member["level"].last %>!</span><% end %>
         <% if member["learned"].present? %><span class="level-up">Learned <%= member["learned"].to_sentence %>!</span><% end %>
       </li>

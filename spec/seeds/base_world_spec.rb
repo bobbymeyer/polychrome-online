@@ -60,7 +60,7 @@ RSpec.describe Seeds::BaseWorld do
 
     described_class.run
     expect(goblin.reload).to have_attributes(name: "Bog Goblin", exp: 99)
-    expect(knight.reload.job_levels.count).to eq(3)
+    expect(knight.reload.job_levels.count).to eq(5) # the one the GM took out stays out
     expect(world.monsters.find_by(slug: "ogre")).to be_present # the missing one is back
   end
 
@@ -71,7 +71,7 @@ RSpec.describe Seeds::BaseWorld do
 
     described_class.run(overwrite: true)
     expect(world.monsters.find_by!(slug: "goblin").name).to eq("Goblin")
-    expect(world.jobs.find_by!(slug: "knight").job_levels.count).to eq(4)
+    expect(world.jobs.find_by!(slug: "knight").job_levels.count).to eq(6)
   end
 
   it "gives every job a desperation move aimed at enemies, found rather than learned" do
@@ -88,5 +88,28 @@ RSpec.describe Seeds::BaseWorld do
     expect(world.jobs.pluck(:slug)).to include("red_mage", "summoner", "geomancer", "dragoon")
     expect(world.jobs.where.not(passive: nil).count).to be >= 8
     expect(world.abilities.find_by!(slug: "gaia").effects.first).to include("type" => "terrain")
+  end
+
+  it "gives every kind of gear a job uses a ladder of four, the first two sold in a village and the next in a port" do
+    # What any job but the Freelancer (who can hold anything) uses.
+    used = world.jobs.where.not(slug: "freelancer").flat_map(&:equip_categories).uniq - %w[accessory]
+    used.each do |category|
+      ladder = world.items.where(category: category).order(:price)
+      expect(ladder.size).to be >= 4, "#{category} has #{ladder.size} steps"
+      power = ladder.map { |item| item.stats.values_at("atk", "def", "mag", "spr").compact.sum }
+      expect(power).to eq(power.sort), "#{category} doesn't get better as it gets dearer"
+    end
+    village = world.generator_tables.find_by!(slug: "village_stock").entries.map { |e| e["item"] }
+    port = world.generator_tables.find_by!(slug: "shop_stock").entries.map { |e| e["item"] }
+    expect(world.items.where(slug: village).where.not(category: "consumable").pluck(:category).uniq).to include(*used)
+    expect(world.items.where(slug: port).maximum(:price)).to be > world.items.where(slug: village).maximum(:price)
+  end
+
+  it "teaches every job but the Freelancer until job level 100, ending in a capstone" do
+    world.jobs.where.not(slug: "freelancer").find_each do |job|
+      levels = job.job_levels.map(&:level)
+      expect(levels.last).to eq(Stats::Growth::MAX_JOB_LEVEL), job.name
+      expect(levels.each_cons(2).map { |a, b| b - a }.max).to be <= 45, "#{job.name} has a long gap"
+    end
   end
 end

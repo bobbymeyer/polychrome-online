@@ -161,8 +161,12 @@ RSpec.describe Character do
       bartz = create(job_level: 40)
       changes = bartz.gain!(abp: Stats::Growth.abp_for_job_level(41) - bartz.character_job.abp)
       expect(changes).to include("mastered_abilities" => [ "War Cry" ], "job_level" => [ 40, 41 ])
+      expect(changes["next_lesson"]).to eq("name" => "Stalwart", "job_level" => 60,
+                                           "abp" => Stats::Growth.abp_for_job_level(60) - bartz.character_job.abp)
       changes = bartz.gain!(abp: 10_000)
-      expect(changes["mastered_abilities"]).to eq([ "Armor Break", "Double Cut", "Shield Bash" ])
+      expect(changes["mastered_abilities"]).to eq([ "Armor Break", "Double Cut", "Shield Bash", "Stalwart", "Oathblade" ])
+      expect(changes["learned"]).to eq([ "Stalwart", "Oathblade" ]) # the capstone comes with mastery
+      expect(changes).not_to have_key("next_lesson")
       expect(changes["mastered"]).to eq("job" => "Knight", "passive" => "second_wind")
     end
 
