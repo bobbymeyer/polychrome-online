@@ -658,7 +658,7 @@ RSpec.describe Battle::Resolver do
       it "shields: blows come out of the barrier first" do
         _, events = cast("barrier", "mage")
         shield = of_type(events, :status_applied).find { |e| e["status"] == "shield" }
-        expect(shield["amount"]).to eq(6 * (20 + 16) / 16)
+        expect(shield["amount"]).to eq(6 * (20 + 8) / 12)
         expect(of_type(events, :shielded).first).to include("target" => "mage")
       end
 
@@ -788,6 +788,18 @@ RSpec.describe Battle::Resolver do
         expect(of_type(events, :unit_left)).to include(a_hash_including("unit" => "wisp_1"))
       end
 
+      it "gives a hasted unit a second go at the end of the round, the same move again" do
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[fire]) ], enemies: brute)
+        state = with_unit(state, "mage", statuses: [ { "kind" => "haste", "turns" => 3 } ])
+        _, events = round(state, "mage" => { kind: "ability", ability: "fire", target: "brute" })
+        expect(of_type(events, :cast).count { |e| e["actor"] == "mage" }).to eq(2)
+        expect(of_type(events, :turn_start)).to include(a_hash_including("unit" => "mage", "quick" => true))
+
+        _, plain = round(build_battle(seed: 3, party: [ caster.merge(abilities: %w[fire]) ], enemies: brute),
+                         "mage" => { kind: "ability", ability: "fire", target: "brute" })
+        expect(of_type(plain, :cast).count { |e| e["actor"] == "mage" }).to eq(1)
+      end
+
       it "sends a summon away the moment it's down, so nothing can raise it" do
         state, = cast("call_wisp", "mage")
         ctx = Battle::Context.new(state)
@@ -878,7 +890,7 @@ RSpec.describe Battle::Resolver do
       it "scales a move by its mastery, and a mastered one brings its job's stats" do
         plain = cure_amount(healer)
         expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 150 } }))).to be_within(1).of(plain * 150 / 100)
-        expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 100, "stats" => { "mag" => 26 } } }))).to be_within(1).of(plain * 42 / 26)
+        expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 100, "stats" => { "mag" => 26 } } }))).to be_within(1).of(plain * 34 / 18)
         expect(cure_amount(healer.merge(mastery: { "cure" => { "power" => 100, "stats" => { "mag" => 26 } } }))).to be > plain
       end
 

@@ -116,18 +116,18 @@ RSpec.describe Battle::Effects do
 
     it "doubles against weakness" do
       # goblin mdef 2
-      expect(cast("goblin_a").events.sole).to include("type" => "damage", "amount" => 42 * 255 / 256 * 100 / 102 * 2,
+      expect(cast("goblin_a").events.sole).to include("type" => "damage", "amount" => 43 * 255 / 256 * 100 / 102 * 2,
                                                       "damage_type" => "fire", "effectiveness" => 200)
     end
 
     it "halves against resistance" do
-      expect(cast("ogre").events.sole["amount"]).to eq(42 * 255 / 256 * 100 / 106 / 2)
+      expect(cast("ogre").events.sole["amount"]).to eq(43 * 255 / 256 * 100 / 106 / 2)
     end
 
     it "heals on absorb" do
       state["units"].find { |u| u["id"] == "ogre" }["hp"] = 100
       ctx = cast("ogre", effect("elemental", type: "ice", power: 20))
-      expect(ctx.events.sole).to include("type" => "heal", "absorbed" => true, "hp" => 100 + 41 * 100 / 106)
+      expect(ctx.events.sole).to include("type" => "heal", "absorbed" => true, "hp" => 100 + (43 * 255 / 256) * 100 / 106)
     end
 
     it "follows the type chart, types multiplying, and a typeless move is always neutral" do

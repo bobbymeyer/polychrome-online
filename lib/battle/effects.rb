@@ -246,7 +246,7 @@ module Battle
 
     def heal(ctx, actor, target, effect)
       power = effect.fetch("power")
-      scaled = effect["item"] ? power * (ITEM_MAG + 16) / 16 : scale_by_mag(ctx, actor, power, effect["basis"])
+      scaled = effect["item"] ? by_mag(power, ITEM_MAG) : scale_by_mag(ctx, actor, power, effect["basis"])
       amount = [ vary(ctx, scaled), 1 ].max
       return ctx.deal_damage(target, amount, actor: actor["id"], undead: true) if target["undead"]
 
@@ -385,6 +385,9 @@ module Battle
 
     # End-of-turn upkeep for a unit: poison, then duration ticks.
     REGEN_DIVISOR = 16
+    # MP comes back more slowly than HP: a caster with it still has to choose
+    # when to spend.
+    MP_REGEN_DIVISOR = 32
 
     # held: the buffs and statuses the unit had when its turn began (nil for
     # all of them). One it gave itself during the turn starts counting next turn.
@@ -399,7 +402,7 @@ module Battle
         ctx.restore_hp(unit, [ unit["stats"]["max_hp"] / REGEN_DIVISOR, 1 ].max, regen: true)
       end
       if passives.include?("mp_regen") && unit["mp"] < unit["stats"]["max_mp"]
-        ctx.restore_mp(unit, [ unit["stats"]["max_mp"] / REGEN_DIVISOR, 1 ].max, regen: true)
+        ctx.restore_mp(unit, [ unit["stats"]["max_mp"] / MP_REGEN_DIVISOR, 1 ].max, regen: true)
       end
 
       # Away and charging count their own turns (Battle::Resolver).
@@ -438,8 +441,14 @@ module Battle
       mitigate(vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"), effect["basis"])), ctx.stat(target, "mdef"))
     end
 
+    # A spell's power grows with the caster's mag: ×2 at 16, ×3 at 28, ×4
+    # at 40, so a mage's growth and gear are felt as a fighter's are.
     def scale_by_mag(ctx, actor, power, basis = nil)
-      power * (ctx.stat(actor, "mag", basis: basis) + 16) / 16
+      by_mag(power, ctx.stat(actor, "mag", basis: basis))
+    end
+
+    def by_mag(power, mag)
+      power * (mag + 8) / 12
     end
 
     # Variance in [224/256, 255/256].
