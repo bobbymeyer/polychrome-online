@@ -166,6 +166,15 @@ class BattleRecord < ApplicationRecord
     marked.exists? ? marked : world.monsters.where(slug: slugs).order(level: :desc).limit(1)
   end
 
+  # What the bosses are called in this fight: a named boss (Roz Tennant, who
+  # never came out) by their own name, not their kind's.
+  def boss_names
+    boss_monsters.map do |monster|
+      units = enemies.select { |u| u.dig("image", "slug") == monster.slug }
+      units.map { |u| u["name"] }.find { |name| !name.start_with?(monster.name) } || monster.name
+    end
+  end
+
   def replay
     Battle::Replay.run(initial_state, battle_actions.map(&:payload))
   end

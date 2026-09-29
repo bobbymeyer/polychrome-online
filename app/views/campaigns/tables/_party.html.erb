@@ -12,7 +12,7 @@
       <li class="<%= 'is-ko' unless character.conscious? %>">
         <%= entry_portrait(character.job, size: :small) %>
         <div>
-          <strong><%= character.name %></strong>
+          <strong><%= link_to character.name, character_path(character), data: { turbo_frame: "_top" } %></strong>
           <span class="muted">Lv <%= character.level %> <%= character.job.name %><%= " · #{character.user.name}" if character.user %></span>
           <%= render "campaigns/tables/vitals", character: character %>
         </div>

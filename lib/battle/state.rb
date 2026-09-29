@@ -372,14 +372,15 @@ module Battle
     # targeting needs no choice (self, all, random).
     def target_options(state, unit, ability)
       living = ->(u) { u["hp"].positive? }
+      present = state["units"].reject { |u| u["gone"] } # left the field: nobody's target, not even a Raise's
       case ability["target"]
       when "single_enemy"
-        state["units"].select { |u| u["side"] != unit["side"] && living.(u) }.map { |u| u["id"] }
+        present.select { |u| u["side"] != unit["side"] && living.(u) }.map { |u| u["id"] }
       when "single_ally"
-        allies = state["units"].select { |u| u["side"] == unit["side"] }
+        allies = present.select { |u| u["side"] == unit["side"] }
         ids = allies.select { |u| revives?(ability) ? !living.(u) : living.(u) }.map { |u| u["id"] }
         # Then the enemies, last: healing turned on the undead.
-        ids + (heals?(ability) ? state["units"].select { |u| u["side"] != unit["side"] && living.(u) && !u["gone"] }.map { |u| u["id"] } : [])
+        ids + (heals?(ability) ? present.select { |u| u["side"] != unit["side"] && living.(u) }.map { |u| u["id"] } : [])
       end
     end
 

@@ -18,15 +18,18 @@
       <%# On a phone the links fold behind one button. %>
       <button type="button" class="topbar__toggle" data-action="topbar#toggle" data-topbar-target="toggle" aria-expanded="false" aria-controls="topbar_menu">Menu</button>
       <div class="topbar__menu" id="topbar_menu">
-      <% if @campaign&.persisted? && current_user %>
-        <%# In a campaign, the way around the game; the world's books are one link away. %>
+      <% in_campaign = @campaign&.persisted? ? @campaign : @battle&.campaign %>
+      <% if in_campaign && current_user %>
+        <%# In a campaign (a battle included), the way around the game; the world's books are one link away. %>
+        <% mine = in_campaign.characters.find_by(user: current_user) %>
         <nav class="topbar__books" aria-label="Campaign">
-          <%= link_to @campaign.name, campaign_path(@campaign), class: "topbar__world" %>
-          <%= link_to "Table", campaign_table_path(@campaign) %>
-          <%= link_to "Map", campaign_map_path(@campaign) %>
-          <%= link_to "Prep", campaign_prep_path(@campaign) if can_gm?(@campaign) %>
-          <%= link_to "Legends", campaign_legends_path(@campaign) %>
-          <%= link_to "#{@campaign.world.name}'s books", world_path(@campaign.world), class: "muted" %>
+          <%= link_to in_campaign.name, campaign_path(in_campaign), class: "topbar__world" %>
+          <%= link_to "Table", campaign_table_path(in_campaign) %>
+          <%= link_to "Map", campaign_map_path(in_campaign) %>
+          <%= link_to "My sheet", character_path(mine) if mine %>
+          <%= link_to "Prep", campaign_prep_path(in_campaign) if can_gm?(in_campaign) %>
+          <%= link_to "Legends", campaign_legends_path(in_campaign) %>
+          <%= link_to "#{in_campaign.world.name}'s books", world_path(in_campaign.world), class: "muted" %>
         </nav>
       <% elsif @world&.persisted? %>
         <nav class="topbar__books" aria-label="Books">

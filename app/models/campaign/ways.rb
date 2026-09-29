@@ -59,6 +59,9 @@ module Campaign::Ways
   def make_move!(move)
     if move["edge"]
       travel!(map_edges.find(move["edge"]))
+    elsif move["leave"]
+      locations.find(move["location"]).leave!
+      narrate("The party comes back out of #{locations.find(move['location']).name}.")
     elsif move["enter"]
       locations.find(move["location"]).enter!
     elsif move["room"]
@@ -76,6 +79,17 @@ module Campaign::Ways
     stale.broadcast_choice
   end
 
+  # Doors on from here the party can't open yet: shown, so they know what
+  # to look for, but not a way anyone can vote for. ["Iron door (needs the Rusty key)"]
+  def locked_ways
+    dungeon = dungeon_in_progress or return []
+    here = dungeon.progress["current"]
+    dungeon.neighbours(here).filter_map do |key|
+      path = dungeon.path_between(here, key)
+      "#{path['lock']['name']} (needs #{path['lock']['key_name']})" if dungeon.locked?(path) && !dungeon.has_key?(path["lock"])
+    end
+  end
+
   private
 
   def dungeon_ways(dungeon)
@@ -84,6 +98,7 @@ module Campaign::Ways
       path = dungeon.path_between(here, key)
       [ key, path ] unless dungeon.locked?(path) && !dungeon.has_key?(path["lock"])
     end
+    way_out = here == dungeon.view["entrance"] ? [ { "label" => "Leave #{dungeon.name}", "move" => { "location" => dungeon.id, "leave" => true } } ] : []
     unseen = ways.map(&:first).reject { |key| dungeon.seen_by_players?(key) }
     ways.map do |key, path|
       label = if dungeon.seen_by_players?(key) then dungeon.room(key)["name"]
@@ -92,6 +107,6 @@ module Campaign::Ways
       end
       label += " (costly)" if path&.dig("cost")
       { "label" => label, "move" => { "location" => dungeon.id, "room" => key } }
-    end
+    end + way_out
   end
 end

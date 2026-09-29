@@ -13,6 +13,14 @@ RSpec.describe "Map pages", type: :request do
     post campaign_table_seat_path(campaign), params: { seat: seat }
   end
 
+  it "puts a place's name over it when the name under it is taken" do
+    campaign.map_nodes.create!(name: "Varn", kind: "town", x: 600, y: 500, visible: true)
+    campaign.map_nodes.create!(name: "Goblin Hollow", kind: "dungeon", x: 630, y: 510, visible: true)
+    get campaign_table_path(campaign)
+    expect(response.body).to include('<text class="map-node__label" y="38" text-anchor="middle">Varn</text>',
+                                     '<text class="map-node__label is-above" y="-24" text-anchor="middle">Goblin Hollow</text>')
+  end
+
   it "shows players only what's been revealed" do
     sit(bartz.id)
     get campaign_map_path(campaign)

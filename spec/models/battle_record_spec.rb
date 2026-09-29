@@ -173,6 +173,15 @@ RSpec.describe BattleRecord do
       expect(boss_battle.campaign.messages.last.body).to include("Victory!", "Goblin has fallen!")
     end
 
+    it "names a boss who has a name of their own when they fall" do
+      campaign = create_campaign
+      campaign.world.monsters.find_by!(slug: "goblin").update!(boss: true)
+      boss_battle = start_battle(campaign: campaign, names: { "goblin" => "Roz Tennant" })
+      expect(boss_battle.boss_names).to eq([ "Roz Tennant" ])
+      boss_battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+      expect(boss_battle.campaign.messages.last.body).to include("Roz Tennant has fallen!")
+    end
+
     it "holds the first clock for the boss's entrance" do
       campaign = create_campaign
       boss_battle = start_battle(campaign: campaign, boss: true, input_seconds: 30)

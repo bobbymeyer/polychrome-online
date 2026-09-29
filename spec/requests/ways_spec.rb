@@ -79,11 +79,32 @@ RSpec.describe "Where next", type: :request do
     vote = campaign.ask_where_next!
     vote.settle!("Into #{cave.name}")
     expect(cave.reload.progress["current"]).to eq(cave.view["entrance"])
-    ways = campaign.reload.ways_on
+    ways, out = campaign.reload.ways_on.partition { |way| way.dig("move", "room") }
     expect(ways).to all(include("move" => include("location" => cave.id, "room" => be_present)))
+    expect(out).to eq([ { "label" => "Leave #{cave.name}", "move" => { "location" => cave.id, "leave" => true } } ]) # at the entrance
     ways.each do |way|
       seen = cave.seen_by_players?(way.dig("move", "room"))
       expect(way["label"]).to(seen ? start_with(cave.room(way.dig("move", "room"))["name"]) : start_with("An unexplored way"))
     end
+  end
+
+  it "lets a player pick up treasure in the room the party is in, from the table" do
+    cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+    cave = campaign.locations.create!(location_template: world.location_templates.find_by!(slug: "goblin_cave"), seed: 11)
+    cave_node.update!(location: cave)
+    campaign.update!(current_node: cave_node)
+    cave.enter!
+    key = cave.add_room!(name: "Vault", connect: cave.view["entrance"], decision: { "kind" => "treasure", "gil" => 40 })
+
+    sign_in_as(kim)
+    post location_treasures_path(cave), params: { room: key, return_to: "table" }
+    expect(flash[:alert]).to eq("The party isn't in that room")
+
+    cave.move_to!(key)
+    get campaign_table_path(campaign)
+    expect(response.body).to include("There's treasure in Vault", ">Take it<")
+    expect { post location_treasures_path(cave), params: { room: key, return_to: "table" } }.to change { campaign.reload.gil }.by(40)
+    expect(response).to redirect_to(campaign_table_path(campaign))
+    expect(flash[:notice]).to eq("Found 40 gil in Vault.")
   end
 end

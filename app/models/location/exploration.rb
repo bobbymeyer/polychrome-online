@@ -70,6 +70,7 @@ module Location::Exploration
 
   # The party went back out onto the map: next time, they come in at the entrance.
   def leave!
+    walk_away_from_fight!
     update!(progress: progress.except("current")) if progress["current"]
   end
 
@@ -92,6 +93,7 @@ module Location::Exploration
     raise Refusal, "#{lock['name']} bars the way. It needs #{lock['key_name']}." if lock && !has_key?(lock)
 
     transaction do
+      walk_away_from_fight!(to: key)
       if lock
         update!(progress: progress.merge("unlocked" => progress.fetch("unlocked", []) | [ lock["id"] ]))
         campaign.narrate("#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.", cue: "door")
@@ -111,12 +113,25 @@ module Location::Exploration
 
     decision = target["decision"]
     item = campaign.world.items.find_by(slug: decision["item"]) if decision["item"]
+    line = "Found #{describe_treasure(decision)} in #{target['name']}.#{" #{who_can_use(item)}" if item&.equipment?}"
     transaction do
       campaign.add_item!(item) if item
       campaign.increment!(:gil, decision["gil"].to_i) if decision["gil"]
       resolve!(key)
-      campaign.narrate("Found #{describe_treasure(decision)} in #{target['name']}.", cue: "treasure")
+      campaign.narrate(line, cue: "treasure")
     end
+    campaign.table_changed # the table's "Take it" goes
+    line
+  end
+
+  # Gear found says who it's for: a sword nobody can swing is still worth
+  # knowing about (a job change away, or a shop's price).
+  def who_can_use(item)
+    party = campaign.characters.includes(:job).select { |c| c.job.equips?(item) }.map(&:name)
+    return "#{party.to_sentence} can use it." if party.any?
+
+    jobs = campaign.available_jobs.select { |j| j.equips?(item) }.map(&:name)
+    jobs.any? ? "Nobody can use it as they are; a #{jobs.to_sentence(last_word_connector: ' or ', two_words_connector: ' or ')} could." : "Nobody here can use it, but it will sell."
   end
 
   # "Potion", "150 gil", "150 gil, in the Vell signet (made for Aldo Vell)".
@@ -135,6 +150,16 @@ module Location::Exploration
 
   private
 
+  # The party walked on without fighting what waits in a room here: it
+  # stays in its room for when they come back, and doesn't follow them.
+  def walk_away_from_fight!(to: nil)
+    waiting = campaign.pending_encounter
+    return unless waiting && waiting["location"] == id && waiting["room"] != to
+
+    update!(progress: progress.merge("resolved" => progress.fetch("resolved", []) - [ waiting["room"] ]))
+    campaign.update!(pending_encounter: nil)
+  end
+
   def announce(target)
     decision = target["decision"]
     case decision["kind"]
@@ -151,6 +176,7 @@ module Location::Exploration
       campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => boss,
                                             "terrain" => location_template.encounter_table&.terrain_type,
                                             "names" => ({ leader.slug => who } if leader),
+                                            "location" => id, "room" => target["key"],
                                             "prelude" => (boss_prelude(target, who) if boss) }.compact)
       campaign.narrate("#{decision['kind'] == 'boss' ? 'Boss' : 'Encounter'}! #{"#{who}: " if leader}#{campaign.describe_encounter(decision['monsters'])}.")
       resolve!(target["key"])

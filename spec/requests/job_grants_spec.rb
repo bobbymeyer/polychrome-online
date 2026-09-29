@@ -13,8 +13,12 @@ RSpec.describe "Jobs as story rewards", type: :request do
   it "opens a campaign with the jobs its GM picks, or every one" do
     campaign = start(%w[freelancer knight])
     expect(campaign.available_jobs.map(&:slug)).to eq(%w[freelancer knight])
-    post world_campaigns_path(world), params: { campaign: { name: "All", every_job: "1", open_jobs: %w[knight] } }
+    post world_campaigns_path(world), params: { campaign: { name: "All", open_jobs: world.jobs.pluck(:slug) } }
     expect(Campaign.find_by!(name: "All").open_jobs).to be_nil
+
+    # The boxes say it: some unticked is those jobs, even with "Every job" left ticked.
+    post world_campaigns_path(world), params: { campaign: { name: "Some", every_job: "1", open_jobs: %w[knight freelancer] } }
+    expect(Campaign.find_by!(name: "Some").open_jobs).to eq(%w[knight freelancer])
   end
 
   it "only lets characters take open jobs" do

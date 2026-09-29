@@ -38,7 +38,7 @@ module Battle
       ctx = Context.new(state)
       actor = ctx.unit(user["id"])
       receiver = ctx.unit(target["id"])
-      item["effects"].each { |effect| Effects.apply(ctx, actor, receiver, effect) }
+      item["effects"].each { |effect| Effects.apply(ctx, actor, receiver, effect.merge("item" => true)) }
       after, events = ctx.finish
       [ after["units"].find { |u| u["id"] == target["id"] }["hp"], events, after["rng"] ]
     end

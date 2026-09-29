@@ -36,6 +36,16 @@ RSpec.describe "Items and curing in battle" do
     expect(unit(after, "rosa")["mp"]).to eq(unit(hurt, "rosa")["mp"]) # items cost nothing
   end
 
+  it "heals the same whoever uses it: a Potion doesn't care who opens it" do
+    hurt = with_unit(state, "vivi", hp: 20)
+    healed = %w[rosa bartz].map do |user|
+      clever = with_unit(hurt, user, stats: unit(hurt, user)["stats"].merge("mag" => user == "rosa" ? 40 : 1))
+      after, = round(clever, use(user, "potion", "vivi"))
+      unit(after, "vivi")["hp"] - 20
+    end
+    expect(healed.max - healed.min).to be <= 30 * 2 / 8 # only the usual variance
+  end
+
   it "works while silenced" do
     silenced = with_unit(with_unit(state, "vivi", hp: 20), "rosa", statuses: [ { "kind" => "silence", "turns" => 3 } ])
     after, = round(silenced, use("rosa", "potion", "vivi"))

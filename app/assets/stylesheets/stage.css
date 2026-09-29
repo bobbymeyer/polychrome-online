@@ -666,8 +666,9 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
   clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
 }
 .stat-inputs--types { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-.popup--weak { color: var(--sun-yellow); -webkit-text-stroke: 1px var(--ink); font-size: 16px; line-height: 20px; margin-top: -36px; letter-spacing: .02em; }
-.popup--resist { color: var(--paper); font-size: 12px; line-height: 16px; margin-top: -32px; letter-spacing: .04em; opacity: .85; }
+/* Said under the number, never over it. */
+.popup--weak { color: var(--sun-yellow); -webkit-text-stroke: 1px var(--ink); font-size: 16px; line-height: 20px; margin-top: 50px; letter-spacing: .02em; }
+.popup--resist { color: var(--paper); background: var(--ink); padding: 0 6px; font-size: 13px; line-height: 18px; margin-top: 50px; letter-spacing: .04em; }
 .type-chart { border-collapse: collapse; font-size: 13px; }
 .type-chart th, .type-chart td { border: 1px solid var(--light-grey); padding: 0; text-align: center; min-width: 30px; height: 30px; }
 .type-chart thead th { vertical-align: bottom; padding: 4px 0; }
@@ -909,6 +910,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .battle:has(.command-panel--over, .try-form) { padding-bottom: 0 !important; }
   .battle:not(.battle--controller):not(.battle--screen) .battle__dock:has(.command-panel--over, .try-form) { position: static; max-height: none; box-shadow: none; padding: 8px 0 0; }
   .party-strip { display: grid; }
+  /* The end of a fight lands in the part of the screen the pinned panel leaves open. */
+  .battle:not(.battle--controller):not(.battle--screen) :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down) {
+    position: fixed; top: 22vh; z-index: 35; font-size: 56px;
+  }
   /* A battle is a game screen: the title and the way back step aside for the fight. */
   .battle .battle__header { margin-bottom: 8px; }
   .battle:not(.battle--controller):not(.battle--screen) .battle__header > div:first-child { display: none; }
@@ -949,6 +954,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* On a phone the map and the skyline draw at a third of their size: their words grow to stay readable. */
 @media (max-width: 640px) {
   .map-node__label { font-size: 38px; stroke-width: 9px; translate: 0 16px; }
+  .map-node__label.is-above { translate: 0 -6px; }
   .map-node__mode { font-size: 24px; translate: 0 30px; }
   .skyline__sign { font-size: 18px; }
 }

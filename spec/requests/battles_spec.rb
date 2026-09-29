@@ -216,6 +216,20 @@ RSpec.describe "Battle screen", type: :request do
   describe "players" do
     before { sit(bartz) }
 
+    it "find their way around the campaign from the battle, their sheet included" do
+      battle.campaign.characters.find_by!(name: "Bartz").update!(user: @admin)
+      get battle_path(battle)
+      nav = response.body[%r{<nav class="topbar__books" aria-label="Campaign">.*?</nav>}m]
+      expect(nav).to include(">Table<", ">Map<", ">My sheet<")
+    end
+
+    it "see who was down at the end of a win, and that they earned nothing" do
+      battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => faris, "value" => 0 }, actor: "gm")
+      battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+      get battle_panel_path(battle)
+      expect(response.body).to include("<strong>Faris</strong>: <span class=\"muted\">down at the end, so no EXP or ABP.</span>")
+    end
+
     it "pick a target, then submit, and get a placeholder that holds no battle state" do
       get battle_panel_path(battle, ability: "attack")
       expect(response.body).to include("data-choosing", "Goblin A", "Goblin B")
