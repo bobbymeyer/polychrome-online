@@ -145,6 +145,7 @@ module Battle
         return if target["side"] != unit["side"] && State.heals?(ability) && ctx.alive?(target)
 
         raise InvalidAction, "#{target_id} is not an ally" unless target["side"] == unit["side"]
+        raise InvalidAction, "#{target_id} has left the field" if target["gone"]
         raise InvalidAction, "#{target_id} is down" unless ctx.alive?(target) || ctx.revives?(ability)
       end
     end
@@ -477,6 +478,10 @@ module Battle
       return unless ctx.alive?(unit) # KO'd earlier this round: no turn at all
 
       ctx.emit(:turn_start, unit: unit["id"])
+      # What the unit carried into its turn: only that counts this turn down.
+      # A buff it gives itself now lasts its full length (War Cry for 3 is
+      # three buffed turns, not two).
+      held = unit["buffs"] + unit["statuses"]
       blocking = DISABLING_STATUSES.find { |kind| ctx.status?(unit, kind) }
       if ctx.status?(unit, "airborne")
         land(unit)
@@ -499,7 +504,7 @@ module Battle
         perform(unit, cmd)
       end
 
-      Effects.upkeep(ctx, unit) if ctx.alive?(unit) && !ctx.over?
+      Effects.upkeep(ctx, unit, held: held) if ctx.alive?(unit) && !ctx.over?
       ctx.emit(:turn_end, unit: unit["id"])
       count_down_summon(unit) unless ctx.over?
     end
@@ -638,7 +643,7 @@ module Battle
       ctx.emit(:item_used, actor: unit["id"], item: item["id"], name: item["name"], targets: targets.map { |t| t["id"] }, left: item["count"])
       return ctx.emit(:miss, actor: unit["id"], item: item["id"], reason: "no_target") if targets.empty?
 
-      apply_effects(unit, item, targets)
+      apply_effects(unit, item, targets, item: true)
     end
 
     def use_ability(unit, ability, target_id)
@@ -702,9 +707,11 @@ module Battle
       ctx.check_end
     end
 
-    def apply_effects(unit, ability, targets)
+    # item: an item's effects work the same whoever uses them (Effects#heal).
+    def apply_effects(unit, ability, targets, item: false)
       targets.each do |target|
         ability["effects"].each do |effect|
+          effect = effect.merge("item" => true) if item
           hits(effect).times do
             break if ctx.over?
             break unless ctx.alive?(target) || effect["primitive"] == "revive"
@@ -755,7 +762,7 @@ module Battle
         [ covered(chosen || ctx.rng.pick(ctx.opponents(unit))) ].compact
       when "single_ally"
         fallen = ctx.allies(unit, alive: false).reject { |a| ctx.alive?(a) }
-        valid = chosen && chosen["side"] == unit["side"] && (revive ? !ctx.alive?(chosen) : ctx.alive?(chosen))
+        valid = chosen && chosen["side"] == unit["side"] && !chosen["gone"] && (revive ? !ctx.alive?(chosen) : ctx.alive?(chosen))
         return [ chosen ] if valid
         return [ chosen ] if chosen && chosen["side"] != unit["side"] && State.heals?(ability) && ctx.alive?(chosen) && !ctx.out_of_reach?(chosen)
         return [ ctx.rng.pick(fallen) ].compact if revive

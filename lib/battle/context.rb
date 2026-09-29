@@ -175,6 +175,11 @@ module Battle
       target["buffs"] = []
       target["defending"] = false
       emit(:ko, target: target["id"])
+      # A summoned creature isn't left lying there to be raised: down, it's gone.
+      return unless target["summoned"] && !target["gone"]
+
+      target["gone"] = true
+      emit(:unit_left, unit: target["id"], name: target["name"], summoned: true)
     end
 
     def revive(target, hp)

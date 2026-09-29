@@ -239,10 +239,15 @@ module Battle
       end
     end
 
-    # heal(power): power scaled by the caster's mag. The undead take it as
-    # damage instead.
+    # heal(power): power scaled by the caster's mag. An item's heal is the
+    # same in anyone's hands, as if at ITEM_MAG: a Potion doesn't care who
+    # opens it. The undead take it as damage instead.
+    ITEM_MAG = 16
+
     def heal(ctx, actor, target, effect)
-      amount = [ vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"), effect["basis"])), 1 ].max
+      power = effect.fetch("power")
+      scaled = effect["item"] ? power * (ITEM_MAG + 16) / 16 : scale_by_mag(ctx, actor, power, effect["basis"])
+      amount = [ vary(ctx, scaled), 1 ].max
       return ctx.deal_damage(target, amount, actor: actor["id"], undead: true) if target["undead"]
 
       ctx.restore_hp(target, amount, actor: actor["id"])
@@ -381,7 +386,10 @@ module Battle
     # End-of-turn upkeep for a unit: poison, then duration ticks.
     REGEN_DIVISOR = 16
 
-    def upkeep(ctx, unit)
+    # held: the buffs and statuses the unit had when its turn began (nil for
+    # all of them). One it gave itself during the turn starts counting next turn.
+    def upkeep(ctx, unit, held: nil)
+      counts = ->(entry) { held.nil? || held.any? { |h| h.equal?(entry) } }
       if ctx.status?(unit, "poison")
         ctx.deal_damage(unit, [ unit["stats"]["max_hp"] / POISON_DIVISOR, 1 ].max, status: "poison")
         return unless ctx.alive?(unit)
@@ -395,14 +403,14 @@ module Battle
       end
 
       # Away and charging count their own turns (Battle::Resolver).
-      unit["statuses"].each { |s| s["turns"] -= 1 unless %w[away charging].include?(s["kind"]) }
+      unit["statuses"].each { |s| s["turns"] -= 1 if counts.(s) && !%w[away charging].include?(s["kind"]) }
       unit["statuses"].select { |s| s["turns"] <= 0 }.map { |s| s["kind"] }.each do |kind|
         ctx.remove_status(unit, kind, reason: "wore_off")
         # Doom's count runs out: down they go, shield or no.
         ctx.deal_damage(unit, unit["hp"], status: "doom") if kind == "doom" && ctx.alive?(unit)
       end
 
-      unit["buffs"].each { |b| b["turns"] -= 1 }
+      unit["buffs"].each { |b| b["turns"] -= 1 if counts.(b) }
       expired, unit["buffs"] = unit["buffs"].partition { |b| b["turns"] <= 0 }
       expired.each do |b|
         ctx.emit(:buff_expired, target: unit["id"], stat: b["stat"], amount: b["amount"])

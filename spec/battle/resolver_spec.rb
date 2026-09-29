@@ -486,6 +486,14 @@ RSpec.describe Battle::Resolver do
       expect(state["status"]).to eq("victory")
     end
 
+    it "never offers a unit that has left as a target, and refuses it if named" do
+      state = build_battle(enemies: BattleFixtures.goblins(2))
+      state, = apply(state, gm("dismiss", unit: "goblin_a", note: "It runs!"))
+      attack = state["abilities"]["attack"]
+      expect(Battle::State.target_options(state, unit(state, "bartz"), attack)).to eq([ "goblin_b" ])
+      expect { apply(state, command("bartz", "attack", "goblin_a")) }.to raise_error(Battle::InvalidAction)
+    end
+
     it "never dismisses a party member, and needs a unit the engine can build" do
       state = build_battle
       expect { apply(state, gm("dismiss", unit: "bartz")) }.to raise_error(Battle::InvalidAction, /party member/)
@@ -778,6 +786,24 @@ RSpec.describe Battle::Resolver do
         expect(of_type(events, :cast).map { |e| e["actor"] }).to include("wisp_1")
         _, events = round(state, "mage" => { kind: "defend" })
         expect(of_type(events, :unit_left)).to include(a_hash_including("unit" => "wisp_1"))
+      end
+
+      it "sends a summon away the moment it's down, so nothing can raise it" do
+        state, = cast("call_wisp", "mage")
+        ctx = Battle::Context.new(state)
+        ctx.knock_out(ctx.unit("wisp_1"))
+        expect(types(ctx.events)).to eq(%w[ko unit_left])
+        expect(ctx.unit("wisp_1")).to include("gone" => true)
+        raise_ability = state["abilities"]["raise"]
+        expect(Battle::State.target_options(ctx.state, unit(state, "mage"), raise_ability)).not_to include("wisp_1")
+      end
+
+      it "gives a buff you cast on yourself its full length: War Cry for 3 is three buffed turns" do
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[war_cry]) ], enemies: brute)
+        state, = round(state, "mage" => { kind: "ability", ability: "war_cry" })
+        expect(unit(state, "mage")["buffs"]).to eq([ { "stat" => "str", "amount" => 50, "turns" => 3 } ])
+        state, = round(state, "mage" => { kind: "defend" })
+        expect(unit(state, "mage")["buffs"].sole["turns"]).to eq(2)
       end
 
       it "lets an enemy call help to its own side, which the party must deal with" do
