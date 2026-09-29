@@ -53,11 +53,17 @@ module Campaign::Travelling
   # What a new party has to spend.
   STARTING_GIL = 150
 
-  # A new campaign: the party starts in the setting's first town it knows
-  # that has a road out (Atlas), with money and the starting bag, and hears
-  # what people there are saying (which may put somewhere on the map).
-  def set_out!
+  # A new campaign begins. From the setting (unless the GM starts from
+  # nothing): its places and people (Atlas) and its trouble, the fronts,
+  # dealt in. Then the party sets out, from the first town it knows with a
+  # road out, with money and the starting bag, and hears what people there
+  # are saying (which may put somewhere on the map).
+  def set_out!(from_the_setting: true)
     transaction do
+      if from_the_setting
+        Atlas.new(self).bring_in_all!
+        WorldFront.undealt_in(self).each { |front| front.deal!(self) }
+      end
       pack_starting_bag!
       increment!(:gil, STARTING_GIL)
       start = starting_town

@@ -102,14 +102,25 @@ class Campaign < ApplicationRecord
     characters.minimum(:level) || FIRST_LEVEL
   end
 
-  # The code behind the invite link and the shared screen's QR code: made
-  # when first asked for, and replaced when the GM wants to shut old links out.
-  def join_code!
-    join_code || new_join_code!
+  # A player's own new character: theirs from the start, at the party's
+  # lowest level, their job level following it. Unsaved, for the caller to
+  # save (the join page signs a guest in first, once it's valid).
+  def newcomer(attrs, user: nil)
+    characters.new(attrs).tap do |character|
+      character.user = user
+      character.starting_level = newcomer_level
+      character.starting_job_level = nil
+    end
   end
 
+  # The code behind the invite link and the shared screen's QR code: made
+  # with the campaign, and replaced when the GM wants to shut old links out.
+  before_create { self.join_code ||= Campaign.fresh_join_code }
+
+  def self.fresh_join_code = SecureRandom.alphanumeric(6).upcase
+
   def new_join_code!
-    update!(join_code: SecureRandom.alphanumeric(6).upcase)
+    update!(join_code: Campaign.fresh_join_code)
     join_code
   end
 

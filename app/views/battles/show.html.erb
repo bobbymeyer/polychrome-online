@@ -16,6 +16,9 @@
      data-dialogue-auto-hide-value="true"
      data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
   <%= turbo_stream_from @battle %>
+  <% if @seat.unit_id && @battle.waiting_for_arrivals? %>
+    <span hidden data-controller="arrival" data-arrival-url-value="<%= battle_arrival_path(@battle) %>"></span>
+  <% end %>
   <%# What's said at the table reaches the battle too (the same signed streams as the table). %>
   <% if @battle.campaign %>
     <%= seat_streams_from @seat, @battle.campaign %>

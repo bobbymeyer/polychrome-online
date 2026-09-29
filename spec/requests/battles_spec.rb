@@ -334,4 +334,25 @@ RSpec.describe "Battle screen", type: :request do
       expect(response).to have_http_status(:forbidden)
     end
   end
+
+  describe "arriving" do
+    let(:campaign) { create_campaign }
+    let(:battle) do
+      create_character(campaign, name: "Bartz", user: @admin)
+      create_character(campaign, name: "Faris", user: make_user("Sam"))
+      start_battle(campaign: campaign, input_seconds: 30)
+    end
+
+    it "is something the page says, never what loading it does" do
+      sit(bartz)
+      get battle_path(battle)
+      expect(response.body).to include('data-controller="arrival"', battle_arrival_path(battle))
+      get battle_panel_path(battle)
+      expect(battle.reload.arrived_units).to be_empty
+
+      post battle_arrival_path(battle)
+      expect(response).to have_http_status(:no_content)
+      expect(battle.reload.arrived_units).to eq([ bartz ])
+    end
+  end
 end

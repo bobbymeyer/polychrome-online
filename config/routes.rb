@@ -200,6 +200,8 @@ Rails.application.routes.draw do
       resources :actions, only: :create
       resource :playback, only: :update
       resource :auto, only: :update
+      # A player's page has the battle in front of them (BattleRecord#arrive!).
+      resource :arrival, only: :create
     end
   end
 end
