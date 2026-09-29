@@ -50,6 +50,9 @@
     replays exactly from seed <%= @battle.seed %>.
   </p>
 <% end %>
+<% if @battle.campaign && battle_gm? && @battle.status == "defeat" && @battle.campaign.wiped_out? && !@battle.campaign.battle_on? %>
+  <%= render "campaigns/recovery", campaign: @battle.campaign %>
+<% end %>
 <% if @battle.campaign %>
   <div class="actions" data-controller="return-link">
     <a class="button play" data-return-link-target="link" data-action="return-link#go" data-turbo-frame="_top" hidden></a>

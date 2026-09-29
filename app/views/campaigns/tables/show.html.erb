@@ -84,6 +84,7 @@
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
     <% if @seat.gm? %>
+      <%= render "campaigns/recovery", campaign: @campaign if @campaign.wiped_out? && !@campaign.battle_on? %>
       <%= render "campaigns/field_uses/requests", campaign: @campaign %>
       <%= render "campaigns/tables/coop_setup", campaign: @campaign unless view %>
       <details class="window table-scenes">

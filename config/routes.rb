@@ -116,6 +116,8 @@ Rails.application.routes.draw do
 
       # The table (§7): the live session page with the dialogue box and log.
       resource :table, only: :show
+      # After a wipe, what the story does with the party (Campaign::Defeat).
+      resource :recovery, only: :create
       resource :time, only: :update
       resource :music, only: :update, controller: "music"
       resources :checks, only: :create
