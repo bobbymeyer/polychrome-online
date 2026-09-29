@@ -89,9 +89,10 @@ module Location::Town
     return text unless text.to_s.include?("{")
 
     here = map_node
+    @roads ||= campaign.roads # once for all of a page's hooks
     text.gsub(/\{(#{PLACE_TOKENS.keys.join('|')})\}/) do
       among = campaign.map_nodes.where(PLACE_TOKENS.fetch(Regexp.last_match(1))).where.not(id: here&.id)
-      campaign.nearest(here, among)&.name || "somewhere far off"
+      campaign.nearest(here, among, roads: @roads)&.name || "somewhere far off"
     end
   end
 end

@@ -75,27 +75,25 @@ module Campaign::Travelling
   end
 
   # The known town nearest a place by road (the place itself if it's one),
-  # or nil if no road leads to one.
-  def nearest_town(from)
-    nearest(from, map_nodes.where(visible: true, kind: "town"))
+  # or nil if no open road leads to one.
+  def nearest_town(from, **options)
+    nearest(from, map_nodes.where(visible: true, kind: "town"), **options)
   end
 
   # The nearest by road of some places (the place itself if it's one of
-  # them), or nil if no road leads to any.
-  def nearest(from, among)
+  # them), or nil. Blocked roads don't count unless asked: talk gets over a
+  # snowed-in pass, people don't (Pointcrawl::Roads).
+  def nearest(from, among, through_blocked: false, roads: self.roads)
     return unless from
 
-    wanted = among.pluck(:id)
-    roads = map_edges.pluck(:from_node_id, :to_node_id)
-    seen = Set[from.id]
-    frontier = [ from.id ]
-    until frontier.empty?
-      found = frontier.find { |id| wanted.include?(id) }
-      return map_nodes.find(found) if found
+    roads = Pointcrawl::Roads.passable(roads) unless through_blocked
+    found = Pointcrawl::Roads.nearest(roads, from.id, among.pluck(:id))
+    found && map_nodes.find(found)
+  end
 
-      frontier = roads.flat_map { |a, b| (frontier.include?(a) ? [ b ] : []) + (frontier.include?(b) ? [ a ] : []) }.uniq.reject { |id| seen.include?(id) }
-      seen.merge(frontier)
-    end
+  # The map's roads as plain data (Pointcrawl::Roads).
+  def roads
+    map_edges.pluck(:from_node_id, :to_node_id, :state).map { |from, to, state| { "from" => from, "to" => to, "state" => state } }
   end
 
   # GM: put the party somewhere directly (and reveal it).

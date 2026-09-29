@@ -60,4 +60,10 @@ RSpec.describe "Defeat", type: :request do
     post campaign_recovery_path(campaign), params: { how: "get_up" }
     expect(bartz.reload.hp).to eq(0)
   end
+
+  it "retreats by open roads only: never over a blocked pass" do
+    over_the_pass = campaign.map_nodes.create!(name: "Pass Town", kind: "town", x: 400, y: 0, visible: true)
+    campaign.map_edges.create!(from_node: ruins, to_node: over_the_pass, state: "blocked")
+    expect(campaign.refuge).to eq(tule)
+  end
 end

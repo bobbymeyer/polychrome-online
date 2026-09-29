@@ -48,7 +48,7 @@ module Pointcrawl
     #   { "kind" => "leak", "secret", "at" }
     def run(world, rng_state)
       rng = Battle::Rng.new(rng_state)
-      roads = passable(world.fetch("roads", []))
+      roads = Roads.passable(world.fetch("roads", []))
       happenings = []
 
       world.fetch("clocks", []).each do |clock|
@@ -61,7 +61,7 @@ module Pointcrawl
           next
         end
         reached = rumour["reached"]
-        onward = reached.flat_map { |place| neighbours(roads, place) }.uniq - reached
+        onward = reached.flat_map { |place| Roads.neighbours(roads, place) }.uniq - reached
         happenings << { "kind" => "spread", "rumour" => rumour["id"], "to" => onward.sort } if onward.any?
       end
 
@@ -100,19 +100,11 @@ module Pointcrawl
       [ rng.state, happenings ]
     end
 
-    def passable(roads)
-      roads.reject { |road| road["state"] == "blocked" }
-    end
-
-    def neighbours(roads, place)
-      roads.filter_map { |road| (road["to"] if road["from"] == place) || (road["from"] if road["to"] == place) }
-    end
-
     # Towns and dungeons one road away, and those just past a crossroads or
     # a marsh on the way.
     def settled_nearby(roads, places, from)
-      near = neighbours(roads, from)
-      beyond = near.reject { |id| places.dig(id, "settled") }.flat_map { |id| neighbours(roads, id) }
+      near = Roads.neighbours(roads, from)
+      beyond = near.reject { |id| places.dig(id, "settled") }.flat_map { |id| Roads.neighbours(roads, id) }
       (near + beyond).uniq.select { |id| id != from && places.dig(id, "settled") }.sort
     end
   end
