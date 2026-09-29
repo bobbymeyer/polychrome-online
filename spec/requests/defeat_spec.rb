@@ -28,6 +28,24 @@ RSpec.describe "Defeat", type: :request do
     expect(response.body).to include("Retreat to Tule")
   end
 
+  it "tells the players the GM is deciding, then what the GM decided" do
+    battle = start_battle(campaign: campaign)
+    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "defeat" }, actor: "gm")
+    campaign.characters.update_all(hp: 0) # the battle wrote its HP back
+
+    sign_in_as(make_user("Kim"))
+    post battle_seat_path(battle), params: { seat: battle.party.first["id"] }
+    get battle_panel_path(battle)
+    expect(response.body).to include("The GM is deciding what happens next")
+    expect(response.body).not_to include("Retreat to Tule")
+
+    expect { campaign.recover!("get_up") }
+      .to have_broadcasted_to(stream(battle)).with(a_string_including("Somehow, one by one, everyone gets back up."))
+    get battle_panel_path(battle)
+    expect(response.body).to include("Somehow, one by one, everyone gets back up.")
+    expect(response.body).not_to include("The GM is deciding")
+  end
+
   it "retreats to the nearest town by road, rested and half as rich" do
     post campaign_recovery_path(campaign), params: { how: "retreat" }
     campaign.reload

@@ -1,5 +1,5 @@
 <%= turbo_frame_tag "command_panel" do %>
-  <div class="window command-panel">
+  <div class="window command-panel<%= " command-panel--over" if @battle.over? %>">
     <% if @error %>
       <p class="form-errors" role="alert"><%= @error %></p>
     <% end %>

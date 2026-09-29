@@ -58,6 +58,7 @@ export default class extends Controller {
   }
 
   disconnect() {
+    clearTimeout(this.reloadTimer)
     this.current?.timeline.pause()
     this.queue = []
     this.current = null
@@ -113,7 +114,8 @@ export default class extends Controller {
     if (!beat) {
       this.current = null
       this.skipTarget.hidden = true
-      if (this.hasPanelTarget) this.panelTarget.classList.remove("is-resolving")
+      // A panel still reloading keeps its "…" until the new one lands.
+      if (this.hasPanelTarget && !this.reloading) this.panelTarget.classList.remove("is-resolving")
       return
     }
 
@@ -158,7 +160,7 @@ export default class extends Controller {
     this.logTarget.append(line.cloneNode(true))
     while (this.logTarget.children.length > 60) this.logTarget.firstElementChild.remove()
     this.scrollLog()
-    // A phone controller doesn't show the stage: the last lines say what happened.
+    // A phone may not show the stage: the last lines say what happened.
     if (this.hasTickerTarget) {
       this.tickerTarget.append(line.cloneNode(true))
       while (this.tickerTarget.children.length > 3) this.tickerTarget.firstElementChild.remove()
@@ -173,11 +175,26 @@ export default class extends Controller {
 
   // After submitting, the panel shows a placeholder until the beat plays.
   // If that beat already finished before the response landed, reload now.
-  panelLoaded() {
-    if (!this.hasPanelTarget) return
+  panelLoaded(event) {
+    if (!this.hasPanelTarget || event?.target !== this.panelTarget) return
     if (this.panelTarget.querySelector("[data-resolving]") && !this.current && !this.queue.length) {
       this.refreshPanel()
+      return
     }
+    this.settled()
+    // The results let go of a phone's bottom edge: bring them into view.
+    const over = this.panelTarget.querySelector(".command-panel--over")
+    if (over && !this.shownOver && window.matchMedia("(max-width: 640px)").matches) {
+      this.shownOver = true
+      over.scrollIntoView({ block: "start" })
+    }
+  }
+
+  // The panel matches the board again: show it.
+  settled() {
+    this.reloading = false
+    clearTimeout(this.reloadTimer)
+    if (!this.current) this.panelTarget.classList.remove("is-resolving")
   }
 
   // Reload the panel after a beat so it matches the new state. A beat that
@@ -186,11 +203,16 @@ export default class extends Controller {
   refreshPanel(events = []) {
     if (!this.hasPanelTarget) return // the shared screen has no commands
     const panel = this.panelTarget
-    panel.classList.remove("is-resolving")
     const onlyInputs = events.every((e) => e.type === "command_accepted")
     const busy = panel.querySelector("[data-choosing]") || panel.contains(document.activeElement)
     const placeholder = panel.querySelector("[data-resolving]")
-    if (onlyInputs && busy && !placeholder) return
+    if (onlyInputs && busy && !placeholder) return this.settled()
+
+    // Until the new panel arrives, the old one (last round's HP, "Waiting
+    // for…") stays behind the "…". A load that never comes gives up.
+    this.reloading = true
+    clearTimeout(this.reloadTimer)
+    this.reloadTimer = setTimeout(() => this.settled(), 4000)
 
     const url = new URL(this.panelUrlValue, window.location.href).href
     const current = panel.src ? new URL(panel.src, window.location.href).href : null

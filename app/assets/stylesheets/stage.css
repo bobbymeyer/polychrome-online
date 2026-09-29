@@ -842,6 +842,18 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .battle-ticker li { padding: 2px 0; border-bottom: 1px solid var(--rule); }
 .battle-ticker li:last-child { font-weight: 700; border-bottom: 0; }
 .battle-ticker:empty { display: none; }
+/* The normal view has the stage in sight on a wide screen: the ticker is for phones and the controller. */
+.battle:not(.battle--controller) .battle-ticker { display: none; }
+/* Skip keeps its place while hidden, so the field doesn't jump when a round starts playing. */
+.battle__controls > [data-battle-player-target="skip"][hidden] { display: inline-flex; visibility: hidden; }
+/* The party at a glance, in a phone's pinned panel. */
+.party-strip { display: none; list-style: none; margin: 4px 0 6px; padding: 0; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 4px 12px; font-size: 13px; line-height: 18px; }
+.party-strip__member { display: grid; grid-template-columns: 1fr auto; column-gap: 6px; }
+.party-strip__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+.party-strip__member.is-you .party-strip__name { text-decoration: underline; text-decoration-thickness: 2px; }
+.party-strip__hp { font-weight: 800; font-variant-numeric: tabular-nums; }
+.party-strip__member .bar { grid-column: 1 / -1; }
+.party-strip__member.is-ko { color: var(--grey); }
 .menu__item.is-futile { color: var(--grey); border-color: var(--rule); }
 
 /* ---------------------------------------------------------------------------
@@ -859,18 +871,27 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .battle .battle__header h1 { font-size: 28px; line-height: 32px; }
   .battlefield { --sprite: 76px; --sprite-min: 76px; --sprite-party: 48px; min-height: 0; padding: 12px; gap: 8px; }
   .battlefield__side--enemy { gap: 8px 12px; }
-  .unit--enemy { --sprite: clamp(var(--sprite-min), calc(100cqi / min(var(--count, 1), 3) - 24px), 160px); }
   .unit__label { font-size: 12px; }
 
-  .battle:not(.battle--controller):not(.battle--screen) { padding-bottom: 44vh; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 42vh; overflow-y: auto;
+  .battle:not(.battle--controller):not(.battle--screen) { padding-bottom: 50vh; }
+  .battle:not(.battle--controller):not(.battle--screen) .battle__dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 50vh; display: flex; flex-direction: column;
     padding: 8px 16px 12px; background: var(--paper); border-top: 3px solid var(--ink); box-shadow: 0 -6px 0 var(--accent);
   }
+  .battle:not(.battle--controller):not(.battle--screen) .battle__dock .battle-ticker:not(:empty) { display: block; flex: none; margin-bottom: 4px; font-size: 13px; line-height: 18px; }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .window { margin: 0; border-top: 0; padding-top: 0; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu { gap: 6px; margin: 6px 0 8px; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu__item { min-height: 48px; padding: 4px 12px; font-size: 16px; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .link-button { min-height: 44px; display: inline-flex; align-items: center; }
+  /* Results, and saying what you try, need the room: the panel lets go of the bottom edge. */
+  .battle:has(.command-panel--over, .try-form) { padding-bottom: 0 !important; }
+  .battle:not(.battle--controller):not(.battle--screen) .battle__dock:has(.command-panel--over, .try-form) { position: static; max-height: none; box-shadow: none; padding: 8px 0 0; }
+  .party-strip { display: grid; }
+  /* A battle is a game screen: the title and the way back step aside for the fight. */
+  .battle .battle__header { margin-bottom: 8px; }
+  .battle:not(.battle--controller):not(.battle--screen) .battle__header > div:first-child { display: none; }
+  .unit--enemy { --sprite: clamp(56px, min(calc(100cqi / min(var(--count, 1), 3) - 24px), 18vh), 160px); }
   /* A battle is a game screen: the site's own navigation steps aside. */
   body:has(.battle) .topbar__account, body:has(.battle) .topbar__books { display: none; }
 }

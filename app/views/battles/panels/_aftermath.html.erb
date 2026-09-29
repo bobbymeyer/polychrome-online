@@ -1,0 +1,10 @@
+<%# After a wipe, the GM decides what the story does with it (Campaign::Defeat); everyone else waits to hear. Replaced by broadcast. %>
+<div id="battle_aftermath" aria-live="polite">
+<% if battle.status == "defeat" && battle.campaign %>
+  <% if (line = battle.settlement&.dig("aftermath")) %>
+    <p class="aftermath"><%= line %></p>
+  <% elsif battle.campaign.wiped_out? %>
+    <p class="aftermath is-waiting">The GM is deciding what happens next…</p>
+  <% end %>
+<% end %>
+</div>
