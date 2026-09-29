@@ -43,6 +43,10 @@
         <% if member["learned"].present? %><span class="level-up">Learned <%= member["learned"].to_sentence %>!</span><% end %>
       </li>
     <% end %>
+    <%# Whoever was down at the end earns nothing, and says so rather than vanishing from the list. %>
+    <% (@battle.party.reject { |u| u["guest"] || u["hp"].positive? }.map { |u| u["name"] } - settlement["members"].map { |m| m["name"] }).each do |fallen| %>
+      <li><strong><%= fallen %></strong>: <span class="muted">down at the end, so no EXP or ABP.</span></li>
+    <% end %>
   </ul>
   <%# The moments worth a card of their own: a new ability, an ability or a job mastered. %>
   <% cards = settlement["members"].flat_map do |member|

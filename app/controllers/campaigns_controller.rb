@@ -40,12 +40,12 @@ class CampaignsController < ApplicationController
 
   private
 
-  # The form's job boxes: every job (nil), or the ones ticked. None ticked
-  # would leave nobody anything to be, so that's every job too.
+  # The form's job boxes: the ones ticked, or every job (nil) when they all
+  # are. None ticked would leave nobody anything to be, so that's every job
+  # too. The boxes say it, whatever "Every job" was left at.
   def posted_open_jobs
-    return if params.dig(:campaign, :every_job) == "1"
-
-    Array(params.dig(:campaign, :open_jobs)).compact_blank.presence
+    ticked = Array(params.dig(:campaign, :open_jobs)).compact_blank
+    ticked.presence unless (@world.jobs.pluck(:slug) - ticked).empty?
   end
 
   def set_campaign
