@@ -51,6 +51,16 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   "Play" in `docs/DESIGN.md`. After a deploy, `bin/rails db:seed` adds the new
   Base World entries; `bin/rails base_world:update` also rewrites the learn
   tables and stock (and overwrites edits).
+- **Balance pass:** the Base World's monsters are tuned for a level-5 party
+  (fights of 3 to 8 rounds that cost HP; bosses a party wins by healing and
+  casting, and loses by only attacking), its types spread so no job hits
+  everything double, and every boss has a move to answer. Signature moves
+  cost MP where they beat Attack; buffs raise the weapon too; Channel doubles
+  the next spell; Haste is a second go each round; spells grow with the
+  caster; MP comes back slowly, and a night in the open brings back half of
+  it. Each job learns something every few fights, to a capstone at job level
+  50. Run `bin/rails base_world:update` after deploying to take the new
+  numbers (it overwrites edits to the Base World).
 
 ```
 bundle install

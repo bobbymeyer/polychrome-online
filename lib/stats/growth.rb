@@ -8,8 +8,8 @@ module Stats
   # every job: quick at first, slow at the top. A job's learn table says at
   # which job level each ability comes; the long climb after the last one
   # is mastery (Stats::Mastery). At about 8 ABP a battle, the last ability
-  # of a base-world job comes after some 30 battles and job level 100
-  # after some 90.
+  # of a base-world job (at job level 50) comes after some 25 battles, one
+  # every few fights on the way, and job level 100 after some 90.
   module Growth
     MAX_LEVEL = 99
     MAX_JOB_LEVEL = 100

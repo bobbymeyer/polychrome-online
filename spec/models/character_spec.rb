@@ -25,7 +25,7 @@ RSpec.describe Character do
     it "starts about two job levels per level when no job level is given" do
       lenna = campaign.characters.create!(name: "Lenna", job: job.("white_mage"), starting_level: 5)
       expect(lenna.character_job.level).to eq(10)
-      expect(lenna.native_abilities.map(&:slug)).to eq(%w[cure silence])
+      expect(lenna.native_abilities.map(&:slug)).to eq(%w[cure silence barrier])
       expect(campaign.characters.create!(name: "Krile", job: job.("black_mage")).character_job.level).to eq(2) # level 1
     end
 
@@ -82,8 +82,8 @@ RSpec.describe Character do
     it "levels up and learns abilities, and reports what changed" do
       bartz = create(job_level: 0)
       changes = bartz.gain!(exp: 1000, abp: 30)
-      expect(changes).to include("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break" ], "to_next" => 120)
-    expect(changes["abilities"].map { |a| a["name"] }).to eq([ "War Cry", "Armor Break" ])
+      expect(changes).to include("exp" => 1000, "abp" => 30, "level" => [ 5, 11 ], "learned" => [ "War Cry", "Armor Break", "Double Cut" ], "to_next" => 120)
+    expect(changes["abilities"].map { |a| a["name"] }).to eq([ "War Cry", "Armor Break", "Double Cut" ])
       expect(bartz.reload.level).to eq(11) # 200 + 1000 EXP
     end
 
@@ -161,11 +161,11 @@ RSpec.describe Character do
       bartz = create(job_level: 40)
       changes = bartz.gain!(abp: Stats::Growth.abp_for_job_level(41) - bartz.character_job.abp)
       expect(changes).to include("mastered_abilities" => [ "War Cry" ], "job_level" => [ 40, 41 ])
-      expect(changes["next_lesson"]).to eq("name" => "Stalwart", "job_level" => 60,
-                                           "abp" => Stats::Growth.abp_for_job_level(60) - bartz.character_job.abp)
+      expect(changes["next_lesson"]).to eq("name" => "Oathblade", "job_level" => 50,
+                                           "abp" => Stats::Growth.abp_for_job_level(50) - bartz.character_job.abp)
       changes = bartz.gain!(abp: 10_000)
       expect(changes["mastered_abilities"]).to eq([ "Armor Break", "Double Cut", "Shield Bash", "Stalwart", "Oathblade" ])
-      expect(changes["learned"]).to eq([ "Stalwart", "Oathblade" ]) # the capstone comes with mastery
+      expect(changes["learned"]).to eq([ "Oathblade" ]) # the capstone, at job level 50, long before the job's mastered
       expect(changes).not_to have_key("next_lesson")
       expect(changes["mastered"]).to eq("job" => "Knight", "passive" => "second_wind")
     end

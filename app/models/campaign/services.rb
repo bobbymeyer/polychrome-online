@@ -75,8 +75,13 @@ module Campaign::Services
     raise Refusal, "Not while a battle is on" if battle_on?
 
     transaction do
-      characters.update_all(hp: nil, mp: nil, field_used: false)
-      narrate("The party rests. Everyone is back to full #{world.word('hp')} and #{world.word('mp')}.")
+      # A night on the ground mends the body, but only half the mind: a full
+      # night's MP takes a bed (the inn).
+      characters.each do |character|
+        mp = [ character.current_mp + (character.stats["max_mp"] / 2), character.stats["max_mp"] ].min
+        character.update!(hp: nil, mp: mp == character.stats["max_mp"] ? nil : mp, field_used: false)
+      end
+      narrate("The party rests. Everyone is back to full #{world.word('hp')}, and half their #{world.word('mp')}.")
       tick_clocks!("rest")
       pass_time!(until_dawn, announce: :new_day)
     end
