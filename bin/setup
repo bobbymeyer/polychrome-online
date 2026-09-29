@@ -15,6 +15,24 @@ FileUtils.chdir APP_ROOT do
   puts "== Installing dependencies =="
   system("bundle check") || system!("bundle install")
 
+  # What the machine needs besides gems. Nothing stops for these, but
+  # without them part of the app doesn't work, so say so now.
+  puts "\n== Checking the machine =="
+  if system("bundle exec ruby -e 'require \"vips\"'", out: File::NULL, err: File::NULL)
+    puts "libvips: ok"
+  else
+    puts "libvips: MISSING. Uploaded art, portraits and background removal need it " \
+         "(macOS: brew install vips; Debian/Ubuntu: apt install libvips42)."
+  end
+  chrome = ENV["CHROME_BIN"].to_s.empty? ? %w[google-chrome chromium chromium-browser].find { |name| system("command -v #{name}", out: File::NULL) } : ENV["CHROME_BIN"]
+  mac_chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+  chrome ||= mac_chrome if File.exist?(mac_chrome)
+  if chrome
+    puts "Chrome: ok (#{chrome})"
+  else
+    puts "Chrome: MISSING. The browser tests (spec/system) need Chrome or Chromium; set CHROME_BIN if it's somewhere unusual."
+  end
+
   # puts "\n== Copying sample files =="
   # unless File.exist?("config/database.yml")
   #   FileUtils.cp "config/database.yml.sample", "config/database.yml"

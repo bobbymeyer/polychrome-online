@@ -819,7 +819,7 @@ Every image slot can be uploaded or generated with
   - **Not reachable:** the batch waits and tries again, as it does for
     ComfyUI. **Not set up:** backgrounds stay, and the pages say so.
 - **Can't see ComfyUI?** Use "Connection" on the Art direction page, or
-  `bin/rails comfy:doctor` inside the app's container. It checks, in turn:
+  `bin/rails services:check` inside the app's container. It checks, in turn:
   - the address: in a container, 127.0.0.1 is the container itself;
   - the name: `host.docker.internal` needs `extra_hosts`, and MagicDNS
     names don't resolve in containers;
