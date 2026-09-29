@@ -47,6 +47,14 @@
   </div>
 
   <div class="battle__lower">
+    <% if view == "controller" %>
+      <ol class="battle-ticker" data-battle-player-target="ticker" aria-label="What just happened">
+        <% @log.last(3).each do |event| %>
+          <% line = battle_log_line(event.payload, @battle.state) %>
+          <% if line %><li><%= line %></li><% end %>
+        <% end %>
+      </ol>
+    <% end %>
     <% unless view == "screen" %>
       <%= turbo_frame_tag "command_panel", src: battle_panel_path(@battle), class: "command-frame",
                           data: { battle_player_target: "panel" } do %>

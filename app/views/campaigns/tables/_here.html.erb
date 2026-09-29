@@ -1,0 +1,6 @@
+<%# Where the party is, and the way in: replaced live when they travel (Campaign#broadcast_map), so it never points at the last place. %>
+<span id="table_here">
+  <% if (here = campaign.current_node&.location) %>
+    · <%= link_to "#{here.dungeon? ? 'Explore' : 'Visit'} #{here.name} →", location_path(here) %>
+  <% end %>
+</span>

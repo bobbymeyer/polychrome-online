@@ -122,8 +122,9 @@ RSpec.describe "Accounts", type: :request do
       free = campaign.characters.create!(name: "Galuf", job: world.jobs.find_by!(slug: "monk"))
 
       get campaign_table_path(campaign)
-      expect(response.body).to include("Galuf (unclaimed)")
-      expect(response.body).not_to include(">Game Master<", ">Bartz<")
+      seats = response.body[%r{<h2>Take a seat</h2>.*?</section>}m]
+      expect(seats).to include("Galuf (unclaimed)")
+      expect(seats).not_to include(">Game Master<", ">Bartz<")
 
       post campaign_table_seat_path(campaign), params: { seat: "gm" }
       post campaign_table_seat_path(campaign), params: { seat: taken.id }

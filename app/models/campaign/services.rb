@@ -58,6 +58,7 @@ module Campaign::Services
       tick_clocks!("rest")
       pass_time!(until_dawn, announce: :new_day)
     end
+    broadcast_party
   end
 
   def rested?(character)

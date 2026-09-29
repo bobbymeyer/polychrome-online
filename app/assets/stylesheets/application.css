@@ -792,3 +792,16 @@ details[open] summary { margin-bottom: 16px; }
 .first-steps__list li.is-done { color: var(--grey); text-decoration: line-through; }
 .first-steps__list li.is-done .muted { display: none; }
 .countdown.is-paused { font-size: 14px; font-weight: 600; color: var(--grey); }
+
+/* The last few lines under the dialogue box (recent_lines_controller), and a whisper popping up. */
+.recent-lines { margin: 0 0 24px; }
+.recent-lines ol { list-style: none; margin: 0; padding: 0; }
+.recent-lines .chat-line { padding: 4px 0 3px; font-size: 14px; }
+.recent-lines .speaker-portrait { width: 32px; height: 32px; }
+.recent-lines .chat-line:last-child { border-bottom: 0; }
+.toast { position: fixed; z-index: 60; right: 16px; bottom: 16px; max-width: min(360px, calc(100vw - 32px)); padding: 12px 16px;
+         background: var(--ink); color: var(--paper); cursor: pointer; }
+.toast p { margin: 4px 0 0; font-style: italic; }
+.party-down { margin: 0 0 8px; font-weight: 700; color: var(--signal); }
+.table:not(.table--screen) .coop-party .portrait--small { width: 56px; height: 56px; }
+.table:not(.table--screen) .coop-party .portrait--small .portrait__initial { font-size: 28px; line-height: 28px; }

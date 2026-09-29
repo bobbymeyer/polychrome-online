@@ -77,7 +77,7 @@ RSpec.describe "Moments at the table", type: :system do
 
     lenna = create_character(campaign, name: "Lenna") # nobody's yet
     Capybara.using_session("phone") do
-      visit join_path(campaign.reload.join_code)
+      visit join_path(campaign.reload.join_code, view: "controller") # the shared screen's QR code
       fill_in "Your name", with: "Sam"
       click_on "Lenna"
       expect(page).to have_css(".vitals", text: "HP")

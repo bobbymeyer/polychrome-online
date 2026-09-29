@@ -615,6 +615,8 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .check-moment p { margin: 0; }
 .check-moment__who { font-style: italic; font-weight: 900; }
 .check-moment__odds { color: var(--grey); font-size: 14px; }
+.check-moment__why { font-size: 15px; }
+.check-moment__why:empty { display: none; }
 .check-moment__roll { font: var(--display); font-size: 96px; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
 .check-moment__verdict { font: var(--display); font-size: 32px; min-height: 36px; }
 .check-moment.is-success { box-shadow: 8px 8px 0 var(--green), 16px 16px 0 var(--ink); }
@@ -834,3 +836,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .modes .inline-form input[type=text] { width: 240px; }
 .map-node.has-mode .map-node__label { fill: var(--signal); }
 .map-node__mode { font-size: 11px; font-weight: 900; font-style: italic; fill: var(--signal); text-transform: uppercase; letter-spacing: .06em; }
+/* On a phone controller, what just happened on the screen everyone's watching. */
+.battle-ticker { list-style: none; margin: 0 0 8px; padding: 0; font-size: 14px; line-height: 20px; }
+.battle-ticker li { padding: 2px 0; border-bottom: 1px solid var(--rule); }
+.battle-ticker li:last-child { font-weight: 700; border-bottom: 0; }
+.battle-ticker:empty { display: none; }

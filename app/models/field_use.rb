@@ -87,8 +87,8 @@ class FieldUse < ApplicationRecord
       end
       label = "#{ability.name} (#{[ skill&.fetch('name'), difficulty, ("+#{bonus} #{character.job.name}" if bonus.positive?) ].compact.join(', ')})"
       campaign.narrate("#{character.name}: #{label}. #{roll['chance']}% · rolled #{roll['roll']} · #{roll['success'] ? 'Success!' : 'Failure.'}",
-                       cue: "check", data: roll.merge("name" => character.name, "stat" => stat, "difficulty" => difficulty,
-                                                      "skill" => skill&.fetch("name"), "bonus" => bonus).compact)
+                       cue: "check", data: roll.merge("name" => character.name, "character_id" => character.id, "stat" => stat, "difficulty" => difficulty,
+                                                      "skill" => skill&.fetch("name"), "bonus" => bonus, "move" => ability.name).compact)
       line = roll["success"] ? apply_outcome : nil
       campaign.narrate(line) if line
       campaign.tick_clocks!("failed_check") unless roll["success"]

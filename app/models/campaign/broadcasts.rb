@@ -27,6 +27,7 @@ module Campaign::Broadcasts
     AUDIENCES.each do |gm, stream|
       broadcast_replace_to self, stream, target: "map_canvas", partial: "campaigns/maps/canvas", locals: { campaign: self, gm: gm }
     end
+    broadcast_replace_to self, :table, target: "table_here", partial: "campaigns/tables/here", locals: { campaign: self }
   end
 
   # "The party knows": public clocks, revealed secrets and public flags on
@@ -42,6 +43,11 @@ module Campaign::Broadcasts
   def broadcast_music
     Turbo::StreamsChannel.broadcast_action_to(self, :stage, action: :music, target: "stage",
                                               attributes: { follow: music.nil?, url: world.music_path(music).to_s })
+  end
+
+  # The party's HP and MP on the table: after a battle, a rest, a potion.
+  def broadcast_party
+    broadcast_replace_to self, :table, target: "table_party", partial: "campaigns/tables/party", locals: { campaign: self }
   end
 
   def broadcast_time

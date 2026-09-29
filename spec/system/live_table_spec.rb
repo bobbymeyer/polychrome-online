@@ -29,7 +29,12 @@ RSpec.describe "The live table", type: :system do
     campaign.narrate("Night falls.")
 
     as(gm) { expect(page).to logged?("under the mat").and logged?("Night falls") }
-    as(player) { expect(page).to logged?("under the mat").and logged?("Night falls") }
+    as(player) do
+      expect(page).to logged?("under the mat").and logged?("Night falls")
+      # Out of the drawer: on screen under the dialogue box, and the whisper pops up.
+      expect(page).to have_css(".recent-lines", text: /under the mat.*Night falls/m)
+      expect(page).to have_css(".toast", text: "under the mat")
+    end
     as(watcher) do
       expect(page).to logged?("Night falls")
       expect(page).not_to logged?("under the mat")

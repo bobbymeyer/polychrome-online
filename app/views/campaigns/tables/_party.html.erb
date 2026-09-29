@@ -1,13 +1,19 @@
-<%# On the shared screen: the party at a glance. %>
-<section class="window coop-party" aria-label="The party">
+<%# The party at a glance, on every view of the table but a phone controller (which shows its own). Replaced live (Campaign#broadcast_party). %>
+<section class="window coop-party" id="table_party" aria-label="The party">
   <h2>Party</h2>
+  <% party = campaign.characters.includes(:job, :user, :character_jobs, equipment_slots: :item).order(:created_at).to_a %>
+  <% if party.empty? %>
+    <p class="empty">Nobody yet.</p>
+  <% elsif party.none?(&:conscious?) %>
+    <p class="party-down">Everyone is down.</p>
+  <% end %>
   <ol class="coop-party__list">
-    <% campaign.characters.includes(:job, :user).order(:created_at).each do |character| %>
+    <% party.each do |character| %>
       <li class="<%= 'is-ko' unless character.conscious? %>">
         <%= entry_portrait(character.job, size: :small) %>
         <div>
           <strong><%= character.name %></strong>
-          <span class="muted"><%= character.user&.name %></span>
+          <span class="muted">Lv <%= character.level %> <%= character.job.name %><%= " · #{character.user.name}" if character.user %></span>
           <%= render "campaigns/tables/vitals", character: character %>
         </div>
       </li>
