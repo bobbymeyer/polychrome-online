@@ -23,7 +23,7 @@ RSpec.describe Recap do
       campaign.messages.create!(kind: "system", body: "Wind Shrine: the party enters Hall.")
       campaign.messages.create!(kind: "system", cue: "key", body: "Found the Crystal Key in Hall.")
       campaign.messages.create!(scope: "whisper", speaker: bartz, body: "psst, secret")
-      campaign.flags.create!(key: "met_cid", public: true)
+      campaign.secrets.create!(body: "Cid is the king's brother.").reveal!
       campaign.flags.create!(key: "gm_secret", value: "twist")
       battle = start_battle(campaign: campaign)
       battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
@@ -36,7 +36,7 @@ RSpec.describe Recap do
     expect(recap.places).to eq([ "Carwen", "Wind Shrine" ])
     expect(recap.battle_lines).to eq([ "Won: Test battle" ])
     expect(recap.found).to eq([ "Found the Crystal Key in Hall." ])
-    expect(recap.learned).to eq([ "Met cid" ])
+    expect(recap.learned).to eq([ "Cid is the king's brother." ]) # a flag is the GM's, not something learned
     expect(recap.last_line).to have_attributes(body: "The crystal is cracking.", speaker: cid)
     expect(recap.ended_at).to be_within(1.second).of(last_week + 2.hours)
     expect(recap.lines.map(&:body)).not_to include("psst, secret")

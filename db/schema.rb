@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_110000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -359,7 +359,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_100000) do
     t.string "key", null: false
     t.string "value", default: "", null: false
     t.text "note"
-    t.boolean "public", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["campaign_id", "key"], name: "index_flags_on_campaign_id_and_key", unique: true

@@ -14,7 +14,7 @@ RSpec.describe "Flags and GM changes", type: :request do
   describe "flags" do
     it "are the GM's to set, count and clear" do
       sit("gm")
-      post campaign_flags_path(campaign), params: { flag: { key: "Crystals found", value: "1", public: "1" } }
+      post campaign_flags_path(campaign), params: { flag: { key: "Crystals found", value: "1" } }
       flag = campaign.flags.find_by!(key: "crystals_found")
       post campaign_flag_bumps_path(campaign, flag), params: { by: 1 }
       expect(flag.reload.value).to eq("2")
@@ -47,16 +47,16 @@ RSpec.describe "Flags and GM changes", type: :request do
       expect(response.body).to include("must start with a letter")
     end
 
-    it "are hidden from players, except the public ones at the table" do
+    it "are hidden from players: the table shows what the party knows, its secrets" do
       campaign.flags.create!(key: "the_king_is_a_fake", value: "yes")
-      campaign.flags.create!(key: "met_the_king", value: "yes", public: true)
+      campaign.secrets.create!(body: "Met the king.").reveal!
       sit(bartz.id)
 
       post campaign_flags_path(campaign), params: { flag: { key: "cheat", value: "1" } }
       expect(response).to have_http_status(:forbidden)
 
       get campaign_path(campaign)
-      expect(response.body).not_to include("the_king_is_a_fake", "met_the_king")
+      expect(response.body).not_to include("the_king_is_a_fake")
       get campaign_table_path(campaign)
       expect(response.body).to include("The party knows", "Met the king")
       expect(response.body).not_to include("fake")

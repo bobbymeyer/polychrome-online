@@ -93,7 +93,7 @@ Every table that belongs to a world carries `world_id`. This is the only second-
 - `character_jobs` — job, ABP, level
 - `ability_slots` — equipped cross-job abilities
 - `inventories`, `equipment_slots`
-- `flags` — campaign-scope key/value for GM state
+- `flags` — campaign-scope key/value for the GM's own state (a choice's outcome, a count), never shown to players. What the party knows is one thing: its secrets, revealed (`Secret`), which a choice, a check's uncover, a cleared place or a leak brings out. Rumours are how news travels, not a kind of knowledge; the codex is the world's, not the campaign's.
 
 ### Session
 

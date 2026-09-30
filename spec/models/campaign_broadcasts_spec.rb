@@ -12,10 +12,10 @@ RSpec.describe Campaign::Broadcasts do
     have_enqueued_job(Turbo::Streams::BroadcastStreamJob).with(stream(campaign, :pages), content: a_string_including("refresh")).at_least(:once)
   end
 
-  it "tells the players' table what the party knows when a flag goes public" do
-    flag = campaign.flags.create!(key: "met_the_king", value: "yes")
-    expect { refreshing_the_table { flag.update!(public: true) } }
-      .to have_broadcasted_to(stream(campaign, :players)).with(a_string_including("party_knows", "Met the king"))
+  it "tells the players' table what the party knows when a secret comes out" do
+    secret = campaign.secrets.create!(body: "The king is a fake.")
+    expect { refreshing_the_table { secret.reveal! } }
+      .to have_broadcasted_to(stream(campaign, :players)).with(a_string_including("party_knows", "The king is a fake."))
   end
 
   it "refreshes the campaign's documents when something on them changes" do
