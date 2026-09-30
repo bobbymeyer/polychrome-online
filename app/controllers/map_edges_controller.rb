@@ -19,15 +19,13 @@ class MapEdgesController < ApplicationController
     end
   end
 
-  def edit
-    render layout: false
-  end
+  def edit; end
 
   def update
     if @edge.update(edge_params)
       redirect_to edit_map_edge_path(@edge), status: :see_other
     else
-      render :edit, layout: false, status: :unprocessable_content
+      render :edit, status: :unprocessable_content
     end
   end
 

@@ -10,7 +10,6 @@ class MapNodesController < ApplicationController
 
   def new
     @node = @campaign.map_nodes.new(x: params[:x].to_i.clamp(0, MapNode::WIDTH), y: params[:y].to_i.clamp(0, MapNode::HEIGHT))
-    render layout: false
   end
 
   def create
@@ -18,13 +17,11 @@ class MapNodesController < ApplicationController
     if @node.save
       redirect_to edit_map_node_path(@node), status: :see_other
     else
-      render :new, layout: false, status: :unprocessable_content
+      render :new, status: :unprocessable_content
     end
   end
 
-  def edit
-    render layout: false
-  end
+  def edit; end
 
   # Also takes { x, y } alone from dragging on the map (a fetch, not the form).
   def update
@@ -34,7 +31,7 @@ class MapNodesController < ApplicationController
     if saved
       redirect_to edit_map_node_path(@node), status: :see_other
     else
-      render :edit, layout: false, status: :unprocessable_content
+      render :edit, status: :unprocessable_content
     end
   end
 

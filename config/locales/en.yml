@@ -29,6 +29,42 @@
 
 en:
   hello: "Hello world"
+  # What a form's button says (f.submit): a sentence in the game's words, not
+  # "Create Npc" or "Update Scene". An edit saves; something new says where it goes.
+  helpers:
+    submit:
+      create: "Create %{model}"
+      update: "Save changes"
+      campaign:
+        create: "Create campaign"
+      npc:
+        create: "Add to the cast"
+      scene:
+        create: "Save scene"
+      job:
+        create: "Create archetype"
+      monster:
+        create: "Add to the bestiary"
+      item:
+        create: "Add to the armory"
+      ability:
+        create: "Add to the grimoire"
+      location_template:
+        create: "Add to the gazetteer"
+      encounter_table:
+        create: "Create encounter table"
+      generator_table:
+        create: "Create table"
+      world_place:
+        create: "Add to the atlas"
+      world_figure:
+        create: "Add to the cast"
+      world_front:
+        create: "Create front"
+      codex_entry:
+        create: "Add to the codex"
+      world:
+        create: "Create world"
   # Jobs are called archetypes wherever a player or GM reads them (the code keeps Job).
   activerecord:
     models:

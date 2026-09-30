@@ -804,6 +804,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .vitals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin: 4px 0 0; }
 .vitals .bar { flex: 1 1 100%; order: 3; }
 .vitals .label { font-size: 12px; font-weight: 800; color: var(--grey); }
+.vitals .is-low { color: var(--caution-ink); } /* amber, as in battle; still, since nothing's urgent outside a fight */
 .vitals .label + strong ~ .label { margin-left: 10px; }
 .coop-setup__steps { padding-left: 20px; display: grid; gap: 10px; }
 

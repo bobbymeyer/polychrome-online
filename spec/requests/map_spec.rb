@@ -50,6 +50,15 @@ RSpec.describe "Map pages", type: :request do
       expect(response.body).to include("Secret Ruins", "is-hidden", 'data-controller="map-editor"', "map_panel")
     end
 
+    it "edits a place in the map's panel, and as a page of its own when opened directly" do
+      get edit_map_node_path(ruins), headers: { "Turbo-Frame" => "map_panel" }
+      expect(response.body).to include('id="map_panel"', "Secret Ruins")
+      expect(response.body).not_to include("topbar") # just the panel, for the map page
+
+      get edit_map_node_path(ruins)
+      expect(response.body).to include("topbar", "stylesheet", 'id="map_panel"', "Secret Ruins") # a whole, styled page
+    end
+
     it "adds a place where the map was clicked, then edits and reveals it" do
       get new_campaign_map_node_path(campaign, x: 640, y: 9999)
       expect(response.body).to include('value="640"', 'value="700"') # clamped to the map

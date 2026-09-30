@@ -448,7 +448,8 @@ Record each place where the game needed more than the Swiss defaults: what chang
   bindings. It changes behaviour rather than style, so it is less a break from Swiss than an
   addition to it.
 - **Low HP turns amber.** At a quarter of max HP or less, the HP number and bar go amber
-  (`--caution`), in the roster, the player's own panel and the GM's unit table. A bold black
+  (`--caution`), in the roster, the player's own panel, the GM's unit table and the table's party
+  panel (still there, not blinking: nothing is urgent outside a fight). A bold black
   number read too slowly mid-fight. Amber stays clear of the interaction red.
 - **Statuses are colour-coded,** as in the games: poison green, sleep blue, paralyze yellow,
   silence purple, blind charcoal, haste teal and slow brown. They are solid badges, and a newly
