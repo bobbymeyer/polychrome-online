@@ -7,8 +7,7 @@ class Campaigns::RestsController < ApplicationController
   before_action :require_campaign_gm
 
   def create
-    @campaign.rest!
-    redirect_to campaign_path(@campaign), notice: "The party rests: full HP, and half their MP back.", status: :see_other
+    redirect_to campaign_path(@campaign), notice: @campaign.rest!, status: :see_other
   rescue Refusal => e
     redirect_to campaign_path(@campaign), alert: e.message, status: :see_other
   end

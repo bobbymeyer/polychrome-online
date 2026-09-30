@@ -68,7 +68,8 @@ module Pointcrawl
       places = world.fetch("places", []).to_h { |p| [ p["id"], p ] }
       world.fetch("antagonists", []).each do |npc|
         go = rng.percent?(WANDER_CHANCE)
-        choices = npc["at"] ? settled_nearby(roads, places, npc["at"]) : []
+        # Only somewhere they can be met: a place with a master's room.
+        choices = npc["at"] ? settled_nearby(roads, places, npc["at"]).select { |id| places.dig(id, "lair") } : []
         pick = choices.empty? ? rng.int(1) : rng.int(choices.size)
         next unless go && choices.any?
 

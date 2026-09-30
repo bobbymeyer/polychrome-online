@@ -69,6 +69,21 @@ RSpec.describe "Locations", type: :request do
       expect(response.body).to include("Galuf", "Can&#39;t remember")
     end
 
+    it "keeps a town's people as the party found them when the world's names change, until the GM lets go" do
+      town = generate("village")
+      met = town.townsfolk.map { |n| n["name"] }
+      campaign.place_party!(node)
+      town.location_template.generator_tables.where(kind: "names").find_each do |table|
+        table.update!(entries: %w[Aoi Haruto Mei Sora Yui Ren].map { |name| { "text" => name } })
+      end
+      town = Location.find(town.id)
+      expect(town.townsfolk.map { |n| n["name"] }).to eq(met)
+      expect(town.changes.pluck("kind")).to include("tables")
+
+      town.revert!("tables")
+      expect(Location.find(town.id).townsfolk.map { |n| n["name"] }).not_to eq(met)
+    end
+
     it "sets and resets the stock, and renames" do
       town = generate("village")
       patch location_stock_path(town), params: { stock: { items: [ "", "phoenix_down" ] } }

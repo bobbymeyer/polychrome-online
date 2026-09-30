@@ -182,7 +182,7 @@ The GM keeps families through rerolls and edits a place's past on the atlas; an 
 5. Dialogue box vs group chat — pick a model (see §7).
 6. Animation/DOM race — see §6.
 7. Stat derivation bugs — pure module, heavy tests.
-8. Editions — decided: **worlds are live.** A GM develops their world as they play it, so editing the Bestiary changes live campaigns, on purpose. There are no world versions and no pins. What stays stable: a battle in progress (it copies what it needs when it starts) and anything a GM has pinned in a location. Forking is copying: a new world can start from another world's books. The seed never overwrites an existing entry; `bin/rails base_world:update` does, explicitly.
+8. Editions — decided: **worlds are live.** A GM develops their world as they play it, so editing the Bestiary changes live campaigns, on purpose. There are no world versions and no pins. What stays stable: a battle in progress (it copies what it needs when it starts), anything a GM has pinned in a location, and the people of a place the party has been to (it keeps the name tables it was rolled from then, so the innkeeper they met keeps her name; a reroll, or letting go of that change, takes the world's tables again). Forking is copying: a new world can start from another world's books. The seed never overwrites an existing entry; `bin/rails base_world:update` does, explicitly.
 9. Turbo Drive vs persistent game screen — game is one long-lived page fed by streams; books use ordinary Turbo Drive navigation.
 
 ## 10. Stack

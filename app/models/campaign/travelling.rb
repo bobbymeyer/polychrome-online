@@ -45,6 +45,7 @@ module Campaign::Travelling
       narrate("Encounter! #{describe_encounter(rolled)}.") if rolled
       tick_clocks!("travel")
       pass_time!(edge.duration, announce: :new_day)
+      destination.location&.remember!
       hear_rumours!(destination)
       welcome_back!(destination)
       drop_stale_where_next!
@@ -113,6 +114,7 @@ module Campaign::Travelling
       current_node&.location&.leave! unless current_node == node
       update!(current_node: node, free_rooms_node_id: (free_rooms_node_id if node == current_node))
       narrate("The party is at #{node.name}.")
+      node.location&.remember!
       hear_rumours!(node)
       welcome_back!(node)
       drop_stale_where_next!

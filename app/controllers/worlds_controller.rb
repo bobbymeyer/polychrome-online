@@ -2,7 +2,7 @@
 
 # A world's page is the table of contents of its books.
 class WorldsController < ApplicationController
-  before_action :set_world, only: %i[show edit update]
+  before_action :set_world, only: %i[show edit update destroy]
   before_action :require_world_editor, only: %i[edit update]
 
   # Home: your campaigns (the ones you play in or GM), then the worlds and
@@ -54,6 +54,18 @@ class WorldsController < ApplicationController
     else
       render :edit, status: :unprocessable_content
     end
+  end
+
+  # Its maker (or an admin) can delete a world nobody is playing in; its
+  # books and canon go with it (the models' dependent:).
+  def destroy
+    return forbid("Only #{@world.owner&.name || 'an admin'} can delete #{@world.name}.") unless admin? || @world.owner_id == current_user&.id
+
+    @world.refuse_deleting!
+    @world.destroy!
+    redirect_to worlds_path, notice: "#{@world.name} was deleted.", status: :see_other
+  rescue Refusal => e
+    redirect_to edit_world_path(@world), alert: e.message, status: :see_other
   end
 
   private

@@ -31,7 +31,18 @@ class World < ApplicationRecord
   before_validation(on: :create) { self.slug = name.to_s.parameterize(separator: "_") if slug.blank? }
 
   validates :name, presence: true
-  validates :slug, presence: true, uniqueness: true, format: { with: BookEntry::SLUG_FORMAT }
+  # "Persona-Scratch" is taken as persona_scratch: the address wants underscores.
+  normalizes :slug, with: ->(slug) { slug.to_s.strip.downcase.tr("- ", "__") }
+  validates :slug, presence: true, uniqueness: true,
+                   format: { with: BookEntry::SLUG_FORMAT, message: "must be lowercase letters, digits and underscores, starting with a letter" }
+
+  # A world can go once nobody plays in it; the Base World never does.
+  def refuse_deleting!
+    raise Refusal, "The Base World stays: the others are copied from it" if slug == "base"
+    return unless campaigns.exists?
+
+    raise Refusal, "#{campaigns.count == 1 ? 'A campaign is' : "#{campaigns.count} campaigns are"} played in #{name} (#{campaigns.order(:name).pluck(:name).uniq.first(3).to_sentence}). Those go first."
+  end
 
   def to_param
     slug_in_database || slug

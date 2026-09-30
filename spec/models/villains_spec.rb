@@ -52,6 +52,27 @@ RSpec.describe "Villains and what clearing a place changes" do
     expect(morrow.reload).to be_defeated
   end
 
+  it "moves in somewhere the party can find them, taking their trouble along, even to a place already cleared" do
+    walk_into_the_throne_room
+    win!(campaign.start_pending_encounter!)
+    hollow = campaign.map_nodes.find_by!(name: "Goblin Hollow")
+    den = hollow.location
+    den.resolve!(den.master_room["key"]) # the party cleared it earlier, and saw off Grol Tusk for good
+    campaign.npcs.find_by!(name: "Grol Tusk").update!(defeated_at: Time.current)
+    expect(den).to be_cleared
+    moved = { "kind" => "moved", "npc" => morrow.id, "name" => "Morrow", "from" => barrow.id, "to" => hollow.id }
+    allow(Pointcrawl::Overnight).to receive(:run) { |_world, rng| [ rng, [ moved ] ] }
+    campaign.update!(time_of_day: "night")
+    campaign.pass_time!(1)
+
+    expect(morrow.reload.location).to eq(den)
+    expect(den.reload).not_to be_cleared
+    clock = campaign.clocks.find_by!(name: "The Barrow Lord wakes")
+    expect(clock.map_node).to eq(hollow)
+    expect(barrow.clocks.running).to be_empty
+    expect(clock.stopper).to eq("Morrow is beaten at Goblin Hollow")
+  end
+
   it "quietens the roads out of a cleared place, brings its secrets out, and has the nearest town welcome the party back" do
     wilds = campaign.map_nodes.create!(name: "Bone Road", kind: "wilds", x: 5, y: 5, visible: true)
     road = campaign.map_edges.create!(from_node: barrow, to_node: wilds, state: "dangerous")

@@ -12,11 +12,11 @@ module Location::Generation
   def generated
     @generated ||= begin
       rolled = if town?
-        in_the_worlds_words(Generators::Town.generate(seed: seed, template: town_settings, tables: location_template.table_entries))
+        in_the_worlds_words(Generators::Town.generate(seed: seed, template: town_settings, tables: tables))
       else
         Generators::Dungeon.generate(seed: seed, template: location_template.settings,
                                      encounters: location_template.encounter_table&.entries || [],
-                                     tables: location_template.table_entries)
+                                     tables: tables)
       end
       Generators::Provenance.apply(rolled, past_for(rolled["name"]), seed: seed)
     end
@@ -34,11 +34,26 @@ module Location::Generation
 
     world = campaign.world
     Generators::Provenance.past_for(seed: seed, name: name, kind: kind,
-                                    given_names: location_template.table_entries.fetch("names", []).filter_map { |e| e["text"] },
-                                    family_names: world.family_names)
+                                    given_names: tables.fetch("names", []).filter_map { |e| e["text"] },
+                                    family_names: overrides["families"] || world.family_names)
   end
 
   def past = Past.new(generated["past"])
+
+  # The tables it's rolled from: the world's, as they are. Once the party
+  # has been here, the ones it was rolled from then (#remember!), so the
+  # people they met keep their names when the world's tables change.
+  def tables
+    overrides["tables"] || location_template.table_entries
+  end
+
+  # The party got here: from now on it's rolled from the tables as they are
+  # now. A reroll (Location#reroll!) takes the world's again.
+  def remember!
+    return if overrides.key?("tables")
+
+    update!(overrides: overrides.merge("tables" => location_template.table_entries, "families" => campaign.world.family_names))
+  end
 
   # Who made the shop's made things (not its potions), and who had them.
   def with_stock_stories(view)

@@ -16,10 +16,8 @@
     data-chat-line-portrait-value="<%= speaker_portrait_url(message.speaker, message.expression) %>"
     data-chat-line-plate-value="<%= plate_style(message.speaker.name, message.speaker.try(:colour)) if message.speaker %>">
   <% if message.choice? %>
-    <p class="chat-line__body">
-      <%= message.body %>
-      <% if message.settled %><strong>They chose: <%= message.settled %>.</strong><% end %>
-    </p>
+    <%# What they chose is its own line next ("The party chose: …"), not said twice here. %>
+    <p class="chat-line__body"><%= message.body %></p>
   <% elsif message.system? %>
     <p class="chat-line__body">
       <%= message.body %>

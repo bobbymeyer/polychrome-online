@@ -78,10 +78,11 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     expect(@seen["secrets"]).to eq([ { "id" => secret.id, "at" => varn.id } ])
     expect(secret.reload.rumour).to have_attributes(body: "The miller pays the goblins.", reached: [ varn.id ])
     expect(campaign.messages.where(body: "In Varn, someone whispers: “The miller pays the goblins.”")).to exist
-    expect(secret).not_to be_revealed
+    expect(secret.reload).to have_attributes(revealed?: true, revealed_by: "Heard in Varn") # heard is known
 
     get campaign_prep_path(campaign)
-    expect(response.body).to include("got out: it's going round as a rumour, and the party has heard it")
+    expect(response.body).to include("The miller pays the goblins.", "Heard in Varn")
+    expect(response.body).not_to include("Reveal</button>")
   end
 
   it "tells the legends: the history the party can know, and their story since; the GM sees the rest" do

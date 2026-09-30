@@ -22,6 +22,25 @@ module Location::Exploration
     progress.fetch("resolved", []).include?(key)
   end
 
+  # The master's room: where the boss waits, or an antagonist who lives here.
+  def master_room
+    view.fetch("rooms", []).find { |r| r.dig("decision", "kind") == "boss" }
+  end
+
+  # Somewhere an antagonist can be met (Campaign::Overnight moves them only here).
+  def lair? = !master_room.nil?
+
+  # Its master has been dealt with (in any master's room the GM added, too).
+  def cleared?
+    view.fetch("rooms", []).any? { |r| r.dig("decision", "kind") == "boss" && resolved?(r["key"]) }
+  end
+
+  # An antagonist has moved in: the master's room waits for the party again.
+  def await_villain!
+    room = master_room or return
+    update!(progress: progress.merge("resolved" => progress.fetch("resolved", []) - [ room["key"] ]))
+  end
+
   # --- locks and keys ----------------------------------------------------------
 
   # Lock ids whose keys the party has found here.
@@ -233,7 +252,7 @@ module Location::Exploration
     lines << "#{villain.name}#{", #{villain.title.downcase_first}," if villain.title.present?} turns to face you."
     said = villain.world_figure&.blurb.presence || villain.description.presence
     lines << said if said
-    lines << "“#{villain.monster.boss_line.strip}”" if villain.monster&.boss_line.present?
+    lines << "#{villain.name}: #{villain.monster.boss_line.strip}" if villain.monster&.boss_line.present? # in their own box (Scene.read_line)
     lines
   end
 

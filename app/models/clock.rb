@@ -90,6 +90,14 @@ class Clock < ApplicationRecord
     self
   end
 
+  # What stops it: "The Terminal is cleared", or, while an antagonist who
+  # lives there is at large, "Kurosaki is beaten at The Drowned Line".
+  def stopper
+    place = map_node.location
+    villain = place && campaign.npcs.at_large.where(location_id: place.id).order(:id).first
+    villain ? "#{villain.name} is beaten at #{map_node.name}" : "#{map_node.name} is cleared"
+  end
+
   # The place whose mode it sets off when it fills.
   def location = location_mode&.location
 
