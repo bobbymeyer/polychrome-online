@@ -18,7 +18,7 @@ module Location::Generation
                                      encounters: location_template.encounter_table&.entries || [],
                                      tables: tables)
       end
-      Generators::Provenance.apply(rolled, past_for(rolled["name"]), seed: seed)
+      Generators::Provenance.apply(rolled, past_for(rolled["name"]), seed: seed, lore: campaign.world.lore)
     end
   end
 
@@ -35,10 +35,10 @@ module Location::Generation
     world = campaign.world
     Generators::Provenance.past_for(seed: seed, name: name, kind: kind,
                                     given_names: tables.fetch("names", []).filter_map { |e| e["text"] },
-                                    family_names: overrides["families"] || world.family_names)
+                                    family_names: overrides["families"] || world.family_names, lore: world.lore)
   end
 
-  def past = Past.new(generated["past"])
+  def past = Past.new(generated["past"], lore: campaign.world.lore)
 
   # The tables it's rolled from: the world's, as they are. Once the party
   # has been here, the ones it was rolled from then (#remember!), so the
@@ -60,7 +60,7 @@ module Location::Generation
     return view unless view["kind"] == "town" && view["stock"].present?
 
     made = campaign.world.items.where(slug: view["stock"]).where.not(category: "consumable").pluck(:slug)
-    view.merge("stock_stories" => Generators::Provenance.stock(made.sort, view["past"], seed: seed))
+    view.merge("stock_stories" => Generators::Provenance.stock(made.sort, view["past"], seed: seed, lore: campaign.world.lore))
   end
 
   # The template's settings, less the services this world doesn't have.

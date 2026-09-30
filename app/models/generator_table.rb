@@ -20,8 +20,22 @@ class GeneratorTable < ApplicationRecord
     "room_events" => %w[text],
     "forks" => %w[text],
     "locks" => %w[text key],
-    "treasure" => %w[item gil]
+    "treasure" => %w[item gil],
+    # The world's lore (Generators::Lore): what its histories and provenance are made of.
+    "trades" => %w[text makes],
+    "pasts" => %w[text rooms heart keeps named],
+    "falls" => %w[text did sealed trace dead town],
+    "quarrels" => %w[text],
+    "betrayals" => %w[text],
+    "fortunes" => %w[text],
+    "waters" => %w[text],
+    "owners" => %w[text],
+    "sightings" => %w[text],
+    "raids" => %w[text]
   }.freeze
+  LORE_KINDS = Generators::Lore::KINDS
+  # Fields that are lists, written with commas.
+  LIST_FIELDS = %w[makes rooms keeps named].freeze
   INTEGER_FIELDS = %w[weight width height gil].freeze
   # What each generator draws on.
   TOWN_KINDS = %w[town_names names hooks service_names buildings stock].freeze
@@ -34,7 +48,18 @@ class GeneratorTable < ApplicationRecord
     "families" => "a family's name (Vell)", "hooks" => "a hook", "rooms" => "a room's name", "room_events" => "what happens there",
     "forks" => "what the costly way costs", "locks" => "the lock, then | and its key (Portal | Blue crystal)",
     "service_names" => "a name, then | and the service (inn, shop, guild or temple)",
-    "stock" => "an item's name", "treasure" => "an item's name, or an amount like 150 gil"
+    "stock" => "an item's name", "treasure" => "an item's name, or an amount like 150 gil",
+    "trades" => "a trade, then | and what it makes, with commas (smith | blade, helm; nothing, for a trade that makes nothing to remember)",
+    "pasts" => "what a dungeon was | its rooms, with commas | its heart (the boss's room) | what it kept, with commas | " \
+               "words in a name that give it away, with commas (station | Ticket Hall, Platform 2 | The Last Platform | ticket, lamp | station, line)",
+    "falls" => "how a place fell | what it did | how it was left | what's still there | who died there | " \
+               "and, if it can strike a town too, what happened, with %s for the town (fire | burned | sealed after the fire | " \
+               "Scorched beams. | who burned with it | A fire took half of %s)",
+    "quarrels" => "what families fall out over (a horse sold lame)", "betrayals" => "what one family did to another (informed on them to the tax-men)",
+    "fortunes" => "what goes well for a family (a good harvest)", "waters" => "somewhere to drown, when the map has no water of its own (the millpond)",
+    "owners" => "how a thing changed hands, with %s for the family (Pawned by a %s, who never came back for it)",
+    "sightings" => "what people say when someone who got away turns up, with {who} and {where} ({who} was seen in {where}.)",
+    "raids" => "what people say when a road is raided overnight, with {from} and {to} (A caravan on the road between {from} and {to} was attacked.)"
   }.freeze
 
   attr_accessor :paste
@@ -52,13 +77,16 @@ class GeneratorTable < ApplicationRecord
   # Form rows or plain hashes; blank rows are dropped, numbers cast.
   def entries=(rows)
     super(JsonCasting.rows(rows).filter_map do |row|
-      entry = row.slice("text", "key", "service", "item", "roof", *INTEGER_FIELDS).transform_values(&:presence).compact
+      entry = row.slice("text", "key", "service", "item", "roof", *lore_fields, *INTEGER_FIELDS).transform_values(&:presence).compact
       next if entry.slice("text", "item", "gil").empty?
 
       INTEGER_FIELDS.each { |f| entry[f] = JsonCasting.integer(entry[f]) if entry.key?(f) }
       entry
     end)
   end
+
+  # The lore kinds' own fields.
+  def lore_fields = LORE_KINDS.flat_map { |kind| KINDS.fetch(kind) }.uniq - %w[text]
 
   private
 
@@ -84,6 +112,7 @@ class GeneratorTable < ApplicationRecord
         end
       when "service_names" then row.merge("text" => value, "service" => parts.second.to_s.downcase.presence).compact
       when "locks" then row.merge("text" => value, "key" => parts.second.presence).compact
+      when *LORE_KINDS then row.merge(fields.zip(parts).to_h { |field, part| [ field, part.to_s.presence ] }.compact)
       else row.merge("text" => value)
       end
     end

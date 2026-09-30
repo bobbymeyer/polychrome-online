@@ -13,74 +13,22 @@ module Generators
   # given_names:  ["Mira", ...]                 the world's names tables
   # family_names: ["Vell", ...]                 the world's families tables
   # families:     [{ "name", "trade", "seat" }] the GM's own, kept on reroll
+  # lore:         the world's lore (Lore): its trades, what dungeons were,
+  #               how places fall, what people quarrel over. A world without
+  #               some of it has none of that happen.
   #
   # Pure: same seed and inputs, same history. Time is counted in years ago.
   module History
     STEP = 5
     FOUNDING = 30
 
-    TRADES = %w[smith brewer miller ferryman weaver merchant fisher chandler jeweller mason].freeze
-    # What each making trade makes, when it makes something to be remembered.
-    MAKES = { "smith" => %w[blade helm spear axe], "jeweller" => %w[ring locket circlet], "weaver" => %w[cloak banner],
-              "mason" => %w[seal effigy] }.freeze
-
-    FAMILY_NAMES = %w[Vell Marrow Asher Crane Dunmore Hale Pike Rook Thorne Wick Briar Coldwell Fenwick Hargrave Lark Moss Oakes
-                      Sallow Tennant Garrow].freeze
-    GIVEN_NAMES = %w[Aldo Bryn Cato Dessa Evert Fane Gilda Hob Ismay Joss Kell Lise Mott Nell Osric Petra Quen Roz Seb Tova].freeze
-
-    # What a dungeon was before it was a dungeon: its rooms, its heart (the
-    # boss's room) and what its people kept there.
-    PASTS = {
-      "manor" => { "rooms" => [ "Great Hall", "Kitchens", "Nursery", "Wine Cellar", "Portrait Gallery", "Servants' Stair", "Library", "Family Chapel" ],
-                   "heart" => "Master Bedchamber", "keeps" => %w[signet portrait ewer] },
-      "mine" => { "rooms" => [ "Pithead", "Cart Run", "Shored Gallery", "Flooded Drift", "Powder Store", "Winding House", "Tally Office" ],
-                  "heart" => "The Deep Seam", "keeps" => %w[lamp pick nugget] },
-      "abbey" => { "rooms" => %w[Cloister Scriptorium Refectory Dormitory Infirmary Undercroft] + [ "Chapter House", "Bell Tower" ],
-                   "heart" => "The Reliquary", "keeps" => %w[reliquary psalter censer] },
-      "fort" => { "rooms" => %w[Gatehouse Armoury Barracks Stores Cells Stables] + [ "Well Court", "Signal Tower" ],
-                  "heart" => "The Keep", "keeps" => %w[banner horn warrant] },
-      "tower" => { "rooms" => [ "Long Stair", "Study", "Observatory", "Laboratory", "Map Room", "Stores" ],
-                   "heart" => "The Top Room", "keeps" => %w[astrolabe journal staff] },
-      "tomb" => { "rooms" => [ "Mourners' Walk", "Ossuary", "Chapel of Rest", "Sealed Niches", "Embalming Room", "Offering Hall" ],
-                  "heart" => "The First Tomb", "keeps" => %w[crown ring urn] }
-    }.freeze
-
-    # How a place ends: what happened, how it's said, what's still there.
-    FALLS = {
-      "fire" => { "did" => "burned", "sealed" => "sealed after the fire", "trace" => "Scorched beams, and a smell of smoke that never left.",
-                  "dead" => "who burned with it" },
-      "flood" => { "did" => "flooded", "sealed" => "left to the water", "trace" => "A tide line on the walls, higher than your head.",
-                   "dead" => "who drowned in it" },
-      "plague" => { "did" => "took the sickness", "sealed" => "sealed with the sick inside",
-                    "trace" => "Doors chalked with a cross, from the outside.", "dead" => "who died of the sickness there" },
-      "collapse" => { "did" => "fell in", "sealed" => "never dug out", "trace" => "Rubble, and a hand-cart still half full.",
-                      "dead" => "who was under it when it fell" },
-      "curse" => { "did" => "went wrong", "sealed" => "bricked up and blessed", "trace" => "Every mirror turned to face the wall.",
-                   "dead" => "who never came out" }
-    }.freeze
-
-    QUARRELS = [ "a boundary stone moved in the night", "a horse sold lame", "a debt never paid", "a broken betrothal",
-                 "water rights on the mill race", "a pew in the temple", "a song about them sung at a wedding", "a dog that killed sheep",
-                 "the price of a bridge toll", "who found the spring first" ].freeze
-    BETRAYALS = [ "informed on them to the tax-men", "bought their debts and called them in", "burned their stores and blamed the weather",
-                  "married into them for the land and left", "sold their secret to a rival house" ].freeze
-
-    # A name that says what a place was: the Drowned Abbey was an abbey.
-    NAMED = {
-      "abbey" => /abbey|priory|chapel|temple|shrine|monastery|cloister/i, "mine" => /mine|quarry|pit|seam|delve|dig/i,
-      "fort" => /fort|keep|castle|citadel|garrison|bastion|watch/i, "tower" => /tower|spire|observatory|lighthouse/i,
-      "tomb" => /crypt|tomb|barrow|grave|catacomb|ossuary|mound|vault/i, "manor" => /manor|hall|house|estate|lodge/i
-    }.freeze
-
     module_function
 
-    def was_for(name)
-      NAMED.find { |_, pattern| name.to_s.match?(pattern) }&.first
-    end
+    def was_for(name, lore) = Lore.was_for(name, lore)
 
-    def generate(seed:, places:, given_names: [], family_names: [], families: [], years: 100)
+    def generate(seed:, places:, given_names: [], family_names: [], families: [], years: 100, lore: Lore.empty)
       Sim.new(Pool.new(Battle::Rng.new(seed)), places: places, given_names: given_names, family_names: family_names,
-                                                 families: families, years: years.to_i.clamp(40, 300)).run
+                                                 families: families, years: years.to_i.clamp(40, 300), lore: lore).run
     end
 
     # "the Vells", "the Ashes"
@@ -98,11 +46,13 @@ module Generators
     end
 
     class Sim
-      def initialize(pool, places:, given_names:, family_names:, families:, years:)
+      def initialize(pool, places:, given_names:, family_names:, families:, years:, lore:)
         @pool = pool
         @years = years
-        @given = unique(given_names).then { |names| names.size >= 12 ? names : names + (GIVEN_NAMES - names) }
-        @surnames = unique(family_names).then { |names| names.size >= 4 ? names : names + (FAMILY_NAMES - names) }
+        @lore = Lore.empty.merge(lore)
+        # The world's names; a world without any still has people, just plainly named.
+        @given = unique(given_names).then { |names| names.empty? ? %w[Someone] : names }
+        @surnames = unique(family_names)
         @places = places.map { |p| { "key" => p["key"].to_s, "name" => p["name"].to_s, "kind" => p["kind"].to_s } }
         @pinned = Array(families).select { |f| f["name"].to_s.strip != "" }
         @events = []
@@ -165,10 +115,12 @@ module Generators
         @families_named = @pinned.map { |f| f["name"].to_s.strip }
         @families = Array.new(count) do |i|
           pin = @pinned[i]
-          surnames = FAMILY_NAMES - @families_named if surnames.empty?
-          name = pin ? pin["name"].to_s.strip : surnames.delete_at(pool.int(surnames.size))
+          surnames = @surnames - @families_named if surnames.empty?
+          # Out of the world's family names: a house goes by a number.
+          name = pin ? pin["name"].to_s.strip : (surnames.empty? ? "House #{i + 1}" : surnames.delete_at(pool.int(surnames.size)))
           @families_named << name
-          trade = pin && TRADES.include?(pin["trade"]) ? pin["trade"] : TRADES[pool.int(TRADES.size)]
+          trades = @lore["trades"].keys
+          trade = pin && trades.include?(pin["trade"]) ? pin["trade"] : pick(trades)
           family = { "key" => "family-#{i}", "name" => name, "trade" => trade, "seat" => nil, "standing" => 2 + pool.int(2),
                      "lineage" => [], "grudges" => [], "gone" => nil, "pinned" => !pin.nil? }
           family["pinned_seat"] = pin["seat"].to_s if pin && pin["seat"].to_s != ""
@@ -200,9 +152,10 @@ module Generators
             family["seat"] ||= place["key"]
             record("founded", "#{family['head']['name']} founded #{place['name']}.", places: [ place ], families: [ family ])
           else
-            rolled = PASTS.keys[pool.int(PASTS.size)]
-            past["was"] = History.was_for(place["name"]) || rolled
-            record("built", "The #{plural(family['name'])} built #{place['name']}, #{past['was'].match?(/\A[aeiou]/) ? 'an' : 'a'} #{past['was']}.", places: [ place ], families: [ family ])
+            rolled = pick(@lore["pasts"].keys)
+            past["was"] = History.was_for(place["name"], @lore) || rolled
+            was = past["was"] ? ", #{past['was'].match?(/\A[aeiou]/) ? 'an' : 'a'} #{past['was']}" : ""
+            record("built", "The #{plural(family['name'])} built #{place['name']}#{was}.", places: [ place ], families: [ family ])
           end
         end
         @now = @years - FOUNDING
@@ -235,15 +188,20 @@ module Generators
 
       KINDS = %w[married quarrel betrayal disaster drowned sold made fled prospered].freeze
 
+      # What a trade makes, when it makes something to be remembered.
+      def makes(trade) = @lore["trades"].fetch(trade.to_s, [])
+
+      def makers = living.select { |f| makes(f["trade"]).any? }
+
       def happen
         weights = {
           "married" => matches.any? ? 3 : 0,
-          "quarrel" => pairs.any? ? 4 : 0,
-          "betrayal" => feuds.any? ? 3 : 0,
-          "disaster" => standing_places.any? ? 2 : 0,
-          "drowned" => 1,
+          "quarrel" => pairs.any? && @lore["quarrels"].any? ? 4 : 0,
+          "betrayal" => feuds.any? && @lore["betrayals"].any? ? 3 : 0,
+          "disaster" => standing_places.any? && @lore["falls"].any? ? 2 : 0,
+          "drowned" => waters.any? || @lore["waters"].any? ? 1 : 0,
           "sold" => sellers.any? ? 1 : 0,
-          "made" => living.any? { |f| MAKES.key?(f["trade"]) } ? 2 : 0,
+          "made" => makers.any? ? 2 : 0,
           "fled" => living.size > 3 && living.any? { |f| f["standing"] <= 1 } ? 2 : 0,
           "prospered" => 1
         }
@@ -280,7 +238,7 @@ module Generators
         a, b = pick(pairs)
         rel = relation(a, b)
         rel["score"] -= 2 + pool.int(2)
-        cause = QUARRELS[pool.int(QUARRELS.size)]
+        cause = pick(@lore["quarrels"])
         if rel["score"] <= -3 && !rel["feud"]
           rel["feud"] = { "since" => @now, "cause" => cause }
           record("feud", "The #{plural(a['name'])} and the #{plural(b['name'])} fell out over #{cause}. It became a feud.", families: [ a, b ])
@@ -294,7 +252,7 @@ module Generators
       def betrayal!
         a, b = pick(feuds)
         a, b = b, a if pool.percent?(50)
-        how = BETRAYALS[pool.int(BETRAYALS.size)]
+        how = pick(@lore["betrayals"])
         relation(a, b)["score"] -= 3
         b["standing"] = [ b["standing"] - 1, 0 ].max
         a["standing"] += 1
@@ -309,11 +267,12 @@ module Generators
       # dies in it, and something is lost there); a town recovers.
       def disaster!
         place = pick(standing_places)
-        kind = FALLS.keys[pool.int(FALLS.size)]
+        kind = pick(@lore["falls"].keys)
         if place["kind"] == "town"
-          # A town's troubles don't come twice: another fire is a quiet year.
-          left = %w[fire flood plague] - place.fetch("troubles", [])
-          chosen = left[pool.int(left.size)] if left.any?
+          # Only what can strike a town (a fall with a town line), and a
+          # town's troubles don't come twice: another fire is a quiet year.
+          left = @lore["falls"].select { |_, fall| fall["town"] }.keys - place.fetch("troubles", [])
+          chosen = pick(left)
           return prospered! unless chosen
 
           kind = chosen
@@ -325,8 +284,7 @@ module Generators
         else
           seated = living.select { |f| f["seat"] == place["key"] }
           seated.each { |f| f["standing"] = [ f["standing"] - 1, 0 ].max }
-          what = { "fire" => "A fire took half of #{place['name']}", "flood" => "The river rose through #{place['name']}",
-                   "plague" => "Sickness came to #{place['name']}" }.fetch(kind)
+          what = @lore["falls"][kind]["town"].sub("%s", place["name"])
           suspect = feud_enemy(holder)
           record(kind, "#{what}.", places: [ place ], families: seated,
                  truth: (("#{suspect['head']['name']} set it, to hurt the #{plural(holder['name'])}." if suspect && kind == "fire" && pool.percent?(40))))
@@ -334,7 +292,7 @@ module Generators
       end
 
       def fall!(place, kind, holder)
-        fall = FALLS.fetch(kind)
+        fall = @lore["falls"].fetch(kind)
         victim = holder && !holder["gone"] ? (holder["heir"] || holder["head"]) : nil
         suspect = holder && feud_enemy(holder)
         blamed = suspect && pool.percent?(40)
@@ -348,10 +306,10 @@ module Generators
           lost["lost_at"] = place["key"]
           place["heirlooms"] << lost["key"]
         end
-        text = "#{place['name']} #{fall['did']}"
+        text = "#{place['name']} #{fall['did'] || 'fell'}"
         text += ", and #{victim['name']} with it" if victim
         text += "; #{lost['name']} was never found" if lost
-        record(kind, "#{text}. It was #{fall['sealed']}.", places: [ place ], families: [ holder ].compact,
+        record(kind, "#{text}.#{" It was #{fall['sealed']}." if fall['sealed']}", places: [ place ], families: [ holder ].compact,
                truth: ("#{suspect['head']['name']} had a hand in it." if blamed))
         holder["grudges"] << { "against" => suspect["key"], "why" => "what happened at #{place['name']}", "ago" => @now } if blamed
       end
@@ -369,7 +327,7 @@ module Generators
         family = pick(living)
         who = pool.percent?(70) && family["heir"] ? family["heir"] : family["head"]
         water = pick(waters)
-        where = water ? water["name"] : %w[the river the millpond the lake the sea][pool.int(4)]
+        where = water ? water["name"] : pick(@lore["waters"])
         enemy = feud_enemy(family)
         rumour = enemy && pool.percent?(70)
         true_rumour = rumour && pool.percent?(40)
@@ -400,9 +358,9 @@ module Generators
       # Something made to be remembered: a smith's blade for the head of
       # another house. It turns up later as treasure, with its story.
       def made!
-        maker = pick(living.select { |f| MAKES.key?(f["trade"]) })
+        maker = pick(makers)
         patron = pick(living - [ maker ]) || maker
-        things = MAKES.fetch(maker["trade"])
+        things = makes(maker["trade"])
         thing = things[pool.int(things.size)]
         heirloom = { "key" => "heirloom-#{@heirlooms.size}", "name" => "the #{patron['name']} #{thing}", "thing" => thing,
                      "maker" => maker["head"]["name"], "trade" => maker["trade"], "made_for" => patron["head"]["name"],
@@ -428,8 +386,8 @@ module Generators
       def prospered!
         family = pick(living)
         family["standing"] += 1
-        record("prospered", "The #{plural(family['name'])} did well: #{[ 'a good harvest', 'a lucky ship', 'a rich marriage', 'a new mill' ][pool.int(4)]}.",
-               families: [ family ])
+        fortune = pick(@lore["fortunes"])
+        record("prospered", "The #{plural(family['name'])} did well#{": #{fortune}" if fortune}.", families: [ family ])
       end
 
       # Before the present: every dungeon has fallen by now, and somewhere a
@@ -437,14 +395,14 @@ module Generators
       def settle
         standing_places.select { |p| p["kind"] == "dungeon" }.each do |place|
           @now = STEP * (1 + pool.int(4))
-          kind = %w[fire flood plague collapse curse][pool.int(5)]
+          kind = pick(@lore["falls"].keys) or break # a world where nothing falls
           fall!(place, kind, family(place["holder"]))
         end
         @now = STEP
-        return if feuds.any? || pairs.empty?
+        return if feuds.any? || pairs.empty? || @lore["quarrels"].empty?
 
         a, b = pairs.min_by { |x, y| [ relation(x, y)["score"], x["key"], y["key"] ] }
-        cause = QUARRELS[pool.int(QUARRELS.size)]
+        cause = pick(@lore["quarrels"])
         relation(a, b)["score"] = [ relation(a, b)["score"], -3 ].min
         relation(a, b)["feud"] = { "since" => @now, "cause" => cause }
         record("feud", "The #{plural(a['name'])} and the #{plural(b['name'])} fell out over #{cause}. It became a feud.", families: [ a, b ])
@@ -488,7 +446,7 @@ module Generators
         holder = family(p["holder"])
         rival = founders && (@families - [ founders ]).min_by { |o| [ relation(founders, o)["score"], o["key"] ] }
         feud = founders && living.find { |o| o != founders && relation(founders, o)["feud"] }
-        makers = living.select { |f| f["seat"] == p["key"] && MAKES.key?(f["trade"]) }.map { |f| { "name" => f["head"]["name"], "trade" => f["trade"] } }
+        makers = self.makers.select { |f| f["seat"] == p["key"] }.map { |f| { "name" => f["head"]["name"], "trade" => f["trade"] } }
         out = p.slice("key", "name", "kind", "founded", "founder", "was", "fall", "lost", "heirlooms")
         out["family"] = founders["name"] if founders
         out["founders_left"] = founders["gone"] if founders && founders["gone"]

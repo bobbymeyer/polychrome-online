@@ -57,7 +57,7 @@
 
 <%= render(@location.town? ? "locations/town" : "locations/dungeon", location: @location, view: view, gm: @gm) %>
 
-<% if (past = Past.new(view["past"])).lines.any? %>
+<% if (past = Past.new(view["past"], lore: @location.campaign.world.lore)).lines.any? %>
   <section class="window past" aria-label="Its past">
     <h2>Its past</h2>
     <% past.lines.each do |line| %><p><%= line %></p><% end %>

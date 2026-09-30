@@ -141,7 +141,7 @@ Test both modules exhaustively with RSpec. Property-style tests on the resolver 
 
 GM controls: reroll, pin, add hand-authored NPC/room, place boss, override stock.
 
-**History and provenance.** Before play, a world can roll a pocket history over its atlas (`Generators::History`, written in by `Chronicle`). It is a seeded simulation, pure like the battle resolver: a few families across the places, over a century or so, in five-year steps. It is written into the existing canon, not a parallel world:
+**History and provenance.** Before play, a world can roll a pocket history over its atlas (`Generators::History`, written in by `Chronicle`). It is a seeded simulation, pure like the battle resolver: a few families across the places, over a century or so, in five-year steps. What it's made of is the world's own, like everything a generator draws on. Its lore (`Generators::Lore`) is a set of generator tables, edited like the rest: its families' trades and what they make, what its dungeons were (their rooms, heart and keepsakes, and the words in a name that give one away), how places fall, what people quarrel over, how they betray each other, what goes well for them, where they drown, how things change hands, and what's said overnight when someone is seen or a road is raided. A world without some of it has none of that happen. The Base World's are seed data, and worlds made before lore was theirs were given the same. It is written into the existing canon, not a parallel world:
 - codex pages, with the truths in the GM notes;
 - the living heads in the cast;
 - a past on each place;

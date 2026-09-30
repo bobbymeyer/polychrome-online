@@ -61,6 +61,17 @@ class World < ApplicationRecord
   end
 
   # The surnames its generator tables offer (families of a place's past).
+  # What its histories and the pasts of its places are made of (Generators::Lore), from its lore tables.
+  def lore
+    @lore ||= Generators::Lore.from_tables(generator_tables.where(kind: GeneratorTable::LORE_KINDS).order(:id)
+                                                           .group_by(&:kind).transform_values { |tables| tables.flat_map(&:entries) })
+  end
+
+  def reload(*)
+    @lore = @family_names = nil
+    super
+  end
+
   def family_names
     @family_names ||= generator_tables.of_kind("families").flat_map { |t| t.entries.filter_map { |e| e["text"] } }
   end

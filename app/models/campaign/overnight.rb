@@ -73,11 +73,13 @@ module Campaign::Overnight
         when "moved"
           to = by_id.fetch(event["to"])
           villain_moves!(npcs.find(event["npc"]), from: by_id[event["from"]], to: to)
-          start_rumour!("#{event['name']} was seen in #{to.name}.", at: to)
+          said = lore_line("sightings", event["npc"].to_i)
+          start_rumour!(Generators::Lore.fill(said, who: event["name"], where: to.name), at: to) if said
           notes << "#{event['name']} went from #{by_id[event['from']]&.name} to #{to.name}."
         when "caravan"
           from, to = by_id.values_at(event["from"], event["to"])
-          start_rumour!("A caravan on the road between #{from.name} and #{to.name} was attacked.", at: from, also: [ to ])
+          said = lore_line("raids", from.id + to.id)
+          start_rumour!(Generators::Lore.fill(said, from: from.name, to: to.name), at: from, also: [ to ]) if said
           notes << "A caravan was lost between #{from.name} and #{to.name}."
         when "price"
           node = by_id.fetch(event["place"])
@@ -98,12 +100,19 @@ module Campaign::Overnight
 
   private
 
+  # One of the world's lines for what people say overnight (its lore); which
+  # one follows from who and the day, so a night reads the same every time.
+  def lore_line(kind, salt)
+    lines = world.lore[kind]
+    lines[(salt + day) % lines.size] if lines.any?
+  end
+
   # An antagonist moves in somewhere new: its master's room is theirs now,
   # even if the party already cleared it, and the clocks only they were
   # keeping going (their old place is cleared) go with them.
   def villain_moves!(villain, from:, to:)
     villain.update!(location: to.location)
-    to.location.await_villain!
+    to.location&.await_villain!
     return unless from&.location&.cleared? && !npcs.at_large.exists?(location_id: from.location.id)
 
     from.clocks.running.each { |clock| clock.update!(map_node: to) }

@@ -53,8 +53,8 @@
         <div class="field"><%= p.label :feud_cause, "Over" %><%= p.text_field :feud_cause, value: was["feud_cause"], placeholder: "a horse sold lame" %></div>
       </div>
       <div class="field-row">
-        <div class="field"><%= p.label :was, "Once (a dungeon)" %><%= p.select :was, Generators::History::PASTS.keys.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing in particular", selected: was["was"] } %></div>
-        <div class="field"><%= p.label :fall_kind, "Until" %><%= p.select :fall_kind, WorldPlace::PAST_FALLS.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing happened", selected: was["fall_kind"] } %></div>
+        <div class="field"><%= p.label :was, "Once (a dungeon)" %><%= p.select :was, @world.lore["pasts"].keys.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing in particular", selected: was["was"] } %></div>
+        <div class="field"><%= p.label :fall_kind, "Until" %><%= p.select :fall_kind, place.past_falls.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing happened", selected: was["fall_kind"] } %></div>
         <div class="field"><%= p.label :fall_ago, "Years ago" %><%= p.number_field :fall_ago, value: was["fall_ago"], min: 0 %></div>
         <div class="field"><%= p.label :holder, "Owned now by" %><%= p.text_field :holder, value: was["holder"] %></div>
       </div>

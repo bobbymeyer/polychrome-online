@@ -34,7 +34,7 @@
       <% @places.each do |place| %>
         <tr>
           <td><strong><%= place.name %></strong><% if place.notes.present? %><br><span class="muted"><%= place.notes.truncate(120) %></span><% end %>
-            <% if (past = Past.new(place.past)).present? %><br><span class="muted"><%= past.to_s.truncate(160) %></span><% end %></td>
+            <% if (past = Past.new(place.past, lore: @world.lore)).present? %><br><span class="muted"><%= past.to_s.truncate(160) %></span><% end %></td>
           <td><%= place.kind.humanize %></td>
           <td><%= place.location_template ? "#{place.location_template.name}, seed #{place.seed}" : "—" %></td>
           <td><%= place.known ? "From the start" : "Once found" %></td>

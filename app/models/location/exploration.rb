@@ -247,8 +247,8 @@ module Location::Exploration
 
   def villain_prelude(target, villain)
     past = view.fetch("past", {})
-    fall = Generators::History::FALLS[past.dig("fall", "kind")]
-    lines = [ "#{target['name']}. #{fall ? fall['trace'] : 'The air is still, and something is waiting.'}" ]
+    fall = campaign.world.lore.dig("falls", past.dig("fall", "kind"))
+    lines = [ "#{target['name']}. #{fall&.dig('trace') || 'The air is still, and something is waiting.'}" ]
     lines << "#{villain.name}#{", #{villain.title.downcase_first}," if villain.title.present?} turns to face you."
     said = villain.world_figure&.blurb.presence || villain.description.presence
     lines << said if said
@@ -262,15 +262,15 @@ module Location::Exploration
   # it or clears it before the fight.
   def boss_prelude(target, who)
     past = view.fetch("past", {})
-    fall = Generators::History::FALLS[past.dig("fall", "kind")]
+    fall = campaign.world.lore.dig("falls", past.dig("fall", "kind"))
     leader = campaign.world.monsters.where(slug: target.dig("decision", "monsters").to_h.keys).order(level: :desc).first
-    lines = [ "#{target['name']}. #{fall ? fall['trace'] : 'The air is still, and something is waiting.'}" ]
+    lines = [ "#{target['name']}. #{fall&.dig('trace') || 'The air is still, and something is waiting.'}" ]
     lost = Array(past["lost"]).last if fall
     if fall && past["was"]
       ago = past.dig("fall", "ago")
-      lines << "#{ago ? Generators::History.ago(ago).upcase_first : 'Long ago'}, the #{[ past['family'], past['was'] ].compact.join(' ')} #{fall['did']}."
+      lines << "#{ago ? Generators::History.ago(ago).upcase_first : 'Long ago'}, the #{[ past['family'], past['was'] ].compact.join(' ')} #{fall['did'] || 'fell'}."
     end
-    lines << (lost && lost == who ? "#{lost}, #{fall['dead']}, turns to face you." : "#{who || leader&.name || 'It'} turns to face you.")
+    lines << (lost && lost == who && fall["dead"] ? "#{lost}, #{fall['dead']}, turns to face you." : "#{who || leader&.name || 'It'} turns to face you.")
     lines << "“#{leader.boss_line.strip}”" if leader&.boss_line.present?
     lines
   end

@@ -148,5 +148,15 @@ module Seeds
                              { item: "aegis_shield" }, { item: "ninja_gear" },
                              { gil: 50, weight: 6 }, { gil: 120, weight: 4 }, { gil: 300, weight: 2 } ] }
     }.freeze
+
+    # The setting's lore (Generators::Lore): what its pocket history and the
+    # pasts of its places are made of. Tables like the rest, so a world
+    # copied from this one can make them its own.
+    LORE_NAMES = { "trades" => "Trades", "pasts" => "What dungeons were", "falls" => "How places fall", "quarrels" => "Quarrels",
+                   "betrayals" => "Betrayals", "fortunes" => "Good fortune", "waters" => "Waters", "owners" => "Changing hands",
+                   "sightings" => "Sightings", "raids" => "Raided roads" }.freeze
+    LORE_TABLES = Generators::Lore.to_tables.to_h do |kind, entries|
+      [ :"lore_#{kind}", { name: LORE_NAMES.fetch(kind), kind: kind, entries: entries } ]
+    end.freeze
   end
 end

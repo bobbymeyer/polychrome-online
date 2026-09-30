@@ -34,7 +34,8 @@ class WorldPlace < ApplicationRecord
 
   # Its past (Past), as the world's history wrote it; the GM changes it from
   # the form, and a changed past is theirs: the history won't write over it.
-  PAST_FALLS = (Generators::History::FALLS.keys + %w[abandoned]).freeze
+  # How it can have fallen: the world's falls (its lore), or left empty.
+  def past_falls = world.lore["falls"].keys + %w[abandoned]
 
   def past_form
     fall = past["fall"].is_a?(Hash) ? past["fall"] : {}
@@ -52,8 +53,8 @@ class WorldPlace < ApplicationRecord
     built = {
       "founded" => fields["founded"].presence&.to_i, "founder" => fields["founder"].presence, "family" => fields["family"].presence,
       "holder" => fields["holder"].presence, "rival" => fields["rival"].presence,
-      "was" => fields["was"].presence_in(Generators::History::PASTS.keys),
-      "fall" => (fields["fall_kind"].presence_in(PAST_FALLS) && { "kind" => fields["fall_kind"], "ago" => fields["fall_ago"].to_i }),
+      "was" => fields["was"].presence_in(world.lore["pasts"].keys),
+      "fall" => (fields["fall_kind"].presence_in(past_falls) && { "kind" => fields["fall_kind"], "ago" => fields["fall_ago"].to_i }),
       "lost" => fields["lost"].to_s.split(",").map(&:strip).compact_blank.presence,
       "feud" => (fields["feud_with"].presence && { "with" => fields["feud_with"], "cause" => fields["feud_cause"].presence }.compact)
     }.compact

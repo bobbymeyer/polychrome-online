@@ -81,7 +81,7 @@
       <h2>Places</h2>
       <ul class="refs">
         <% history["places"].each do |key, past| %>
-          <% lines = Past.new(past).lines %>
+          <% lines = Past.new(past, lore: @world.lore).lines %>
           <% next if lines.empty? %>
           <li><strong><%= past["name"] %></strong> <span class="muted"><%= lines.join(" ") %></span></li>
         <% end %>
