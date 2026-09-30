@@ -97,32 +97,28 @@ class Outcome
   # Makes it happen for the campaign. by: who did it ("Rook", "The party");
   # who: the characters it's for (EXP, ABP: those standing, by default).
   # line: the table's words, with {who}, {amount} and {rumour} filled in,
-  # instead of the plain line. Returns the line the table hears, or nil if
-  # something else already said it.
+  # instead of the plain line, for what has an amount or a rumour to say.
   # source: what did it, for a secret it brings out ("Rook's Ask Around").
+  # Returns the line the table hears, or nil if something else already said it.
   def apply!(campaign, by:, who: nil, line: nil, source: nil)
     who ||= campaign.characters.order(:created_at).select(&:conscious?)
-    said = kind == "uncover" ? uncover!(campaign, by, source) : send(:"#{kind}!", campaign, by, who)
-    return said unless said.is_a?(Hash)
-    return said[:line] if line.blank? || (kind == "rumour" && said[:rumour].nil?)
-
-    Generators::Lore.fill(line, who: by, amount: said[:amount], rumour: said[:rumour]) + said[:grew].to_s
+    send(:"#{kind}!", campaign, by: by, who: who, line: line, source: source)
   end
 
   private
 
-  # Each returns the line, or { line:, amount:, rumour: } where a caller's
-  # own words can say it instead.
-  def money!(campaign, by, _who)
+  # Each makes it happen and returns its line, or nil.
+
+  def money!(campaign, by:, line:, **)
     campaign.increment!(:gil, amount)
     text = campaign.money(amount)
-    { line: "#{by}: #{text}.", amount: text }
+    say(line, "#{by}: #{text}.", by: by, amount: text)
   end
 
-  def exp!(campaign, by, who) = gain(campaign, by, who, :exp)
-  def abp!(campaign, by, who) = gain(campaign, by, who, :abp)
+  def exp!(_campaign, **) = gain(:exp, **)
+  def abp!(_campaign, **) = gain(:abp, **)
 
-  def gain(_campaign, by, who, kind)
+  def gain(kind, by:, who:, line:, **)
     grew = who.filter_map do |character|
       gained = character.gain!(kind => amount)
       if gained["level"] then "#{character.name}: level #{gained['level'].last}!"
@@ -130,24 +126,29 @@ class Outcome
       end
     end
     text = "#{amount} #{kind.upcase}"
-    { line: "#{by}: #{text}#{' each' if who.size > 1}.#{" #{grew.join(' ')}" if grew.any?}", amount: text, grew: grew.any? ? " #{grew.join(' ')}" : nil }
+    say(line, "#{by}: #{text}#{' each' if who.size > 1}.", by: by, amount: text) + grew.map { |g| " #{g}" }.join
   end
 
-  def rumour!(campaign, by, _who)
+  def rumour!(campaign, by:, line:, **)
     rumour = campaign.rumour_for_sale
-    return { line: "#{by} listens, but hears nothing new." } unless rumour
+    return "#{by} listens, but hears nothing new." unless rumour
 
     rumour.update!(heard: true)
     campaign.hear_of!(rumour)
-    { line: "#{by} hears something: “#{rumour.body}”", rumour: "“#{rumour.body}”" }
+    say(line, "#{by} hears something: “#{rumour.body}”", by: by, rumour: "“#{rumour.body}”")
   end
 
-  def rest!(campaign, _by, _who)
+  # The caller's own words for it, if it gave some, or the plain line.
+  def say(line, plain, by:, amount: nil, rumour: nil)
+    line.present? ? Generators::Lore.fill(line, who: by, amount: amount, rumour: rumour) : plain
+  end
+
+  def rest!(campaign, **)
     campaign.sleep!(bed: amount >= 100, mp_share: amount.clamp(0, 100))
     nil # the night says itself
   end
 
-  def restore!(campaign, by, who)
+  def restore!(campaign, by:, who:, **)
     who.each do |c|
       c.update!(hp: [ c.current_hp + (c.stats["max_hp"] * amount / 100), c.stats["max_hp"] ].min,
                 mp: [ c.current_mp + (c.stats["max_mp"] * amount / 100), c.stats["max_mp"] ].min)
@@ -155,13 +156,13 @@ class Outcome
     "#{by} sees to everyone: #{amount}% of #{campaign.world.word('hp')} and #{campaign.world.word('mp')} back."
   end
 
-  def raise!(campaign, _by, _who)
+  def raise!(campaign, **)
     fallen = campaign.characters.order(:created_at).reject(&:conscious?)
     fallen.each { |c| c.update!(hp: nil, mp: nil) }
     "#{fallen.map(&:name).to_sentence} #{fallen.one? ? 'is' : 'are'} raised, whole again."
   end
 
-  def reveal!(campaign, by, _who)
+  def reveal!(campaign, by:, **)
     if target
       place = campaign.map_nodes.find(target["node"])
       return if place.visible?
@@ -177,7 +178,7 @@ class Outcome
     "#{by} scouts ahead: #{hidden.map(&:name).to_sentence} come#{'s' if hidden.one?} into view."
   end
 
-  def find!(campaign, by, _who)
+  def find!(campaign, by:, **)
     finds = campaign.world.items.where(category: "consumable").where(price: 1..amount).order(:price, :id).to_a
     return "#{by} searches, but finds nothing worth the carrying." if finds.empty?
 
@@ -186,7 +187,7 @@ class Outcome
     "#{by} finds #{item.name.start_with?(/[AEIOU]/i) ? 'an' : 'a'} #{item.name}."
   end
 
-  def learn!(campaign, by, _who)
+  def learn!(campaign, by:, **)
     monsters = campaign.world.monsters.where(slug: campaign.pending_encounter.to_h.fetch("monsters", {}).keys)
     return "There's nothing on the road to read." if monsters.empty?
 
@@ -202,29 +203,29 @@ class Outcome
     "#{by} sizes up #{monsters.map(&:name).to_sentence}: their weaknesses are known."
   end
 
-  def sneak!(campaign, by, _who)
+  def sneak!(campaign, by:, **)
     return "The road was already clear." unless campaign.pending_encounter
 
     campaign.update!(pending_encounter: nil)
     "#{by} gets the party past without a fight."
   end
 
-  def safe_road!(campaign, by, _who)
+  def safe_road!(campaign, by:, **)
     campaign.update!(safe_road: true)
     "#{by} finds a way through: the next dangerous path is safe."
   end
 
-  def uncover!(campaign, by, source)
+  def uncover!(campaign, by:, source:, **)
     secret = Secret.next_for(campaign) or return "#{by} digs, but there's nothing more to find out."
     secret.reveal!(by: source || by)
     nil # the secret says itself
   end
 
-  def story!(_campaign, by, _who) = "#{by} manages it. What happens is the GM's to tell."
+  def story!(_campaign, by:, **) = "#{by} manages it. What happens is the GM's to tell."
 
   # A place set in a mode (MapNode#switch_mode!), or back to how it was.
   # The place says so itself.
-  def mode!(campaign, _by, _who)
+  def mode!(campaign, **)
     place = campaign.map_nodes.find(target["node"])
     if target["mode"] then place.switch_mode!(target["mode"]) unless place.current_mode&.key == target["mode"]
     elsif place.current_mode then place.clear_mode!
@@ -233,7 +234,7 @@ class Outcome
   end
 
   # A fight, now: the stage takes everyone there.
-  def battle!(campaign, _by, _who)
+  def battle!(campaign, **)
     campaign.update!(pending_encounter: { "table" => target["name"], "monsters" => target["monsters"], "boss" => false })
     campaign.start_pending_encounter!
     nil
