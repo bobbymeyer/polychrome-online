@@ -39,9 +39,6 @@ class Worlds::FrontsController < ApplicationController
     @world = World.find_by!(slug: params[:world_slug])
   end
 
-  def require_lore
-    forbid unless knows_the_lore?
-  end
 
   def set_front
     @front = @world.world_fronts.find(params[:id])

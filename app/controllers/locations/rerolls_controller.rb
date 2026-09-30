@@ -4,7 +4,7 @@
 class Locations::RerollsController < ApplicationController
   include LocationScoped
 
-  before_action :require_gm
+  before_action :require_table_gm
 
   def create
     @location.reroll!

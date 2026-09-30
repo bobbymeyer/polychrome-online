@@ -6,7 +6,7 @@ class Campaigns::FlagsController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
-  before_action :require_gm
+  before_action :require_table_gm
   before_action :set_flag, only: %i[update destroy]
 
   def create
@@ -29,9 +29,6 @@ class Campaigns::FlagsController < ApplicationController
 
   private
 
-  def require_gm
-    head :forbidden unless table_gm?
-  end
 
   def set_flag
     @flag = @campaign.flags.find(params[:id])

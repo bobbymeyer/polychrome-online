@@ -34,8 +34,7 @@ class Worlds::SkillsController < ApplicationController
   # Kept and added skills, in the form's order. A new skill's id comes
   # from its name.
   def posted_rows
-    rows = params.permit(skills: %i[slug name stat description remove]).fetch(:skills, {})
-    rows = rows.to_h.sort_by { |index, _| index.to_i }.map(&:last) if rows.respond_to?(:each_pair)
+    rows = JsonCasting.rows(params.permit(skills: %i[slug name stat description remove]).fetch(:skills, {}))
     rows.filter_map do |row|
       row = row.to_h.with_indifferent_access
       next if row[:remove] == "1"

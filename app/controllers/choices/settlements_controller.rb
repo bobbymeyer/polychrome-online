@@ -4,9 +4,9 @@
 class Choices::SettlementsController < ApplicationController
   include ChoiceScoped
 
-  def create
-    return forbid("Only the GM settles a choice.") unless table_gm?
+  before_action :require_table_gm
 
+  def create
     @choice.settle!(params[:option])
     head :no_content
   rescue Refusal => e

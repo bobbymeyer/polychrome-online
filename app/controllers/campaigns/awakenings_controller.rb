@@ -6,10 +6,9 @@ class Campaigns::AwakeningsController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
+  before_action :require_table_gm
 
   def create
-    return forbid("Only the GM awakens someone.") unless table_gm?
-
     character = @campaign.characters.find(params.expect(:character_id))
     job = @campaign.world.jobs.find_by!(slug: params.expect(:job))
     @campaign.awaken!(character, job, params[:line])

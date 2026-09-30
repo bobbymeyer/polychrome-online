@@ -38,15 +38,15 @@ class MapNode < ApplicationRecord
 
   # Things to do here (Pastime): the setting's (its atlas place's, live, as
   # worlds are), then the GM's own, then those of the modes it's in now
-  # (LocationMode#activities), by name, so a later one can replace one. A
+  # (Mode#activities), by name, so a later one can replace one. A
   # mode can shut the usual ones ("pastimes" in what it closes). Then a
   # town's inn, temple and guild, or, with no inn to take rooms at, making
-  # camp (Campaign::Services).
+  # camp (Location::Town#services_for, Campaign::Services).
   def pastimes
     almanac = campaign.world.almanac
     usual = shut_by("pastimes") ? [] : Pastime.list(world_place&.activities, almanac) + Pastime.list(activities, almanac)
     in_modes = modes_on.flat_map { |mode| Pastime.list(mode.activities, almanac) }
-    services = campaign.service_pastimes(location)
+    services = location ? location.services_for(campaign.characters.to_a) : []
     services << campaign.camp_pastime unless services.any? { |pastime| pastime.service == "inn" }
     (usual + in_modes).reverse.uniq(&:name).reverse + services
   end

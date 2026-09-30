@@ -1,5 +1,5 @@
 <%# The GM's modes for a place on the map (MapNode::Modes): prepared, set off, put back. On a town or
-    dungeon's page, and in the map's panel for anywhere else. services: what a mode can shut there. %>
+    dungeon's page, and in the map's panel for anywhere else. %>
 <% modes = node.modes %>
 <% on = node.modes_on %>
 <% almanac = node.campaign.world.almanac %>
@@ -58,12 +58,11 @@
       <%= f.label :activities, "Things to do meanwhile" %>
       <%= f.text_area :activities, rows: 2, class: "script-field", placeholder: "Wade the platforms (2): Knee-deep, and the lights still on." %>
     </div>
-    <% services = node.location&.town? ? node.location.view.fetch("services", []).map { |s| s["kind"] }.uniq : [] %>
     <fieldset class="field">
       <legend>Shut meanwhile</legend>
       <%= hidden_field_tag "mode[closed][]", "", id: nil %>
       <div class="checks">
-        <% services.each do |kind| %>
+        <% node.shuttable.each do |kind| %>
           <label><%= check_box_tag "mode[closed][]", kind, false, id: "mode_closed_#{kind}" %> <%= term(kind) %></label>
         <% end %>
         <label><%= check_box_tag "mode[closed][]", "pastimes", false, id: "mode_closed_pastimes" %> The usual things to do</label>

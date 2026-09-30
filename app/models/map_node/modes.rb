@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# A place's modes (LocationMode): its other states, prepared by the GM. Any
+# A place's modes (Mode): its other states, prepared by the GM. Any
 # place on the map has them: a town, a dungeon, a landmark, the wilds. One
 # can be set off at the table (the current mode); others come on by
 # themselves when the calendar says (by night, in winter). They layer: the
@@ -12,8 +12,8 @@ module MapNode::Modes
   included do
     # The two point at each other: let go of the current one before the modes go.
     before_destroy(prepend: true) { update_columns(current_mode_id: nil) if current_mode_id }
-    has_many :modes, -> { order(:id) }, class_name: "LocationMode", dependent: :destroy, inverse_of: :map_node
-    belongs_to :current_mode, class_name: "LocationMode", optional: true
+    has_many :modes, -> { order(:id) }, dependent: :destroy, inverse_of: :map_node
+    belongs_to :current_mode, class_name: "Mode", optional: true
     validate :current_mode_is_ours
   end
 
@@ -34,7 +34,9 @@ module MapNode::Modes
   # The mode that shuts a service (or its things to do: "pastimes"), or nil.
   def shut_by(kind) = modes_on.find { |mode| mode.shuts?(kind) }
 
-  def service_closed?(kind) = shut_by(kind).present?
+  # What a mode could shut here: a town's services (the usual things to do
+  # can be shut anywhere).
+  def shuttable = location&.town? ? location.view.fetch("services", []).map { |service| service["kind"] }.uniq : []
 
   # The mode with trouble waiting in it, or nil.
   def troubled_by(**at) = modes_on(**at).find(&:encounter_table)

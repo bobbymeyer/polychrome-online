@@ -14,7 +14,7 @@ module VocabularyHelper
 
   # "150 gil", in the world's money.
   def money(amount, world = vocabulary_world)
-    "#{number_with_delimiter(amount)} #{word('currency', world)}"
+    World::Vocabulary.money(world&.terms, amount)
   end
 
   # What the battle player shows as it animates (battle_player_controller.js).

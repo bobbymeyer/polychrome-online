@@ -26,7 +26,7 @@ class Scene < ApplicationRecord
   belongs_to :map_node, optional: true
   # A "mode" ending sets this mode off; without one, the place goes back
   # to how it was.
-  belongs_to :location_mode, optional: true
+  belongs_to :mode, optional: true
 
   normalizes :name, with: ->(name) { name.to_s.strip }
 
@@ -98,7 +98,7 @@ class Scene < ApplicationRecord
     case ending
     when "battle" then Outcome.of("battle", target: { "name" => name, "monsters" => encounter })
     when "reveal" then map_node && Outcome.of("reveal", target: { "node" => map_node.id })
-    when "mode" then map_node && Outcome.of("mode", target: { "node" => map_node.id, "mode" => location_mode&.key })
+    when "mode" then map_node && Outcome.of("mode", target: { "node" => map_node.id, "mode" => mode&.key })
     end
   end
 
@@ -109,7 +109,7 @@ class Scene < ApplicationRecord
     parts << "then a battle: #{campaign.describe_encounter(encounter)}" if ending == "battle"
     parts << "then #{map_node&.name || 'a place'} appears on the map" if ending == "reveal"
     if ending == "mode"
-      parts << (location_mode ? "then #{map_node&.name}: #{location_mode.name}" : "then #{map_node&.name} goes back to how it was")
+      parts << (mode ? "then #{map_node&.name}: #{mode.name}" : "then #{map_node&.name} goes back to how it was")
     end
     parts.join(", ")
   end
@@ -153,8 +153,8 @@ class Scene < ApplicationRecord
     when "mode"
       if map_node&.campaign_id != campaign_id
         errors.add(:map_node, "must be a place on this campaign's map")
-      elsif location_mode && location_mode.map_node_id != map_node.id
-        errors.add(:location_mode, "isn't one of #{map_node.name}'s modes")
+      elsif mode && mode.map_node_id != map_node.id
+        errors.add(:mode, "isn't one of #{map_node.name}'s modes")
       end
     end
   end

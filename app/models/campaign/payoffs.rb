@@ -21,11 +21,25 @@ module Campaign::Payoffs
     parts = spent_parts.clamp(0, MOST_PARTS)
     return [] if parts.zero?
 
-    characters.includes(:job).order(:created_at).select(&:conscious?).filter_map do |character|
+    conscious_characters.filter_map do |character|
       payoff = character.job.payoff
       next if payoff.blank?
 
       [ character, payoff, payoff["kind"] == "rumour" ? 1 : payoff["amount"].to_i * parts ]
+    end
+  end
+
+  # What each archetype pays, as the table reads it before the rest:
+  # ["Rook, 40 gil a part", "Lenna, a rumour"].
+  def payoff_preview
+    conscious_characters.filter_map do |character|
+      payoff = character.job.payoff.presence or next
+      paid = case payoff["kind"]
+      when "rumour" then "a rumour"
+      when "money" then "#{money(payoff['amount'])} a part"
+      else "#{payoff['amount']} #{payoff['kind'].upcase} a part"
+      end
+      "#{character.name}, #{paid}"
     end
   end
 

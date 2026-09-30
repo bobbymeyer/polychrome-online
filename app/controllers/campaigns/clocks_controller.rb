@@ -6,7 +6,7 @@ class Campaigns::ClocksController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
-  before_action :require_gm
+  before_action :require_table_gm
   before_action :set_clock, only: %i[update destroy]
 
   def create
@@ -25,9 +25,6 @@ class Campaigns::ClocksController < ApplicationController
 
   private
 
-  def require_gm
-    head :forbidden unless table_gm?
-  end
 
   def set_clock
     @clock = @campaign.clocks.find(params[:id])
@@ -38,7 +35,7 @@ class Campaigns::ClocksController < ApplicationController
   def clock_params
     attrs = params.expect(clock: [ :name, :segments, :public, :full_line, :when_full, :map_node_id, { triggers: [], times: [] } ])
     mode_id = attrs.delete(:when_full).presence
-    attrs.merge(location_mode: mode_id && LocationMode.joins(:map_node).where(map_nodes: { campaign_id: @campaign.id }).find_by(id: mode_id))
+    attrs.merge(mode: mode_id && Mode.joins(:map_node).where(map_nodes: { campaign_id: @campaign.id }).find_by(id: mode_id))
   end
 
   def back(notice: nil, alert: nil)

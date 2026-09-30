@@ -7,6 +7,7 @@ class Campaigns::FieldUsesController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
+  before_action :require_table_gm, only: :update
 
   def create
     seat = table_seat
@@ -18,8 +19,6 @@ class Campaigns::FieldUsesController < ApplicationController
   end
 
   def update
-    return forbid("Only the GM says yes or no.") unless table_gm?
-
     use = @campaign.field_uses.find(params[:id])
     if params[:verdict] == "veto"
       use.veto!(params[:line])

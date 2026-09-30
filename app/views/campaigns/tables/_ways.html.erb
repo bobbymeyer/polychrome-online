@@ -34,11 +34,10 @@
         <% end %>
       <% end %>
     </div>
-    <% if group.equal?(doings) && (paid = campaign.characters.includes(:job, :character_jobs, equipment_slots: :item).order(:created_at).select { |c| c.conscious? && c.job.payoff.present? }).any? %>
+    <% if group.equal?(doings) && (paid = campaign.payoff_preview).any? %>
       <%# Daily life pays off through the archetypes, at the next rest (Campaign::Payoffs). %>
       <p class="hint table-ways__payoff">
-        At the next rest: <%= paid.map { |c| p = c.job.payoff
-                                             "#{c.name}, #{p['kind'] == 'rumour' ? 'a rumour' : "#{p['kind'] == 'money' ? campaign.money(p['amount']) : "#{p['amount']} #{p['kind'].upcase}"} a part"}" }.join("; ") %>.
+        At the next rest: <%= paid.join("; ") %>.
         <% if campaign.spent_parts.positive? %><strong><%= pluralize(campaign.spent_parts, "part") %> of the day spent so far.</strong><% end %>
       </p>
     <% end %>

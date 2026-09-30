@@ -24,20 +24,20 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
   end
 
   it "draws the place as it is in the mode, and shows that picture while the mode lasts" do
-    expect(town.reload.modes.sole["art"]).to eq("on fire, thick smoke")
+    expect(town.map_node.reload.modes.sole["art"]).to eq("on fire, thick smoke")
     village.update!(image_seed: 4242)
     get location_path(town)
     expect(response.body).to include("Pictures for modes", "on fire, thick smoke")
     expect(response.body).not_to include("location-picture")
 
-    post world_art_batches_path(world), params: { entry_type: "location_mode", location_id: town.id, mode: "burning",
+    post world_art_batches_path(world), params: { entry_type: "mode", location_id: town.id, mode: "burning",
                                                   mode_art: "on fire, thick smoke, ash falling", count: 2 }
     expect(response).to redirect_to(location_path(town, anchor: "art"))
     art = town.mode_arts.sole
     batch = art.art_batch
     expect(batch.recipe["positive"]).to end_with("#{village.art_subject}, on fire, thick smoke, ash falling")
     expect(batch.candidates.first.seed).to eq(4242)
-    expect(town.reload.modes.sole["art"]).to eq("on fire, thick smoke, ash falling")
+    expect(town.map_node.reload.modes.sole["art"]).to eq("on fire, thick smoke, ash falling")
 
     finish(batch)
     post world_art_candidate_pick_path(world, batch.candidates.first)
@@ -46,7 +46,7 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
 
     get location_path(town)
     expect(response.body).not_to include("location-picture") # not burning yet
-    town.reload.switch_mode!("burning")
+    town.map_node.reload.switch_mode!("burning")
     get location_path(town)
     expect(response.body).to include("location-picture is-mode")
     expect(town.picture.blob).to eq(art.image.blob)
@@ -57,7 +57,7 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
 
   it "is the GM's to make" do
     sign_in_as(make_user("Player"))
-    post world_art_batches_path(world), params: { entry_type: "location_mode", location_id: town.id, mode: "burning" }
+    post world_art_batches_path(world), params: { entry_type: "mode", location_id: town.id, mode: "burning" }
     expect(town.mode_arts.filter_map(&:art_batch)).to be_empty
   end
 end

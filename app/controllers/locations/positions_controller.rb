@@ -4,7 +4,7 @@
 class Locations::PositionsController < ApplicationController
   include LocationScoped
 
-  before_action :require_gm
+  before_action :require_table_gm
 
   def update
     @location.move_to!(params.expect(:room))

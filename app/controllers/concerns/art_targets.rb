@@ -32,13 +32,13 @@ module ArtTargets
   end
 
   def mode_request?
-    params[:entry_type] == "location_mode"
+    params[:entry_type] == "mode"
   end
 
   # The picture for one of a location's modes, made when first asked for.
   def art_mode
     location = Location.joins(:campaign).where(campaigns: { world_id: @world.id }).find(params[:location_id])
-    mode = location.modes.find_by!(key: params[:mode].to_s)
-    location.mode_arts.find_or_create_by!(location_mode: mode)
+    mode = location.map_node.modes.find_by!(key: params[:mode].to_s)
+    location.mode_arts.find_or_create_by!(mode: mode)
   end
 end

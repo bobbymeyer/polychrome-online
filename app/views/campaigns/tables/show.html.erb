@@ -8,33 +8,7 @@
 <div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
-  <%# The table stops for a moment (moment_controller): each card comes up when a line with its cue arrives,
-      filled from the line. Modal dialogs, so they come up over anything else open (the recap). %>
-  <dialog class="awakening-stage" data-moment-cue="awakening" data-moment-hold="9500" data-moment-music="hold"
-          data-action="click->moment#dismiss" aria-label="An awakening">
-    <div class="awakening-wrap" data-moment-enter="pop">
-    <%# Someone awakens: their face turns over, and their new archetype is on the other side. %>
-    <div class="awakening-card" data-moment-turn="1400">
-      <div class="awakening-card__face awakening-card__front">
-        <div class="awakening-card__portrait" data-moment-field="portrait"></div>
-        <p class="awakening-card__name" data-moment-field="name"></p>
-      </div>
-      <div class="awakening-card__face awakening-card__back">
-        <p class="awakening-card__who" data-moment-field="who"></p>
-        <p class="awakening-card__line" data-moment-field="line"></p>
-        <p class="awakening-card__job" data-moment-field="job"></p>
-        <p class="awakening-card__description" data-moment-field="description"></p>
-      </div>
-    </div>
-    </div>
-  </dialog>
-  <dialog class="deadline-stage" data-moment-cue="deadline" data-moment-hold="4200" data-action="click->moment#dismiss" aria-label="A deadline has passed">
-    <div class="deadline-card">
-      <p class="deadline-card__date" data-moment-field="date" data-moment-enter="drop"></p>
-      <p class="deadline-card__line" data-moment-field="line" data-moment-enter="slam" data-moment-delay="220"></p>
-      <p class="deadline-card__place" data-moment-field="place" data-moment-enter="slide" data-moment-delay="620" hidden></p>
-    </div>
-  </dialog>
+  <%= render "campaigns/tables/cards" %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= seat_streams_from @seat, @campaign %>
   <%= render "shared/stage_stream", campaign: @campaign %>
@@ -115,113 +89,19 @@
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
     <% if @seat.gm? %>
-      <% if @campaign.wiped_out? && !@campaign.battle_on? && !@campaign.open_choice&.what_now? %>
-        <%# Everyone is down: what now is the table's (Campaign::Defeat), settled in the choice panel. %>
-        <section class="window recovery" aria-label="Everyone is KO'd">
-          <h2>Everyone is KO'd. What happens now?</h2>
-          <%= button_to "Put it to the table", campaign_recovery_path(@campaign), class: "button play" %>
-        </section>
-      <% end %>
+      <%= render "campaigns/tables/gm/recovery", campaign: @campaign %>
       <%= render "campaigns/field_uses/requests", campaign: @campaign %>
       <%= render "campaigns/tables/coop_setup", campaign: @campaign unless view %>
-      <details class="window table-scenes">
-        <summary>Time</summary>
-        <div class="inline-form">
-          <%= button_to "A part of the day passes", campaign_time_path(@campaign), method: :patch, params: { parts: 1 }, class: "button button--quiet" %>
-          <%= button_to "Until #{@campaign.almanac.periods.first}", campaign_time_path(@campaign), method: :patch, params: { until: "the_day" }, class: "button button--quiet" %>
-          <%= form_with url: campaign_time_path(@campaign), method: :patch, class: "inline-form" do |f| %>
-            <%= number_field_tag :parts, 4, min: 1, max: 28, "aria-label": "Parts of the day" %>
-            <%= f.submit "Pass", class: "button button--quiet" %>
-          <% end %>
-        </div>
-        <p class="hint">A day here has <%= pluralize(@campaign.almanac.periods.size, "part") %>: <%= @campaign.almanac.periods.to_sentence %>. Journeys take their road's time; a rest sleeps until <%= @campaign.almanac.periods.first %>. Each new day ticks the clocks that tick on a new day.</p>
-      </details>
-      <details class="window table-scenes" <%= "open" if @campaign.clocks.running.exists? %>>
-        <summary>Clocks</summary>
-        <%= render "campaigns/clocks/gm", campaign: @campaign %>
-      </details>
-      <details class="window table-scenes">
-        <summary>Secrets</summary>
-        <%= render "campaigns/secrets/gm", campaign: @campaign %>
-      </details>
-      <% locked = @campaign.locked_jobs.to_a %>
-      <% if locked.any? %>
-        <details class="window table-scenes">
-          <summary>Grant archetypes</summary>
-          <%= form_with url: campaign_job_grants_path(@campaign), class: "book-form" do |f| %>
-            <div class="checks">
-              <% locked.each do |job| %>
-                <label><%= check_box_tag "jobs[]", job.slug, false, id: "grant_#{job.slug}" %> <%= job.name %></label>
-              <% end %>
-            </div>
-            <div class="field"><%= label_tag :line, "The moment" %><%= text_field_tag :line, nil, placeholder: "The old master finally nods, and shows you how." %></div>
-            <%= f.submit "Grant", class: "button play" %>
-          <% end %>
-        </details>
-      <% end %>
-      <% if @campaign.characters.any? %>
-        <details class="window table-scenes">
-          <summary>Awaken someone</summary>
-          <%= form_with url: campaign_awakenings_path(@campaign), class: "book-form" do |f| %>
-            <div class="field-row">
-              <div class="field"><%= label_tag :character_id, "Who" %><%= select_tag :character_id, options_from_collection_for_select(@campaign.characters.order(:created_at), :id, :name) %></div>
-              <div class="field"><%= label_tag :job, "To" %><%= select_tag :job, options_for_select(@campaign.world.jobs.order(:name).map { |j| [ j.name, j.slug ] }) %></div>
-            </div>
-            <div class="field"><%= label_tag :awakening_line, "What they hear" %><%= text_field_tag :line, nil, id: "awakening_line", placeholder: "I am thou, thou art I." %></div>
-            <p class="hint">They take the archetype up at once (it opens for the party if it wasn't), and the table stops for it.</p>
-            <%= f.submit "Awaken", class: "button play" %>
-          <% end %>
-        </details>
-      <% end %>
-      <details class="window table-scenes">
-        <summary>Call for a check</summary>
-        <%= form_with url: campaign_checks_path(@campaign), scope: :check, class: "book-form check-form" do |f| %>
-          <fieldset class="field">
-            <legend>Who tries</legend>
-            <% @campaign.characters.includes(:job, :character_jobs, equipment_slots: :item).order(:created_at).select(&:conscious?).each do |character| %>
-              <label class="inline"><%= check_box_tag "check[characters][]", character.id, false, id: "check_character_#{character.id}" %> <%= character.name %></label>
-            <% end %>
-          </fieldset>
-          <div class="field-row">
-            <div class="field"><%= f.label :stat, "Roll" %><%= f.select :stat, check_options(@campaign.world) %></div>
-            <div class="field"><%= f.label :difficulty %><%= f.select :difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, selected: "normal" %></div>
-            <div class="field"><%= f.label :reason, "To…" %><%= f.text_field :reason, placeholder: "scale the wall" %></div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <%= f.label :outcome, "On a success" %>
-              <%= f.select :outcome, Outcome::ON_A_CHECK.map { |kind| [ Outcome.of(kind).describe(@campaign.world), kind ] }, include_blank: "Nothing: you tell what happens" %>
-            </div>
-            <div class="field"><%= f.label :amount, "How much" %><%= f.number_field :amount, min: 0, max: 9999, placeholder: "its usual" %></div>
-          </div>
-          <p class="hint">Each rolls against their own stat (a skill uses its stat, and an archetype good at it adds +<%= Job::SKILL_BONUS %>). At Normal, someone typical for their level has an even chance; nothing is ever certain. What a success makes happen, happens once, whoever made it; a failure ticks the clocks that tick on one.</p>
-          <%= f.submit "Roll", class: "button play" %>
-        <% end %>
-      </details>
-      <details class="window table-scenes" <%= "open" if @campaign.scenes.where(played_at: nil).exists? %>>
-        <summary>Scenes</summary>
-        <%= render "scenes/list", campaign: @campaign, play: true %>
-        <%= link_to "New scene", new_campaign_scene_path(@campaign), class: "button button--quiet" %>
-      </details>
-      <%= form_with url: campaign_music_path(@campaign), method: :patch, class: "music-switch", data: { controller: "autosubmit" } do %>
-        <%= label_tag :music, "Music for the table" %>
-        <%= select_tag :music, options_for_select([ [ "Follow the scene (#{@campaign.scene})", "" ] ] +
-                                 Campaign::MUSIC_CHOICES.map { |c| [ c.capitalize + (c == "silence" || @campaign.world.music_track(c) ? "" : " (no track)"), c ] }, @campaign.music),
-                       data: { action: "autosubmit#submit" } %>
-        <noscript><%= submit_tag "Play", class: "button button--quiet" %></noscript>
-      <% end %>
+      <%= render "campaigns/tables/gm/time", campaign: @campaign %>
+      <%= render "campaigns/tables/gm/clocks", campaign: @campaign %>
+      <%= render "campaigns/tables/gm/secrets", campaign: @campaign %>
+      <%= render "campaigns/tables/gm/job_grants", campaign: @campaign %>
+      <%= render "campaigns/tables/gm/awakening", campaign: @campaign %>
+      <%= render "campaigns/tables/gm/check", campaign: @campaign %>
+      <%= render "campaigns/tables/gm/scenes", campaign: @campaign %>
+      <%= render "campaigns/tables/gm/music", campaign: @campaign %>
     <% end %>
   <% else %>
-    <section class="window">
-      <h2>Take a seat</h2>
-      <p class="hint">Sit as your character, or as the GM if this is your campaign. A character nobody has claimed becomes yours when you sit as them.</p>
-      <div class="menu" data-controller="menu" data-menu-primary-value="true">
-        <%= button_to "Game Master", campaign_table_seat_path(@campaign), params: { seat: "gm" }, class: "menu__item" if can_gm?(@campaign) %>
-        <% @campaign.characters.order(:created_at).select { |c| can_play?(c) }.each do |character| %>
-          <%= button_to character.name + (character.user_id ? "" : " (unclaimed)"), campaign_table_seat_path(@campaign),
-                        params: { seat: character.id }, class: "menu__item" %>
-        <% end %>
-      </div>
-    </section>
+    <%= render "campaigns/tables/take_a_seat", campaign: @campaign %>
   <% end %>
 </div>

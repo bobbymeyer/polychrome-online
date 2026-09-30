@@ -8,11 +8,11 @@ module Campaign::Shopping
   # reason the table can read.
   def buy!(item, quantity, at:, by:)
     quantity = quantity.to_i.clamp(1, 99)
-    raise Refusal, "The shop is shut: #{at.shut_by('shop').name.downcase}" if at.respond_to?(:shut_by) && at.shut_by("shop")
+    raise Refusal, "The shop is shut: #{at.shut_by('shop').name.downcase}" if at.shut_by("shop")
     raise Refusal, "#{at.name} doesn't sell #{item.name}" unless at.stock_items.include?(item)
     refuse_if_shunned!(at)
 
-    cost = (at.respond_to?(:price_of) ? at.price_of(item) : item.price) * quantity
+    cost = at.price_of(item) * quantity
     transaction do
       reload
       raise Refusal, "The party has #{money(gil)}; #{quantity} × #{item.name} costs #{cost}" if cost > gil
@@ -26,14 +26,14 @@ module Campaign::Shopping
   # Sell from the bag, for half the price.
   def sell!(item, quantity, at:, by:)
     quantity = quantity.to_i.clamp(1, 99)
-    raise Refusal, "The shop is shut: #{at.shut_by('shop').name.downcase}" if at.respond_to?(:shut_by) && at.shut_by("shop")
+    raise Refusal, "The shop is shut: #{at.shut_by('shop').name.downcase}" if at.shut_by("shop")
     refuse_if_shunned!(at)
     transaction do
       row = inventories.find_by(item: item)
       raise Refusal, "The bag has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
 
       row.update!(quantity: row.quantity - quantity)
-      earned = (at.respond_to?(:resale_price_of) ? at.resale_price_of(item) : item.resale_price) * quantity
+      earned = at.resale_price_of(item) * quantity
       update!(gil: gil + earned)
       narrate("#{by} sold #{quantity} × #{item.name} in #{at.name} for #{money(earned)}.")
     end
@@ -51,6 +51,6 @@ module Campaign::Shopping
   private
 
   def refuse_if_shunned!(at)
-    raise Refusal, "Nobody in #{at.name} will deal with the party." if at.respond_to?(:shuns_party?) && at.shuns_party?
+    raise Refusal, "Nobody in #{at.name} will deal with the party." if at.shuns_party?
   end
 end

@@ -68,7 +68,7 @@ module Campaign::Timekeeping
   # (a mode with times: MapNode#follow_the_hours!), become so and stop
   # being. Where the party is, the table hears it.
   def follow_the_hours!(was_day, was_period)
-    map_nodes.where(id: LocationMode.where("json_array_length(times) > 0").select(:map_node_id)).includes(:modes, :current_mode, :location).find_each do |place|
+    map_nodes.where(id: Mode.where("json_array_length(times) > 0").select(:map_node_id)).includes(:modes, :current_mode, :location).find_each do |place|
       place.follow_the_hours!(was_day, was_period, quiet: place == @arriving)
     end
   end

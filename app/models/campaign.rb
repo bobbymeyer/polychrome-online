@@ -124,13 +124,16 @@ class Campaign < ApplicationRecord
     join_code
   end
 
+  # Those still on their feet, in the party's order, with what their stats need.
+  def conscious_characters
+    characters.includes(:job, :character_jobs, equipment_slots: :item).order(:created_at).select(&:conscious?)
+  end
+
   # The choice the table is deciding, if any (Message#settle!).
   def open_choice
     messages.where(kind: "choice", settled: nil).order(:id).last
   end
 
   # An amount in the world's money: "150 gil", "150 crowns".
-  def money(amount)
-    "#{amount} #{world.word('currency')}"
-  end
+  delegate :money, to: :world
 end

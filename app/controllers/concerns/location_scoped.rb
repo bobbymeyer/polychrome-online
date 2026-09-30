@@ -24,9 +24,6 @@ module LocationScoped
     @world = @campaign.world
   end
 
-  def require_gm
-    head :forbidden unless table_gm?
-  end
 
   # Only in the town where the party is (the GM shops anywhere).
   def require_party_in_town

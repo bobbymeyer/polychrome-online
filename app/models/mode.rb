@@ -9,7 +9,7 @@
 # doesn't: the place by night, in winter, on market day. It can have things
 # to do of its own (activities, written as a place's are: Pastime), and
 # shut the place's usual ones ("pastimes" in closed).
-class LocationMode < ApplicationRecord
+class Mode < ApplicationRecord
   belongs_to :map_node, touch: true
   belongs_to :encounter_table, optional: true
   has_one :mode_art, dependent: :destroy

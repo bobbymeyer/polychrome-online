@@ -69,7 +69,7 @@ module Location::Town
   def shuns_party? = reputation <= -3
 
   # What anything costs here today, the shop's stock and the inn, temple
-  # and guild alike (Campaign::Services): dearer after a caravan is lost on
+  # and guild alike: dearer after a caravan is lost on
   # the road, easing back day by day (Campaign::Overnight), and cheaper for
   # friends.
   def price_here(base) = (base * (100 + prices - (REPUTATION_PRICE * reputation)).clamp(10, 300) / 100.0).round
@@ -78,6 +78,43 @@ module Location::Town
 
   # Shops pay half.
   def resale_price_of(item) = price_of(item) / 2
+
+  # What the inn, temple and guild charge: gil per level of each character
+  # served, with a floor (a rumour costs the same for anyone), at the
+  # town's prices.
+  SERVICE_PRICES = { "inn" => [ 5, 10 ], "temple" => [ 20, 50 ], "guild" => [ 0, 30 ] }.freeze
+
+  def service_price(kind, character = nil)
+    per_level, floor = SERVICE_PRICES.fetch(kind)
+    price_here([ per_level * character&.level.to_i, floor ].max)
+  end
+
+  # The inn, temple and guild, as things to do here (Pastime) with a price
+  # and an outcome (Outcome): rooms for the whole party at the inn, a
+  # raising at the temple for whoever is KO'd, a rumour at the guild. None
+  # where a mode has shut them, or if the town won't deal with the party.
+  def services_for(party)
+    return [] unless town? && !shuns_party?
+
+    open_services.filter_map do |service|
+      case service["kind"]
+      when "inn"
+        Pastime.new(name: "Rooms at #{service['name']}", takes: 0, price: party.sum { |c| service_price("inn", c) },
+                    outcomes: [ Outcome.of("rest", 100) ], service: "inn")
+      when "temple"
+        fallen = party.reject(&:conscious?)
+        next if fallen.empty?
+
+        Pastime.new(name: "A raising at #{service['name']}", takes: 0, price: fallen.sum { |c| service_price("temple", c) },
+                    outcomes: [ Outcome.of("raise") ], service: "temple")
+      when "guild"
+        Pastime.new(name: "Rumours at #{service['name']}", takes: 0, price: service_price("guild"), outcomes: [ Outcome.of("rumour") ], service: "guild")
+      end
+    end
+  end
+
+  # The inn, if there's one open here.
+  def inn = (open_services.find { |s| s["kind"] == "inn" } if town?)
 
   def stock_items
     slugs = view.fetch("stock", [])
@@ -99,4 +136,8 @@ module Location::Town
       campaign.nearest(here, among, roads: @roads)&.name || "somewhere far off"
     end
   end
+
+  private
+
+  def open_services = view.fetch("services", []).reject { |service| shut_by(service["kind"]) }
 end

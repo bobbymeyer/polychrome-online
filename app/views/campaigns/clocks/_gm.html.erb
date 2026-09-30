@@ -1,5 +1,5 @@
 <%# The GM's clocks (Clock): tick them, see what fills them, make new ones. Replaced live as they change. %>
-<% clocks = campaign.clocks.includes(:map_node, location_mode: :map_node).order(:stopped_at, :full_at, :id) %>
+<% clocks = campaign.clocks.includes(:map_node, mode: :map_node).order(:stopped_at, :full_at, :id) %>
 <div id="gm_clocks" class="gm-clocks">
   <% if clocks.any? %>
     <ul class="clock-rows">

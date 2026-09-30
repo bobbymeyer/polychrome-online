@@ -4,7 +4,7 @@
 class Locations::RoomsController < ApplicationController
   include LocationScoped
 
-  before_action :require_gm
+  before_action :require_table_gm
 
   def create
     room = params.expect(room: %i[name connect kind text item gil monster count])

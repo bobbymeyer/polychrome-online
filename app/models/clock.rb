@@ -23,7 +23,7 @@ class Clock < ApplicationRecord
 
   belongs_to :campaign
   belongs_to :world_front, optional: true
-  belongs_to :location_mode, optional: true
+  belongs_to :mode, optional: true
   # The place behind it (a dungeon the goblins raid from): clearing the place
   # stops the clock (Campaign#clear_place!).
   belongs_to :map_node, optional: true
@@ -113,10 +113,10 @@ class Clock < ApplicationRecord
   end
 
   # The place whose mode it sets off when it fills.
-  def place = location_mode&.map_node
+  def place = mode&.map_node
 
   # The mode it sets off, named for the pages.
-  def mode_name = location_mode&.name
+  def mode_name = mode&.name
 
   private
 
@@ -126,10 +126,10 @@ class Clock < ApplicationRecord
     # It stops the table (the deadline card): the date, the line, and what
     # the place has become.
     card = { "date" => campaign.world.date(campaign.day), "clock" => name, "line" => line,
-             "place" => (place && "#{place.name}: #{location_mode.name}") }.compact
+             "place" => (place && "#{place.name}: #{mode.name}") }.compact
     update!(full_at: campaign.narrate(line, cue: "deadline", data: card).created_at) if line
     # What filling it does to the place (Outcome "mode", as a scene's ending can).
-    Outcome.of("mode", target: { "node" => place.id, "mode" => location_mode.key }).apply!(campaign, by: name) if location_mode
+    Outcome.of("mode", target: { "node" => place.id, "mode" => mode.key }).apply!(campaign, by: name) if mode
   end
 
   def place_is_the_campaigns
@@ -147,7 +147,7 @@ class Clock < ApplicationRecord
   end
 
   def mode_is_the_locations
-    errors.add(:location_mode, "isn't in this campaign") if location_mode && place.campaign_id != campaign_id
+    errors.add(:mode, "isn't in this campaign") if mode && place.campaign_id != campaign_id
   end
 
   # The GM's list everywhere it's open, and the players' view of the public

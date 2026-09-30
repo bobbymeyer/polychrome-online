@@ -13,7 +13,7 @@ RSpec.describe "Clocks and secrets", type: :request do
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
   let!(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true, location: town) }
   let(:road) { campaign.map_nodes.create!(name: "Road", kind: "field", x: 300, y: 100, visible: true) }
-  let(:burning) { town.modes.find_by!(key: "burning") }
+  let(:burning) { town.map_node.modes.find_by!(key: "burning") }
   let(:hero) { campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), starting_level: 10) }
 
   def sit(seat)
@@ -22,12 +22,12 @@ RSpec.describe "Clocks and secrets", type: :request do
 
   before do
     sit("gm")
-    town.add_mode!("name" => "Burning", "line" => "Smoke over the rooftops: Tule is burning.")
+    town.map_node.add_mode!("name" => "Burning", "line" => "Smoke over the rooftops: Tule is burning.")
   end
 
   describe "clocks" do
     it "offers the modes a clock can set off by place, and not those that follow the hours" do
-      town.add_mode!("name" => "By night", "times" => %w[night])
+      town.map_node.add_mode!("name" => "By night", "times" => %w[night])
       get campaign_prep_path(campaign)
       expect(response.body).to include(%(>Tule: Burning</option>))
       expect(response.body).not_to include(%(>Tule: By night</option>))
@@ -37,7 +37,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       post campaign_clocks_path(campaign), params: { clock: { name: "The Syndicate torches Tule", segments: "3", public: "1",
                                                               triggers: [ "", "rest", "travel" ], when_full: burning.id } }
       clock = campaign.clocks.sole
-      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], place: node, location_mode: burning, public: true)
+      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], place: node, mode: burning, public: true)
 
       rest_the_night(campaign)
       expect(clock.reload.filled).to eq(1)
@@ -50,7 +50,7 @@ RSpec.describe "Clocks and secrets", type: :request do
 
       post campaign_clock_ticks_path(campaign, clock), params: { by: 1 }
       expect(clock.reload).to be_full
-      expect(town.reload.current_mode["name"]).to eq("Burning")
+      expect(town.map_node.reload.current_mode["name"]).to eq("Burning")
       expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The Syndicate torches Tule: it has happened.", "Smoke over the rooftops: Tule is burning." ])
       # It stops the table: the deadline card, with the date and what the place has become.
       filled = campaign.messages.find_by!(body: "The Syndicate torches Tule: it has happened.")
@@ -66,7 +66,7 @@ RSpec.describe "Clocks and secrets", type: :request do
 
       post campaign_clock_ticks_path(campaign, clock), params: { by: -1 }
       expect(clock.reload).to have_attributes(filled: 2, full_at: nil)
-      expect(town.reload.mode).to eq("burning") # winding back doesn't put the fire out
+      expect(town.map_node.reload.mode).to eq("burning") # winding back doesn't put the fire out
     end
 
     it "lets a check the GM calls make something happen on a success, once, whoever made it" do
@@ -126,10 +126,10 @@ RSpec.describe "Clocks and secrets", type: :request do
     it "only switches one of the campaign's own places, whatever the form sends" do
       elsewhere = world.campaigns.create!(name: "Elsewhere", gm: @admin).map_nodes.create!(name: "Far", kind: "town", x: 1, y: 1)
       flooded = elsewhere.add_mode!("name" => "Flooded")
-      expect(campaign.clocks.new(name: "x", segments: 4, location_mode: flooded)).not_to be_valid
+      expect(campaign.clocks.new(name: "x", segments: 4, mode: flooded)).not_to be_valid
 
       post campaign_clocks_path(campaign), params: { clock: { name: "Rain", segments: "4", when_full: flooded.id } }
-      expect(campaign.clocks.find_by!(name: "Rain").location_mode).to be_nil
+      expect(campaign.clocks.find_by!(name: "Rain").mode).to be_nil
     end
   end
 

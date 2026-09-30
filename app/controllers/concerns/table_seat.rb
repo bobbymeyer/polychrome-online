@@ -67,6 +67,12 @@ module TableSeat
     table_seat(campaign).gm?
   end
 
+  # The GM's controls at a campaign's table: only the GM seat may.
+  #   before_action :require_table_gm
+  def require_table_gm
+    head :forbidden unless table_gm?
+  end
+
   def take_table_seat(campaign, seat)
     @table_seats = nil
     session[:table_seats] = (session[:table_seats] || {}).merge(seat_key(campaign) => seat.to_s)
