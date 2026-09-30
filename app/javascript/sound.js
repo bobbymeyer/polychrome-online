@@ -141,6 +141,15 @@ const JINGLES = {
     phrase(t, 0.24, [ [ "E4", 0, 1 ], [ "D4", 1, 1 ], [ "C4", 2, 1 ], [ "B3", 3, 1 ], [ "A3", 4, 4 ] ], { wave: "triangle", gain: 0.6 })
     phrase(t, 0.24, [ [ "A2", 0, 4 ], [ "F2", 4, 4 ] ], { wave: "triangle", gain: 0.4 })
   },
+  // Someone awakens: a held low drone, a heartbeat, then a chord that
+  // opens upward.
+  awakening(t) {
+    tone(t, "D2", 2.4, { wave: "sawtooth", gain: 0.08, decay: 0.8 })
+    noise(t + 0.2, 0.12, { gain: 0.4, filter: 300 })
+    noise(t + 0.5, 0.12, { gain: 0.4, filter: 300 })
+    ;[ "D4", "A4", "D5", "F#5", "A5" ].forEach((n, i) => tone(t + 1.1 + i * 0.06, n, 1.4, { wave: "triangle", gain: 0.3, decay: 0.5 }))
+    tone(t + 1.1, "D3", 1.6, { wave: "triangle", gain: 0.6, decay: 0.6 })
+  },
   // A run up two octaves and a sparkle at the top.
   level_up(t) {
     phrase(t, 0.045, [ "C5", "D5", "E5", "G5", "A5", "C6", "D6", "E6", "G6" ].map((n, i) => [ n, i, 1.2 ]), { gain: 0.22 })

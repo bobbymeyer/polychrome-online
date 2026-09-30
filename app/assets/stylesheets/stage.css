@@ -293,6 +293,13 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
   font-size: 18px; line-height: 26px; letter-spacing: 0; padding: 2px calc(16px + var(--slant)) 2px 12px;
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
+/* One More: a slanted red tag across the stage, the size of a round call's big sister. */
+.banner--one-more {
+  padding: 6px calc(24px + var(--slant)) 6px 18px; rotate: -3deg;
+  background: var(--bright-red); color: #fff; font-size: clamp(32px, 6vw, 56px); text-shadow: 3px 3px 0 var(--ink);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+}
+.popup.status-down { background: var(--ink); color: var(--sun-yellow); }
 .banner--victory, .banner--defeat, .banner--escape {
   left: -4%; right: -4%; padding: 12px 8%; rotate: -4deg;
   background: var(--sun-yellow); color: var(--ink); font-size: clamp(56px, 12vw, 144px);
@@ -524,6 +531,36 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .deadline-card__line { margin: 0; font: var(--display); font-size: clamp(32px, 6vw, 64px); line-height: 1.05; letter-spacing: -0.03em; text-shadow: 4px 4px 0 var(--ink); }
 .deadline-card__place { margin: 0; padding: 4px 12px; border: 3px solid #fff; font-weight: 900; }
 .deadline-card__place[hidden] { display: none; }
+
+/* Someone awakens: their face comes up and turns over; the job is on the
+   other side. Black and yellow, like the name tags: it's their moment. */
+.awakening-stage {
+  width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 16px; border: 0;
+  background: transparent; place-items: center; cursor: pointer; perspective: 1400px;
+}
+.awakening-stage[open] { display: grid; }
+.awakening-stage::backdrop { background: rgb(0 0 0 / .75); }
+.awakening-wrap { perspective: 1400px; }
+.awakening-card { position: relative; width: min(420px, 90vw); aspect-ratio: 3 / 4; transform-style: preserve-3d; transition: transform .7s var(--snap); }
+.awakening-card.is-turned { transform: rotateY(180deg); }
+.awakening-card__face {
+  position: absolute; inset: 0; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; gap: 16px;
+  padding: 28px; border: 4px solid var(--ink); box-shadow: 12px 12px 0 var(--sun-yellow);
+}
+.awakening-card__front { background: var(--paper); align-items: center; }
+.awakening-card__back { background: var(--ink); color: #fff; transform: rotateY(180deg); }
+.awakening-card__portrait { width: 70%; aspect-ratio: 1; display: grid; place-items: center; overflow: hidden; }
+.awakening-card__portrait img { width: 100%; height: 100%; object-fit: cover; }
+.awakening-card__plate {
+  width: 100%; height: 100%; display: grid; place-items: center;
+  background: var(--plate, var(--sun-yellow)); color: var(--plate-ink, var(--ink)); font: var(--display); font-size: 160px;
+}
+.awakening-card__name { margin: 0; font: var(--display); font-size: 36px; }
+.awakening-card__line { margin: 0; font-style: italic; color: var(--sun-yellow); }
+.awakening-card__line[hidden] { display: none; }
+.awakening-card__job { margin: 0; font: var(--display); font-size: clamp(40px, 9vw, 72px); line-height: 1; letter-spacing: -0.04em; text-shadow: 5px 5px 0 var(--wine-red); }
+.awakening-card__description { margin: 0; font-size: 16px; line-height: 24px; }
+@media (prefers-reduced-motion: reduce) { .awakening-card { transition: none; } }
 
 .boss-intro { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; overflow: hidden; background: rgb(0 0 0 / .55); cursor: pointer; }
 .boss-intro[hidden] { display: none; }

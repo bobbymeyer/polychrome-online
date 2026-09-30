@@ -43,7 +43,7 @@ class WorldsController < ApplicationController
 
   def update
     attrs = params.expect(world: [ :name, :description, :voice, :avoid, :lines, :veils, *World::MUSIC.map { |scene| :"music_#{scene}" },
-                                   { remove_music: [] }, { calendar: %i[weekdays months month_length] },
+                                   { remove_music: [] }, { calendar: %i[weekdays months month_length] }, { battle_rules: Battle::RULES },
                                    { terms: [ :currency, :hp, :mp, { stats: World::Vocabulary::STATS, services: World::Vocabulary::SERVICES,
                                                                      statuses: Battle::STATUSES, services_off: [] } ] } ])
     # Removing a track and uploading its replacement in one go keeps the new one.

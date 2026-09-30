@@ -4,7 +4,8 @@
 # set off at the table. The city burns, the mine floods, the festival
 # starts. While it lasts, some services are shut, the music changes, there
 # can be trouble on arrival, and players read a line about it. Clocks,
-# scenes and its picture point at it.
+# scenes and its picture point at it. A mode with times comes on by itself
+# at those parts of the day and goes at the others: the place by night.
 class LocationMode < ApplicationRecord
   belongs_to :location, touch: true
   belongs_to :encounter_table, optional: true
@@ -28,6 +29,14 @@ class LocationMode < ApplicationRecord
   end
 
   def shuts?(kind) = closed.include?(kind.to_s)
+
+  # The parts of the day it comes on by itself (a place by night), in order.
+  def times=(parts)
+    super(Campaign::Timekeeping::TIMES & Array(parts).map(&:to_s))
+  end
+
+  # It follows the hours (Location#follow_the_hours!) instead of being set off.
+  def timed? = times.any?
 
   private
 

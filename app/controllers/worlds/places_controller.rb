@@ -48,7 +48,7 @@ class Worlds::PlacesController < ApplicationController
   end
 
   def place_params
-    fields = params.expect(world_place: [ :name, :kind, :x, :y, :known, :description, :notes, :lead, :location_template_id, :activities,
+    fields = params.expect(world_place: [ :name, :kind, :x, :y, :known, :description, :notes, :lead, :location_template_id, :activities, :night_line,
                                           { past_form: WorldPlace.new.past_form.keys } ])
     fields.merge(location_template: fields[:location_template_id].presence && @world.location_templates.find_by(id: fields[:location_template_id]))
           .except(:location_template_id)

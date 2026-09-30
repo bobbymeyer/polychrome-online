@@ -31,7 +31,9 @@ class RandomTable
       summons: BattleFixtures.summons,
       escapable: @chooser.rand(4) != 0,
       items: BattleFixtures.items(potion: @chooser.rand(0..3), phoenix_down: @chooser.rand(0..2),
-                                  antidote: @chooser.rand(0..2), remedy: @chooser.rand(0..1))
+                                  antidote: @chooser.rand(0..2), remedy: @chooser.rand(0..1)),
+      # Half the tables play One More (from the seed, so the rest of the table is drawn as before).
+      rules: { one_more: seed.odd? }
     )
     @actions = []
     @steps = [] # [state_before, action, state_after, events]

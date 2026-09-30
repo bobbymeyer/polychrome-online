@@ -44,6 +44,14 @@ class World < ApplicationRecord
     raise Refusal, "#{campaigns.count == 1 ? 'A campaign is' : "#{campaigns.count} campaigns are"} played in #{name} (#{campaigns.order(:name).pluck(:name).uniq.first(3).to_sentence}). Those go first."
   end
 
+  # From the form: a box per rule, on or off.
+  def battle_rules=(value)
+    value = value.to_h.stringify_keys
+    super(Battle::RULES.select { |rule| ActiveModel::Type::Boolean.new.cast(value[rule]) }.index_with(true))
+  end
+
+  def rule?(rule) = battle_rules.to_h[rule.to_s] == true
+
   def to_param
     slug_in_database || slug
   end
@@ -84,6 +92,6 @@ class World < ApplicationRecord
       by_slug.fetch(slug.to_s) { raise ActiveRecord::RecordNotFound, "no monster #{slug} in #{self.slug}" }.to_engine(count: count)
     end + extra_enemies
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: ability_library, escapable: escapable, items: items,
-                        terrain: terrain, types: type_chart.to_engine, summons: summon_library)
+                        terrain: terrain, types: type_chart.to_engine, summons: summon_library, rules: battle_rules)
   end
 end

@@ -166,7 +166,19 @@ const STEPS = {
     b.popup(tl, e.target || e.actor, { immune: e.damage_type ? "NO EFFECT" : "IMMUNE", nothing_to_cure: "NO EFFECT", nothing_to_steal: "NOTHING", steal_failed: "MISSED" }[e.reason] || "MISS", "miss", at)
     return 380
   },
+  // One More (a world's rule): the blow found a weakness, and they go again.
+  one_more(b, tl, e, at) {
+    b.banner(tl, "ONE MORE!", at, "one-more")
+    gesture(tl, b.sprite(e.actor), "bounce", at)
+    return 700
+  },
   status_applied(b, tl, e, at) {
+    if (e.status === "down") {
+      tl.call(() => b.setStatus(e.target, e.status, true), at)
+      b.popup(tl, e.target, "DOWN!", "crit", at, "status-down")
+      gesture(tl, b.sprite(e.target), "shake", at)
+      return 360
+    }
     b.die(tl, e.target, e, at)
     tl.call(() => b.setStatus(e.target, e.status, true), at)
     b.popup(tl, e.target, b.statusName(e.status), "status", at, `status-${e.status}`)

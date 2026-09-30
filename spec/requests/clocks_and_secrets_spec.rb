@@ -51,7 +51,7 @@ RSpec.describe "Clocks and secrets", type: :request do
                                                                   "line" => "The Syndicate torches Tule: it has happened.",
                                                                   "place" => "Tule: Burning" })
       get campaign_table_path(campaign)
-      expect(response.body).to include('data-controller="dialogue recap deadline"', 'class="deadline-stage"',
+      expect(response.body).to include('data-controller="dialogue recap deadline awakening"', 'class="deadline-stage"',
                                        "data-chat-line-cue-value=\"deadline\"", "data-chat-line-card-value=")
 
       rest_the_night(campaign)

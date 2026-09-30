@@ -19,7 +19,7 @@ module World::Copying
   def copy_books_from!(source, rules_only: false)
     transaction do
       # The setting's types and skills first: the books are checked against them.
-      update!(damage_types: source.damage_types, terrain_types: source.terrain_types, skills: source.skills)
+      update!(damage_types: source.damage_types, terrain_types: source.terrain_types, skills: source.skills, battle_rules: source.battle_rules)
       tables = {}
       abilities = {}
       # Summons name creatures from the Bestiary, so they come after it.

@@ -36,6 +36,37 @@ RSpec.describe "Location modes", type: :request do
     expect(campaign.messages.last.body).to eq("The fires are out.")
   end
 
+  it "follows the hours: a place by night comes on at night and goes at dawn, but a mode set off outlasts them" do
+    post location_modes_path(town), params: { mode: { name: "By night", line: "The shutters come down. Under the platform, the Undertow wakes.",
+                                                         closed: %w[shop], times: [ "", "night" ] } }
+    expect(town.reload.modes.sole).to have_attributes(times: %w[night], timed?: true)
+    get location_path(town)
+    expect(response.body).to include("by itself at night")
+
+    campaign.update!(current_node: node, time_of_day: "dusk")
+    campaign.pass_time!(1)
+    expect(town.reload.current_mode.name).to eq("By night")
+    expect(town.service_closed?("shop")).to be(true)
+    expect(campaign.messages.pluck(:body)).to include("The shutters come down. Under the platform, the Undertow wakes.")
+
+    campaign.pass_time!(1) # dawn
+    expect(town.reload.current_mode).to be_nil
+
+    prepare_burning
+    patch location_current_mode_path(town), params: { key: "burning" }
+    campaign.pass_time!(3) # to night
+    expect(town.reload.current_mode.name).to eq("Burning") # the fire doesn't go out at nightfall
+  end
+
+  it "comes from the atlas: a place's night line is a mode that comes on at night" do
+    place = world.world_places.create!(name: "Tsukiura Station", kind: "town", x: 5, y: 5, location_template: village,
+                                       night_line: "The last train leaves. Something else arrives.")
+    fresh = world.campaigns.create!(name: "Night Shift", gm: @admin)
+    Atlas.new(fresh).bring_in_places!([ place ])
+    station = fresh.map_nodes.find_by!(world_place: place).location
+    expect(station.modes.sole).to have_attributes(name: "By night", times: %w[night], line: "The last train leaves. Something else arrives.")
+  end
+
   it "shuts its services, changes the music and has trouble waiting while it lasts" do
     prepare_burning
     town.reload.switch_mode!("burning")

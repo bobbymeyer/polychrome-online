@@ -300,6 +300,32 @@ dusk)". They go to the same vote, and settling one says its line and lets the ti
 is the day schedule of a calendar game: each part of the day is spent on something, and the
 countdowns on the date card say what it costs.
 
+### Someone awakens
+
+The GM can have one character awaken to a job at the table ("Awaken someone": who, to what, and
+what they hear). The job opens for the party if it wasn't open, they take it up at once, and
+the table stops for it. Their face comes up on a white card with a yellow shadow, and after a
+beat the card turns over. On the black back are what they heard, in yellow italic, the job's
+name in display type, and its description. A low drone and a heartbeat play, then a chord that
+opens upward, and the scene's music holds still while the card is up.
+
+### One More
+
+A world can turn on One More (its Battle rules). A blow that finds a weakness, or lands a
+critical hit, knocks its target down: "DOWN!" pops over them on black and yellow, and they lose
+their next turn. Whoever struck goes again at once with the same move, under a slanted red "ONE
+MORE!" across the stage. It happens once a turn, it works for enemies too, and someone already
+down isn't knocked down twice. Commands are chosen for the whole round at its start, so the
+extra go repeats the move rather than asking for a new one, as haste's second go does.
+
+### A place by night
+
+A mode can come on by itself at parts of the day: the station after the last train, the
+market when the shutters come down. It turns on at those hours and off at the others, and only
+the party, where it is, hears the change. A mode set off at the table (the city burning)
+outlasts the hours. In the Atlas, a place's "What it's like by night" line becomes a "By night"
+mode in every new campaign.
+
 ### A deadline passes
 
 When a clock the table can see fills, the table stops for it. A red card comes up over

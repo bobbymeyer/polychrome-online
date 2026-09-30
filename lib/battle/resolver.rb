@@ -420,8 +420,10 @@ module Battle
       order.each do |id|
         break if ctx.over?
 
+        mark = ctx.events.size
         take_turn(ctx.unit(id), inputs[id])
         ctx.check_end
+        one_more(ctx.unit(id), inputs[id], mark) if state.dig("rules", "one_more") && !ctx.over?
       end
       # Haste: whoever was quick when the round began has a second go at
       # its end, the same move again.
@@ -527,7 +529,44 @@ module Battle
     SINGLE_GO = %w[jump away summon escape].freeze
 
     def quick_turn(unit, cmd)
-      return unless ctx.alive?(unit) && ctx.status?(unit, "haste")
+      return unless ctx.status?(unit, "haste")
+
+      extra_go(unit, cmd)
+    end
+
+    # One More (a world's rule, Battle::RULES): a blow on its turn that found
+    # a weakness or landed a critical hit knocks the one it hit down (they
+    # lose their next turn), and whoever struck goes again at once, the same
+    # move (as haste's second go, #extra_go). Once a turn: the other go
+    # knocks down too, but doesn't go again. Someone already down isn't
+    # knocked down twice, and gives nobody another go.
+    def one_more(unit, cmd, mark)
+      downed = knock_down(unit, ctx.events[mark..])
+      return if downed.empty? || !ctx.alive?(unit)
+
+      ctx.emit(:one_more, actor: unit["id"], downed: downed)
+      mark = ctx.events.size
+      extra_go(unit, cmd, reason: "one_more")
+      ctx.check_end
+      knock_down(unit, ctx.events[mark..]) unless ctx.over?
+    end
+
+    def knock_down(unit, events)
+      events.filter_map do |event|
+        next unless event["type"] == "damage" && event["actor"] == unit["id"] && (event["crit"] || event["effectiveness"].to_i > 100)
+
+        target = ctx.find_unit(event["target"].to_s)
+        next unless target && target["side"] != unit["side"] && ctx.alive?(target) && !ctx.status?(target, "down")
+
+        ctx.add_status(target, "down", 1)
+        target["id"]
+      end
+    end
+
+    # Another go, the same move again, and nothing else of a turn (no upkeep,
+    # no countdowns): haste's second go, and One More.
+    def extra_go(unit, cmd, reason: nil)
+      return unless ctx.alive?(unit)
       return if (DISABLING_STATUSES + %w[airborne away charging confuse]).any? { |kind| ctx.status?(unit, kind) }
 
       ability = if ctx.status?(unit, "berserk") then ctx.ability("attack")
@@ -536,7 +575,7 @@ module Battle
       end
       return unless ability && ability.fetch("charge", 0).zero? && ability["effects"].none? { |e| SINGLE_GO.include?(e["primitive"]) }
 
-      ctx.emit(:turn_start, unit: unit["id"], quick: true)
+      ctx.emit(:turn_start, unit: unit["id"], quick: true, **(reason ? { reason: reason } : {}))
       if chosen then use_ability(unit, own(unit, ability), chosen.last)
       elsif ctx.status?(unit, "berserk") then use_ability(unit, own(unit, ability), nil)
       else perform(unit, cmd)

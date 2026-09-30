@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_180000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -484,6 +484,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
     t.text "art"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "times", default: [], null: false
     t.index ["encounter_table_id"], name: "index_location_modes_on_encounter_table_id"
     t.index ["location_id", "key"], name: "index_location_modes_on_location_id_and_key", unique: true
     t.index ["location_id"], name: "index_location_modes_on_location_id"
@@ -794,6 +795,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
     t.json "past", default: {}, null: false
     t.text "lead"
     t.text "activities"
+    t.text "night_line"
     t.index ["location_template_id"], name: "index_world_places_on_location_template_id"
     t.index ["world_id"], name: "index_world_places_on_world_id"
   end
@@ -836,6 +838,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
     t.json "calendar", default: {}, null: false
     t.json "origins", default: [], null: false
     t.json "history", default: {}, null: false
+    t.json "battle_rules", default: {}, null: false
     t.index ["owner_id"], name: "index_worlds_on_owner_id"
     t.index ["slug"], name: "index_worlds_on_slug", unique: true
   end

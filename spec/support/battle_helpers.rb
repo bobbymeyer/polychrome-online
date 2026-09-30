@@ -161,9 +161,9 @@ module BattleHelpers
   end
 
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
-                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil, summons: BattleFixtures.summons)
+                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil, summons: BattleFixtures.summons, rules: {})
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items, terrain: terrain,
-                        types: types, summons: summons)
+                        types: types, summons: summons, rules: rules)
   end
 
   def apply(state, action)

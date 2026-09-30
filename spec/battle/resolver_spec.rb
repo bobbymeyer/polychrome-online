@@ -800,6 +800,27 @@ RSpec.describe Battle::Resolver do
         expect(of_type(plain, :cast).count { |e| e["actor"] == "mage" }).to eq(1)
       end
 
+      it "plays One More where the world says so: a weakness knocks the target down, and the striker goes again" do
+        weak_brute = [ brute.first.merge(affinities: { fire: "weak" }) ]
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[fire]) ], enemies: weak_brute, rules: { one_more: true })
+        expect(state["rules"]).to eq("one_more" => true)
+        after, events = round(state, "mage" => { kind: "ability", ability: "fire", target: "brute" })
+        expect(of_type(events, :cast).count { |e| e["actor"] == "mage" }).to eq(2)
+        expect(of_type(events, :one_more)).to eq([ { "type" => "one_more", "actor" => "mage", "downed" => [ "brute" ] } ])
+        expect(of_type(events, :turn_start)).to include(a_hash_including("unit" => "mage", "quick" => true, "reason" => "one_more"))
+        expect(of_type(events, :turn_skipped)).to include(a_hash_including("unit" => "brute", "reason" => "down")) # it lost its turn
+        expect(unit(after, "brute")["statuses"].map { |st| st["kind"] }).not_to include("down") # and is back up
+
+        plain = build_battle(seed: 3, party: [ caster.merge(abilities: %w[fire]) ], enemies: weak_brute)
+        _, events = round(plain, "mage" => { kind: "ability", ability: "fire", target: "brute" })
+        expect(of_type(events, :one_more)).to be_empty
+        expect(of_type(events, :cast).count { |e| e["actor"] == "mage" }).to eq(1)
+
+        _, events = round(build_battle(seed: 3, party: [ caster.merge(abilities: %w[fire]) ], enemies: brute, rules: { one_more: true }),
+                          "mage" => { kind: "ability", ability: "fire", target: "brute" })
+        expect(of_type(events, :one_more)).to be_empty # no weakness, no One More
+      end
+
       it "sends a summon away the moment it's down, so nothing can raise it" do
         state, = cast("call_wisp", "mage")
         ctx = Battle::Context.new(state)
