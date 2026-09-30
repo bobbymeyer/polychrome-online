@@ -5,8 +5,9 @@
 #
 # The clock is never unfair to someone who isn't looking: the first round's
 # starts only once every player in the fight has said they're ready (or the
-# GM has put them on auto), and it stops while a player's idea waits for the
-# GM's ruling.
+# GM has put them on auto), it stops while a player's idea waits for the
+# GM's ruling, and it holds when nobody has the battle open (#watch!), so a
+# fight never plays itself out to the end with nobody there.
 module BattleRecord::Rounds
   extend ActiveSupport::Concern
 
@@ -88,6 +89,33 @@ module BattleRecord::Rounds
   def waiting_for_arrivals?
     input_seconds.present? && !over? && round == 1 && deadline_at.nil?
   end
+
+  # Anyone with the battle open says so now and then (battle_watch_controller,
+  # every WATCH_BEAT); gone for longer than WATCHERS_GONE, nobody's watching.
+  WATCH_BEAT = 20.seconds
+  WATCHERS_GONE = 50.seconds
+
+  def watched? = watched_at.present? && watched_at > WATCHERS_GONE.ago
+
+  # Someone has it in front of them: a clock held for want of anyone
+  # watching starts again, with a whole round's time.
+  def watch!
+    update_column(:watched_at, Time.current)
+    return unless held?
+
+    open_round!
+    broadcast_countdown
+  end
+
+  # The round's time ran out with nobody watching: the round waits.
+  def hold_clock!
+    update!(deadline_at: nil)
+    broadcast_countdown
+  end
+
+  # Held: a timed round with no clock running, not because it's waiting
+  # for the first round's players to be ready.
+  def held? = input_seconds.present? && !over? && deadline_at.nil? && !(round == 1 && still_coming.any?)
 
   # A player's idea is waiting for the GM's ruling: the clock stops.
   def ruling_pending?

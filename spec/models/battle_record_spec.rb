@@ -92,6 +92,7 @@ RSpec.describe BattleRecord do
 
     it "runs the round with defaults when the deadline passes" do
       battle.apply!(command(bartz), actor: bartz)
+      battle.watch! # someone has it open
       travel_to(battle.deadline_at + 1.second) do
         BattleTimeoutJob.perform_now(battle.reload, 1)
       end
@@ -99,6 +100,19 @@ RSpec.describe BattleRecord do
       expect(battle.round).to eq(2)
       expect(battle.battle_actions.last).to have_attributes(actor: "system", payload: { "type" => "timeout" })
       expect(battle.battle_events.find_by(kind: "timeout").payload["defaulted"]).to eq([ faris ])
+    end
+
+    it "holds the round when nobody has the battle open, and starts the clock again when someone does" do
+      battle.watch!
+      travel_to(battle.deadline_at + BattleRecord::WATCHERS_GONE) do
+        expect { BattleTimeoutJob.perform_now(battle.reload, 1) }.not_to change(BattleAction, :count)
+        expect(battle.reload).to have_attributes(round: 1, deadline_at: nil)
+        expect(battle).to be_held
+
+        expect { battle.watch! }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_countdown"))
+        expect(battle.reload.deadline_at).to be_within(2.seconds).of(30.seconds.from_now)
+        expect(battle).not_to be_held
+      end
     end
 
     it "ignores a timer for a round that already ran" do

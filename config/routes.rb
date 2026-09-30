@@ -200,6 +200,8 @@ Rails.application.routes.draw do
       resource :auto, only: :update
       # A player's page has the battle in front of them (BattleRecord#arrive!).
       resource :arrival, only: :create
+      # Someone has the battle open: its clock runs (BattleRecord#watch!).
+      resource :watch, only: :update
     end
   end
 end
