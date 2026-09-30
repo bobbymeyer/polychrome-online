@@ -130,7 +130,5 @@ class Campaign < ApplicationRecord
   end
 
   # An amount in the world's money: "150 gil", "150 crowns".
-  def money(amount)
-    "#{amount} #{world.word('currency')}"
-  end
+  delegate :money, to: :world
 end

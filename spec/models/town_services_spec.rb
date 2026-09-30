@@ -3,7 +3,7 @@
 require "rails_helper"
 
 # A town's inn, temple and guild, and camp on the road: things to do with a
-# price and an outcome (Campaign::Services, Outcome).
+# price and an outcome (Location::Town#services_for, Campaign::Services, Outcome).
 RSpec.describe "Town services" do
   let(:campaign) { base_world.campaigns.create!(name: "Rust", gil: 1000) }
   let!(:bartz) { create_character(campaign, name: "Bartz") }
@@ -20,9 +20,9 @@ RSpec.describe "Town services" do
   def labels = campaign.reload.pastimes_here.map { |way| way["label"] }
 
   it "charges by level, with a floor" do
-    expect(campaign.service_price("inn", bartz)).to eq(25) # level 5
-    expect(campaign.service_price("temple", bartz)).to eq(100)
-    expect(campaign.service_price("guild", bartz)).to eq(30)
+    expect(town.service_price("inn", bartz)).to eq(25) # level 5
+    expect(town.service_price("temple", bartz)).to eq(100)
+    expect(town.service_price("guild", bartz)).to eq(30)
   end
 
   it "offers the town's services as things to do: rooms for everyone, a raising for the KO'd, a rumour" do
@@ -58,7 +58,7 @@ RSpec.describe "Town services" do
     town.map_node.add_mode!("name" => "Burning", "closed" => %w[inn])
     town.map_node.switch_mode!("burning")
     expect(labels).to eq([ "Rumours at Adventurers' Hall (30 gil)", "Make camp (overnight)" ]) # no inn: camp
-    allow_any_instance_of(Location).to receive(:shuns_party?).and_return(true) # they won't deal with the party
+    2.times { campaign.record_deed!("The party burned the granary.", at: tule, sway: -2) } # they won't deal with the party
     expect(labels).to eq([ "Make camp (overnight)" ])
   end
 

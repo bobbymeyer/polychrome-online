@@ -28,6 +28,11 @@ module World::Vocabulary
     World::Vocabulary.word(terms, key)
   end
 
+  # "1,500 gil", in the world's money.
+  def money(amount) = World::Vocabulary.money(terms, amount)
+
+  def self.money(terms, amount) = "#{amount.to_i.to_fs(:delimited)} #{word(terms, 'currency')}"
+
   # The word from a set of terms, or the game's own when they don't say.
   def self.word(terms, key)
     group, name = key.to_s.split(".", 2)

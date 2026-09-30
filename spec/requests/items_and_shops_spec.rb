@@ -98,7 +98,7 @@ RSpec.describe "Items and shops", type: :request do
       lenna_character = campaign.characters.find_by!(name: "Lenna")
       lenna_character.update!(hp: 10, mp: 0)
       inn = town.view["services"].find { |sv| sv["kind"] == "inn" }
-      price = campaign.service_price("inn", lenna_character)
+      price = town.service_price("inn", lenna_character)
       label = "Rooms at #{inn['name']} (#{price} gil, overnight)"
       get location_path(town)
       expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', "Rooms at #{ERB::Util.h(inn['name'])}", "suggest")
