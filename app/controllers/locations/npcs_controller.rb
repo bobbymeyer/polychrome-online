@@ -4,7 +4,7 @@
 class Locations::NpcsController < ApplicationController
   include LocationScoped
 
-  before_action :require_gm
+  before_action :require_table_gm
 
   def create
     fields = params.expect(npc: %i[name title description])

@@ -1,15 +1,12 @@
 # frozen_string_literal: true
 
-# Map editing and travel are the GM's (§7): only the table's GM seat may.
+# Map editing is the GM's (§7): only the table's GM seat may
+# (TableSeat#require_table_gm), and it answers in the map's panel.
 module MapGm
   extend ActiveSupport::Concern
   include TableSeat
 
   private
-
-  def require_gm
-    head :forbidden unless table_gm?(@campaign)
-  end
 
   def panel(notice: nil, alert: nil)
     flash[:map_notice] = notice if notice

@@ -57,6 +57,12 @@ module Authorization
     forbid("Only #{@world.owner ? "#{@world.owner.name} and the GMs playing in it" : 'an admin'} can change #{@world.name}. Copy it to make your own.") unless can_edit_world?
   end
 
+  # A world's GM side (its codex notes, fronts, places' secrets): its
+  # editors and the GMs playing in it.
+  def require_lore
+    forbid unless knows_the_lore?
+  end
+
   def require_campaign_gm
     forbid unless can_gm?(@campaign)
   end

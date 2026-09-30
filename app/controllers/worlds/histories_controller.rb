@@ -53,8 +53,4 @@ class Worlds::HistoriesController < ApplicationController
   def set_world
     @world = World.find_by!(slug: params[:world_slug])
   end
-
-  def require_lore
-    forbid unless knows_the_lore?
-  end
 end

@@ -10,7 +10,7 @@ module PlaceScoped
     include TableSeat
 
     before_action :set_node
-    before_action :require_gm
+    before_action :require_table_gm
 
     rescue_from Refusal do |refusal|
       back alert: refusal.message
@@ -25,9 +25,6 @@ module PlaceScoped
     @world = @campaign.world
   end
 
-  def require_gm
-    head :forbidden unless table_gm?(@campaign)
-  end
 
   def back(notice = nil, alert: nil)
     place = @node.location ? location_path(@node.location) : campaign_map_path(@campaign)

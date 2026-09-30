@@ -4,7 +4,7 @@
 class Locations::StocksController < ApplicationController
   include LocationScoped
 
-  before_action :require_gm
+  before_action :require_table_gm
 
   def update
     @location.set_stock!(Array(params.dig(:stock, :items)))

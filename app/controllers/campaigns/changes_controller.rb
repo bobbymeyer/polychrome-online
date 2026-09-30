@@ -6,10 +6,9 @@ class Campaigns::ChangesController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
+  before_action :require_table_gm
 
   def show
-    return head :forbidden unless table_gm?
-
     @locations = @campaign.locations.includes(:location_template, :map_node).order(:id)
   end
 end

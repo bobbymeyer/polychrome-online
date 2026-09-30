@@ -4,7 +4,7 @@
 class Locations::BossesController < ApplicationController
   include LocationScoped
 
-  before_action :require_gm
+  before_action :require_table_gm
 
   def update
     boss = params.expect(boss: %i[monster count])

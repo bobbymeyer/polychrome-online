@@ -50,9 +50,6 @@ class Worlds::FiguresController < ApplicationController
     @world = World.find_by!(slug: params[:world_slug])
   end
 
-  def require_lore
-    forbid unless knows_the_lore?
-  end
 
   def set_figure
     @figure = @world.world_figures.find(params[:id])

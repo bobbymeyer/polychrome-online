@@ -6,7 +6,7 @@ class Campaigns::ClocksController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
-  before_action :require_gm
+  before_action :require_table_gm
   before_action :set_clock, only: %i[update destroy]
 
   def create
@@ -25,9 +25,6 @@ class Campaigns::ClocksController < ApplicationController
 
   private
 
-  def require_gm
-    head :forbidden unless table_gm?
-  end
 
   def set_clock
     @clock = @campaign.clocks.find(params[:id])

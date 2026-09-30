@@ -6,7 +6,7 @@ class Campaigns::EncountersController < ApplicationController
   include CampaignScoped
   include MapGm
 
-  before_action :set_campaign, :require_gm
+  before_action :set_campaign, :require_table_gm
 
   def create
     seconds = params[:input_seconds].presence&.to_i

@@ -6,10 +6,9 @@ class Campaigns::JobGrantsController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
+  before_action :require_table_gm
 
   def create
-    return forbid("Only the GM grants archetypes.") unless table_gm?
-
     jobs = @campaign.world.jobs.where(slug: Array(params[:jobs]).compact_blank).to_a
     @campaign.grant_jobs!(jobs, params[:line])
     redirect_back_or_to campaign_table_path(@campaign), status: :see_other

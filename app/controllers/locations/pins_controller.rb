@@ -5,7 +5,7 @@
 class Locations::PinsController < ApplicationController
   include LocationScoped
 
-  before_action :require_gm
+  before_action :require_table_gm
 
   def create
     @location.pin!(params.expect(:key))

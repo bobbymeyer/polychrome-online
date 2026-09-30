@@ -7,7 +7,7 @@
 class LocationsController < ApplicationController
   include LocationScoped
 
-  before_action :require_gm, except: :show
+  before_action :require_table_gm, except: :show
 
   def show
     @gm = table_gm?

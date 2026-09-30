@@ -6,7 +6,7 @@ class Campaigns::RumoursController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
-  before_action -> { head :forbidden unless table_gm? }
+  before_action :require_table_gm
 
   def create
     fields = params.expect(rumour: %i[body origin_id about_id])

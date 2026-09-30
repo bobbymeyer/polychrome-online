@@ -6,7 +6,7 @@ class MapEdgesController < ApplicationController
 
   before_action :set_from_node, only: :create
   before_action :set_edge, only: %i[edit update destroy]
-  before_action :require_gm
+  before_action :require_table_gm
 
   # Connect a node to another (from the node's panel).
   def create

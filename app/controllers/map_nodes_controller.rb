@@ -6,7 +6,7 @@ class MapNodesController < ApplicationController
 
   before_action :set_campaign, only: %i[new create]
   before_action :set_node, only: %i[edit update destroy]
-  before_action :require_gm
+  before_action :require_table_gm
 
   def new
     @node = @campaign.map_nodes.new(x: params[:x].to_i.clamp(0, MapNode::WIDTH), y: params[:y].to_i.clamp(0, MapNode::HEIGHT))

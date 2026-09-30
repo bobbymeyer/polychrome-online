@@ -6,7 +6,7 @@ class Campaigns::Clocks::TicksController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
-  before_action -> { head :forbidden unless table_gm? }
+  before_action :require_table_gm
 
   def create
     @campaign.clocks.find(params[:clock_id]).tick!(params[:by].to_i.clamp(-12, 12))

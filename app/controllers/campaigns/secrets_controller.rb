@@ -6,7 +6,7 @@ class Campaigns::SecretsController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
-  before_action :require_gm
+  before_action :require_table_gm
   before_action :set_secret, only: :destroy
 
   def create
@@ -21,9 +21,6 @@ class Campaigns::SecretsController < ApplicationController
 
   private
 
-  def require_gm
-    head :forbidden unless table_gm?
-  end
 
   def set_secret
     @secret = @campaign.secrets.find(params[:id])
