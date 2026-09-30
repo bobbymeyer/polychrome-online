@@ -132,7 +132,8 @@ module Location::Exploration
     end
   end
 
-  # Hand a room's treasure to the party (once).
+  # Hand a room's treasure to the party (once): money, or the item, found
+  # (Outcome), in the place's own words.
   def take_treasure!(key)
     target = room(key)
     raise Refusal, "No treasure there" unless target && target["decision"]["kind"] == "treasure" && !resolved?(key)
@@ -140,14 +141,13 @@ module Location::Exploration
     decision = target["decision"]
     item = campaign.world.items.find_by(slug: decision["item"]) if decision["item"]
     line = "Found #{describe_treasure(decision)} in #{target['name']}.#{" #{who_can_use(item)}" if item&.equipment?}"
-    transaction do
-      campaign.add_item!(item) if item
-      campaign.increment!(:gil, decision["gil"].to_i) if decision["gil"]
+    found = decision["gil"] ? Outcome.of("money", decision["gil"].to_i) : Outcome.of("find", target: { "item" => decision["item"] })
+    said = transaction do
       resolve!(key)
-      campaign.narrate(line, cue: "treasure")
+      campaign.narrate(found.apply!(campaign, by: "The party", line: line), cue: "treasure").body
     end
     campaign.table_changed # the table's "Take it" goes
-    line
+    said
   end
 
   # Gear found says who it's for: a sword nobody can swing is still worth

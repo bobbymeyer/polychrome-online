@@ -27,6 +27,7 @@
 # clock's does (Scene#outcome, Clock):
 #   reveal      a place comes into view            { "node" => id }
 #   mode        a place is set in a mode, or back  { "node" => id, "mode" => key or nil }
+#   find        that item, into the bag            { "item" => slug } (a dungeon's treasure)
 #   battle      a fight starts, now                { "name" => "...", "monsters" => { slug => count } }
 Outcome = Data.define(:kind, :amount, :target)
 
@@ -178,13 +179,21 @@ class Outcome
     "#{by} scouts ahead: #{hidden.map(&:name).to_sentence} come#{'s' if hidden.one?} into view."
   end
 
-  def find!(campaign, by:, **)
+  def find!(campaign, by:, line:, **)
+    return found!(campaign, by: by, line: line) if target
     finds = campaign.world.items.where(category: "consumable").where(price: 1..amount).order(:price, :id).to_a
     return "#{by} searches, but finds nothing worth the carrying." if finds.empty?
 
     item = campaign.roll { |dice| finds[dice.int(finds.size)] }
     campaign.add_item!(item)
     "#{by} finds #{item.name.start_with?(/[AEIOU]/i) ? 'an' : 'a'} #{item.name}."
+  end
+
+  # A named thing found (a dungeon's treasure), whatever it's worth.
+  def found!(campaign, by:, line:)
+    item = campaign.world.items.find_by(slug: target["item"])
+    campaign.add_item!(item) if item
+    say(line, "#{by} finds #{item&.name || target['item']}.", by: by)
   end
 
   def learn!(campaign, by:, **)
