@@ -107,7 +107,7 @@
       </div>
       <div class="field">
         <%= f.label :monster, "From the Bestiary" %>
-        <%= f.select :monster, @battle.world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.slug ] } %>
+        <%= f.select :monster, monster_options(@battle.world.monsters) %>
       </div>
       <div class="field">
         <%= f.label :name, "Name" %>

@@ -7,7 +7,7 @@
   </div>
   <div class="field">
     <%= f.label :monster_id, "Fights as" %>
-    <%= f.select :monster_id, @campaign.world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.id ] }, include_blank: "Doesn't fight" %>
+    <%= f.select :monster_id, monster_options(@campaign.world.monsters, by: :id), include_blank: "Doesn't fight" %>
     <p class="hint">
       A recurring antagonist: they can join a battle under their own name and face, as a boss. If you send them off the field in battle,
       they get away and come back <%= Npc::GROWTH %>% stronger each time<%= " (#{npc.strength_percent}% now, after #{pluralize(npc.escapes, 'escape')})" if npc.escapes.positive? %>.

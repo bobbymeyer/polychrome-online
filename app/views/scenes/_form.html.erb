@@ -23,7 +23,7 @@
     </div>
 
     <div class="field" data-show-for="battle">
-      <% monsters = @world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level}#{', boss' if m.boss?})", m.slug ] } %>
+      <% monsters = monster_options(@world.monsters) %>
       <% rows = scene.encounter.to_a + Array.new([ ScenesController::ENCOUNTER_SLOTS - scene.encounter.size, 0 ].max) { [ "", 1 ] } %>
       <table class="book-table">
         <thead><tr><th scope="col">Monster</th><th scope="col">How many</th></tr></thead>

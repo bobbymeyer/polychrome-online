@@ -40,6 +40,8 @@ RSpec.describe "Battle screen", type: :request do
     create_character(campaign, name: "Bartz")
     get new_campaign_battle_path(campaign)
     expect(response.body).to include('data-controller="forecast"', 'id="forecast"')
+    expect(response.body).to match(/>Goblin \(\d+ HP\)</) # how tough, not the book's level
+    expect(response.body).not_to include("(Lv ")
 
     get campaign_forecast_path(campaign), params: { battle: { encounter: { "0" => { monster: "goblin", count: "1" } } } }
     expect(response.body).to match(/forecast--(easy|fair|hard|deadly)/)
