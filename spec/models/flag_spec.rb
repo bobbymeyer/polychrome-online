@@ -24,5 +24,4 @@ RSpec.describe Flag do
     expect(mood).not_to be_counter
     expect { mood.bump!(1) }.to raise_error(Refusal, /isn't a number/)
   end
-
 end
