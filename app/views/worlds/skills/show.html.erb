@@ -7,11 +7,11 @@
   </div>
 </div>
 <p class="prose">
-  What checks in <%= @world.name %> are made with. Each skill rides on a stat, and a job that's good at it adds
+  What checks in <%= @world.name %> are made with. Each skill rides on a stat, and an archetype that's good at it adds
   +<%= Job::SKILL_BONUS %> to the chance.
 </p>
 <table class="book-table">
-  <thead><tr><th>Skill</th><th>Stat</th><th>What it covers</th><th>Jobs good at it</th></tr></thead>
+  <thead><tr><th>Skill</th><th>Stat</th><th>What it covers</th><th>Archetypes good at it</th></tr></thead>
   <tbody>
     <% jobs = @world.jobs.alphabetical.to_a %>
     <% Array(@world.skills).each do |skill| %>

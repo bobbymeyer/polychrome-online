@@ -20,7 +20,7 @@ RSpec.describe "Battle resolver properties" do
                                   turn_start turn_end flee victory defeat gm_override buff_applied
                                   buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll
                                   jump land away back covered counter second_wind mp_restored
-                                  shielded confused mp_lost hp_paid charging summoned one_more])
+                                  shielded confused mp_lost hp_paid charging summoned one_more all_out])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end
@@ -221,6 +221,23 @@ RSpec.describe "Battle resolver properties" do
         before = moves.(events[0...i]).last
         after = moves.(events[(i + 1)..]).first
         expect(after["ability"]).to eq(before["ability"]) if before && after && !before["desperation"]
+      end
+    end
+  end
+
+  it "goes All-Out only for the party, after a One More, with every enemy it names down, and at most once a round" do
+    each_step do |_, before, _, _, events|
+      events.slice_before { |e| e["type"] == "round_start" }.each do |round|
+        expect(of_type(round, :all_out).size).to be <= 1
+      end
+      events.each_with_index do |event, i|
+        next unless event["type"] == "all_out"
+
+        expect(before.dig("rules", "one_more")).to be_truthy
+        expect(before["units"].find { |u| u["id"] == event["actor"] }["side"]).to eq("party")
+        expect(events[0...i].map { |e| e["type"] }).to include("one_more")
+        downed = events[0...i].select { |e| e["type"] == "status_applied" && e["status"] == "down" }.map { |e| e["target"] }
+        expect(event["targets"] - downed).to be_empty
       end
     end
   end

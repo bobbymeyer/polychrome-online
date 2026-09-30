@@ -182,6 +182,17 @@ const JINGLES = {
     tone(t + 0.28, "E2", 0.9, { wave: "triangle", gain: 0.7, decay: 0.8 })
     noise(t + 0.28, 0.25, { gain: 0.35, filter: 2500 })
   },
+  // One More: a quick stab up an octave, and a hit.
+  one_more(t) {
+    phrase(t, 0.06, [ [ "A4", 0, 1 ], [ "E5", 1, 1 ], [ "A5", 2, 2 ] ], { wave: "square", gain: 0.12 })
+    noise(t, 0.08, { gain: 0.3, filter: 3000 })
+  },
+  // All-Out Attack: a drum roll into a crash.
+  all_out(t) {
+    for (let i = 0; i < 8; i++) noise(t + i * 0.06, 0.05, { gain: 0.25 + i * 0.03, filter: 800 })
+    ;[ "A3", "E4", "A4", "C#5" ].forEach((n) => tone(t + 0.5, n, 1.0, { wave: "sawtooth", gain: 0.1, decay: 0.8 }))
+    noise(t + 0.5, 0.6, { gain: 0.5, filter: 5000 })
+  },
   // A check lands: up a fourth and a bright top, or a flat fall.
   check_pass(t) {
     phrase(t, 0.08, [ [ "G5", 0, 1 ], [ "C6", 1, 1 ], [ "E6", 2, 3 ] ], { gain: 0.22 })

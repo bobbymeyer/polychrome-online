@@ -300,6 +300,12 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
 .popup.status-down { background: var(--ink); color: var(--sun-yellow); }
+/* All-Out Attack: a black slab across the whole stage, red type, a yellow edge. */
+.banner--all-out {
+  left: -4%; right: -4%; padding: 12px 8%; rotate: -6deg;
+  background: var(--ink); color: var(--bright-red); font-size: clamp(44px, 10vw, 120px);
+  text-shadow: 4px 4px 0 var(--sun-yellow); box-shadow: 0 -6px 0 var(--sun-yellow), 0 10px 0 var(--bright-red);
+}
 .banner--victory, .banner--defeat, .banner--escape {
   left: -4%; right: -4%; padding: 12px 8%; rotate: -4deg;
   background: var(--sun-yellow); color: var(--ink); font-size: clamp(56px, 12vw, 144px);
@@ -556,6 +562,8 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
   background: var(--plate, var(--sun-yellow)); color: var(--plate-ink, var(--ink)); font: var(--display); font-size: 160px;
 }
 .awakening-card__name { margin: 0; font: var(--display); font-size: 36px; }
+.awakening-card__who { margin: 0; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 14px; }
+.awakening-card__who:empty { display: none; }
 .awakening-card__line { margin: 0; font-style: italic; color: var(--sun-yellow); }
 .awakening-card__line[hidden] { display: none; }
 .awakening-card__job { margin: 0; font: var(--display); font-size: clamp(40px, 9vw, 72px); line-height: 1; letter-spacing: -0.04em; text-shadow: 5px 5px 0 var(--wine-red); }
@@ -982,11 +990,13 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .battle__dock .command-panel--over > h2:first-child { margin-top: 12px; }
   .party-strip { display: grid; }
   /* The end of a fight lands in the part of the screen the pinned panel leaves open. */
-  .battle:not(.battle--controller):not(.battle--screen) :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down) {
+  .battle:not(.battle--controller):not(.battle--screen) :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down, .banner--all-out) {
     position: fixed; top: 22vh; z-index: 35; font-size: 56px;
   }
-  /* One More too: above the pinned menu, not under it. */
-  .battle:not(.battle--controller):not(.battle--screen) .banner--one-more { position: fixed; top: 30vh; left: 16px; right: auto; z-index: 35; font-size: 44px; }
+  /* One More too: above the pinned menu, not under it, across the whole width. */
+  .battle:not(.battle--controller):not(.battle--screen) .banner--one-more {
+    position: fixed; top: 28vh; left: -8px; right: -8px; z-index: 35; font-size: 56px; text-align: center; box-shadow: 0 6px 0 var(--ink);
+  }
   /* A battle is a game screen: the title and the way back step aside for the fight. */
   .battle .battle__header { margin-bottom: 8px; }
   .battle:not(.battle--controller):not(.battle--screen) .battle__header > div:first-child { display: none; }

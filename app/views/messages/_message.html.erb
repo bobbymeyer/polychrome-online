@@ -28,7 +28,7 @@
         <span class="reward-cards reward-cards--jobs">
           <% Array(message.data["jobs"]).each do |job| %>
             <span class="reward-card reward-card--new-job">
-              <span class="reward-card__kind">New job!</span>
+              <span class="reward-card__kind">New archetype!</span>
               <strong class="reward-card__name"><%= job["name"] %></strong>
               <% if job["description"].present? %><span class="reward-card__detail"><%= job["description"] %></span><% end %>
             </span>

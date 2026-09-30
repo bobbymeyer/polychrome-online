@@ -3,11 +3,12 @@ import { animate } from "animejs"
 import { holdMusic, releaseMusic } from "sound"
 
 // Someone awakens (Campaign#awaken!): the table stops, their face comes up,
-// and turns over; the job is on the other side, with what they heard. The
+// and turns over; their new archetype is on the other side, with what they heard. The
 // line's own cue plays the jingle (chat_line_controller). Click, or wait,
 // to go on.
-const FLIP_AFTER_MS = 1100
-const HOLD_MS = 5200
+const FLIP_AFTER_MS = 1400
+// Long enough to read the back out loud at the table.
+const HOLD_MS = 9500
 
 // A card's line that arrived a moment ago, before this page was up (the GM
 // who set it off comes back to the table on a fresh page): shown once here.
@@ -41,7 +42,7 @@ function recent(root, cue) {
 }
 
 export default class extends Controller {
-  static targets = ["overlay", "wrap", "card", "portrait", "name", "line", "job", "description"]
+  static targets = ["overlay", "wrap", "card", "portrait", "name", "who", "line", "job", "description"]
 
   connect() {
     const missed = recent(this.element, "awakening")
@@ -64,6 +65,8 @@ export default class extends Controller {
     this.shownId = id // seen once it's been up and put away (a page torn down mid-card shows it again)
     this.fillPortrait(card)
     this.nameTarget.textContent = card.name || ""
+    // The back says whose it is: the card is still theirs once it's turned.
+    this.whoTarget.textContent = card.name ? `${card.name} awakens` : ""
     this.lineTarget.textContent = card.line || ""
     this.lineTarget.hidden = !card.line
     this.jobTarget.textContent = card.job || ""

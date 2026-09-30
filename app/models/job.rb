@@ -16,6 +16,11 @@ class Job < ApplicationRecord
   # Points added to a check with a skill the job is good at (Stats::Check).
   SKILL_BONUS = 15
 
+  # What time spent on things to do pays someone in the job, at the next
+  # rest (Campaign::Payoffs): money for the party, EXP or ABP for them, per
+  # part of the day; or a rumour, once.
+  PAYOFFS = %w[money exp abp rumour].freeze
+
   validates :ability_slots, numericality: { only_integer: true, in: 0..4 }
   validate :skills_are_the_worlds
   validate :multipliers_are_percentages
@@ -25,6 +30,7 @@ class Job < ApplicationRecord
   validate :signature_is_an_ability
   validate :field_ability_is_a_field_ability
   validates :passive, inclusion: { in: Battle::PASSIVES }, allow_nil: true
+  validate :payoff_is_a_payoff
   # A character in the job has its type: hit as the chart says, and hitting
   # with it through Attack and the job's own command.
   before_validation :default_to_plain_type, on: :create
@@ -60,6 +66,14 @@ class Job < ApplicationRecord
 
   def skill_names
     skills.map { |slug| world.skill_name(slug) }
+  end
+
+  # { "kind" => one of PAYOFFS, "amount" => per part of the day, "line" =>
+  # "{who} works the counter: {amount}." }. No kind: no payoff.
+  def payoff=(value)
+    value = value.to_h.stringify_keys
+    kind = value["kind"].to_s.strip
+    super(kind.empty? ? {} : { "kind" => kind, "amount" => value["amount"].to_i, "line" => value["line"].to_s.strip.presence }.compact)
   end
 
   def equip_categories=(values)
@@ -107,6 +121,13 @@ class Job < ApplicationRecord
   end
 
   private
+
+  def payoff_is_a_payoff
+    return if payoff.blank?
+
+    errors.add(:payoff, "must be one of #{PAYOFFS.join(', ')}") unless PAYOFFS.include?(payoff["kind"])
+    errors.add(:payoff, "needs an amount from 1 to 9999") unless payoff["kind"] == "rumour" || payoff["amount"].to_i.between?(1, 9999)
+  end
 
   def multipliers_are_percentages
     unknown = stat_multipliers.keys - Stats::NAMES

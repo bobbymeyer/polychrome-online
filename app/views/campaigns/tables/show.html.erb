@@ -9,7 +9,7 @@
      data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%# A deadline passing stops the table (deadline_controller): filled in from the line when it arrives. %>
-  <%# Someone awakens (awakening_controller): their face turns over, and the job is on the other side. %>
+  <%# Someone awakens (awakening_controller): their face turns over, and their new archetype is on the other side. %>
   <dialog class="awakening-stage" data-awakening-target="overlay" data-action="click->awakening#dismiss" aria-label="An awakening">
     <div class="awakening-wrap" data-awakening-target="wrap">
     <div class="awakening-card" data-awakening-target="card">
@@ -18,6 +18,7 @@
         <p class="awakening-card__name" data-awakening-target="name"></p>
       </div>
       <div class="awakening-card__face awakening-card__back">
+        <p class="awakening-card__who" data-awakening-target="who"></p>
         <p class="awakening-card__line" data-awakening-target="line"></p>
         <p class="awakening-card__job" data-awakening-target="job"></p>
         <p class="awakening-card__description" data-awakening-target="description"></p>
@@ -139,7 +140,7 @@
       <% locked = @campaign.locked_jobs.to_a %>
       <% if locked.any? %>
         <details class="window table-scenes">
-          <summary>Grant jobs</summary>
+          <summary>Grant archetypes</summary>
           <%= form_with url: campaign_job_grants_path(@campaign), class: "book-form" do |f| %>
             <div class="checks">
               <% locked.each do |job| %>
@@ -160,7 +161,7 @@
               <div class="field"><%= label_tag :job, "To" %><%= select_tag :job, options_for_select(@campaign.world.jobs.order(:name).map { |j| [ j.name, j.slug ] }) %></div>
             </div>
             <div class="field"><%= label_tag :awakening_line, "What they hear" %><%= text_field_tag :line, nil, id: "awakening_line", placeholder: "I am thou, thou art I." %></div>
-            <p class="hint">They take the job up at once (it opens for the party if it wasn't), and the table stops for it.</p>
+            <p class="hint">They take the archetype up at once (it opens for the party if it wasn't), and the table stops for it.</p>
             <%= f.submit "Awaken", class: "button play" %>
           <% end %>
         </details>
@@ -179,7 +180,7 @@
             <div class="field"><%= f.label :difficulty %><%= f.select :difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, selected: "normal" %></div>
             <div class="field"><%= f.label :reason, "To…" %><%= f.text_field :reason, placeholder: "scale the wall" %></div>
           </div>
-          <p class="hint">Each rolls against their own stat (a skill uses its stat, and a job good at it adds +<%= Job::SKILL_BONUS %>). At Normal, someone typical for their level has an even chance; nothing is ever certain.</p>
+          <p class="hint">Each rolls against their own stat (a skill uses its stat, and an archetype good at it adds +<%= Job::SKILL_BONUS %>). At Normal, someone typical for their level has an even chance; nothing is ever certain.</p>
           <%= f.submit "Roll", class: "button play" %>
         <% end %>
       </details>

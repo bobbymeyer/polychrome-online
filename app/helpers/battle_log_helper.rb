@@ -46,7 +46,8 @@ module BattleLogHelper
     when "miss" then miss_line(event, name.("target"), state)
     when "status_applied"
       event["status"] == "down" ? "#{name.('target')} is knocked down!" : "#{name.('target')}: #{term(event['status'])}.#{dice_note(event)}"
-    when "one_more" then "One More! #{name.('actor')} goes again."
+    when "one_more" then "One More! #{name.('actor')} goes again#{" at #{name.('target')}" if event['target']}."
+    when "all_out" then "All-Out Attack! Everyone piles in, and the enemies scramble to their feet."
     when "status_expired" then status_expired_line(event, name.("target"))
     when "buff_applied"
       "#{name.('target')}'s #{stat_label(event['stat'])} #{event['amount'].positive? ? 'rises' : 'falls'}."

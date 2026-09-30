@@ -31,7 +31,7 @@
 <% end %>
 <%= render "worlds/lines_and_veils", world: @world %>
 <% if can_edit_world? %>
-  <%= render "drafts/panel", owner: @world, kind: "setting", title: "Suggest types, skills and jobs for this setting" %>
+  <%= render "drafts/panel", owner: @world, kind: "setting", title: "Suggest types, skills and archetypes for this setting" %>
 <% end %>
 
 <% campaigns = @world.campaigns.order(updated_at: :desc) %>
@@ -49,7 +49,7 @@
 <div class="shelf">
   <% [
        ["Bestiary", :bestiary, "Monsters: stat blocks, affinities, behavior, drops.", @world.monsters],
-       ["Job Compendium", :compendium, "Jobs: stat modifiers, equipment, learn tables.", @world.jobs],
+       ["Archetype Compendium", :compendium, "Archetypes: stat modifiers, equipment, learn tables.", @world.jobs],
        ["Grimoire", :grimoire, "Abilities, composed from the engine's primitives.", @world.abilities],
        ["Armory", :armory, "Items and equipment.", @world.items],
        ["Encounter Tables", :encounters, "Weighted monster groups by terrain and tier.", @world.encounter_tables],

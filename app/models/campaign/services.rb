@@ -52,6 +52,7 @@ module Campaign::Services
       narrate(line)
       hear_of!(bought) if bought
       if kind == "inn" && night
+        payday! # the day's work pays off (Campaign::Payoffs)
         tick_clocks!("rest")
         pass_time!(rest_time, announce: :new_day)
       end
@@ -71,6 +72,7 @@ module Campaign::Services
 
     transaction do
       tired.each { |c| use_service!("inn", c, at: at, by: by, night: false, stay: true) }
+      payday! # the day's work pays off (Campaign::Payoffs)
       tick_clocks!("rest")
       pass_time!(rest_time, announce: :new_day)
     end
@@ -104,6 +106,7 @@ module Campaign::Services
       end
       fallen.each { |character| character.update!(field_used: false) }
       line = narrate(camp_line(fallen)).body
+      payday! # the day's work pays off (Campaign::Payoffs)
       tick_clocks!("rest")
       pass_time!(rest_time, announce: :new_day)
       line
@@ -113,7 +116,7 @@ module Campaign::Services
   # What the party hears when it makes camp.
   def camp_line(fallen = characters.reject(&:conscious?))
     line = "The party rests. #{fallen.any? ? 'Everyone standing' : 'Everyone'} is back to full #{world.word('hp')}, and half their #{world.word('mp')}."
-    fallen.any? ? "#{line} #{fallen.map(&:name).to_sentence} #{fallen.one? ? 'is' : 'are'} still down. #{raising_help}".strip : line
+    fallen.any? ? "#{line} #{fallen.map(&:name).to_sentence} #{fallen.one? ? 'is' : 'are'} still KO'd. #{raising_help}".strip : line
   end
 
   private

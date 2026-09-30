@@ -29,3 +29,19 @@
 
 en:
   hello: "Hello world"
+  # Jobs are called archetypes wherever a player or GM reads them (the code keeps Job).
+  activerecord:
+    models:
+      job:
+        one: Archetype
+        other: Archetypes
+      character_job: Archetype level
+    attributes:
+      character:
+        job: Archetype
+        job_id: Archetype
+      character_job:
+        job: Archetype
+      job_level:
+        job: Archetype
+        level: Archetype level

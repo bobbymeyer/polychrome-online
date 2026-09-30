@@ -40,7 +40,7 @@ module Seeds
       JOBS.each do |slug, attrs|
         levels = attrs.fetch(:levels)
         fresh = !world.jobs.exists?(slug: slug.to_s)
-        job = upsert(world.jobs, slug, attrs.except(:levels))
+        job = upsert(world.jobs, slug, attrs.except(:levels).merge(payoff: PAYOFFS.fetch(slug.to_s, {})))
         next unless fresh || overwrite
 
         job.job_levels.destroy_all

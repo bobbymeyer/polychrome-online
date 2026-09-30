@@ -92,7 +92,7 @@
         <%= check_box_tag "world[battle_rules][one_more]", "1", world.rule?(:one_more), id: "world_battle_rules_one_more" %>
         <%= label_tag "world_battle_rules_one_more", "One More" %>
       </div>
-      <p class="hint">A blow that finds a weakness, or lands a critical hit, knocks its target down (they lose their next turn), and whoever struck goes again at once. Enemies too.</p>
+      <p class="hint">A blow that finds a weakness, or lands a critical hit, knocks its target down (they lose their next turn), and whoever struck goes again at once, at whoever is still standing and weakest to it. Enemies too. When the party has every enemy down, everyone piles in: an All-Out Attack, and the enemies get back up.</p>
     </fieldset>
     <fieldset class="panel">
       <legend>Lines and veils</legend>
@@ -125,7 +125,7 @@
       <%= label_tag :copy_from, "Start from" %>
       <%= select_tag :copy_from, options_for_select(sources.map { |w| [ "#{w.name}'s books", w.slug ] }, params[:copy_from] || sources.first&.slug),
                      include_blank: "Empty books" %>
-      <p class="hint">Copying gives you working monsters, jobs, abilities, items, tables and templates to edit and cut down. Your copies are your own: changing them never touches the original.</p>
+      <p class="hint">Copying gives you working monsters, archetypes, abilities, items, tables and templates to edit and cut down. Your copies are your own: changing them never touches the original.</p>
     </div>
     <div class="field field--check">
       <%= check_box_tag :rules_only, "1", params[:rules_only] == "1" %>

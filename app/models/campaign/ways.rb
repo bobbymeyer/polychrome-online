@@ -75,6 +75,7 @@ module Campaign::Ways
     transaction do
       narrate("#{node.name}: #{pastime.name}.")
       messages.create!(body: pastime.line) if pastime.line
+      spent_time!(pastime.takes) # paid at the next rest (Campaign::Payoffs)
       pass_time!(pastime.takes)
     end
   end

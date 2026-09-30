@@ -51,7 +51,7 @@
         <%= f.text_field :motive, maxlength: Character::MOTIVE_LENGTH, placeholder: "“My sister's debt is mine now.”" %>
         <p class="hint">One line, in their own words. It's what they shout when their back is to the wall.</p>
       </div>
-      <p class="hint">They start at level <%= @campaign.newcomer_level %><%= ", with the rest of the party" if @campaign.characters.exists? %>, knowing what their job teaches by then, in the gear it uses. Where they're from and who they know can wait for their sheet.</p>
+      <p class="hint">They start at level <%= @campaign.newcomer_level %><%= ", with the rest of the party" if @campaign.characters.exists? %>, knowing what their archetype teaches by then, in the gear it uses. Where they're from and who they know can wait for their sheet.</p>
       <div class="sticky-submit"><%= f.submit "Join as them", class: "button play" %></div>
     <% end %>
   </details>

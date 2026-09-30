@@ -168,9 +168,19 @@ const STEPS = {
   },
   // One More (a world's rule): the blow found a weakness, and they go again.
   one_more(b, tl, e, at) {
+    tl.call(() => play("one_more"), at)
     b.banner(tl, "ONE MORE!", at, "one-more")
     gesture(tl, b.sprite(e.actor), "bounce", at)
-    return 700
+    gesture(tl, b.stage, "flash", at)
+    return 800
+  },
+  // All-Out Attack: every enemy is down, and the whole party piles in.
+  all_out(b, tl, e, at) {
+    tl.call(() => play("all_out"), at)
+    b.banner(tl, "ALL-OUT ATTACK!", at, "all-out")
+    ;(e.units || []).forEach((id, i) => gesture(tl, b.sprite(id), "bounce", at + i * 80))
+    gesture(tl, b.stage, "flash", at + 500)
+    return 1400
   },
   status_applied(b, tl, e, at) {
     if (e.status === "down") {

@@ -13,7 +13,7 @@ RSpec.describe "Books", type: :request do
 
       get world_path(world)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Bestiary", "Job Compendium", "Grimoire", "Armory", "Goblin")
+      expect(response.body).to include("Bestiary", "Archetype Compendium", "Grimoire", "Armory", "Goblin")
     end
 
     it "creates and edits a world, keeping its slug" do
@@ -140,7 +140,7 @@ RSpec.describe "Books", type: :request do
       create_job(world, name: "Black Mage").job_levels.create!(level: 1, ability: ability)
       create_monster(world, name: "Imp", ai_script: [ { use: "fire" } ])
       get world_grimoire_ability_path(world, ability)
-      expect(response.body).to include("Taught by", "Black Mage", "job level 1", "Used by", "Imp")
+      expect(response.body).to include("Taught by", "Black Mage", "archetype level 1", "Used by", "Imp")
     end
   end
 
@@ -209,7 +209,7 @@ RSpec.describe "Books", type: :request do
     end
   end
 
-  describe "Job Compendium" do
+  describe "Archetype Compendium" do
     it "edits the learn table through nested rows" do
       cure = create_ability(world, slug: "cure", target: "single_ally", effects: [ { primitive: "heal", power: 10 } ])
       raise_spell = create_ability(world, slug: "raise", target: "single_ally", effects: [ { primitive: "revive" } ])

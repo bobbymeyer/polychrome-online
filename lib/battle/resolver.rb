@@ -417,13 +417,17 @@ module Battle
       order = turn_order
       ctx.emit(:turn_order, order: order)
       hasted = order.select { |id| ctx.status?(ctx.unit(id), "haste") }
+      all_out = false
       order.each do |id|
         break if ctx.over?
 
         mark = ctx.events.size
         take_turn(ctx.unit(id), inputs[id])
         ctx.check_end
-        one_more(ctx.unit(id), inputs[id], mark) if state.dig("rules", "one_more") && !ctx.over?
+        next unless state.dig("rules", "one_more") && !ctx.over?
+
+        one_more(ctx.unit(id), inputs[id], mark)
+        all_out ||= all_out_attack(ctx.unit(id), mark) unless ctx.over?
       end
       # Haste: whoever was quick when the round began has a second go at
       # its end, the same move again.
@@ -544,13 +548,59 @@ module Battle
       downed = knock_down(unit, ctx.events[mark..])
       return if downed.empty? || !ctx.alive?(unit)
 
-      ctx.emit(:one_more, actor: unit["id"], downed: downed)
       # The same move that found the weakness (an enemy's too, not a fresh pick from its script).
       used = ctx.events[mark..].reverse.find { |e| %w[attack cast].include?(e["type"]) && e["actor"] == unit["id"] }&.dig("ability")
+      cmd = next_mark(unit, cmd)
+      ctx.emit(:one_more, actor: unit["id"], downed: downed, **(cmd && cmd["target"] ? { target: cmd["target"] } : {}))
       mark = ctx.events.size
       extra_go(unit, cmd, reason: "one_more", repeat: used)
       ctx.check_end
       knock_down(unit, ctx.events[mark..]) unless ctx.over?
+    end
+
+    # The other go finds its own mark: a move at one enemy goes for whoever
+    # is still standing and weakest to it (first in line on a tie), since
+    # the one it knocked down is down. Where everyone is down, or the move
+    # isn't at one enemy, it's the same command.
+    def next_mark(unit, cmd)
+      return cmd unless cmd && cmd["kind"] == "ability" && cmd["target"]
+
+      ability = ctx.ability(cmd["ability"])
+      return cmd unless ability && ability["target"] == "single_enemy"
+
+      standing = ctx.opponents(unit).reject { |foe| ctx.status?(foe, "down") }
+      return cmd if standing.empty? || standing.any? { |foe| foe["id"] == cmd["target"] }
+
+      damage = own(unit, ability)["effects"].find { |e| e.key?("type") }
+      type = damage && Effects.type_of(ctx, damage)
+      score = ->(foe) { (percent = Types.effectiveness(type, foe, ctx.types)) == :absorb ? -1 : percent }
+      best = standing.each_with_index.max_by { |foe, i| [ score.(foe), -i ] }.first
+      cmd.merge("target" => best["id"])
+    end
+
+    # All-Out Attack (One More): once the party's blows have every enemy
+    # still standing knocked down, everyone in the party who can act piles
+    # in at once, each with an Attack on every enemy, and the enemies get
+    # back up. Once a round, on the party's side only.
+    def all_out_attack(unit, mark)
+      return false unless unit["side"] == "party"
+
+      foes = ctx.opponents(unit)
+      return false if foes.empty? || !foes.all? { |foe| ctx.status?(foe, "down") }
+      return false unless ctx.events[mark..].any? { |e| e["type"] == "one_more" }
+
+      crew = ctx.allies(unit).reject { |ally| (DISABLING_STATUSES + %w[airborne away charging confuse]).any? { |kind| ctx.status?(ally, kind) } }
+      return false if crew.empty?
+
+      ctx.emit(:all_out, actor: unit["id"], units: crew.map { |ally| ally["id"] }, targets: foes.map { |foe| foe["id"] })
+      crew.each do |ally|
+        break if ctx.over?
+
+        apply_effects(ally, own(ally, ctx.ability("attack")), ctx.opponents(ally)) if ctx.alive?(ally)
+        ctx.check_end
+      end
+      ctx.opponents(unit).each { |foe| ctx.remove_status(foe, "down", reason: "all_out") } unless ctx.over?
+      true
     end
 
     def knock_down(unit, events)

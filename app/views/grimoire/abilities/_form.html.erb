@@ -5,7 +5,7 @@
     <div class="field">
       <%= f.label :kind %>
       <%= f.select :kind, Ability::KINDS.map { |k| [term(k), k] } %>
-      <p class="hint">Magic is blocked by Silence. Field is for outside battle: a job's field ability, below.</p>
+      <p class="hint">Magic is blocked by Silence. Field is for outside battle: an archetype's field ability, below.</p>
     </div>
     <div class="field">
       <%= f.label :target %>

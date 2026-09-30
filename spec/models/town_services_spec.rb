@@ -67,7 +67,7 @@ RSpec.describe "Town services" do
   it "makes camp on the road without raising the fallen, and says what would; " do
     bartz.update!(hp: 0)
     lenna.update!(hp: 5)
-    expect(campaign.rest!).to eq("The party rests. Everyone standing is back to full HP, and half their MP. Bartz is still down. It takes a bed at an inn or a temple.")
+    expect(campaign.rest!).to eq("The party rests. Everyone standing is back to full HP, and half their MP. Bartz is still KO'd. It takes a bed at an inn or a temple.")
     expect([ bartz.reload.conscious?, lenna.reload.current_hp ]).to eq([ false, lenna.stats["max_hp"] ])
   end
 

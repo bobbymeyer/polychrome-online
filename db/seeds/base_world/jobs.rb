@@ -3,6 +3,20 @@
 # The Job Compendium: each job and its learn table. (Seeds::BaseWorld)
 module Seeds
   module BaseWorld
+    # What each is paid for time spent on things to do, at the next rest (Job#payoff).
+    PAYOFFS = {
+      "freelancer" => { "kind" => "money", "amount" => 20, "line" => "{who} picks up odd work: {amount}." },
+      "knight" => { "kind" => "exp", "amount" => 20, "line" => "{who} drills with the watch: {amount}." },
+      "thief" => { "kind" => "money", "amount" => 40, "line" => "{who} comes back with {amount} and no explanation." },
+      "monk" => { "kind" => "exp", "amount" => 25, "line" => "{who} trains until it hurts: {amount}." },
+      "black_mage" => { "kind" => "abp", "amount" => 2, "line" => "{who} studies by candlelight: {amount}." },
+      "white_mage" => { "kind" => "rumour", "amount" => 1, "line" => "{who} sits with the sick, and hears something: {rumour}" },
+      "red_mage" => { "kind" => "money", "amount" => 30, "line" => "{who} duels for a purse: {amount}." },
+      "summoner" => { "kind" => "abp", "amount" => 2, "line" => "{who} talks with the small spirits: {amount}." },
+      "geomancer" => { "kind" => "rumour", "amount" => 1, "line" => "{who} reads the land, and the land says: {rumour}" },
+      "dragoon" => { "kind" => "exp", "amount" => 25, "line" => "{who} climbs the highest thing in sight: {amount}." }
+    }.freeze
+
     JOBS = {
       freelancer: { name: "Freelancer", base_type: "normal", skills: %w[persuasion survival], field_ability: "forage", signature: "rally", desperation: "last_stand", description: "No talents, no limits. Every hero starts here.",
                     stat_multipliers: {}, ability_slots: 2, equip_categories: Item::EQUIPMENT_CATEGORIES,

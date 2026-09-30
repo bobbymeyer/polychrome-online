@@ -249,9 +249,10 @@ keyboard, a mouse or a finger.
 - **Won't work:** when what the party knows of a target says a move can't touch it (the chart's
   no effect, or an absorb), the target says "Won't work" and the help line says why. It never
   tells more than the party has found out.
-- **The clock is fair.** A battle's first round starts its input timer only once every player in
-  the fight has reached its screen, or the GM has put them on auto; until then it says who it's
-  waiting for. A player's idea waiting for the GM's ruling stops the clock. At ten seconds left,
+- **The clock is fair.** A battle's first round starts its input timer only once every player
+  still standing in the fight has pressed Ready, or the GM has put them on auto; until then it
+  says who it's waiting for. A character who is KO'd comes into the fight KO'd: their player
+  watches, and a raise brings them back in. A player's idea waiting for the GM's ruling stops the clock. At ten seconds left,
   a phone buzzes and the page blips once.
 
 ### The first hour
@@ -302,21 +303,40 @@ countdowns on the date card say what it costs.
 
 ### Someone awakens
 
-The GM can have one character awaken to a job at the table ("Awaken someone": who, to what, and
-what they hear). The job opens for the party if it wasn't open, they take it up at once, and
-the table stops for it. Their face comes up on a white card with a yellow shadow, and after a
-beat the card turns over. On the black back are what they heard, in yellow italic, the job's
-name in display type, and its description. A low drone and a heartbeat play, then a chord that
-opens upward, and the scene's music holds still while the card is up.
+The GM can have one character awaken to an archetype at the table ("Awaken someone": who, to
+what, and what they hear). The archetype opens for the party if it wasn't open, they take it up
+at once, and the table stops for it. Their face comes up on a white card with a yellow shadow,
+and after a beat the card turns over. On the black back are whose it is ("Rook awakens"), what
+they heard in yellow italic, the archetype's name in display type, and its description. The
+card holds for about ten seconds, long enough to read it out, or until a click. A low drone and
+a heartbeat play, then a chord that opens upward, and the scene's music holds still while the
+card is up. The GM who pressed the button sees it too, on the table page they come back to.
 
 ### One More
 
 A world can turn on One More (its Battle rules). A blow that finds a weakness, or lands a
 critical hit, knocks its target down: "DOWN!" pops over them on black and yellow, and they lose
 their next turn. Whoever struck goes again at once with the same move, under a slanted red "ONE
-MORE!" across the stage. It happens once a turn, it works for enemies too, and someone already
-down isn't knocked down twice. Commands are chosen for the whole round at its start, so the
-extra go repeats the move rather than asking for a new one, as haste's second go does.
+MORE!" across the stage, with a flash and a stab of brass. The other go finds its own mark: if
+it was at one enemy, it goes for whoever is still standing and weakest to it, so a party can
+knock a whole line down. On a phone the banner runs the full width above the pinned menu. It
+happens once a turn, it works for enemies too, and someone already down isn't knocked down twice.
+Commands are chosen for the whole round at its start, so the extra go repeats the move rather
+than asking for a new one, as haste's second go does.
+
+When the party has every enemy down, everyone who can act piles in: an **All-Out Attack**. A
+black slab crosses the whole stage with "ALL-OUT ATTACK!" in red, the party bounces in turn over
+a drum roll and a crash, and each of them lands an Attack on every enemy. Then the enemies
+scramble back to their feet. It happens at most once a round.
+
+### Daily life pays off
+
+Time spent on things to do pays off through the party's archetypes, at the next rest. Each
+archetype says how: money for the party, EXP or ABP for them (so much a part of the day), or a
+rumour. Under the things to do, "At the next rest" says what each character's archetype will
+make of it, and how many parts of the day have been spent so far. When the party sleeps, the
+table hears each one in the archetype's own words ("Nim comes back with 80 gil and no
+explanation"). Someone KO'd earns nothing.
 
 ### A place by night
 

@@ -38,7 +38,7 @@
       <li>
         <strong><%= member["name"] %></strong>: <%= member["exp"] %> EXP, <%= member["abp"] %> ABP.
         <% if member["to_next"] %><span class="muted"><%= member["to_next"] %> to the next level.</span><% end %>
-        <% if (lesson = member["next_lesson"]) %><span class="muted">Next: <%= lesson["name"] %> at job level <%= lesson["job_level"] %> (<%= lesson["abp"] %> ABP to go).</span><% end %>
+        <% if (lesson = member["next_lesson"]) %><span class="muted">Next: <%= lesson["name"] %> at archetype level <%= lesson["job_level"] %> (<%= lesson["abp"] %> ABP to go).</span><% end %>
         <% if member["level"] %><span class="level-up">Level <%= member["level"].last %>!</span><% end %>
         <% if member["learned"].present? %><span class="level-up">Learned <%= member["learned"].to_sentence %>!</span><% end %>
       </li>
@@ -51,9 +51,9 @@
   <%# The moments worth a card of their own: a new ability, an ability or a job mastered. %>
   <% cards = settlement["members"].flat_map do |member|
        Array(member["abilities"]).map { |a| [ "New ability", member["name"], a["name"], a["description"] ] } +
-         Array(member["mastered_abilities"]).map { |name| [ "Mastered", member["name"], name, "At full strength, in any job." ] } +
+         Array(member["mastered_abilities"]).map { |name| [ "Mastered", member["name"], name, "At full strength, in any archetype." ] } +
          (member["mastered"] ? [ [ "Mastered", member["name"], member["mastered"]["job"],
-                                   (member["mastered"]["passive"] ? "#{GlossaryHelper::PASSIVES.dig(member['mastered']['passive'], 0)} is yours in every job now." : "Every level learned.") ] ] : [])
+                                   (member["mastered"]["passive"] ? "#{GlossaryHelper::PASSIVES.dig(member['mastered']['passive'], 0)} is yours in every archetype now." : "Every level learned.") ] ] : [])
      end %>
   <% if cards.any? %>
     <div class="reward-cards">
