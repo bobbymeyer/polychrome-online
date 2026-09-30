@@ -46,6 +46,19 @@ RSpec.describe "Defeat", type: :request do
     expect(response).to have_http_status(:forbidden).or redirect_to(root_path)
   end
 
+  it "comes before a choice already open, which is the table's again after, and nobody goes anywhere meanwhile" do
+    scene_choice = Message.choice(campaign, options: [ "Board the train", "Run" ]).tap(&:save!)
+    expect(campaign.ways_on).to be_empty
+    expect { campaign.take_way!("To Tule") }.to raise_error(Refusal)
+
+    ask = campaign.ask_what_now!
+    expect(ask).to be_what_now
+    expect(campaign.open_choice).to eq(ask)
+    ask.settle!("Everyone gets up")
+    expect(campaign.reload.open_choice).to eq(scene_choice)
+    expect(campaign.ways_on).to be_present
+  end
+
   it "retreats to the nearest town by road, rested and half as rich" do
     campaign.ask_what_now!.settle!("Retreat to Tule")
     campaign.reload

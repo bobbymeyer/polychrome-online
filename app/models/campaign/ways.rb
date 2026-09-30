@@ -17,8 +17,11 @@ module Campaign::Ways
   # or, inside, [{ "label" => "The Ossuary", "move" => { "location" => id, "room" => key } }].
   # A room the players haven't seen is only "An unexplored way".
   # warn: what the GM is asked before just going (a dangerous road, a night).
+  # None while everyone is KO'd: what happens then is decided first (Campaign::Defeat).
   def ways_on
-    if (dungeon = dungeon_in_progress)
+    if wiped_out?
+      []
+    elsif (dungeon = dungeon_in_progress)
       dungeon_ways(dungeon)
     elsif current_node
       inside = current_node.location

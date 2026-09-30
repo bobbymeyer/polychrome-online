@@ -25,12 +25,13 @@ module Campaign::Defeat
 
   # "Everyone is KO'd. What happens now?", put to the table. Each option is
   # a move (Campaign::Ways#make_move!) the GM's settling makes. Once: an
-  # open one is left as it is.
+  # open one is left as it is. Another choice still open (a scene's) waits
+  # behind it, and is the table's again once this is settled.
   def ask_what_now!
     return unless wiped_out? && !battle_on?
 
     drop_stale_where_next!
-    return open_choice if open_choice
+    return open_choice if open_choice&.what_now?
 
     town = refuge
     moves = { ("Retreat to #{town.name}" if town) => { "recover" => "retreat" }, "Everyone gets up" => { "recover" => "get_up" },
