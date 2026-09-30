@@ -27,7 +27,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     expect(tule_town.reload.reputation).to eq(0)
 
     campaign.update!(time_of_day: "night")
-    campaign.rest!
+    rest_the_night(campaign)
     expect(tule_town.reload).to have_attributes(reputation: 2, standing: "Welcome")
     expect(campaign.messages.where("body LIKE ?", "In Varn, people are saying%")).to be_empty # they were there
     campaign.travel!(road)
@@ -74,7 +74,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     secret = campaign.secrets.create!(body: "The miller pays the goblins.", location: varn_town)
     allow(Pointcrawl::Overnight).to receive(:run) { |state, rng| @seen = state; [ rng, [ { "kind" => "leak", "secret" => secret.id, "at" => varn.id } ] ] }
     campaign.update!(time_of_day: "night")
-    campaign.rest!
+    rest_the_night(campaign)
     expect(@seen["secrets"]).to eq([ { "id" => secret.id, "at" => varn.id } ])
     expect(secret.reload.rumour).to have_attributes(body: "The miller pays the goblins.", reached: [ varn.id ])
     expect(campaign.messages.where(body: "In Varn, someone whispers: “The miller pays the goblins.”")).to exist

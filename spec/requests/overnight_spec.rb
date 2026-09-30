@@ -25,7 +25,7 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
     expect(rumour).to have_attributes(reached: [ varn.id ], heard: false)
 
     campaign.update!(time_of_day: "night") # a rest from dawn only takes the morning
-    campaign.rest!
+    rest_the_night(campaign)
     expect(rumour.reload).to have_attributes(reached: [ varn.id, tule.id ], heard: true, age: 1)
     expect(campaign.messages.where(body: "In Tule, people are saying: “The mill grinds at night.”")).to exist
 
@@ -59,7 +59,7 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
     allow(Pointcrawl::Overnight).to receive(:run) { |world_state, rng| @seen = world_state; [ rng + 1, night ] }
 
     campaign.update!(time_of_day: "night")
-    campaign.rest!
+    rest_the_night(campaign)
     expect(@seen).to include("clocks" => [ clock.id ], "antagonists" => [ { "id" => mara.id, "name" => "Mara", "at" => varn.id } ])
     expect(@seen["places"]).to include({ "id" => tule.id, "name" => "Tule", "town" => true, "settled" => true, "lair" => false })
     expect(clock.reload.filled).to eq(1)

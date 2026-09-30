@@ -151,6 +151,15 @@ end
 module BattleHelpers
   def stats(**overrides) = BattleFixtures.stats(**overrides)
 
+  # A night's rest where the party is: rooms at the inn in a town with one
+  # (camp is for the road), paid for by the GM.
+  def rest_the_night(campaign)
+    return campaign.rest! unless campaign.inn_here
+
+    campaign.update!(gil: campaign.gil + 10_000)
+    campaign.rest_at_inn!(at: campaign.current_node.location, by: "The GM")
+  end
+
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
                    abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil, summons: BattleFixtures.summons)
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items, terrain: terrain,

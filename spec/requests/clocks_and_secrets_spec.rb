@@ -32,7 +32,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       clock = campaign.clocks.sole
       expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], location: town, location_mode: burning, public: true)
 
-      campaign.rest!
+      rest_the_night(campaign)
       expect(clock.reload.filled).to eq(1)
       expect(campaign.messages.where(body: "The Syndicate torches Tule: 1 of 3 (the party rested).")).to exist
 
@@ -46,7 +46,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(town.reload.current_mode["name"]).to eq("Burning")
       expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The Syndicate torches Tule: it has happened.", "Smoke over the rooftops: Tule is burning." ])
 
-      campaign.rest!
+      rest_the_night(campaign)
       expect(clock.reload.filled).to eq(3) # a full clock stays full
 
       post campaign_clock_ticks_path(campaign, clock), params: { by: -1 }
