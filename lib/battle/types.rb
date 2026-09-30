@@ -94,6 +94,9 @@ module Battle
       # A character's job type never makes them untouchable: what the
       # chart calls no effect is a resistance.
       percent = 50 if percent.zero? && target["immune_as_resist"]
+      # Its own weakness breaks the chart: weak is weak, even where the chart
+      # says the type does nothing (a Curse spirit that Bless can hurt).
+      percent = 100 if percent.zero? && affinity == "weak"
       percent *= 2 if affinity == "weak"
       percent /= 2 if affinity == "resist"
       percent

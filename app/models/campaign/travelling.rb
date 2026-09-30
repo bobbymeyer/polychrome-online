@@ -129,7 +129,13 @@ module Campaign::Travelling
     standing = characters.order(:created_at).select(&:conscious?)
     raise Refusal, "Nobody is standing to fight" if standing.empty?
 
-    prelude.first(PRELUDE_LINES).each { |line| messages.create!(body: line.to_s.first(500)) }
+    # Read as a scene's lines are: "Kurosaki (sad): …" is Kurosaki's, sadly.
+    cast = npcs.to_a
+    prelude.first(PRELUDE_LINES).each do |raw|
+      line = Scene.read_line(raw.to_s.strip.first(500), cast)
+      line = { "text" => raw.to_s.strip.first(500) } if line["problem"] # someone not in the cast: said as written
+      messages.create!(speaker: line["speaker"], expression: line["expression"], body: line["text"])
+    end
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,

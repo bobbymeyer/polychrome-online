@@ -141,6 +141,9 @@ RSpec.describe Battle::Effects do
       expect(cast("goblin_a").events.sole).to include("effectiveness" => 50)
       goblin["types"] = %w[ground]
       expect(cast("goblin_a", effect("elemental", type: "electric", power: 20)).events.sole).to include("type" => "miss", "reason" => "immune")
+      goblin["affinities"] = { "electric" => "weak" } # its own weakness breaks the chart
+      expect(cast("goblin_a", effect("elemental", type: "electric", power: 20)).events.sole).to include("type" => "damage", "effectiveness" => 200)
+      goblin["affinities"] = {}
       goblin["types"] = %w[ghost]
       ctx = Battle::Context.new(state, rng: ScriptedRng.new(31))
       described_class.apply(ctx, ctx.unit("bartz"), ctx.unit("goblin_a"), effect("physical"))

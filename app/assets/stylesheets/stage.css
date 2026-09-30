@@ -909,6 +909,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
   /* Results, and saying what you try, need the room: the panel lets go of the bottom edge. */
   .battle:has(.command-panel--over, .try-form) { padding-bottom: 0 !important; }
   .battle:not(.battle--controller):not(.battle--screen) .battle__dock:has(.command-panel--over, .try-form) { position: static; max-height: none; box-shadow: none; padding: 8px 0 0; }
+  /* Let go of the edge, the results' title sits below the last line of the fight, not over it. */
+  .battle__dock .command-panel--over > h2:first-child { margin-top: 12px; }
   .party-strip { display: grid; }
   /* The end of a fight lands in the part of the screen the pinned panel leaves open. */
   .battle:not(.battle--controller):not(.battle--screen) :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down) {

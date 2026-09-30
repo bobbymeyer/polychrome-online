@@ -46,6 +46,27 @@ class Scene < ApplicationRecord
     script.to_s.lines.map(&:strip).reject(&:empty?).map { |raw| read(raw, npcs) }
   end
 
+  # One line of a script, read as a scene reads it: an NPC's (with an
+  # expression), the narrator's, or narration with a colon in it ("Tsukiura
+  # Station, 0:09."). A boss's entrance is read the same way.
+  #   { "speaker" => Npc or nil, "expression", "text", "problem" }
+  def self.read_line(raw, npcs)
+    match = LINE.match(raw)
+    return { "speaker" => nil, "expression" => nil, "text" => raw } unless match
+
+    name = match[:name].strip
+    expression = match[:expression].to_s.strip.downcase.presence
+    line = { "speaker" => nil, "expression" => expression, "text" => match[:text].strip }
+    return line if name.casecmp?("narrator")
+
+    npc = npcs.find { |n| n.name.casecmp?(name) }
+    return line.merge("speaker" => npc) if npc
+    # Not a name: too long, or a time or a place and a time ("Tsukiura Station, 0:09.").
+    return { "speaker" => nil, "expression" => nil, "text" => raw } if name.split.size > NAME_WORDS || name.match?(/[\d,]/) || line["text"].match?(/\A\d/)
+
+    line.merge("problem" => "#{name} isn't in the cast. Add them as an NPC, or start the line with “Narrator:”.")
+  end
+
   # The lines go to the table in order, then the ending plays. A battle
   # starts last, so everyone reads the scene before the stage takes them
   # there (stage.js waits for the dialogue box).
@@ -96,19 +117,7 @@ class Scene < ApplicationRecord
       return { "text" => raw, "problem" => "A choice needs two options or more: “? Trust Cid | Refuse -> trusted_cid”." }
     end
 
-    match = LINE.match(raw)
-    return { "speaker" => nil, "expression" => nil, "text" => raw } unless match
-
-    name = match[:name].strip
-    expression = match[:expression].to_s.strip.downcase.presence
-    line = { "speaker" => nil, "expression" => expression, "text" => match[:text].strip }
-    return line if name.casecmp?("narrator")
-
-    npc = npcs.find { |n| n.name.casecmp?(name) }
-    return line.merge("speaker" => npc) if npc
-    return { "speaker" => nil, "expression" => nil, "text" => raw } if name.split.size > NAME_WORDS
-
-    line.merge("problem" => "#{name} isn't in the cast. Add them as an NPC, or start the line with “Narrator:”.")
+    self.class.read_line(raw, npcs)
   end
 
   def script_reads

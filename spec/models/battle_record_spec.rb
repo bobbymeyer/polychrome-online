@@ -153,6 +153,18 @@ RSpec.describe BattleRecord do
     end
   end
 
+  it "runs a round nobody can choose in at once, until someone can" do
+    battle = start_battle(goblins: 1, input_seconds: 30)
+    bartz, faris = battle.party.map { |u| u["id"] }
+    [ bartz, faris ].each do |id|
+      battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => id, "value" => 999 }, actor: "gm")
+      battle.apply!({ "type" => "gm_override", "op" => "add_status", "unit" => id, "status" => "stop", "turns" => 3 }, actor: "gm")
+    end
+    battle.apply!({ "type" => "gm_override", "op" => "execute_round" }, actor: "gm")
+    expect(battle.reload.round).to be > 2 # the stopped rounds ran by themselves
+    expect(battle.over? || battle.awaiting_input.any?).to be(true)
+  end
+
   describe "bosses" do
     it "calls everyone at the table into the battle when it starts" do
       campaign = create_campaign

@@ -38,6 +38,14 @@ RSpec.describe "The boss and the victory", type: :request do
     expect(said).to all(be_dialogue)
   end
 
+  it "reads a boss's entrance as a scene's lines are read: the cast by name and mood" do
+    kurosaki = campaign.npcs.create!(name: "Kurosaki")
+    walk_in_on_the_boss
+    post campaign_encounter_path(campaign), params: { prelude: "Tsukiura Station, 0:09.\nKurosaki (sad): Last stop.", input_seconds: "" }
+    said = campaign.messages.where("id < ?", campaign.messages.find_by!(battle: campaign.battles.last).id).last(2)
+    expect(said.map { |m| [ m.speaker, m.expression, m.body ] }).to eq([ [ nil, nil, "Tsukiura Station, 0:09." ], [ kurosaki, "sad", "Last stop." ] ])
+  end
+
   it "cheers a cleared dungeon at the table and stops the clocks it was behind" do
     raid = campaign.clocks.create!(name: "The goblins raid Tule", segments: 4, public: true, map_node: cave_node, triggers: %w[dawn])
     elsewhere = campaign.clocks.create!(name: "The mill burns", segments: 4)
