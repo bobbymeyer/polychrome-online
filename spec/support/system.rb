@@ -73,7 +73,9 @@ RSpec.configure do |config|
   end
 
   config.before(:each, type: :system) do
-    driven_by :selenium, using: :headless_chrome, screen_size: [ 1280, 900 ] do |options|
+    # Each example starts with nothing remembered in the browser (a pinned log, the GM's open tab, cards seen).
+    driven_by :selenium, using: :headless_chrome, screen_size: [ 1280, 900 ],
+                         options: { clear_local_storage: true, clear_session_storage: true } do |options|
       options.binary = ENV["CHROME_BIN"] unless ENV.fetch("CHROME_BIN", "").empty?
       options.add_argument("--no-sandbox") if Process.uid.zero? # Chrome won't sandbox as root (containers)
       options.add_argument("--disable-dev-shm-usage")

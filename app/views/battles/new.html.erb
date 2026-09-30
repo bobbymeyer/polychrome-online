@@ -3,7 +3,7 @@
 <h1>New battle</h1>
 <% if @error %><div class="form-errors" role="alert"><p><%= @error %></p></div><% end %>
 
-<% monsters = @world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.slug ] } %>
+<% monsters = monster_options(@world.monsters) %>
 <%= form_with url: campaign_battles_path(@campaign), scope: :battle, class: "book-form",
               data: { controller: "forecast", forecast_url_value: campaign_forecast_path(@campaign), action: "change->forecast#changed input->forecast#changed" } do |f| %>
   <div class="field-row">

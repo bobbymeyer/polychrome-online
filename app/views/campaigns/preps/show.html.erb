@@ -11,8 +11,13 @@
     <h1>Prep</h1>
   </div>
   <div class="actions">
-    <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
+    <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--primary" %>
     <%= link_to "Legends", campaign_legends_path(@campaign), class: "button button--quiet" %>
+    <% if table_gm? %>
+      <%# What the GM has changed in the places the campaign rolled: a record of its own, not a flag. %>
+      <% changes = @campaign.locations.includes(:npcs, *Location::ROLLING).sum { |location| location.changes.size } %>
+      <%= link_to "Changes to places (#{changes})", campaign_changes_path(@campaign), class: "button button--quiet" %>
+    <% end %>
   </div>
 </div>
 <nav class="prep-nav" aria-label="Prep">

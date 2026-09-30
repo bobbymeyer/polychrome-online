@@ -29,4 +29,20 @@ module MapsHelper
   def overlap?(a, b)
     a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]
   end
+
+  # A room's name on a floorplan, in the room's box: on up to three lines
+  # ("Shuttered / Shopping / Street"), the last cut short only if it has to be.
+  ROOM_LINE = 12 # letters that fit on a line of a room's box
+
+  def room_name_lines(name)
+    lines = name.to_s.split.each_with_object([ +"" ]) do |word, out|
+      if out.last.empty? then out.last << word
+      elsif out.last.length + 1 + word.length <= ROOM_LINE then out.last << " " << word
+      else out << word.dup
+      end
+    end
+    return lines if lines.size <= 3 && lines.all? { |line| line.length <= ROOM_LINE }
+
+    (lines.first(2).map { |line| line.truncate(ROOM_LINE) } + [ lines.drop(2).join(" ").truncate(ROOM_LINE) ]).compact_blank
+  end
 end

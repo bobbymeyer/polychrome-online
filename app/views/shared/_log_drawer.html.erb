@@ -1,6 +1,7 @@
 <%# The game log (docs/DESIGN.md, "The stage"): kept out of the way in a drawer on the right edge,
-    closed by default. A tab (or L) slides it open; while it's closed the tab counts new lines. %>
-<div class="log-drawer" data-controller="log-drawer" <%= tag.attributes(data: { log_drawer_self_value: local_assigns[:self_name] }) %>
+    closed by default. A tab (or L) slides it open; while it's closed the tab counts new lines.
+    dockable: the GM can pin it open as a column beside the page (open from the start on a wide screen). %>
+<div class="log-drawer" data-controller="log-drawer" <%= tag.attributes(data: { log_drawer_self_value: local_assigns[:self_name], log_drawer_dockable_value: local_assigns[:dockable] || nil }) %>
      data-action="keydown@window->log-drawer#key:capture">
   <button type="button" class="log-drawer__tab" data-log-drawer-target="tab" data-action="log-drawer#toggle"
           aria-expanded="false" aria-controls="log_drawer" title="The log (L)">
@@ -9,7 +10,13 @@
   <aside class="log-drawer__panel" id="log_drawer" data-log-drawer-target="panel" aria-label="Log" inert>
     <header class="log-drawer__head">
       <h2>Log</h2>
-      <button type="button" class="button button--quiet" data-action="log-drawer#close" title="Close (L or Esc)">Close</button>
+      <span class="log-drawer__actions">
+        <% if local_assigns[:dockable] %>
+          <button type="button" class="button button--quiet log-drawer__pin" data-log-drawer-target="pin" data-action="log-drawer#togglePin"
+                  aria-pressed="false" title="Keep the log open beside the page">Pin</button>
+        <% end %>
+        <button type="button" class="button button--quiet" data-action="log-drawer#close" title="Close (L or Esc)">Close</button>
+      </span>
     </header>
     <%= yield %>
   </aside>

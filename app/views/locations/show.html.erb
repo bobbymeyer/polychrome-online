@@ -45,7 +45,6 @@
 
 <% if @gm %>
   <%= render "map_nodes/modes", node: @location.map_node if @location.map_node %>
-  <%= render "art_batches/mode_art", location: @location if @location.map_node&.modes&.any? %>
   <details class="window gm-tools">
     <summary>GM: rename</summary>
     <%= form_with model: @location, url: location_path(@location), class: "book-form inline-form" do |f| %>
@@ -73,3 +72,6 @@
     <% end %>
   </section>
 <% end %>
+
+<%# Pictures come last: the place itself is what the GM needs first. %>
+<%= render "art_batches/mode_art", location: @location if @gm && @location.map_node&.modes&.any? %>

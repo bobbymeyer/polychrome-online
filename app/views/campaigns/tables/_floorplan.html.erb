@@ -1,0 +1,19 @@
+<%# The dungeon the party is inside, at the table: its floorplan in the map's place, with the room
+    they're in. The GM's shows every room and what waits there; the players', what they've seen.
+    Replaced live, for each audience (Campaign::Broadcasts). %>
+<% dungeon = campaign.dungeon_in_progress %>
+<div id="table_floorplan" class="table-floorplan">
+  <% if dungeon %>
+    <% view = dungeon.view %>
+    <% current = dungeon.progress["current"] %>
+    <p class="table-floorplan__title">
+      <strong><%= dungeon.name %></strong><%= " · #{dungeon.current_room['name']}" if dungeon.current_room %>
+    </p>
+    <% if gm %>
+      <%= render "locations/floorplan", view: view, current: current, resolved: dungeon.progress.fetch("resolved", []), unlocked: dungeon.progress.fetch("unlocked", []) %>
+    <% else %>
+      <% seen = view["rooms"].map { |r| r["key"] }.select { |k| dungeon.seen_by_players?(k) } %>
+      <%= render "locations/floorplan", view: view, current: current, shown: dungeon.visited, known: seen - dungeon.visited, unlocked: dungeon.progress.fetch("unlocked", []) %>
+    <% end %>
+  <% end %>
+</div>

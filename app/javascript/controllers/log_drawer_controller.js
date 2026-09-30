@@ -4,19 +4,71 @@ import { Controller } from "@hotwired/stimulus"
 // Closed by default; the tab or L slides it open, and Esc or L closes it.
 // While it's closed, the tab counts the lines that arrive and gives a pulse,
 // so nothing happens unseen.
+//
+// Dockable (the GM's seat): Pin keeps it open as a column beside the page,
+// and it stays pinned in this browser. On a wide screen it starts pinned.
+const PINNED_KEY = "polychrome.logPinned"
+const DOCK_WIDTH = 1000 // narrower than this, there's no room beside the page
+const WIDE = 1440
+
 export default class extends Controller {
-  static targets = ["panel", "tab", "count", "list"]
+  static targets = ["panel", "tab", "count", "list", "pin"]
   // Your own lines aren't news to you: they don't count.
-  static values = { self: String }
+  static values = { self: String, dockable: Boolean }
 
   connect() {
     this.unread = 0
     this.observer = new MutationObserver((mutations) => this.arrived(mutations))
     this.listTargets.forEach((list) => this.observer.observe(list, { childList: true }))
+    if (this.dockableValue && window.innerWidth >= DOCK_WIDTH && this.pinned()) this.dock()
   }
 
   disconnect() {
     this.observer?.disconnect()
+    document.documentElement.classList.remove("log-docked")
+  }
+
+  togglePin() {
+    if (this.isDocked) {
+      this.close()
+    } else {
+      this.remember(true)
+      this.dock()
+    }
+  }
+
+  get isDocked() {
+    return this.element.classList.contains("is-docked")
+  }
+
+  dock() {
+    this.open({ focus: false })
+    this.element.classList.add("is-docked")
+    document.documentElement.classList.add("log-docked")
+    if (this.hasPinTarget) {
+      this.pinTarget.setAttribute("aria-pressed", "true")
+      this.pinTarget.textContent = "Unpin"
+    }
+  }
+
+  undock() {
+    this.element.classList.remove("is-docked")
+    document.documentElement.classList.remove("log-docked")
+    if (this.hasPinTarget) {
+      this.pinTarget.setAttribute("aria-pressed", "false")
+      this.pinTarget.textContent = "Pin"
+    }
+  }
+
+  pinned() {
+    try {
+      const stored = localStorage.getItem(PINNED_KEY)
+      return stored === null ? window.innerWidth >= WIDE : stored === "1"
+    } catch { return window.innerWidth >= WIDE }
+  }
+
+  remember(pinned) {
+    try { localStorage.setItem(PINNED_KEY, pinned ? "1" : "0") } catch { /* private window: pinned for now */ }
   }
 
   get isOpen() {
@@ -27,17 +79,22 @@ export default class extends Controller {
     this.isOpen ? this.close() : this.open()
   }
 
-  open() {
+  open({ focus = true } = {}) {
     this.element.classList.add("is-open")
     this.panelTarget.inert = false
     this.tabTarget.setAttribute("aria-expanded", "true")
     this.unread = 0
     this.showCount()
     this.scrollToEnd()
-    this.panelTarget.querySelector("button")?.focus({ preventScroll: true })
+    if (focus) this.panelTarget.querySelector("button")?.focus({ preventScroll: true })
   }
 
+  // Closing a pinned log unpins it, and it stays unpinned until Pin.
   close() {
+    if (this.isDocked) {
+      this.undock()
+      this.remember(false)
+    }
     const hadFocus = this.panelTarget.contains(document.activeElement)
     this.element.classList.remove("is-open")
     this.panelTarget.inert = true
@@ -53,7 +110,7 @@ export default class extends Controller {
     if (event.key === "l" || event.key === "L") {
       event.preventDefault()
       this.toggle()
-    } else if (event.key === "Escape" && this.isOpen) {
+    } else if (event.key === "Escape" && this.isOpen && !this.isDocked) { // a pinned log leaves Esc to the page
       event.preventDefault()
       event.stopImmediatePropagation()
       this.close()

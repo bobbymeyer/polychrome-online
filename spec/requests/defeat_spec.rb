@@ -26,6 +26,9 @@ RSpec.describe "Defeat", type: :request do
     expect(ask.options).to eq([ "Retreat to Tule", "Everyone gets up", "Game over" ])
     expect(ask.body).to eq("Everyone is KO'd. What happens now? Retreat to Tule, Everyone gets up, or Game over.")
     expect(campaign.ask_what_now!).to eq(ask) # once
+    get battle_panel_path(battle)
+    expect(response.body).to include("Back to the table") # where what happens now is decided
+    expect(response.body).not_to include("Another battle")
 
     get campaign_table_path(campaign)
     expect(response.body).to include("Retreat to Tule", "Settle on this")
@@ -46,6 +49,19 @@ RSpec.describe "Defeat", type: :request do
     expect(response).to have_http_status(:forbidden).or redirect_to(root_path)
   end
 
+  it "comes before a choice already open, which is the table's again after, and nobody goes anywhere meanwhile" do
+    scene_choice = Message.choice(campaign, options: [ "Board the train", "Run" ]).tap(&:save!)
+    expect(campaign.ways_on).to be_empty
+    expect { campaign.take_way!("To Tule") }.to raise_error(Refusal)
+
+    ask = campaign.ask_what_now!
+    expect(ask).to be_what_now
+    expect(campaign.open_choice).to eq(ask)
+    ask.settle!("Everyone gets up")
+    expect(campaign.reload.open_choice).to eq(scene_choice)
+    expect(campaign.ways_on).to be_present
+  end
+
   it "retreats to the nearest town by road, rested and half as rich" do
     campaign.ask_what_now!.settle!("Retreat to Tule")
     campaign.reload
@@ -60,6 +76,8 @@ RSpec.describe "Defeat", type: :request do
     campaign.ask_what_now!.settle!("Everyone gets up")
     expect([ bartz.reload.hp, faris.reload.hp ]).to eq([ 1, 1 ])
     expect(campaign.reload.current_node).to eq(ruins)
+    get campaign_table_path(campaign)
+    expect(response.body).to include(%(<strong class="is-low">1</strong>)) # amber at the table, as in battle
   end
 
   it "can end the story, and only when everyone is down" do

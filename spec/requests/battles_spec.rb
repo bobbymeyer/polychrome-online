@@ -40,6 +40,8 @@ RSpec.describe "Battle screen", type: :request do
     create_character(campaign, name: "Bartz")
     get new_campaign_battle_path(campaign)
     expect(response.body).to include('data-controller="forecast"', 'id="forecast"')
+    expect(response.body).to match(/>Goblin \(\d+ HP\)</) # how tough, not the book's level
+    expect(response.body).not_to include("(Lv ")
 
     get campaign_forecast_path(campaign), params: { battle: { encounter: { "0" => { monster: "goblin", count: "1" } } } }
     expect(response.body).to match(/forecast--(easy|fair|hard|deadly)/)
@@ -159,7 +161,7 @@ RSpec.describe "Battle screen", type: :request do
     it "renders the board from the current state, with a lazily loaded command panel" do
       get battle_path(battle)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('data-controller="battle-player dialogue recap"', "turbo-cable-stream-source",
+      expect(response.body).to include('data-controller="battle-player dialogue battle-watch recap"', "turbo-cable-stream-source",
                                         'data-unit="goblin_a"', %(data-roster="#{bartz}"), 'id="command_panel"')
     end
 
@@ -310,7 +312,8 @@ RSpec.describe "Battle screen", type: :request do
 
     it "sees every unit's HP and who the round is waiting on" do
       get battle_panel_path(battle)
-      expect(response.body).to include("Auto Bartz", "Auto Faris", "Run the round now", "Goblin A", "50/50")
+      expect(response.body).to include("The party", "waiting", "Run the round now", "The other side", "Goblin A", "50/50")
+      expect(response.body).not_to include("Waiting on", "On auto every round") # said once, in the party's rows
     end
 
     it "auto-pilots an absent player and runs the round, all logged" do
@@ -369,6 +372,22 @@ RSpec.describe "Battle screen", type: :request do
       expect(battle.reload.arrived_units).to eq([ bartz ])
       get battle_path(battle)
       expect(response.body).not_to include('id="battle_ready"')
+    end
+
+    it "keeps the clock going while someone has the battle open, and says when it's held" do
+      sit(bartz)
+      get battle_path(battle)
+      expect(response.body).to include("battle-watch", battle_watch_path(battle))
+
+      patch battle_watch_path(battle)
+      expect(response).to have_http_status(:no_content)
+      expect(battle.reload).to be_watched
+
+      battle.update!(arrived_units: [ bartz, faris ], deadline_at: nil) # its time ran out, unwatched
+      get battle_panel_path(battle)
+      expect(response.body).to include("Clock stopped: nobody had the battle open")
+      patch battle_watch_path(battle)
+      expect(battle.reload.deadline_at).to be_present
     end
   end
 end

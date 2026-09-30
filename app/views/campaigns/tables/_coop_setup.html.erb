@@ -1,6 +1,5 @@
 <%# The GM's way into local co-op: one shared screen, phones as controllers. %>
-<details class="window table-scenes coop-setup">
-  <summary>Play around one screen</summary>
+<div class="coop-setup">
   <p>Play around one shared screen: a TV at the table, or your screen shared on a call. Everyone talks out loud (or on voice chat); phones are just controllers.</p>
   <ol class="coop-setup__steps">
     <li><%= link_to "Open the shared screen", campaign_table_path(campaign, view: "screen"), class: "button play", target: "_blank", rel: "noopener" %>
@@ -9,4 +8,4 @@
     <li>Want your phone as a GM remote? <%= link_to "Use this device as a controller", campaign_table_path(campaign, view: "controller") %>.</li>
   </ol>
   <p class="hint">Players somewhere else join with the invite link on <%= link_to "the campaign page", campaign_path(campaign, anchor: "invite") %>.</p>
-</details>
+</div>

@@ -18,7 +18,7 @@
     <% b = rooms[path["to"]] %>
     <% next unless a && b && (full.(a["key"]) || full.(b["key"])) %>
     <g class="floorplan__path <%= 'floorplan__path--costly' if path['cost'] %>">
-      <title><%= if path["lock"] then "#{path['lock']['name']}: needs #{path['lock']['key_name']}" elsif path["cost"] then "Cost: #{path['cost']}" else "#{a['name']} – #{b['name']}" end %></title>
+      <title><%= if path["lock"] then "#{path['lock']['name']}: needs #{path['lock']['key_name']}" elsif path["cost"] then "Cost: #{path['cost']}" else [ a, b ].map { |r| full.(r["key"]) ? r["name"] : "an unexplored way" }.join(" – ") end %></title>
       <line x1="<%= a['x'] %>" y1="<%= a['y'] %>" x2="<%= b['x'] %>" y2="<%= b['y'] %>" />
       <% if path["lock"] %>
         <%# A padlock on the path, a little off its middle so a cost marker still shows; hollow once opened. %>
@@ -41,7 +41,10 @@
       <rect x="-58" y="-24" width="116" height="48" />
       <% if open %>
         <g transform="translate(-44 0)"><%= render "locations/marker", kind: room["decision"]["kind"] %></g>
-        <text class="floorplan__name" x="-30" y="5"><%= room["name"].truncate(11) %></text>
+        <% lines = room_name_lines(room["name"]) %>
+        <text class="floorplan__name<%= " floorplan__name--#{lines.size}" if lines.size > 1 %>" x="-30" y="<%= { 1 => 5, 2 => -3, 3 => -10 }[lines.size] %>">
+          <% lines.each_with_index do |line, i| %><tspan x="-30" dy="<%= i.zero? ? 0 : (lines.size > 2 ? 14 : 16) %>"><%= line %></tspan><% end %>
+        </text>
       <% else %>
         <text class="floorplan__name" x="0" y="7" text-anchor="middle">?</text>
       <% end %>

@@ -162,7 +162,9 @@ a.play:hover { color: var(--signal-dark); }
   font-weight: 600; background: var(--wash);
 }
 .form-errors h2 { font-size: 16px; line-height: 24px; }
-.flashes { position: fixed; z-index: 70; top: 12px; left: 50%; translate: -50% 0; width: min(520px, calc(100vw - 32px));
+/* Just under the top bar, where the page starts, so it never covers the navigation (top: auto keeps
+   its place in the page, first in <main>). */
+.flashes { position: absolute; z-index: 70; top: auto; margin-top: -28px; left: 50%; translate: -50% 0; width: min(520px, calc(100vw - 32px));
            display: grid; justify-items: center; gap: 8px; pointer-events: none; }
 .flashes .flash { margin: 0; pointer-events: auto; cursor: pointer; }
 .form-errors ul { margin: 0; padding-left: 20px; font-weight: 400; }
@@ -179,6 +181,8 @@ a.play:hover { color: var(--signal-dark); }
 }
 .button:hover, input[type=submit]:hover, button:hover { color: var(--ink); text-decoration: none; background: var(--control-fill-hover); border-color: var(--control-fill-hover); }
 .button--quiet, .button--danger { background: transparent; border-color: var(--control-fill); }
+/* The one way on from a page (Open the table): ink, not red, since it's a way in, not a game move. */
+.button--primary, .button--primary:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .button--quiet:hover, .button--danger:hover { background: var(--control-fill); border-color: var(--control-fill); }
 .button.play, input[type=submit].play { background: var(--signal); border-color: var(--signal); color: var(--paper); }
 .button.play:hover, input[type=submit].play:hover { background: var(--signal-dark); border-color: var(--signal-dark); color: var(--paper); }
@@ -335,8 +339,9 @@ details summary { cursor: pointer; color: var(--control); font-weight: 600; font
 details summary::-webkit-details-marker { display: none; }
 details summary::before { content: ""; display: inline-block; width: 0; height: 0; margin-right: 8px; vertical-align: 1px;
   border-left: 7px solid var(--control); border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
-details[open] summary::before { transform: rotate(90deg); }
-details[open] summary { margin-bottom: 16px; }
+/* Only a panel's own summary: a closed panel inside an open one stays closed-looking. */
+details[open] > summary::before { transform: rotate(90deg); }
+details[open] > summary { margin-bottom: 16px; }
 .inline-form { display: flex; flex-wrap: wrap; gap: 0 var(--gutter); align-items: flex-end; margin-top: 16px; }
 .inline-form .field { flex: 0 1 208px; }
 .inline-form input[type=submit] { margin-bottom: 16px; }
@@ -704,6 +709,8 @@ details[open] summary { margin-bottom: 16px; }
 .floorplan__room rect { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
 .floorplan__room text { fill: var(--ink); }
 .floorplan__name { font: 600 17px var(--font); letter-spacing: -0.01em; }
+.floorplan__name--2 { font-size: 14px; }
+.floorplan__name--3 { font-size: 13px; }
 .floorplan__marker { fill: var(--ink); stroke: var(--ink); }
 .floorplan__marker--fork { fill: none; stroke-width: 2.5; }
 .floorplan__room.is-boss rect { stroke-width: 4; }
@@ -892,3 +899,7 @@ details[open] summary { margin-bottom: 16px; }
 
 /* A long form's one button stays in reach at the bottom of the screen. */
 .sticky-submit { position: sticky; bottom: 0; z-index: 5; margin: 16px -16px 0; padding: 12px 16px; background: var(--paper); border-top: 2px solid var(--ink); }
+
+/* Generating pictures (art_batches): a closed panel until there's something to look at. */
+.art-studio > summary { font-style: italic; font-weight: 900; font-size: 20px; color: var(--ink); }
+.art-studio__status { font-style: normal; font-weight: 400; font-size: 14px; color: var(--control); }

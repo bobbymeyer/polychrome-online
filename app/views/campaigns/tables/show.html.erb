@@ -16,6 +16,13 @@
   <header class="battle__header">
     <div>
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= { "screen" => "Shared screen", "controller" => "Controller" }.fetch(view, "Table") %></p>
+      <%# Where you sit, up here with the name rather than under everything else. %>
+      <% if @seat.seated? && view != "screen" %>
+        <p class="hint table__seat">
+          At the table as <strong><%= @seat.name %></strong> ·
+          <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
+        </p>
+      <% end %>
       <h1><%= view == "controller" && @seat.character? ? @seat.name : @campaign.name %></h1>
       <% if view == "controller" && @seat.character? %>
         <%= render "campaigns/tables/vitals", character: @seat.character %>
@@ -56,19 +63,23 @@
     <% unless view == "controller" %>
     <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
     <section class="window table__map" aria-label="Map">
+      <%# Inside a dungeon, its floorplan stands in for the world map. %>
+      <%= render "campaigns/tables/floorplan", campaign: @campaign, gm: @seat.gm? %>
       <%= render "campaigns/maps/canvas", campaign: @campaign, gm: @seat.gm? %>
       <p class="hint">
         <%= link_to(@seat.gm? ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %>
         <%= render "campaigns/tables/here", campaign: @campaign %>
       </p>
     </section>
+    <%# The GM's tools beside the play, where they can be reached mid-scene. %>
+    <%= render "campaigns/tables/gm/tools", campaign: @campaign if @seat.gm? && !view %>
     <%= render "campaigns/tables/party", campaign: @campaign %>
     <% end %>
     <%= render "campaigns/tables/party_knows", campaign: @campaign %>
     </div>
   </div>
 
-  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name } do %>
+  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name, dockable: @seat&.gm? } do %>
     <%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %>
   <% end %>
 
@@ -84,22 +95,8 @@
     <% if view == "controller" && @seat.character? %>
       <%= render "campaigns/field_uses/ability", character: @seat.character %>
     <% end %>
-    <p class="hint">
-      At the table as <strong><%= @seat.name %></strong>.
-      <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
-    </p>
-    <% if @seat.gm? %>
-      <%= render "campaigns/tables/gm/recovery", campaign: @campaign %>
-      <%= render "campaigns/field_uses/requests", campaign: @campaign %>
-      <%= render "campaigns/tables/coop_setup", campaign: @campaign unless view %>
-      <%= render "campaigns/tables/gm/time", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/clocks", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/secrets", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/job_grants", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/check", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/scenes", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/music", campaign: @campaign %>
-    <% end %>
+    <%# On a phone as the GM's remote, the tools come after the play. %>
+    <%= render "campaigns/tables/gm/tools", campaign: @campaign, view: view if @seat.gm? && view == "controller" %>
   <% else %>
     <%= render "campaigns/tables/take_a_seat", campaign: @campaign %>
   <% end %>

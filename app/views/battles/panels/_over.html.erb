@@ -6,13 +6,15 @@
 <% if @battle.campaign %>
   <div class="actions" data-controller="return-link">
     <a class="button play" data-return-link-target="link" data-action="return-link#go" data-turbo-frame="_top" hidden></a>
-    <% if (inside = @battle.campaign.dungeon_in_progress) %>
+    <%# Everyone down: what happens now is decided at the table (Campaign::Defeat), so that's the only way on. %>
+    <% wiped = @battle.campaign.wiped_out? %>
+    <% if !wiped && (inside = @battle.campaign.dungeon_in_progress) %>
       <%= link_to "Back to #{inside.name}", location_path(inside), class: "button", data: { turbo_frame: "_top" } %>
       <%= link_to "Back to the table", campaign_table_path(@battle.campaign), class: "button button--quiet", data: { turbo_frame: "_top" } %>
     <% else %>
       <%= link_to "Back to the table", campaign_table_path(@battle.campaign), class: "button", data: { turbo_frame: "_top" } %>
     <% end %>
-    <% if battle_gm? %>
+    <% if battle_gm? && !wiped %>
       <%= link_to "Another battle", new_campaign_battle_path(@battle.campaign), class: "button button--quiet", data: { turbo_frame: "_top" } %>
     <% end %>
   </div>

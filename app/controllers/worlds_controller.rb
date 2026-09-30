@@ -15,6 +15,8 @@ class WorldsController < ApplicationController
       c.gm_id == current_user.id || c.characters.any? { |ch| ch.user_id == current_user.id }
     end
     @other_campaigns = [] unless admin?
+    # When each was last played (its last line at the table), in one query.
+    @last_played = Message.where(campaign_id: (@my_campaigns + @other_campaigns).map(&:id)).group(:campaign_id).maximum(:created_at)
   end
 
   def show; end

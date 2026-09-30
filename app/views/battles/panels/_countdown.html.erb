@@ -3,9 +3,11 @@
 <% if battle.over? || battle.input_seconds.nil? %>
 <% elsif battle.ruling_pending? %>
   <p class="countdown is-paused">Clock stopped: the GM is ruling on an idea</p>
-<% elsif battle.waiting_for_arrivals? %>
+<% elsif battle.waiting_for_arrivals? && battle.still_coming.any? %>
   <% coming = battle.still_coming.map { |id| unit_name(battle.state, id) } %>
   <p class="countdown is-paused">The clock starts when <%= coming.to_sentence %> <%= coming.one? ? "is" : "are" %> ready</p>
+<% elsif battle.held? %>
+  <p class="countdown is-paused">Clock stopped: nobody had the battle open. It starts again when someone does.</p>
 <% elsif battle.deadline_at %>
   <p class="countdown" data-controller="countdown" data-countdown-deadline-value="<%= battle.deadline_at.iso8601 %>" data-countdown-seconds-value="<%= battle.input_seconds %>">
     <span data-countdown-target="clock"></span>

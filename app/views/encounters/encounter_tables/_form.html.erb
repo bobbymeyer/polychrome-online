@@ -9,7 +9,7 @@
   <fieldset class="panel">
     <legend>Groups</legend>
     <p class="hint">Each group is picked in proportion to its weight. Leave the first monster blank to remove a row.</p>
-    <% monsters = @world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.slug ] } %>
+    <% monsters = monster_options(@world.monsters) %>
     <table class="grid-form">
       <thead><tr><th>Weight</th><th>Monster</th><th>Count</th><th>With</th><th>Count</th></tr></thead>
       <tbody>

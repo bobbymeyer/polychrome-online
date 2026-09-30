@@ -25,7 +25,8 @@ RSpec.describe "The player's way through", type: :request do
     world.campaigns.create!(name: "Someone else's")
     sign_in_as(krile)
     get root_path
-    expect(response.body).to include("Your campaigns", "Crystal Road", "You play Krile", "Table →")
+    expect(response.body).to include("Your campaigns", "Crystal Road", "You play Krile", "Table →", "character")
+    expect(response.body).to match(/last played .* ago|not played yet/)
     expect(response.body).not_to include("Someone else&#39;s")
 
     sign_out

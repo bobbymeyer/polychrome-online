@@ -9,7 +9,7 @@
     <div class="field"><%= f.label :world_place_id, "Found at" %><%= f.select :world_place_id, @world.world_places.in_order.map { |p| [ p.name, p.id ] }, include_blank: "Anywhere" %></div>
     <div class="field">
       <%= f.label :monster_id, "Fights as" %>
-      <%= f.select :monster_id, @world.monsters.order(:level, :name).map { |m| [ "#{m.name} (Lv #{m.level})", m.id ] }, include_blank: "Doesn't fight" %>
+      <%= f.select :monster_id, monster_options(@world.monsters, by: :id), include_blank: "Doesn't fight" %>
     </div>
   </div>
   <div class="field"><%= f.label :blurb, "What people say about them" %><%= f.text_field :blurb, placeholder: "Never raises her voice. Never needs to." %></div>

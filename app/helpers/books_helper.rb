@@ -18,13 +18,21 @@ module BooksHelper
     "spr" => "Spr", "agi" => "Agi", "atk" => "Atk", "def" => "Def", "mdef" => "MDef"
   }.freeze
 
-  # Encounter tables for a select, with the levels of what's in them, so the
-  # GM can match a road or dungeon to the party: "Grasslands (Lv 1–2)".
+  # A monster in a select, by how tough it is: its HP, which is what a fight
+  # against it turns on. A Bestiary level is only its place in the book (a
+  # world can make its first monster a real threat), so it isn't shown here.
+  # "Goblin (81 HP)", "Goblin Chief (364 HP, boss)". by: :id or :slug.
+  def monster_options(monsters, by: :slug)
+    monsters.order(:level, :name).map { |m| [ "#{m.name} (#{m.stats['max_hp']} HP#{', boss' if m.boss?})", m.public_send(by) ] }
+  end
+
+  # Encounter tables for a select, with how tough what's in them is, so the
+  # GM can match a road or dungeon to the party: "Grasslands (81–108 HP)".
   def encounter_table_options(world)
-    levels = world.monsters.to_h { |m| [ m.slug, m.level ] }
+    hp = world.monsters.to_h { |m| [ m.slug, m.stats["max_hp"] ] }
     world.encounter_tables.order(:tier, :name).map do |table|
-      found = table.entries.flat_map { |e| e["monsters"].keys }.filter_map { |slug| levels[slug] }.minmax.compact.uniq
-      [ found.any? ? "#{table.name} (Lv #{found.join('–')})" : table.name, table.id ]
+      found = table.entries.flat_map { |e| e["monsters"].keys }.filter_map { |slug| hp[slug] }.minmax.compact.uniq
+      [ found.any? ? "#{table.name} (#{found.join('–')} HP)" : table.name, table.id ]
     end
   end
 
