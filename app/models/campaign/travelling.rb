@@ -26,6 +26,7 @@ module Campaign::Travelling
       end
       self.safe_road = false if safe
       destination.update!(visible: true)
+      hear_rumours!(origin) # what people were saying there, heard on the way out
       origin.location&.leave!
       self.current_node = destination
       self.free_rooms_node_id = nil # the town's thanks were for while the party was there
@@ -57,8 +58,9 @@ module Campaign::Travelling
   # A new campaign begins. From the setting (unless the GM starts from
   # nothing): its places and people (Atlas) and its trouble, the fronts,
   # dealt in. Then the party sets out, from the first town it knows with a
-  # road out, with money and the starting bag, and hears what people there
-  # are saying (which may put somewhere on the map).
+  # road out, with money and the starting bag. What people there are saying
+  # (which may put somewhere on the map) is heard that night, after the GM's
+  # opening, not before it.
   def set_out!(from_the_setting: true)
     transaction do
       if from_the_setting
@@ -70,8 +72,9 @@ module Campaign::Travelling
       start = starting_town
       next unless start && current_node.nil?
 
+      # What people there are saying waits for the first night (or the next
+      # place the party reaches): the GM's opening scene comes first.
       update!(current_node: start)
-      hear_rumours!(start)
     end
   end
 

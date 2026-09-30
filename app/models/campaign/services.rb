@@ -62,7 +62,7 @@ module Campaign::Services
     transaction do
       tired.each { |c| use_service!("inn", c, at: at, by: by) }
       tick_clocks!("rest")
-      pass_time!(until_dawn, announce: :new_day)
+      pass_time!(rest_time, announce: :new_day)
     end
     table_changed # everyone's HP back, in one update_all
   end
@@ -83,7 +83,7 @@ module Campaign::Services
       end
       narrate("The party rests. Everyone is back to full #{world.word('hp')}, and half their #{world.word('mp')}.")
       tick_clocks!("rest")
-      pass_time!(until_dawn, announce: :new_day)
+      pass_time!(rest_time, announce: :new_day)
     end
   end
 

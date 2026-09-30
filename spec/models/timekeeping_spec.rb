@@ -34,6 +34,17 @@ RSpec.describe Campaign::Timekeeping do
 
     campaign.rest!
     expect([ campaign.day, campaign.time_of_day ]).to eq([ 2, "dawn" ])
+
+    # Begun at dawn, a rest takes the morning: it never skips a whole day.
+    expect(campaign.until_dawn).to eq(0)
+    campaign.rest!
+    expect([ campaign.day, campaign.time_of_day ]).to eq([ 2, "day" ])
+
+    # A step through a door takes no time at all.
+    c = campaign.map_nodes.create!(name: "Platform Zero", kind: "landmark", x: 20, y: 20, visible: true)
+    platform = campaign.map_edges.create!(from_node: b, to_node: c, duration: 0)
+    campaign.reload.travel!(platform)
+    expect([ campaign.reload.day, campaign.time_of_day ]).to eq([ 2, "day" ])
   end
 
   it "names the days the world's way" do

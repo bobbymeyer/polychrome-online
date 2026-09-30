@@ -44,7 +44,10 @@ RSpec.describe "The player's way through", type: :request do
     expect(started.bag.to_h { |row| [ row.item.slug, row.quantity ] }).to eq("phoenix_down" => 1, "potion" => 3)
     expect(started.gil).to eq(Campaign::STARTING_GIL)
 
-    # What Tule is talking about puts the places it points to on the map; the rest wait to be heard of.
+    # What Tule is talking about waits for the GM's opening: it's heard once time passes there (or on the way out),
+    # and puts the places it points to on the map; the rest wait to be heard of.
+    expect(started.messages.pluck(:body)).not_to include(a_string_starting_with("In Tule, people are saying"))
+    started.pass_time!(1)
     said = started.messages.pluck(:body)
     expect(said).to include(a_string_starting_with("In Tule, people are saying: “Goblins have been coming down"),
                             "Goblin Hollow is on the map now.", "The Old Barrow is on the map now.")
