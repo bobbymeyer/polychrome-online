@@ -39,6 +39,58 @@ RSpec.describe "Where next", type: :request do
     expect(campaign.messages.pluck(:body)).to include("The party chose: To Greymere.", "The party travels from Tule to Greymere.")
   end
 
+  describe "spending the day (Pastime)" do
+    before do
+      school = world.world_places.create!(name: "Kogen High", kind: "landmark", x: 10, y: 10,
+                                          activities: "Attend class (dawn/day, 2): The bell. Maths, then lunch on the roof.\nThe Undertow (night, 4)")
+      tule.update!(world_place: school, activities: "Work a shift (day): Aprons, and the till that sticks.")
+      campaign.update!(time_of_day: "day")
+    end
+
+    it "offers what there is to do here this part of the day, and the table picks it like a way on" do
+      sign_in_as(kim)
+      get campaign_table_path(campaign)
+      expect(response.body).to include("Day in Tule", "Attend class (until night)", "Work a shift (until dusk)", "Or go", "To Greymere")
+      expect(response.body).not_to include("The Undertow")
+
+      post campaign_ways_path(campaign), params: { way: "Attend class (until night)" }
+      vote = campaign.open_choice
+      expect(vote.options).to start_with("Attend class (until night)", "Work a shift (until dusk)")
+
+      vote.settle!("Attend class (until night)")
+      expect(campaign.reload).to have_attributes(day: 1, time_of_day: "night", current_node: tule)
+      expect(campaign.messages.pluck(:body)).to include("Tule: Attend class.", "The bell. Maths, then lunch on the roof.", "Night.")
+
+      expect(campaign.ways_on.map { |w| w["label"] }).to include("The Undertow (until night, tomorrow)")
+      campaign.take_way!("The Undertow (until night, tomorrow)")
+      expect(campaign.reload).to have_attributes(day: 2, time_of_day: "night")
+    end
+
+    it "won't do what isn't done at this time of day, or somewhere else" do
+      expect { campaign.spend_time!(tule, "The Undertow") }.to raise_error(Refusal, /isn't something to do at day/)
+      expect { campaign.spend_time!(mere, "Attend class") }.to raise_error(Refusal, /There's no Attend class at Greymere/)
+    end
+
+    it "is written by the GM on the map and by the world's author in the atlas" do
+      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      get edit_map_node_path(tule)
+      expect(response.body).to include("Things to do here", "The setting's, too: Attend class and The Undertow")
+      patch map_node_path(tule), params: { map_node: { name: "Tule", kind: "town", activities: "Attend class (day): Cancelled: a free period." } }
+      expect(tule.reload.pastimes.map(&:name)).to eq([ "The Undertow", "Attend class" ]) # the GM's replaces the setting's
+      expect(tule.pastimes.last.line).to eq("Cancelled: a free period.")
+
+      place = tule.world_place
+      patch world_world_place_path(world, place), params: { world_place: { name: place.name, kind: "landmark", activities: "Club (dusk)" } }
+      expect(place.reload.activities).to eq("Club (dusk)")
+    end
+
+    it "checks how a place's things to do are written" do
+      tule.update(activities: "Nap (noon)\n(no name)")
+      expect(tule.errors[:activities]).to include("“Nap”: noon isn't a part of the day (dawn, day, dusk, night) or a number of parts",
+                                                  "“(no name)” needs a name before any brackets or colon")
+    end
+  end
+
   it "stays put when the party chooses to" do
     vote = campaign.ask_where_next!
     vote.settle!(Campaign::STAY)

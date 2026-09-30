@@ -127,10 +127,28 @@ const JINGLES = {
     phrase(t, beat, [ [ "E4", 0, 1 ], [ "G4", 1, 1 ], [ "C5", 2, 1 ], [ "E5", 3, 3 ], [ "C5", 6, 1 ], [ "E5", 7, 1 ], [ "G5", 8, 8 ] ], { gain: 0.2 })
     phrase(t, beat, [ [ "C3", 0, 3 ], [ "G2", 3, 3 ], [ "C3", 6, 2 ], [ "C2", 8, 8 ] ], { wave: "triangle", gain: 0.7 })
   },
+  // Time's up: a bell tolls three times over a held low chord.
+  deadline(t) {
+    ;[ 0, 0.55, 1.1 ].forEach((at) => {
+      tone(t + at, "A4", 0.9, { wave: "triangle", gain: 0.45, decay: 0.3 })
+      tone(t + at, "E5", 0.6, { gain: 0.12, decay: 0.2 })
+    })
+    ;[ "A2", "E3", "C4" ].forEach((n) => tone(t, n, 2.2, { wave: "sawtooth", gain: 0.06, decay: 0.7 }))
+    noise(t, 0.3, { gain: 0.25, filter: 600 })
+  },
   // Down and down, and a long low note.
   defeat(t) {
     phrase(t, 0.24, [ [ "E4", 0, 1 ], [ "D4", 1, 1 ], [ "C4", 2, 1 ], [ "B3", 3, 1 ], [ "A3", 4, 4 ] ], { wave: "triangle", gain: 0.6 })
     phrase(t, 0.24, [ [ "A2", 0, 4 ], [ "F2", 4, 4 ] ], { wave: "triangle", gain: 0.4 })
+  },
+  // Someone awakens: a held low drone, a heartbeat, then a chord that
+  // opens upward.
+  awakening(t) {
+    tone(t, "D2", 2.4, { wave: "sawtooth", gain: 0.08, decay: 0.8 })
+    noise(t + 0.2, 0.12, { gain: 0.4, filter: 300 })
+    noise(t + 0.5, 0.12, { gain: 0.4, filter: 300 })
+    ;[ "D4", "A4", "D5", "F#5", "A5" ].forEach((n, i) => tone(t + 1.1 + i * 0.06, n, 1.4, { wave: "triangle", gain: 0.3, decay: 0.5 }))
+    tone(t + 1.1, "D3", 1.6, { wave: "triangle", gain: 0.6, decay: 0.6 })
   },
   // A run up two octaves and a sparkle at the top.
   level_up(t) {

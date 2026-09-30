@@ -50,7 +50,7 @@ RSpec.describe "Campaigns and characters", type: :request do
     end
 
     it "rests the party, and says so at the table, but not mid-battle" do
-      bartz.update!(hp: 0, mp: 0)
+      bartz.update!(hp: 1, mp: 0)
       campaign.update!(time_of_day: "dusk")
       post campaign_rest_path(campaign)
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
@@ -62,6 +62,18 @@ RSpec.describe "Campaigns and characters", type: :request do
       post campaign_rest_path(campaign)
       expect(flash[:alert]).to include("Not while a battle is on")
       expect(bartz.reload.hp).to eq(5)
+    end
+
+    it "makes camp on the road only: in a town with an inn, the party takes rooms" do
+      village = world.location_templates.find_by!(slug: "village")
+      seed = (1..50).find { |n| campaign.locations.new(location_template: village, seed: n).view["services"].any? { |sv| sv["kind"] == "inn" } }
+      varn = campaign.map_nodes.create!(name: "Varn", kind: "town", x: 1, y: 1, visible: true, location: campaign.locations.create!(location_template: village, seed: seed))
+      campaign.place_party!(varn)
+      get campaign_path(campaign)
+      expect(response.body).to include("Rooms at #{campaign.reload.inn_here['name']}")
+      expect(response.body).not_to include("Make camp")
+      post campaign_rest_path(campaign)
+      expect(flash[:alert]).to include("The party is in Varn: take rooms at", "Camp is for the road.")
     end
   end
 

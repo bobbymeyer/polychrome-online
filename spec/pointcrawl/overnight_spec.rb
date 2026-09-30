@@ -10,7 +10,7 @@ RSpec.describe Pointcrawl::Overnight do
       "places" => [ { "id" => 1, "name" => "Varn", "town" => true, "settled" => true },
                     { "id" => 2, "name" => "Tule", "town" => true, "settled" => true },
                     { "id" => 3, "name" => "Greymere", "town" => false, "settled" => false },
-                    { "id" => 4, "name" => "The Abbey", "town" => false, "settled" => true } ],
+                    { "id" => 4, "name" => "The Abbey", "town" => false, "settled" => true, "lair" => true } ],
       "roads" => [ { "from" => 1, "to" => 2, "state" => "dangerous" }, { "from" => 2, "to" => 3, "state" => "open" },
                    { "from" => 3, "to" => 4, "state" => "open" } ],
       "clocks" => [ 10, 11 ],
@@ -36,10 +36,10 @@ RSpec.describe Pointcrawl::Overnight do
     expect(kinds(night(1, blocked).last, "spread")).to be_empty
   end
 
-  it "sends an antagonist somewhere with people, past the marsh if need be, about half the time" do
+  it "sends an antagonist somewhere they can be met, past the marsh if need be, about half the time" do
     moves = (1..200).flat_map { |s| kinds(night(s).last, "moved") }
     expect(moves.size).to be_within(30).of(100)
-    expect(moves.map { |m| m["to"] }.uniq).to contain_exactly(1, 4)
+    expect(moves.map { |m| m["to"] }.uniq).to contain_exactly(4) # not the towns: nobody could face them there
     expect(moves).to all(include("npc" => 7, "name" => "Mara", "from" => 2))
   end
 

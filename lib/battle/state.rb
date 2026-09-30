@@ -90,7 +90,7 @@ module Battle
   # charging: winding up a move that takes turns to go off.
   # doom:    a countdown; when it runs out, the unit is knocked out.
   STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away
-                aggro stop berserk confuse charged imbued shield charging doom].freeze
+                aggro stop berserk confuse charged imbued shield charging doom down].freeze
   # Off the field: nobody can reach them, and they can't be commanded.
   OUT_OF_REACH_STATUSES = %w[airborne away].freeze
   # Draw the other side's single-target moves.
@@ -98,14 +98,21 @@ module Battle
   # What a cleanse with no kind cures: everything but the good ones.
   HARMFUL_STATUSES = (STATUSES - %w[haste cover airborne away aggro charged imbued shield charging]).freeze
   # Only their own primitives make these: they carry more than a duration.
-  PRIMITIVE_STATUSES = %w[airborne imbued shield charging].freeze
+  # (down: a world's One More rule knocks units down, Battle::Resolver#one_more.)
+  PRIMITIVE_STATUSES = %w[airborne imbued shield charging down].freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
   COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
 
+  # A world's own battle rules, each off unless it says so:
+  #   one_more — a blow that finds a weakness or lands a critical hit knocks
+  #              its target down (they lose their next turn), and whoever
+  #              struck goes again at once (Battle::Resolver#one_more)
+  RULES = %w[one_more].freeze
+
   # Statuses that stop a unit from taking its turn (and from being asked
   # for input).
-  DISABLING_STATUSES = %w[sleep paralyze stop].freeze
+  DISABLING_STATUSES = %w[sleep paralyze stop down].freeze
   # They act on their own: berserk attacks, confuse attacks anyone.
   RUNAWAY_STATUSES = %w[berserk confuse].freeze
   # No command while these last: the unit's turn is already spoken for.
@@ -157,7 +164,9 @@ module Battle
     # types:     the world's types and chart (Battle::Types); the base
     #            world's when not given. Everything typed must be one of them.
     # summons:   creatures abilities can call, as unit specs: { "eagle" => { name:, stats:, ai:, ... } }
-    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {})
+    # rules: a world's battle rules, on top of the game's own (RULES).
+    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {})
+      rules = normalize(rules).select { |rule, on| RULES.include?(rule) && on == true }
       types = types ? Types.validate!(normalize(types)) : normalize(Types::DEFAULT)
       known = Types.list(types)
       library = normalize(abilities)
@@ -216,7 +225,7 @@ module Battle
         "items" => bag,
         "units" => units,
         "inputs" => {}
-      }
+      }.merge(rules.any? ? { "rules" => rules } : {})
     end
 
     # Where the fight is has a type; anywhere in particular is the plain one.

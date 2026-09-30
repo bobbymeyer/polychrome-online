@@ -7,7 +7,7 @@ class Locations::ModesController < ApplicationController
   before_action :require_gm
 
   def create
-    fields = params.expect(mode: [ :name, :line, :description, :music, :encounters, :art, { closed: [] } ])
+    fields = params.expect(mode: [ :name, :line, :description, :music, :encounters, :art, { closed: [], times: [] } ])
     @location.add_mode!(fields.to_h)
     back "#{fields[:name]} is ready to set off."
   rescue ActiveRecord::RecordInvalid => e

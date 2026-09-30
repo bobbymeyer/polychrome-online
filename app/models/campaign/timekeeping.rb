@@ -35,6 +35,7 @@ module Campaign::Timekeeping
         line = new_days.positive? ? "#{new_days > 1 ? "#{new_days} days pass. " : ''}#{world.date(day)}: #{time_of_day}." : "#{time_of_day.capitalize}."
         narrate(line)
       end
+      follow_the_hours!
       new_days.times do
         tick_clocks!("dawn")
         overnight!
@@ -44,6 +45,14 @@ module Campaign::Timekeeping
       hear_rumours! if new_days.zero?
     end
     new_days
+  end
+
+  # Places that are different by night (or any other part of the day)
+  # become so, and stop being.
+  def follow_the_hours!
+    locations.where(id: LocationMode.where("json_array_length(times) > 0").select(:location_id)).find_each do |place|
+      place.follow_the_hours!(time_of_day)
+    end
   end
 
   # Parts of the day until the next dawn: none if it's dawn already.

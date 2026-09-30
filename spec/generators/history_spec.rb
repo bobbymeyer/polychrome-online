@@ -1,5 +1,11 @@
 # frozen_string_literal: true
 
+# The Base World's lore, and the names it used to fall back on: a world
+# brings its own (World#lore, its names and families tables).
+LORE = Generators::Lore::STARTER
+GIVEN = %w[Aldo Bryn Cato Dessa Evert Fane Gilda Hob Ismay Joss Kell Lise Mott Nell Osric Petra Quen Roz Seb Tova].freeze
+FAMILIES = %w[Vell Marrow Asher Crane Dunmore Hale Pike Rook Thorne Wick Briar Coldwell Fenwick Hargrave Lark Moss Oakes Sallow Tennant Garrow].freeze
+
 RSpec.describe Generators::History do
   include GeneratorFixtures
 
@@ -10,7 +16,31 @@ RSpec.describe Generators::History do
   end
 
   def history(seed, **options)
-    described_class.generate(seed: seed, places: places, **options)
+    described_class.generate(seed: seed, places: places, lore: LORE, given_names: GIVEN, family_names: FAMILIES, **options)
+  end
+
+  it "is made of the world's own lore: its trades, what its dungeons were, how they fell, what its families fall out over" do
+    undertow = { "trades" => { "stationmaster" => %w[lantern whistle], "teacher" => [] },
+                 "pasts" => { "station" => { "rooms" => [ "Ticket Hall", "Platform 2" ], "heart" => "The Last Platform", "keeps" => %w[ticket],
+                                             "named" => %w[station line] } },
+                 "falls" => { "flood" => { "did" => "went under the tide", "sealed" => "left to the sea", "trace" => "Salt on the timetables.",
+                                           "dead" => "who waited for the last train", "town" => "The spring tide came into %s" } },
+                 "quarrels" => [ "a seat on the 7:42" ], "betrayals" => [ "told the headmaster" ], "fortunes" => [ "a new branch line" ],
+                 "waters" => [ "the harbour" ], "owners" => [] }
+    line = [ { "key" => "line", "name" => "The Drowned Line", "kind" => "dungeon" }, { "key" => "town", "name" => "Tsukiura", "kind" => "town" } ]
+    run = described_class.generate(seed: 3, places: line, lore: undertow, given_names: %w[Aoi Haruto Mei Sora Yui Ren], family_names: %w[Kurosaki Tsukino Hoshi Mori])
+    expect(run["places"]["line"]).to include("was" => "station", "fall" => a_hash_including("kind" => "flood"))
+    expect(run["families"].map { |f| f["trade"] } - %w[stationmaster teacher]).to be_empty
+    text = run["events"].map { |e| e["text"] }.join(" ")
+    expect(text).to include("went under the tide")
+    expect(text).not_to match(/horse sold lame|manor|mill race/)
+  end
+
+  it "has none of what a world has no lore for, and still runs" do
+    run = described_class.generate(seed: 3, places: places, lore: Generators::Lore.empty)
+    expect(run["events"].map { |e| e["kind"] }).not_to include("feud", "quarrel", "betrayal", "fire", "flood", "made")
+    expect(run["places"]["abbey"]).not_to have_key("was")
+    expect(run["families"].map { |f| f["name"] }).to all(start_with("House"))
   end
 
   it "is reproducible from its seed, and different from another" do
@@ -39,8 +69,8 @@ RSpec.describe Generators::History do
       %w[varn tule].each { |key| expect(h["places"][key]).to include("founded", "founder", "family", "rival") }
       %w[abbey quarry].each do |key|
         past = h["places"][key]
-        expect(Generators::History::PASTS).to have_key(past["was"])
-        expect(Generators::History::FALLS.keys + %w[abandoned]).to include(past["fall"]["kind"])
+        expect(LORE["pasts"]).to have_key(past["was"])
+        expect(LORE["falls"].keys + %w[abandoned]).to include(past["fall"]["kind"])
       end
       expect(h["places"].values_at("abbey", "quarry").map { |p| p["was"] }).to eq(%w[abbey mine]) # as their names say
       expect(h["places"]["mere"].keys).to contain_exactly("key", "name", "kind")
@@ -106,8 +136,8 @@ RSpec.describe Generators::Provenance do
   it "makes a dungeon what it was, without moving a room or changing a decision's kind" do
     (1..40).each do |seed|
       plain = dungeon(seed)
-      made = described_class.apply(plain, past, seed: seed)
-      expect(made).to eq(described_class.apply(plain, past, seed: seed))
+      made = described_class.apply(plain, past, seed: seed, lore: LORE)
+      expect(made).to eq(described_class.apply(plain, past, seed: seed, lore: LORE))
       expect(made["rooms"].map { |r| r.slice("key", "x", "y", "depth") }).to eq(plain["rooms"].map { |r| r.slice("key", "x", "y", "depth") })
       expect(made["rooms"].map { |r| r["decision"]["kind"] }).to eq(plain["rooms"].map { |r| r["decision"]["kind"] })
       expect(made["paths"]).to eq(plain["paths"])
@@ -116,10 +146,10 @@ RSpec.describe Generators::Provenance do
       expect(boss).to include("name" => "Master Bedchamber")
       expect(boss["decision"]["who"]).to eq("Pell Vell, who burned with it")
       expect(made["rooms"].first["name"]).to eq("Entrance")
-      manor = Generators::History::PASTS["manor"]["rooms"]
+      manor = LORE["pasts"]["manor"]["rooms"]
       expect(made["rooms"].count { |r| manor.include?(r["name"]) }).to be >= 1
       if (event = made["rooms"].find { |r| r["decision"]["kind"] == "event" })
-        expect(made["rooms"].map { |r| r["decision"]["text"] }).to include(Generators::History::FALLS["fire"]["trace"]), "seed #{seed}: #{event}"
+        expect(made["rooms"].map { |r| r["decision"]["text"] }).to include(LORE["falls"]["fire"]["trace"]), "seed #{seed}: #{event}"
       end
       if (treasure = made["rooms"].find { |r| r["decision"]["kind"] == "treasure" })
         expect(treasure["decision"]["heirloom"]).to eq("name" => "the Vell signet", "maker" => "Hob Pike", "made_for" => "Aldo Vell")
@@ -129,16 +159,16 @@ RSpec.describe Generators::Provenance do
   end
 
   it "rolls a place its own small past when the world's history hasn't given it one" do
-    rolled = described_class.past_for(seed: 5, name: "Hollow", kind: "dungeon")
-    expect(rolled).to eq(described_class.past_for(seed: 5, name: "Hollow", kind: "dungeon"))
+    rolled = described_class.past_for(seed: 5, name: "Hollow", kind: "dungeon", lore: LORE, family_names: FAMILIES)
+    expect(rolled).to eq(described_class.past_for(seed: 5, name: "Hollow", kind: "dungeon", lore: LORE, family_names: FAMILIES))
     expect(rolled).to include("was", "fall", "founder", "family")
-    expect(described_class.past_for(seed: 5, name: "Tule", kind: "town")).to include("founder", "founded", "rival")
+    expect(described_class.past_for(seed: 5, name: "Tule", kind: "town", lore: LORE, family_names: FAMILIES)).to include("founder", "founded", "rival")
   end
 
   it "says who made a shop's things and who had them, the same each time, each item on its own" do
     town = { "family" => "Vell", "rival" => "Marrow", "makers" => [ { "name" => "Hob Pike", "trade" => "smith" } ] }
-    stories = (1..30).map { |seed| described_class.stock(%w[broadsword dagger], town, seed: seed) }
-    expect(stories).to eq((1..30).map { |seed| described_class.stock(%w[broadsword dagger], town, seed: seed) })
+    stories = (1..30).map { |seed| described_class.stock(%w[broadsword dagger], town, seed: seed, lore: LORE) }
+    expect(stories).to eq((1..30).map { |seed| described_class.stock(%w[broadsword dagger], town, seed: seed, lore: LORE) })
     expect(stories.flat_map(&:values).map { |s| s["maker"] }.compact.uniq).to eq([ "Hob Pike, smith" ])
     expect(stories.flat_map(&:values).map { |s| s["owner"] }.compact.join).to match(/Vell|Marrow/)
     expect(described_class.stock(%w[dagger], town, seed: 4)["dagger"]).to eq(described_class.stock(%w[broadsword dagger], town, seed: 4)["dagger"])

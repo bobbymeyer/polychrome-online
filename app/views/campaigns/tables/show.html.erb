@@ -5,9 +5,34 @@
 <% end %>
 
 <% view = coop_view %>
-<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap deadline awakening" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->deadline#arrive chat-line:arrived->awakening#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
+  <%# A deadline passing stops the table (deadline_controller): filled in from the line when it arrives. %>
+  <%# Someone awakens (awakening_controller): their face turns over, and the job is on the other side. %>
+  <dialog class="awakening-stage" data-awakening-target="overlay" data-action="click->awakening#dismiss" aria-label="An awakening">
+    <div class="awakening-wrap" data-awakening-target="wrap">
+    <div class="awakening-card" data-awakening-target="card">
+      <div class="awakening-card__face awakening-card__front">
+        <div class="awakening-card__portrait" data-awakening-target="portrait"></div>
+        <p class="awakening-card__name" data-awakening-target="name"></p>
+      </div>
+      <div class="awakening-card__face awakening-card__back">
+        <p class="awakening-card__line" data-awakening-target="line"></p>
+        <p class="awakening-card__job" data-awakening-target="job"></p>
+        <p class="awakening-card__description" data-awakening-target="description"></p>
+      </div>
+    </div>
+    </div>
+  </dialog>
+  <%# A modal dialog, so it comes up over anything else open (the recap). %>
+  <dialog class="deadline-stage" data-deadline-target="overlay" data-action="click->deadline#dismiss" aria-label="A deadline has passed">
+    <div class="deadline-card">
+      <p class="deadline-card__date" data-deadline-target="date"></p>
+      <p class="deadline-card__line" data-deadline-target="line"></p>
+      <p class="deadline-card__place" data-deadline-target="place" hidden></p>
+    </div>
+  </dialog>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= seat_streams_from @seat, @campaign %>
   <%= render "shared/stage_stream", campaign: @campaign %>
@@ -123,6 +148,20 @@
             </div>
             <div class="field"><%= label_tag :line, "The moment" %><%= text_field_tag :line, nil, placeholder: "The old master finally nods, and shows you how." %></div>
             <%= f.submit "Grant", class: "button play" %>
+          <% end %>
+        </details>
+      <% end %>
+      <% if @campaign.characters.any? %>
+        <details class="window table-scenes">
+          <summary>Awaken someone</summary>
+          <%= form_with url: campaign_awakenings_path(@campaign), class: "book-form" do |f| %>
+            <div class="field-row">
+              <div class="field"><%= label_tag :character_id, "Who" %><%= select_tag :character_id, options_from_collection_for_select(@campaign.characters.order(:created_at), :id, :name) %></div>
+              <div class="field"><%= label_tag :job, "To" %><%= select_tag :job, options_for_select(@campaign.world.jobs.order(:name).map { |j| [ j.name, j.slug ] }) %></div>
+            </div>
+            <div class="field"><%= label_tag :awakening_line, "What they hear" %><%= text_field_tag :line, nil, id: "awakening_line", placeholder: "I am thou, thou art I." %></div>
+            <p class="hint">They take the job up at once (it opens for the party if it wasn't), and the table stops for it.</p>
+            <%= f.submit "Awaken", class: "button play" %>
           <% end %>
         </details>
       <% end %>

@@ -54,9 +54,14 @@ RSpec.describe "Books", type: :request do
     end
 
     it "re-renders the form with errors" do
-      post worlds_path, params: { world: { name: "", slug: "Bad Slug" } }
+      post worlds_path, params: { world: { name: "", slug: "9 lives" } }
       expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("problems to fix")
+      expect(response.body).to include("problems to fix", "must be lowercase letters, digits and underscores, starting with a letter")
+    end
+
+    it "takes hyphens and capitals in an address as underscores" do
+      post worlds_path, params: { world: { name: "Persona Scratch", slug: "Persona-Scratch" } }
+      expect(response).to redirect_to(world_path("persona_scratch"))
     end
   end
 

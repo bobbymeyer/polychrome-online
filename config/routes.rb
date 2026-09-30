@@ -15,7 +15,7 @@ Rails.application.routes.draw do
   # Local co-op: the QR code on the shared screen leads here.
   get "join/:code", to: "joins#show", as: :join
   post "join/:code", to: "joins#create"
-  resources :worlds, param: :slug, except: :destroy do
+  resources :worlds, param: :slug do
     # Each book is a resource namespace inside its world (docs/HANDOFF.md §7).
     namespace :bestiary do
       resources :monsters, param: :slug
@@ -123,6 +123,7 @@ Rails.application.routes.draw do
       resources :checks, only: :create
       resources :field_uses, only: %i[create update]
       resources :job_grants, only: :create
+      resources :awakenings, only: :create
       resource :join_code, only: :create
       resource :forecast, only: :show
       resource :table_seat, only: %i[create destroy]

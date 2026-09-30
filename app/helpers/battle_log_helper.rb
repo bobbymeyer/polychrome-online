@@ -44,7 +44,9 @@ module BattleLogHelper
       else "#{name.('target')} recovers #{event['amount']} #{word('hp')}."
       end
     when "miss" then miss_line(event, name.("target"), state)
-    when "status_applied" then "#{name.('target')}: #{term(event['status'])}.#{dice_note(event)}"
+    when "status_applied"
+      event["status"] == "down" ? "#{name.('target')} is knocked down!" : "#{name.('target')}: #{term(event['status'])}.#{dice_note(event)}"
+    when "one_more" then "One More! #{name.('actor')} goes again."
     when "status_expired" then status_expired_line(event, name.("target"))
     when "buff_applied"
       "#{name.('target')}'s #{stat_label(event['stat'])} #{event['amount'].positive? ? 'rises' : 'falls'}."
@@ -154,6 +156,7 @@ module BattleLogHelper
     when "paralyze" then "#{unit} can't move."
     when "away" then "#{unit} is away."
     when "stop" then "#{unit} is stopped in time."
+    when "down" then "#{unit} is getting back up."
     when "charging" then "#{unit} is still gathering strength."
     else "#{unit} has no orders."
     end

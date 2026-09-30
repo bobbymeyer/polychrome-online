@@ -12,7 +12,7 @@
               <%= [ ("Ticks on #{clock.triggers.map { |t| Clock::TRIGGERS[t] }.to_sentence}" if clock.triggers.any?),
                     ("then #{clock.location.name}: #{clock.mode_name}" if clock.mode_name),
                     ("“#{clock.full_line}”" if clock.full_line),
-                    ("stops when #{clock.map_node.name} is cleared" if clock.map_node && !clock.stopped?),
+                    ("stops when #{clock.stopper}" if clock.map_node && !clock.stopped?),
                     ("Stopped#{": #{clock.map_node.name} was cleared" if clock.map_node}" if clock.stopped?) ].compact.join(" · ").presence || "Ticked by hand" %>
             </p>
           </div>

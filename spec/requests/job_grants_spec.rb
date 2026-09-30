@@ -51,4 +51,27 @@ RSpec.describe "Jobs as story rewards", type: :request do
     post campaign_job_grants_path(campaign), params: { jobs: %w[knight] }
     expect(flash[:alert]).to eq("Pick a job that isn't open yet")
   end
+
+  it "awakens one character: the job opens, they take it up, and the table stops for it" do
+    campaign = start(%w[freelancer])
+    yui = create_character(campaign, name: "Yui", job: world.jobs.find_by!(slug: "freelancer"))
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Awaken someone", 'class="awakening-stage"', "awakening#arrive")
+
+    post campaign_awakenings_path(campaign), params: { character_id: yui.id, job: "monk", line: "I am thou, thou art I." }
+    expect(yui.reload.job.slug).to eq("monk")
+    expect(campaign.reload.available_jobs.map(&:slug)).to include("monk")
+    line = campaign.messages.last
+    expect(line).to have_attributes(body: "I am thou, thou art I. Yui awakens: Monk.", cue: "awakening")
+    expect(line.data).to include("character" => yui.id, "name" => "Yui", "job" => "Monk", "line" => "I am thou, thou art I.")
+
+    get campaign_table_path(campaign)
+    card = JSON.parse(CGI.unescapeHTML(response.body[/data-chat-line-card-value="([^"]+)"/, 1]))
+    expect(card).to include("name" => "Yui", "job" => "Monk", "portrait" => "")
+    expect(card["plate"]).to start_with("--plate:")
+
+    post campaign_awakenings_path(campaign), params: { character_id: yui.id, job: "monk" }
+    expect(flash[:alert]).to eq("Yui is a Monk already")
+  end
 end

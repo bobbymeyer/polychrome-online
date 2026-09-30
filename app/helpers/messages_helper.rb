@@ -24,6 +24,15 @@ module MessagesHelper
     image ? url_for(image) : ""
   end
 
+  # What the awakening card shows (awakening_controller): the line's own
+  # words, and the character's face as it is now (their portrait, or their
+  # plate).
+  def awakening_card(message)
+    character = message.campaign.characters.find_by(id: message.data["character"])
+    message.data.merge("portrait" => speaker_portrait_url(character, "neutral"),
+                       "plate" => (plate_style(character.name, character.try(:colour)) if character))
+  end
+
   # A stable key for "is this the same speaker as the last line?".
   def speaker_key(message)
     message.speaker ? "#{message.speaker_type}:#{message.speaker_id}" : "narrator"

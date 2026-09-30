@@ -293,6 +293,48 @@ unexplored way"). A player's "suggest" puts the question to a vote with their pi
 GM settling the vote takes the party there. The GM can also just go, from the same panel, and
 calls a waiting encounter there too, so a session can run from the table without the map page.
 
+Staying is a way on as well. A place can list things to do there (`Pastime`): class, a shift, a
+visit, a night in the other world. Each says which parts of the day it can be done in and how
+long it takes. The ones open now head the list, under "Day in Tule": "Attend class (until
+dusk)". They go to the same vote, and settling one says its line and lets the time go by. This
+is the day schedule of a calendar game: each part of the day is spent on something, and the
+countdowns on the date card say what it costs.
+
+### Someone awakens
+
+The GM can have one character awaken to a job at the table ("Awaken someone": who, to what, and
+what they hear). The job opens for the party if it wasn't open, they take it up at once, and
+the table stops for it. Their face comes up on a white card with a yellow shadow, and after a
+beat the card turns over. On the black back are what they heard, in yellow italic, the job's
+name in display type, and its description. A low drone and a heartbeat play, then a chord that
+opens upward, and the scene's music holds still while the card is up.
+
+### One More
+
+A world can turn on One More (its Battle rules). A blow that finds a weakness, or lands a
+critical hit, knocks its target down: "DOWN!" pops over them on black and yellow, and they lose
+their next turn. Whoever struck goes again at once with the same move, under a slanted red "ONE
+MORE!" across the stage. It happens once a turn, it works for enemies too, and someone already
+down isn't knocked down twice. Commands are chosen for the whole round at its start, so the
+extra go repeats the move rather than asking for a new one, as haste's second go does.
+
+### A place by night
+
+A mode can come on by itself at parts of the day: the station after the last train, the
+market when the shutters come down. It turns on at those hours and off at the others, and only
+the party, where it is, hears the change. A mode set off at the table (the city burning)
+outlasts the hours. In the Atlas, a place's "What it's like by night" line becomes a "By night"
+mode in every new campaign.
+
+### A deadline passes
+
+When a clock the table can see fills, the table stops for it. A red card comes up over
+everything, the recap included. The date sits on a black band, the clock's line is set in
+display type, and a bell tolls three times. If the clock sets a place into a new state, the
+card names it ("Tule: Burning"). A click or a few seconds dismisses it. The day before, the
+countdown on the date card turns into a red band ("TOMORROW The spring tide comes in"), and on
+a phone that band stays pinned along the bottom of the screen.
+
 ### A boss, and a place cleared
 
 Walking in on a dungeon's boss, the GM gets a few lines for its entrance, written from the
@@ -365,3 +407,6 @@ Record each place where the game needed more than the Swiss defaults: what chang
 - **Story time in the log.** Log lines show the part of the day they were said in ("Dusk"), and
   the recap is dated by the setting's calendar. The wall-clock time is only on hover, because
   "00:17" in a fantasy log breaks the fiction.
+- **Red for a deadline.** A deadline passing is a red card, and its last day is a red band. That's
+  the one place red means something other than a move: the game stopping you. A grey or black
+  card read as one more notice, and the Persona table missed the biggest beat of its campaign.

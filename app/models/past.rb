@@ -14,8 +14,10 @@ class Past
 
   attr_reader :data
 
-  def initialize(data)
+  # lore: the world's (Generators::Lore), for how its falls are told.
+  def initialize(data, lore: nil)
     @data = data.is_a?(Hash) ? data.stringify_keys : {}
+    @lore = lore
   end
 
   def present? = (data.keys - %w[key name kind edited]).any?
@@ -42,11 +44,12 @@ class Past
   end
 
   def dungeon_lines
-    fall = Generators::History::FALLS[data.dig("fall", "kind")]
+    fall = @lore&.dig("falls", data.dig("fall", "kind"))
     fell = data.dig("fall", "ago")
     [ "Once #{data['family'] ? "the #{data['family']}" : data['was'].to_s.match?(/\A[aeiou]/) ? 'an' : 'a'} #{data['was']}#{", built #{ago(data['founded'])}" if data['founded']}.",
-      (if fall then "It #{fall['did']} #{ago(fell)}, and was #{fall['sealed']}."
+      (if fall then "It #{fall['did'] || 'fell'} #{ago(fell)}#{", and was #{fall['sealed']}" if fall['sealed']}."
        elsif data.dig("fall", "kind") == "abandoned" then "Left empty #{ago(fell)}, when #{data['holder'] ? "the #{plural(data['holder'])}" : 'its people'} went away."
+       elsif data.dig("fall", "kind") then "It fell #{ago(fell)}: #{data.dig('fall', 'kind')}."
        end),
       ("#{Array(data['lost']).to_sentence} never came out." if Array(data["lost"]).any?),
       ("The #{plural(data['holder'])} bought it from the #{plural(data['family'])}." if data["holder"] && data["family"] && data["holder"] != data["family"]),

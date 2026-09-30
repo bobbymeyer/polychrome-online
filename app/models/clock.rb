@@ -90,6 +90,14 @@ class Clock < ApplicationRecord
     self
   end
 
+  # What stops it: "The Terminal is cleared", or, while an antagonist who
+  # lives there is at large, "Kurosaki is beaten at The Drowned Line".
+  def stopper
+    place = map_node.location
+    villain = place && campaign.npcs.at_large.where(location_id: place.id).order(:id).first
+    villain ? "#{villain.name} is beaten at #{map_node.name}" : "#{map_node.name} is cleared"
+  end
+
   # The place whose mode it sets off when it fills.
   def location = location_mode&.location
 
@@ -101,7 +109,11 @@ class Clock < ApplicationRecord
   def fill!
     line = full_line || ("#{name}: it has happened." if public?)
     # Full when the table heard it, so the recap finds it in that session.
-    update!(full_at: campaign.narrate(line).created_at) if line
+    # It stops the table (the deadline card): the date, the line, and what
+    # the place has become.
+    card = { "date" => campaign.world.date(campaign.day), "clock" => name, "line" => line,
+             "place" => (location && "#{location.map_node&.name || location.name}: #{location_mode.name}") }.compact
+    update!(full_at: campaign.narrate(line, cue: "deadline", data: card).created_at) if line
     location.switch_mode!(location_mode.key) if location_mode && location.current_mode != location_mode
   end
 

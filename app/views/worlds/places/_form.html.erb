@@ -23,6 +23,16 @@
     <%= f.text_area :lead, rows: 2, placeholder: "Goblins have been coming down at night from a cave in the hills." %>
     <p class="hint">For a place players don't know from the start: a campaign starts this talk in the nearest town by road, and hearing it puts the place on the map.</p>
   </div>
+  <div class="field">
+    <%= f.label :night_line, "What it's like by night" %>
+    <%= f.text_area :night_line, rows: 2, placeholder: "The shutters come down. Under the platform, the Undertow wakes." %>
+    <p class="hint">For a town or dungeon that's different after dark: campaigns give it a "By night" mode that comes on at night by itself (the GM can shut services in it, or add trouble).</p>
+  </div>
+  <div class="field">
+    <%= f.label :activities, "Things to do here" %>
+    <%= f.text_area :activities, rows: 4, class: "script-field", placeholder: "Attend class (dawn/day, 2): The bell. Maths, then lunch on the roof.\nThe Undertow (night, 4)" %>
+    <p class="hint">Things to do here, one per line: a name, then in brackets when (dawn, day, dusk, night; any if none) and how many parts of the day it takes (1 if none), then what the table hears. The party picks one from Where next?, and the time goes by.</p>
+  </div>
   <fieldset class="panel past-fields">
     <legend>Its past</legend>
     <p class="hint">
@@ -43,8 +53,8 @@
         <div class="field"><%= p.label :feud_cause, "Over" %><%= p.text_field :feud_cause, value: was["feud_cause"], placeholder: "a horse sold lame" %></div>
       </div>
       <div class="field-row">
-        <div class="field"><%= p.label :was, "Once (a dungeon)" %><%= p.select :was, Generators::History::PASTS.keys.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing in particular", selected: was["was"] } %></div>
-        <div class="field"><%= p.label :fall_kind, "Until" %><%= p.select :fall_kind, WorldPlace::PAST_FALLS.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing happened", selected: was["fall_kind"] } %></div>
+        <div class="field"><%= p.label :was, "Once (a dungeon)" %><%= p.select :was, @world.lore["pasts"].keys.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing in particular", selected: was["was"] } %></div>
+        <div class="field"><%= p.label :fall_kind, "Until" %><%= p.select :fall_kind, place.past_falls.map { |k| [ k.capitalize, k ] }, { include_blank: "Nothing happened", selected: was["fall_kind"] } %></div>
         <div class="field"><%= p.label :fall_ago, "Years ago" %><%= p.number_field :fall_ago, value: was["fall_ago"], min: 0 %></div>
         <div class="field"><%= p.label :holder, "Owned now by" %><%= p.text_field :holder, value: was["holder"] %></div>
       </div>

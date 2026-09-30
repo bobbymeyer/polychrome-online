@@ -39,6 +39,8 @@ class Atlas
 
         location = campaign.locations.create!(location_template: place.location_template, seed: place.seed, overrides: { "name" => place.name })
         node.update!(location: location)
+        # What it's like by night: a mode that comes on at night by itself.
+        location.add_mode!("name" => "By night", "line" => place.night_line, "times" => %w[night]) if place.night_line.present?
       end
       bring_in_routes!
       start_leads!(places)

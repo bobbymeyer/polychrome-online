@@ -64,6 +64,15 @@
       </div>
     </fieldset>
     <fieldset class="panel">
+      <legend>Battle rules</legend>
+      <%= hidden_field_tag "world[battle_rules][one_more]", "0", id: nil %>
+      <div class="field field--check">
+        <%= check_box_tag "world[battle_rules][one_more]", "1", world.rule?(:one_more), id: "world_battle_rules_one_more" %>
+        <%= label_tag "world_battle_rules_one_more", "One More" %>
+      </div>
+      <p class="hint">A blow that finds a weakness, or lands a critical hit, knocks its target down (they lose their next turn), and whoever struck goes again at once. Enemies too.</p>
+    </fieldset>
+    <fieldset class="panel">
       <legend>Lines and veils</legend>
       <p class="hint">Shown to everyone who plays here, and the language model never writes them. Lines never happen in this setting; veils can happen, but off-screen.</p>
       <div class="field"><%= f.label :lines %><%= f.text_area :lines, rows: 2, placeholder: "harm to children, sexual violence" %></div>

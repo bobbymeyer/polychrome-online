@@ -25,7 +25,7 @@ module Location::Town
     cast = campaign.npcs.to_a
     pinned_here = cast.select { |npc| npc.location_id == id && npc.location_key }.map(&:location_key)
     taken = cast.map(&:name) + rolled.select { |n| pinned_here.include?(n["key"]) }.map { |n| n["name"] }
-    names = location_template.table_entries.fetch("names", []).map { |e| e["text"] }
+    names = tables.fetch("names", []).map { |e| e["text"] }
     rolled.each_with_index.map do |npc, i|
       if pinned_here.exclude?(npc["key"]) && taken.include?(npc["name"])
         free = names.rotate((seed + i) % [ names.size, 1 ].max).find { |name| taken.exclude?(name) && rolled.none? { |n| n["name"] == name } }

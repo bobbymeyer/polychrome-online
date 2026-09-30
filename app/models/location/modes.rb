@@ -26,7 +26,8 @@ module Location::Modes
   end
 
   # Prepares a mode. attrs: "name", "line", "description", "closed",
-  # "music", "art", and "encounters" (an encounter table's slug).
+  # "music", "art", "times" (when it comes on by itself), and "encounters"
+  # (an encounter table's slug).
   def add_mode!(attrs)
     attrs = attrs.to_h.stringify_keys
     name = attrs["name"].to_s.strip
@@ -34,7 +35,7 @@ module Location::Modes
     raise Refusal, "#{view['name']} already has a mode called #{name}" if modes.exists?(key: name.parameterize(separator: "_"))
 
     table = attrs["encounters"].presence && campaign.world.encounter_tables.find_by(slug: attrs["encounters"])
-    modes.create!(attrs.slice("line", "description", "closed", "music", "art").merge("name" => name, "encounter_table" => table))
+    modes.create!(attrs.slice("line", "description", "closed", "music", "art", "times").merge("name" => name, "encounter_table" => table))
   end
 
   def remove_mode!(key)
@@ -69,6 +70,22 @@ module Location::Modes
       campaign.narrate(line)
       campaign.start_rumour!(line, at: map_node, seen: campaign.current_node == map_node) if map_node
     end
+    campaign.broadcast_music
+  end
+
+  # The hours turn: a mode with times comes on in them and goes in the
+  # others. A mode set off at the table (the city burning) outlasts the
+  # hours. Only the party, where it is, hears it.
+  def follow_the_hours!(time_of_day)
+    return if current_mode && !current_mode.timed?
+
+    due = modes.find { |mode| mode.times.include?(time_of_day) }
+    return if due == current_mode
+
+    update!(current_mode: due)
+    return unless map_node&.party_here?
+
+    campaign.narrate(due.line || "#{view['name']}: #{due.name}.") if due
     campaign.broadcast_music
   end
 

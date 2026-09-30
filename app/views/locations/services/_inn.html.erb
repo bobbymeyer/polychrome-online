@@ -1,10 +1,10 @@
 <%# An inn's panel (locations/_town): a room for the night, per character. %>
-<p>A room for the night: full <%= word("hp") %> and <%= word("mp") %>.<% if vocabulary_world&.service_offered?("temple") != false %> It can't help the fallen: that takes a <%= word("service.temple").downcase %>.<% end %></p>
+<p>A room for the night: full <%= word("hp") %> and <%= word("mp") %>, and the fallen back on their feet by morning.</p>
 <%= render layout: "locations/services/customers", locals: { location: location, kind: "inn", action: "Rest", shopping: shopping } do |character| %>
-  <%= !character.conscious? ? "Down" : (@campaign.rested?(character) ? "Rested" : nil) %>
+  <%= "Rested" if @campaign.rested?(character) %>
 <% end %>
-<% tired = @campaign.characters.select { |c| c.conscious? && !@campaign.rested?(c) } %>
-<% if shopping && tired.size > 1 %>
+<% tired = @campaign.characters.reject { |c| @campaign.rested?(c) }.presence || @campaign.characters.to_a %>
+<% if shopping && tired.any? %>
   <% total = tired.sum { |c| @campaign.service_price("inn", c) } %>
   <% if total > @campaign.gil %>
     <p class="muted">Rooms for everyone cost <%= money(total) %>: more than the party has.</p>

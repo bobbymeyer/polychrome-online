@@ -31,7 +31,26 @@ class World < ApplicationRecord
   before_validation(on: :create) { self.slug = name.to_s.parameterize(separator: "_") if slug.blank? }
 
   validates :name, presence: true
-  validates :slug, presence: true, uniqueness: true, format: { with: BookEntry::SLUG_FORMAT }
+  # "Persona-Scratch" is taken as persona_scratch: the address wants underscores.
+  normalizes :slug, with: ->(slug) { slug.to_s.strip.downcase.tr("- ", "__") }
+  validates :slug, presence: true, uniqueness: true,
+                   format: { with: BookEntry::SLUG_FORMAT, message: "must be lowercase letters, digits and underscores, starting with a letter" }
+
+  # A world can go once nobody plays in it; the Base World never does.
+  def refuse_deleting!
+    raise Refusal, "The Base World stays: the others are copied from it" if slug == "base"
+    return unless campaigns.exists?
+
+    raise Refusal, "#{campaigns.count == 1 ? 'A campaign is' : "#{campaigns.count} campaigns are"} played in #{name} (#{campaigns.order(:name).pluck(:name).uniq.first(3).to_sentence}). Those go first."
+  end
+
+  # From the form: a box per rule, on or off.
+  def battle_rules=(value)
+    value = value.to_h.stringify_keys
+    super(Battle::RULES.select { |rule| ActiveModel::Type::Boolean.new.cast(value[rule]) }.index_with(true))
+  end
+
+  def rule?(rule) = battle_rules.to_h[rule.to_s] == true
 
   def to_param
     slug_in_database || slug
@@ -42,6 +61,17 @@ class World < ApplicationRecord
   end
 
   # The surnames its generator tables offer (families of a place's past).
+  # What its histories and the pasts of its places are made of (Generators::Lore), from its lore tables.
+  def lore
+    @lore ||= Generators::Lore.from_tables(generator_tables.where(kind: GeneratorTable::LORE_KINDS).order(:id)
+                                                           .group_by(&:kind).transform_values { |tables| tables.flat_map(&:entries) })
+  end
+
+  def reload(*)
+    @lore = @family_names = nil
+    super
+  end
+
   def family_names
     @family_names ||= generator_tables.of_kind("families").flat_map { |t| t.entries.filter_map { |e| e["text"] } }
   end
@@ -73,6 +103,6 @@ class World < ApplicationRecord
       by_slug.fetch(slug.to_s) { raise ActiveRecord::RecordNotFound, "no monster #{slug} in #{self.slug}" }.to_engine(count: count)
     end + extra_enemies
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: ability_library, escapable: escapable, items: items,
-                        terrain: terrain, types: type_chart.to_engine, summons: summon_library)
+                        terrain: terrain, types: type_chart.to_engine, summons: summon_library, rules: battle_rules)
   end
 end

@@ -7,14 +7,21 @@
       <%= f.select :kind, GeneratorTable::KINDS.keys.map { |k| [ k.humanize, k ] }, {}, data: { kind_switch_target: "select", action: "kind-switch#update" } %>
     </div>
   </div>
-  <% show_for = ->(field) { GeneratorTable::KINDS.select { |_, fields| field == "weight" || fields.include?(field) }.keys.join(" ") } %>
-  <% columns = { "text" => "Text", "key" => "Key", "item" => "Item", "gil" => word("currency").upcase_first, "service" => "Service", "width" => "Width", "height" => "Height", "roof" => "Roof", "weight" => "Weight" } %>
+  <%# Lore is drawn evenly: its tables have no weights. %>
+  <% show_for = ->(field) { GeneratorTable::KINDS.select { |kind, fields| (field == "weight" && GeneratorTable::LORE_KINDS.exclude?(kind)) || fields.include?(field) }.keys.join(" ") } %>
+  <% columns = { "text" => "Text", "key" => "Key", "item" => "Item", "gil" => word("currency").upcase_first, "service" => "Service", "width" => "Width", "height" => "Height", "roof" => "Roof",
+                 "makes" => "Makes (commas)", "rooms" => "Rooms (commas)", "heart" => "Heart", "keeps" => "Keeps (commas)", "named" => "Named (commas)",
+                 "did" => "Did", "sealed" => "Left", "trace" => "What's still there", "dead" => "Who died there", "town" => "In a town (%s)",
+                 "weight" => "Weight" } %>
+  <% lore_columns = %w[makes rooms heart keeps named did sealed trace dead town] %>
   <fieldset class="panel">
     <legend>Rows</legend>
     <p class="hint" data-show-for="treasure">Each row is an item or an amount of <%= word("currency") %>.</p>
+    <p class="hint" data-show-for="<%= GeneratorTable::LORE_KINDS.join(' ') %>">This is the world's lore: what its pocket history and the pasts of its places are made of. A world with none of a kind has none of that happen (no feuds without quarrels, no fallen dungeons without falls).</p>
     <p class="hint" data-show-for="locks">Each row is a lock and the key that opens it, in any flavour: Portal and Blue crystal, Altar and Goat's skull.</p>
     <p class="hint"><strong>Worlds are live:</strong> towns and dungeons already rolled from this table change with it, except the people and rooms a GM has pinned.</p>
-    <p class="hint">Weight defaults to 1: a row with weight 3 comes up three times as often. Clear a row to remove it.</p>
+    <p class="hint" data-show-for="<%= show_for.("weight") %>">Weight defaults to 1: a row with weight 3 comes up three times as often.</p>
+    <p class="hint">Clear a row to remove it.</p>
     <% items = @world.items.order(:name).map { |i| [ i.name, i.slug ] } %>
     <table class="grid-form">
       <thead><tr><% columns.each do |key, label| %><th data-show-for="<%= show_for.(key) %>"><%= label %></th><% end %></tr></thead>
@@ -30,6 +37,9 @@
             <td data-show-for="<%= show_for.("width") %>"><%= number_field_tag name.(:width), row["width"], min: 1, "aria-label": "Width #{i + 1}" %></td>
             <td data-show-for="<%= show_for.("height") %>"><%= number_field_tag name.(:height), row["height"], min: 1, "aria-label": "Height #{i + 1}" %></td>
             <td data-show-for="<%= show_for.("roof") %>"><%= select_tag name.(:roof), options_for_select(Generators::Town::ROOFS.map { |r| [ r.humanize, r ] }, row["roof"]), include_blank: true, "aria-label": "Roof #{i + 1}" %></td>
+            <% lore_columns.each do |key| %>
+              <td data-show-for="<%= show_for.(key) %>"><%= text_field_tag name.(key), row[key], "aria-label": "#{columns[key]} #{i + 1}" %></td>
+            <% end %>
             <td data-show-for="<%= show_for.("weight") %>"><%= number_field_tag name.(:weight), row["weight"], min: 1, placeholder: 1, "aria-label": "Weight #{i + 1}" %></td>
           </tr>
         <% end %>
@@ -41,7 +51,7 @@
       <%= f.label :paste, "Add many at once" %>
       <%= f.text_area :paste, rows: 6, value: entry.paste %>
       <% pasteable.each do |kind, format| %>
-        <p class="hint" data-show-for="<%= kind %>">One per line: <%= format %>. Add <code>| 3</code> at the end of a line for a weight.</p>
+        <p class="hint" data-show-for="<%= kind %>">One per line: <%= format %>.<% unless GeneratorTable::LORE_KINDS.include?(kind) %> Add <code>| 3</code> at the end of a line for a weight.<% end %></p>
       <% end %>
     </div>
   </fieldset>

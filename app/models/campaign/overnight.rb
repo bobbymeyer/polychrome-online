@@ -22,12 +22,17 @@ module Campaign::Overnight
   # What the party hears on reaching a place: every rumour that got there
   # before them. Only where there are people to talk to.
   def hear_rumours!(node = current_node)
-    return [] unless node&.location
+    return [] unless node
 
     # Not their own deed where they did it: they were there.
-    rumours.travelling.unheard.at(node).where.not(id: rumours.about_deeds.where(origin: node).select(:id)).order(:id).each do |rumour|
+    heard = rumours.travelling.unheard.at(node).where.not(id: rumours.about_deeds.where(origin: node).select(:id))
+    # Somewhere nobody lives (a landmark, the wilds) only says what was set loose right there.
+    heard = heard.where(origin: node) unless node.location
+    heard.order(:id).each do |rumour|
       rumour.update!(heard: true, heard_day: day, heard_at: node)
-      narrate(rumour.secret_id ? "In #{node.name}, someone whispers: “#{rumour.body}”" : "In #{node.name}, people are saying: “#{rumour.body}”")
+      said = narrate(rumour.secret_id ? "In #{node.name}, someone whispers: “#{rumour.body}”" : "In #{node.name}, people are saying: “#{rumour.body}”")
+      # A secret that got out is out: the party knows it now (the whisper was its telling).
+      rumour.secret.update!(revealed_at: said.created_at, revealed_by: "Heard in #{node.name}") if rumour.secret && !rumour.secret.revealed?
       hear_of!(rumour)
     end
   end
@@ -67,12 +72,14 @@ module Campaign::Overnight
           rumours.find(event["rumour"]).update!(faded: true)
         when "moved"
           to = by_id.fetch(event["to"])
-          npcs.find(event["npc"]).update!(location: to.location)
-          start_rumour!("#{event['name']} was seen in #{to.name}.", at: to)
+          villain_moves!(npcs.find(event["npc"]), from: by_id[event["from"]], to: to)
+          said = lore_line("sightings", event["npc"].to_i)
+          start_rumour!(Generators::Lore.fill(said, who: event["name"], where: to.name), at: to) if said
           notes << "#{event['name']} went from #{by_id[event['from']]&.name} to #{to.name}."
         when "caravan"
           from, to = by_id.values_at(event["from"], event["to"])
-          start_rumour!("A caravan on the road between #{from.name} and #{to.name} was attacked.", at: from, also: [ to ])
+          said = lore_line("raids", from.id + to.id)
+          start_rumour!(Generators::Lore.fill(said, from: from.name, to: to.name), at: from, also: [ to ]) if said
           notes << "A caravan was lost between #{from.name} and #{to.name}."
         when "price"
           node = by_id.fetch(event["place"])
@@ -93,9 +100,27 @@ module Campaign::Overnight
 
   private
 
+  # One of the world's lines for what people say overnight (its lore); which
+  # one follows from who and the day, so a night reads the same every time.
+  def lore_line(kind, salt)
+    lines = world.lore[kind]
+    lines[(salt + day) % lines.size] if lines.any?
+  end
+
+  # An antagonist moves in somewhere new: its master's room is theirs now,
+  # even if the party already cleared it, and the clocks only they were
+  # keeping going (their old place is cleared) go with them.
+  def villain_moves!(villain, from:, to:)
+    villain.update!(location: to.location)
+    to.location&.await_villain!
+    return unless from&.location&.cleared? && !npcs.at_large.exists?(location_id: from.location.id)
+
+    from.clocks.running.each { |clock| clock.update!(map_node: to) }
+  end
+
   def overnight_world(nodes)
     {
-      "places" => nodes.map { |n| { "id" => n.id, "name" => n.name, "town" => n.location&.town? || false, "settled" => !n.location.nil? } },
+      "places" => nodes.map { |n| { "id" => n.id, "name" => n.name, "town" => n.location&.town? || false, "settled" => !n.location.nil?, "lair" => n.location&.lair? || false } },
       "roads" => map_edges.map { |e| { "from" => e.from_node_id, "to" => e.to_node_id, "state" => e.state } },
       "clocks" => clocks.running.order(:id).select { |c| c.ticks_on?("now_and_then") }.map(&:id),
       "rumours" => rumours.travelling.includes(:rumour_places).order(:id).map { |r| { "id" => r.id, "reached" => r.reached, "age" => r.age } },

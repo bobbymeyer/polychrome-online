@@ -1,3 +1,12 @@
 <% content_for :title, "Edit #{@world.name}" %>
 <h1>Edit <%= @world.name_in_database %></h1>
 <%= render "form", world: @world %>
+
+<% if admin? || @world.owner_id == current_user&.id %>
+  <section class="window danger-zone" aria-label="Delete this world">
+    <h2>Delete <%= @world.name_in_database %></h2>
+    <p class="hint">Its books, atlas, cast, codex and fronts go with it. A world with campaigns in it can't be deleted.</p>
+    <%= button_to "Delete #{@world.name_in_database}", world_path(@world), method: :delete, class: "button button--quiet",
+                  form: { data: { turbo_confirm: "Delete #{@world.name_in_database} and everything in it? This can't be undone." } } %>
+  </section>
+<% end %>

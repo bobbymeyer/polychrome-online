@@ -25,7 +25,7 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
     expect(rumour).to have_attributes(reached: [ varn.id ], heard: false)
 
     campaign.update!(time_of_day: "night") # a rest from dawn only takes the morning
-    campaign.rest!
+    rest_the_night(campaign)
     expect(rumour.reload).to have_attributes(reached: [ varn.id, tule.id ], heard: true, age: 1)
     expect(campaign.messages.where(body: "In Tule, people are saying: “The mill grinds at night.”")).to exist
 
@@ -59,9 +59,9 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
     allow(Pointcrawl::Overnight).to receive(:run) { |world_state, rng| @seen = world_state; [ rng + 1, night ] }
 
     campaign.update!(time_of_day: "night")
-    campaign.rest!
+    rest_the_night(campaign)
     expect(@seen).to include("clocks" => [ clock.id ], "antagonists" => [ { "id" => mara.id, "name" => "Mara", "at" => varn.id } ])
-    expect(@seen["places"]).to include({ "id" => tule.id, "name" => "Tule", "town" => true, "settled" => true })
+    expect(@seen["places"]).to include({ "id" => tule.id, "name" => "Tule", "town" => true, "settled" => true, "lair" => false })
     expect(clock.reload.filled).to eq(1)
     expect(mara.reload.location).to eq(tule_town)
     expect(tule_town.reload.prices).to eq(15)
@@ -84,5 +84,17 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
     expect(campaign.messages.where(body: said).count).to eq(1)
     campaign.place_party!(varn)
     expect(campaign.messages.where(body: said).count).to eq(1)
+  end
+
+  it "hears at a landmark what was set loose there, but not what's only passing through" do
+    school = campaign.map_nodes.create!(name: "Kogen High", kind: "landmark", x: 200, y: 200, visible: true)
+    campaign.map_edges.create!(from_node: tule, to_node: school, duration: 0)
+    campaign.start_rumour!("The rooftop door is never locked.", at: school)
+    passing = campaign.start_rumour!("Wolves on the north road.", at: tule)
+    passing.reach!(school, day: campaign.day)
+    campaign.place_party!(school)
+    campaign.pass_time!(1)
+    expect(campaign.messages.pluck(:body)).to include("In Kogen High, people are saying: “The rooftop door is never locked.”")
+    expect(campaign.messages.pluck(:body)).not_to include(a_string_including("In Kogen High, people are saying: “Wolves"))
   end
 end

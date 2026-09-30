@@ -9,7 +9,7 @@ module Location::Tailoring
   # A new seed. Pins, stock, boss and added rooms stay; a dungeon's
   # exploration starts over, since its rooms have moved.
   def reroll!
-    update!(seed: Location.new_seed, progress: {})
+    update!(seed: Location.new_seed, progress: {}, overrides: overrides.except("tables", "families"))
   end
 
   def rename!(name)
@@ -86,6 +86,9 @@ module Location::Tailoring
     if overrides["boss"]
       list << change("boss", nil, "Boss placed: #{campaign.describe_encounter(overrides['boss'])}")
     end
+    if overrides.key?("tables")
+      list << change("tables", nil, "Kept as the party found it: its people keep their names when the world's tables change")
+    end
     overrides.fetch("added_rooms", []).each do |room|
       list << change("room", room["key"], "Added room #{room['name']}")
     end
@@ -103,6 +106,7 @@ module Location::Tailoring
     when "stock" then set_stock!(nil)
     when "boss" then place_boss!({})
     when "room" then remove_room!(key)
+    when "tables" then update!(overrides: overrides.except("tables", "families")) # rolled from the world's tables as they are now
     else raise Refusal, "Unknown change #{kind}"
     end
   end

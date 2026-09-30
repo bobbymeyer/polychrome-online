@@ -20,7 +20,7 @@ RSpec.describe "Battle resolver properties" do
                                   turn_start turn_end flee victory defeat gm_override buff_applied
                                   buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll
                                   jump land away back covered counter second_wind mp_restored
-                                  shielded confused mp_lost hp_paid charging summoned])
+                                  shielded confused mp_lost hp_paid charging summoned one_more])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end
@@ -185,15 +185,34 @@ RSpec.describe "Battle resolver properties" do
     end
   end
 
-  it "gives each unit at most one turn per round, and a hasted one at most one quick go besides" do
+  it "gives each unit at most one turn per round, a hasted one at most one quick go besides, and One More at most one more" do
     each_step do |_, before, _, _, events|
       events.slice_before { |e| e["type"] == "round_start" }.each do |round|
-        turns, quick = of_type(round, :turn_start).partition { |e| !e["quick"] }.map { |list| list.map { |e| e["unit"] } }
+        turns, quick = of_type(round, :turn_start).partition { |e| !e["quick"] }
+        turns = turns.map { |e| e["unit"] }
+        again, hasty = quick.partition { |e| e["reason"] == "one_more" }.map { |list| list.map { |e| e["unit"] } }
         expect(turns).to eq(turns.uniq)
-        expect(quick).to eq(quick.uniq)
+        expect(hasty).to eq(hasty.uniq)
+        expect(again).to eq(again.uniq)
         hasted = before["units"].select { |u| u["statuses"].any? { |s| s["kind"] == "haste" } }.map { |u| u["id"] }
-        expect(quick - hasted).to be_empty
+        expect(hasty - hasted).to be_empty
+        expect(again - of_type(round, :one_more).map { |e| e["actor"] }).to be_empty
+        expect(of_type(round, :one_more)).to all(satisfy { |e| before.dig("rules", "one_more") })
       end
+    end
+  end
+
+  it "knocks down only on a weakness or a critical hit, once, and never gives One More for someone already down" do
+    each_step do |_, _, _, _, events|
+      events.each_with_index do |event, i|
+        next unless event["type"] == "status_applied" && event["status"] == "down"
+
+        # Any blow on it in the go that knocked it down: a multi-hit move needs only one to find the weakness.
+        go = events[0...i].rindex { |e| e["type"] == "turn_start" }
+        hits = events[go...i].select { |e| e["type"] == "damage" && e["target"] == event["target"] }
+        expect(hits).to include(satisfy { |e| e["crit"] || e["effectiveness"].to_i > 100 })
+      end
+      of_type(events, :one_more).each { |e| expect(e["downed"]).not_to be_empty }
     end
   end
 

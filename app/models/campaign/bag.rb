@@ -52,7 +52,7 @@ module Campaign::Bag
       take_item!(item)
       target.update!(hp: hp)
       on = target == user ? "" : " on #{target.name}"
-      narrate("#{user.name} uses #{item.name}#{on}: HP #{before} → #{hp}.")
+      narrate("#{user.name} uses #{item.name}#{on}: #{world.word('hp')} #{before} → #{hp}.")
     end
   rescue Battle::InvalidAction => e
     raise Refusal, e.message

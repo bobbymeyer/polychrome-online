@@ -31,7 +31,7 @@ module Seeds
       MONSTERS.each { |slug, attrs| upsert(world.monsters, slug, attrs) }
       summons.each { |slug, attrs| upsert(world.abilities, slug, attrs) }
       ENCOUNTER_TABLES.each { |slug, attrs| upsert(world.encounter_tables, slug, attrs) }
-      GENERATOR_TABLES.each { |slug, attrs| upsert(world.generator_tables, slug, attrs) }
+      GENERATOR_TABLES.merge(LORE_TABLES).each { |slug, attrs| upsert(world.generator_tables, slug, attrs) }
       LOCATION_TEMPLATES.each do |slug, attrs|
         table = attrs[:encounter_table] && world.encounter_tables.find_by!(slug: attrs[:encounter_table])
         upsert(world.location_templates, slug, attrs.except(:encounter_table).merge(encounter_table: table))

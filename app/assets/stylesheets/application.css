@@ -819,6 +819,16 @@ details[open] summary { margin-bottom: 16px; }
 .table-time__deadlines { list-style: none; margin: 8px 0 0; padding: 0; }
 .table-time__deadlines li { font-size: 14px; }
 .table-time__deadlines strong { color: var(--signal); margin-right: 6px; }
+.table-time__deadlines li.is-tomorrow {
+  margin-top: 4px; padding: 4px 12px; background: var(--bright-red); color: #fff; font-weight: 900;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.table-time__deadlines li.is-tomorrow strong { color: var(--sun-yellow); text-transform: uppercase; letter-spacing: .08em; }
+/* On a phone the last day stays in view: pinned along the bottom, over the page. */
+@media (max-width: 640px) {
+  .table-time__deadlines li.is-tomorrow { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; margin: 0; padding: 10px 16px; text-align: left; box-shadow: 0 -4px 0 var(--ink); }
+  body:has(.is-tomorrow) { padding-bottom: 48px; }
+}
 .battle__header .table-time { margin: 0; text-align: right; }
 @media (max-width: 640px) { .battle__header .table-time { text-align: left; } }
 
@@ -875,6 +885,7 @@ details[open] summary { margin-bottom: 16px; }
   .shop-form input[type=number] { width: 64px; }
 }
 .table-ways h2 { margin-top: 0; }
+.table-ways__group { margin: 12px 0 6px; font-size: 14px; font-style: italic; font-weight: 900; }
 .table-ways .encounter-call { margin-bottom: 16px; }
 
 /* A long form's one button stays in reach at the bottom of the screen. */

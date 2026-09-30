@@ -44,7 +44,7 @@ class Chronicle
 
   def generated
     @generated ||= Generators::History.generate(seed: seed, places: places, years: years, families: kept,
-                                                given_names: table_texts("names"), family_names: table_texts("families"))
+                                                given_names: table_texts("names"), family_names: table_texts("families"), lore: world.lore)
   end
 
   def places

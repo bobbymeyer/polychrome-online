@@ -27,7 +27,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     expect(tule_town.reload.reputation).to eq(0)
 
     campaign.update!(time_of_day: "night")
-    campaign.rest!
+    rest_the_night(campaign)
     expect(tule_town.reload).to have_attributes(reputation: 2, standing: "Welcome")
     expect(campaign.messages.where("body LIKE ?", "In Varn, people are saying%")).to be_empty # they were there
     campaign.travel!(road)
@@ -74,14 +74,15 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     secret = campaign.secrets.create!(body: "The miller pays the goblins.", location: varn_town)
     allow(Pointcrawl::Overnight).to receive(:run) { |state, rng| @seen = state; [ rng, [ { "kind" => "leak", "secret" => secret.id, "at" => varn.id } ] ] }
     campaign.update!(time_of_day: "night")
-    campaign.rest!
+    rest_the_night(campaign)
     expect(@seen["secrets"]).to eq([ { "id" => secret.id, "at" => varn.id } ])
     expect(secret.reload.rumour).to have_attributes(body: "The miller pays the goblins.", reached: [ varn.id ])
     expect(campaign.messages.where(body: "In Varn, someone whispers: “The miller pays the goblins.”")).to exist
-    expect(secret).not_to be_revealed
+    expect(secret.reload).to have_attributes(revealed?: true, revealed_by: "Heard in Varn") # heard is known
 
     get campaign_prep_path(campaign)
-    expect(response.body).to include("got out: it's going round as a rumour, and the party has heard it")
+    expect(response.body).to include("The miller pays the goblins.", "Heard in Varn")
+    expect(response.body).not_to include("Reveal</button>")
   end
 
   it "tells the legends: the history the party can know, and their story since; the GM sees the rest" do

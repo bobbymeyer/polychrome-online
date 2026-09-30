@@ -22,26 +22,27 @@ module Generators
     end
 
     # A place's own small history, when the world's hasn't given it one.
-    def past_for(seed:, name:, kind:, given_names: [], family_names: [])
+    # lore: the world's (Lore), for this and everything below.
+    def past_for(seed:, name:, kind:, given_names: [], family_names: [], lore: Lore.empty)
       history = History.generate(seed: derive(seed), places: [ { "key" => "here", "name" => name, "kind" => kind } ],
-                                 given_names: given_names, family_names: family_names, years: 80)
+                                 given_names: given_names, family_names: family_names, years: 80, lore: lore)
       history["places"]["here"]
     end
 
-    def apply(location, past, seed:)
+    def apply(location, past, seed:, lore: Lore.empty)
       return location unless past.is_a?(Hash) && !past.empty?
 
       location = Overrides.deep_dup(location)
       location["past"] = past
-      dungeon(location, past, Pool.new(Battle::Rng.new(derive(seed, 1)))) if location["kind"] == "dungeon"
+      dungeon(location, past, Pool.new(Battle::Rng.new(derive(seed, 1))), lore) if location["kind"] == "dungeon"
       location
     end
 
-    def dungeon(location, past, pool)
+    def dungeon(location, past, pool, lore)
       rooms = location["rooms"]
       boss = rooms.find { |room| room["key"] == location["boss"] }
-      was = History::PASTS[past["was"]]
-      fall = History::FALLS[past.dig("fall", "kind")]
+      was = lore.fetch("pasts", {})[past["was"]]
+      fall = lore.fetch("falls", {})[past.dig("fall", "kind")]
       if was
         names = was["rooms"].dup
         others = rooms.reject { |room| room["key"] == location["entrance"] || room.equal?(boss) }
@@ -50,12 +51,12 @@ module Generators
 
           chosen["room"]["name"] = names.delete_at(pool.int(names.size))
         end
-        boss["name"] = was["heart"] if boss
+        boss["name"] = was["heart"] if boss && was["heart"]
       end
       lost = Array(past["lost"])
-      boss["decision"]["who"] = "#{lost.last}, #{fall['dead']}" if boss && fall && lost.any?
+      boss["decision"]["who"] = "#{lost.last}, #{fall['dead']}" if boss && fall && fall["dead"] && lost.any?
       events = rooms.select { |room| room.dig("decision", "kind") == "event" }
-      events[pool.int(events.size)]["decision"]["text"] = fall["trace"] if fall && events.any?
+      events[pool.int(events.size)]["decision"]["text"] = fall["trace"] if fall && fall["trace"] && events.any?
       heirlooms(past, was, pool).zip(rooms.select { |room| room.dig("decision", "kind") == "treasure" }).each do |heirloom, room|
         room["decision"]["heirloom"] = heirloom if room
       end
@@ -64,7 +65,7 @@ module Generators
     # What the family lost there; failing that, something the place kept.
     def heirlooms(past, was, pool)
       lost = Array(past["heirlooms"]).map { |h| h.slice("name", "maker", "trade", "made_for", "ago") }
-      return lost if lost.any? || !was || !past["family"]
+      return lost if lost.any? || !was || !past["family"] || was["keeps"].empty?
 
       keeps = was["keeps"]
       [ { "name" => "the #{past['family']} #{keeps[pool.int(keeps.size)]}", "made_for" => past["founder"] }.compact ]
@@ -72,23 +73,20 @@ module Generators
 
     # Who made the shop's made things, and who had them before. One stream
     # per item, so changing the stock doesn't change the rest's stories.
-    def stock(slugs, past, seed:)
+    def stock(slugs, past, seed:, lore: Lore.empty)
       return {} unless past.is_a?(Hash)
 
-      makers = Array(past["makers"])
-      smiths = makers.select { |m| m["trade"] == "smith" }
-      smiths = makers if smiths.empty?
+      # Whoever in the town makes things makes the shop's (Lore trades).
+      smiths = Array(past["makers"])
+      owners = lore.fetch("owners", [])
       families = [ past["family"], past["rival"], past.dig("feud", "with"), past["holder"] ].compact.uniq
       slugs.to_h do |slug|
         pool = Pool.new(Battle::Rng.new(derive(seed, slug.to_s.bytes.each_with_index.sum { |b, i| b * (i + 7) })))
         maker = smiths[pool.int(smiths.size)] if smiths.any? && pool.percent?(70)
         family = families[pool.int(families.size)] if families.any? && pool.percent?(60)
-        owner = family && OWNERS[pool.int(OWNERS.size)].sub("%s", family)
+        owner = (owners[pool.int(owners.size)].sub("%s", family) if family && owners.any?)
         [ slug, { "maker" => (maker && "#{maker['name']}, #{maker['trade']}"), "owner" => owner }.compact ]
       end.reject { |_, story| story.empty? }
     end
-
-    OWNERS = [ "Pawned by a %s, who never came back for it", "Sold off by the %s family in a lean year", "Taken from a %s in a card game",
-               "Made for a %s wedding that never happened", "A %s's, until the feud" ].freeze
   end
 end
