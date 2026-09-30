@@ -42,6 +42,7 @@ class Message < ApplicationRecord
 
   scope :chronological, -> { order(:created_at, :id) }
 
+  before_create :mark_story_time
   after_create_commit :broadcast
   after_create_commit :broadcast_choice, if: :choice?
   after_destroy_commit { streams.each { |stream| broadcast_remove_to(*stream) } }
@@ -156,7 +157,18 @@ class Message < ApplicationRecord
     lines.chronological
   end
 
+  # "Dusk", or, for a line said before the story kept time, nothing.
+  def story_time
+    time_of_day&.capitalize
+  end
+
   private
+
+  # When in the story it was said, from the campaign's clock.
+  def mark_story_time
+    self.day ||= campaign&.day
+    self.time_of_day ||= campaign&.time_of_day
+  end
 
   def broadcast
     streams.each do |stream|

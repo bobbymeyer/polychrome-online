@@ -23,6 +23,7 @@
         <button type="button" class="link-button recap-link" data-action="recap#open">Previously on <%= @campaign.name %>…</button>
       <% end %>
     </div>
+    <%= render "campaigns/tables/time", campaign: @campaign %>
     <%= render "campaigns/tables/current_battle", campaign: @campaign %>
   </header>
 
@@ -62,7 +63,6 @@
     </section>
     <%= render "campaigns/tables/party", campaign: @campaign %>
     <% end %>
-    <%= render "campaigns/tables/time", campaign: @campaign %>
     <%= render "campaigns/tables/party_knows", campaign: @campaign %>
     </div>
   </div>

@@ -96,6 +96,11 @@
                      include_blank: "Empty books" %>
       <p class="hint">Copying gives you working monsters, jobs, abilities, items, tables and templates to edit and cut down. Your copies are your own: changing them never touches the original.</p>
     </div>
+    <div class="field field--check">
+      <%= check_box_tag :rules_only, "1", params[:rules_only] == "1" %>
+      <%= label_tag :rules_only, "Rules only" %>
+    </div>
+    <p class="hint">Rules only keeps the books and leaves the setting: no places, people, codex or fronts, and none of its voice, words, calendar, history or music. For a world of your own on the same rules.</p>
   <% end %>
   <div class="actions">
     <%= f.submit class: "button" %>

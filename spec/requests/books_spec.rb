@@ -41,6 +41,18 @@ RSpec.describe "Books", type: :request do
       expect(base.monsters.find_by!(slug: "goblin").name).to eq("Goblin")
     end
 
+    it "copies only the rules when asked: the books without the setting" do
+      base = base_world
+      post worlds_path, params: { world: { name: "Velvet", slug: "velvet" }, copy_from: "base", rules_only: "1" }
+      velvet = World.find_by!(slug: "velvet")
+      expect(flash[:notice]).to end_with("rules.")
+      World::BOOKS.each { |book| expect(velvet.public_send(book).count).to eq(base.public_send(book).count), book.to_s }
+      expect(velvet.skills).to eq(base.skills)
+      expect([ velvet.world_places, velvet.world_figures, velvet.codex_entries, velvet.world_fronts ].map(&:count)).to eq([ 0, 0, 0, 0 ])
+      expect([ velvet.voice, velvet.terms, velvet.calendar, velvet.history ]).to all(be_blank)
+      expect(velvet.date(12)).to eq("Day 12")
+    end
+
     it "re-renders the form with errors" do
       post worlds_path, params: { world: { name: "", slug: "Bad Slug" } }
       expect(response).to have_http_status(:unprocessable_content)

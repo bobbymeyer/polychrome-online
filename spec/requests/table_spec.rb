@@ -118,6 +118,33 @@ RSpec.describe "The table", type: :request do
     expect(box).not_to include("Player chatter.")
   end
 
+  it "gives the narrator the whole box, and a speaker's name tag their colour" do
+    campaign.messages.create!(body: "Rain on the roofs.")
+    get campaign_table_path(campaign)
+    box = response.body[/<section class="dialogue window.*?<\/section>/m]
+    expect(box).to include("is-narration", "Rain on the roofs.")
+    expect(box).not_to include("speaker-portrait")
+
+    campaign.messages.create!(body: "Hm.", speaker: cid)
+    get campaign_table_path(campaign)
+    box = response.body[/<section class="dialogue window.*?<\/section>/m]
+    expect(box).not_to include("is-narration")
+    expect(box).to include("speaker-portrait", 'class="dialogue__name" data-dialogue-target="name" style="--plate: ')
+  end
+
+  it "puts the date up top, with the days left on the clocks a new day ticks, and story time in the log" do
+    campaign.update!(day: 3, time_of_day: "dusk")
+    campaign.clocks.create!(name: "The spring tide comes in", segments: 6, filled: 1, triggers: %w[dawn], public: true)
+    campaign.clocks.create!(name: "The count schemes", segments: 4, triggers: %w[dawn], public: false)
+    campaign.clocks.create!(name: "The guard grows wary", segments: 4, triggers: %w[rest dawn], public: true)
+    campaign.messages.create!(body: "Lanterns.", speaker: cid)
+    get campaign_table_path(campaign)
+    header = response.body[/<header class="battle__header">.*?<\/header>/m]
+    expect(header).to include("Day 3", "time--dusk", "5 days</strong> The spring tide comes in")
+    expect(header).not_to include("The count schemes", "The guard grows wary")
+    expect(response.body).to match(%r{<time class="muted" datetime="[^"]+" title="Day 3 · [^"]+">Dusk</time>})
+  end
+
   describe "battles" do
     it "announce their start and their outcome at the table, with a link" do
       battle = start_battle(campaign: campaign)

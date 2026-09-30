@@ -2,6 +2,8 @@
 
 # Starting a new world from another one's: its books, then its canon
 # (atlas, cast, codex, fronts), each pointing at the new world's copies.
+# Rules only takes the books and leaves the setting behind: no canon, and
+# none of its voice, words, calendar, origins, history or art direction.
 module World::Copying
   extend ActiveSupport::Concern
 
@@ -13,8 +15,8 @@ module World::Copying
   # setting instead of an empty one. Books refer to each other by slug, so
   # copies keep pointing at copies; the few id references are remapped.
   # Copied in dependency order, so each entry validates against the ones
-  # it names.
-  def copy_books_from!(source)
+  # it names. rules_only: the books without the setting (see above).
+  def copy_books_from!(source, rules_only: false)
     transaction do
       # The setting's types and skills first: the books are checked against them.
       update!(damage_types: source.damage_types, terrain_types: source.terrain_types, skills: source.skills)
@@ -46,6 +48,8 @@ module World::Copying
         end
       end
       source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
+      return if rules_only
+
       %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar origins history].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
       copy_canon_from!(source)

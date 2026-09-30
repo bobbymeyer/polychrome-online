@@ -7,7 +7,7 @@ import { play } from "sound"
 // its jingle. Lines rendered with the page just sit in the log.
 export default class extends Controller {
   static targets = ["body", "retract"]
-  static values = { id: Number, live: Boolean, dialogue: Boolean, speaker: String, speakerKey: String, expression: String, portrait: String, cue: String }
+  static values = { id: Number, live: Boolean, dialogue: Boolean, speaker: String, speakerKey: String, expression: String, portrait: String, cue: String, plate: String }
 
   // Moving the element (placeInOrder) makes Stimulus reconnect it, so a
   // line announces itself only the first time.

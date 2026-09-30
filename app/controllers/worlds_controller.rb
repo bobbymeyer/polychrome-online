@@ -30,11 +30,12 @@ class WorldsController < ApplicationController
     @world = World.new(params.expect(world: %i[name slug description]).merge(owner: current_user))
     source = World.find_by(slug: params[:copy_from]) if params[:copy_from].present?
     if @world.save
+      rules_only = params[:rules_only] == "1"
       if source
-        @world.copy_books_from!(source)
-        @world.copy_music_from!(source)
+        @world.copy_books_from!(source, rules_only: rules_only)
+        @world.copy_music_from!(source) unless rules_only
       end
-      redirect_to @world, notice: source ? "#{@world.name} was created from #{source.name}'s books." : "#{@world.name} was created."
+      redirect_to @world, notice: source ? "#{@world.name} was created from #{source.name}'s #{rules_only ? 'rules' : 'books'}." : "#{@world.name} was created."
     else
       render :new, status: :unprocessable_content
     end

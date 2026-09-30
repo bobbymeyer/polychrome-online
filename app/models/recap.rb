@@ -94,6 +94,13 @@ class Recap
     window.end
   end
 
+  # Where the story had got to when it ended: "Moonsday, 12 Rainfall", or nil
+  # for a session from before the log kept story time.
+  def ended_on
+    day = lines.reverse.find(&:day)&.day
+    campaign.world.date(day) if day
+  end
+
   def empty?
     places.empty? && battle_lines.empty? && found.empty? && learned.empty? && last_line.nil?
   end

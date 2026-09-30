@@ -1,2 +1,15 @@
-<%# The day and the part of it (Timekeeping). Replaced live as time passes. %>
-<p id="table_time" class="table-time time--<%= campaign.time_of_day %>"><span class="label">Now</span> <%= campaign.when_it_is %></p>
+<%# The day and the part of it (Timekeeping), and the days left on the public clocks that
+    only a new day ticks: the date is what the party lives by. Replaced live as time passes. %>
+<% deadlines = campaign.clocks.running.shown_to_players.select { |clock| clock.triggers == [ "dawn" ] }
+                       .map { |clock| [ clock.segments - clock.filled, clock ] }.sort_by(&:first).first(3) %>
+<section id="table_time" class="table-time time--<%= campaign.time_of_day %>" aria-label="The date">
+  <p class="table-time__date"><%= campaign.world.date(campaign.day) %></p>
+  <p class="table-time__part"><%= campaign.time_of_day %></p>
+  <% if deadlines.any? %>
+    <ul class="table-time__deadlines">
+      <% deadlines.each do |days, clock| %>
+        <li><strong><%= days == 1 ? "Tomorrow" : "#{days} days" %></strong> <%= clock.name %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

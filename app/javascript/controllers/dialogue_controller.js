@@ -137,6 +137,8 @@ export default class extends Controller {
     this.boxTarget.hidden = false
     this.moreTarget.hidden = true
     this.nameTarget.textContent = line.speakerValue
+    // The name tag wears the speaker's colour, as their plate does.
+    this.nameTarget.style.cssText = this.plateOf(line)
     this.showPortrait(line)
     this.liveTarget.textContent = `${line.speakerValue}: ${line.text}`
     this.type(line.text, () => this.finished(line))
@@ -167,9 +169,17 @@ export default class extends Controller {
     this.holdTimer = setTimeout(() => this.next(), HOLD_MS + this.current.text.length * HOLD_PER_CHAR_MS)
   }
 
+  plateOf(line) {
+    return line.plate || (line.hasPlateValue && line.plateValue) || ""
+  }
+
   showPortrait(line) {
     const speakerChanged = line.speakerKeyValue !== this.speakerKey
     this.speakerKey = line.speakerKeyValue
+    // Narration is a voice, not a face: no portrait, the words take the room.
+    const narration = line.speakerKeyValue === "narrator"
+    this.boxTarget.classList.toggle("is-narration", narration)
+    if (narration) return this.portraitTarget.replaceChildren()
 
     let portrait
     if (line.portraitValue) {
@@ -179,9 +189,9 @@ export default class extends Controller {
       portrait.className = "speaker-portrait speaker-portrait--large"
     } else {
       portrait = document.createElement("span")
-      portrait.className = `speaker-portrait speaker-portrait--large speaker-portrait--plate${line.speakerKeyValue === "narrator" ? " speaker-portrait--narrator" : ""}`
+      portrait.className = "speaker-portrait speaker-portrait--large speaker-portrait--plate"
       portrait.textContent = line.speakerValue.charAt(0)
-      if (line.plate) portrait.style.cssText = line.plate
+      portrait.style.cssText = this.plateOf(line)
     }
     this.portraitTarget.replaceChildren(portrait)
 
