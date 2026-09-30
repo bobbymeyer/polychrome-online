@@ -218,11 +218,9 @@ module Location::Exploration
     # the table fights: the strongest of them takes that name.
     who = decision["who"].to_s.split(",").first.presence
     leader = who && campaign.world.monsters.where(slug: decision["monsters"].keys).order(level: :desc).first
-    campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => boss,
-                                          "terrain" => location_template.encounter_table&.terrain_type,
-                                          "names" => ({ leader.slug => who } if leader),
-                                          "location" => id, "room" => target["key"],
-                                          "prelude" => (boss_prelude(target, who) if boss) }.compact)
+    campaign.waylay!(label, decision["monsters"], boss: boss, terrain: location_template.encounter_table&.terrain_type,
+                                                  names: ({ leader.slug => who } if leader), location: id, room: target["key"],
+                                                  prelude: (boss_prelude(target, who) if boss))
     campaign.narrate("#{boss ? 'Boss' : 'Encounter'}! #{"#{who}: " if leader}#{campaign.describe_encounter(decision['monsters'])}.")
     resolve!(target["key"])
   end
@@ -238,10 +236,9 @@ module Location::Exploration
       monsters[leader.slug] -= 1
       monsters.delete(leader.slug) unless monsters[leader.slug].positive?
     end
-    campaign.update!(pending_encounter: { "table" => "#{villain.name}, in #{name}", "monsters" => monsters, "boss" => true,
-                                          "terrain" => location_template.encounter_table&.terrain_type,
-                                          "antagonists" => [ villain.id ], "location" => id, "room" => target["key"],
-                                          "prelude" => villain_prelude(target, villain) })
+    campaign.waylay!("#{villain.name}, in #{name}", monsters, boss: true, terrain: location_template.encounter_table&.terrain_type,
+                                                               antagonists: [ villain.id ], location: id, room: target["key"],
+                                                               prelude: villain_prelude(target, villain))
     with = monsters.any? ? ", with #{campaign.describe_encounter(monsters)}" : ""
     campaign.narrate("Boss! #{villain.name}#{", #{villain.title}" if villain.title.present?}#{with}.")
     resolve!(target["key"])

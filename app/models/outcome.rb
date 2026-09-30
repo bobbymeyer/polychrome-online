@@ -235,7 +235,7 @@ class Outcome
 
   # A fight, now: the stage takes everyone there.
   def battle!(campaign, **)
-    campaign.update!(pending_encounter: { "table" => target["name"], "monsters" => target["monsters"], "boss" => false })
+    campaign.waylay!(target["name"], target["monsters"])
     campaign.start_pending_encounter!
     nil
   end
