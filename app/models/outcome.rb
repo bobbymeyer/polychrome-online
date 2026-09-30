@@ -101,7 +101,7 @@ class Outcome
   # source: what did it, for a secret it brings out ("Rook's Ask Around").
   # Returns the line the table hears, or nil if something else already said it.
   def apply!(campaign, by:, who: nil, line: nil, source: nil)
-    who ||= campaign.characters.order(:created_at).select(&:conscious?)
+    who ||= campaign.conscious_characters
     send(:"#{kind}!", campaign, by: by, who: who, line: line, source: source)
   end
 

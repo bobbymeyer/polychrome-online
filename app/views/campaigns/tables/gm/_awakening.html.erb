@@ -1,0 +1,14 @@
+<% if campaign.characters.any? %>
+  <details class="window table-scenes">
+    <summary>Awaken someone</summary>
+    <%= form_with url: campaign_awakenings_path(campaign), class: "book-form" do |f| %>
+      <div class="field-row">
+        <div class="field"><%= label_tag :character_id, "Who" %><%= select_tag :character_id, options_from_collection_for_select(campaign.characters.order(:created_at), :id, :name) %></div>
+        <div class="field"><%= label_tag :job, "To" %><%= select_tag :job, options_for_select(campaign.world.jobs.order(:name).map { |j| [ j.name, j.slug ] }) %></div>
+      </div>
+      <div class="field"><%= label_tag :awakening_line, "What they hear" %><%= text_field_tag :line, nil, id: "awakening_line", placeholder: "I am thou, thou art I." %></div>
+      <p class="hint">They take the archetype up at once (it opens for the party if it wasn't), and the table stops for it.</p>
+      <%= f.submit "Awaken", class: "button play" %>
+    <% end %>
+  </details>
+<% end %>

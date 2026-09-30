@@ -1,0 +1,12 @@
+<details class="window table-scenes">
+  <summary>Time</summary>
+  <div class="inline-form">
+    <%= button_to "A part of the day passes", campaign_time_path(campaign), method: :patch, params: { parts: 1 }, class: "button button--quiet" %>
+    <%= button_to "Until #{campaign.almanac.periods.first}", campaign_time_path(campaign), method: :patch, params: { until: "the_day" }, class: "button button--quiet" %>
+    <%= form_with url: campaign_time_path(campaign), method: :patch, class: "inline-form" do |f| %>
+      <%= number_field_tag :parts, 4, min: 1, max: 28, "aria-label": "Parts of the day" %>
+      <%= f.submit "Pass", class: "button button--quiet" %>
+    <% end %>
+  </div>
+  <p class="hint">A day here has <%= pluralize(campaign.almanac.periods.size, "part") %>: <%= campaign.almanac.periods.to_sentence %>. Journeys take their road's time; a rest sleeps until <%= campaign.almanac.periods.first %>. Each new day ticks the clocks that tick on a new day.</p>
+</details>

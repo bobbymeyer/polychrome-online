@@ -1,0 +1,7 @@
+<%# Everyone is down: what now is the table's (Campaign::Defeat), settled in the choice panel. %>
+<% if campaign.wiped_out? && !campaign.battle_on? && !campaign.open_choice&.what_now? %>
+<section class="window recovery" aria-label="Everyone is KO'd">
+  <h2>Everyone is KO'd. What happens now?</h2>
+  <%= button_to "Put it to the table", campaign_recovery_path(campaign), class: "button play" %>
+</section>
+<% end %>

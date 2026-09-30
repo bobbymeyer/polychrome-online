@@ -23,7 +23,7 @@ module Campaign::Ways
       inside = current_node.location
       way_in = inside&.dungeon? ? [ { "label" => "Into #{inside.name}", "move" => { "location" => inside.id, "enter" => true } } ] : []
       # The place's own things to do first, then the ways out, then its inn,
-      # temple and guild, or camp (Campaign::Services).
+      # temple and guild, or camp (Location::Town#services_for, Campaign::Services).
       own, services = pastimes_here.partition { |way| way["service"].nil? }
       roads = current_node.edges.includes(:from_node, :to_node).reject(&:blocked?).map do |edge|
         { "label" => way_along(edge), "move" => { "edge" => edge.id } }

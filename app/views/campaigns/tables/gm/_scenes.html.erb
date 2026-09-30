@@ -1,0 +1,5 @@
+<details class="window table-scenes" <%= "open" if campaign.scenes.where(played_at: nil).exists? %>>
+  <summary>Scenes</summary>
+  <%= render "scenes/list", campaign: campaign, play: true %>
+  <%= link_to "New scene", new_campaign_scene_path(campaign), class: "button button--quiet" %>
+</details>

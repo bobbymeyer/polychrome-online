@@ -1,4 +1,4 @@
-<%# The inn, the temple and the guild are things to do here (Campaign::Services): the party picks one
+<%# The inn, the temple and the guild are things to do here (Location::Town#services_for): the party picks one
     from Where next? like anything else, or from here. The purse pays; the outcome happens (Outcome). %>
 <% here = @campaign.current_node&.location_id == location.id %>
 <% pastime = here && @campaign.current_node.pastimes.find { |p| p.service == service["kind"] } %>

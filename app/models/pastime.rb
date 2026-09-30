@@ -23,7 +23,7 @@
 # picks one like a way on (Campaign::Ways): a vote, settled by the GM.
 #
 # A town's inn, temple and guild are things to do as well, made from the
-# town (Campaign::Services), and so is making camp on the road.
+# town (Location::Town#services_for), and so is making camp on the road.
 Pastime = Data.define(:name, :times, :takes, :line, :price, :outcomes, :service)
 
 class Pastime

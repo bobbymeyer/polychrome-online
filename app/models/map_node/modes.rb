@@ -34,6 +34,10 @@ module MapNode::Modes
   # The mode that shuts a service (or its things to do: "pastimes"), or nil.
   def shut_by(kind) = modes_on.find { |mode| mode.shuts?(kind) }
 
+  # What a mode could shut here: a town's services (the usual things to do
+  # can be shut anywhere).
+  def shuttable = location&.town? ? location.view.fetch("services", []).map { |service| service["kind"] }.uniq : []
+
   # The mode with trouble waiting in it, or nil.
   def troubled_by(**at) = modes_on(**at).find(&:encounter_table)
 

@@ -15,6 +15,9 @@ module Campaign::Services
     Pastime.new(name: "Make camp", takes: 0, outcomes: [ Outcome.of("rest", CAMP_MP) ], service: "camp")
   end
 
+  # Making camp where the party is, as a way (Campaign::Ways), if it can.
+  def camp_here = pastimes_here.find { |way| way["service"] == "camp" }
+
   # The inn where the party is, if it's in a town with one open.
   def inn_here = current_node&.location&.inn
 
