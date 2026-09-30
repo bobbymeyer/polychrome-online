@@ -39,7 +39,7 @@ module Location::Town
   # How the town sees the party, -5 to 5: the sway of every deed whose
   # story has got here (Campaign::Deeds), struck deeds not included.
   def reputation
-    @reputation ||= map_node ? campaign.rumours.about_deeds.at(map_node).sum(:sway).clamp(-5, 5) : 0
+    @reputation ||= map_node ? campaign.deeds.at(map_node).sum(:sway).clamp(-5, 5) : 0
   end
 
   def reload(*)
@@ -54,7 +54,7 @@ module Location::Town
       return nodes if nodes.empty?
 
       sways = RumourPlace.where(map_node_id: nodes.map(&:id)).joins(:rumour)
-                         .merge(Rumour.about_deeds.where(campaign_id: nodes.first.campaign_id))
+                         .merge(Rumour.deeds.where(campaign_id: nodes.first.campaign_id))
                          .group(:map_node_id).sum("rumours.sway")
       nodes.each { |node| node.location.instance_variable_set(:@reputation, sways.fetch(node.id, 0).clamp(-5, 5)) }
     end

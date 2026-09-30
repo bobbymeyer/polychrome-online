@@ -132,7 +132,8 @@ module Location::Exploration
     end
   end
 
-  # Hand a room's treasure to the party (once).
+  # Hand a room's treasure to the party (once): money, or the item, found
+  # (Outcome), in the place's own words.
   def take_treasure!(key)
     target = room(key)
     raise Refusal, "No treasure there" unless target && target["decision"]["kind"] == "treasure" && !resolved?(key)
@@ -140,14 +141,13 @@ module Location::Exploration
     decision = target["decision"]
     item = campaign.world.items.find_by(slug: decision["item"]) if decision["item"]
     line = "Found #{describe_treasure(decision)} in #{target['name']}.#{" #{who_can_use(item)}" if item&.equipment?}"
-    transaction do
-      campaign.add_item!(item) if item
-      campaign.increment!(:gil, decision["gil"].to_i) if decision["gil"]
+    found = decision["gil"] ? Outcome.of("money", decision["gil"].to_i) : Outcome.of("find", target: { "item" => decision["item"] })
+    said = transaction do
       resolve!(key)
-      campaign.narrate(line, cue: "treasure")
+      campaign.narrate(found.apply!(campaign, by: "The party", line: line), cue: "treasure").body
     end
     campaign.table_changed # the table's "Take it" goes
-    line
+    said
   end
 
   # Gear found says who it's for: a sword nobody can swing is still worth
@@ -218,11 +218,9 @@ module Location::Exploration
     # the table fights: the strongest of them takes that name.
     who = decision["who"].to_s.split(",").first.presence
     leader = who && campaign.world.monsters.where(slug: decision["monsters"].keys).order(level: :desc).first
-    campaign.update!(pending_encounter: { "table" => label, "monsters" => decision["monsters"], "boss" => boss,
-                                          "terrain" => location_template.encounter_table&.terrain_type,
-                                          "names" => ({ leader.slug => who } if leader),
-                                          "location" => id, "room" => target["key"],
-                                          "prelude" => (boss_prelude(target, who) if boss) }.compact)
+    campaign.waylay!(label, decision["monsters"], boss: boss, terrain: location_template.encounter_table&.terrain_type,
+                                                  names: ({ leader.slug => who } if leader), location: id, room: target["key"],
+                                                  prelude: (boss_prelude(target, who) if boss))
     campaign.narrate("#{boss ? 'Boss' : 'Encounter'}! #{"#{who}: " if leader}#{campaign.describe_encounter(decision['monsters'])}.")
     resolve!(target["key"])
   end
@@ -238,10 +236,9 @@ module Location::Exploration
       monsters[leader.slug] -= 1
       monsters.delete(leader.slug) unless monsters[leader.slug].positive?
     end
-    campaign.update!(pending_encounter: { "table" => "#{villain.name}, in #{name}", "monsters" => monsters, "boss" => true,
-                                          "terrain" => location_template.encounter_table&.terrain_type,
-                                          "antagonists" => [ villain.id ], "location" => id, "room" => target["key"],
-                                          "prelude" => villain_prelude(target, villain) })
+    campaign.waylay!("#{villain.name}, in #{name}", monsters, boss: true, terrain: location_template.encounter_table&.terrain_type,
+                                                               antagonists: [ villain.id ], location: id, room: target["key"],
+                                                               prelude: villain_prelude(target, villain))
     with = monsters.any? ? ", with #{campaign.describe_encounter(monsters)}" : ""
     campaign.narrate("Boss! #{villain.name}#{", #{villain.title}" if villain.title.present?}#{with}.")
     resolve!(target["key"])

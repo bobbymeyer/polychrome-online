@@ -29,13 +29,13 @@ module Campaign::Travelling
       hear_rumours!(origin) # what people were saying there, heard on the way out
       origin.location&.leave!
       self.current_node = destination
-      self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled, "terrain" => edge.encounter_table.terrain_type }
+      self.pending_encounter = rolled && fight(edge.encounter_table.name, rolled, terrain: edge.encounter_table.terrain_type)
       # A place in a mode (as it will be when the party gets there) can have trouble waiting.
       arrival_period, days_on = almanac.later(period, edge.duration.to_i)
       if !rolled && (troubled = destination.troubled_by(day: day + days_on, period: arrival_period))
         trouble = troubled.encounter_table
         rolled = roll_with { |state| Pointcrawl::Encounters.roll(state, trouble.entries, "dangerous") }
-        self.pending_encounter = rolled && { "table" => "#{destination.name}: #{troubled.name}", "monsters" => rolled, "terrain" => trouble.terrain_type }
+        self.pending_encounter = rolled && fight("#{destination.name}: #{troubled.name}", rolled, terrain: trouble.terrain_type)
       end
       save!
 
@@ -126,6 +126,15 @@ module Campaign::Travelling
     end
   end
 
+  # A fight waiting for the GM to call or wave off, however it came: on a
+  # road, as trouble at a place, in a dungeon's room, from a villain at home,
+  # or as an outcome. name: what the table sees it as; monsters: { slug =>
+  # count }; the rest as the battle takes it (#start_pending_encounter!):
+  # terrain, names, antagonists, and for a room's, location, room and prelude.
+  def waylay!(name, monsters, **details)
+    update!(pending_encounter: fight(name, monsters, **details))
+  end
+
   # The most a boss's prelude says before the fight.
   PRELUDE_LINES = 8
 
@@ -178,5 +187,12 @@ module Campaign::Travelling
   def dungeon_in_progress
     location = current_node&.location
     location if location&.dungeon? && location.progress["current"]
+  end
+
+  private
+
+  # A waiting fight, as it's kept (#waylay!).
+  def fight(name, monsters, boss: false, **details)
+    { "table" => name, "monsters" => monsters, "boss" => (true if boss) }.merge(details.transform_keys(&:to_s)).compact
   end
 end

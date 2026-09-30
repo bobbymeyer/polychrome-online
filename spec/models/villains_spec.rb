@@ -110,7 +110,7 @@ RSpec.describe "Villains and what clearing a place changes" do
       .to include(a_string_including("“You cleared The Old Barrow? Then you've friends in #{town.name}, and friends pay less.”"))
     expect(campaign.reload.welcomes).to be_empty
     # The thanks is a deed there: the town thinks better of the party, and its prices come down.
-    expect(campaign.deeds.last).to have_attributes(map_node: town, sway: 2)
+    expect(campaign.deeds.last).to have_attributes(origin: town, sway: 2)
     expect(town.location.reload.reputation).to be >= 2
     expect(town.location.reload.service_price("inn", rook)).to be < before
   end

@@ -10,11 +10,12 @@ module Campaign::Overnight
   extend ActiveSupport::Concern
 
   # People start talking about something at a place on the map. seen: the
-  # party was there and saw it happen, so there's nothing to hear. sway: a
+  # party was there and saw it happen, so there's nothing to hear. deed:
+  # what kind, for something the party did (Campaign::Deeds); sway: a
   # deed's, moving each town's view of the party as the news gets there.
   def start_rumour!(body, at:, also: [], seen: false, sway: 0, deed: nil, secret: nil, about: nil)
     rumour = rumours.create!(body: body, origin: at, heard: seen, heard_day: (day if seen), heard_at: (at if seen),
-                             sway: sway, deed: deed, secret: secret, about: about)
+                             day: day, sway: sway, deed: deed, secret: secret, about: about)
     rumour.reach!(([ at ] + also).compact, day: day)
     rumour
   end
@@ -25,7 +26,7 @@ module Campaign::Overnight
     return [] unless node
 
     # Not their own deed where they did it: they were there.
-    heard = rumours.travelling.unheard.at(node).where.not(id: rumours.about_deeds.where(origin: node).select(:id))
+    heard = rumours.travelling.unheard.at(node).where.not(id: rumours.deeds.where(origin: node).select(:id))
     # Somewhere nobody lives (a landmark, the wilds) only says what was set loose right there.
     heard = heard.where(origin: node) unless node.location
     heard.order(:id).each do |rumour|
@@ -49,7 +50,7 @@ module Campaign::Overnight
 
   # A rumour nobody at the table has heard yet (the guild sells one).
   def rumour_for_sale
-    rumours.travelling.unheard.where(deed_id: nil).order(:id).first
+    rumours.travelling.unheard.talk.order(:id).first
   end
 
   def overnight!

@@ -1,5 +1,5 @@
-<%# The GM's record of the party's deeds (Deed), and how each town sees them. %>
-<% deeds = campaign.deeds.includes(:map_node).in_order.reverse %>
+<%# The GM's record of the party's deeds (Rumour#deed), and how each town sees them. %>
+<% deeds = campaign.deeds.includes(:origin).in_order.reverse %>
 <% towns = Location.preload_reputations(campaign.map_nodes.includes(location: :location_template).select { |n| n.location&.town? }.sort_by(&:name)) %>
 <% if deeds.any? %>
   <ul class="secret-rows">
@@ -7,7 +7,7 @@
       <li>
         <div>
           <%= deed.body %>
-          <span class="muted"> · day <%= deed.day %><%= " · #{deed.map_node.name}" if deed.map_node %><%= " · #{format('%+d', deed.sway)}" if deed.sway.nonzero? %></span>
+          <span class="muted"> · day <%= deed.day %><%= " · #{deed.origin.name}" if deed.origin %><%= " · #{format('%+d', deed.sway)}" if deed.sway.nonzero? %></span>
         </div>
         <%= button_to "Strike", campaign_deed_path(campaign, deed), method: :delete, class: "link-button", form: { class: "inline", data: { turbo_confirm: "Strike this deed? Towns that heard it forget it." } } %>
       </li>
@@ -23,7 +23,7 @@
 <% end %>
 <details id="new_deed" data-turbo-permanent data-controller="fresh-form" data-action="turbo:submit-end->fresh-form#done">
   <summary>Record a deed</summary>
-  <%= form_with model: Deed.new, url: campaign_deeds_path(campaign), class: "book-form" do |f| %>
+  <%= form_with scope: :deed, url: campaign_deeds_path(campaign), class: "book-form" do |f| %>
     <div class="field"><%= f.label :body, "What they did, as people will tell it" %><%= f.text_field :body, required: true, placeholder: "Rook's party burned the Vell mill." %></div>
     <div class="field-row">
       <div class="field"><%= f.label :map_node_id, "Where" %><%= f.select :map_node_id, campaign.map_nodes.order(:name).map { |n| [ n.name, n.id ] }, selected: campaign.current_node_id %></div>

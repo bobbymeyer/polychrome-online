@@ -20,8 +20,7 @@ class Campaign < ApplicationRecord
   has_many :scenes, dependent: :destroy # at places and their modes
   has_many :clocks, dependent: :delete_all # at modes
   has_many :secrets, dependent: :delete_all # at places and NPCs
-  has_many :rumours, dependent: :destroy # at places, deeds and secrets
-  has_many :deeds, dependent: :delete_all
+  has_many :rumours, dependent: :destroy # at places and secrets
   has_many :flags, dependent: :delete_all
   has_many :inventories, dependent: :delete_all
   has_many :battles, class_name: "BattleRecord", dependent: :destroy

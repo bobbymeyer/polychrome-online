@@ -24,34 +24,28 @@ module Campaign::JobRewards
     open_jobs.nil? ? world.jobs.none : world.jobs.alphabetical.where.not(slug: open_jobs)
   end
 
-  # The GM grants jobs, with a line for the moment ("The Wind Crystal
-  # shatters"). The table sees a card for each.
-  def grant_jobs!(jobs, line = nil)
-    jobs = jobs.reject { |job| job_open?(job) }
-    raise Refusal, "Pick an archetype that isn't open yet" if jobs.empty?
-
-    transaction do
-      update!(open_jobs: (open_jobs || []) + jobs.map(&:slug))
-      body = [ line.to_s.strip.presence, "New #{'archetype'.pluralize(jobs.size)}: #{jobs.map(&:name).to_sentence}." ].compact.join(" ")
-      narrate(body, cue: "jobs",
-                    data: { "jobs" => jobs.map { |j| { "name" => j.name, "slug" => j.slug, "description" => j.description.to_s } } })
-    end
-  end
-
-  # One character's awakening: the job opens if it wasn't, they take it up
-  # at once, and the table stops for it (the awakening card: their face
-  # turns over, and the job is on the other side).
-  def awaken!(character, job, line = nil)
-    raise Refusal, "#{character.name} isn't in this party" unless character.campaign_id == id
+  # The GM grants an archetype, as a story reward, with a line for the
+  # moment ("The Wind Crystal shatters"). To the party: it opens, and the
+  # table sees a card for it. To someone: they awaken to it, taking it up at
+  # once (it opens if it wasn't), and the table stops for it (the awakening
+  # card: their face turns over, and the archetype is on the other side).
+  def grant_job!(job, to: nil, line: nil)
     raise Refusal, "#{job.name} isn't one of #{world.name}'s archetypes" unless job.world_id == world_id
-    raise Refusal, "#{character.name} is a #{job.name} already" if character.job_id == job.id
+    raise Refusal, "#{to.name} isn't in this party" if to && to.campaign_id != id
+    raise Refusal, "#{to.name} is a #{job.name} already" if to&.job_id == job.id
+    raise Refusal, "#{job.name} is open already" if !to && job_open?(job)
 
+    line = line.to_s.strip.presence
     transaction do
       update!(open_jobs: open_jobs + [ job.slug ]) unless job_open?(job)
-      character.change_job!(job)
-      line = line.to_s.strip.presence
-      narrate([ line, "#{character.name} awakens: #{job.name}." ].compact.join(" "), cue: "awakening",
-              data: { "character" => character.id, "name" => character.name, "job" => job.name, "description" => job.description.to_s, "line" => line }.compact)
+      if to
+        to.change_job!(job)
+        narrate([ line, "#{to.name} awakens: #{job.name}." ].compact.join(" "), cue: "awakening",
+                data: { "character" => to.id, "name" => to.name, "job" => job.name, "description" => job.description.to_s, "line" => line }.compact)
+      else
+        narrate([ line, "New archetype: #{job.name}." ].compact.join(" "), cue: "jobs",
+                data: { "jobs" => [ { "name" => job.name, "slug" => job.slug, "description" => job.description.to_s } ] })
+      end
     end
   end
 

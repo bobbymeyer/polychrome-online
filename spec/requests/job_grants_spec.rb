@@ -35,21 +35,21 @@ RSpec.describe "Jobs as story rewards", type: :request do
     expect { butz.change_job!(world.jobs.find_by!(slug: "monk")) }.to raise_error(ActiveRecord::RecordInvalid, /isn't open/)
   end
 
-  it "lets the GM grant jobs at the table, with a line and a card for each" do
+  it "lets the GM grant an archetype to the party at the table, with a line and a card" do
     campaign = start(%w[freelancer])
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
     get campaign_table_path(campaign)
-    expect(response.body).to include("Grant archetypes", "Knight")
+    expect(response.body).to include("Grant an archetype", "Knight", "Freelancer (open)")
 
-    post campaign_job_grants_path(campaign), params: { jobs: %w[knight monk], line: "The Wind Crystal shatters." }
-    expect(campaign.reload.available_jobs.map(&:slug)).to eq(%w[freelancer knight monk])
+    post campaign_job_grants_path(campaign), params: { job: "knight", character_id: "", line: "The Wind Crystal shatters." }
+    expect(campaign.reload.available_jobs.map(&:slug)).to eq(%w[freelancer knight])
     line = campaign.messages.last
-    expect(line.body).to eq("The Wind Crystal shatters. New archetypes: Knight and Monk.")
+    expect(line.body).to eq("The Wind Crystal shatters. New archetype: Knight.")
     get campaign_table_path(campaign)
     expect(response.body).to include("New archetype!", "Heavy armor, a long sword")
 
-    post campaign_job_grants_path(campaign), params: { jobs: %w[knight] }
-    expect(flash[:alert]).to eq("Pick an archetype that isn't open yet")
+    post campaign_job_grants_path(campaign), params: { job: "knight" }
+    expect(flash[:alert]).to eq("Knight is open already")
   end
 
   it "awakens one character: the job opens, they take it up, and the table stops for it" do
@@ -57,9 +57,9 @@ RSpec.describe "Jobs as story rewards", type: :request do
     yui = create_character(campaign, name: "Yui", job: world.jobs.find_by!(slug: "freelancer"))
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
     get campaign_table_path(campaign)
-    expect(response.body).to include("Awaken someone", 'class="awakening-stage" data-moment-cue="awakening"', "moment#arrive")
+    expect(response.body).to include("Grant an archetype", 'class="awakening-stage" data-moment-cue="awakening"', "moment#arrive")
 
-    post campaign_awakenings_path(campaign), params: { character_id: yui.id, job: "monk", line: "I am thou, thou art I." }
+    post campaign_job_grants_path(campaign), params: { character_id: yui.id, job: "monk", line: "I am thou, thou art I." }
     expect(yui.reload.job.slug).to eq("monk")
     expect(campaign.reload.available_jobs.map(&:slug)).to include("monk")
     line = campaign.messages.last
@@ -71,7 +71,7 @@ RSpec.describe "Jobs as story rewards", type: :request do
     expect(card).to include("name" => "Yui", "job" => "Monk", "portrait" => "")
     expect(card["plate"]).to start_with("--plate:")
 
-    post campaign_awakenings_path(campaign), params: { character_id: yui.id, job: "monk" }
+    post campaign_job_grants_path(campaign), params: { character_id: yui.id, job: "monk" }
     expect(flash[:alert]).to eq("Yui is a Monk already")
   end
 end

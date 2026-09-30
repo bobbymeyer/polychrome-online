@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # The GM's record of what the party did (Campaign::Deeds): written at the
-# table, or struck when it was a mistake. Its story goes with it, and so
-# does what the towns it reached thought of the party.
+# table, or struck when it was a mistake. A deed is its story (Rumour#deed),
+# so striking it takes back what the towns it reached thought of the party.
 class Campaigns::DeedsController < ApplicationController
   include CampaignScoped
   include TableSeat
@@ -13,7 +13,7 @@ class Campaigns::DeedsController < ApplicationController
   def create
     fields = params.expect(deed: %i[body map_node_id sway])
     at = fields[:map_node_id].present? ? @campaign.map_nodes.find(fields[:map_node_id]) : @campaign.current_node
-    @campaign.record_deed!(fields[:body], at: at, sway: fields[:sway].to_i.clamp(Deed::SWAYS.min, Deed::SWAYS.max))
+    @campaign.record_deed!(fields[:body], at: at, sway: fields[:sway].to_i.clamp(Rumour::SWAYS.min, Rumour::SWAYS.max))
     back notice: "Done, and people will talk."
   rescue ActiveRecord::RecordInvalid => e
     back alert: e.record.errors.full_messages.to_sentence

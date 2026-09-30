@@ -42,7 +42,7 @@ RSpec.describe "Moments at the table", type: :system do
     end
 
     monk = create_job(campaign.world, slug: "monk")
-    campaign.awaken!(rook, monk, "I remember my fists.")
+    campaign.grant_job!(monk, to: rook, line: "I remember my fists.")
     as(player) do
       within("dialog.awakening-stage[open]") do
         expect(page).to have_text("ROOK AWAKENS").or have_text("Rook awakens")
