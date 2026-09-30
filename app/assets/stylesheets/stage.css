@@ -1083,3 +1083,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
   html.log-docked body { padding-right: min(440px, 36vw); }
   .log-drawer.is-docked .log-drawer__panel { width: min(440px, 36vw); box-shadow: none; transition: none; z-index: 30; }
 }
+
+/* Inside a dungeon, the table's map is its floorplan (campaigns/tables/_floorplan). */
+.table__map:has(#table_floorplan .floorplan) #map_canvas { display: none; }
+.table-floorplan__title { margin: 0 0 8px; font-size: 14px; }

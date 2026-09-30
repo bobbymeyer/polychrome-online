@@ -56,6 +56,8 @@
     <% unless view == "controller" %>
     <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
     <section class="window table__map" aria-label="Map">
+      <%# Inside a dungeon, its floorplan stands in for the world map. %>
+      <%= render "campaigns/tables/floorplan", campaign: @campaign, gm: @seat.gm? %>
       <%= render "campaigns/maps/canvas", campaign: @campaign, gm: @seat.gm? %>
       <p class="hint">
         <%= link_to(@seat.gm? ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %>

@@ -195,6 +195,30 @@ RSpec.describe "Where next", type: :request do
     end
   end
 
+  it "shows the dungeon's floorplan in the table's map, and tells the GM what waits in each room" do
+    cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+    cave = campaign.locations.create!(location_template: world.location_templates.find_by!(slug: "goblin_cave"), seed: 11)
+    cave_node.update!(location: cave)
+    campaign.update!(current_node: cave_node)
+    cave.enter!
+    key = cave.add_room!(name: "Vault of the Old Kings", connect: cave.view["entrance"], decision: { "kind" => "treasure", "gil" => 40 })
+
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    get campaign_table_path(campaign)
+    floorplan = response.body[/<div id="table_floorplan".*?<\/svg>/m]
+    expect(floorplan).to include(cave.name, "Vault of", "the Old", "Kings") # every room, names on as many lines as they need
+    ways = response.body[/<section class="window table-ways".*?<\/section>/m]
+    expect(ways).to include(%(<span class="menu__cost">treasure</span>))
+
+    sign_in_as(kim)
+    get campaign_table_path(campaign)
+    theirs = response.body[/<div id="table_floorplan".*?<\/svg>/m]
+    expect(theirs).to include(cave.name)
+    expect(theirs).not_to include("Vault of") # not been in: an unexplored way at most
+    expect(response.body).not_to include(%(<span class="menu__cost">treasure</span>))
+    expect(cave.room(key)["name"]).to eq("Vault of the Old Kings")
+  end
+
   it "lets a player pick up treasure in the room the party is in, from the table" do
     cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
     cave = campaign.locations.create!(location_template: world.location_templates.find_by!(slug: "goblin_cave"), seed: 11)

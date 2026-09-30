@@ -705,6 +705,8 @@ details[open] > summary { margin-bottom: 16px; }
 .floorplan__room rect { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
 .floorplan__room text { fill: var(--ink); }
 .floorplan__name { font: 600 17px var(--font); letter-spacing: -0.01em; }
+.floorplan__name--2 { font-size: 14px; }
+.floorplan__name--3 { font-size: 13px; }
 .floorplan__marker { fill: var(--ink); stroke: var(--ink); }
 .floorplan__marker--fork { fill: none; stroke-width: 2.5; }
 .floorplan__room.is-boss rect { stroke-width: 4; }
