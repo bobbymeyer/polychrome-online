@@ -14,7 +14,8 @@
     data-chat-line-speaker-key-value="<%= speaker_key(message) %>"
     data-chat-line-expression-value="<%= message.expression || 'neutral' %>"
     data-chat-line-portrait-value="<%= speaker_portrait_url(message.speaker, message.expression) %>"
-    data-chat-line-plate-value="<%= plate_style(message.speaker.name, message.speaker.try(:colour)) if message.speaker %>">
+    data-chat-line-plate-value="<%= plate_style(message.speaker.name, message.speaker.try(:colour)) if message.speaker %>"
+    <%= tag.attributes("data-chat-line-card-value": message.data.to_json) if message.cue == "deadline" %>>
   <% if message.choice? %>
     <%# What they chose is its own line next ("The party chose: …"), not said twice here. %>
     <p class="chat-line__body"><%= message.body %></p>

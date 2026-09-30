@@ -5,7 +5,8 @@
 # in a dungeon, the ways on from the room they're in. Anyone at the table
 # can put "Where next?" to a vote: a choice (Message) whose options carry
 # the moves, so the GM settling it takes the party there. The GM can still
-# just go.
+# just go. Staying is a way on too: what there is to do here this part of
+# the day (Pastime) goes to the same vote, and takes its time.
 module Campaign::Ways
   extend ActiveSupport::Concern
 
@@ -21,7 +22,7 @@ module Campaign::Ways
     elsif current_node
       inside = current_node.location
       way_in = inside&.dungeon? ? [ { "label" => "Into #{inside.name}", "move" => { "location" => inside.id, "enter" => true } } ] : []
-      way_in + current_node.edges.includes(:from_node, :to_node).reject(&:blocked?).map do |edge|
+      pastimes_here + way_in + current_node.edges.includes(:from_node, :to_node).reject(&:blocked?).map do |edge|
         there = edge.other_end(current_node)
         { "label" => "To #{there.name}#{' (by a dangerous road)' if edge.state == 'dangerous'}", "move" => { "edge" => edge.id } }
       end
@@ -55,9 +56,34 @@ module Campaign::Ways
     make_move!(way["move"])
   end
 
-  # Make a way's move: travel a path, or step into a room.
+  # What there is to do where the party is, this part of the day.
+  def pastimes_here
+    return [] unless current_node && !dungeon_in_progress
+
+    current_node.pastimes.select { |pastime| pastime.open_at?(time_of_day) }.map do |pastime|
+      { "label" => pastime.label(time_of_day), "move" => { "node" => current_node.id, "pastime" => pastime.name } }
+    end
+  end
+
+  # The party spends part of the day on something here: the table hears it,
+  # and the time goes by.
+  def spend_time!(node, name)
+    pastime = node.pastimes.find { |p| p.name == name } or raise Refusal, "There's no #{name} at #{node.name}"
+    raise Refusal, "The party isn't at #{node.name}" unless current_node == node
+    raise Refusal, "#{pastime.name} isn't something to do at #{time_of_day}" unless pastime.open_at?(time_of_day)
+
+    transaction do
+      narrate("#{node.name}: #{pastime.name}.")
+      messages.create!(body: pastime.line) if pastime.line
+      pass_time!(pastime.takes)
+    end
+  end
+
+  # Make a way's move: travel a path, step into a room, or spend time here.
   def make_move!(move)
-    if move["edge"]
+    if move["pastime"]
+      spend_time!(map_nodes.find(move["node"]), move["pastime"])
+    elsif move["edge"]
       travel!(map_edges.find(move["edge"]))
     elsif move["leave"]
       locations.find(move["location"]).leave!

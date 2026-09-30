@@ -142,6 +142,9 @@ RSpec.describe "The table", type: :request do
     header = response.body[/<header class="battle__header">.*?<\/header>/m]
     expect(header).to include("Day 3", "time--dusk", "5 days</strong> The spring tide comes in")
     expect(header).not_to include("The count schemes", "The guard grows wary")
+    campaign.clocks.find_by!(name: "The spring tide comes in").update!(filled: 5)
+    get campaign_table_path(campaign)
+    expect(response.body).to include(%(<li class="is-tomorrow"><strong>Tomorrow</strong> The spring tide comes in</li>))
     expect(response.body).to match(%r{<time class="muted" datetime="[^"]+" title="Day 3 · [^"]+">Dusk</time>})
   end
 
@@ -200,7 +203,7 @@ RSpec.describe "The table", type: :request do
 
     campaign.messages.create!(speaker: cid, body: "The crystal is cracking.", created_at: 2.days.ago)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap"', "The crystal is cracking.",
+    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap deadline"', "The crystal is cracking.",
                                      'data-recap-auto-value="true"')
   end
 

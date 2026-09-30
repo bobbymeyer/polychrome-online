@@ -5,9 +5,18 @@
 <% end %>
 
 <% view = coop_view %>
-<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap deadline" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->deadline#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
+  <%# A deadline passing stops the table (deadline_controller): filled in from the line when it arrives. %>
+  <%# A modal dialog, so it comes up over anything else open (the recap). %>
+  <dialog class="deadline-stage" data-deadline-target="overlay" data-action="click->deadline#dismiss" aria-label="A deadline has passed">
+    <div class="deadline-card">
+      <p class="deadline-card__date" data-deadline-target="date"></p>
+      <p class="deadline-card__line" data-deadline-target="line"></p>
+      <p class="deadline-card__place" data-deadline-target="place" hidden></p>
+    </div>
+  </dialog>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= seat_streams_from @seat, @campaign %>
   <%= render "shared/stage_stream", campaign: @campaign %>

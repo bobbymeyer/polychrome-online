@@ -109,7 +109,11 @@ class Clock < ApplicationRecord
   def fill!
     line = full_line || ("#{name}: it has happened." if public?)
     # Full when the table heard it, so the recap finds it in that session.
-    update!(full_at: campaign.narrate(line).created_at) if line
+    # It stops the table (the deadline card): the date, the line, and what
+    # the place has become.
+    card = { "date" => campaign.world.date(campaign.day), "clock" => name, "line" => line,
+             "place" => (location && "#{location.map_node&.name || location.name}: #{location_mode.name}") }.compact
+    update!(full_at: campaign.narrate(line, cue: "deadline", data: card).created_at) if line
     location.switch_mode!(location_mode.key) if location_mode && location.current_mode != location_mode
   end
 

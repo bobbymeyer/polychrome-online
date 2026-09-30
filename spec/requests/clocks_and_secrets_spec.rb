@@ -45,6 +45,14 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(clock.reload).to be_full
       expect(town.reload.current_mode["name"]).to eq("Burning")
       expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The Syndicate torches Tule: it has happened.", "Smoke over the rooftops: Tule is burning." ])
+      # It stops the table: the deadline card, with the date and what the place has become.
+      filled = campaign.messages.find_by!(body: "The Syndicate torches Tule: it has happened.")
+      expect(filled).to have_attributes(cue: "deadline", data: { "date" => campaign.world.date(campaign.day), "clock" => "The Syndicate torches Tule",
+                                                                  "line" => "The Syndicate torches Tule: it has happened.",
+                                                                  "place" => "Tule: Burning" })
+      get campaign_table_path(campaign)
+      expect(response.body).to include('data-controller="dialogue recap deadline"', 'class="deadline-stage"',
+                                       "data-chat-line-cue-value=\"deadline\"", "data-chat-line-card-value=")
 
       rest_the_night(campaign)
       expect(clock.reload.filled).to eq(3) # a full clock stays full

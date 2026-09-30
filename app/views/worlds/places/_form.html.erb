@@ -23,6 +23,11 @@
     <%= f.text_area :lead, rows: 2, placeholder: "Goblins have been coming down at night from a cave in the hills." %>
     <p class="hint">For a place players don't know from the start: a campaign starts this talk in the nearest town by road, and hearing it puts the place on the map.</p>
   </div>
+  <div class="field">
+    <%= f.label :activities, "Things to do here" %>
+    <%= f.text_area :activities, rows: 4, class: "script-field", placeholder: "Attend class (dawn/day, 2): The bell. Maths, then lunch on the roof.\nThe Undertow (night, 4)" %>
+    <p class="hint">Things to do here, one per line: a name, then in brackets when (dawn, day, dusk, night; any if none) and how many parts of the day it takes (1 if none), then what the table hears. The party picks one from Where next?, and the time goes by.</p>
+  </div>
   <fieldset class="panel past-fields">
     <legend>Its past</legend>
     <p class="hint">

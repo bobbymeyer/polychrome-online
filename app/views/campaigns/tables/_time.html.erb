@@ -8,7 +8,8 @@
   <% if deadlines.any? %>
     <ul class="table-time__deadlines">
       <% deadlines.each do |days, clock| %>
-        <li><strong><%= days == 1 ? "Tomorrow" : "#{days} days" %></strong> <%= clock.name %></li>
+        <%# The last day is a red band, and on a phone it stays in view (stage.css). %>
+        <li class="<%= "is-tomorrow" if days == 1 %>"><strong><%= days == 1 ? "Tomorrow" : "#{days} days" %></strong> <%= clock.name %></li>
       <% end %>
     </ul>
   <% end %>

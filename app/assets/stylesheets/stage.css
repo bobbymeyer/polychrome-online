@@ -504,6 +504,27 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
  * (boss_intro_controller), and the victory says what fell.
  * ------------------------------------------------------------------------- */
 
+/* A deadline passes: the table stops. Red for what can't be taken back, the
+   date on a black band above it, the line in display type. */
+.deadline-stage {
+  width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 16px; border: 0;
+  background: transparent; place-items: center; cursor: pointer;
+}
+.deadline-stage[open] { display: grid; }
+.deadline-stage::backdrop { background: rgb(0 0 0 / .6); }
+.deadline-card {
+  width: min(880px, 100%); display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
+  padding: 28px 32px 32px; background: var(--bright-red); color: #fff; rotate: -2deg;
+  box-shadow: 12px 12px 0 var(--ink);
+}
+.deadline-card__date {
+  margin: 0; padding: 4px 16px; background: var(--ink); color: var(--sun-yellow);
+  font-weight: 900; font-style: italic; letter-spacing: .12em; text-transform: uppercase;
+}
+.deadline-card__line { margin: 0; font: var(--display); font-size: clamp(32px, 6vw, 64px); line-height: 1.05; letter-spacing: -0.03em; text-shadow: 4px 4px 0 var(--ink); }
+.deadline-card__place { margin: 0; padding: 4px 12px; border: 3px solid #fff; font-weight: 900; }
+.deadline-card__place[hidden] { display: none; }
+
 .boss-intro { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; overflow: hidden; background: rgb(0 0 0 / .55); cursor: pointer; }
 .boss-intro[hidden] { display: none; }
 .boss-card {

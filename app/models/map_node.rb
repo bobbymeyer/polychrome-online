@@ -24,12 +24,19 @@ class MapNode < ApplicationRecord
   validates :kind, inclusion: { in: KINDS }
   validates :x, numericality: { only_integer: true, in: 0..WIDTH }
   validates :y, numericality: { only_integer: true, in: 0..HEIGHT }
+  validate { Pastime.parse(activities).last.each { |problem| errors.add(:activities, problem) } }
 
   before_destroy { campaign.update_columns(current_node_id: nil) if campaign.current_node_id == id }
   after_commit { campaign.table_changed }
 
   def edges
     campaign.map_edges.where(from_node: self).or(campaign.map_edges.where(to_node: self))
+  end
+
+  # Things to do here (Pastime): the setting's (its atlas place's, live, as
+  # worlds are) and then the GM's own, by name, so the GM's can replace one.
+  def pastimes
+    (Pastime.list(world_place&.activities) + Pastime.list(activities)).reverse.uniq(&:name).reverse
   end
 
   def party_here?

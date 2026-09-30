@@ -127,6 +127,15 @@ const JINGLES = {
     phrase(t, beat, [ [ "E4", 0, 1 ], [ "G4", 1, 1 ], [ "C5", 2, 1 ], [ "E5", 3, 3 ], [ "C5", 6, 1 ], [ "E5", 7, 1 ], [ "G5", 8, 8 ] ], { gain: 0.2 })
     phrase(t, beat, [ [ "C3", 0, 3 ], [ "G2", 3, 3 ], [ "C3", 6, 2 ], [ "C2", 8, 8 ] ], { wave: "triangle", gain: 0.7 })
   },
+  // Time's up: a bell tolls three times over a held low chord.
+  deadline(t) {
+    ;[ 0, 0.55, 1.1 ].forEach((at) => {
+      tone(t + at, "A4", 0.9, { wave: "triangle", gain: 0.45, decay: 0.3 })
+      tone(t + at, "E5", 0.6, { gain: 0.12, decay: 0.2 })
+    })
+    ;[ "A2", "E3", "C4" ].forEach((n) => tone(t, n, 2.2, { wave: "sawtooth", gain: 0.06, decay: 0.7 }))
+    noise(t, 0.3, { gain: 0.25, filter: 600 })
+  },
   // Down and down, and a long low note.
   defeat(t) {
     phrase(t, 0.24, [ [ "E4", 0, 1 ], [ "D4", 1, 1 ], [ "C4", 2, 1 ], [ "B3", 3, 1 ], [ "A3", 4, 4 ] ], { wave: "triangle", gain: 0.6 })

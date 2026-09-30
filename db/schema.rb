@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_160000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -551,6 +551,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_140000) do
     t.integer "location_id"
     t.integer "world_place_id"
     t.text "description"
+    t.text "activities"
     t.index ["campaign_id"], name: "index_map_nodes_on_campaign_id"
     t.index ["location_id"], name: "index_map_nodes_on_location_id"
     t.index ["world_place_id"], name: "index_map_nodes_on_world_place_id"
@@ -792,6 +793,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_140000) do
     t.datetime "updated_at", null: false
     t.json "past", default: {}, null: false
     t.text "lead"
+    t.text "activities"
     t.index ["location_template_id"], name: "index_world_places_on_location_template_id"
     t.index ["world_id"], name: "index_world_places_on_world_id"
   end

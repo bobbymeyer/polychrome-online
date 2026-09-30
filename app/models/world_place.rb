@@ -26,6 +26,7 @@ class WorldPlace < ApplicationRecord
   validates :x, numericality: { only_integer: true, in: 0..MapNode::WIDTH }
   validates :y, numericality: { only_integer: true, in: 0..MapNode::HEIGHT }
   validate :template_fits
+  validate { Pastime.parse(activities).last.each { |problem| errors.add(:activities, problem) } }
 
   before_validation { self.seed ||= Location.new_seed if location_template }
 

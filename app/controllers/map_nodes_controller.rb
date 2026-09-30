@@ -52,6 +52,6 @@ class MapNodesController < ApplicationController
   end
 
   def node_params
-    params.expect(map_node: %i[name kind x y visible notes description])
+    params.expect(map_node: %i[name kind x y visible notes description activities])
   end
 end
