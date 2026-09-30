@@ -1,4 +1,4 @@
-<% in_mode = node.location&.current_mode %>
+<% in_mode = node.location&.modes_on&.map(&:name)&.join(" · ").presence %>
 <g class="map-node map-node--<%= node.kind %> <%= 'is-hidden' unless node.visible? %> <%= 'is-party' if party&.id == node.id %> <%= 'has-mode' if in_mode %>"
    transform="translate(<%= node.x %> <%= node.y %>)"
    <% if gm %>data-map-node data-edit-url="<%= edit_map_node_path(node) %>" data-update-url="<%= map_node_path(node, format: :json) %>" tabindex="0" role="button"<% end %>>
@@ -7,7 +7,7 @@
     <%= render "map_nodes/shape", kind: node.kind %>
     <% label_y = local_assigns.fetch(:labels, {}).fetch(node.id, 38) %>
     <text class="map-node__label<%= " is-above" if label_y.negative? %>" y="<%= label_y %>" text-anchor="middle"><%= node.name %></text>
-    <% if in_mode %><text class="map-node__mode" y="<%= label_y.negative? ? label_y - 20 : label_y + 16 %>" text-anchor="middle"><%= in_mode["name"] %></text><% end %>
+    <% if in_mode %><text class="map-node__mode" y="<%= label_y.negative? ? label_y - 20 : label_y + 16 %>" text-anchor="middle"><%= in_mode %></text><% end %>
   <% end %>
   <% if !gm && node.location %>
     <%# A player taps a place to look at it; a wide target, since the map is small on a phone. %>

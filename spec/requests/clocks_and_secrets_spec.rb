@@ -26,6 +26,13 @@ RSpec.describe "Clocks and secrets", type: :request do
   end
 
   describe "clocks" do
+    it "offers the modes a clock can set off by place, and not those that follow the hours" do
+      town.add_mode!("name" => "By night", "times" => %w[night])
+      get campaign_prep_path(campaign)
+      expect(response.body).to include(%(>Tule: Burning</option>))
+      expect(response.body).not_to include(%(>Tule: By night</option>))
+    end
+
     it "fills on what the party does, and a full clock sets a place burning" do
       post campaign_clocks_path(campaign), params: { clock: { name: "The Syndicate torches Tule", segments: "3", public: "1",
                                                               triggers: [ "", "rest", "travel" ], when_full: burning.id } }
@@ -113,7 +120,7 @@ RSpec.describe "Clocks and secrets", type: :request do
   it "lets the GM pass time at the table, and shows everyone the time" do
     patch campaign_time_path(campaign), params: { parts: 2 }
     expect(campaign.reload.time_of_day).to eq("dusk")
-    patch campaign_time_path(campaign), params: { until: "dawn" }
+    patch campaign_time_path(campaign), params: { until: "the_day" }
     expect(campaign.reload).to have_attributes(day: 2, time_of_day: "dawn")
     sit(hero)
     get campaign_table_path(campaign)

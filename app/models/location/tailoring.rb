@@ -44,9 +44,14 @@ module Location::Tailoring
     update!(overrides: stock.nil? ? overrides.except("stock") : overrides.merge("stock" => stock))
   end
 
+  # Who waits in the boss room ({} for as rolled). Placing one sets the room
+  # waiting again, even if the party has been through it.
   def place_boss!(monsters)
     monsters = monsters.to_h.reject { |slug, count| slug.blank? || count.to_i < 1 }.transform_values(&:to_i)
-    update!(overrides: monsters.empty? ? overrides.except("boss") : overrides.merge("boss" => monsters))
+    transaction do
+      update!(overrides: monsters.empty? ? overrides.except("boss") : overrides.merge("boss" => monsters))
+      reopen_room!(view["boss"]) unless campaign.pending_encounter&.dig("room") == view["boss"]
+    end
   end
 
   def add_room!(name:, connect:, decision:)

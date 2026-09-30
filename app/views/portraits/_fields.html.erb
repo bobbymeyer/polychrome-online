@@ -1,7 +1,7 @@
 <%# One image per expression. owner: an Npc or Character. %>
 <fieldset class="panel">
   <legend>Portraits</legend>
-  <p class="hint">One image per expression. Missing ones fall back to Neutral<%= ", then to the job's image" if owner.is_a?(Character) %>.</p>
+  <p class="hint">One image per expression. Missing ones fall back to Neutral<%= ", then to the archetype's image" if owner.is_a?(Character) %>.</p>
   <div class="portrait-fields">
     <% existing = owner.portraits.includes(image_attachment: :blob).index_by(&:expression) %>
     <% Portrait::EXPRESSIONS.each do |expression| %>

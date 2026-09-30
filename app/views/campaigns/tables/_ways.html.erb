@@ -20,7 +20,7 @@
     <h2>Where next?</h2>
     <%# What there is to do here this part of the day (Pastime) comes first, under the time; then the roads out. %>
     <% doings, roads = ways.partition { |way| way.dig("move", "pastime") } %>
-    <% [ [ doings, "#{campaign.time_of_day.capitalize} in #{campaign.current_node&.name}" ], [ roads, (doings.any? ? "Or go" : nil) ] ].each do |group, heading| %>
+    <% [ [ doings, "#{campaign.period.upcase_first} in #{campaign.current_node&.name}" ], [ roads, (doings.any? ? "Or go" : nil) ] ].each do |group, heading| %>
     <% next if group.empty? %>
     <% if heading %><h3 class="table-ways__group"><%= heading %></h3><% end %>
     <div class="menu play">
@@ -34,6 +34,14 @@
         <% end %>
       <% end %>
     </div>
+    <% if group.equal?(doings) && (paid = campaign.characters.includes(:job).order(:created_at).select { |c| c.conscious? && c.job.payoff.present? }).any? %>
+      <%# Daily life pays off through the archetypes, at the next rest (Campaign::Payoffs). %>
+      <p class="hint table-ways__payoff">
+        At the next rest: <%= paid.map { |c| p = c.job.payoff
+                                             "#{c.name}, #{p['kind'] == 'rumour' ? 'a rumour' : "#{p['kind'] == 'money' ? campaign.money(p['amount']) : "#{p['amount']} #{p['kind'].upcase}"} a part"}" }.join("; ") %>.
+        <% if campaign.spent_parts.positive? %><strong><%= pluralize(campaign.spent_parts, "part") %> of the day spent so far.</strong><% end %>
+      </p>
+    <% end %>
     <% end %>
     <% if locked.any? %>
       <p class="hint">Locked: <%= locked.to_sentence %>.</p>

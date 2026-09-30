@@ -31,11 +31,12 @@ module Campaign::Travelling
       self.current_node = destination
       self.free_rooms_node_id = nil # the town's thanks were for while the party was there
       self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled, "terrain" => edge.encounter_table.terrain_type }
-      # A place in a mode can have trouble waiting.
-      if !rolled && (trouble = destination.location&.encounter_table_for_mode)
+      # A place in a mode (as it will be when the party gets there) can have trouble waiting.
+      arrival_period, days_on = almanac.later(period, edge.duration.to_i)
+      if !rolled && (troubled = destination.location&.troubled_by(day: day + days_on, period: arrival_period))
+        trouble = troubled.encounter_table
         rolled = roll_with { |state| Pointcrawl::Encounters.roll(state, trouble.entries, "dangerous") }
-        self.pending_encounter = rolled && { "table" => "#{destination.name}: #{destination.location.current_mode['name']}", "monsters" => rolled,
-                                             "terrain" => trouble.terrain_type }
+        self.pending_encounter = rolled && { "table" => "#{destination.name}: #{troubled.name}", "monsters" => rolled, "terrain" => trouble.terrain_type }
       end
       save!
 
@@ -44,7 +45,10 @@ module Campaign::Travelling
       narrate("The way is safe: nothing troubles the party on the road.") if safe
       narrate("Encounter! #{describe_encounter(rolled)}.") if rolled
       tick_clocks!("travel")
+      @arriving = destination # what it's like there is said once, on arrival
       pass_time!(edge.duration, announce: :new_day)
+      @arriving = nil
+      how_it_is_here!(destination)
       destination.location&.remember!
       hear_rumours!(destination)
       welcome_back!(destination)
@@ -111,9 +115,11 @@ module Campaign::Travelling
   def place_party!(node)
     transaction do
       node.update!(visible: true)
-      current_node&.location&.leave! unless current_node == node
+      moved = current_node != node
+      current_node&.location&.leave! if moved
       update!(current_node: node, free_rooms_node_id: (free_rooms_node_id if node == current_node))
       narrate("The party is at #{node.name}.")
+      how_it_is_here!(node) if moved
       node.location&.remember!
       hear_rumours!(node)
       welcome_back!(node)
@@ -128,8 +134,8 @@ module Campaign::Travelling
   # battle's pull waits for them (stage.js).
   def start_pending_encounter!(input_seconds: nil, prelude: [])
     encounter = pending_encounter or raise Refusal, "No encounter is waiting"
-    standing = characters.order(:created_at).select(&:conscious?)
-    raise Refusal, "Nobody is standing to fight" if standing.empty?
+    party = characters.order(:created_at).to_a
+    raise Refusal, "Nobody is standing to fight" if party.none?(&:conscious?)
 
     # Read as a scene's lines are: "Kurosaki (sad): …" is Kurosaki's, sadly.
     cast = npcs.to_a
@@ -139,7 +145,8 @@ module Campaign::Travelling
       messages.create!(speaker: line["speaker"], expression: line["expression"], body: line["text"])
     end
 
-    battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
+    # The fallen come too, down: their players watch, and a raise brings them in.
+    battle = BattleRecord.start!(campaign: self, characters: party, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
                                  terrain: encounter["terrain"], names: encounter.fetch("names", {}),
                                  antagonists: npcs.where(id: encounter.fetch("antagonists", [])).to_a)
@@ -147,11 +154,20 @@ module Campaign::Travelling
     battle
   end
 
+  # A boss waved off isn't gone: it goes back to its room, to wait for the
+  # party (a road's or a room's ordinary fight just doesn't happen).
   def wave_off_encounter!
-    return unless pending_encounter
+    waiting = pending_encounter or return
 
-    update!(pending_encounter: nil)
-    narrate("The GM waves off the encounter.")
+    transaction do
+      update!(pending_encounter: nil)
+      if waiting["boss"] && waiting["location"] && (lair = locations.find_by(id: waiting["location"]))
+        lair.reopen_room!(waiting["room"])
+        narrate("The GM holds the fight back: it waits in #{lair.room(waiting['room'])&.dig('name') || lair.name}.")
+      else
+        narrate("The GM waves off the encounter.")
+      end
+    end
   end
 
   def describe_encounter(monsters)

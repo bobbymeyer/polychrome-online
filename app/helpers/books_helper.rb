@@ -3,6 +3,16 @@
 # Rendering helpers for book pages. Everything here is derived from the
 # entry; nothing is stored (§12: rendering is derived, never the source).
 module BooksHelper
+  # An archetype's payoff, as a line: "40 gil a part of the day", "A rumour".
+  def payoff_summary(job)
+    payoff = job.payoff
+    case payoff["kind"]
+    when "rumour" then "A rumour, at the next rest"
+    when "money" then "#{payoff['amount']} #{word('currency')} a part of the day, at the next rest"
+    else "#{payoff['amount']} #{payoff['kind'].upcase} a part of the day, at the next rest"
+    end
+  end
+
   STAT_LABELS = {
     "max_hp" => "HP", "max_mp" => "MP", "str" => "Str", "mag" => "Mag", "vit" => "Vit",
     "spr" => "Spr", "agi" => "Agi", "atk" => "Atk", "def" => "Def", "mdef" => "MDef"
@@ -153,7 +163,7 @@ module BooksHelper
     case name
     when "self_hp_below" then "own HP below #{value}%"
     when "ally_hp_below" then "an ally's HP below #{value}%"
-    when "ally_ko" then value ? "an ally is down" : "no ally is down"
+    when "ally_ko" then value ? "an ally is KO'd" : "no ally is KO'd"
     when "round_multiple" then "every #{value.ordinalize} round"
     when "chance" then "#{value}% of the time"
     else "#{name} #{value}"

@@ -26,13 +26,14 @@
   </div>
 </div>
 
+<% modes_on = @location.modes_on %>
 <% if (picture = @location.picture) %>
-  <figure class="location-picture<%= " is-mode" if @location.current_mode %>">
-    <%= image_tag url_for(picture), alt: [ view["name"], @location.current_mode&.name ].compact.join(": ") %>
+  <figure class="location-picture<%= " is-mode" if modes_on.any? %>">
+    <%= image_tag url_for(picture), alt: [ view["name"], *modes_on.map(&:name) ].join(": ") %>
   </figure>
 <% end %>
 
-<% if (in_mode = @location.current_mode) %>
+<% modes_on.each do |in_mode| %>
   <section class="window location-mode" aria-label="What's happening here">
     <p class="location-mode__name"><%= in_mode["name"] %></p>
     <% if in_mode["description"] %><p><%= in_mode["description"] %></p><% end %>

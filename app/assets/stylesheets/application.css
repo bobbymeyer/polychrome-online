@@ -806,12 +806,14 @@ details[open] summary { margin-bottom: 16px; }
 .type-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--ink); vertical-align: middle; }
 .front-row { padding: 8px 0 12px; border-bottom: 1px solid var(--rule); }
 /* The date card: what day it is, and what's coming, is what the party lives by. The part
-   of the day wears its own colour (dawn yellow, day white, dusk red, night blue-black). */
+   of the day wears its own colour (dawn yellow, day white, dusk red, night blue-black), by
+   its light in the setting's calendar (Campaign#daylight), whatever the setting calls it. */
 .table-time { --part: var(--paper); --part-ink: var(--ink); margin: 0 0 12px; }
 .table-time.time--dawn { --part: var(--sun-yellow); }
 .table-time.time--dusk { --part: var(--bright-red); --part-ink: #fff; }
 .table-time.time--night { --part: var(--dark-blue); --part-ink: #fff; }
 .table-time__date { margin: 0; font: var(--display); font-size: clamp(28px, 5vw, 44px); letter-spacing: -0.03em; }
+.table-time__season { margin: 2px 0 0; font-weight: 700; color: var(--grey); letter-spacing: .02em; }
 .table-time__part {
   display: inline-block; margin: 6px 0 0; padding: 2px 12px; border: 3px solid var(--ink);
   background: var(--part); color: var(--part-ink); font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 13px;

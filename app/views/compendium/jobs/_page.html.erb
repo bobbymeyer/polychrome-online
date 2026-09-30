@@ -1,7 +1,7 @@
 <header class="book-page__header">
   <%= entry_portrait(entry) %>
   <div>
-    <p class="eyebrow">Job Compendium</p>
+    <p class="eyebrow">Archetype Compendium</p>
     <h1><%= entry.name %></h1>
     <dl class="facts">
       <% if types_matter? %><dt>Type</dt><dd><%= type_tag(entry.base_type) %></dd><% end %>
@@ -18,6 +18,9 @@
       <% end %>
       <% if entry.passive %>
         <dt><%= gloss(:passive, "Passive") %></dt><dd><%= passive_term(entry.passive) %></dd>
+      <% end %>
+      <% if entry.payoff.present? %>
+        <dt><%= gloss(:payoff, "Payoff") %></dt><dd><%= payoff_summary(entry) %></dd>
       <% end %>
       <% if (move = entry.desperation_ability) %>
         <dt>Desperation</dt><dd><%= link_to move.name, world_grimoire_ability_path(entry.world, move) %></dd>
@@ -48,7 +51,7 @@
     <% else %>
       Attack and the signature command strike as <%= type_name(entry.base_type).downcase %>.
     <% end %>
-    A character is never immune through a job's type: what the chart calls no effect, they resist.
+    A character is never immune through an archetype's type: what the chart calls no effect, they resist.
   </p>
 </section>
 <% end %>
@@ -82,7 +85,7 @@
     <p class="empty"><%= entry.name %> teaches nothing. It has no limits either.</p>
   <% else %>
     <table class="book-table book-table--plain">
-      <thead><tr><th class="num">Job level</th><th class="num">ABP</th><th class="num">Mastered at</th><th>Ability</th><th>Kind</th></tr></thead>
+      <thead><tr><th class="num">Archetype level</th><th class="num">ABP</th><th class="num">Mastered at</th><th>Ability</th><th>Kind</th></tr></thead>
       <tbody>
         <% entry.job_levels.includes(:ability).each do |level| %>
           <tr>

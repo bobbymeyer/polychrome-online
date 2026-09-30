@@ -36,26 +36,73 @@ RSpec.describe "Location modes", type: :request do
     expect(campaign.messages.last.body).to eq("The fires are out.")
   end
 
-  it "follows the hours: a place by night comes on at night and goes at dawn, but a mode set off outlasts them" do
+  it "follows the hours: a place by night comes on at night and goes at dawn, on top of a mode set off, which outlasts them" do
     post location_modes_path(town), params: { mode: { name: "By night", line: "The shutters come down. Under the platform, the Undertow wakes.",
                                                          closed: %w[shop], times: [ "", "night" ] } }
     expect(town.reload.modes.sole).to have_attributes(times: %w[night], timed?: true)
     get location_path(town)
-    expect(response.body).to include("by itself at night")
+    expect(response.body).to include("by itself: night")
 
     campaign.update!(current_node: node, time_of_day: "dusk")
     campaign.pass_time!(1)
-    expect(town.reload.current_mode.name).to eq("By night")
+    expect(town.reload.modes_on.map(&:name)).to eq([ "By night" ])
+    expect(town.current_mode).to be_nil # the calendar's, not the table's
     expect(town.service_closed?("shop")).to be(true)
     expect(campaign.messages.pluck(:body)).to include("The shutters come down. Under the platform, the Undertow wakes.")
 
     campaign.pass_time!(1) # dawn
-    expect(town.reload.current_mode).to be_nil
+    expect(town.reload.modes_on).to be_empty
 
     prepare_burning
     patch location_current_mode_path(town), params: { key: "burning" }
     campaign.pass_time!(3) # to night
-    expect(town.reload.current_mode.name).to eq("Burning") # the fire doesn't go out at nightfall
+    expect(town.reload.modes_on.map(&:name)).to eq([ "Burning", "By night" ]) # the fire doesn't go out at nightfall
+    campaign.pass_time!(1)
+    expect(town.reload.modes_on.map(&:name)).to eq([ "Burning" ])
+  end
+
+  it "comes on when the calendar says, several at once, with things to do of their own" do
+    world.update!(calendar: { periods: "Morning, Evening, Late night", dark: "Late night", weekdays: "Weekday, Market day",
+                              months: "Thaw (2, Spring)\nFrost (2, Winter)" })
+    campaign.update!(current_node: node, time_of_day: "Morning")
+    campaign.map_nodes.find(node.id).update!(activities: "Browse the stalls (market day)\nSkate the millpond (winter): Round and round.")
+    town.add_mode!("name" => "Snowbound", "line" => "Snow to the sills.", "times" => %w[winter], "closed" => %w[pastimes],
+                   "activities" => "Build a snow fort (2): It lasts till the thaw.")
+    town.add_mode!("name" => "Market", "times" => [ "market day" ], "closed" => %w[inn])
+    expect { town.add_mode!("name" => "Monsoon", "times" => %w[monsoon]) }.to raise_error(ActiveRecord::RecordInvalid, /monsoon isn't in/)
+
+    # Day 1: a weekday in Thaw. Day 2: market day. Day 3: a weekday in Frost.
+    expect(town.reload.modes_on).to be_empty
+    expect(campaign.reload.pastimes_here.map { |w| w["label"] }).to eq([])
+    campaign.pass_time!(3)
+    expect(town.reload.modes_on.map(&:name)).to eq([ "Market" ])
+    expect(town.shut_by("inn").name).to eq("Market")
+    expect(campaign.reload.pastimes_here.map { |w| w["label"] }).to eq([ "Browse the stalls (until Evening)" ])
+    campaign.pass_time!(3)
+    expect(campaign.messages.pluck(:body)).to include("Snow to the sills.")
+    expect(town.reload.modes_on.map(&:name)).to eq([ "Snowbound" ])
+    # Snowbound shuts the usual things to do (skating too) and has its own.
+    expect(campaign.reload.pastimes_here.map { |w| w["label"] }).to eq([ "Build a snow fort (until Late night)" ])
+    campaign.pass_time!(3)
+    expect(town.reload.modes_on.map(&:name)).to eq([ "Snowbound", "Market" ])
+
+    get location_path(town)
+    expect(response.body).to include("Snowbound", "Market", "Shut: Things to do.")
+  end
+
+  it "says how it is on arrival: the place's modes, and a landmark's night line after dark" do
+    shrine = world.world_places.create!(name: "Old Shrine", kind: "landmark", x: 9, y: 9, night_line: "Foxfire between the torii.")
+    lantern = campaign.map_nodes.create!(name: "Old Shrine", kind: "landmark", x: 9, y: 9, visible: true, world_place: shrine)
+    town.add_mode!("name" => "By night", "line" => "The shutters come down.", "times" => %w[night])
+    campaign.update!(time_of_day: "night")
+    campaign.place_party!(node)
+    expect(campaign.messages.last(2).map(&:body)).to eq([ "The party is at #{node.name}.", "The shutters come down." ])
+    campaign.place_party!(lantern)
+    expect(campaign.messages.last.body).to eq("Foxfire between the torii.")
+
+    campaign.update!(time_of_day: "dusk")
+    campaign.pass_time!(1) # night falls at the shrine
+    expect(campaign.messages.where(body: "Foxfire between the torii.").count).to eq(2)
   end
 
   it "comes from the atlas: a place's night line is a mode that comes on at night" do

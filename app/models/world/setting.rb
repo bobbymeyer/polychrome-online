@@ -36,6 +36,7 @@ module World::Setting
     validate :terrain_types_are_types
     validate :skills_are_skills
     validate :origins_are_origins
+    validate { Array(@calendar_problems).each { |problem| errors.add(:calendar, problem) } }
   end
 
   def type_chart
@@ -61,25 +62,22 @@ module World::Setting
     Array(origins).find { |o| o["slug"] == slug.to_s }
   end
 
-  # A campaign's day as the setting names it: "Moonsday, 12 Rainfall", or
-  # "Day 12" for a world with no calendar.
-  #   calendar: { "weekdays" => [...], "months" => [...], "month_length" => 30 }
-  def date(day)
-    weekdays = Array(calendar["weekdays"]).compact_blank
-    months = Array(calendar["months"]).compact_blank
-    length = calendar["month_length"].to_i
-    index = day.to_i - 1
-    [ (weekdays[index % weekdays.size] if weekdays.any?),
-      (months.any? && length.positive? ? "#{(index % length) + 1} #{months[(index / length) % months.size]}" : "day #{day}") ]
-      .compact.join(", ").upcase_first
+  # The setting's calendar, read (Pointcrawl::Calendar): its parts of the
+  # day, weeks, months, seasons, years and eras.
+  def almanac
+    @almanac = nil unless @almanac_of.equal?(calendar)
+    @almanac_of = calendar
+    @almanac ||= Pointcrawl::Calendar.new(calendar)
   end
 
-  # From the form: names as comma-separated text.
+  # A campaign's day as the setting names it: "Moonsday, 12 Rainfall", or
+  # "Day 12" for a world with no calendar.
+  def date(day) = almanac.date(day)
+
+  # From the form (Pointcrawl::Calendar.read), or settings as stored.
   def calendar=(value)
-    value = value.to_h.stringify_keys
-    split = ->(v) { (v.is_a?(Array) ? v : v.to_s.split(",")).map { |n| n.to_s.strip }.reject(&:empty?).first(24) }
-    super({ "weekdays" => split.(value["weekdays"]), "months" => split.(value["months"]),
-            "month_length" => value["month_length"].to_i.clamp(0, 400) }.reject { |_, v| v.blank? })
+    settings, @calendar_problems = Pointcrawl::Calendar.read(value.respond_to?(:to_unsafe_h) ? value.to_unsafe_h : value.to_h)
+    super(settings.reject { |_, v| v.nil? || v == [] })
   end
 
   private

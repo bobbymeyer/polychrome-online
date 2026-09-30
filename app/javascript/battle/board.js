@@ -134,7 +134,7 @@ export class Board {
     el.className = `banner banner--${kind}`
     el.textContent = text
     this.fx.append(el)
-    if (["victory", "defeat", "escape", "boss-down"].includes(kind)) {
+    if (["victory", "defeat", "escape", "boss-down", "all-out"].includes(kind)) {
       // Thrown across the stage from the left, held, then gone.
       tl.add(el, { opacity: [0, 1, 1, 1, 0], translateX: ["-60%", "0%", "0%", "0%", "4%"], duration: 1300, ease: "outExpo" }, at)
     } else {

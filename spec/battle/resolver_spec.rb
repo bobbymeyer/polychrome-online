@@ -800,15 +800,18 @@ RSpec.describe Battle::Resolver do
         expect(of_type(plain, :cast).count { |e| e["actor"] == "mage" }).to eq(1)
       end
 
-      it "plays One More where the world says so: a weakness knocks the target down, and the striker goes again" do
-        weak_brute = [ brute.first.merge(affinities: { fire: "weak" }) ]
+      it "plays One More where the world says so: a weakness knocks the target down, and the striker goes again at whoever's standing" do
+        weak_brute = [ brute.first.merge(affinities: { fire: "weak" }), brute.first.merge(id: "ogre", name: "Ogre") ]
         state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[fire]) ], enemies: weak_brute, rules: { one_more: true })
         expect(state["rules"]).to eq("one_more" => true)
         after, events = round(state, "mage" => { kind: "ability", ability: "fire", target: "brute" })
         expect(of_type(events, :cast).count { |e| e["actor"] == "mage" }).to eq(2)
-        expect(of_type(events, :one_more)).to eq([ { "type" => "one_more", "actor" => "mage", "downed" => [ "brute" ] } ])
+        # The brute is down, so the other go finds the ogre, still standing.
+        expect(of_type(events, :one_more)).to eq([ { "type" => "one_more", "actor" => "mage", "downed" => [ "brute" ], "target" => "ogre" } ])
+        expect(of_type(events, :cast).last["targets"]).to eq([ "ogre" ])
         expect(of_type(events, :turn_start)).to include(a_hash_including("unit" => "mage", "quick" => true, "reason" => "one_more"))
         expect(of_type(events, :turn_skipped)).to include(a_hash_including("unit" => "brute", "reason" => "down")) # it lost its turn
+        expect(of_type(events, :all_out)).to be_empty # the ogre is still up
         expect(unit(after, "brute")["statuses"].map { |st| st["kind"] }).not_to include("down") # and is back up
 
         plain = build_battle(seed: 3, party: [ caster.merge(abilities: %w[fire]) ], enemies: weak_brute)
@@ -819,6 +822,19 @@ RSpec.describe Battle::Resolver do
         _, events = round(build_battle(seed: 3, party: [ caster.merge(abilities: %w[fire]) ], enemies: brute, rules: { one_more: true }),
                           "mage" => { kind: "ability", ability: "fire", target: "brute" })
         expect(of_type(events, :one_more)).to be_empty # no weakness, no One More
+      end
+
+      it "goes All-Out when One More has every enemy down: the party piles in, and the enemies get back up" do
+        both_weak = [ brute.first.merge(affinities: { fire: "weak" }), brute.first.merge(id: "ogre", name: "Ogre", affinities: { fire: "weak" }) ]
+        fighter = { id: "fighter", name: "Fighter", stats: stats(max_hp: 300, str: 30, atk: 30, agi: 1) }
+        state = build_battle(seed: 3, party: [ caster.merge(abilities: %w[fire]), fighter ], enemies: both_weak, rules: { one_more: true })
+        after, events = round(state, "mage" => { kind: "ability", ability: "fire", target: "brute" }, "fighter" => { kind: "defend" })
+        expect(of_type(events, :all_out)).to eq([ { "type" => "all_out", "actor" => "mage", "units" => %w[mage fighter], "targets" => %w[brute ogre] } ])
+        at = events.index { |e| e["type"] == "all_out" }
+        hits = events[at..].select { |e| e["type"] == "damage" }.map { |e| [ e["actor"], e["target"] ] }
+        expect(hits).to include(%w[mage brute], %w[mage ogre], %w[fighter brute], %w[fighter ogre])
+        expect(of_type(events, :status_expired)).to include(a_hash_including("target" => "brute", "status" => "down", "reason" => "all_out"))
+        expect(%w[brute ogre].flat_map { |id| unit(after, id)["statuses"].map { |st| st["kind"] } }).not_to include("down")
       end
 
       it "sends a summon away the moment it's down, so nothing can raise it" do

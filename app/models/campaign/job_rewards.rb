@@ -28,11 +28,11 @@ module Campaign::JobRewards
   # shatters"). The table sees a card for each.
   def grant_jobs!(jobs, line = nil)
     jobs = jobs.reject { |job| job_open?(job) }
-    raise Refusal, "Pick a job that isn't open yet" if jobs.empty?
+    raise Refusal, "Pick an archetype that isn't open yet" if jobs.empty?
 
     transaction do
       update!(open_jobs: (open_jobs || []) + jobs.map(&:slug))
-      body = [ line.to_s.strip.presence, "New #{'job'.pluralize(jobs.size)}: #{jobs.map(&:name).to_sentence}." ].compact.join(" ")
+      body = [ line.to_s.strip.presence, "New #{'archetype'.pluralize(jobs.size)}: #{jobs.map(&:name).to_sentence}." ].compact.join(" ")
       narrate(body, cue: "jobs",
                     data: { "jobs" => jobs.map { |j| { "name" => j.name, "slug" => j.slug, "description" => j.description.to_s } } })
     end
@@ -43,7 +43,7 @@ module Campaign::JobRewards
   # turns over, and the job is on the other side).
   def awaken!(character, job, line = nil)
     raise Refusal, "#{character.name} isn't in this party" unless character.campaign_id == id
-    raise Refusal, "#{job.name} isn't one of #{world.name}'s jobs" unless job.world_id == world_id
+    raise Refusal, "#{job.name} isn't one of #{world.name}'s archetypes" unless job.world_id == world_id
     raise Refusal, "#{character.name} is a #{job.name} already" if character.job_id == job.id
 
     transaction do

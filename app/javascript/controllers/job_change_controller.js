@@ -7,7 +7,7 @@ export default class extends Controller {
 
   pick() {
     const drops = this.selectTarget.selectedOptions[0]?.dataset.drops
-    if (drops) this.element.dataset.turboConfirm = `Change job? ${drops} can't be used and go${drops.includes(" and ") || drops.includes(",") ? "" : "es"} back to the bag.`
+    if (drops) this.element.dataset.turboConfirm = `Change archetype? ${drops} can't be used and go${drops.includes(" and ") || drops.includes(",") ? "" : "es"} back to the bag.`
     else delete this.element.dataset.turboConfirm
   }
 

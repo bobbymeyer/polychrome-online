@@ -25,7 +25,7 @@
       <p class="hint">For hexers.</p>
     </div>
     <div class="field">
-      <%= f.label :job_id, "Into a job's learn table" %>
+      <%= f.label :job_id, "Into an archetype's learn table" %>
       <%= f.select :job_id, @world.jobs.alphabetical.map { |j| [ j.name, j.id ] }, include_blank: "No" %>
     </div>
   </div>
@@ -36,7 +36,7 @@
       Caster presets: <%= AbilityFamily::SHAPES["caster"][2].map { |t| "#{t.power} for #{t.mp} MP" }.join(", ") %>.
     </p>
     <table class="grid-form">
-      <thead><tr><th>Tier</th><th>Name</th><th>Description</th><th>Aims at</th><th>Power</th><th>MP</th><th>Job level</th></tr></thead>
+      <thead><tr><th>Tier</th><th>Name</th><th>Description</th><th>Aims at</th><th>Power</th><th>MP</th><th>Archetype level</th></tr></thead>
       <tbody>
         <% AbilityFamily::SHAPES["caster"][2].each_with_index do |tier, i| %>
           <% posted = Array(@family.tiers)[i].to_h %>
@@ -47,7 +47,7 @@
             <td class="muted"><%= tier.target.start_with?("all") ? "Everyone" : "One" %></td>
             <td><%= number_field_tag "family[tiers][#{i}][power]", posted["power"], min: 1, placeholder: "preset", "aria-label": "Tier #{i + 1} power" %></td>
             <td><%= number_field_tag "family[tiers][#{i}][mp]", posted["mp"], min: 0, placeholder: tier.mp, "aria-label": "Tier #{i + 1} MP" %></td>
-            <td><%= number_field_tag "family[tiers][#{i}][level]", posted["level"], min: 1, max: Stats::Growth::MAX_JOB_LEVEL, placeholder: tier.level, "aria-label": "Tier #{i + 1} job level" %></td>
+            <td><%= number_field_tag "family[tiers][#{i}][level]", posted["level"], min: 1, max: Stats::Growth::MAX_JOB_LEVEL, placeholder: tier.level, "aria-label": "Tier #{i + 1} archetype level" %></td>
           </tr>
         <% end %>
       </tbody>

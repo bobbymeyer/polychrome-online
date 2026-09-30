@@ -35,11 +35,12 @@ class Past
 
   def ago(years) = Generators::History.ago(years.to_i)
   def plural(name) = Generators::History.plural(name)
+  def house(name, cap: false) = Generators::History.house(name, cap: cap)
 
   def town_lines
     [ ("Founded #{ago(data['founded'])}#{" by #{data['founder']}" if data['founder']}." if data["founded"]),
-      ("The #{plural(data['family'])} left #{ago(data['founders_left'])}." if data["family"] && data["founders_left"]),
-      ("The #{plural(data['family'])}' old rivals are the #{plural(data['rival'])}." if data["family"] && data["rival"] && data["rival"] != data.dig("feud", "with")),
+      ("#{house(data['family'], cap: true)} left #{ago(data['founders_left'])}." if data["family"] && data["founders_left"]),
+      ("#{house(data['family'], cap: true)}' old rivals are #{house(data['rival'])}." if data["family"] && data["rival"] && data["rival"] != data.dig("feud", "with")),
       feud_line ].compact
   end
 
@@ -48,11 +49,11 @@ class Past
     fell = data.dig("fall", "ago")
     [ "Once #{data['family'] ? "the #{data['family']}" : data['was'].to_s.match?(/\A[aeiou]/) ? 'an' : 'a'} #{data['was']}#{", built #{ago(data['founded'])}" if data['founded']}.",
       (if fall then "It #{fall['did'] || 'fell'} #{ago(fell)}#{", and was #{fall['sealed']}" if fall['sealed']}."
-       elsif data.dig("fall", "kind") == "abandoned" then "Left empty #{ago(fell)}, when #{data['holder'] ? "the #{plural(data['holder'])}" : 'its people'} went away."
+       elsif data.dig("fall", "kind") == "abandoned" then "Left empty #{ago(fell)}, when #{data['holder'] ? "#{house(data['holder'])}" : 'its people'} went away."
        elsif data.dig("fall", "kind") then "It fell #{ago(fell)}: #{data.dig('fall', 'kind')}."
        end),
       ("#{Array(data['lost']).to_sentence} never came out." if Array(data["lost"]).any?),
-      ("The #{plural(data['holder'])} bought it from the #{plural(data['family'])}." if data["holder"] && data["family"] && data["holder"] != data["family"]),
+      ("#{house(data['holder'], cap: true)} bought it from #{house(data['family'])}." if data["holder"] && data["family"] && data["holder"] != data["family"]),
       *Array(data["heirlooms"]).map { |h| heirloom_line(h) },
       feud_line ].compact
   end
@@ -61,7 +62,7 @@ class Past
     feud = data["feud"]
     return unless feud.is_a?(Hash) && feud["with"].present?
 
-    "The #{plural(data['family'] || 'founder')} are still at feud with the #{plural(feud['with'])}#{", over #{feud['cause']}" if feud['cause'].present?}."
+    "#{house(data['family'] || 'founder', cap: true)} are still at feud with #{house(feud['with'])}#{", over #{feud['cause']}" if feud['cause'].present?}."
   end
 
   def heirloom_line(heirloom)

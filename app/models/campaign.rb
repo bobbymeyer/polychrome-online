@@ -31,7 +31,7 @@ class Campaign < ApplicationRecord
   has_many :map_nodes, dependent: :destroy # at locations
   has_many :locations, dependent: :destroy
 
-  include Bag, Shopping, Services, Travelling, Ways, Checks, MonsterNotes, JobRewards, Overnight, Deeds, Defeat, Broadcasts
+  include Bag, Shopping, Services, Travelling, Ways, Checks, MonsterNotes, JobRewards, Payoffs, Overnight, Deeds, Defeat, Broadcasts
 
   # The campaign's dice: one seeded RNG, stored here like a battle's, for
   # everything outside a battle (encounters on the road, checks, what
@@ -87,8 +87,8 @@ class Campaign < ApplicationRecord
   def scene
     return "dungeon" if dungeon_in_progress
 
-    # A place in a mode has its own music (Location#switch_mode!).
-    moded = current_node&.location&.current_mode&.music
+    # A place in a mode has its own music (Location#mode_music).
+    moded = current_node&.location&.mode_music
     return moded if moded
 
     current_node&.location&.town? ? "town" : "field"

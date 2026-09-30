@@ -1,7 +1,7 @@
 <%# The GM's choices once everyone is down (Campaign::Defeat): on the battle's results and at the table. %>
 <% town = campaign.refuge %>
-<section class="window recovery" aria-label="Everyone is down">
-  <h2>Everyone is down. What happens now?</h2>
+<section class="window recovery" aria-label="Everyone is KO'd">
+  <h2>Everyone is KO'd. What happens now?</h2>
   <div class="actions">
     <% if town %>
       <%= button_to "Retreat to #{town.name}", campaign_recovery_path(campaign), params: { how: "retreat" }, class: "button play", form: { data: { turbo_frame: "_top" } } %>

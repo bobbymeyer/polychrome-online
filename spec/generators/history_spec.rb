@@ -43,6 +43,13 @@ RSpec.describe Generators::History do
     expect(run["families"].map { |f| f["name"] }).to all(start_with("House"))
   end
 
+  it "calls a family a house, and leaves a collective as it is" do
+    expect(described_class.house("Vell")).to eq("the Vells")
+    expect(described_class.house("Asch", cap: true)).to eq("The Asches")
+    expect(described_class.house("the bus company")).to eq("the bus company")
+    expect(described_class.house("The Tides", cap: true)).to eq("The Tides")
+  end
+
   it "is reproducible from its seed, and different from another" do
     expect(history(7)).to eq(history(7))
     expect((1..20).map { |s| history(s)["events"] }.uniq.size).to eq(20)

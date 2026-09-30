@@ -11,7 +11,7 @@
   <h3>From <%= @character.job.name %></h3>
   <% native = @character.native_abilities %>
   <% if native.empty? %>
-    <p class="empty">Nothing learned in this job yet. Attack is always available.</p>
+    <p class="empty">Nothing learned in this archetype yet. Attack is always available.</p>
   <% else %>
     <ul class="refs refs--inline">
       <% native.each do |ability| %>
@@ -25,7 +25,7 @@
   <% if @character.job.ability_slots.zero? %>
     <p class="empty"><%= @character.job.name %> has no free slots.</p>
   <% elsif slottable.empty? %>
-    <p class="empty">Learn abilities in other jobs to bring them here.</p>
+    <p class="empty">Learn abilities in other archetypes to bring them here.</p>
   <% elsif !can_manage?(@character) %>
     <ul class="refs refs--inline"><% @character.slotted_abilities.compact.each do |ability| %><li><%= ability.name %></li><% end %></ul>
   <% else %>

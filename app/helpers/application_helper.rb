@@ -60,6 +60,7 @@ module ApplicationHelper
     token = token.to_s
     return word("status.#{token}", world) if Battle::STATUSES.include?(token)
     return word("service.#{token}", world) if World::Vocabulary::SERVICES.include?(token)
+    return "Things to do" if token == "pastimes" # a mode can shut them (LocationMode)
 
     token.humanize
   end

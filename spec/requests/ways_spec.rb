@@ -66,8 +66,36 @@ RSpec.describe "Where next", type: :request do
       expect(campaign.reload).to have_attributes(day: 2, time_of_day: "night")
     end
 
+    it "pays off through the archetypes at the next rest" do
+      nim = create_character(campaign, name: "Nim", job: world.jobs.find_by!(slug: "thief"))
+      ada = create_character(campaign, name: "Ada", job: world.jobs.find_by!(slug: "white_mage"))
+      create_character(campaign, name: "Down", job: world.jobs.find_by!(slug: "thief"), hp: 0) # the KO'd earn nothing
+      campaign.start_rumour!("The ferryman owes the Vells money.", at: mere) # not heard in Tule yet
+      sign_in_as(kim)
+      get campaign_table_path(campaign)
+      expect(response.body).to include("At the next rest: Rook, 20 EXP a part; Nim, 40 gil a part; Ada, a rumour")
+
+      campaign.take_way!("Attend class (until night)")
+      expect(campaign.reload.spent_parts).to eq(2)
+      get campaign_table_path(campaign)
+      expect(response.body).to include("2 parts of the day spent so far.")
+
+      gil = campaign.gil
+      exp = rook.reload.exp
+      campaign.rest!
+      expect(campaign.reload).to have_attributes(gil: gil + 80, spent_parts: 0)
+      expect(rook.reload.exp).to eq(exp + 40)
+      expect(campaign.messages.pluck(:body)).to include(
+        "Rook drills with the watch: 40 EXP.", "Nim comes back with 80 gil and no explanation.",
+        "Ada sits with the sick, and hears something: “The ferryman owes the Vells money.”"
+      )
+
+      # A rest with nothing done pays nothing.
+      expect { campaign.update!(time_of_day: "night") && campaign.rest! }.not_to(change { campaign.reload.gil })
+    end
+
     it "won't do what isn't done at this time of day, or somewhere else" do
-      expect { campaign.spend_time!(tule, "The Undertow") }.to raise_error(Refusal, /isn't something to do at day/)
+      expect { campaign.spend_time!(tule, "The Undertow") }.to raise_error(Refusal, /isn't something to do now \(day\)/)
       expect { campaign.spend_time!(mere, "Attend class") }.to raise_error(Refusal, /There's no Attend class at Greymere/)
     end
 
@@ -84,9 +112,14 @@ RSpec.describe "Where next", type: :request do
       expect(place.reload.activities).to eq("Club (dusk)")
     end
 
+    it "takes a colon inside a name, when no space follows it" do
+      tule.update!(activities: "Wait for the 0:13 (night): The last train.")
+      expect(tule.pastimes.last).to have_attributes(name: "Wait for the 0:13", times: %w[night], line: "The last train.")
+    end
+
     it "checks how a place's things to do are written" do
       tule.update(activities: "Nap (noon)\n(no name)")
-      expect(tule.errors[:activities]).to include("“Nap”: noon isn't a part of the day (dawn, day, dusk, night) or a number of parts",
+      expect(tule.errors[:activities]).to include("“Nap”: noon isn't in the calendar (a part of the day, a day of the week, a month or a season) or a number of parts",
                                                   "“(no name)” needs a name before any brackets or colon")
     end
   end

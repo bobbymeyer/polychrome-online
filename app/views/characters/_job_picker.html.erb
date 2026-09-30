@@ -1,6 +1,6 @@
 <%# Choosing a job as a moment, not a dropdown: one card per open job with what it is good at, its own command and what it wears. f: the form; jobs; selected: the job id. %>
 <fieldset class="field job-picker">
-  <legend>Job</legend>
+  <legend>Archetype</legend>
   <div class="job-picker__cards">
     <% jobs.each do |job| %>
       <% strong = job.stat_multipliers.select { |_, pct| pct > 100 }.sort_by { |_, pct| -pct }.map(&:first) %>

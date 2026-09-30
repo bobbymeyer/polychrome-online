@@ -1,7 +1,7 @@
 <% content_for :title, "#{@world.name}: edit skills" %>
 <div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Skills", world_skills_path(@world) %> / Edit</div>
 <h1>Edit skills</h1>
-<p class="prose">As many as the setting needs, and at least one. A removed skill comes off the jobs that were good at it.</p>
+<p class="prose">As many as the setting needs, and at least one. A removed skill comes off the archetypes that were good at it.</p>
 <% stats = Stats::Check::STATS.map { |s| [ stat_label(s), s ] } %>
 <%= form_with url: world_skills_path(@world), method: :patch, class: "book-form" do |f| %>
   <fieldset class="panel">

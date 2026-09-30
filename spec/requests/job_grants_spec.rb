@@ -39,17 +39,17 @@ RSpec.describe "Jobs as story rewards", type: :request do
     campaign = start(%w[freelancer])
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
     get campaign_table_path(campaign)
-    expect(response.body).to include("Grant jobs", "Knight")
+    expect(response.body).to include("Grant archetypes", "Knight")
 
     post campaign_job_grants_path(campaign), params: { jobs: %w[knight monk], line: "The Wind Crystal shatters." }
     expect(campaign.reload.available_jobs.map(&:slug)).to eq(%w[freelancer knight monk])
     line = campaign.messages.last
-    expect(line.body).to eq("The Wind Crystal shatters. New jobs: Knight and Monk.")
+    expect(line.body).to eq("The Wind Crystal shatters. New archetypes: Knight and Monk.")
     get campaign_table_path(campaign)
-    expect(response.body).to include("New job!", "Heavy armor, a long sword")
+    expect(response.body).to include("New archetype!", "Heavy armor, a long sword")
 
     post campaign_job_grants_path(campaign), params: { jobs: %w[knight] }
-    expect(flash[:alert]).to eq("Pick a job that isn't open yet")
+    expect(flash[:alert]).to eq("Pick an archetype that isn't open yet")
   end
 
   it "awakens one character: the job opens, they take it up, and the table stops for it" do

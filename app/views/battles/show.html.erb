@@ -19,8 +19,12 @@
      data-dialogue-auto-hide-value="true"
      data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
   <%= turbo_stream_from @battle %>
-  <% if @seat.unit_id && @battle.waiting_for_arrivals? %>
-    <span hidden data-controller="arrival" data-arrival-url-value="<%= battle_arrival_path(@battle) %>"></span>
+  <%# The first round's clock waits for each player to say they're ready (BattleRecord#arrive!). %>
+  <% if @seat.unit_id && @battle.waiting_for_arrivals? && @battle.still_coming.include?(@seat.unit_id) %>
+    <div id="battle_ready" class="battle-ready">
+      <%= button_to "Ready", battle_arrival_path(@battle), class: "button play", form: { data: { turbo_stream: true } } %>
+      <p class="hint">The clock starts once everyone in the fight is ready.</p>
+    </div>
   <% end %>
   <%# What's said at the table reaches the battle too (the same signed streams as the table). %>
   <% if @battle.campaign %>

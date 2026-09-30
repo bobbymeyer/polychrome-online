@@ -36,6 +36,14 @@ module Generators
       name.to_s.match?(/(s|x|z|ch|sh)\z/) ? "#{name}es" : "#{name}s"
     end
 
+    # A family as a house: "the Vells". A world's family written as a
+    # collective ("the bus company", "the tides") is already one.
+    # cap: at the start of a sentence.
+    def house(name, cap: false)
+      said = name.to_s.match?(/\Athe /i) ? name.to_s.sub(/\Athe /i, "the ") : "the #{plural(name)}"
+      cap ? said.sub(/\At/, "T") : said
+    end
+
     # "38 years ago", "this year"
     def ago(years)
       case years
@@ -79,6 +87,8 @@ module Generators
       attr_reader :pool
 
       def plural(name) = History.plural(name)
+
+      def house(name, cap: false) = History.house(name, cap: cap)
 
       def unique(names) = Array(names).map { |n| n.to_s.strip }.reject(&:empty?).uniq
 
@@ -155,7 +165,7 @@ module Generators
             rolled = pick(@lore["pasts"].keys)
             past["was"] = History.was_for(place["name"], @lore) || rolled
             was = past["was"] ? ", #{past['was'].match?(/\A[aeiou]/) ? 'an' : 'a'} #{past['was']}" : ""
-            record("built", "The #{plural(family['name'])} built #{place['name']}#{was}.", places: [ place ], families: [ family ])
+            record("built", "#{house(family['name'], cap: true)} built #{place['name']}#{was}.", places: [ place ], families: [ family ])
           end
         end
         @now = @years - FOUNDING
@@ -229,7 +239,7 @@ module Generators
         rel["score"] += 2
         ended = rel["feud"] && pool.percent?(50)
         a["heir"]["wed"] = b["heir"]["wed"] = true
-        text = "#{a['heir']['name']} married #{b['heir']['name'].split.first} of the #{plural(b['name'])}"
+        text = "#{a['heir']['name']} married #{b['heir']['name'].split.first} of #{house(b['name'])}"
         rel["feud"] = nil if ended
         record("married", "#{text}#{', and the feud was put by' if ended}.", families: [ a, b ])
       end
@@ -241,9 +251,9 @@ module Generators
         cause = pick(@lore["quarrels"])
         if rel["score"] <= -3 && !rel["feud"]
           rel["feud"] = { "since" => @now, "cause" => cause }
-          record("feud", "The #{plural(a['name'])} and the #{plural(b['name'])} fell out over #{cause}. It became a feud.", families: [ a, b ])
+          record("feud", "#{house(a['name'], cap: true)} and #{house(b['name'])} fell out over #{cause}. It became a feud.", families: [ a, b ])
         else
-          record("quarrel", "The #{plural(a['name'])} and the #{plural(b['name'])} quarrelled over #{cause}.", families: [ a, b ])
+          record("quarrel", "#{house(a['name'], cap: true)} and #{house(b['name'])} quarrelled over #{cause}.", families: [ a, b ])
         end
       end
 
@@ -257,7 +267,7 @@ module Generators
         b["standing"] = [ b["standing"] - 1, 0 ].max
         a["standing"] += 1
         b["grudges"] << { "against" => a["key"], "why" => "the time they #{how}", "ago" => @now }
-        record("betrayal", "The #{plural(b['name'])} lost their standing; nobody could say how.", families: [ a, b ],
+        record("betrayal", "#{house(b['name'], cap: true)} lost their standing; nobody could say how.", families: [ a, b ],
                truth: "#{a['head']['name']} #{how}.")
       end
 
@@ -287,7 +297,7 @@ module Generators
           what = @lore["falls"][kind]["town"].sub("%s", place["name"])
           suspect = feud_enemy(holder)
           record(kind, "#{what}.", places: [ place ], families: seated,
-                 truth: (("#{suspect['head']['name']} set it, to hurt the #{plural(holder['name'])}." if suspect && kind == "fire" && pool.percent?(40))))
+                 truth: (("#{suspect['head']['name']} set it, to hurt #{house(holder['name'])}." if suspect && kind == "fire" && pool.percent?(40))))
         end
       end
 
@@ -336,7 +346,7 @@ module Generators
         text += " Folk say a #{enemy['name']} held them under." if rumour
         family["grudges"] << { "against" => enemy["key"], "why" => "#{who['name']}'s drowning", "ago" => @now } if rumour
         truth = if true_rumour then "#{enemy['head']['name']} did it."
-        elsif rumour then "It was an accident. The #{plural(enemy['name'])} have never known what they're blamed for."
+        elsif rumour then "It was an accident. #{house(enemy['name'], cap: true)} have never known what they're blamed for."
         end
         record("drowned", text, places: [ water ].compact, families: [ family, enemy ].compact, truth: truth)
       end
@@ -352,7 +362,7 @@ module Generators
         place["holder"] = buyer["key"]
         relation(seller, buyer)["score"] -= 1
         buyer["standing"] += 1
-        record("sold", "The #{plural(seller['name'])} sold #{place['name']} to the #{plural(buyer['name'])}.", places: [ place ], families: [ seller, buyer ])
+        record("sold", "#{house(seller['name'], cap: true)} sold #{place['name']} to #{house(buyer['name'])}.", places: [ place ], families: [ seller, buyer ])
       end
 
       # Something made to be remembered: a smith's blade for the head of
@@ -380,14 +390,14 @@ module Generators
         @history.values.select { |p| p["holder"] == family["key"] && p["kind"] == "dungeon" && !p["fall"] }.each do |place|
           place["fall"] = { "kind" => "abandoned", "ago" => @now }
         end
-        record("fled", "The #{plural(family['name'])} left the region#{why}. Their house stands empty.", families: [ family ])
+        record("fled", "#{house(family['name'], cap: true)} left the region#{why}. Their house stands empty.", families: [ family ])
       end
 
       def prospered!
         family = pick(living)
         family["standing"] += 1
         fortune = pick(@lore["fortunes"])
-        record("prospered", "The #{plural(family['name'])} did well#{": #{fortune}" if fortune}.", families: [ family ])
+        record("prospered", "#{house(family['name'], cap: true)} did well#{": #{fortune}" if fortune}.", families: [ family ])
       end
 
       # Before the present: every dungeon has fallen by now, and somewhere a
@@ -405,7 +415,7 @@ module Generators
         cause = pick(@lore["quarrels"])
         relation(a, b)["score"] = [ relation(a, b)["score"], -3 ].min
         relation(a, b)["feud"] = { "since" => @now, "cause" => cause }
-        record("feud", "The #{plural(a['name'])} and the #{plural(b['name'])} fell out over #{cause}. It became a feud.", families: [ a, b ])
+        record("feud", "#{house(a['name'], cap: true)} and #{house(b['name'])} fell out over #{cause}. It became a feud.", families: [ a, b ])
       end
 
       # --- output ------------------------------------------------------------------

@@ -10,7 +10,7 @@ class Campaigns::TimesController < ApplicationController
   def update
     return head :forbidden unless table_gm?
 
-    parts = params[:until] == "dawn" ? @campaign.until_dawn : params[:parts].to_i.clamp(1, 28)
+    parts = params[:until] == "the_day" ? @campaign.until_the_day_begins : params[:parts].to_i.clamp(1, 28)
     @campaign.pass_time!(parts)
     redirect_back_or_to campaign_table_path(@campaign), status: :see_other
   end

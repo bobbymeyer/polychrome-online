@@ -1,22 +1,29 @@
 <%# The GM's modes for a place (Location#switch_mode!): prepared, set off, put back. %>
 <% modes = location.modes %>
+<% on = location.modes_on %>
+<% almanac = location.campaign.world.almanac %>
 <details class="window gm-tools" <%= "open" if location.current_mode %>>
-  <summary>GM: modes<%= " · #{location.current_mode['name']} now" if location.current_mode %></summary>
+  <summary>GM: modes<%= " · #{on.map(&:name).join(' · ')} now" if on.any? %></summary>
   <p class="hint">
-    Another state for this place, prepared ahead and set off at the table: the city burns, the mine floods, the festival starts.
-    While it lasts, services can be shut, the music changes, and arriving can mean trouble. The rest of the world stays as it is.
+    Another state for this place, prepared ahead: set off at the table (the city burns, the mine floods, the festival starts), or on by
+    itself when the calendar says (by night, in winter, on market day). A place can be in several at once.
+    While one lasts, services and things to do can be shut, it can have things to do of its own, the music changes, and arriving can mean trouble.
+    The rest of the world stays as it is.
   </p>
   <% if modes.any? %>
     <ul class="modes">
       <% modes.each do |t| %>
-        <li class="<%= 'is-current' if location.mode == t['key'] %>">
-          <strong><%= t["name"] %></strong>
+        <li class="<%= 'is-current' if on.include?(t) %>">
+          <strong><%= t["name"] %></strong><%= " (on now)" if t.timed? && on.include?(t) %>
           <span class="muted">
-            <%= [ ("by itself at #{t.times.to_sentence}" if t.timed?),
+            <%= [ ("by itself: #{t.times.join(', ')}" if t.timed?),
+                  ("things to do: #{Pastime.list(t.activities, almanac).map(&:name).to_sentence}" if t.activities),
                   ("shuts #{t['closed'].map { |k| term(k) }.to_sentence.downcase}" if t["closed"].present?), ("#{t['music']} music" if t["music"]),
                   ("trouble from #{t.encounter_table.name}" if t.encounter_table) ].compact.join(" · ") %>
           </span>
-          <% if location.mode == t["key"] %>
+          <% if t.timed? %>
+            <%# It follows the calendar: nothing to set off. %>
+          <% elsif location.mode == t["key"] %>
             <%= form_with url: location_current_mode_path(location), method: :delete, class: "inline-form" do |f| %>
               <%= f.text_field :line, placeholder: "The fires are out. (optional)", "aria-label": "What the table hears" %>
               <%= f.submit "Put it back", class: "button" %>
@@ -45,27 +52,33 @@
     <div class="field"><%= f.label :line, "What the table hears" %><%= f.text_field :line, placeholder: "Smoke over the rooftops: the city is burning." %></div>
     <div class="field"><%= f.label :description, "What players read here meanwhile" %><%= f.text_field :description, placeholder: "Half the market is ash. The guard is everywhere." %></div>
     <div class="field"><%= f.label :art, "How it looks (for its picture)" %><%= f.text_field :art, placeholder: "on fire, thick smoke, ash falling" %></div>
-    <% services = view.fetch("services", []) %>
-    <% if services.any? %>
-      <fieldset class="field">
-        <legend>Shut meanwhile</legend>
-        <%= hidden_field_tag "mode[closed][]", "", id: nil %>
-        <div class="checks">
-          <% services.map { |s| s["kind"] }.uniq.each do |kind| %>
-            <label><%= check_box_tag "mode[closed][]", kind, false, id: "mode_closed_#{kind}" %> <%= term(kind) %></label>
-          <% end %>
-        </div>
-      </fieldset>
-    <% end %>
+    <div class="field">
+      <%= f.label :activities, "Things to do meanwhile" %>
+      <%= f.text_area :activities, rows: 2, class: "script-field", placeholder: "Wade the platforms (2): Knee-deep, and the lights still on." %>
+    </div>
+    <% services = view.fetch("services", []).map { |s| s["kind"] }.uniq %>
+    <fieldset class="field">
+      <legend>Shut meanwhile</legend>
+      <%= hidden_field_tag "mode[closed][]", "", id: nil %>
+      <div class="checks">
+        <% services.each do |kind| %>
+          <label><%= check_box_tag "mode[closed][]", kind, false, id: "mode_closed_#{kind}" %> <%= term(kind) %></label>
+        <% end %>
+        <label><%= check_box_tag "mode[closed][]", "pastimes", false, id: "mode_closed_pastimes" %> The usual things to do</label>
+      </div>
+    </fieldset>
     <fieldset class="field">
       <legend>Comes on by itself</legend>
       <%= hidden_field_tag "mode[times][]", "", id: nil %>
-      <div class="checks">
-        <% Campaign::Timekeeping::TIMES.each do |time| %>
-          <label><%= check_box_tag "mode[times][]", time, false, id: "mode_times_#{time}" %> at <%= time %></label>
-        <% end %>
-      </div>
-      <p class="hint">For a place that's different by night: it turns into this mode at those parts of the day, and back at the others. Leave them all off for a mode you set off yourself.</p>
+      <% almanac.words.each do |kind, names| %>
+        <% next if names.empty? %>
+        <div class="checks" role="group" aria-label="<%= Pointcrawl::Calendar::KINDS[kind] %>">
+          <% names.each do |name| %>
+            <label><%= check_box_tag "mode[times][]", name, false, id: "mode_times_#{name.parameterize(separator: '_')}" %> <%= name %></label>
+          <% end %>
+        </div>
+      <% end %>
+      <p class="hint">For a place that's different by night, in winter or on market day: it's in this mode then, and not otherwise, on top of any you set off. Ticked in one row, any of them (dusk or night); in different rows, all at once (winter nights). Leave them all off for a mode you set off yourself.</p>
     </fieldset>
     <%= f.submit "Prepare the mode", class: "button" %>
   <% end %>

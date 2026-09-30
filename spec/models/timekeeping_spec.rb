@@ -13,7 +13,7 @@ RSpec.describe Campaign::Timekeeping do
     expect([ campaign.day, campaign.time_of_day ]).to eq([ 1, "dusk" ])
     expect(campaign.messages.last.body).to eq("Dusk.")
 
-    expect(campaign.pass_time!(campaign.until_dawn)).to eq(1)
+    expect(campaign.pass_time!(campaign.until_the_day_begins)).to eq(1)
     expect([ campaign.day, campaign.time_of_day ]).to eq([ 2, "dawn" ])
     expect(festival.reload.filled).to eq(1)
 
@@ -36,7 +36,7 @@ RSpec.describe Campaign::Timekeeping do
     expect([ campaign.day, campaign.time_of_day ]).to eq([ 2, "dawn" ])
 
     # Begun at dawn, a rest takes the morning: it never skips a whole day.
-    expect(campaign.until_dawn).to eq(0)
+    expect(campaign.until_the_day_begins).to eq(0)
     campaign.rest!
     expect([ campaign.day, campaign.time_of_day ]).to eq([ 2, "day" ])
 
@@ -45,6 +45,19 @@ RSpec.describe Campaign::Timekeeping do
     platform = campaign.map_edges.create!(from_node: b, to_node: c, duration: 0)
     campaign.reload.travel!(platform)
     expect([ campaign.reload.day, campaign.time_of_day ]).to eq([ 2, "day" ])
+  end
+
+  it "keeps the world's own parts of the day, and sleeps until its first" do
+    world.update!(calendar: { periods: "Morning, After school, Evening, Late night", dark: "Late night" })
+    school = world.campaigns.create!(name: "Third Term")
+    expect(school.when_it_is).to eq("Day 1 · Morning")
+    school.pass_time!(3)
+    expect([ school.period, school.dark? ]).to eq([ "Late night", true ])
+    expect(school.rest_time).to eq(1)
+    school.pass_time!(school.rest_time)
+    expect([ school.day, school.period ]).to eq([ 2, "Morning" ])
+    expect(school.messages.last.body).to eq("Day 2: Morning.")
+    expect { school.update!(time_of_day: "dawn") }.to raise_error(ActiveRecord::RecordInvalid, /isn't a part of the day/)
   end
 
   it "names the days the world's way" do

@@ -46,12 +46,13 @@ module BattleLogHelper
     when "miss" then miss_line(event, name.("target"), state)
     when "status_applied"
       event["status"] == "down" ? "#{name.('target')} is knocked down!" : "#{name.('target')}: #{term(event['status'])}.#{dice_note(event)}"
-    when "one_more" then "One More! #{name.('actor')} goes again."
+    when "one_more" then "One More! #{name.('actor')} goes again#{" at #{name.('target')}" if event['target']}."
+    when "all_out" then "All-Out Attack! Everyone piles in, and the enemies scramble to their feet."
     when "status_expired" then status_expired_line(event, name.("target"))
     when "buff_applied"
       "#{name.('target')}'s #{stat_label(event['stat'])} #{event['amount'].positive? ? 'rises' : 'falls'}."
     when "buff_expired" then "#{name.('target')}'s #{stat_label(event['stat'])} returns to normal."
-    when "ko" then state["units"].find { |u| u["id"] == event["target"] }&.dig("side") == "party" ? "#{name.('target')} is down!" : "#{name.('target')} is defeated."
+    when "ko" then state["units"].find { |u| u["id"] == event["target"] }&.dig("side") == "party" ? "#{name.('target')} is KO'd!" : "#{name.('target')} is defeated."
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
     when "steal" then "#{name.('actor')} stole #{event['name']} from #{name.('target')}!#{dice_note(event)}"

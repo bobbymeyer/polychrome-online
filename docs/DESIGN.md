@@ -249,9 +249,10 @@ keyboard, a mouse or a finger.
 - **Won't work:** when what the party knows of a target says a move can't touch it (the chart's
   no effect, or an absorb), the target says "Won't work" and the help line says why. It never
   tells more than the party has found out.
-- **The clock is fair.** A battle's first round starts its input timer only once every player in
-  the fight has reached its screen, or the GM has put them on auto; until then it says who it's
-  waiting for. A player's idea waiting for the GM's ruling stops the clock. At ten seconds left,
+- **The clock is fair.** A battle's first round starts its input timer only once every player
+  still standing in the fight has pressed Ready, or the GM has put them on auto; until then it
+  says who it's waiting for. A character who is KO'd comes into the fight KO'd: their player
+  watches, and a raise brings them back in. A player's idea waiting for the GM's ruling stops the clock. At ten seconds left,
   a phone buzzes and the page blips once.
 
 ### The first hour
@@ -302,29 +303,69 @@ countdowns on the date card say what it costs.
 
 ### Someone awakens
 
-The GM can have one character awaken to a job at the table ("Awaken someone": who, to what, and
-what they hear). The job opens for the party if it wasn't open, they take it up at once, and
-the table stops for it. Their face comes up on a white card with a yellow shadow, and after a
-beat the card turns over. On the black back are what they heard, in yellow italic, the job's
-name in display type, and its description. A low drone and a heartbeat play, then a chord that
-opens upward, and the scene's music holds still while the card is up.
+The GM can have one character awaken to an archetype at the table ("Awaken someone": who, to
+what, and what they hear). The archetype opens for the party if it wasn't open, they take it up
+at once, and the table stops for it. Their face comes up on a white card with a yellow shadow,
+and after a beat the card turns over. On the black back are whose it is ("Rook awakens"), what
+they heard in yellow italic, the archetype's name in display type, and its description. The
+card holds for about ten seconds, long enough to read it out, or until a click. A low drone and
+a heartbeat play, then a chord that opens upward, and the scene's music holds still while the
+card is up. The GM who pressed the button sees it too, on the table page they come back to.
 
 ### One More
 
 A world can turn on One More (its Battle rules). A blow that finds a weakness, or lands a
 critical hit, knocks its target down: "DOWN!" pops over them on black and yellow, and they lose
 their next turn. Whoever struck goes again at once with the same move, under a slanted red "ONE
-MORE!" across the stage. It happens once a turn, it works for enemies too, and someone already
-down isn't knocked down twice. Commands are chosen for the whole round at its start, so the
-extra go repeats the move rather than asking for a new one, as haste's second go does.
+MORE!" across the stage, with a flash and a stab of brass. The other go finds its own mark: if
+it was at one enemy, it goes for whoever is still standing and weakest to it, so a party can
+knock a whole line down. On a phone the banner runs the full width above the pinned menu. It
+happens once a turn, it works for enemies too, and someone already down isn't knocked down twice.
+Commands are chosen for the whole round at its start, so the extra go repeats the move rather
+than asking for a new one, as haste's second go does.
+
+When the party has every enemy down, everyone who can act piles in: an **All-Out Attack**. A
+black slab crosses the whole stage with "ALL-OUT ATTACK!" in red, the party bounces in turn over
+a drum roll and a crash, and each of them lands an Attack on every enemy. Then the enemies
+scramble back to their feet. It happens at most once a round.
+
+### Daily life pays off
+
+Time spent on things to do pays off through the party's archetypes, at the next rest. Each
+archetype says how: money for the party, EXP or ABP for them (so much a part of the day), or a
+rumour. Under the things to do, "At the next rest" says what each character's archetype will
+make of it, and how many parts of the day have been spent so far. When the party sleeps, the
+table hears each one in the archetype's own words ("Nim comes back with 80 gil and no
+explanation"). Someone KO'd earns nothing.
 
 ### A place by night
 
-A mode can come on by itself at parts of the day: the station after the last train, the
-market when the shutters come down. It turns on at those hours and off at the others, and only
-the party, where it is, hears the change. A mode set off at the table (the city burning)
-outlasts the hours. In the Atlas, a place's "What it's like by night" line becomes a "By night"
-mode in every new campaign.
+A mode can come on by itself when the calendar says: the station after the last train, the
+market when the shutters come down, the town snowbound in winter, the square on market day. It
+turns on then and off otherwise. Words of one kind are any of them (dusk or night); words of
+different kinds are all at once (winter nights). Modes layer: a place is in the one set off at
+the table and every one the calendar has brought on, so the city can burn by night. Each one on
+gets its own box on the place's page, and the map names them all ("Burning · By night"). A mode
+can shut the place's usual things to do and bring its own, so the flooded station has no kiosk
+shift but does have "Wade the platforms". Only the party, where it is, hears a mode come on,
+and arriving somewhere says what the modes it's in say. In the Atlas, a place's "What it's like
+by night" line becomes a "By night" mode in every new campaign, in the setting's night; a
+landmark, which has no modes, says the line as night falls or when the party arrives after dark.
+
+### The setting's calendar
+
+Each world sets its own calendar, and each part of it is made of the one before. Parts of the
+day make a day, and some of them are its night; days make a week (the weekdays) and a month;
+months, each with its own length and season, make a year; years make an era, written with #
+for the year in it ("Heisei #", "# AC"). The world also sets the date the story starts on. A
+school year runs Morning, After school, Evening, Late night, from Tuesday 7 April, Heisei 21.
+A world with none of it has dawn, day, dusk and night, and counts days.
+
+The date card says the date in display type, then the season and year in grey, then the part
+of the day in its own box. The box wears the light, not the name: the first part of the day is
+yellow, the night is blue-black, the part just before night is red, and the rest are white. A
+rest sleeps until the first part of the day. Things to do and modes are kept to times with the
+calendar's own words.
 
 ### A deadline passes
 

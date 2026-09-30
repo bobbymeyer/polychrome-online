@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_220000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -196,6 +196,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
     t.string "time_of_day", default: "dawn", null: false
     t.json "welcomes", default: {}, null: false
     t.integer "free_rooms_node_id"
+    t.integer "spent_parts", default: 0, null: false
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true
@@ -468,6 +469,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
     t.string "base_type", default: "normal", null: false
     t.json "skills", default: [], null: false
     t.string "field_ability"
+    t.json "payoff", default: {}, null: false
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -485,6 +487,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_190000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "times", default: [], null: false
+    t.text "activities"
     t.index ["encounter_table_id"], name: "index_location_modes_on_encounter_table_id"
     t.index ["location_id", "key"], name: "index_location_modes_on_location_id_and_key", unique: true
     t.index ["location_id"], name: "index_location_modes_on_location_id"

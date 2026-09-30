@@ -8,19 +8,19 @@ module Drafts
     def instructions
       "You help set up a setting for a JRPG-style tabletop game. From the pitch, suggest damage types (like fire or " \
         "holy, but fitting this setting), skills for checks outside battle, each rolled on one stat " \
-        "(#{Stats::Check::STATS.join(', ')}: strength, magic, vitality, spirit, agility), and jobs (character classes). " \
+        "(#{Stats::Check::STATS.join(', ')}: strength, magic, vitality, spirit, agility), and archetypes (character classes). " \
         'Reply with JSON: {"types": [{"name": "...", "colour": "#rrggbb"}], ' \
         '"skills": [{"name": "...", "stat": "one of the stats", "description": "one short sentence"}], ' \
         '"jobs": [{"name": "...", "description": "one short sentence", "type": "one of your types, or null"}], ' \
         '"origins": [{"name": "where a character comes from", "description": "one short sentence", "skill": "one of the skills, or null"}]}, ' \
-        "with 4 to 8 types, 6 to 8 skills, 6 to 10 jobs and 4 to 6 origins."
+        "with 4 to 8 types, 6 to 8 skills, 6 to 10 archetypes and 4 to 6 origins."
     end
 
     def context
       [ setting,
         "It has types: #{world.type_chart.types.map(&:name).join(', ')}.",
         "It has skills: #{world.skills.map { |s| s['name'] }.join(', ')}.",
-        "It has jobs: #{world.jobs.alphabetical.limit(30).map(&:name).join(', ').presence || 'none'}.",
+        "It has archetypes: #{world.jobs.alphabetical.limit(30).map(&:name).join(', ').presence || 'none'}.",
         ("Pitch: #{request['pitch']}" if request["pitch"].present?) ].compact.join("\n\n")
     end
 
@@ -67,7 +67,7 @@ module Drafts
         world.update!(origins: Array(world.origins) + [ { "slug" => slug, "name" => item["name"], "description" => item["description"], "skill" => skill&.dig("slug") }.compact ])
         { notice: "#{item['name']} is one of #{world.name}'s origins." }
       else
-        raise Refusal, "A job needs its numbers: make it in the Compendium"
+        raise Refusal, "An archetype needs its numbers: make it in the Compendium"
       end
     end
   end

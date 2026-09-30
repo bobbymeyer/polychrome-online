@@ -357,16 +357,18 @@ RSpec.describe "Battle screen", type: :request do
       start_battle(campaign: campaign, input_seconds: 30)
     end
 
-    it "is something the page says, never what loading it does" do
+    it "is the player saying they're ready, never what loading the page does" do
       sit(bartz)
       get battle_path(battle)
-      expect(response.body).to include('data-controller="arrival"', battle_arrival_path(battle))
+      expect(response.body).to include('id="battle_ready"', battle_arrival_path(battle), "Ready", "is ready")
       get battle_panel_path(battle)
       expect(battle.reload.arrived_units).to be_empty
 
-      post battle_arrival_path(battle)
-      expect(response).to have_http_status(:no_content)
+      post battle_arrival_path(battle), as: :turbo_stream
+      expect(response.body).to include('action="remove"', "battle_ready")
       expect(battle.reload.arrived_units).to eq([ bartz ])
+      get battle_path(battle)
+      expect(response.body).not_to include('id="battle_ready"')
     end
   end
 end

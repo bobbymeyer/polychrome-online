@@ -102,7 +102,7 @@ RSpec.describe "Campaigns and characters", type: :request do
     it "shows level, job progress, the stat derivation, equipment and abilities" do
       get character_path(bartz)
       expect(response.body).to include("Bartz", "played by Sam", "Knight", "Lv</span> 1", "Base", "Gear", "Total",
-                                       "War Cry", "Change job", "Free slots (1)")
+                                       "War Cry", "Change archetype", "Free slots (1)")
 
       bartz.update!(user: make_user("Jo")) # an account beats the old player-name note
       get character_path(bartz)

@@ -64,7 +64,7 @@ module BattlesHelper
   end
 
   def enemy_facts(battle, target)
-    return [ "Down" ] if target["hp"].zero?
+    return [ "KO" ] if target["hp"].zero?
 
     level = battle && unit_art(battle, target).try(:level)
     facts = [ level ? "Level #{level}" : "Enemy" ]

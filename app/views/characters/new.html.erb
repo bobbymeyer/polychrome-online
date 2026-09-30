@@ -23,14 +23,14 @@
       <%= f.number_field :starting_level, min: 1, max: Stats::Growth::MAX_LEVEL %>
     </div>
     <div class="field">
-      <%= f.label :starting_job_level, "Job level" %>
+      <%= f.label :starting_job_level, "Archetype level" %>
       <%= f.number_field :starting_job_level, min: 0, placeholder: "From their level" %>
-      <p class="hint">Starts with that much of the job's learn table already learned. Blank: two job levels for each level. New characters also get the cheapest gear their job can use.</p>
+      <p class="hint">Starts with that much of the archetype's learn table already learned. Blank: two archetype levels for each level. New characters also get the cheapest gear their archetype can use.</p>
     </div>
   </div>
   <% end %>
   <% unless can_gm?(@campaign) %>
-    <p class="hint">A new character starts at the party's lowest level, knowing what their job teaches by then.</p>
+    <p class="hint">A new character starts at the party's lowest level, knowing what their archetype teaches by then.</p>
   <% end %>
   <div class="actions">
     <%= f.submit "Create character", class: "button" %>

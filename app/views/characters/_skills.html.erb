@@ -8,7 +8,7 @@
   <% end %>
   <p class="hint">The chance of a Normal check with each of <%= @world.name %>'s skills. The GM can call it easier or harder.</p>
   <table class="book-table book-table--plain">
-    <thead><tr><th>Skill</th><th>Stat</th><th class="num">Job</th><th class="num">Normal check</th></tr></thead>
+    <thead><tr><th>Skill</th><th>Stat</th><th class="num">Archetype</th><th class="num">Normal check</th></tr></thead>
     <tbody>
       <% Array(@world.skills).each do |skill| %>
         <% bonus = @character.skill_bonus(skill["slug"]) %>

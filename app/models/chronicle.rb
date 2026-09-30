@@ -47,9 +47,15 @@ class Chronicle
                                                 given_names: table_texts("names"), family_names: table_texts("families"), lore: world.lore)
   end
 
+  # The places the history happens in: not those whose past the GM wrote
+  # themselves (kept), so it never tells a different story about them.
   def places
-    world.world_places.order(:id).map { |p| { "key" => key_for(p), "name" => p.name, "kind" => p.kind } }
+    world.world_places.order(:id).reject { |p| kept_past?(p) }.map { |p| { "key" => key_for(p), "name" => p.name, "kind" => p.kind } }
   end
+
+  def kept_places = world.world_places.order(:name).select { |p| kept_past?(p) }
+
+  def kept_past?(place) = Past.new(place.past).edited?
 
   def key_for(place) = "place-#{place.id}"
   def place_for(key) = world_places_by_key[key]

@@ -60,8 +60,8 @@ module Campaign::Ways
   def pastimes_here
     return [] unless current_node && !dungeon_in_progress
 
-    current_node.pastimes.select { |pastime| pastime.open_at?(time_of_day) }.map do |pastime|
-      { "label" => pastime.label(time_of_day), "move" => { "node" => current_node.id, "pastime" => pastime.name } }
+    current_node.pastimes.select { |pastime| pastime.open?(almanac, day, period) }.map do |pastime|
+      { "label" => pastime.label(almanac, period), "move" => { "node" => current_node.id, "pastime" => pastime.name } }
     end
   end
 
@@ -70,11 +70,12 @@ module Campaign::Ways
   def spend_time!(node, name)
     pastime = node.pastimes.find { |p| p.name == name } or raise Refusal, "There's no #{name} at #{node.name}"
     raise Refusal, "The party isn't at #{node.name}" unless current_node == node
-    raise Refusal, "#{pastime.name} isn't something to do at #{time_of_day}" unless pastime.open_at?(time_of_day)
+    raise Refusal, "#{pastime.name} isn't something to do now (#{period})" unless pastime.open?(almanac, day, period)
 
     transaction do
       narrate("#{node.name}: #{pastime.name}.")
       messages.create!(body: pastime.line) if pastime.line
+      spent_time!(pastime.takes) # paid at the next rest (Campaign::Payoffs)
       pass_time!(pastime.takes)
     end
   end

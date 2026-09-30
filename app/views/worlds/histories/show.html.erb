@@ -85,6 +85,10 @@
           <% next if lines.empty? %>
           <li><strong><%= past["name"] %></strong> <span class="muted"><%= lines.join(" ") %></span></li>
         <% end %>
+        <%# Pasts the GM wrote: the history leaves them alone and happens around them. %>
+        <% @chronicle.kept_places.each do |place| %>
+          <li><strong><%= place.name %></strong> <span class="label">Yours, kept</span> <span class="muted"><%= Past.new(place.past, lore: @world.lore).lines.join(" ") %></span></li>
+        <% end %>
       </ul>
     </section>
 

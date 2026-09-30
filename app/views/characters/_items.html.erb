@@ -19,7 +19,7 @@
             <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span><br><span class="hint"><%= row.item.effects.map { |e| describe_effect(e) }.join(" · ") %></span></td>
             <td class="shop-table__buy">
               <% if targets.empty? %>
-                <span class="muted"><%= revive ? "Nobody is down" : (row.item.target == "self" ? "#{@character.name} is unhurt" : "Nobody is hurt") %></span>
+                <span class="muted"><%= revive ? "Nobody is KO'd" : (row.item.target == "self" ? "#{@character.name} is unhurt" : "Nobody is hurt") %></span>
               <% else %>
                 <%= form_with url: character_item_use_path(@character), class: "inline-form shop-form" do |f| %>
                   <%= hidden_field_tag :item, row.item.slug, id: nil %>

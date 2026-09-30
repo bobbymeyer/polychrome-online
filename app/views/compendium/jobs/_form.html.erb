@@ -6,7 +6,7 @@
       <div class="field">
         <%= f.label :base_type, "Type" %>
         <%= f.select :base_type, type_options %>
-        <p class="hint">A character in the job takes hits as this type, and Attack and the signature command strike with it. <%= link_to "The chart", world_types_path(@world) %>.</p>
+        <p class="hint">A character in the archetype takes hits as this type, and Attack and the signature command strike with it. <%= link_to "The chart", world_types_path(@world) %>.</p>
       </div>
     <% else %>
       <%= f.hidden_field :base_type, value: type_chart.plain %>
@@ -14,12 +14,12 @@
     <div class="field">
       <%= f.label :ability_slots, "Free ability slots" %>
       <%= f.number_field :ability_slots, min: 0, max: 4 %>
-      <p class="hint">How many abilities learned in other jobs a character can bring into this one.</p>
+      <p class="hint">How many abilities learned in other archetypes a character can bring into this one.</p>
     </div>
     <div class="field">
       <%= f.label :signature, "Signature command" %>
       <%= f.select :signature, @world.abilities.order(:name).map { |a| [ a.name, a.slug ] }, include_blank: "(none)" %>
-      <p class="hint">The job's own command: always on its menu, learned or not.</p>
+      <p class="hint">The archetype's own command: always on its menu, learned or not.</p>
     </div>
     <div class="field">
       <%= f.label :field_ability, "Field ability" %>
@@ -29,7 +29,7 @@
     <div class="field">
       <%= f.label :passive %>
       <%= f.select :passive, Battle::PASSIVES.map { |p| [ GlossaryHelper::PASSIVES.fetch(p).first, p ] }, include_blank: "(none)" %>
-      <p class="hint">What the job gives beyond numbers. Master the job and a character keeps it in every job.</p>
+      <p class="hint">What the archetype gives beyond numbers. Master the archetype and a character keeps it in every archetype.</p>
     </div>
     <div class="field">
       <%= f.label :desperation, "Desperation move" %>
@@ -38,6 +38,25 @@
       <p class="hint">At a quarter HP or less, a character's attack sometimes becomes this instead: once a battle, for free. It doesn't need to be learned.</p>
     </div>
   </div>
+
+  <fieldset class="panel">
+    <legend>Payoff</legend>
+    <p class="hint">What time spent on things to do pays someone in this archetype, when the party next rests: money for the party, EXP or ABP for them, each so much per part of the day; or a rumour, once. The line can say {who} and {amount}, or {rumour}.</p>
+    <div class="field-row">
+      <div class="field">
+        <%= label_tag "job_payoff_kind", "Pays in" %>
+        <%= select_tag "job[payoff][kind]", options_for_select([ [ "Nothing", "" ], [ word("currency").capitalize, "money" ], %w[EXP exp], %w[ABP abp], [ "A rumour", "rumour" ] ], entry.payoff["kind"]), id: "job_payoff_kind" %>
+      </div>
+      <div class="field">
+        <%= label_tag "job_payoff_amount", "Per part of the day" %>
+        <%= number_field_tag "job[payoff][amount]", entry.payoff["amount"], min: 0, max: 9999, id: "job_payoff_amount", placeholder: "30" %>
+      </div>
+    </div>
+    <div class="field">
+      <%= label_tag "job_payoff_line", "What the table hears" %>
+      <%= text_field_tag "job[payoff][line]", entry.payoff["line"], id: "job_payoff_line", placeholder: "{who} comes back with {amount} and no explanation." %>
+    </div>
+  </fieldset>
 
   <fieldset class="panel">
     <legend>Stat multipliers (%)</legend>
@@ -55,7 +74,7 @@
 
   <fieldset class="panel">
     <legend>Good at</legend>
-    <p class="hint">Skills a character in this job adds +<%= Job::SKILL_BONUS %> to, on checks. The world's skills are on <%= link_to "its skills page", world_skills_path(@world) %>.</p>
+    <p class="hint">Skills a character in this archetype adds +<%= Job::SKILL_BONUS %> to, on checks. The world's skills are on <%= link_to "its skills page", world_skills_path(@world) %>.</p>
     <%= hidden_field_tag "job[skills][]", "", id: nil %>
     <div class="checks">
       <% Array(@world.skills).each do |skill| %>
@@ -82,7 +101,7 @@
 
   <fieldset class="panel">
     <legend>Innates</legend>
-    <p class="hint">Passive bonuses while this job is set. Leave the stat blank to remove a row.</p>
+    <p class="hint">Passive bonuses while this archetype is set. Leave the stat blank to remove a row.</p>
     <table class="grid-form">
       <thead><tr><th>Stat</th><th>Add</th><th>Percent</th></tr></thead>
       <tbody>
@@ -99,16 +118,16 @@
 
   <fieldset class="panel">
     <legend>Learn table</legend>
-    <p class="hint">The job level (1 to <%= Stats::Growth::MAX_JOB_LEVEL %>) at which each ability from the Grimoire comes. It's mastered <%= Stats::Mastery::SPAN %> job levels later, or at <%= Stats::Growth::MAX_JOB_LEVEL %>.</p>
+    <p class="hint">The archetype level (1 to <%= Stats::Growth::MAX_JOB_LEVEL %>) at which each ability from the Grimoire comes. It's mastered <%= Stats::Mastery::SPAN %> archetype levels later, or at <%= Stats::Growth::MAX_JOB_LEVEL %>.</p>
     <% abilities = @world.abilities.order(:name).map { |a| [a.name, a.id] } %>
     <table class="grid-form">
-      <thead><tr><th>Job level</th><th>Ability</th><th>Remove</th></tr></thead>
+      <thead><tr><th>Archetype level</th><th>Ability</th><th>Remove</th></tr></thead>
       <tbody>
         <% levels = entry.job_levels.to_a %>
         <% levels += Array.new(2) { entry.job_levels.build } unless levels.count(&:new_record?) >= 2 %>
         <%= f.fields_for :job_levels, levels do |lf| %>
           <tr>
-            <td><%= lf.number_field :level, min: 1, max: Stats::Growth::MAX_JOB_LEVEL, "aria-label": "Job level" %></td>
+            <td><%= lf.number_field :level, min: 1, max: Stats::Growth::MAX_JOB_LEVEL, "aria-label": "Archetype level" %></td>
             <td><%= lf.select :ability_id, abilities, { include_blank: true }, "aria-label": "Ability" %></td>
             <td><% if lf.object.persisted? %><%= lf.check_box :_destroy, "aria-label": "Remove" %><% end %></td>
           </tr>

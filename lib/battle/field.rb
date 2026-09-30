@@ -28,7 +28,7 @@ module Battle
       target = user if item["target"] == "self"
       revives = State.revives?(item)
       down = target.fetch("hp").zero?
-      raise InvalidAction, "#{target['name']} is down: #{item['name']} won't help" if down && !revives
+      raise InvalidAction, "#{target['name']} is KO'd: #{item['name']} won't help" if down && !revives
       raise InvalidAction, "#{target['name']} isn't down" if revives && !down
       raise InvalidAction, "#{target['name']} is already at full HP" if !revives && target["hp"] >= target["stats"]["max_hp"]
 

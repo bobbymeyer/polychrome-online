@@ -51,7 +51,7 @@ class FieldUse < ApplicationRecord
     campaign = character.campaign
     ability = character.job.field_ability_entry or raise Refusal, "#{character.job.name} has no field ability"
     raise Refusal, "#{character.name} has used #{ability.name} since the last rest" if character.field_used?
-    raise Refusal, "#{character.name} is down" unless character.conscious?
+    raise Refusal, "#{character.name} is KO'd" unless character.conscious?
     raise Refusal, "Not while a battle is on" if campaign.battle_on?
     raise Refusal, "#{character.name} is already waiting on the GM" if campaign.field_uses.pending.exists?(character: character)
     raise Refusal, "There's no encounter on the road to #{ability.name.downcase} against" if NEEDS_ENCOUNTER.include?(ability.field_outcome) && !campaign.pending_encounter

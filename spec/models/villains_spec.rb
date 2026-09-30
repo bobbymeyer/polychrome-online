@@ -38,6 +38,25 @@ RSpec.describe "Villains and what clearing a place changes" do
     expect(battle.boss_names).to eq([ "Morrow" ])
   end
 
+  it "keeps a boss waved off in its room, for when the party comes back; placing a boss sets the room waiting again" do
+    walk_into_the_throne_room
+    lair = barrow.location.reload
+    room = campaign.pending_encounter["room"]
+    campaign.wave_off_encounter!
+    expect(campaign.messages.last.body).to eq("The GM holds the fight back: it waits in The Charter Vault.")
+    expect(lair.reload.resolved?(room)).to be(false)
+
+    lair.move_to!(lair.view["entrance"])
+    lair.move_to!(room)
+    expect(campaign.reload.pending_encounter).to include("room" => room, "boss" => true)
+
+    # Fought through, then placed again by the GM: it waits once more.
+    campaign.update!(pending_encounter: nil)
+    lair.resolve!(lair.view["boss"])
+    lair.place_boss!("goblin_chief" => 1)
+    expect(lair.reload.resolved?(lair.view["boss"])).to be(false)
+  end
+
   it "lets the villain slip away the first time, their trouble still running; the second time, down is down" do
     walk_into_the_throne_room
     win!(campaign.start_pending_encounter!)

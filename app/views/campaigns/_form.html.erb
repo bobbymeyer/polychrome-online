@@ -14,9 +14,9 @@
   </div>
   <% chosen = campaign.open_jobs %>
   <fieldset class="panel" data-controller="check-all">
-    <legend>Jobs open from the start</legend>
+    <legend>Archetypes open from the start</legend>
     <p class="hint">The rest are yours to grant at the table, as story rewards: a relic wakes, a master takes them on.</p>
-    <label class="inline"><%= check_box_tag "campaign[every_job]", "1", chosen.nil?, id: "campaign_every_job", data: { check_all_target: "all", action: "check-all#all" } %> <strong>Every job</strong> (nothing to grant)</label>
+    <label class="inline"><%= check_box_tag "campaign[every_job]", "1", chosen.nil?, id: "campaign_every_job", data: { check_all_target: "all", action: "check-all#all" } %> <strong>Every archetype</strong> (nothing to grant)</label>
     <div class="checks">
       <%= hidden_field_tag "campaign[open_jobs][]", "", id: nil %>
       <% @world.jobs.alphabetical.each do |job| %>
