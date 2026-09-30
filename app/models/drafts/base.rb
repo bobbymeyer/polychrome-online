@@ -64,8 +64,8 @@ module Drafts
     end
 
     def places
-      campaign.map_nodes.includes(:location).order(:name).limit(20).map do |node|
-        modes = node.location&.modes.to_a.map { |m| m["name"] }
+      campaign.map_nodes.includes(:location, :modes).order(:name).limit(20).map do |node|
+        modes = node.modes.map(&:name)
         seen = node.location&.town? && node.location.reputation.nonzero? ? "; sees the party as #{node.location.standing.downcase}" : ""
         "- #{node.name} (#{node.kind})#{"; can become: #{modes.join(', ')}" if modes.any?}#{seen}"
       end

@@ -55,8 +55,8 @@ RSpec.describe "Town services" do
   end
 
   it "shuts what a mode shuts, and deals nothing to a party the town shuns" do
-    town.add_mode!("name" => "Burning", "closed" => %w[inn])
-    town.switch_mode!("burning")
+    town.map_node.add_mode!("name" => "Burning", "closed" => %w[inn])
+    town.map_node.switch_mode!("burning")
     expect(labels).to eq([ "Rumours at Adventurers' Hall (30 gil)", "Make camp (overnight)" ]) # no inn: camp
     allow_any_instance_of(Location).to receive(:shuns_party?).and_return(true) # they won't deal with the party
     expect(labels).to eq([ "Make camp (overnight)" ])

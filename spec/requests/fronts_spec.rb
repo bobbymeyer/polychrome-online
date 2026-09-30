@@ -40,12 +40,12 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     campaign = world.campaigns.find_by!(name: "Rust")
     town = campaign.locations.sole
     clock = campaign.clocks.sole
-    expect(clock).to have_attributes(name: "The Syndicate takes the docks", place: town.map_node, location_mode: have_attributes(key: "syndicate_town"), world_front: front)
-    expect(town.modes.sole).to have_attributes(name: "Syndicate town", line: "Varn belongs to Mara now.")
+    expect(clock).to have_attributes(name: "The Syndicate takes the docks", place: town.map_node, mode: have_attributes(key: "syndicate_town"), world_front: front)
+    expect(town.map_node.modes.sole).to have_attributes(name: "Syndicate town", line: "Varn belongs to Mara now.")
     expect(campaign.secrets.sole).to have_attributes(body: "Mara's ledger is fake.", npc: campaign.npcs.sole, location: town)
 
     clock.tick!(4)
-    expect(town.reload.current_mode["name"]).to eq("Syndicate town")
+    expect(town.map_node.reload.current_mode["name"]).to eq("Syndicate town")
 
     post campaign_front_deals_path(campaign), params: { front_id: front.id }
     expect(flash[:alert]).to include("already in Rust")

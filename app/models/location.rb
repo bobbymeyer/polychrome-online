@@ -28,19 +28,10 @@ class Location < ApplicationRecord
 
   delegate :town?, :dungeon?, :kind, to: :location_template
 
-  # Its modes are its place's on the map (MapNode::Modes): a town or dungeon
-  # off the map has none.
-  delegate :modes, :current_mode, :mode, :add_mode!, :remove_mode!, :switch_mode!, :clear_mode!, :mode_called,
-           to: :map_node, allow_nil: false
+  # What modes its place on the map is in, and whether one shuts a service
+  # (MapNode::Modes, where modes live). A town or dungeon off the map is in none.
   def modes_on(**) = map_node ? map_node.modes_on(**) : []
   def shut_by(kind) = map_node&.shut_by(kind)
-  def service_closed?(kind) = shut_by(kind).present?
-
-  # How a mode changes the place's picture (§8): words after the rest of
-  # the prompt ("on fire, thick smoke, ash falling").
-  def set_mode_art!(key, words)
-    mode_called(key).update!(art: words)
-  end
 
   # The place's picture as it is now: the first of its modes' own, if one
   # has one, else the Gazetteer entry's. nil when neither has been made.
@@ -57,7 +48,7 @@ class Location < ApplicationRecord
   end
 
   # What rolling a place reads, to preload with a list of them:
-  #   clocks.includes(location_mode: { location: Location::ROLLING })
+  #   clocks.includes(mode: { location: Location::ROLLING })
   ROLLING = [ :campaign, { map_node: :world_place }, { location_template: %i[world encounter_table] } ].freeze
 
   # Its name without the whole view: the GM's, else the rolled one.

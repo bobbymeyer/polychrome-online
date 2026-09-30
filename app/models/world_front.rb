@@ -70,7 +70,7 @@ class WorldFront < ApplicationRecord
         place = nodes[row["place_id"]]
         mode = add_mode(place, row) if place && row["mode_name"]
         campaign.clocks.create!(name: row["name"], segments: row["segments"], triggers: row["triggers"], full_line: row["full_line"],
-                                public: row["public"], location_mode: mode, world_front: self, map_node: nodes[row["source_id"]])
+                                public: row["public"], mode: mode, world_front: self, map_node: nodes[row["source_id"]])
       end
       secrets.each do |row|
         campaign.secrets.create!(body: row["body"], location: nodes[row["place_id"]]&.location, npc: npcs[row["figure_id"]], world_front: self)

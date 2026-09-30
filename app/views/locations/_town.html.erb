@@ -29,7 +29,7 @@
               <span class="service__kind"><%= term(service["kind"]) %><%= " · #{keepers[service['kind']]}" if keepers[service["kind"]] %></span>
             </summary>
             <div class="service__body">
-              <% if location.service_closed?(service["kind"]) %>
+              <% if location.shut_by(service["kind"]) %>
                 <p class="hint">Shut: <%= location.shut_by(service["kind"]).name.downcase %>.</p>
               <% elsif %w[inn temple guild].include?(service["kind"]) %>
                 <%= render "locations/services/doing", location: location, service: service, gm: gm, shopping: shopping %>

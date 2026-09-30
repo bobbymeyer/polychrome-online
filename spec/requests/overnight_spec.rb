@@ -36,8 +36,8 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
   end
 
   it "sells a rumour the party hasn't heard at the guild, and starts one when a place changes" do
-    varn_town.add_mode!("name" => "Burning", "line" => "Smoke over Varn.")
-    varn_town.switch_mode!("burning")
+    varn_town.map_node.add_mode!("name" => "Burning", "line" => "Smoke over Varn.")
+    varn_town.map_node.switch_mode!("burning")
     rumour = campaign.rumours.sole
     expect(rumour).to have_attributes(body: "Smoke over Varn.", reached: [ varn.id ], heard: false)
 

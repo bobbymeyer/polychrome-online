@@ -7,15 +7,14 @@
 # recognisably the city.
 class ModeArt < ApplicationRecord
   belongs_to :location
-  belongs_to :location_mode
+  belongs_to :mode
   has_one_attached :image
 
-  validates :location_mode, uniqueness: true
+  validates :mode, uniqueness: true
 
   include Artwork
 
-  def mode = location_mode
-  delegate :key, to: :location_mode, prefix: :mode
+  delegate :key, to: :mode, prefix: :mode
 
   def template = location.location_template
 

@@ -18,8 +18,8 @@ RSpec.describe "Queries per page", type: :request do
       template = i.even? ? village : cave
       location = campaign.locations.create!(location_template: template, seed: 100 + i)
       node = campaign.map_nodes.create!(name: "Place #{campaign.map_nodes.count}", kind: template.kind, x: i * 10, y: i * 10, visible: true, location: location)
-      mode = location.modes.create!(name: "Under siege #{i}", line: "Smoke.")
-      campaign.clocks.create!(name: "Clock #{node.id}", segments: 4, public: i.odd?, location_mode: mode)
+      mode = location.map_node.modes.create!(name: "Under siege #{i}", line: "Smoke.")
+      campaign.clocks.create!(name: "Clock #{node.id}", segments: 4, public: i.odd?, mode: mode)
       npc = campaign.npcs.create!(name: "Npc #{node.id}", location: location)
       campaign.secrets.create!(body: "Secret #{node.id}", location: location, npc: npc)
       create_character(campaign, name: "Hero #{node.id}", job: world.jobs.first) if i < 2

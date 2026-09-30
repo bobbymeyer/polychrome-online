@@ -38,7 +38,7 @@ class MapNode < ApplicationRecord
 
   # Things to do here (Pastime): the setting's (its atlas place's, live, as
   # worlds are), then the GM's own, then those of the modes it's in now
-  # (LocationMode#activities), by name, so a later one can replace one. A
+  # (Mode#activities), by name, so a later one can replace one. A
   # mode can shut the usual ones ("pastimes" in what it closes). Then a
   # town's inn, temple and guild, or, with no inn to take rooms at, making
   # camp (Campaign::Services).
