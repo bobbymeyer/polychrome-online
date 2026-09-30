@@ -84,6 +84,11 @@ RSpec.describe "Where next", type: :request do
       expect(place.reload.activities).to eq("Club (dusk)")
     end
 
+    it "takes a colon inside a name, when no space follows it" do
+      tule.update!(activities: "Wait for the 0:13 (night): The last train.")
+      expect(tule.pastimes.last).to have_attributes(name: "Wait for the 0:13", times: %w[night], line: "The last train.")
+    end
+
     it "checks how a place's things to do are written" do
       tule.update(activities: "Nap (noon)\n(no name)")
       expect(tule.errors[:activities]).to include("“Nap”: noon isn't a part of the day (dawn, day, dusk, night) or a number of parts",

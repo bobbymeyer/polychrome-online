@@ -545,8 +545,10 @@ module Battle
       return if downed.empty? || !ctx.alive?(unit)
 
       ctx.emit(:one_more, actor: unit["id"], downed: downed)
+      # The same move that found the weakness (an enemy's too, not a fresh pick from its script).
+      used = ctx.events[mark..].reverse.find { |e| %w[attack cast].include?(e["type"]) && e["actor"] == unit["id"] }&.dig("ability")
       mark = ctx.events.size
-      extra_go(unit, cmd, reason: "one_more")
+      extra_go(unit, cmd, reason: "one_more", repeat: used)
       ctx.check_end
       knock_down(unit, ctx.events[mark..]) unless ctx.over?
     end
@@ -565,12 +567,15 @@ module Battle
 
     # Another go, the same move again, and nothing else of a turn (no upkeep,
     # no countdowns): haste's second go, and One More.
-    def extra_go(unit, cmd, reason: nil)
+    # repeat: the move to go again with, for a unit the AI plays (One More).
+    def extra_go(unit, cmd, reason: nil, repeat: nil)
       return unless ctx.alive?(unit)
       return if (DISABLING_STATUSES + %w[airborne away charging confuse]).any? { |kind| ctx.status?(unit, kind) }
 
+      ai = unit["side"] == "enemy" || unit["guest"]
       ability = if ctx.status?(unit, "berserk") then ctx.ability("attack")
-      elsif unit["side"] == "enemy" || unit["guest"] then (chosen = AI.choose(ctx, unit)).first
+      elsif ai && repeat && ctx.state["abilities"][repeat] then (chosen = [ ctx.ability(repeat), nil ]).first
+      elsif ai then (chosen = AI.choose(ctx, unit)).first
       elsif cmd && cmd["kind"] == "ability" then ctx.ability(cmd["ability"])
       end
       return unless ability && ability.fetch("charge", 0).zero? && ability["effects"].none? { |e| SINGLE_GO.include?(e["primitive"]) }

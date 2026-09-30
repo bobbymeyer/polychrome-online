@@ -213,6 +213,15 @@ RSpec.describe "Battle resolver properties" do
         expect(hits).to include(satisfy { |e| e["crit"] || e["effectiveness"].to_i > 100 })
       end
       of_type(events, :one_more).each { |e| expect(e["downed"]).not_to be_empty }
+      # The other go is the same move, whoever's side it's on.
+      events.each_with_index do |event, i|
+        next unless event["type"] == "one_more"
+
+        moves = ->(list) { list.select { |e| %w[attack cast].include?(e["type"]) && e["actor"] == event["actor"] } }
+        before = moves.(events[0...i]).last
+        after = moves.(events[(i + 1)..]).first
+        expect(after["ability"]).to eq(before["ability"]) if before && after && !before["desperation"]
+      end
     end
   end
 

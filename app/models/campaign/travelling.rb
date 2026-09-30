@@ -147,11 +147,20 @@ module Campaign::Travelling
     battle
   end
 
+  # A boss waved off isn't gone: it goes back to its room, to wait for the
+  # party (a road's or a room's ordinary fight just doesn't happen).
   def wave_off_encounter!
-    return unless pending_encounter
+    waiting = pending_encounter or return
 
-    update!(pending_encounter: nil)
-    narrate("The GM waves off the encounter.")
+    transaction do
+      update!(pending_encounter: nil)
+      if waiting["boss"] && waiting["location"] && (lair = locations.find_by(id: waiting["location"]))
+        lair.reopen_room!(waiting["room"])
+        narrate("The GM holds the fight back: it waits in #{lair.room(waiting['room'])&.dig('name') || lair.name}.")
+      else
+        narrate("The GM waves off the encounter.")
+      end
+    end
   end
 
   def describe_encounter(monsters)

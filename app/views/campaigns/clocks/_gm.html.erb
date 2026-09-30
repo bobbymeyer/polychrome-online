@@ -44,8 +44,10 @@
         <% end %>
       </fieldset>
       <div class="field"><%= f.label :full_line, "When it fills, the table hears", for: "clock_full_line_#{campaign.id}" %><%= f.text_field :full_line, id: "clock_full_line_#{campaign.id}", placeholder: "Smoke over the harbour: the Syndicate holds the docks." %></div>
-      <% modes = campaign.map_nodes.includes(location: :modes).order(:name).select { |n| n.location&.modes.present? }.map do |n|
-           [ n.name, n.location.modes.map { |m| [ m.name, m.id ] } ]
+      <%# Each named with its place (the group labels don't show everywhere); not modes that follow the hours, which come and go by themselves. %>
+      <% modes = campaign.map_nodes.includes(location: :modes).order(:name).filter_map do |n|
+           settable = n.location&.modes.to_a.reject(&:timed?)
+           [ n.name, settable.map { |m| [ "#{n.name}: #{m.name}", m.id ] } ] if settable.any?
          end %>
       <% if modes.any? %>
         <div class="field">

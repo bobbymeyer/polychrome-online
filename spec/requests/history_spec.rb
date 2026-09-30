@@ -33,6 +33,17 @@ RSpec.describe "A setting's pocket history (Chronicle) and where things came fro
     expect(chronicle.kept).to be_empty
   end
 
+  it "happens around a place whose past the GM wrote, and names families from the world's own table" do
+    abbey.update!(past_form: { "was" => "abbey", "fall_kind" => "flood", "fall_ago" => "40", "family" => "Vell" })
+    history = chronicle.generated
+    expect(history["places"].keys).not_to include("place-#{abbey.id}")
+    expect(history["events"].flat_map { |e| e["places"] }).not_to include("place-#{abbey.id}")
+    expect(history["families"].map { |f| f["name"] }).to all(satisfy { |n| world.family_names.include?(n) })
+
+    get world_history_path(world)
+    expect(response.body).to include("The Drowned Abbey", "Yours, kept", "It flooded 40 years ago")
+  end
+
   it "writes into the canon: codex pages, the living heads, every place's past and the running feuds as fronts" do
     history = chronicle.generated
     post world_history_path(world)

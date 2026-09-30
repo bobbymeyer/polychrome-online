@@ -38,7 +38,14 @@ module Location::Exploration
   # An antagonist has moved in: the master's room waits for the party again.
   def await_villain!
     room = master_room or return
-    update!(progress: progress.merge("resolved" => progress.fetch("resolved", []) - [ room["key"] ]))
+    reopen_room!(room["key"])
+  end
+
+  # What waits in a room is there again the next time the party walks in.
+  def reopen_room!(key)
+    return unless key
+
+    update!(progress: progress.merge("resolved" => progress.fetch("resolved", []) - [ key ]))
   end
 
   # --- locks and keys ----------------------------------------------------------

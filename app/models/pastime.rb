@@ -16,7 +16,8 @@ Pastime = Data.define(:name, :times, :takes, :line)
 
 class Pastime
   TIMES = Campaign::Timekeeping::TIMES
-  FORMAT = /\A(?<name>[^():]+?)\s*(?:\((?<when>[^)]*)\))?\s*(?::\s*(?<line>.*))?\z/
+  # A colon only ends the name when a space follows it: "Wait for the 0:13 (night)".
+  FORMAT = /\A(?<name>(?:[^():]|:(?!\s))+?)\s*(?:\((?<when>[^)]*)\))?\s*(?::\s+(?<line>.*)|:)?\z/
 
   # [pastimes, problems] from a place's text.
   def self.parse(text)

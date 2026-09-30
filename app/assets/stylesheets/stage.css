@@ -985,6 +985,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .battle:not(.battle--controller):not(.battle--screen) :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down) {
     position: fixed; top: 22vh; z-index: 35; font-size: 56px;
   }
+  /* One More too: above the pinned menu, not under it. */
+  .battle:not(.battle--controller):not(.battle--screen) .banner--one-more { position: fixed; top: 30vh; left: 16px; right: auto; z-index: 35; font-size: 44px; }
   /* A battle is a game screen: the title and the way back step aside for the fight. */
   .battle .battle__header { margin-bottom: 8px; }
   .battle:not(.battle--controller):not(.battle--screen) .battle__header > div:first-child { display: none; }

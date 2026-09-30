@@ -26,6 +26,13 @@ RSpec.describe "Clocks and secrets", type: :request do
   end
 
   describe "clocks" do
+    it "offers the modes a clock can set off by place, and not those that follow the hours" do
+      town.add_mode!("name" => "By night", "times" => %w[night])
+      get campaign_prep_path(campaign)
+      expect(response.body).to include(%(>Tule: Burning</option>))
+      expect(response.body).not_to include(%(>Tule: By night</option>))
+    end
+
     it "fills on what the party does, and a full clock sets a place burning" do
       post campaign_clocks_path(campaign), params: { clock: { name: "The Syndicate torches Tule", segments: "3", public: "1",
                                                               triggers: [ "", "rest", "travel" ], when_full: burning.id } }
