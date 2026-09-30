@@ -19,7 +19,7 @@ module Campaign::Services
   def service_price(kind, character, place = current_node&.location)
     per_level, floor = SERVICE_PRICES.fetch(kind)
     base = [ per_level * character.level, floor ].max
-    place.respond_to?(:price_here) ? place.price_here(base) : base
+    place&.town? ? place.price_here(base) : base
   end
 
   # A town's services, as things to do there: rooms for everyone at the
@@ -27,7 +27,7 @@ module Campaign::Services
   # guild. None where a mode has shut them, or where the town won't deal
   # with the party.
   def service_pastimes(place)
-    return [] unless place&.town? && !(place.respond_to?(:shuns_party?) && place.shuns_party?)
+    return [] unless place&.town? && !place.shuns_party?
 
     party = characters.to_a
     place.view.fetch("services", []).filter_map do |service|

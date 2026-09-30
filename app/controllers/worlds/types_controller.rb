@@ -34,8 +34,7 @@ class Worlds::TypesController < ApplicationController
 
   # The posted rows, in the form's order ("0", "1", …).
   def type_params
-    rows = params.permit(types: [ :slug, :name, :colour, :remove, :send_to, { shrugs_off: [] } ]).fetch(:types, [])
-    rows.respond_to?(:each_pair) ? rows.to_h.sort_by { |index, _| index.to_i }.map(&:last).map(&:with_indifferent_access) : rows
+    JsonCasting.rows(params.permit(types: [ :slug, :name, :colour, :remove, :send_to, { shrugs_off: [] } ]).fetch(:types, [])).map(&:with_indifferent_access)
   end
 
   # The kept and added types, the plain one first. A new type's id comes

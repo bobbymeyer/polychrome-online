@@ -27,8 +27,7 @@ class Worlds::OriginsController < ApplicationController
 
   # Kept and added origins, in the form's order. A new one's id comes from its name.
   def posted_rows
-    rows = params.permit(origins: %i[slug name skill description remove]).fetch(:origins, {})
-    rows = rows.to_h.sort_by { |index, _| index.to_i }.map(&:last) if rows.respond_to?(:each_pair)
+    rows = JsonCasting.rows(params.permit(origins: %i[slug name skill description remove]).fetch(:origins, {}))
     rows.filter_map do |row|
       row = row.to_h.with_indifferent_access
       next if row[:remove] == "1"
