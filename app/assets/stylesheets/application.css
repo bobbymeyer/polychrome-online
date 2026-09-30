@@ -162,7 +162,9 @@ a.play:hover { color: var(--signal-dark); }
   font-weight: 600; background: var(--wash);
 }
 .form-errors h2 { font-size: 16px; line-height: 24px; }
-.flashes { position: fixed; z-index: 70; top: 12px; left: 50%; translate: -50% 0; width: min(520px, calc(100vw - 32px));
+/* Just under the top bar, where the page starts, so it never covers the navigation (top: auto keeps
+   its place in the page, first in <main>). */
+.flashes { position: absolute; z-index: 70; top: auto; margin-top: -28px; left: 50%; translate: -50% 0; width: min(520px, calc(100vw - 32px));
            display: grid; justify-items: center; gap: 8px; pointer-events: none; }
 .flashes .flash { margin: 0; pointer-events: auto; cursor: pointer; }
 .form-errors ul { margin: 0; padding-left: 20px; font-weight: 400; }
@@ -179,6 +181,8 @@ a.play:hover { color: var(--signal-dark); }
 }
 .button:hover, input[type=submit]:hover, button:hover { color: var(--ink); text-decoration: none; background: var(--control-fill-hover); border-color: var(--control-fill-hover); }
 .button--quiet, .button--danger { background: transparent; border-color: var(--control-fill); }
+/* The one way on from a page (Open the table): ink, not red, since it's a way in, not a game move. */
+.button--primary, .button--primary:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .button--quiet:hover, .button--danger:hover { background: var(--control-fill); border-color: var(--control-fill); }
 .button.play, input[type=submit].play { background: var(--signal); border-color: var(--signal); color: var(--paper); }
 .button.play:hover, input[type=submit].play:hover { background: var(--signal-dark); border-color: var(--signal-dark); color: var(--paper); }

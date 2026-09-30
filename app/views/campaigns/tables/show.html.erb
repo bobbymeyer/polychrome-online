@@ -16,6 +16,13 @@
   <header class="battle__header">
     <div>
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= { "screen" => "Shared screen", "controller" => "Controller" }.fetch(view, "Table") %></p>
+      <%# Where you sit, up here with the name rather than under everything else. %>
+      <% if @seat.seated? && view != "screen" %>
+        <p class="hint table__seat">
+          At the table as <strong><%= @seat.name %></strong> ·
+          <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
+        </p>
+      <% end %>
       <h1><%= view == "controller" && @seat.character? ? @seat.name : @campaign.name %></h1>
       <% if view == "controller" && @seat.character? %>
         <%= render "campaigns/tables/vitals", character: @seat.character %>
@@ -88,10 +95,6 @@
     <% if view == "controller" && @seat.character? %>
       <%= render "campaigns/field_uses/ability", character: @seat.character %>
     <% end %>
-    <p class="hint">
-      At the table as <strong><%= @seat.name %></strong>.
-      <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
-    </p>
     <%# On a phone as the GM's remote, the tools come after the play. %>
     <%= render "campaigns/tables/gm/tools", campaign: @campaign, view: view if @seat.gm? && view == "controller" %>
   <% else %>

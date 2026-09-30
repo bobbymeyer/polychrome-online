@@ -73,6 +73,10 @@ RSpec.describe "Campaigns and characters", type: :request do
       varn = campaign.map_nodes.create!(name: "Varn", kind: "town", x: 1, y: 1, visible: true, location: campaign.locations.create!(location_template: village, seed: seed))
       campaign.place_party!(varn)
       get campaign_path(campaign)
+      expect(response.body).not_to include("Rooms at") # nobody to take them yet
+
+      bartz # the party
+      get campaign_path(campaign)
       expect(response.body).to include("Rooms at #{campaign.reload.inn_here['name']}")
       expect(response.body).not_to include("Make camp")
     end

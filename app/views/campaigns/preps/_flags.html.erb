@@ -1,9 +1,5 @@
 <section class="window" id="flags">
-  <div class="book-header">
-    <h2>Flags</h2>
-    <% changes = campaign.locations.includes(:npcs, *Location::ROLLING).sum { |location| location.changes.size } %>
-    <%= link_to "GM changes to locations (#{changes})", campaign_changes_path(campaign), class: "button button--quiet" %>
-  </div>
+  <h2>Flags</h2>
   <p class="hint">Your campaign state, yours alone: what the table chose, what's been counted, for your next scene to follow. What the party knows is its secrets, revealed.</p>
   <% flags = campaign.flags.order(:key) %>
   <% if flags.any? %>

@@ -1,16 +1,19 @@
-<%# Campaigns on the home page, each with what you are in it. %>
+<%# Campaigns on the home page, each with what you are in it, who's in it and when it was last played,
+    so two with the same name can be told apart. %>
 <ul class="location-list campaign-list">
   <% campaigns.each do |campaign| %>
     <% mine = campaign.characters.select { |c| c.user_id == current_user.id } %>
+    <% gm = campaign.gm_id == current_user.id %>
+    <% played = @last_played[campaign.id] %>
     <li>
       <span>
         <strong><%= link_to campaign.name, campaign_path(campaign) %></strong>
-        <span class="muted">· <%= campaign.world.name %> · GM <%= campaign.gm&.name || "not set" %></span>
-        <% if mine.any? || campaign.gm_id == current_user.id %>
-          <br><span class="hint"><%= [ ("You GM it" if campaign.gm_id == current_user.id), (mine.any? ? "You play #{mine.map(&:name).to_sentence}" : nil) ].compact.join(". ") %>.</span>
-        <% end %>
+        <span class="muted">· <%= campaign.world.name %> · <%= gm ? "you GM it" : "GM #{campaign.gm&.name || 'not set'}" %></span>
+        <br><span class="hint"><%= [ ("You play #{mine.map(&:name).to_sentence}" if mine.any?),
+                                    pluralize(campaign.characters.size, "character"),
+                                    (played ? "last played #{time_ago_in_words(played)} ago" : "not played yet") ].compact.join(" · ") %></span>
       </span>
-      <%= link_to "Table →", campaign_table_path(campaign), class: "button play" if mine.any? || campaign.gm_id == current_user.id %>
+      <%= link_to "Table →", campaign_table_path(campaign), class: "button button--quiet" if mine.any? || gm %>
     </li>
   <% end %>
 </ul>

@@ -312,7 +312,8 @@ RSpec.describe "Battle screen", type: :request do
 
     it "sees every unit's HP and who the round is waiting on" do
       get battle_panel_path(battle)
-      expect(response.body).to include("Auto Bartz", "Auto Faris", "Run the round now", "Goblin A", "50/50")
+      expect(response.body).to include("The party", "waiting", "Run the round now", "The other side", "Goblin A", "50/50")
+      expect(response.body).not_to include("Waiting on", "On auto every round") # said once, in the party's rows
     end
 
     it "auto-pilots an absent player and runs the round, all logged" do

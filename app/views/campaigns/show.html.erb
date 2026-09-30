@@ -12,12 +12,15 @@
     <p class="muted"><%= money(@campaign.gil) %> · <%= @campaign.when_it_is %></p>
   </div>
   <div class="actions">
-    <%= link_to "Open the table", campaign_table_path(@campaign), class: "button" %>
+    <%# Open the table is the way on from here; the rest are quiet, and what needs a party waits for one. %>
+    <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--primary" %>
     <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" if @world.codex_entries.exists? %>
     <% if can_gm?(@campaign) %>
-    <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" %>
+    <% party = @campaign.characters.any? %>
+    <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" if party %>
     <%# Camp is for the road: in a town, the party takes rooms at the inn. %>
-    <% if (inn = @campaign.inn_here) %>
+    <% if !party %>
+    <% elsif (inn = @campaign.inn_here) %>
       <%= link_to "Rooms at #{inn['name']}", location_path(@campaign.current_node.location, anchor: "service-inn"), class: "button button--quiet" %>
     <% else %>
       <% if (camp = @campaign.camp_here) %>
