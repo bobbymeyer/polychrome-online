@@ -68,7 +68,7 @@ module Campaign::Defeat
     town = refuge or raise Refusal, "There's no town on the map to retreat to"
     lost = gil / 2
     current_node&.location&.leave! unless current_node == town
-    update!(current_node: town, gil: gil - lost, pending_encounter: nil, free_rooms_node_id: nil)
+    update!(current_node: town, gil: gil - lost, pending_encounter: nil)
     characters.update_all(hp: nil, mp: nil, field_used: false)
     line = narrate("The party comes to in #{town.name}, bruised but alive#{", #{money(lost)} lighter" if lost.positive?}.").body
     pass_time!(rest_time, announce: :new_day)

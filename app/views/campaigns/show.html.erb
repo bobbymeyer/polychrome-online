@@ -20,8 +20,10 @@
     <% if (inn = @campaign.inn_here) %>
       <%= link_to "Rooms at #{inn['name']}", location_path(@campaign.current_node.location, anchor: "service-inn"), class: "button button--quiet" %>
     <% else %>
-      <%= button_to "Make camp", campaign_rest_path(@campaign), class: "button button--quiet",
-                    form: { data: { turbo_confirm: "Rest in the open? Everyone standing gets back full #{word('hp')} and half their #{word('mp')}; the night passes. It raises nobody." } } %>
+      <% if (camp = @campaign.pastimes_here.find { |way| way["service"] == "camp" }) %>
+        <%= button_to "Make camp", campaign_ways_path(@campaign), params: { way: camp["label"], go: 1 }, class: "button button--quiet",
+                      form: { data: { turbo_confirm: "Rest in the open? Everyone standing gets back full #{word('hp')} and half their #{word('mp')}; the night passes. It raises nobody." } } %>
+      <% end %>
     <% end %>
     <%= link_to "Edit", edit_campaign_path(@campaign), class: "button button--quiet" %>
     <% end %>

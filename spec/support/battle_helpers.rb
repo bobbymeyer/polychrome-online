@@ -154,7 +154,7 @@ module BattleHelpers
   # A night's rest where the party is: rooms at the inn in a town with one
   # (camp is for the road), paid for by the GM.
   def rest_the_night(campaign)
-    return campaign.rest! unless campaign.inn_here
+    return campaign.sleep! unless campaign.inn_here
 
     campaign.update!(gil: campaign.gil + 10_000)
     campaign.spend_time!(campaign.current_node, "Rooms at #{campaign.inn_here['name']}")

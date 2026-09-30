@@ -68,9 +68,13 @@ module Location::Town
   # Nobody here will trade with them, or give them a bed.
   def shuns_party? = reputation <= -3
 
-  # What the shop asks today: dearer after a caravan is lost on the road,
-  # easing back day by day (Campaign::Overnight), and cheaper for friends.
-  def price_of(item) = (item.price * (100 + prices - (REPUTATION_PRICE * reputation)).clamp(10, 300) / 100.0).round
+  # What anything costs here today, the shop's stock and the inn, temple
+  # and guild alike (Campaign::Services): dearer after a caravan is lost on
+  # the road, easing back day by day (Campaign::Overnight), and cheaper for
+  # friends.
+  def price_here(base) = (base * (100 + prices - (REPUTATION_PRICE * reputation)).clamp(10, 300) / 100.0).round
+
+  def price_of(item) = price_here(item.price)
 
   # Shops pay half.
   def resale_price_of(item) = price_of(item) / 2

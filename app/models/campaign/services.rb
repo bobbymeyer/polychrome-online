@@ -10,16 +10,16 @@ module Campaign::Services
   extend ActiveSupport::Concern
 
   # What a town's services charge, from the party's purse: gil per level of
-  # each character served, with a floor. A rumour costs the same for anyone.
+  # each character served, with a floor (a rumour costs the same for
+  # anyone), at the town's prices (Location::Town#price_here).
   SERVICE_PRICES = { "inn" => [ 5, 10 ], "temple" => [ 20, 50 ], "guild" => [ 0, 30 ] }.freeze
   # What a night at camp gives back of MP (Outcome "rest").
   CAMP_MP = 50
 
-  def service_price(kind, character)
-    return 0 if kind == "inn" && free_rooms? # a town's thanks (Campaign::Deeds#welcome_back!)
-
+  def service_price(kind, character, place = current_node&.location)
     per_level, floor = SERVICE_PRICES.fetch(kind)
-    [ per_level * character.level, floor ].max
+    base = [ per_level * character.level, floor ].max
+    place.respond_to?(:price_here) ? place.price_here(base) : base
   end
 
   # A town's services, as things to do there: rooms for everyone at the
@@ -36,16 +36,16 @@ module Campaign::Services
 
       case kind
       when "inn"
-        Pastime.new(name: "Rooms at #{service['name']}", takes: 0, price: party.sum { |c| service_price("inn", c) },
+        Pastime.new(name: "Rooms at #{service['name']}", takes: 0, price: party.sum { |c| service_price("inn", c, place) },
                     outcomes: [ Outcome.of("rest", 100) ], service: kind)
       when "temple"
         fallen = party.reject(&:conscious?)
         next if fallen.empty?
 
-        Pastime.new(name: "A raising at #{service['name']}", takes: 0, price: fallen.sum { |c| service_price("temple", c) },
+        Pastime.new(name: "A raising at #{service['name']}", takes: 0, price: fallen.sum { |c| service_price("temple", c, place) },
                     outcomes: [ Outcome.of("raise") ], service: kind)
       when "guild"
-        Pastime.new(name: "Rumours at #{service['name']}", takes: 0, price: SERVICE_PRICES["guild"].last, outcomes: [ Outcome.of("rumour") ], service: kind)
+        Pastime.new(name: "Rumours at #{service['name']}", takes: 0, price: place.price_here(SERVICE_PRICES["guild"].last), outcomes: [ Outcome.of("rumour") ], service: kind)
       end
     end
   end
@@ -61,15 +61,6 @@ module Campaign::Services
     return unless place&.town? && !place.shut_by("inn")
 
     place.view.fetch("services", []).find { |s| s["kind"] == "inn" }
-  end
-
-  # The GM makes camp from the campaign page. Camp is for the road: in a
-  # town the party takes rooms.
-  def rest!
-    raise Refusal, "Not while a battle is on" if battle_on?
-    raise Refusal, "The party is in #{current_node.name}: take rooms at #{inn_here['name']} instead. Camp is for the road." if inn_here
-
-    transaction { sleep!(mp_share: CAMP_MP) }
   end
 
   # A night's sleep (Outcome "rest"), and the only one. In a bed, everyone

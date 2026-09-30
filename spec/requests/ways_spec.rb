@@ -82,7 +82,7 @@ RSpec.describe "Where next", type: :request do
 
       gil = campaign.gil
       exp = rook.reload.exp
-      campaign.rest!
+      campaign.sleep!
       expect(campaign.reload).to have_attributes(gil: gil + 80, spent_parts: 0)
       expect(rook.reload.exp).to eq(exp + 40)
       expect(campaign.messages.pluck(:body)).to include(
@@ -91,7 +91,7 @@ RSpec.describe "Where next", type: :request do
       )
 
       # A rest with nothing done pays nothing.
-      expect { campaign.update!(time_of_day: "night") && campaign.rest! }.not_to(change { campaign.reload.gil })
+      expect { campaign.update!(time_of_day: "night") && campaign.sleep! }.not_to(change { campaign.reload.gil })
     end
 
     it "pays for what it costs and makes happen what it does" do

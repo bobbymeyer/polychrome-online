@@ -29,7 +29,6 @@ module Campaign::Travelling
       hear_rumours!(origin) # what people were saying there, heard on the way out
       origin.location&.leave!
       self.current_node = destination
-      self.free_rooms_node_id = nil # the town's thanks were for while the party was there
       self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled, "terrain" => edge.encounter_table.terrain_type }
       # A place in a mode (as it will be when the party gets there) can have trouble waiting.
       arrival_period, days_on = almanac.later(period, edge.duration.to_i)
@@ -117,7 +116,7 @@ module Campaign::Travelling
       node.update!(visible: true)
       moved = current_node != node
       current_node&.location&.leave! if moved
-      update!(current_node: node, free_rooms_node_id: (free_rooms_node_id if node == current_node))
+      update!(current_node: node)
       narrate("The party is at #{node.name}.")
       how_it_is_here!(node) if moved
       node.location&.remember!

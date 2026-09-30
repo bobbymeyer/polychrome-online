@@ -72,7 +72,6 @@ RSpec.describe "Town services" do
       "The party rests. Everyone standing is back to full HP, and half their MP. Bartz is still KO'd. It takes a bed at an inn, a temple, or Phoenix Down."
     )
     expect([ bartz.reload.conscious?, lenna.reload.current_hp ]).to eq([ false, lenna.stats["max_hp"] ])
-    expect { campaign.update!(current_node: tule) && campaign.rest! }.to raise_error(Refusal, /take rooms at Last Light Inn/)
   end
 
   it "needs no battle on" do

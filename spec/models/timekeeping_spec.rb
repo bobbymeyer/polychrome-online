@@ -32,12 +32,12 @@ RSpec.describe Campaign::Timekeeping do
     expect(campaign.reload.time_of_day).to eq("night")
     expect(campaign.messages.where(body: "Night.")).not_to exist # a journey only says so when a day starts
 
-    campaign.rest!
+    campaign.sleep!
     expect([ campaign.day, campaign.time_of_day ]).to eq([ 2, "dawn" ])
 
     # Begun at dawn, a rest takes the morning: it never skips a whole day.
     expect(campaign.until_the_day_begins).to eq(0)
-    campaign.rest!
+    campaign.sleep!
     expect([ campaign.day, campaign.time_of_day ]).to eq([ 2, "day" ])
 
     # A step through a door takes no time at all.

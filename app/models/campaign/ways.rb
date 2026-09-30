@@ -26,8 +26,7 @@ module Campaign::Ways
       # temple and guild, or camp (Campaign::Services).
       own, services = pastimes_here.partition { |way| way["service"].nil? }
       roads = current_node.edges.includes(:from_node, :to_node).reject(&:blocked?).map do |edge|
-        there = edge.other_end(current_node)
-        { "label" => "To #{there.name}#{' (by a dangerous road)' if edge.state == 'dangerous'}", "move" => { "edge" => edge.id } }
+        { "label" => way_along(edge), "move" => { "edge" => edge.id } }
       end
       own + way_in + roads + services.map { |way| way.except("service") }
     else
@@ -67,6 +66,11 @@ module Campaign::Ways
     current_node.pastimes.select { |pastime| pastime.open?(almanac, day, period) }.map do |pastime|
       { "label" => pastime_label(pastime), "move" => { "node" => current_node.id, "pastime" => pastime.name }, "service" => pastime.service }.compact
     end
+  end
+
+  # How the table sees a road from here: "To Greymere (by a dangerous road)".
+  def way_along(edge)
+    "To #{edge.other_end(current_node).name}#{' (by a dangerous road)' if edge.state == 'dangerous'}"
   end
 
   # How the table sees a thing to do now: "Rooms at the Gull (50 gil, overnight)".

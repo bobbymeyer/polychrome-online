@@ -92,7 +92,7 @@ RSpec.describe "Map pages", type: :request do
       get campaign_map_panel_path(campaign)
       expect(response.body).to include("The party is at Tule", "To Secret Ruins", "dangerous · Grasslands")
 
-      post campaign_travel_path(campaign), params: { edge_id: campaign.map_edges.sole.id }
+      post campaign_ways_path(campaign), params: { way: "To Secret Ruins (by a dangerous road)", go: 1, return_to: "map" }
       follow_redirect!
       expect(response.body).to include("The party is at Secret Ruins", "Encounter!", "Fight", "Wave it off")
 
@@ -120,9 +120,11 @@ RSpec.describe "Map pages", type: :request do
     it "reports a blocked path instead of travelling" do
       campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "blocked")
       campaign.place_party!(tule)
-      post campaign_travel_path(campaign), params: { edge_id: campaign.map_edges.sole.id }
+      get campaign_map_panel_path(campaign)
+      expect(response.body).to match(%r{<button class="menu__item" disabled>To Secret Ruins})
+      post campaign_ways_path(campaign), params: { way: "To Secret Ruins", go: 1, return_to: "map" }
       follow_redirect!
-      expect(response.body).to include("That path is blocked")
+      expect(response.body).to include("That isn&#39;t a way on from here")
     end
 
     it "removes a place, taking its paths and the party marker with it" do

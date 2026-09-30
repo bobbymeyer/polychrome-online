@@ -22,7 +22,7 @@
             <% if edge.blocked? %>
               <button class="menu__item" disabled><%= label %></button>
             <% else %>
-              <%= button_to label, campaign_travel_path(@campaign), params: { edge_id: edge.id }, class: "menu__item" %>
+              <%= button_to label, campaign_ways_path(@campaign), params: { way: @campaign.way_along(edge), go: 1, return_to: "map" }, class: "menu__item" %>
             <% end %>
           <% end %>
         </div>

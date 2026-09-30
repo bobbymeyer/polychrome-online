@@ -49,17 +49,20 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(campaign.reload.gil).to eq(250)
     end
 
-    it "rests the party, and says so at the table, but not mid-battle" do
+    it "makes camp from the campaign's page, and says so at the table, but not mid-battle" do
       bartz.update!(hp: 1, mp: 0)
-      campaign.update!(time_of_day: "dusk")
-      post campaign_rest_path(campaign)
+      campaign.update!(time_of_day: "dusk", current_node: campaign.map_nodes.create!(name: "The Road", kind: "field", x: 1, y: 1, visible: true))
+      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      get campaign_path(campaign)
+      expect(response.body).to include("Make camp")
+      post campaign_ways_path(campaign), params: { way: "Make camp (overnight)", go: 1 }
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
       expect(bartz.current_mp).to eq(bartz.stats["max_mp"] / 2) # a bed brings the rest
       expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The party rests. Everyone is back to full HP, and half their MP.", "Day 2: dawn." ])
 
       bartz.update!(hp: 5)
       BattleRecord.start!(campaign: campaign, characters: [ bartz ], name: "Road", encounter: { "goblin" => 1 }, seed: 1)
-      post campaign_rest_path(campaign)
+      post campaign_ways_path(campaign), params: { way: "Make camp (overnight)", go: 1 }
       expect(flash[:alert]).to include("Not while a battle is on")
       expect(bartz.reload.hp).to eq(5)
     end
@@ -72,8 +75,6 @@ RSpec.describe "Campaigns and characters", type: :request do
       get campaign_path(campaign)
       expect(response.body).to include("Rooms at #{campaign.reload.inn_here['name']}")
       expect(response.body).not_to include("Make camp")
-      post campaign_rest_path(campaign)
-      expect(flash[:alert]).to include("The party is in Varn: take rooms at", "Camp is for the road.")
     end
   end
 
