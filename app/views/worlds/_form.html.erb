@@ -56,12 +56,34 @@
     </fieldset>
     <fieldset class="panel">
       <legend>Calendar</legend>
-      <p class="hint">How campaigns here count their days. Blank counts them plainly: Day 1, Day 2.</p>
-      <div class="field"><%= label_tag "world_calendar_weekdays", "Days of the week" %><%= text_field_tag "world[calendar][weekdays]", Array(world.calendar["weekdays"]).join(", "), id: "world_calendar_weekdays", placeholder: "Moonsday, Tidesday, Ashday, Bellday, Restday" %></div>
+      <% almanac = world.almanac %>
+      <% field = ->(key, label, value, **options) { tag.div(class: "field") { label_tag("world_calendar_#{key}", label) + text_field_tag("world[calendar][#{key}]", value, id: "world_calendar_#{key}", **options) } } %>
+      <p class="hint">How campaigns here count time. Each part is made of the one before: parts of the day make a day, days a week and a month, months a season and a year, and years an era. Leave any of it blank: with none, a day is dawn, day, dusk and night, and days are counted plainly (Day 1, Day 2).</p>
       <div class="field-row">
-        <div class="field"><%= label_tag "world_calendar_months", "Months" %><%= text_field_tag "world[calendar][months]", Array(world.calendar["months"]).join(", "), id: "world_calendar_months", placeholder: "Thaw, Rainfall, Highsun, Harvest, Frost" %></div>
-        <div class="field"><%= label_tag "world_calendar_month_length", "Days in a month" %><%= number_field_tag "world[calendar][month_length]", world.calendar["month_length"], min: 0, max: 400, id: "world_calendar_month_length", placeholder: "30" %></div>
+        <%= field.("periods", "Parts of the day, in order", Array(world.calendar["periods"]).join(", "), placeholder: "Morning, After school, Evening, Late night") %>
+        <%= field.("dark", "Of those, the night", Array(world.calendar["dark"]).join(", "), placeholder: "Late night") %>
       </div>
+      <p class="hint">A night's sleep ends at the first part. Things to do and places' modes can be kept to any of these words, and a place's night line comes on in the night.</p>
+      <%= field.("weekdays", "Days of the week", almanac.weekdays.join(", "), placeholder: "Moonsday, Tidesday, Ashday, Bellday, Restday") %>
+      <div class="field-row">
+        <div class="field">
+          <%= label_tag "world_calendar_months", "Months, one a line: days, and the season" %>
+          <%= text_area_tag "world[calendar][months]", almanac.months_text, id: "world_calendar_months", rows: 4, placeholder: "Thaw (30, Spring)\nRainfall (31, Spring)\nHighsun (30, Summer)" %>
+        </div>
+        <div class="field">
+          <%= label_tag "world_calendar_eras", "Eras, one a line: # is the year, and when it began" %>
+          <%= text_area_tag "world[calendar][eras]", almanac.eras_text, id: "world_calendar_eras", rows: 4, placeholder: "# AC (1)\nYear # of the Tide (1204)" %>
+        </div>
+      </div>
+      <fieldset class="field">
+        <legend>The story starts on</legend>
+        <div class="field-row field-row--wrap">
+          <%= field.("start_weekday", "Day of the week", (almanac.weekdays[almanac.start["weekday"]] if world.calendar["start"]), placeholder: almanac.weekdays.first || "Tuesday") %>
+          <div class="field"><%= label_tag "world_calendar_start_day", "Day" %><%= number_field_tag "world[calendar][start_day]", (almanac.start["day"] if world.calendar["start"]), min: 1, max: 400, id: "world_calendar_start_day", placeholder: "1" %></div>
+          <%= field.("start_month", "Month", (almanac.months[almanac.start["month"]]&.dig("name") if world.calendar["start"]), placeholder: almanac.months.first&.dig("name") || "April") %>
+          <div class="field"><%= label_tag "world_calendar_start_year", "Year" %><%= number_field_tag "world[calendar][start_year]", almanac.start["year"], id: "world_calendar_start_year", placeholder: "2009" %></div>
+        </div>
+      </fieldset>
     </fieldset>
     <fieldset class="panel">
       <legend>Battle rules</legend>

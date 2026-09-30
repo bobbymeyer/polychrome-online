@@ -29,7 +29,7 @@ module Campaign::Services
     raise Refusal, "Not while a battle is on" if battle_on?
     raise Refusal, "#{character.name} isn't in this party" unless character.campaign_id == id
     service = at.view.fetch("services", []).find { |s| s["kind"] == kind } or raise Refusal, "#{at.name} has no #{kind}"
-    raise Refusal, "The #{service['name']} is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?(kind)
+    raise Refusal, "The #{service['name']} is shut: #{at.shut_by(kind).name.downcase}" if at.respond_to?(:shut_by) && at.shut_by(kind)
     refuse_if_shunned!(at)
     case kind
     when "inn"

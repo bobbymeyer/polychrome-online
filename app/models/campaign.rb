@@ -87,8 +87,8 @@ class Campaign < ApplicationRecord
   def scene
     return "dungeon" if dungeon_in_progress
 
-    # A place in a mode has its own music (Location#switch_mode!).
-    moded = current_node&.location&.current_mode&.music
+    # A place in a mode has its own music (Location#mode_music).
+    moded = current_node&.location&.mode_music
     return moded if moded
 
     current_node&.location&.town? ? "town" : "field"

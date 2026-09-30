@@ -4,23 +4,25 @@
 # shift, see someone, go down into the other world at night. A place lists
 # them one per line, the way scenes are written:
 #
-#   Attend class (dawn/day, 2): The bell. Maths, then lunch on the roof.
+#   Attend class (morning, after school, 2): The bell. Maths, then lunch.
+#   Swim at the lido (summer, weekend): Chlorine and shrieking.
 #   Visit the shrine: Incense, and the sound of the sea.
-#   The Undertow (night, 4)
+#   The Undertow (late night, 2)
 #
-# In brackets: the parts of the day it can be done in (any, if none are
-# given) and how many parts it takes (one, if not given). After the colon,
-# what the table hears when the party does it. The table picks one like a
-# way on (Campaign::Ways): a vote, settled by the GM, and time passes.
+# In brackets: when it can be done, in the setting's calendar words (parts
+# of the day, days of the week, months, seasons: Pointcrawl::Calendar#on?;
+# any time, if none are given), and how many parts of the day it takes
+# (one, if not given). After the colon, what the table hears when the party
+# does it. The table picks one like a way on (Campaign::Ways): a vote,
+# settled by the GM, and time passes.
 Pastime = Data.define(:name, :times, :takes, :line)
 
 class Pastime
-  TIMES = Campaign::Timekeeping::TIMES
   # A colon only ends the name when a space follows it: "Wait for the 0:13 (night)".
   FORMAT = /\A(?<name>(?:[^():]|:(?!\s))+?)\s*(?:\((?<when>[^)]*)\))?\s*(?::\s+(?<line>.*)|:)?\z/
 
-  # [pastimes, problems] from a place's text.
-  def self.parse(text)
+  # [pastimes, problems] from a place's text, read by a world's calendar.
+  def self.parse(text, almanac = Pointcrawl::Calendar.new)
     problems = []
     pastimes = text.to_s.lines.map(&:strip).reject(&:empty?).filter_map do |raw|
       match = FORMAT.match(raw)
@@ -31,33 +33,32 @@ class Pastime
 
       times = []
       takes = 1
-      match[:when].to_s.split(%r{[/,\s]+}).reject(&:empty?).each do |word|
+      most = almanac.periods.size
+      match[:when].to_s.split(%r{\s*[/,]\s*}).map(&:strip).reject(&:empty?).each do |word|
         if word.match?(/\A\d+\z/) then takes = word.to_i
-        elsif TIMES.include?(word.downcase) then times << word.downcase
-        elsif word.downcase != "any" then problems << "“#{match[:name]}”: #{word} isn't a part of the day (#{TIMES.join(', ')}) or a number of parts"
+        elsif (kind = almanac.kind_of(word)) then times << almanac.words[kind].find { |name| name.casecmp?(word) }
+        elsif word.downcase != "any" then problems << "“#{match[:name]}”: #{word} isn't in the calendar (a part of the day, a day of the week, a month or a season) or a number of parts"
         end
       end
-      problems << "“#{match[:name]}” takes 1 to 4 parts of the day" unless takes.between?(1, 4)
-      new(name: match[:name].strip, times: times.presence || TIMES, takes: takes.clamp(1, 4), line: match[:line].to_s.strip.presence)
+      problems << "“#{match[:name]}” takes 1 to #{most} parts of the day" unless takes.between?(1, most)
+      new(name: match[:name].strip, times: times, takes: takes.clamp(1, most), line: match[:line].to_s.strip.presence)
     end
     dupes = pastimes.map(&:name).tally.select { |_, n| n > 1 }.keys
     problems << "#{dupes.to_sentence} is listed twice" if dupes.any?
     [ pastimes, problems ]
   end
 
-  def self.list(text) = parse(text).first
+  def self.list(text, almanac = Pointcrawl::Calendar.new) = parse(text, almanac).first
 
-  def open_at?(time_of_day) = times.include?(time_of_day)
+  def open?(almanac, day, period) = almanac.on?(times, day, period)
 
-  # The part of the day it ends in, begun now: "dusk".
-  def ends(time_of_day)
-    TIMES[(TIMES.index(time_of_day) + takes) % TIMES.size]
-  end
+  # The part of the day it ends in, begun now: "Evening".
+  def ends(almanac, period) = almanac.later(period, takes).first
 
-  # How the table sees it, begun now: "Attend class (until dusk)", or,
-  # past the next dawn, "The Undertow (until night, tomorrow)".
-  def label(time_of_day)
-    tomorrow = TIMES.index(time_of_day) + takes > TIMES.size
-    "#{name} (until #{ends(time_of_day)}#{', tomorrow' if tomorrow})"
+  # How the table sees it, begun now: "Attend class (until Evening)", or,
+  # past the day's end, "The Undertow (until Morning, tomorrow)".
+  def label(almanac, period)
+    ends, days = almanac.later(period, takes)
+    "#{name} (until #{ends}#{', tomorrow' if days.positive?})"
   end
 end

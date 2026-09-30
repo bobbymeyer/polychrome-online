@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_210000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -485,6 +485,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "times", default: [], null: false
+    t.text "activities"
     t.index ["encounter_table_id"], name: "index_location_modes_on_encounter_table_id"
     t.index ["location_id", "key"], name: "index_location_modes_on_location_id_and_key", unique: true
     t.index ["location_id"], name: "index_location_modes_on_location_id"

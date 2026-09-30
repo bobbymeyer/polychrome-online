@@ -159,7 +159,7 @@ class Message < ApplicationRecord
 
   # "Dusk", or, for a line said before the story kept time, nothing.
   def story_time
-    time_of_day&.capitalize
+    time_of_day&.upcase_first
   end
 
   private

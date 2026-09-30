@@ -320,11 +320,32 @@ extra go repeats the move rather than asking for a new one, as haste's second go
 
 ### A place by night
 
-A mode can come on by itself at parts of the day: the station after the last train, the
-market when the shutters come down. It turns on at those hours and off at the others, and only
-the party, where it is, hears the change. A mode set off at the table (the city burning)
-outlasts the hours. In the Atlas, a place's "What it's like by night" line becomes a "By night"
-mode in every new campaign.
+A mode can come on by itself when the calendar says: the station after the last train, the
+market when the shutters come down, the town snowbound in winter, the square on market day. It
+turns on then and off otherwise. Words of one kind are any of them (dusk or night); words of
+different kinds are all at once (winter nights). Modes layer: a place is in the one set off at
+the table and every one the calendar has brought on, so the city can burn by night. Each one on
+gets its own box on the place's page, and the map names them all ("Burning · By night"). A mode
+can shut the place's usual things to do and bring its own, so the flooded station has no kiosk
+shift but does have "Wade the platforms". Only the party, where it is, hears a mode come on,
+and arriving somewhere says what the modes it's in say. In the Atlas, a place's "What it's like
+by night" line becomes a "By night" mode in every new campaign, in the setting's night; a
+landmark, which has no modes, says the line as night falls or when the party arrives after dark.
+
+### The setting's calendar
+
+Each world sets its own calendar, and each part of it is made of the one before. Parts of the
+day make a day, and some of them are its night; days make a week (the weekdays) and a month;
+months, each with its own length and season, make a year; years make an era, written with #
+for the year in it ("Heisei #", "# AC"). The world also sets the date the story starts on. A
+school year runs Morning, After school, Evening, Late night, from Tuesday 7 April, Heisei 21.
+A world with none of it has dawn, day, dusk and night, and counts days.
+
+The date card says the date in display type, then the season and year in grey, then the part
+of the day in its own box. The box wears the light, not the name: the first part of the day is
+yellow, the night is blue-black, the part just before night is red, and the rest are white. A
+rest sleeps until the first part of the day. Things to do and modes are kept to times with the
+calendar's own words.
 
 ### A deadline passes
 

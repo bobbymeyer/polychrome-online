@@ -2,9 +2,11 @@
     only a new day ticks: the date is what the party lives by. Replaced live as time passes. %>
 <% deadlines = campaign.clocks.running.shown_to_players.select { |clock| clock.triggers == [ "dawn" ] }
                        .map { |clock| [ clock.segments - clock.filled, clock ] }.sort_by(&:first).first(3) %>
-<section id="table_time" class="table-time time--<%= campaign.time_of_day %>" aria-label="The date">
+<% season_and_year = campaign.almanac.season_and_year(campaign.day) %>
+<section id="table_time" class="table-time time--<%= campaign.daylight %>" aria-label="The date">
   <p class="table-time__date"><%= campaign.world.date(campaign.day) %></p>
-  <p class="table-time__part"><%= campaign.time_of_day %></p>
+  <% if season_and_year.present? %><p class="table-time__season"><%= season_and_year %></p><% end %>
+  <p class="table-time__part"><%= campaign.period %></p>
   <% if deadlines.any? %>
     <ul class="table-time__deadlines">
       <% deadlines.each do |days, clock| %>

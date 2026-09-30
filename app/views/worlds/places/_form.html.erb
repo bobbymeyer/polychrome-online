@@ -26,12 +26,12 @@
   <div class="field">
     <%= f.label :night_line, "What it's like by night" %>
     <%= f.text_area :night_line, rows: 2, placeholder: "The shutters come down. Under the platform, the Undertow wakes." %>
-    <p class="hint">For a town or dungeon that's different after dark: campaigns give it a "By night" mode that comes on at night by itself (the GM can shut services in it, or add trouble).</p>
+    <p class="hint">For a place that's different after dark: a town or dungeon gets a "By night" mode in each campaign, on in the calendar's night by itself (the GM can shut services in it, or add trouble); anywhere else, the table hears it as night falls, or on arriving after dark.</p>
   </div>
   <div class="field">
     <%= f.label :activities, "Things to do here" %>
-    <%= f.text_area :activities, rows: 4, class: "script-field", placeholder: "Attend class (dawn/day, 2): The bell. Maths, then lunch on the roof.\nThe Undertow (night, 4)" %>
-    <p class="hint">Things to do here, one per line: a name, then in brackets when (dawn, day, dusk, night; any if none) and how many parts of the day it takes (1 if none), then what the table hears. The party picks one from Where next?, and the time goes by.</p>
+    <%= f.text_area :activities, rows: 4, class: "script-field", placeholder: "Attend class (dawn/day, 2): The bell. Maths, then lunch on the roof.\nSwim at the lido (summer): Chlorine and shrieking.\nThe Undertow (night, 4)" %>
+    <p class="hint">Things to do here, one per line: a name, then in brackets when, in the calendar's words (<%= @world.almanac.periods.join(', ') %>, or a day of the week, month or season; any time if none) and how many parts of the day it takes (1 if none), then what the table hears. The party picks one from Where next?, and the time goes by.</p>
   </div>
   <fieldset class="panel past-fields">
     <legend>Its past</legend>

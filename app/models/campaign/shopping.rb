@@ -8,7 +8,7 @@ module Campaign::Shopping
   # reason the table can read.
   def buy!(item, quantity, at:, by:)
     quantity = quantity.to_i.clamp(1, 99)
-    raise Refusal, "The shop is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
+    raise Refusal, "The shop is shut: #{at.shut_by('shop').name.downcase}" if at.respond_to?(:shut_by) && at.shut_by("shop")
     raise Refusal, "#{at.name} doesn't sell #{item.name}" unless at.stock_items.include?(item)
     refuse_if_shunned!(at)
 
@@ -26,7 +26,7 @@ module Campaign::Shopping
   # Sell from the bag, for half the price.
   def sell!(item, quantity, at:, by:)
     quantity = quantity.to_i.clamp(1, 99)
-    raise Refusal, "The shop is shut: #{at.current_mode['name'].downcase}" if at.respond_to?(:service_closed?) && at.service_closed?("shop")
+    raise Refusal, "The shop is shut: #{at.shut_by('shop').name.downcase}" if at.respond_to?(:shut_by) && at.shut_by("shop")
     refuse_if_shunned!(at)
     transaction do
       row = inventories.find_by(item: item)

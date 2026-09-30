@@ -5,7 +5,10 @@
 # starts. While it lasts, some services are shut, the music changes, there
 # can be trouble on arrival, and players read a line about it. Clocks,
 # scenes and its picture point at it. A mode with times comes on by itself
-# at those parts of the day and goes at the others: the place by night.
+# when the calendar says (Pointcrawl::Calendar#on?) and goes when it
+# doesn't: the place by night, in winter, on market day. It can have things
+# to do of its own (activities, written as a place's are: Pastime), and
+# shut the place's usual ones ("pastimes" in closed).
 class LocationMode < ApplicationRecord
   belongs_to :location, touch: true
   belongs_to :encounter_table, optional: true
@@ -14,7 +17,7 @@ class LocationMode < ApplicationRecord
   has_many :scenes, dependent: :nullify
 
   normalizes :name, with: ->(name) { name.to_s.strip }
-  normalizes :line, :description, :art, with: ->(text) { text.to_s.strip.presence }
+  normalizes :line, :description, :art, :activities, with: ->(text) { text.to_s.strip.presence }
   normalizes :music, with: ->(music) { music.presence }
 
   before_validation { self.key = name.parameterize(separator: "_") if key.blank? && name.present? }
@@ -23,6 +26,8 @@ class LocationMode < ApplicationRecord
   validates :key, presence: true, uniqueness: { scope: :location_id }
   validates :music, inclusion: { in: Campaign::MUSIC_CHOICES }, allow_nil: true
   validate :trouble_from_this_world
+  validate :times_in_the_calendar, if: :will_save_change_to_times?
+  validate { Pastime.parse(activities, almanac).last.each { |problem| errors.add(:activities, problem) } if location }
 
   def closed=(kinds)
     super(Array(kinds).compact_blank.map(&:to_s))
@@ -30,15 +35,25 @@ class LocationMode < ApplicationRecord
 
   def shuts?(kind) = closed.include?(kind.to_s)
 
-  # The parts of the day it comes on by itself (a place by night), in order.
-  def times=(parts)
-    super(Campaign::Timekeeping::TIMES & Array(parts).map(&:to_s))
+  # When it comes on by itself, in the calendar's words: parts of the
+  # day, days of the week, months, seasons ("winter", "night": winter nights).
+  def times=(words)
+    super(Array(words).map { |word| word.to_s.strip }.reject(&:empty?).uniq(&:downcase))
   end
 
-  # It follows the hours (Location#follow_the_hours!) instead of being set off.
+  # It follows the calendar (Location#follow_the_hours!) instead of being set off.
   def timed? = times.any?
 
+  def almanac = location.campaign.world.almanac
+
   private
+
+  def times_in_the_calendar
+    return unless location
+
+    unknown = almanac.unknown(times)
+    errors.add(:times, "#{unknown.to_sentence} #{unknown.one? ? "isn't" : "aren't"} in #{location.campaign.world.name}'s calendar") if unknown.any?
+  end
 
   def trouble_from_this_world
     return unless encounter_table && location

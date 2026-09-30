@@ -120,7 +120,7 @@ RSpec.describe "Clocks and secrets", type: :request do
   it "lets the GM pass time at the table, and shows everyone the time" do
     patch campaign_time_path(campaign), params: { parts: 2 }
     expect(campaign.reload.time_of_day).to eq("dusk")
-    patch campaign_time_path(campaign), params: { until: "dawn" }
+    patch campaign_time_path(campaign), params: { until: "the_day" }
     expect(campaign.reload).to have_attributes(day: 2, time_of_day: "dawn")
     sit(hero)
     get campaign_table_path(campaign)

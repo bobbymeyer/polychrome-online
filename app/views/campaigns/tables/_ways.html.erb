@@ -20,7 +20,7 @@
     <h2>Where next?</h2>
     <%# What there is to do here this part of the day (Pastime) comes first, under the time; then the roads out. %>
     <% doings, roads = ways.partition { |way| way.dig("move", "pastime") } %>
-    <% [ [ doings, "#{campaign.time_of_day.capitalize} in #{campaign.current_node&.name}" ], [ roads, (doings.any? ? "Or go" : nil) ] ].each do |group, heading| %>
+    <% [ [ doings, "#{campaign.period.upcase_first} in #{campaign.current_node&.name}" ], [ roads, (doings.any? ? "Or go" : nil) ] ].each do |group, heading| %>
     <% next if group.empty? %>
     <% if heading %><h3 class="table-ways__group"><%= heading %></h3><% end %>
     <div class="menu play">

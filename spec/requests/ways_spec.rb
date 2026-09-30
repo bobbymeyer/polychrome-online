@@ -67,7 +67,7 @@ RSpec.describe "Where next", type: :request do
     end
 
     it "won't do what isn't done at this time of day, or somewhere else" do
-      expect { campaign.spend_time!(tule, "The Undertow") }.to raise_error(Refusal, /isn't something to do at day/)
+      expect { campaign.spend_time!(tule, "The Undertow") }.to raise_error(Refusal, /isn't something to do now \(day\)/)
       expect { campaign.spend_time!(mere, "Attend class") }.to raise_error(Refusal, /There's no Attend class at Greymere/)
     end
 
@@ -91,7 +91,7 @@ RSpec.describe "Where next", type: :request do
 
     it "checks how a place's things to do are written" do
       tule.update(activities: "Nap (noon)\n(no name)")
-      expect(tule.errors[:activities]).to include("“Nap”: noon isn't a part of the day (dawn, day, dusk, night) or a number of parts",
+      expect(tule.errors[:activities]).to include("“Nap”: noon isn't in the calendar (a part of the day, a day of the week, a month or a season) or a number of parts",
                                                   "“(no name)” needs a name before any brackets or colon")
     end
   end
