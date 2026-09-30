@@ -1031,3 +1031,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .map-node__mode { font-size: 24px; translate: 0 30px; }
   .skyline__sign { font-size: 18px; }
 }
+
+/* Before the first round's clock: each player's Ready. */
+.battle-ready { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 12px; }
+.battle-ready form { margin: 0; }
+.battle-ready .hint { margin: 0; }

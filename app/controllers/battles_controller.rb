@@ -53,7 +53,8 @@ class BattlesController < ApplicationController
     monster = @world.monsters.order(:level).first&.slug
     {
       name: "Battle", seed: nil, escapable: "1", input_seconds: BattleRecord::DEFAULT_TIMER.to_s, terrain: "",
-      characters: @campaign.characters.select(&:conscious?).first(4).map(&:id), antagonists: [],
+      # The standing first; the fallen come too, down, to be raised (and their players watch).
+      characters: @campaign.characters.order(:created_at).sort_by { |c| c.conscious? ? 0 : 1 }.first(4).map(&:id), antagonists: [],
       encounter: [ { monster: monster.to_s, count: "3" } ] + Array.new(ENCOUNTER_SLOTS - 1) { { monster: "", count: "1" } }
     }
   end

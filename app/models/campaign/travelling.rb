@@ -128,8 +128,8 @@ module Campaign::Travelling
   # battle's pull waits for them (stage.js).
   def start_pending_encounter!(input_seconds: nil, prelude: [])
     encounter = pending_encounter or raise Refusal, "No encounter is waiting"
-    standing = characters.order(:created_at).select(&:conscious?)
-    raise Refusal, "Nobody is standing to fight" if standing.empty?
+    party = characters.order(:created_at).to_a
+    raise Refusal, "Nobody is standing to fight" if party.none?(&:conscious?)
 
     # Read as a scene's lines are: "Kurosaki (sad): …" is Kurosaki's, sadly.
     cast = npcs.to_a
@@ -139,7 +139,8 @@ module Campaign::Travelling
       messages.create!(speaker: line["speaker"], expression: line["expression"], body: line["text"])
     end
 
-    battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
+    # The fallen come too, down: their players watch, and a raise brings them in.
+    battle = BattleRecord.start!(campaign: self, characters: party, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
                                  terrain: encounter["terrain"], names: encounter.fetch("names", {}),
                                  antagonists: npcs.where(id: encounter.fetch("antagonists", [])).to_a)

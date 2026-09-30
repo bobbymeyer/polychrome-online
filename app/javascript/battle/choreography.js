@@ -202,6 +202,7 @@ const STEPS = {
   },
   ko(b, tl, e, at) {
     tl.call(() => b.setKo(e.target, true), at)
+    b.popup(tl, e.target, "KO", "miss", at)
     return gesture(tl, b.sprite(e.target), "fade", at)
   },
   revive(b, tl, e, at) {

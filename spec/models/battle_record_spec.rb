@@ -120,11 +120,11 @@ RSpec.describe BattleRecord do
         start_battle(campaign: campaign, input_seconds: 30)
       end
 
-      it "starts the first round's clock once every player has reached the battle" do
+      it "starts the first round's clock once every player is ready" do
         expect(battle.deadline_at).to be_nil
         expect(battle.still_coming).to eq([ bartz, faris ])
 
-        expect { battle.arrive!(bartz) }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("when Faris gets here"))
+        expect { battle.arrive!(bartz) }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("when Faris is ready"))
         expect(battle.deadline_at).to be_nil
         expect { battle.arrive!(faris) }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_countdown"))
         expect(battle.deadline_at).to be_within(2.seconds).of(30.seconds.from_now)

@@ -5,7 +5,7 @@
 # what they do, with the nearest D&D idea where that helps.
 module GlossaryHelper
   GLOSSARY = {
-    "max_hp" => [ "HP", "Hit points. At 0 you're down (knocked out, not dead) until someone revives you." ],
+    "max_hp" => [ "HP", "Hit points. At 0 you're KO'd (out of the fight, not dead) until someone revives you." ],
     "max_mp" => [ "MP", "Magic points: one pool that pays for spells and some skills. Like spell slots, but you spend points." ],
     "str" => [ "Str", "Strength. How hard your weapon, fists and physical skills hit. (D&D: Str)" ],
     "mag" => [ "Mag", "Magic. How hard your spells hit and how much your healing heals. (D&D: your casting stat)" ],

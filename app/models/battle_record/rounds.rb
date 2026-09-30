@@ -4,7 +4,7 @@
 # units the GM has put on auto.
 #
 # The clock is never unfair to someone who isn't looking: the first round's
-# starts only once every player in the fight has reached its screen (or the
+# starts only once every player in the fight has said they're ready (or the
 # GM has put them on auto), and it stops while a player's idea waits for the
 # GM's ruling.
 module BattleRecord::Rounds
@@ -58,7 +58,7 @@ module BattleRecord::Rounds
     BattleTimeoutJob.set(wait_until: deadline_at).perform_later(self, round)
   end
 
-  # A player has the battle in front of them (Battles::PanelsController).
+  # A player is ready (Battles::ArrivalsController: their Ready button).
   def arrive!(unit_id)
     return if arrived_units.include?(unit_id) || party.none? { |u| u["id"] == unit_id }
 
@@ -68,7 +68,7 @@ module BattleRecord::Rounds
   end
 
   # The players the first round's clock is waiting for: in the fight and
-  # standing, not on auto, and not at the battle yet.
+  # standing, not on auto, and not ready yet.
   def still_coming
     party.select { |u| u["hp"].positive? }.map { |u| u["id"] } - auto_units - arrived_units
   end

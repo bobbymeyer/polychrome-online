@@ -6,7 +6,7 @@
   <% if party.empty? %>
     <p class="empty">Nobody yet.</p>
   <% elsif party.none?(&:conscious?) %>
-    <p class="party-down">Everyone is down.</p>
+    <p class="party-down">Everyone is KO'd.</p>
   <% end %>
   <ol class="coop-party__list">
     <% party.each do |character| %>

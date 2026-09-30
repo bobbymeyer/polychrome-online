@@ -5,7 +5,7 @@
   <p class="countdown is-paused">Clock stopped: the GM is ruling on an idea</p>
 <% elsif battle.waiting_for_arrivals? %>
   <% coming = battle.still_coming.map { |id| unit_name(battle.state, id) } %>
-  <p class="countdown is-paused">The clock starts when <%= coming.to_sentence %> <%= coming.one? ? "gets" : "get" %> here</p>
+  <p class="countdown is-paused">The clock starts when <%= coming.to_sentence %> <%= coming.one? ? "is" : "are" %> ready</p>
 <% elsif battle.deadline_at %>
   <p class="countdown" data-controller="countdown" data-countdown-deadline-value="<%= battle.deadline_at.iso8601 %>" data-countdown-seconds-value="<%= battle.input_seconds %>">
     <span data-countdown-target="clock"></span>

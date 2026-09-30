@@ -90,10 +90,13 @@ RSpec.describe "The live table", type: :system do
 
     allow(BattleTimeoutJob).to receive(:set).and_return(instance_double(ActiveJob::ConfiguredJob, perform_later: nil)) # jobs run inline here
     second = start_battle(campaign: campaign, goblins: 1, input_seconds: 60)
-    expect(second.deadline_at).to be_nil # Rook hasn't seen it yet
+    expect(second.deadline_at).to be_nil # Rook isn't ready yet
     as(player) do
       expect(page).to have_current_path(battle_path(second), wait: 15)
+      expect(page).to have_text("The clock starts when Rook is ready", wait: 10)
+      click_on "Ready"
       expect(page).to have_css(".countdown[data-controller=countdown]", wait: 10)
+      expect(page).to have_no_button("Ready")
     end
     expect(second.reload.deadline_at).to be_present
   end

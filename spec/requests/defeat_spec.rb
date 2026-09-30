@@ -20,7 +20,7 @@ RSpec.describe "Defeat", type: :request do
 
   it "offers the GM a way on at the table and on the battle's results" do
     get campaign_table_path(campaign)
-    expect(response.body).to include("Everyone is down. What happens now?", "Retreat to Tule", "Everyone gets up", "Game over")
+    expect(response.body).to include("Everyone is KO'd. What happens now?", "Retreat to Tule", "Everyone gets up", "Game over")
 
     battle = start_battle(campaign: campaign)
     battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "defeat" }, actor: "gm")

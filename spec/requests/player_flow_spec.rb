@@ -140,6 +140,28 @@ RSpec.describe "The player's way through", type: :request do
     expect(campaign.reload.known_affinities["goblin"]).to include("ice" => "none", "sleep" => "none")
   end
 
+  it "brings a fallen character into the next fight KO'd: their player watches, and a raise can reach them" do
+    lenna = campaign.characters.create!(name: "Lenna", job: white_mage, user: krile)
+    bartz = campaign.characters.create!(name: "Bartz", job: knight)
+    lenna.update!(hp: 0)
+    campaign.update!(pending_encounter: { "table" => "Road", "monsters" => { "goblin" => 1 } })
+    battle = campaign.start_pending_encounter!
+    expect(battle.party.map { |u| [ u["name"], u["hp"] ] }).to include([ "Lenna", 0 ])
+    expect(battle.still_coming).not_to include(lenna.battle_unit_id) # the clock doesn't wait for someone who can't act
+    expect(Battle::State.target_options(battle.state, battle.unit(bartz.battle_unit_id), battle.state["abilities"]["attack"])).not_to include(lenna.battle_unit_id)
+
+    sign_in_as(krile)
+    post battle_seat_path(battle), params: { seat: lenna.battle_unit_id }
+    get battle_panel_path(battle)
+    expect(response.body).to include("You're KO'd: you watch until someone raises you.")
+    expect(response.body).not_to include("Take a seat")
+
+    lenna.update!(hp: 0)
+    bartz.update!(hp: 0)
+    campaign.update!(pending_encounter: { "table" => "Road", "monsters" => { "goblin" => 1 } })
+    expect { campaign.start_pending_encounter! }.to raise_error(Refusal, /Nobody is standing/)
+  end
+
   it "puts stolen things in the bag however the battle ends" do
     bartz = campaign.characters.create!(name: "Bartz", job: knight)
     battle = battle_with(bartz)

@@ -26,7 +26,7 @@ RSpec.describe Battle::Field do
 
   it "refuses what would do nothing, or only works in battle" do
     expect { described_class.use_item(items["potion"], user: rosa, target: bartz.merge("hp" => 0), rng: rng) }
-      .to raise_error(Battle::InvalidAction, /is down/)
+      .to raise_error(Battle::InvalidAction, /is KO'd/)
     expect { described_class.use_item(items["potion"], user: rosa, target: rosa.merge("hp" => 80), rng: rng) }
       .to raise_error(Battle::InvalidAction, "Rosa is already at full HP")
     expect { described_class.use_item(items["remedy"], user: rosa, target: bartz, rng: rng) }

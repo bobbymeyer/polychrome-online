@@ -82,7 +82,7 @@ RSpec.describe "The pointcrawl map" do
       expect(campaign.messages.last.body).to start_with("Encounter! ")
     end
 
-    it "starts the pending encounter as a battle for everyone standing, or lets the GM wave it off" do
+    it "starts the pending encounter as a battle for the party, the fallen KO'd, or lets the GM wave it off" do
       bartz = campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"))
       campaign.characters.create!(name: "Down", job: world.jobs.first, hp: 0)
       connect(tule, ruins, state: "dangerous", encounter_table: grasslands)
@@ -90,7 +90,7 @@ RSpec.describe "The pointcrawl map" do
 
       battle = campaign.start_pending_encounter!
       expect(battle.name).to eq("Grasslands")
-      expect(battle.party.map { |u| u["name"] }).to eq([ bartz.name ])
+      expect(battle.party.map { |u| [ u["name"], u["hp"].zero? ] }).to eq([ [ bartz.name, false ], [ "Down", true ] ])
       expect(campaign.reload.pending_encounter).to be_nil
 
       campaign.update!(pending_encounter: { "table" => "X", "monsters" => { "goblin" => 1 } })

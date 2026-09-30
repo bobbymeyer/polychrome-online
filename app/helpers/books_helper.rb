@@ -153,7 +153,7 @@ module BooksHelper
     case name
     when "self_hp_below" then "own HP below #{value}%"
     when "ally_hp_below" then "an ally's HP below #{value}%"
-    when "ally_ko" then value ? "an ally is down" : "no ally is down"
+    when "ally_ko" then value ? "an ally is KO'd" : "no ally is KO'd"
     when "round_multiple" then "every #{value.ordinalize} round"
     when "chance" then "#{value}% of the time"
     else "#{name} #{value}"
