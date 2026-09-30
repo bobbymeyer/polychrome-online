@@ -40,7 +40,7 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     campaign = world.campaigns.find_by!(name: "Rust")
     town = campaign.locations.sole
     clock = campaign.clocks.sole
-    expect(clock).to have_attributes(name: "The Syndicate takes the docks", location: town, location_mode: have_attributes(key: "syndicate_town"), world_front: front)
+    expect(clock).to have_attributes(name: "The Syndicate takes the docks", place: town.map_node, location_mode: have_attributes(key: "syndicate_town"), world_front: front)
     expect(town.modes.sole).to have_attributes(name: "Syndicate town", line: "Varn belongs to Mara now.")
     expect(campaign.secrets.sole).to have_attributes(body: "Mara's ledger is fake.", npc: campaign.npcs.sole, location: town)
 

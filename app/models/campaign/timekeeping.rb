@@ -65,27 +65,17 @@ module Campaign::Timekeeping
   end
 
   # Places that are different by night, or in winter, or on a market day
-  # (a mode with times: Location#follow_the_hours!), become so and stop
-  # being. Where the party is, the table hears it; a landmark with a night
-  # line (no modes of its own) says it as night falls.
+  # (a mode with times: MapNode#follow_the_hours!), become so and stop
+  # being. Where the party is, the table hears it.
   def follow_the_hours!(was_day, was_period)
-    locations.where(id: LocationMode.where("json_array_length(times) > 0").select(:location_id)).includes(:modes, :map_node).find_each do |place|
-      place.follow_the_hours!(was_day, was_period, quiet: place.map_node && place.map_node == @arriving)
+    map_nodes.where(id: LocationMode.where("json_array_length(times) > 0").select(:map_node_id)).includes(:modes, :current_mode, :location).find_each do |place|
+      place.follow_the_hours!(was_day, was_period, quiet: place == @arriving)
     end
-    node = current_node
-    return if node.nil? || node.location || node == @arriving || almanac.dark?(was_period) || !dark?
-
-    narrate(node.night_line) if node.night_line
   end
 
-  # How it is at a place the party has just reached: what the modes it's in
-  # say, and a landmark's night line after dark.
+  # How it is at a place the party has just reached: what the modes it's in say.
   def how_it_is_here!(node)
-    if node.location
-      node.location.modes_on.each { |mode| narrate(mode.line || "#{node.name}: #{mode.name}.") }
-    elsif dark? && node.night_line
-      narrate(node.night_line)
-    end
+    node.modes_on.each { |mode| narrate(mode.line || "#{node.name}: #{mode.name}.") }
   end
 
   # Parts of the day until the day begins again: none if it just has.

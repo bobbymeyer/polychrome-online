@@ -1,17 +1,18 @@
 # frozen_string_literal: true
 
-# A place's modes (LocationMode): its other states, prepared by the GM. One
+# A place's modes (LocationMode): its other states, prepared by the GM. Any
+# place on the map has them: a town, a dungeon, a landmark, the wilds. One
 # can be set off at the table (the current mode); others come on by
 # themselves when the calendar says (by night, in winter). They layer: the
 # place is in all of them at once, the table's first. The world doesn't
 # change; the place does, for a while.
-module Location::Modes
+module MapNode::Modes
   extend ActiveSupport::Concern
 
   included do
     # The two point at each other: let go of the current one before the modes go.
     before_destroy(prepend: true) { update_columns(current_mode_id: nil) if current_mode_id }
-    has_many :modes, -> { order(:id) }, class_name: "LocationMode", dependent: :destroy, inverse_of: :location
+    has_many :modes, -> { order(:id) }, class_name: "LocationMode", dependent: :destroy, inverse_of: :map_node
     belongs_to :current_mode, class_name: "LocationMode", optional: true
     validate :current_mode_is_ours
   end
@@ -50,7 +51,7 @@ module Location::Modes
     attrs = attrs.to_h.stringify_keys
     name = attrs["name"].to_s.strip
     raise Refusal, "A mode needs a name" if name.empty?
-    raise Refusal, "#{view['name']} already has a mode called #{name}" if modes.exists?(key: name.parameterize(separator: "_"))
+    raise Refusal, "#{name} already has a mode called #{name}" if modes.exists?(key: name.parameterize(separator: "_"))
 
     table = attrs["encounters"].presence && campaign.world.encounter_tables.find_by(slug: attrs["encounters"])
     modes.create!(attrs.slice("line", "description", "closed", "music", "art", "times", "activities").merge("name" => name, "encounter_table" => table))
@@ -64,29 +65,14 @@ module Location::Modes
     end
   end
 
-  # How a mode changes the place's picture (§8): words after the rest of
-  # the prompt ("on fire, thick smoke, ash falling").
-  def set_mode_art!(key, words)
-    mode_called(key).update!(art: words)
-  end
-
-  # The place's picture as it is now: the first of its modes' own, if one
-  # has one, else the Gazetteer entry's. nil when neither has been made.
-  def picture
-    in_mode = modes_on.filter_map(&:mode_art).find { |art| art.image.attached? }
-    return in_mode.image if in_mode
-
-    location_template.image if location_template.image.attached?
-  end
-
   # Sets the mode off, and tells the table.
   def switch_mode!(key)
     chosen = mode_called(key)
     transaction do
       update!(current_mode: chosen)
-      line = chosen.line || "#{view['name']}: #{chosen.name}."
+      line = chosen.line || "#{name}: #{chosen.name}."
       campaign.narrate(line)
-      campaign.start_rumour!(line, at: map_node, seen: campaign.current_node == map_node) if map_node
+      campaign.start_rumour!(line, at: self, seen: party_here?)
     end
     campaign.broadcast_music
   end
@@ -99,30 +85,30 @@ module Location::Modes
     now = timed_modes_at(campaign.day, campaign.time_of_day)
     return if before == now
 
-    broadcast_refresh_later
-    return unless map_node&.party_here?
+    location&.broadcast_refresh_later
+    return unless party_here?
 
-    (now - before).each { |mode| campaign.narrate(mode.line || "#{view['name']}: #{mode.name}.") } unless quiet
+    (now - before).each { |mode| campaign.narrate(mode.line || "#{name}: #{mode.name}.") } unless quiet
     campaign.broadcast_music
   end
 
   # Back to how it was.
   def clear_mode!(line = nil)
-    was = current_mode or raise Refusal, "#{view['name']} is as it always was"
+    was = current_mode or raise Refusal, "#{name} is as it always was"
     transaction do
       update!(current_mode: nil)
-      campaign.narrate(line.to_s.strip.presence || "#{view['name']} is itself again: #{was.name.downcase} no more.")
+      campaign.narrate(line.to_s.strip.presence || "#{name} is itself again: #{was.name.downcase} no more.")
     end
     campaign.broadcast_music
   end
 
   def mode_called(key)
-    modes.find_by(key: key.to_s) or raise Refusal, "#{view['name']} has no mode called #{key}"
+    modes.find_by(key: key.to_s) or raise Refusal, "#{name} has no mode called #{key}"
   end
 
   private
 
   def current_mode_is_ours
-    errors.add(:current_mode, "isn't one of this place's modes") if current_mode && current_mode.location_id != id
+    errors.add(:current_mode, "isn't one of this place's modes") if current_mode && current_mode.map_node_id != id
   end
 end

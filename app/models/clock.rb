@@ -113,7 +113,7 @@ class Clock < ApplicationRecord
   end
 
   # The place whose mode it sets off when it fills.
-  def location = location_mode&.location
+  def place = location_mode&.map_node
 
   # The mode it sets off, named for the pages.
   def mode_name = location_mode&.name
@@ -126,9 +126,9 @@ class Clock < ApplicationRecord
     # It stops the table (the deadline card): the date, the line, and what
     # the place has become.
     card = { "date" => campaign.world.date(campaign.day), "clock" => name, "line" => line,
-             "place" => (location && "#{location.map_node&.name || location.name}: #{location_mode.name}") }.compact
+             "place" => (place && "#{place.name}: #{location_mode.name}") }.compact
     update!(full_at: campaign.narrate(line, cue: "deadline", data: card).created_at) if line
-    location.switch_mode!(location_mode.key) if location_mode && location.current_mode != location_mode
+    place.switch_mode!(location_mode.key) if location_mode && place.current_mode != location_mode
   end
 
   def place_is_the_campaigns
@@ -146,7 +146,7 @@ class Clock < ApplicationRecord
   end
 
   def mode_is_the_locations
-    errors.add(:location_mode, "isn't in this campaign") if location_mode && location.campaign_id != campaign_id
+    errors.add(:location_mode, "isn't in this campaign") if location_mode && place.campaign_id != campaign_id
   end
 
   # The GM's list everywhere it's open, and the players' view of the public

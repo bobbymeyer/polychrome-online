@@ -44,7 +44,7 @@
 <% end %>
 
 <% if @gm %>
-  <%= render "locations/modes", location: @location, view: view %>
+  <%= render "map_nodes/modes", node: @location.map_node if @location.map_node %>
   <%= render "art_batches/mode_art", location: @location if @location.modes.any? %>
   <details class="window gm-tools">
     <summary>GM: rename</summary>

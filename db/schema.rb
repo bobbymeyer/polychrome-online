@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_090000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -476,7 +476,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_230000) do
   end
 
   create_table "location_modes", force: :cascade do |t|
-    t.integer "location_id", null: false
     t.string "key", null: false
     t.string "name", null: false
     t.text "line"
@@ -489,9 +488,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_230000) do
     t.datetime "updated_at", null: false
     t.json "times", default: [], null: false
     t.text "activities"
+    t.integer "map_node_id", null: false
     t.index ["encounter_table_id"], name: "index_location_modes_on_encounter_table_id"
-    t.index ["location_id", "key"], name: "index_location_modes_on_location_id_and_key", unique: true
-    t.index ["location_id"], name: "index_location_modes_on_location_id"
+    t.index ["map_node_id", "key"], name: "index_location_modes_on_map_node_id_and_key", unique: true
   end
 
   create_table "location_templates", force: :cascade do |t|
@@ -518,10 +517,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_230000) do
     t.json "progress", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "current_mode_id"
     t.integer "prices", default: 0, null: false
     t.index ["campaign_id"], name: "index_locations_on_campaign_id"
-    t.index ["current_mode_id"], name: "index_locations_on_current_mode_id"
     t.index ["location_template_id"], name: "index_locations_on_location_template_id"
   end
 
@@ -557,7 +554,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_230000) do
     t.integer "world_place_id"
     t.text "description"
     t.text "activities"
+    t.integer "current_mode_id"
     t.index ["campaign_id"], name: "index_map_nodes_on_campaign_id"
+    t.index ["current_mode_id"], name: "index_map_nodes_on_current_mode_id"
     t.index ["location_id"], name: "index_map_nodes_on_location_id"
     t.index ["world_place_id"], name: "index_map_nodes_on_world_place_id"
   end
@@ -897,11 +896,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_230000) do
   add_foreign_key "job_levels", "jobs"
   add_foreign_key "jobs", "worlds"
   add_foreign_key "location_modes", "encounter_tables"
-  add_foreign_key "location_modes", "locations"
   add_foreign_key "location_templates", "encounter_tables"
   add_foreign_key "location_templates", "worlds"
   add_foreign_key "locations", "campaigns"
-  add_foreign_key "locations", "location_modes", column: "current_mode_id"
   add_foreign_key "locations", "location_templates"
   add_foreign_key "map_edges", "campaigns"
   add_foreign_key "map_edges", "encounter_tables"

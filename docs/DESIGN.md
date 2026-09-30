@@ -356,9 +356,10 @@ the table and every one the calendar has brought on, so the city can burn by nig
 gets its own box on the place's page, and the map names them all ("Burning · By night"). A mode
 can shut the place's usual things to do and bring its own, so the flooded station has no kiosk
 shift but does have "Wade the platforms". Only the party, where it is, hears a mode come on,
-and arriving somewhere says what the modes it's in say. In the Atlas, a place's "What it's like
-by night" line becomes a "By night" mode in every new campaign, in the setting's night; a
-landmark, which has no modes, says the line as night falls or when the party arrives after dark.
+and arriving somewhere says what the modes it's in say. Any place on the map has modes, a landmark
+or the wilds as much as a town: the GM prepares a town's on its page and anywhere else's in the
+map's panel. In the Atlas, a place's "What it's like by night" line becomes a "By night" mode in
+every new campaign, in the setting's night.
 
 ### The setting's calendar
 

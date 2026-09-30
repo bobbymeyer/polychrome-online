@@ -58,7 +58,7 @@ class WorldFront < ApplicationRecord
 
   # Its clocks and secrets, made the campaign's. Places and people it names
   # are linked if the campaign has them (Atlas); a clock's mode is made on
-  # its place's location when there is one.
+  # its place.
   def deal!(campaign)
     raise Refusal, "#{name} is #{world.name}'s, not #{campaign.world.name}'s" unless world_id == campaign.world_id
     raise Refusal, "#{name} is already in #{campaign.name}" if dealt_into?(campaign)
@@ -67,8 +67,8 @@ class WorldFront < ApplicationRecord
     npcs = campaign.npcs.where.not(world_figure_id: nil).index_by(&:world_figure_id)
     transaction do
       clocks.each do |row|
-        location = nodes[row["place_id"]]&.location
-        mode = add_mode(location, row) if location && row["mode_name"]
+        place = nodes[row["place_id"]]
+        mode = add_mode(place, row) if place && row["mode_name"]
         campaign.clocks.create!(name: row["name"], segments: row["segments"], triggers: row["triggers"], full_line: row["full_line"],
                                 public: row["public"], location_mode: mode, world_front: self, map_node: nodes[row["source_id"]])
       end
@@ -81,9 +81,9 @@ class WorldFront < ApplicationRecord
   private
 
   # The place's mode by that name, made if it hasn't one yet.
-  def add_mode(location, row)
-    location.modes.find_by(key: row["mode_name"].parameterize(separator: "_")) ||
-      location.add_mode!("name" => row["mode_name"], "line" => row["mode_line"], "description" => row["mode_description"])
+  def add_mode(place, row)
+    place.modes.find_by(key: row["mode_name"].parameterize(separator: "_")) ||
+      place.add_mode!("name" => row["mode_name"], "line" => row["mode_line"], "description" => row["mode_description"])
   end
 
   def rows_from(rows)

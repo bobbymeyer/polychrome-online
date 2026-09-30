@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Drafts
-  # Modes for a place (Location#add_mode!): the city burns, the mine floods.
+  # Modes for a place on the map (MapNode#add_mode!): the city burns, the mine floods.
   class Mode < Base
     def instructions
       "You write modes for one place: another state it can be in for a while, set off at the table " \
@@ -13,8 +13,8 @@ module Drafts
     end
 
     def context
-      view = target.view
-      services = view.fetch("services", []).map { |s| s["kind"] }.uniq
+      view = target.location&.view || { "description" => target.description }
+      services = self.services
       [ campaign_context,
         "The place: #{target.name}, a #{target.kind}#{" (#{clip(view['description'], 200)})" if view['description'].present?}.",
         "Its services: #{services.join(', ').presence || 'none'}.",
@@ -22,7 +22,6 @@ module Drafts
     end
 
     def items(json)
-      services = target.view.fetch("services", []).map { |s| s["kind"] }.uniq
       rows(json, "modes").filter_map do |row|
         name = clip(row["name"], 40)
         next if name.empty?
@@ -33,6 +32,9 @@ module Drafts
           "art" => clip(row["art"], 200).presence }.compact
       end.first(5)
     end
+
+    # What a mode can shut there: a town's services.
+    def services = target.location&.town? ? target.location.view.fetch("services", []).map { |s| s["kind"] }.uniq : []
 
     def keep!(item)
       target.add_mode!(item.except("kept"))

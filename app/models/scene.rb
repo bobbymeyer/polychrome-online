@@ -83,9 +83,9 @@ class Scene < ApplicationRecord
         map_node.update!(visible: true)
         campaign.narrate("#{map_node.name} appears on the map.")
       end
-      # A place changes mode (Location#switch_mode!), or goes back to how it was.
-      if ending == "mode" && (location = map_node&.location)
-        location_mode ? location.switch_mode!(location_mode.key) : (location.clear_mode! if location.current_mode)
+      # A place changes mode (MapNode#switch_mode!), or goes back to how it was.
+      if ending == "mode" && map_node
+        location_mode ? map_node.switch_mode!(location_mode.key) : (map_node.clear_mode! if map_node.current_mode)
       end
       update!(played_at: Time.current)
     end
@@ -144,10 +144,9 @@ class Scene < ApplicationRecord
     when "reveal"
       errors.add(:map_node, "must be a place on this campaign's map") unless map_node && map_node.campaign_id == campaign_id
     when "mode"
-      location = map_node&.campaign_id == campaign_id && map_node.location
-      if !location
-        errors.add(:map_node, "must be a town or dungeon on this campaign's map")
-      elsif location_mode && location_mode.location_id != location.id
+      if map_node&.campaign_id != campaign_id
+        errors.add(:map_node, "must be a place on this campaign's map")
+      elsif location_mode && location_mode.map_node_id != map_node.id
         errors.add(:location_mode, "isn't one of #{map_node.name}'s modes")
       end
     end

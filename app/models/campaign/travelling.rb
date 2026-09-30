@@ -33,7 +33,7 @@ module Campaign::Travelling
       self.pending_encounter = rolled && { "table" => edge.encounter_table.name, "monsters" => rolled, "terrain" => edge.encounter_table.terrain_type }
       # A place in a mode (as it will be when the party gets there) can have trouble waiting.
       arrival_period, days_on = almanac.later(period, edge.duration.to_i)
-      if !rolled && (troubled = destination.location&.troubled_by(day: day + days_on, period: arrival_period))
+      if !rolled && (troubled = destination.troubled_by(day: day + days_on, period: arrival_period))
         trouble = troubled.encounter_table
         rolled = roll_with { |state| Pointcrawl::Encounters.roll(state, trouble.entries, "dangerous") }
         self.pending_encounter = rolled && { "table" => "#{destination.name}: #{troubled.name}", "monsters" => rolled, "terrain" => trouble.terrain_type }

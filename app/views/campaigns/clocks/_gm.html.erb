@@ -1,5 +1,5 @@
 <%# The GM's clocks (Clock): tick them, see what fills them, make new ones. Replaced live as they change. %>
-<% clocks = campaign.clocks.includes(:map_node, location_mode: { location: Location::ROLLING }).order(:stopped_at, :full_at, :id) %>
+<% clocks = campaign.clocks.includes(:map_node, location_mode: :map_node).order(:stopped_at, :full_at, :id) %>
 <div id="gm_clocks" class="gm-clocks">
   <% if clocks.any? %>
     <ul class="clock-rows">
@@ -10,7 +10,7 @@
             <span class="label"><%= clock.public? ? "Everyone sees it" : "GM only" %></span>
             <p class="muted">
               <%= [ ("Ticks on #{clock.ticking}" if clock.ticking),
-                    ("then #{clock.location.name}: #{clock.mode_name}" if clock.mode_name),
+                    ("then #{clock.place.name}: #{clock.mode_name}" if clock.mode_name),
                     ("“#{clock.full_line}”" if clock.full_line),
                     ("stops when #{clock.stopper}" if clock.map_node && !clock.stopped?),
                     ("Stopped#{": #{clock.map_node.name} was cleared" if clock.map_node}" if clock.stopped?) ].compact.join(" · ").presence || "Ticked by hand" %>
@@ -61,8 +61,8 @@
       <% end %>
       <div class="field"><%= f.label :full_line, "When it fills, the table hears", for: "clock_full_line_#{campaign.id}" %><%= f.text_field :full_line, id: "clock_full_line_#{campaign.id}", placeholder: "Smoke over the harbour: the Syndicate holds the docks." %></div>
       <%# Each named with its place (the group labels don't show everywhere); not modes that follow the hours, which come and go by themselves. %>
-      <% modes = campaign.map_nodes.includes(location: :modes).order(:name).filter_map do |n|
-           settable = n.location&.modes.to_a.reject(&:timed?)
+      <% modes = campaign.map_nodes.includes(:modes).order(:name).filter_map do |n|
+           settable = n.modes.reject(&:timed?)
            [ n.name, settable.map { |m| [ "#{n.name}: #{m.name}", m.id ] } ] if settable.any?
          end %>
       <% if modes.any? %>

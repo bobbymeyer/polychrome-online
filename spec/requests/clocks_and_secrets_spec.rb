@@ -37,7 +37,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       post campaign_clocks_path(campaign), params: { clock: { name: "The Syndicate torches Tule", segments: "3", public: "1",
                                                               triggers: [ "", "rest", "travel" ], when_full: burning.id } }
       clock = campaign.clocks.sole
-      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], location: town, location_mode: burning, public: true)
+      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], place: node, location_mode: burning, public: true)
 
       rest_the_night(campaign)
       expect(clock.reload.filled).to eq(1)
@@ -108,7 +108,7 @@ RSpec.describe "Clocks and secrets", type: :request do
     end
 
     it "only switches one of the campaign's own places, whatever the form sends" do
-      elsewhere = world.campaigns.create!(name: "Elsewhere", gm: @admin).locations.create!(location_template: village, seed: 3)
+      elsewhere = world.campaigns.create!(name: "Elsewhere", gm: @admin).map_nodes.create!(name: "Far", kind: "town", x: 1, y: 1)
       flooded = elsewhere.add_mode!("name" => "Flooded")
       expect(campaign.clocks.new(name: "x", segments: 4, location_mode: flooded)).not_to be_valid
 

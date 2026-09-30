@@ -144,6 +144,9 @@ Rails.application.routes.draw do
     resource :party, only: :create, module: :map_nodes
     resources :map_edges, only: :create, path: "paths"
     resource :location, only: :create, module: :map_nodes
+    # Its other states (MapNode::Modes), for any place: a town, a landmark, the wilds.
+    resources :modes, only: %i[create destroy], module: :map_nodes
+    resource :current_mode, only: %i[update destroy], module: :map_nodes
   end
 
   # Towns and dungeons (§7). Everything but viewing is a GM control, each a
@@ -160,8 +163,6 @@ Rails.application.routes.draw do
       resource :position, only: :update
       resources :treasures, only: :create
       resources :reversions, only: :create
-      resources :modes, only: %i[create destroy]
-      resource :current_mode, only: %i[update destroy]
       resources :purchases, only: :create
       resources :sales, only: :create
     end

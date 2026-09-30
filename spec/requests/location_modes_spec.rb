@@ -14,7 +14,7 @@ RSpec.describe "Location modes", type: :request do
   before { post campaign_table_seat_path(campaign), params: { seat: "gm" } }
 
   def prepare_burning
-    post location_modes_path(town), params: { mode: { name: "Burning", line: "Smoke over the rooftops: Tule is burning.",
+    post map_node_modes_path(town.map_node), params: { mode: { name: "Burning", line: "Smoke over the rooftops: Tule is burning.",
                                                          description: "Half the market is ash.", music: "battle",
                                                          encounters: "grasslands", closed: %w[shop inn] } }
   end
@@ -25,19 +25,19 @@ RSpec.describe "Location modes", type: :request do
     get location_path(town)
     expect(response.body).to include("GM: modes", "Burning", "Set it off")
 
-    patch location_current_mode_path(town), params: { key: "burning" }
+    patch map_node_current_mode_path(town.map_node), params: { key: "burning" }
     expect(town.reload.current_mode["name"]).to eq("Burning")
     expect(campaign.messages.last.body).to eq("Smoke over the rooftops: Tule is burning.")
     get location_path(town)
     expect(response.body).to include("location-mode", "Half the market is ash.", "Shut: Shop and Inn")
 
-    delete location_current_mode_path(town), params: { line: "The fires are out." }
+    delete map_node_current_mode_path(town.map_node), params: { line: "The fires are out." }
     expect(town.reload.current_mode).to be_nil
     expect(campaign.messages.last.body).to eq("The fires are out.")
   end
 
   it "follows the hours: a place by night comes on at night and goes at dawn, on top of a mode set off, which outlasts them" do
-    post location_modes_path(town), params: { mode: { name: "By night", line: "The shutters come down. Under the platform, the Undertow wakes.",
+    post map_node_modes_path(town.map_node), params: { mode: { name: "By night", line: "The shutters come down. Under the platform, the Undertow wakes.",
                                                          closed: %w[shop], times: [ "", "night" ] } }
     expect(town.reload.modes.sole).to have_attributes(times: %w[night], timed?: true)
     get location_path(town)
@@ -54,7 +54,7 @@ RSpec.describe "Location modes", type: :request do
     expect(town.reload.modes_on).to be_empty
 
     prepare_burning
-    patch location_current_mode_path(town), params: { key: "burning" }
+    patch map_node_current_mode_path(town.map_node), params: { key: "burning" }
     campaign.pass_time!(3) # to night
     expect(town.reload.modes_on.map(&:name)).to eq([ "Burning", "By night" ]) # the fire doesn't go out at nightfall
     campaign.pass_time!(1)
@@ -90,9 +90,11 @@ RSpec.describe "Location modes", type: :request do
     expect(response.body).to include("Snowbound", "Market", "Shut: Things to do.")
   end
 
-  it "says how it is on arrival: the place's modes, and a landmark's night line after dark" do
+  it "says how it is on arrival: the place's modes, a landmark's too, and as night falls where the party is" do
     shrine = world.world_places.create!(name: "Old Shrine", kind: "landmark", x: 9, y: 9, night_line: "Foxfire between the torii.")
-    lantern = campaign.map_nodes.create!(name: "Old Shrine", kind: "landmark", x: 9, y: 9, visible: true, world_place: shrine)
+    Atlas.new(campaign).bring_in_places!([ shrine ]) # a landmark's night line is a mode like a town's
+    lantern = campaign.map_nodes.find_by!(world_place: shrine)
+    expect(lantern.modes.sole).to have_attributes(name: "By night", times: %w[night])
     town.add_mode!("name" => "By night", "line" => "The shutters come down.", "times" => %w[night])
     campaign.update!(time_of_day: "night")
     campaign.place_party!(node)
@@ -124,7 +126,7 @@ RSpec.describe "Location modes", type: :request do
     expect { campaign.buy!(world.items.find_by!(slug: "potion"), 1, at: town, by: "Rook") }.to raise_error(Refusal, /shop is shut/)
 
     campaign.place_party!(road)
-    edge = campaign.map_edges.create!(from_node: road, to_node: node)
+    edge = campaign.map_edges.create!(from_node: road, to_node: node.reload)
     campaign.reload.travel!(edge)
     expect(campaign.reload.pending_encounter).to include("table" => "Tule: Burning")
   end
@@ -147,6 +149,24 @@ RSpec.describe "Location modes", type: :request do
     expect(response.body).to include("has-mode", "map-node__mode")
   end
 
+  it "gives any place modes, a landmark too: prepared and set off from the map" do
+    shrine = campaign.map_nodes.create!(name: "Old Shrine", kind: "landmark", x: 400, y: 400, visible: true, activities: "Pray (day): Quiet.")
+    get edit_map_node_path(shrine)
+    expect(response.body).to include("GM: modes", "Prepare the mode")
+    post map_node_modes_path(shrine), params: { mode: { name: "Festival", line: "Lanterns on every step.", closed: %w[pastimes],
+                                                         activities: "Catch a goldfish: Two, in a bag." } }
+    expect(response).to redirect_to(campaign_map_path(campaign))
+    patch map_node_current_mode_path(shrine), params: { key: "festival" }
+    expect(shrine.reload.current_mode.name).to eq("Festival")
+    expect(campaign.messages.last.body).to eq("Lanterns on every step.")
+    expect(shrine.pastimes.reject(&:service).map(&:name)).to eq([ "Catch a goldfish" ])
+
+    get campaign_map_path(campaign)
+    expect(response.body).to include('class="map-node__mode"', "Festival")
+    delete map_node_current_mode_path(shrine)
+    expect(shrine.reload.current_mode).to be_nil
+  end
+
   it "keeps what points at a mode honest when the mode or the place goes" do
     burning = town.add_mode!("name" => "Burning")
     clock = campaign.clocks.create!(name: "Fire spreads", segments: 4, location_mode: burning)
@@ -161,6 +181,7 @@ RSpec.describe "Location modes", type: :request do
 
     town.add_mode!("name" => "Festival")
     town.switch_mode!("festival")
-    expect { town.destroy! }.to change(LocationMode, :count).by(-1)
+    expect { town.destroy! }.not_to change(LocationMode, :count) # the modes are the place's, on the map
+    expect { node.destroy! }.to change(LocationMode, :count).by(-1)
   end
 end
