@@ -36,9 +36,9 @@ class Campaigns::ClocksController < ApplicationController
   # The mode it sets off when full, from one picker: one of the campaign's
   # places' modes, or nothing.
   def clock_params
-    attrs = params.expect(clock: [ :name, :segments, :public, :full_line, :when_full, :map_node_id, { triggers: [] } ])
+    attrs = params.expect(clock: [ :name, :segments, :public, :full_line, :when_full, :map_node_id, { triggers: [], times: [] } ])
     mode_id = attrs.delete(:when_full).presence
-    attrs.merge(location_mode: mode_id && LocationMode.joins(:location).where(locations: { campaign_id: @campaign.id }).find_by(id: mode_id))
+    attrs.merge(location_mode: mode_id && LocationMode.joins(:map_node).where(map_nodes: { campaign_id: @campaign.id }).find_by(id: mode_id))
   end
 
   def back(notice: nil, alert: nil)

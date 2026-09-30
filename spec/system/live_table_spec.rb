@@ -10,11 +10,11 @@ RSpec.describe "The live table", type: :system do
   let(:campaign) { create_campaign.tap { |c| c.update!(gm_id: gm.id) } }
   let!(:rook) { create_character(campaign, name: "Rook", user: player) }
 
-  it "tells the players what the party knows when the GM makes a flag public" do
+  it "tells the players what the party knows when a secret comes out" do
     seat(player, rook)
     as(player) { expect(page).to have_no_css("#party_knows", text: "Met the king", visible: :all) }
 
-    campaign.flags.create!(key: "met_the_king", value: "yes", public: true)
+    campaign.secrets.create!(body: "Met the king.").reveal!
 
     as(player) { expect(page).to have_css("#party_knows", text: "Met the king") }
   end

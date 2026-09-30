@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-# A campaign flag (§4): a named piece of GM state, like
-# `met_the_king = yes` or `crystals_found = 2`. Values are text; a whole
-# number can be counted up and down.
+# A campaign flag (§4): a named piece of the GM's state, like
+# `met_the_king = yes` or `crystals_found = 2`, for the GM's next scene to
+# follow. Values are text; a whole number can be counted up and down. What
+# the party knows is something else: its secrets, revealed (Secret).
 class Flag < ApplicationRecord
   KEY_FORMAT = /\A[a-z][a-z0-9_]*\z/
 
@@ -16,11 +17,6 @@ class Flag < ApplicationRecord
   validates :key, presence: true, uniqueness: { scope: :campaign_id },
                   format: { with: KEY_FORMAT, message: "must start with a letter: letters, digits and underscores" }
   validates :value, length: { maximum: 500 }
-
-  scope :shown_to_players, -> { where(public: true) }
-
-  # Public flags are part of what the party knows.
-  after_commit { campaign.table_changed }
 
   def counter?
     value.match?(/\A-?\d+\z/)

@@ -1,6 +1,6 @@
 <%# The day and the part of it (Timekeeping), and the days left on the public clocks that
     only a new day ticks: the date is what the party lives by. Replaced live as time passes. %>
-<% deadlines = campaign.clocks.running.shown_to_players.select { |clock| clock.triggers == [ "dawn" ] }
+<% deadlines = campaign.clocks.running.shown_to_players.select { |clock| clock.triggers == [ "dawn" ] && clock.times.empty? }
                        .map { |clock| [ clock.segments - clock.filled, clock ] }.sort_by(&:first).first(3) %>
 <% season_and_year = campaign.almanac.season_and_year(campaign.day) %>
 <section id="table_time" class="table-time time--<%= campaign.daylight %>" aria-label="The date">

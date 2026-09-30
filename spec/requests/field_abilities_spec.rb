@@ -66,7 +66,7 @@ RSpec.describe "Field abilities", type: :request do
     sit(kim)
     post campaign_field_uses_path(campaign)
     expect(flash[:alert]).to eq("Kim has used Pick Lock since the last rest")
-    campaign.rest!
+    campaign.sleep!
     expect(kim.reload).not_to be_field_used
   end
 

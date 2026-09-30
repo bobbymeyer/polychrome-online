@@ -31,7 +31,7 @@ class DraftsController < ApplicationController
 
     record = GlobalID::Locator.locate(params[:target]) or raise ActiveRecord::RecordNotFound
     owned = case record
-    when Location then @owner.is_a?(Campaign) && record.campaign_id == @owner.id && kind == "mode"
+    when MapNode then @owner.is_a?(Campaign) && record.campaign_id == @owner.id && kind == "mode"
     else @owner.is_a?(World) && record.respond_to?(:world_id) && record.world_id == @owner.id && kind == "description"
     end
     owned ? record : raise(ActiveRecord::RecordNotFound)

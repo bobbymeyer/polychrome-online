@@ -10,6 +10,7 @@ class MapNode < ApplicationRecord
   belongs_to :campaign
   belongs_to :location, optional: true
   belongs_to :world_place, optional: true
+  include Modes
   has_many :home_characters, class_name: "Character", foreign_key: :home_node_id, dependent: :nullify, inverse_of: :home_node
   has_many :outgoing_edges, class_name: "MapEdge", foreign_key: :from_node_id, dependent: :destroy, inverse_of: :from_node
   has_many :incoming_edges, class_name: "MapEdge", foreign_key: :to_node_id, dependent: :destroy, inverse_of: :to_node
@@ -28,6 +29,8 @@ class MapNode < ApplicationRecord
 
   before_destroy { campaign.update_columns(current_node_id: nil) if campaign.current_node_id == id }
   after_commit { campaign.table_changed }
+  # Its town or dungeon's page shows the modes it's in.
+  after_update_commit { location&.broadcast_refresh_later if saved_change_to_current_mode_id? }
 
   def edges
     campaign.map_edges.where(from_node: self).or(campaign.map_edges.where(to_node: self))
@@ -36,16 +39,18 @@ class MapNode < ApplicationRecord
   # Things to do here (Pastime): the setting's (its atlas place's, live, as
   # worlds are), then the GM's own, then those of the modes it's in now
   # (LocationMode#activities), by name, so a later one can replace one. A
-  # mode can shut the usual ones ("pastimes" in what it closes).
+  # mode can shut the usual ones ("pastimes" in what it closes). Then a
+  # town's inn, temple and guild, or, with no inn to take rooms at, making
+  # camp (Campaign::Services).
   def pastimes
     almanac = campaign.world.almanac
-    usual = location&.shut_by("pastimes") ? [] : Pastime.list(world_place&.activities, almanac) + Pastime.list(activities, almanac)
-    in_modes = location ? location.modes_on.flat_map { |mode| Pastime.list(mode.activities, almanac) } : []
-    (usual + in_modes).reverse.uniq(&:name).reverse
+    usual = shut_by("pastimes") ? [] : Pastime.list(world_place&.activities, almanac) + Pastime.list(activities, almanac)
+    in_modes = modes_on.flat_map { |mode| Pastime.list(mode.activities, almanac) }
+    services = campaign.service_pastimes(location)
+    services << campaign.camp_pastime unless services.any? { |pastime| pastime.service == "inn" }
+    (usual + in_modes).reverse.uniq(&:name).reverse + services
   end
 
-  # What the setting says it's like here after dark (WorldPlace#night_line).
-  def night_line = world_place&.night_line.presence
 
   def party_here?
     campaign.current_node_id == id

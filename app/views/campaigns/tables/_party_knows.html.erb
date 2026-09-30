@@ -1,8 +1,7 @@
-<%# What the party knows and can see coming: public clocks, public flags, revealed secrets. Replaced live as they change. %>
+<%# What the party knows and can see coming: public clocks, and its secrets, revealed. Replaced live as they change. %>
 <% clocks = campaign.clocks.shown_to_players.where(stopped_at: nil).order(:full_at, :id) %>
-<% known = campaign.flags.shown_to_players.order(:key) %>
 <% secrets = campaign.secrets.revealed.order(:revealed_at) %>
-<section class="window party-knows" id="party_knows" aria-label="What the party knows" <%= "hidden" if clocks.none? && known.none? && secrets.none? %>>
+<section class="window party-knows" id="party_knows" aria-label="What the party knows" <%= "hidden" if clocks.none? && secrets.none? %>>
   <h2>The party knows</h2>
   <% if clocks.any? %>
     <ul class="clock-list">
@@ -11,11 +10,6 @@
       <% end %>
     </ul>
     <p class="hint">Trouble on its way: each box fills as time passes or things go wrong, and when the last one fills, it happens.</p>
-  <% end %>
-  <% if known.any? %>
-    <dl class="facts">
-      <% known.each do |flag| %><dt><%= flag.label %></dt><dd><%= flag.value.presence || "yes" %></dd><% end %>
-    </dl>
   <% end %>
   <% if secrets.any? %>
     <ul class="refs secret-list">

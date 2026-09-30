@@ -28,7 +28,7 @@ RSpec.describe "Choices for the table" do
     expect { choice.picks.create!(character: lenna, option: "Refuse") }.to raise_error(ActiveRecord::RecordInvalid)
 
     choice.settle!("Trust Cid")
-    expect(campaign.flags.find_by!(key: "trusted_cid")).to have_attributes(value: "Trust Cid", public: true)
+    expect(campaign.flags.find_by!(key: "trusted_cid")).to have_attributes(value: "Trust Cid")
     expect(campaign.messages.last.body).to eq("The party chose: Trust Cid.")
     expect(campaign.open_choice).to be_nil
     expect { choice.picks.find_by(character: bartz).update!(option: "Refuse") }.to raise_error(ActiveRecord::RecordInvalid)

@@ -9,10 +9,11 @@
 module Campaign::Deeds
   extend ActiveSupport::Concern
 
-  def record_deed!(body, at: current_node, sway: 0, kind: "gm")
+  # seen: the party is there, and already knows (a town's thanks).
+  def record_deed!(body, at: current_node, sway: 0, kind: "gm", seen: false)
     transaction do
       deed = deeds.create!(body: body, map_node: at, day: day, sway: sway.to_i, kind: kind)
-      start_rumour!(body, at: at, sway: deed.sway, deed: deed) if at
+      start_rumour!(body, at: at, sway: deed.sway, deed: deed, seen: seen) if at
       deed
     end
   end
@@ -33,24 +34,23 @@ module Campaign::Deeds
   end
 
   # Back in the town that was waiting for news: someone who lives there says
-  # so, the rooms are on the house while the party's in town, and whoever
-  # has something on their mind tells them (a hook for what's next).
+  # so, and the town thinks well of the party for it (a deed there, so its
+  # prices come down: Location::Town#price_here), and whoever has something
+  # on their mind tells them (a hook for what's next).
   def welcome_back!(node)
     place = welcomes[node.id.to_s] or return
     folk = node.location&.town? ? node.location.townsfolk : []
     host = folk.find { |f| f["service"] == "inn" } || folk.first
     transaction do
-      update!(welcomes: welcomes.except(node.id.to_s), free_rooms_node_id: node.id)
+      update!(welcomes: welcomes.except(node.id.to_s))
       messages.create!(body: "#{host ? host['name'] : 'The whole street'} meets the party: “You cleared #{place}? " \
-                             "Then your rooms are on the house while you're here.”")
+                             "Then you've friends in #{node.name}, and friends pay less.”")
+      record_deed!("#{node.name} is grateful for #{place}", at: node, sway: 2, kind: "cleared", seen: true)
       hook = folk.find { |f| f != host && f["hook"].present? }
       messages.create!(body: "#{hook['name']}, #{hook['title'].downcase}: “#{hook['hook']}”") if hook
     end
   end
 
-  def free_rooms?(node = current_node)
-    node.present? && free_rooms_node_id == node.id
-  end
   # The names of those who did it: "Rook, Lenna and Faris".
   def party_names(characters = self.characters.order(:created_at))
     names = characters.map(&:name)

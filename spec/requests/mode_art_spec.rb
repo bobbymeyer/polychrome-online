@@ -14,7 +14,7 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
 
   before do
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    post location_modes_path(town), params: { mode: { name: "Burning", art: "on fire, thick smoke" } }
+    post map_node_modes_path(town.map_node), params: { mode: { name: "Burning", art: "on fire, thick smoke" } }
   end
 
   def finish(batch)
@@ -51,7 +51,7 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
     expect(response.body).to include("location-picture is-mode")
     expect(town.picture.blob).to eq(art.image.blob)
 
-    delete location_mode_path(town, "burning")
+    delete map_node_mode_path(town.map_node, "burning")
     expect(town.reload.mode_arts).to be_empty
   end
 

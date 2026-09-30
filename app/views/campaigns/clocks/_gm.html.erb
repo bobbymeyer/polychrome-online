@@ -1,5 +1,5 @@
 <%# The GM's clocks (Clock): tick them, see what fills them, make new ones. Replaced live as they change. %>
-<% clocks = campaign.clocks.includes(:map_node, location_mode: { location: Location::ROLLING }).order(:stopped_at, :full_at, :id) %>
+<% clocks = campaign.clocks.includes(:map_node, location_mode: :map_node).order(:stopped_at, :full_at, :id) %>
 <div id="gm_clocks" class="gm-clocks">
   <% if clocks.any? %>
     <ul class="clock-rows">
@@ -9,8 +9,8 @@
             <strong><%= clock.name %></strong>
             <span class="label"><%= clock.public? ? "Everyone sees it" : "GM only" %></span>
             <p class="muted">
-              <%= [ ("Ticks on #{clock.triggers.map { |t| Clock::TRIGGERS[t] }.to_sentence}" if clock.triggers.any?),
-                    ("then #{clock.location.name}: #{clock.mode_name}" if clock.mode_name),
+              <%= [ ("Ticks on #{clock.ticking}" if clock.ticking),
+                    ("then #{clock.place.name}: #{clock.mode_name}" if clock.mode_name),
                     ("“#{clock.full_line}”" if clock.full_line),
                     ("stops when #{clock.stopper}" if clock.map_node && !clock.stopped?),
                     ("Stopped#{": #{clock.map_node.name} was cleared" if clock.map_node}" if clock.stopped?) ].compact.join(" · ").presence || "Ticked by hand" %>
@@ -43,10 +43,26 @@
           <label class="inline"><%= check_box_tag "clock[triggers][]", key, false, id: "clock_trigger_#{key}_#{campaign.id}" %> <%= label.capitalize %></label>
         <% end %>
       </fieldset>
+      <%# The calendar's words, as modes and things to do keep to them (Pointcrawl::Calendar#on?). %>
+      <% words = campaign.almanac.words.reject { |kind, names| kind == "periods" || names.empty? } %>
+      <% if words.any? %>
+        <details class="field">
+          <summary>Only on…</summary>
+          <%= hidden_field_tag "clock[times][]", "", id: nil %>
+          <% words.each do |kind, names| %>
+            <div class="checks" role="group" aria-label="<%= Pointcrawl::Calendar::KINDS[kind] %>">
+              <% names.each do |name| %>
+                <label><%= check_box_tag "clock[times][]", name, false, id: "clock_times_#{name.parameterize(separator: '_')}_#{campaign.id}" %> <%= name %></label>
+              <% end %>
+            </div>
+          <% end %>
+          <p class="hint">Keep it to the calendar: ticked in one row, any of them (Monday or Friday); in different rows, all at once (Mondays in winter).</p>
+        </details>
+      <% end %>
       <div class="field"><%= f.label :full_line, "When it fills, the table hears", for: "clock_full_line_#{campaign.id}" %><%= f.text_field :full_line, id: "clock_full_line_#{campaign.id}", placeholder: "Smoke over the harbour: the Syndicate holds the docks." %></div>
       <%# Each named with its place (the group labels don't show everywhere); not modes that follow the hours, which come and go by themselves. %>
-      <% modes = campaign.map_nodes.includes(location: :modes).order(:name).filter_map do |n|
-           settable = n.location&.modes.to_a.reject(&:timed?)
+      <% modes = campaign.map_nodes.includes(:modes).order(:name).filter_map do |n|
+           settable = n.modes.reject(&:timed?)
            [ n.name, settable.map { |m| [ "#{n.name}: #{m.name}", m.id ] } ] if settable.any?
          end %>
       <% if modes.any? %>

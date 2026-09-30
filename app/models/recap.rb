@@ -74,10 +74,9 @@ class Recap
     lines.select { |m| %w[key treasure].include?(m.cue) }.map(&:body)
   end
 
-  # Public flags set, secrets found out, and clocks that filled.
+  # Secrets found out, and clocks that filled.
   def learned
-    campaign.flags.shown_to_players.where(updated_at: window).order(:key).map { |f| f.value.present? ? "#{f.label}: #{f.value}" : f.label } +
-      campaign.secrets.where(revealed_at: window).order(:revealed_at).map(&:body) +
+    campaign.secrets.where(revealed_at: window).order(:revealed_at).map(&:body) +
       campaign.clocks.shown_to_players.where(full_at: window).order(:full_at).map { |c| "#{c.name}: it happened" }
   end
 

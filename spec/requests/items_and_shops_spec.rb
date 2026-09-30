@@ -94,27 +94,26 @@ RSpec.describe "Items and shops", type: :request do
       expect(campaign.reload.gil).to eq(200)
     end
 
-    it "puts each service under its building, and lets a character pay for a night at the inn" do
+    it "puts each service under its building, where the party does it like any other thing to do" do
       lenna_character = campaign.characters.find_by!(name: "Lenna")
       lenna_character.update!(hp: 10, mp: 0)
-      get location_path(town)
-      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', ">Rest<")
-
-      post location_services_path(town), params: { kind: "inn", character_id: lenna_character.id }
-      expect(response).to redirect_to(location_path(town, anchor: "service-inn"))
+      inn = town.view["services"].find { |sv| sv["kind"] == "inn" }
       price = campaign.service_price("inn", lenna_character)
+      label = "Rooms at #{inn['name']} (#{price} gil, overnight)"
+      get location_path(town)
+      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', "Rooms at #{ERB::Util.h(inn['name'])}", "suggest")
+
+      get campaign_table_path(campaign)
+      post campaign_ways_path(campaign), params: { way: label }
+      expect(campaign.open_choice.tally[label]).to eq([ "Lenna" ])
+
+      sign_out
+      sign_in_as(@admin)
+      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      post campaign_ways_path(campaign), params: { way: label, go: 1 }
       expect(campaign.reload.gil).to eq(200 - price)
       expect(lenna_character.reload.current_hp).to eq(lenna_character.stats["max_hp"])
-      expect(campaign.messages.last.body).to include("Lenna takes a room", "#{price} gil")
-      expect(flash[:notice]).to eq(campaign.messages.last.body) # said where you are, not only in the log
-
-      post location_services_path(town), params: { kind: "inn", character_id: lenna_character.id }
-      expect(flash[:alert]).to include("already rested")
-
-      other = campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "knight"), user: make_user("Faris"), starting_gear: false)
-      other.update!(hp: 1)
-      post location_services_path(town), params: { kind: "inn", character_id: other.id }
-      expect(flash[:alert]).to include("isn't yours to pay for")
+      expect(campaign.messages.pluck(:body)).to include("Port: Rooms at #{inn['name']} (#{price} gil).")
     end
 
     it "only opens where the party is, unless you're the GM" do

@@ -57,7 +57,7 @@ RSpec.describe "Jobs as story rewards", type: :request do
     yui = create_character(campaign, name: "Yui", job: world.jobs.find_by!(slug: "freelancer"))
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
     get campaign_table_path(campaign)
-    expect(response.body).to include("Awaken someone", 'class="awakening-stage"', "awakening#arrive")
+    expect(response.body).to include("Awaken someone", 'class="awakening-stage" data-moment-cue="awakening"', "moment#arrive")
 
     post campaign_awakenings_path(campaign), params: { character_id: yui.id, job: "monk", line: "I am thou, thou art I." }
     expect(yui.reload.job.slug).to eq("monk")

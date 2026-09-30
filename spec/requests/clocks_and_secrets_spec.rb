@@ -37,7 +37,7 @@ RSpec.describe "Clocks and secrets", type: :request do
       post campaign_clocks_path(campaign), params: { clock: { name: "The Syndicate torches Tule", segments: "3", public: "1",
                                                               triggers: [ "", "rest", "travel" ], when_full: burning.id } }
       clock = campaign.clocks.sole
-      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], location: town, location_mode: burning, public: true)
+      expect(clock).to have_attributes(segments: 3, triggers: %w[rest travel], place: node, location_mode: burning, public: true)
 
       rest_the_night(campaign)
       expect(clock.reload.filled).to eq(1)
@@ -58,7 +58,7 @@ RSpec.describe "Clocks and secrets", type: :request do
                                                                   "line" => "The Syndicate torches Tule: it has happened.",
                                                                   "place" => "Tule: Burning" })
       get campaign_table_path(campaign)
-      expect(response.body).to include('data-controller="dialogue recap deadline awakening"', 'class="deadline-stage"',
+      expect(response.body).to include('data-controller="dialogue recap moment"', 'class="deadline-stage" data-moment-cue="deadline"',
                                        "data-chat-line-cue-value=\"deadline\"", "data-chat-line-card-value=")
 
       rest_the_night(campaign)
@@ -67,6 +67,22 @@ RSpec.describe "Clocks and secrets", type: :request do
       post campaign_clock_ticks_path(campaign, clock), params: { by: -1 }
       expect(clock.reload).to have_attributes(filled: 2, full_at: nil)
       expect(town.reload.mode).to eq("burning") # winding back doesn't put the fire out
+    end
+
+    it "lets a check the GM calls make something happen on a success, once, whoever made it" do
+      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      get campaign_table_path(campaign)
+      expect(response.body).to include("On a success")
+      gil = campaign.gil
+      20.times do
+        post campaign_checks_path(campaign), params: { check: { characters: [ hero.id ], stat: "agi", difficulty: "easy", outcome: "money", amount: "15" } }
+        break if campaign.reload.gil > gil
+      end
+      expect(campaign.gil).to eq(gil + 15)
+      expect(campaign.messages.last.body).to eq("#{hero.name}: 15 gil.")
+
+      post campaign_checks_path(campaign), params: { check: { characters: [ hero.id ], stat: "agi", difficulty: "easy", outcome: "sneak" } }
+      expect(flash[:alert]).to eq("There's no encounter on the road to get past")
     end
 
     it "ticks on a failed check, and keeps a hidden clock off the table until it fills" do
@@ -108,7 +124,7 @@ RSpec.describe "Clocks and secrets", type: :request do
     end
 
     it "only switches one of the campaign's own places, whatever the form sends" do
-      elsewhere = world.campaigns.create!(name: "Elsewhere", gm: @admin).locations.create!(location_template: village, seed: 3)
+      elsewhere = world.campaigns.create!(name: "Elsewhere", gm: @admin).map_nodes.create!(name: "Far", kind: "town", x: 1, y: 1)
       flooded = elsewhere.add_mode!("name" => "Flooded")
       expect(campaign.clocks.new(name: "x", segments: 4, location_mode: flooded)).not_to be_valid
 

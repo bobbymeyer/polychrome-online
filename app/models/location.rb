@@ -12,7 +12,7 @@ class Location < ApplicationRecord
   has_one :map_node, dependent: :nullify
   has_many :npcs, dependent: :nullify
 
-  include Generation, Modes, Tailoring, Town, Exploration
+  include Generation, Tailoring, Town, Exploration
 
   validates :seed, numericality: { only_integer: true }
   validate :template_from_this_world
@@ -27,6 +27,30 @@ class Location < ApplicationRecord
   after_save { @generated = @view = nil }
 
   delegate :town?, :dungeon?, :kind, to: :location_template
+
+  # Its modes are its place's on the map (MapNode::Modes): a town or dungeon
+  # off the map has none.
+  delegate :modes, :current_mode, :mode, :add_mode!, :remove_mode!, :switch_mode!, :clear_mode!, :mode_called,
+           to: :map_node, allow_nil: false
+  def modes_on(**) = map_node ? map_node.modes_on(**) : []
+  def shut_by(kind) = map_node&.shut_by(kind)
+  def service_closed?(kind) = shut_by(kind).present?
+
+  # How a mode changes the place's picture (§8): words after the rest of
+  # the prompt ("on fire, thick smoke, ash falling").
+  def set_mode_art!(key, words)
+    mode_called(key).update!(art: words)
+  end
+
+  # The place's picture as it is now: the first of its modes' own, if one
+  # has one, else the Gazetteer entry's. nil when neither has been made.
+  def picture
+    in_mode = modes_on.filter_map(&:mode_art).find { |art| art.image.attached? }
+    return in_mode.image if in_mode
+
+    location_template.image if location_template.image.attached?
+  end
+
 
   def self.new_seed
     Random.new_seed % 2**31

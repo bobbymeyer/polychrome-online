@@ -38,7 +38,7 @@ class Campaigns::FlagsController < ApplicationController
   end
 
   def flag_params
-    params.expect(flag: %i[key value note public])
+    params.expect(flag: %i[key value note])
   end
 
   def back(notice: nil, alert: nil)

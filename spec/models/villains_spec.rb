@@ -104,13 +104,14 @@ RSpec.describe "Villains and what clearing a place changes" do
     town = campaign.nearest_town(barrow)
     expect(campaign.reload.welcomes).to eq(town.id.to_s => "The Old Barrow")
 
+    before = campaign.service_price("inn", rook, town.location)
     campaign.place_party!(town)
     expect(campaign.messages.where(kind: "dialogue").or(campaign.messages.where(speaker: nil)).pluck(:body))
-      .to include(a_string_including("“You cleared The Old Barrow? Then your rooms are on the house while you're here.”"))
+      .to include(a_string_including("“You cleared The Old Barrow? Then you've friends in #{town.name}, and friends pay less.”"))
     expect(campaign.reload.welcomes).to be_empty
-    expect(campaign.service_price("inn", rook)).to eq(0)
-
-    campaign.place_party!(barrow)
-    expect(campaign.reload.service_price("inn", rook)).to be_positive
+    # The thanks is a deed there: the town thinks better of the party, and its prices come down.
+    expect(campaign.deeds.last).to have_attributes(map_node: town, sway: 2)
+    expect(town.location.reload.reputation).to be >= 2
+    expect(campaign.service_price("inn", rook, town.location)).to be < before
   end
 end

@@ -1,0 +1,21 @@
+<%# The inn, the temple and the guild are things to do here (Campaign::Services): the party picks one
+    from Where next? like anything else, or from here. The purse pays; the outcome happens (Outcome). %>
+<% here = @campaign.current_node&.location_id == location.id %>
+<% pastime = here && @campaign.current_node.pastimes.find { |p| p.service == service["kind"] } %>
+<% outcome = { "inn" => Outcome.of("rest", 100), "temple" => Outcome.of("raise"), "guild" => Outcome.of("rumour") }.fetch(service["kind"]) %>
+<p><%= outcome.describe(@world) %>.</p>
+<% if pastime %>
+  <% label = @campaign.pastime_label(pastime) %>
+  <p class="shop-purse"><%= pastime.price.zero? ? "On the house" : "#{money(pastime.price)} from the party's purse" %><%= ", for everyone" if service["kind"] == "inn" %>.</p>
+  <% if pastime.price > @campaign.gil %>
+    <p class="muted">More than the party has.</p>
+  <% elsif gm %>
+    <%= button_to pastime.name, campaign_ways_path(@campaign), params: { way: label, go: 1 }, class: "button play" %>
+  <% elsif shopping %>
+    <%= button_to campaign_ways_path(@campaign), params: { way: label }, class: "button play" do %><%= pastime.name %> <span class="menu__cost">suggest</span><% end %>
+  <% end %>
+<% elsif service["kind"] == "temple" && here %>
+  <p class="muted">Nobody is KO'd.</p>
+<% elsif !here %>
+  <p class="hint">The party has to be here.</p>
+<% end %>

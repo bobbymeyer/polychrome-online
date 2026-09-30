@@ -1,8 +1,10 @@
-<%# The GM's modes for a place (Location#switch_mode!): prepared, set off, put back. %>
-<% modes = location.modes %>
-<% on = location.modes_on %>
-<% almanac = location.campaign.world.almanac %>
-<details class="window gm-tools" <%= "open" if location.current_mode %>>
+<%# The GM's modes for a place on the map (MapNode::Modes): prepared, set off, put back. On a town or
+    dungeon's page, and in the map's panel for anywhere else. services: what a mode can shut there. %>
+<% modes = node.modes %>
+<% on = node.modes_on %>
+<% almanac = node.campaign.world.almanac %>
+<% top = { turbo_frame: "_top" } %>
+<details class="window gm-tools" <%= "open" if node.current_mode %>>
   <summary>GM: modes<%= " · #{on.map(&:name).join(' · ')} now" if on.any? %></summary>
   <p class="hint">
     Another state for this place, prepared ahead: set off at the table (the city burns, the mine floods, the festival starts), or on by
@@ -23,21 +25,21 @@
           </span>
           <% if t.timed? %>
             <%# It follows the calendar: nothing to set off. %>
-          <% elsif location.mode == t["key"] %>
-            <%= form_with url: location_current_mode_path(location), method: :delete, class: "inline-form" do |f| %>
+          <% elsif node.mode == t["key"] %>
+            <%= form_with url: map_node_current_mode_path(node), method: :delete, class: "inline-form", data: top do |f| %>
               <%= f.text_field :line, placeholder: "The fires are out. (optional)", "aria-label": "What the table hears" %>
               <%= f.submit "Put it back", class: "button" %>
             <% end %>
           <% else %>
-            <%= button_to "Set it off", location_current_mode_path(location), method: :patch, params: { key: t["key"] }, class: "button play",
-                          form: { class: "inline", data: { turbo_confirm: "#{view['name']}: #{t['name']}? The table hears: “#{t['line'] || "#{view['name']}: #{t['name']}."}”" } } %>
+            <%= button_to "Set it off", map_node_current_mode_path(node), method: :patch, params: { key: t["key"] }, class: "button play",
+                          form: { class: "inline", data: { turbo_frame: "_top", turbo_confirm: "#{node.name}: #{t['name']}? The table hears: “#{t['line'] || "#{node.name}: #{t['name']}."}”" } } %>
           <% end %>
-          <%= button_to "Remove", location_mode_path(location, t["key"]), method: :delete, class: "link-button", form: { class: "inline" } %>
+          <%= button_to "Remove", map_node_mode_path(node, t["key"]), method: :delete, class: "link-button", form: { class: "inline", data: top } %>
         </li>
       <% end %>
     </ul>
   <% end %>
-  <%= form_with url: location_modes_path(location), scope: :mode, class: "book-form" do |f| %>
+  <%= form_with url: map_node_modes_path(node), scope: :mode, class: "book-form", data: top do |f| %>
     <div class="field-row">
       <div class="field"><%= f.label :name %><%= f.text_field :name, placeholder: "Burning", required: true %></div>
       <div class="field">
@@ -46,7 +48,7 @@
       </div>
       <div class="field">
         <%= f.label :encounters, "Trouble on arrival" %>
-        <%= f.select :encounters, @world.encounter_tables.order(:name).map { |t| [ t.name, t.slug ] }, include_blank: "None" %>
+        <%= f.select :encounters, node.campaign.world.encounter_tables.order(:name).map { |t| [ t.name, t.slug ] }, include_blank: "None" %>
       </div>
     </div>
     <div class="field"><%= f.label :line, "What the table hears" %><%= f.text_field :line, placeholder: "Smoke over the rooftops: the city is burning." %></div>
@@ -56,7 +58,7 @@
       <%= f.label :activities, "Things to do meanwhile" %>
       <%= f.text_area :activities, rows: 2, class: "script-field", placeholder: "Wade the platforms (2): Knee-deep, and the lights still on." %>
     </div>
-    <% services = view.fetch("services", []).map { |s| s["kind"] }.uniq %>
+    <% services = node.location&.town? ? node.location.view.fetch("services", []).map { |s| s["kind"] }.uniq : [] %>
     <fieldset class="field">
       <legend>Shut meanwhile</legend>
       <%= hidden_field_tag "mode[closed][]", "", id: nil %>
@@ -82,5 +84,5 @@
     </fieldset>
     <%= f.submit "Prepare the mode", class: "button" %>
   <% end %>
-  <%= render "drafts/panel", owner: location.campaign, kind: "mode", target: location, title: "Suggest modes", placeholder: "plague, or a festival" %>
+  <%= render "drafts/panel", owner: node.campaign, kind: "mode", target: node, title: "Suggest modes", placeholder: "plague, or a festival" %>
 </details>

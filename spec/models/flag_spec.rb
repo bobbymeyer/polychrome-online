@@ -24,10 +24,4 @@ RSpec.describe Flag do
     expect(mood).not_to be_counter
     expect { mood.bump!(1) }.to raise_error(Refusal, /isn't a number/)
   end
-
-  it "separates what the players may see" do
-    campaign.flags.create!(key: "secret", value: "the king is a fake")
-    known = campaign.flags.create!(key: "met_the_king", value: "yes", public: true)
-    expect(campaign.flags.shown_to_players).to eq([ known ])
-  end
 end

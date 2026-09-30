@@ -93,8 +93,11 @@ class Message < ApplicationRecord
 
   # A "Where next?" (Campaign::Ways): its options carry the party's moves.
   def where_next?
-    choice? && data.key?("moves")
+    choice? && data.key?("moves") && !data["recovery"]
   end
+
+  # "Everyone is KO'd. What happens now?" (Campaign::Defeat#ask_what_now!).
+  def what_now? = choice? && data["recovery"].present?
 
   # { option => [character names] }, in the options' order.
   def tally
@@ -102,18 +105,18 @@ class Message < ApplicationRecord
     options.index_with { |option| names.fetch(option, []) }
   end
 
-  # The GM settles it: the outcome is said, and set as a flag the party
-  # knows, for the GM's next scene to follow.
+  # The GM settles it: the outcome is said, and set as a flag, for the GM's
+  # next scene to follow.
   def settle!(option)
     raise Refusal, "That isn't one of the options" unless options.include?(option)
     raise Refusal, "This was settled already" unless open_choice?
 
     transaction do
       update!(settled: option)
-      campaign.make_move!(data.dig("moves", option)) if where_next? && data.dig("moves", option)
+      campaign.make_move!(data.dig("moves", option)) if data.dig("moves", option)
       if flag_key
         flag = campaign.flags.find_or_initialize_by(key: Flag.new(key: flag_key).key)
-        flag.update!(value: option, public: true)
+        flag.update!(value: option)
       end
       campaign.narrate("The party chose: #{option}.")
     end

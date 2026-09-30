@@ -35,12 +35,12 @@ class Atlas
       places.each do |place|
         node = campaign.map_nodes.create!(name: place.name, kind: place.kind, x: place.x, y: place.y, visible: place.known,
                                           notes: place.notes, description: place.description, world_place: place)
+        # What it's like by night: a mode that comes on at night by itself.
+        node.add_mode!("name" => "By night", "line" => place.night_line, "times" => campaign.world.almanac.dark) if place.night_line.present?
         next unless place.location_template
 
         location = campaign.locations.create!(location_template: place.location_template, seed: place.seed, overrides: { "name" => place.name })
         node.update!(location: location)
-        # What it's like by night: a mode that comes on at night by itself.
-        location.add_mode!("name" => "By night", "line" => place.night_line, "times" => campaign.world.almanac.dark) if place.night_line.present?
       end
       bring_in_routes!
       start_leads!(places)

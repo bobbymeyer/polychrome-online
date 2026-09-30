@@ -61,7 +61,7 @@ class ScenesController < ApplicationController
     if raw[:ending] == "mode"
       node_id, mode_id = choice.to_s.split("|", 2)
       node = @campaign.map_nodes.find_by(id: node_id)
-      raw = raw.merge(map_node_id: node&.id, location_mode: mode_id.presence && node&.location&.modes&.find_by(id: mode_id))
+      raw = raw.merge(map_node_id: node&.id, location_mode: mode_id.presence && node&.modes&.find_by(id: mode_id))
     end
     raw.merge(encounter: encounter)
   end

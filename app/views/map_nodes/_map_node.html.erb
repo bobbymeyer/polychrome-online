@@ -1,4 +1,4 @@
-<% in_mode = node.location&.modes_on&.map(&:name)&.join(" · ").presence %>
+<% in_mode = node.modes_on.map(&:name).join(" · ").presence %>
 <g class="map-node map-node--<%= node.kind %> <%= 'is-hidden' unless node.visible? %> <%= 'is-party' if party&.id == node.id %> <%= 'has-mode' if in_mode %>"
    transform="translate(<%= node.x %> <%= node.y %>)"
    <% if gm %>data-map-node data-edit-url="<%= edit_map_node_path(node) %>" data-update-url="<%= map_node_path(node, format: :json) %>" tabindex="0" role="button"<% end %>>

@@ -29,7 +29,7 @@ RSpec.describe "A setting's own words (Vocabulary)", type: :request do
     hero = campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), starting_level: 5)
     get campaign_path(campaign)
     expect(response.body).to include("500 crowns", "Grit #{hero.current_hp}", "Nerve")
-    campaign.rest!
+    campaign.sleep!
     expect(campaign.messages.where(body: "The party rests. Everyone is back to full Grit, and half their Nerve.")).to exist
 
     towns = Array.new(12) { |i| campaign.locations.create!(location_template: village, seed: i + 1) }

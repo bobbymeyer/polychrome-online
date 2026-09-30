@@ -72,11 +72,11 @@ RSpec.describe Character do
       expect(bartz.current_hp).to eq(bartz.stats["max_hp"])
       expect(bartz.current_mp).to eq(3)
       bartz.update!(hp: 20)
-      campaign.rest!
+      campaign.sleep!
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
       bartz.update!(hp: 0)
       expect(bartz).not_to be_conscious
-      campaign.rest!
+      campaign.sleep!
       expect(bartz.reload).not_to be_conscious # a night's rest raises nobody
     end
   end

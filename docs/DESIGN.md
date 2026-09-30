@@ -281,9 +281,12 @@ keyboard, a mouse or a finger.
 
 ### Defeat
 
-When the whole party is down, the GM chooses what the story does with it, on the battle's
-results and at the table: retreat to the nearest town by road (rested, with half the party's
-money gone, as in Dragon Quest), everyone gets up where they fell with 1 HP, or game over.
+When the whole party is down, the table decides what the story does with it: "Everyone is KO'd.
+What happens now?" goes up as a choice like any other, with three ways on: retreat to the
+nearest town by road (rested, with half the party's money gone, as in Dragon Quest), everyone
+gets up where they fell with 1 HP, or game over. Players pick; the GM settles it, and the
+battle's results say what was decided. A lost battle asks by itself; if the party fell some
+other way, the GM puts it to the table.
 
 ### Players steer
 
@@ -295,11 +298,19 @@ GM settling the vote takes the party there. The GM can also just go, from the sa
 calls a waiting encounter there too, so a session can run from the table without the map page.
 
 Staying is a way on as well. A place can list things to do there (`Pastime`): class, a shift, a
-visit, a night in the other world. Each says which parts of the day it can be done in and how
-long it takes. The ones open now head the list, under "Day in Tule": "Attend class (until
-dusk)". They go to the same vote, and settling one says its line and lets the time go by. This
-is the day schedule of a calendar game: each part of the day is spent on something, and the
-countdowns on the date card say what it costs.
+visit, a night in the other world. Each says when it can be done, how long it takes, what it
+costs and what it does ("Work a shift (day, 2, money 40)"). The place's own head the list, under
+"Day in Tule": "Attend class (until dusk)". They go to the same vote, and settling one pays, says
+its line, makes its outcome happen and lets the time go by. This is the day schedule of a
+calendar game: each part of the day is spent on something, and the countdowns on the date card
+say what it costs.
+
+A town's inn, temple and guild are things to do too, after the roads: "Rooms at the Gull (50
+gil, overnight)", "A raising at the Chapel (100 gil)" when someone is KO'd, "Rumours at the
+Guild (30 gil)". Where there's no inn, "Make camp (overnight)" takes its place. On the town page
+each service's building says what it does and what it costs, with the same button: the GM does
+it, a player suggests it. The party's purse pays for everyone at once, not one character at a
+time.
 
 ### Someone awakens
 
@@ -348,9 +359,10 @@ the table and every one the calendar has brought on, so the city can burn by nig
 gets its own box on the place's page, and the map names them all ("Burning · By night"). A mode
 can shut the place's usual things to do and bring its own, so the flooded station has no kiosk
 shift but does have "Wade the platforms". Only the party, where it is, hears a mode come on,
-and arriving somewhere says what the modes it's in say. In the Atlas, a place's "What it's like
-by night" line becomes a "By night" mode in every new campaign, in the setting's night; a
-landmark, which has no modes, says the line as night falls or when the party arrives after dark.
+and arriving somewhere says what the modes it's in say. Any place on the map has modes, a landmark
+or the wilds as much as a town: the GM prepares a town's on its page and anywhere else's in the
+map's panel. In the Atlas, a place's "What it's like by night" line becomes a "By night" mode in
+every new campaign, in the setting's night.
 
 ### The setting's calendar
 
@@ -365,14 +377,16 @@ The date card says the date in display type, then the season and year in grey, t
 of the day in its own box. The box wears the light, not the name: the first part of the day is
 yellow, the night is blue-black, the part just before night is red, and the rest are white. A
 rest sleeps until the first part of the day. Things to do and modes are kept to times with the
-calendar's own words.
+calendar's own words, and so are clocks: a clock can tick each new day, but only on market day, or each rest, but only in winter.
 
 ### A deadline passes
 
 When a clock the table can see fills, the table stops for it. A red card comes up over
 everything, the recap included. The date sits on a black band, the clock's line is set in
 display type, and a bell tolls three times. If the clock sets a place into a new state, the
-card names it ("Tule: Burning"). A click or a few seconds dismisses it. The day before, the
+card names it ("Tule: Burning"). A click or a few seconds dismisses it. Every card that stops the table (this one, an awakening)
+is played by one controller: a card is a dialog that says which cue brings it up, how long it
+holds, how its parts come in and whether it turns over. The day before, the
 countdown on the date card turns into a red band ("TOMORROW The spring tide comes in"), and on
 a phone that band stays pinned along the bottom of the screen.
 

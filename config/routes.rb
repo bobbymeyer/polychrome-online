@@ -92,7 +92,6 @@ Rails.application.routes.draw do
     # Everything that belongs to the campaign alone (app/controllers/campaigns/).
     scope module: :campaigns do
       resources :inventories, only: %i[create update], path: "bag"
-      resource :rest, only: :create
 
       # Prep: pressure, secrets, what's being said and done (one page).
       resource :prep, only: :show
@@ -133,7 +132,6 @@ Rails.application.routes.draw do
       # updates by broadcast for every viewer.
       resource :map, only: :show
       resource :map_panel, only: :show
-      resource :travel, only: :create
       # Where next: a player's suggestion (a vote), or the GM going (Campaign::Ways).
       resources :ways, only: :create
       resource :encounter, only: %i[create destroy]
@@ -144,6 +142,9 @@ Rails.application.routes.draw do
     resource :party, only: :create, module: :map_nodes
     resources :map_edges, only: :create, path: "paths"
     resource :location, only: :create, module: :map_nodes
+    # Its other states (MapNode::Modes), for any place: a town, a landmark, the wilds.
+    resources :modes, only: %i[create destroy], module: :map_nodes
+    resource :current_mode, only: %i[update destroy], module: :map_nodes
   end
 
   # Towns and dungeons (§7). Everything but viewing is a GM control, each a
@@ -160,9 +161,6 @@ Rails.application.routes.draw do
       resource :position, only: :update
       resources :treasures, only: :create
       resources :reversions, only: :create
-      resources :modes, only: %i[create destroy]
-      resource :current_mode, only: %i[update destroy]
-      resources :services, only: :create
       resources :purchases, only: :create
       resources :sales, only: :create
     end

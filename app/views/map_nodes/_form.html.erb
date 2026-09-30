@@ -14,9 +14,9 @@
   <div class="field"><%= f.label :notes, "GM notes" %><%= f.text_area :notes, rows: 2 %></div>
   <div class="field">
     <%= f.label :activities, "Things to do here" %>
-    <%= f.text_area :activities, rows: 3, class: "script-field", placeholder: "Work a shift (day, 2): Aprons, and the till that sticks." %>
+    <%= f.text_area :activities, rows: 3, class: "script-field", placeholder: "Work a shift (day, 2, money 40): Aprons, and the till that sticks." %>
     <% if node.world_place&.activities.present? %><p class="hint">The setting's, too: <%= Pastime.list(node.world_place.activities, node.campaign.world.almanac).map(&:name).to_sentence %>. One of yours with the same name takes its place.</p><% end %>
-    <p class="hint">Things to do here, one per line: a name, then in brackets when, in the calendar's words (<%= node.campaign.world.almanac.periods.join(', ') %>, or a day of the week, month or season; any time if none) and how many parts of the day it takes (1 if none), then what the table hears. The party picks one from Where next?, and the time goes by.</p>
+    <p class="hint">Things to do here, one per line: a name, then in brackets, in any order: when, in the calendar's words (<%= node.campaign.world.almanac.periods.join(', ') %>, or a day of the week, month or season; any time if none); how many parts of the day it takes (1 if none, 0 for a moment); what it costs (pay 20); and what it does (money 40, exp 20, abp 2, rumour, rest, restore 25, raise, find 100, reveal, uncover). Then what the table hears. The party picks one from Where next?, pays, and the time goes by. A town's inn, temple and guild are offered too, and camp on the road.</p>
   </div>
   <%= f.submit node.persisted? ? "Save" : "Add to map", class: "button" %>
 <% end %>

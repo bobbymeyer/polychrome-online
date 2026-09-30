@@ -31,6 +31,39 @@ RSpec.describe "Moments at the table", type: :system do
     expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Trust Cid")
   end
 
+  it "stops the table for a deadline and an awakening: one card at a time, up over everything, then put away" do
+    seat(player, rook)
+    clock = campaign.clocks.create!(name: "The tide", segments: 2, public: true, full_line: "The tide comes in over the platforms.")
+    clock.tick!(2)
+    as(player) do
+      within("dialog.deadline-stage[open]") { expect(page).to have_text("The tide comes in over the platforms.") }
+      find("dialog.deadline-stage[open]").click
+      expect(page).to have_no_css("dialog.deadline-stage[open]")
+    end
+
+    monk = create_job(campaign.world, slug: "monk")
+    campaign.awaken!(rook, monk, "I remember my fists.")
+    as(player) do
+      within("dialog.awakening-stage[open]") do
+        expect(page).to have_text("ROOK AWAKENS").or have_text("Rook awakens")
+        expect(page).to have_text("I remember my fists.")
+        expect(page).to have_css(".awakening-card.is-turned")
+      end
+      find("dialog.awakening-stage[open]").click # put away: seen
+    end
+
+    # A page that comes up just after shows the card it missed, once.
+    as(player) do
+      visit campaign_table_path(campaign)
+      expect(page).to have_no_css("dialog.awakening-stage[open]") # this browser saw it already
+    end
+    as(gm) do # the GM, who set it off from another page, comes to the table after
+      sign_in_through_the_page(gm)
+      visit campaign_table_path(campaign)
+      expect(page).to have_css("dialog.awakening-stage[open]", text: /awakens/i)
+    end
+  end
+
   it "rolls a check the GM calls, for everyone to see" do
     seat(player, rook)
     seat(gm, "gm")

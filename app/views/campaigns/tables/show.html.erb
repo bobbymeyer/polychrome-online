@@ -5,33 +5,34 @@
 <% end %>
 
 <% view = coop_view %>
-<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap deadline awakening" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->deadline#arrive chat-line:arrived->awakening#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
-  <%# A deadline passing stops the table (deadline_controller): filled in from the line when it arrives. %>
-  <%# Someone awakens (awakening_controller): their face turns over, and their new archetype is on the other side. %>
-  <dialog class="awakening-stage" data-awakening-target="overlay" data-action="click->awakening#dismiss" aria-label="An awakening">
-    <div class="awakening-wrap" data-awakening-target="wrap">
-    <div class="awakening-card" data-awakening-target="card">
+  <%# The table stops for a moment (moment_controller): each card comes up when a line with its cue arrives,
+      filled from the line. Modal dialogs, so they come up over anything else open (the recap). %>
+  <dialog class="awakening-stage" data-moment-cue="awakening" data-moment-hold="9500" data-moment-music="hold"
+          data-action="click->moment#dismiss" aria-label="An awakening">
+    <div class="awakening-wrap" data-moment-enter="pop">
+    <%# Someone awakens: their face turns over, and their new archetype is on the other side. %>
+    <div class="awakening-card" data-moment-turn="1400">
       <div class="awakening-card__face awakening-card__front">
-        <div class="awakening-card__portrait" data-awakening-target="portrait"></div>
-        <p class="awakening-card__name" data-awakening-target="name"></p>
+        <div class="awakening-card__portrait" data-moment-field="portrait"></div>
+        <p class="awakening-card__name" data-moment-field="name"></p>
       </div>
       <div class="awakening-card__face awakening-card__back">
-        <p class="awakening-card__who" data-awakening-target="who"></p>
-        <p class="awakening-card__line" data-awakening-target="line"></p>
-        <p class="awakening-card__job" data-awakening-target="job"></p>
-        <p class="awakening-card__description" data-awakening-target="description"></p>
+        <p class="awakening-card__who" data-moment-field="who"></p>
+        <p class="awakening-card__line" data-moment-field="line"></p>
+        <p class="awakening-card__job" data-moment-field="job"></p>
+        <p class="awakening-card__description" data-moment-field="description"></p>
       </div>
     </div>
     </div>
   </dialog>
-  <%# A modal dialog, so it comes up over anything else open (the recap). %>
-  <dialog class="deadline-stage" data-deadline-target="overlay" data-action="click->deadline#dismiss" aria-label="A deadline has passed">
+  <dialog class="deadline-stage" data-moment-cue="deadline" data-moment-hold="4200" data-action="click->moment#dismiss" aria-label="A deadline has passed">
     <div class="deadline-card">
-      <p class="deadline-card__date" data-deadline-target="date"></p>
-      <p class="deadline-card__line" data-deadline-target="line"></p>
-      <p class="deadline-card__place" data-deadline-target="place" hidden></p>
+      <p class="deadline-card__date" data-moment-field="date" data-moment-enter="drop"></p>
+      <p class="deadline-card__line" data-moment-field="line" data-moment-enter="slam" data-moment-delay="220"></p>
+      <p class="deadline-card__place" data-moment-field="place" data-moment-enter="slide" data-moment-delay="620" hidden></p>
     </div>
   </dialog>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
@@ -114,7 +115,13 @@
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
     <% if @seat.gm? %>
-      <%= render "campaigns/recovery", campaign: @campaign if @campaign.wiped_out? && !@campaign.battle_on? %>
+      <% if @campaign.wiped_out? && !@campaign.battle_on? && !@campaign.open_choice&.what_now? %>
+        <%# Everyone is down: what now is the table's (Campaign::Defeat), settled in the choice panel. %>
+        <section class="window recovery" aria-label="Everyone is KO'd">
+          <h2>Everyone is KO'd. What happens now?</h2>
+          <%= button_to "Put it to the table", campaign_recovery_path(@campaign), class: "button play" %>
+        </section>
+      <% end %>
       <%= render "campaigns/field_uses/requests", campaign: @campaign %>
       <%= render "campaigns/tables/coop_setup", campaign: @campaign unless view %>
       <details class="window table-scenes">
@@ -180,7 +187,14 @@
             <div class="field"><%= f.label :difficulty %><%= f.select :difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, selected: "normal" %></div>
             <div class="field"><%= f.label :reason, "To…" %><%= f.text_field :reason, placeholder: "scale the wall" %></div>
           </div>
-          <p class="hint">Each rolls against their own stat (a skill uses its stat, and an archetype good at it adds +<%= Job::SKILL_BONUS %>). At Normal, someone typical for their level has an even chance; nothing is ever certain.</p>
+          <div class="field-row">
+            <div class="field">
+              <%= f.label :outcome, "On a success" %>
+              <%= f.select :outcome, Outcome::ON_A_CHECK.map { |kind| [ Outcome.of(kind).describe(@campaign.world), kind ] }, include_blank: "Nothing: you tell what happens" %>
+            </div>
+            <div class="field"><%= f.label :amount, "How much" %><%= f.number_field :amount, min: 0, max: 9999, placeholder: "its usual" %></div>
+          </div>
+          <p class="hint">Each rolls against their own stat (a skill uses its stat, and an archetype good at it adds +<%= Job::SKILL_BONUS %>). At Normal, someone typical for their level has an even chance; nothing is ever certain. What a success makes happen, happens once, whoever made it; a failure ticks the clocks that tick on one.</p>
           <%= f.submit "Roll", class: "button play" %>
         <% end %>
       </details>
