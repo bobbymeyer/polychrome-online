@@ -136,7 +136,7 @@ module Location::Exploration
 
   # "Potion", "150 gil", "150 gil, in the Vell signet (made for Aldo Vell)".
   def describe_treasure(decision)
-    found = decision["gil"] ? "#{decision['gil']} gil" : campaign.world.items.find_by(slug: decision["item"])&.name || decision["item"]
+    found = decision["gil"] ? campaign.money(decision["gil"]) : campaign.world.items.find_by(slug: decision["item"])&.name || decision["item"]
     heirloom = decision["heirloom"]
     return found unless heirloom
 

@@ -29,7 +29,7 @@
         <% end %>
       <% end %>
       <% if b["service"] %>
-        <text class="skyline__sign" x="<%= b['x'] + b['width'] / 2 %>" y="<%= ground + 22 %>" text-anchor="middle"><%= b["service"].upcase %></text>
+        <text class="skyline__sign" x="<%= b['x'] + b['width'] / 2 %>" y="<%= ground + 22 %>" text-anchor="middle"><%= word("service.#{b['service']}").upcase %></text>
       <% end %>
     </g>
     <% if offered %></g><% end %>

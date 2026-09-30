@@ -42,6 +42,22 @@ RSpec.describe "A setting's own words (Vocabulary)", type: :request do
     expect(response.body).to include("crowns")
   end
 
+  it "reaches the battle: the victory line, the beats broadcast as they happen, and the GM's panel" do
+    set_words
+    create_character(campaign, name: "Rook")
+    battle = start_battle(campaign: campaign)
+    expect { battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => battle.party.first["id"], "value" => 5 }, actor: "gm") }
+      .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("sets Rook&#39;s Grit to 5."))
+    post battle_seat_path(battle), params: { seat: "gm" }
+    get battle_panel_path(battle)
+    expect(response.body).to include(">Rust-lock<")
+    expect(response.body).not_to include(">Poison<")
+
+    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+    expect(campaign.messages.last.body).to include("crowns").and(include("Victory!"))
+    expect(campaign.messages.last.body).not_to include("gil")
+  end
+
   it "names statuses its way on the battle board and in the glossary's labels" do
     set_words
     expect(helper_term("poison")).to eq("Rust-lock")

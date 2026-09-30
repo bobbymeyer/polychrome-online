@@ -23,14 +23,14 @@ module BattleLogHelper
     when "back" then "#{name.('unit')} is back."
     when "shielded" then "#{name.('target')}'s barrier takes #{event['absorbed']}#{event['left'].zero? ? ' and breaks' : ''}."
     when "confused" then event["target"] ? "#{name.('actor')}, confused, turns on #{name.('target')}!" : "#{name.('actor')} stumbles about."
-    when "mp_lost" then "#{name.('target')} loses #{event['amount']} MP."
-    when "hp_paid" then "#{name.('actor')} pays #{event['amount']} HP."
+    when "mp_lost" then "#{name.('target')} loses #{event['amount']} #{word('mp')}."
+    when "hp_paid" then "#{name.('actor')} pays #{event['amount']} #{word('hp')}."
     when "charging" then "#{name.('actor')} gathers strength for #{ability_name(state, event['ability'])}…"
     when "land" then event["target"] ? "#{name.('actor')} comes down on #{name.('target')}!" : "#{name.('actor')} lands, with nobody to hit."
     when "covered" then "#{name.('unit')} steps in front of #{unit_name(state, event['for'])}!"
     when "counter" then "#{name.('actor')} strikes back!#{dice_note(event)}"
     when "second_wind" then "#{name.('target')} gets back up! (Second Wind)"
-    when "mp_restored" then "#{name.('target')} recovers #{event['amount']} MP."
+    when "mp_restored" then "#{name.('target')} recovers #{event['amount']} #{word('mp')}."
     when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
     when "cast"
       verb = state["abilities"].dig(event["ability"], "kind") == "magic" ? "casts" : "uses"
@@ -39,12 +39,12 @@ module BattleLogHelper
     when "crit" then "Critical hit!#{dice_note(event)}"
     when "damage" then damage_line(event, name.("target"))
     when "heal"
-      if event["absorbed"] then "#{name.('target')} absorbs #{event['amount']} HP."
-      elsif event["regen"] then "#{name.('target')} regenerates #{event['amount']} HP."
-      else "#{name.('target')} recovers #{event['amount']} HP."
+      if event["absorbed"] then "#{name.('target')} absorbs #{event['amount']} #{word('hp')}."
+      elsif event["regen"] then "#{name.('target')} regenerates #{event['amount']} #{word('hp')}."
+      else "#{name.('target')} recovers #{event['amount']} #{word('hp')}."
       end
     when "miss" then miss_line(event, name.("target"), state)
-    when "status_applied" then "#{name.('target')}: #{event['status'].humanize}.#{dice_note(event)}"
+    when "status_applied" then "#{name.('target')}: #{term(event['status'])}.#{dice_note(event)}"
     when "status_expired" then status_expired_line(event, name.("target"))
     when "buff_applied"
       "#{name.('target')}'s #{stat_label(event['stat'])} #{event['amount'].positive? ? 'rises' : 'falls'}."
@@ -111,15 +111,15 @@ module BattleLogHelper
       "#{label.downcase} #{names.map { |n| type_or_status(n).downcase }.to_sentence}" if names.any?
     end
     kind = types.any? && types_matter? ? ", #{types.map { |t| type_name(t) }.join('/')} type" : ""
-    "#{target}: HP #{event['hp']}/#{event['max_hp']}#{kind}#{facts.any? ? ", #{facts.join(', ')}" : ', no weaknesses'}."
+    "#{target}: #{word('hp')} #{event['hp']}/#{event['max_hp']}#{kind}#{facts.any? ? ", #{facts.join(', ')}" : ', no weaknesses'}."
   end
 
   def status_expired_line(event, target)
     case event["reason"]
     when "woke" then "#{target} wakes up."
-    when "cured" then "#{target} is cured of #{event['status'].humanize.downcase}."
+    when "cured" then "#{target} is cured of #{term(event['status']).downcase}."
     when "gm" then nil # the gm_override line already said it
-    else "#{target}'s #{event['status'].humanize} wears off."
+    else "#{target}'s #{term(event['status'])} wears off."
     end
   end
 
@@ -127,7 +127,7 @@ module BattleLogHelper
     case event["reason"]
     when "silenced" then "#{actor} is silenced!"
     when "no_item" then "There's no #{item_name(state, event['item'])} left."
-    when "no_hp" then "#{actor} doesn't have the HP to spare."
+    when "no_hp" then "#{actor} doesn't have the #{word('hp')} to spare."
     else "#{actor} doesn't have the MP."
     end
   end
@@ -171,10 +171,10 @@ module BattleLogHelper
     text = case event["op"]
     when "auto" then "plays #{event['units'] ? event['units'].map { |id| unit_name(state, id) }.to_sentence : who} on auto."
     when "execute_round" then "runs the round now."
-    when "set_hp" then "sets #{who}'s HP to #{event['hp']}."
-    when "set_mp" then "sets #{who}'s MP to #{event['mp']}."
-    when "add_status" then "inflicts #{event['status'].to_s.humanize} on #{who}."
-    when "remove_status" then "cures #{who}'s #{event['status'].to_s.humanize}."
+    when "set_hp" then "sets #{who}'s #{word('hp')} to #{event['hp']}."
+    when "set_mp" then "sets #{who}'s #{word('mp')} to #{event['mp']}."
+    when "add_status" then "inflicts #{term(event['status'].to_s)} on #{who}."
+    when "remove_status" then "cures #{who}'s #{term(event['status'].to_s)}."
     when "end_battle" then "ends the battle: #{event['result']}."
     when "add_unit" then event["side"] == "party" ? "brings in #{who} to fight beside the party." : "brings in #{who}."
     when "dismiss" then "sends #{who} off."

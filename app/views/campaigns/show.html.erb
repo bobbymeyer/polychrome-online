@@ -16,8 +16,8 @@
     <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" if @world.codex_entries.exists? %>
     <% if can_gm?(@campaign) %>
     <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" %>
-    <%= button_to "Rest at an inn", campaign_rest_path(@campaign), class: "button button--quiet",
-                  form: { data: { turbo_confirm: "Restore everyone to full #{word('hp')} and #{word('mp')}?" } } %>
+    <%= button_to "Make camp", campaign_rest_path(@campaign), class: "button button--quiet",
+                  form: { data: { turbo_confirm: "Rest in the open? Everyone gets back full #{word('hp')} and half their #{word('mp')}; the night passes." } } %>
     <%= link_to "Edit", edit_campaign_path(@campaign), class: "button button--quiet" %>
     <% end %>
   </div>

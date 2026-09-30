@@ -122,7 +122,7 @@ module BattleRecord::Settlement
     end
     parts << "Stole #{summary['stolen'].to_sentence}." if summary["stolen"].present?
     parts << "Used #{summary['used'].map { |name, n| "#{n} × #{name}" }.to_sentence}." if summary["used"].present?
-    parts << "#{summary['gil']} gil." if summary["gil"].positive?
+    parts << "#{campaign.money(summary['gil'])}." if summary["gil"].positive?
     parts << "Found #{summary['drops'].to_sentence}." if summary["drops"].any?
     summary["members"].each do |member|
       parts << "#{member['name']} reached level #{member['level'].last}." if member["level"]
