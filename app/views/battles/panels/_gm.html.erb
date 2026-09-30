@@ -26,7 +26,7 @@
           <% if battle_types.size > 1 %>
             <div class="field"><%= f.label :type, "Type", for: "rule_type_#{id}" %><%= f.select :type, battle_types.map { |t| [ type_name(t), t ] }, { include_blank: "None" }, id: "rule_type_#{id}" %></div>
           <% end %>
-          <div class="field"><%= f.label :status, "Status", for: "rule_status_#{id}" %><%= f.select :status, Battle::STATUSES.map { |st| [ st.humanize, st ] }, { include_blank: true }, id: "rule_status_#{id}" %></div>
+          <div class="field"><%= f.label :status, "Status", for: "rule_status_#{id}" %><%= f.select :status, Battle::STATUSES.map { |st| [ term(st), st ] }, { include_blank: true }, id: "rule_status_#{id}" %></div>
           <div class="field">
             <%= f.label :aim, "On", for: "rule_aim_#{id}" %>
             <%= f.select :aim, [ [ idea["target"] ? "Their target" : "One enemy", "single_enemy" ], [ "Every enemy", "all_enemies" ], [ "One ally", "single_ally" ], [ "The whole party", "all_allies" ], [ "Themselves", "self" ] ], {}, id: "rule_aim_#{id}" %>
@@ -82,7 +82,7 @@
           <td><%= u["name"] %></td>
           <td class="num"><%= u["hp"] %>/<%= u["stats"]["max_hp"] %></td>
           <td class="num"><%= u["mp"] %>/<%= u["stats"]["max_mp"] %></td>
-          <td><%= (u["statuses"].map { |s| "#{s['kind'].humanize} (#{s['turns']})" } + u["buffs"].map { |b| "#{stat_label(b['stat'])} #{signed(b['amount'])}%" }).join(", ") %></td>
+          <td><%= (u["statuses"].map { |s| "#{term(s['kind'])} (#{s['turns']})" } + u["buffs"].map { |b| "#{stat_label(b['stat'])} #{signed(b['amount'])}%" }).join(", ") %></td>
           <td>
             <% if (u["side"] == "enemy" || u["guest"]) && u["hp"].positive? && !@battle.over? %>
               <%= button_to u["guest"] ? "Send off" : "Make it flee", battle_actions_path(@battle), class: "link-button",
@@ -138,7 +138,7 @@
       <div class="field"><%= f.label :value, "HP / MP" %><%= f.number_field :value, min: 0 %></div>
       <div class="field">
         <%= f.label :status %>
-        <%= f.select :status, (Battle::STATUSES - Battle::PRIMITIVE_STATUSES).map { |s| [ s.humanize, s ] }, include_blank: true %>
+        <%= f.select :status, (Battle::STATUSES - Battle::PRIMITIVE_STATUSES).map { |s| [ term(s), s ] }, include_blank: true %>
       </div>
       <div class="field"><%= f.label :turns %><%= f.number_field :turns, min: 1, placeholder: 3 %></div>
     </div>

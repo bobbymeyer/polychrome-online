@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_30_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_140000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -573,6 +573,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_30_100000) do
     t.string "flag_key"
     t.string "settled"
     t.json "data", default: {}, null: false
+    t.integer "day"
+    t.string "time_of_day"
     t.index ["battle_id"], name: "index_messages_on_battle_id"
     t.index ["campaign_id", "created_at"], name: "index_messages_on_campaign_id_and_created_at"
     t.index ["campaign_id"], name: "index_messages_on_campaign_id"

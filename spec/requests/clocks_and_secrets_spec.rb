@@ -109,7 +109,7 @@ RSpec.describe "Clocks and secrets", type: :request do
     expect(campaign.reload).to have_attributes(day: 2, time_of_day: "dawn")
     sit(hero)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Day 2 · dawn")
+    expect(response.body).to include(%(<p class="table-time__date">Day 2</p>), %(<p class="table-time__part">dawn</p>))
     patch campaign_time_path(campaign), params: { parts: 1 }
     expect(response).to have_http_status(:forbidden)
   end

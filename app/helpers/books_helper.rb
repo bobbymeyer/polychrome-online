@@ -104,22 +104,22 @@ module BooksHelper
     when "physical" then "#{"#{effect_type(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}#{describe_against(e)}#{describe_extras(e)}"
     when "elemental" then "#{effect_type(e['type'])} damage, power #{e['power']}#{hits(e)}#{describe_against(e)}#{describe_extras(e)}"
     when "status" then "#{term(e['kind'])} (#{e.fetch('chance', 100)}%, #{e.fetch('duration', 3)} turns)"
-    when "heal" then "Restore HP, power #{e['power']}"
-    when "drain" then "Drain HP, power #{e['power']}"
+    when "heal" then "Restore #{word('hp')}, power #{e['power']}"
+    when "drain" then "Drain #{word('hp')}, power #{e['power']}"
     when "buff" then "#{stat_label(e['stat'])} +#{e['amount']}% for #{e.fetch('duration', 3)} turns"
     when "debuff" then "#{stat_label(e['stat'])} −#{e['amount']}% for #{e.fetch('duration', 3)} turns"
-    when "revive" then "Revive at #{e.fetch('fraction', 25)}% HP"
+    when "revive" then "Revive at #{e.fetch('fraction', 25)}% #{word('hp')}"
     when "escape" then "Escape from battle"
     when "cleanse" then e["kind"] ? "Cure #{term(e['kind']).downcase}" : "Cure every harmful status"
     when "steal" then "Steal one of its drops (#{e.fetch('chance', 50)}% + speed)"
-    when "scan" then "Reveal HP, weaknesses and immunities"
+    when "scan" then "Reveal #{word('hp')}, weaknesses and immunities"
     when "jump" then "Leap out of reach, then land a #{e.fetch('power', 200)}% blow next turn"
     when "away" then describe_away(e)
     when "shield" then "A barrier against the next #{e['power']}-power worth of damage (#{e.fetch('duration', 3)} turns)"
     when "imbue" then "Attack strikes as #{effect_type(e['type']).downcase} (#{e.fetch('duration', 3)} turns)"
-    when "percent" then "#{e['power']}% of current HP#{" (#{e['chance']}%)" if e['chance']}; never the last of it"
+    when "percent" then "#{e['power']}% of current #{word('hp')}#{" (#{e['chance']}%)" if e['chance']}; never the last of it"
     when "summon" then "Call #{@world&.monsters&.find_by(slug: e['creature'])&.name || e['creature'].to_s.humanize} (acts at once, stays #{pluralize(e.fetch('duration', 1), 'turn')}#{", #{e['power']}% strength" if e['power']})"
-    when "sap" then "Take MP, power #{e['power']}#{", keep #{e['keep']}%" if e['keep'].to_i.positive?}"
+    when "sap" then "Take #{word('mp')}, power #{e['power']}#{", keep #{e['keep']}%" if e['keep'].to_i.positive?}"
     else e["primitive"].to_s.humanize
     end
   end

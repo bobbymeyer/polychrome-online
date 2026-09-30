@@ -42,6 +42,13 @@ RSpec.describe Recap do
     expect(recap.lines.map(&:body)).not_to include("psst, secret")
   end
 
+  it "dates the session in story time, as every line is" do
+    expect(campaign.messages.last).to have_attributes(day: 1, time_of_day: "dawn", story_time: "Dawn")
+    expect(described_class.for(campaign).ended_on).to eq("Day 1")
+    campaign.world.update!(calendar: { weekdays: "Moonsday, Tidesday", months: "Thaw", month_length: 30 })
+    expect(described_class.for(campaign.reload).ended_on).to eq("Moonsday, 1 Thaw")
+  end
+
   it "keeps recapping last week once tonight's session has started" do
     at(tonight) { campaign.messages.create!(body: "Welcome back.") }
     expect(described_class.for(campaign).last_line.body).to eq("The crystal is cracking.")

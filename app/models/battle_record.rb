@@ -152,8 +152,24 @@ class BattleRecord < ApplicationRecord
     new_round = !over? && round != before["round"]
     new_round ? open_round! : resume_clock!
     broadcast_beat(before, events, record.position)
-    auto_fill! if new_round
+    if new_round
+      auto_fill!
+      run_if_nobody_can_choose!
+    end
     [ before, events ]
+  end
+
+  # A round nobody can choose anything in (everyone asleep, confused or
+  # stopped) runs at once, not after the timer, and so on until someone
+  # can choose again (each run is a new round, which comes back here).
+  # Bounded, in case a battle never lets anyone.
+  QUIET_ROUNDS = 10
+
+  def run_if_nobody_can_choose!
+    return @quiet_rounds = 0 if over? || awaiting_input.any?
+
+    @quiet_rounds = @quiet_rounds.to_i + 1
+    apply!({ "type" => "timeout" }, actor: "gm", if_round: round) if @quiet_rounds <= QUIET_ROUNDS
   end
 
   # The bosses in this fight, for their entrance: the monsters marked as

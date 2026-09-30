@@ -3,8 +3,9 @@
   <section class="window lines-and-veils" aria-label="Lines and veils">
     <h2>Lines and veils</h2>
     <dl class="facts">
-      <% if world.lines.present? %><dt>Never</dt><dd><%= world.lines %></dd><% end %>
-      <% if world.veils.present? %><dt>Off-screen</dt><dd><%= world.veils %></dd><% end %>
+      <%# One per line, as the GM wrote them. %>
+      <% if world.lines.present? %><dt>Never</dt><dd><%= safe_join(world.lines.lines.map(&:strip).compact_blank, tag.br) %></dd><% end %>
+      <% if world.veils.present? %><dt>Off-screen</dt><dd><%= safe_join(world.veils.lines.map(&:strip).compact_blank, tag.br) %></dd><% end %>
     </dl>
   </section>
 <% end %>

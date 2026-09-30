@@ -50,7 +50,7 @@ module Campaign::Defeat
     update!(current_node: town, gil: gil - lost, pending_encounter: nil, free_rooms_node_id: nil)
     characters.update_all(hp: nil, mp: nil, field_used: false)
     line = narrate("The party comes to in #{town.name}, bruised but alive#{", #{money(lost)} lighter" if lost.positive?}.").body
-    pass_time!(until_dawn, announce: :new_day)
+    pass_time!(rest_time, announce: :new_day)
     line
   end
 end

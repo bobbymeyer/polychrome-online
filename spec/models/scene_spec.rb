@@ -17,12 +17,16 @@ RSpec.describe Scene do
       The wind picks up.
       narrator: A shadow crosses the moon.
       The sign on the door reads, in a shaky hand: keep out.
+      Tsukiura Station, 0:09.
+      Platform Zero: 0:13, and no train on the board.
     SCRIPT
     expect(lines.map { |l| [ l["speaker"], l["expression"], l["text"] ] }).to eq([
       [ cid, "worried", "The airship won't hold." ],
       [ nil, nil, "The wind picks up." ],
       [ nil, nil, "A shadow crosses the moon." ],
-      [ nil, nil, "The sign on the door reads, in a shaky hand: keep out." ]
+      [ nil, nil, "The sign on the door reads, in a shaky hand: keep out." ],
+      [ nil, nil, "Tsukiura Station, 0:09." ],
+      [ nil, nil, "Platform Zero: 0:13, and no train on the board." ]
     ])
   end
 

@@ -19,6 +19,17 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     world.world_fronts.find_by!(name: "The Syndicate's grab")
   end
 
+  it "deals a new campaign only its own world's fronts" do
+    elsewhere = World.create!(name: "Elsewhere", slug: "elsewhere")
+    other = elsewhere.world_fronts.create!(name: "Someone else's trouble", secrets: [ { "body" => "Not here." } ])
+    write_front
+    post world_campaigns_path(world), params: { campaign: { name: "Rust" } }
+    campaign = world.campaigns.find_by!(name: "Rust")
+    expect(campaign.clocks.pluck(:name)).to eq([ "The Syndicate takes the docks" ])
+    expect(campaign.secrets.pluck(:body)).to eq([ "Mara's ledger is fake." ])
+    expect { other.deal!(campaign) }.to raise_error(Refusal, /Elsewhere's, not/)
+  end
+
   it "is written once and dealt into a new campaign, tied to what the campaign brought in" do
     front = write_front
     expect(front.clocks.sole).to have_attributes(name: "The Syndicate takes the docks", segments: 4, public: true, triggers: [ "rest" ], place: varn)

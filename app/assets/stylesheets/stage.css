@@ -349,10 +349,20 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 }
 .dialogue__name {
   position: absolute; top: -15px; left: -10px; margin: 0; padding: 3px calc(16px + var(--slant)) 3px 12px;
-  background: var(--sun-yellow); color: var(--ink); font-style: italic; font-weight: 900; font-size: 14px; letter-spacing: .02em;
+  background: var(--plate, var(--sun-yellow)); color: var(--plate-ink, var(--ink)); font-style: italic; font-weight: 900; font-size: 16px; letter-spacing: .02em;
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
 .dialogue__name:empty { display: none; }
+/* Narration is a voice, not a face: the words take the whole box. */
+.dialogue.is-narration { grid-template-columns: 1fr; }
+.dialogue.is-narration .dialogue__portrait { display: none; }
+/* On a phone the speaker's face sits beside their words, small: the words are the scene. */
+@media (max-width: 640px) {
+  .dialogue { grid-template-columns: 64px 1fr; gap: 12px; }
+  .dialogue .speaker-portrait--large { width: 64px; height: 64px; clip-path: polygon(0 0, 100% 0, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+  .dialogue .speaker-portrait--large.speaker-portrait--plate { font-size: 44px; }
+  .dialogue__text { padding: 20px 16px 16px; min-height: 0; }
+}
 .dialogue__more { right: 10px; bottom: 10px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .speaker-portrait--large { clip-path: polygon(0 0, 100% 0, 100% 100%, 18px 100%, 0 calc(100% - 18px)); }
 
@@ -482,6 +492,7 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 
 /* In battle the dialogue box stands beside the commands, and only while someone speaks. */
 .dialogue--battle { grid-column: span 5; min-height: 0; padding-top: 20px; grid-template-columns: auto 1fr; }
+.dialogue--battle.is-narration { grid-template-columns: 1fr; }
 .dialogue--battle .speaker-portrait--large { width: 88px; height: 88px; }
 .dialogue--battle .speaker-portrait--large.speaker-portrait--plate { font-size: 64px; }
 .dialogue--battle .dialogue__body { font-size: 18px; line-height: 26px; }
@@ -909,6 +920,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
   /* Results, and saying what you try, need the room: the panel lets go of the bottom edge. */
   .battle:has(.command-panel--over, .try-form) { padding-bottom: 0 !important; }
   .battle:not(.battle--controller):not(.battle--screen) .battle__dock:has(.command-panel--over, .try-form) { position: static; max-height: none; box-shadow: none; padding: 8px 0 0; }
+  /* Let go of the edge, the results' title sits below the last line of the fight, not over it. */
+  .battle__dock .command-panel--over > h2:first-child { margin-top: 12px; }
   .party-strip { display: grid; }
   /* The end of a fight lands in the part of the screen the pinned panel leaves open. */
   .battle:not(.battle--controller):not(.battle--screen) :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down) {

@@ -26,6 +26,7 @@ module Campaign::Travelling
       end
       self.safe_road = false if safe
       destination.update!(visible: true)
+      hear_rumours!(origin) # what people were saying there, heard on the way out
       origin.location&.leave!
       self.current_node = destination
       self.free_rooms_node_id = nil # the town's thanks were for while the party was there
@@ -57,8 +58,9 @@ module Campaign::Travelling
   # A new campaign begins. From the setting (unless the GM starts from
   # nothing): its places and people (Atlas) and its trouble, the fronts,
   # dealt in. Then the party sets out, from the first town it knows with a
-  # road out, with money and the starting bag, and hears what people there
-  # are saying (which may put somewhere on the map).
+  # road out, with money and the starting bag. What people there are saying
+  # (which may put somewhere on the map) is heard that night, after the GM's
+  # opening, not before it.
   def set_out!(from_the_setting: true)
     transaction do
       if from_the_setting
@@ -70,8 +72,9 @@ module Campaign::Travelling
       start = starting_town
       next unless start && current_node.nil?
 
+      # What people there are saying waits for the first night (or the next
+      # place the party reaches): the GM's opening scene comes first.
       update!(current_node: start)
-      hear_rumours!(start)
     end
   end
 
@@ -126,7 +129,13 @@ module Campaign::Travelling
     standing = characters.order(:created_at).select(&:conscious?)
     raise Refusal, "Nobody is standing to fight" if standing.empty?
 
-    prelude.first(PRELUDE_LINES).each { |line| messages.create!(body: line.to_s.first(500)) }
+    # Read as a scene's lines are: "Kurosaki (sad): …" is Kurosaki's, sadly.
+    cast = npcs.to_a
+    prelude.first(PRELUDE_LINES).each do |raw|
+      line = Scene.read_line(raw.to_s.strip.first(500), cast)
+      line = { "text" => raw.to_s.strip.first(500) } if line["problem"] # someone not in the cast: said as written
+      messages.create!(speaker: line["speaker"], expression: line["expression"], body: line["text"])
+    end
 
     battle = BattleRecord.start!(campaign: self, characters: standing, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,

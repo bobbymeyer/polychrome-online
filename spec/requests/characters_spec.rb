@@ -51,6 +51,7 @@ RSpec.describe "Campaigns and characters", type: :request do
 
     it "rests the party, and says so at the table, but not mid-battle" do
       bartz.update!(hp: 0, mp: 0)
+      campaign.update!(time_of_day: "dusk")
       post campaign_rest_path(campaign)
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
       expect(bartz.current_mp).to eq(bartz.stats["max_mp"] / 2) # a bed brings the rest

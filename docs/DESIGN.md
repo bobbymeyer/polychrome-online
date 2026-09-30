@@ -353,3 +353,15 @@ Record each place where the game needed more than the Swiss defaults: what chang
   navigation and admin drowned out the game. Controls are now grey, and red is kept for game
   moves (`.play`).
 
+- **The date is the table's headline.** The day, in the setting's calendar, sits in the table's
+  header at display size. The part of the day is a tag in its own colour (dawn yellow, day white,
+  dusk red, night blue), and under it the days left on each public clock that only a new day
+  ticks ("5 days · The spring tide comes in"). The party plans around the calendar, so it
+  shouldn't be a line of small print in the side column.
+- **Name tags in the speaker's colour.** The dialogue box's name tag wears the speaker's plate
+  colour instead of a fixed yellow. The narrator has no portrait: narration is a voice, and its
+  words take the whole box. On a phone a speaker's portrait is 64px beside their words, where it
+  used to be a plate half the screen high.
+- **Story time in the log.** Log lines show the part of the day they were said in ("Dusk"), and
+  the recap is dated by the setting's calendar. The wall-clock time is only on hover, because
+  "00:17" in a fantasy log breaks the fiction.

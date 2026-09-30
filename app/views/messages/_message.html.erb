@@ -13,7 +13,8 @@
     data-chat-line-speaker-value="<%= message.speaker_name %>"
     data-chat-line-speaker-key-value="<%= speaker_key(message) %>"
     data-chat-line-expression-value="<%= message.expression || 'neutral' %>"
-    data-chat-line-portrait-value="<%= speaker_portrait_url(message.speaker, message.expression) %>">
+    data-chat-line-portrait-value="<%= speaker_portrait_url(message.speaker, message.expression) %>"
+    data-chat-line-plate-value="<%= plate_style(message.speaker.name, message.speaker.try(:colour)) if message.speaker %>">
   <% if message.choice? %>
     <p class="chat-line__body">
       <%= message.body %>
@@ -46,7 +47,8 @@
         <% if message.whisper? %><span class="chat-line__tag"><%= whisper_label(message) %></span><% end %>
         <% if message.gm_only? %><span class="chat-line__tag">GM only</span><% end %>
         <% if message.expression.present? && message.expression != "neutral" %><span class="muted">(<%= message.expression %>)</span><% end %>
-        <time class="muted" datetime="<%= message.created_at.iso8601 %>"><%= message.created_at.strftime("%H:%M") %></time>
+        <%# Story time on the line; the wall clock only on hover. %>
+        <time class="muted" datetime="<%= message.created_at.iso8601 %>" title="<%= "Day #{message.day} · " if message.day %><%= message.created_at.strftime("%-d %B, %H:%M") %>"><%= message.story_time || message.created_at.strftime("%H:%M") %></time>
       </p>
       <div class="chat-line__body" data-chat-line-target="body"><%= simple_format(message.body, {}, wrapper_tag: "p") %></div>
       <%= button_to "Take back", message_path(message), method: :delete, class: "link-button chat-line__retract",

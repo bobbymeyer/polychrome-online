@@ -45,11 +45,11 @@ class WorldFront < ApplicationRecord
     end
   end
 
-  # The world's fronts not yet dealt into a campaign, with their rows.
+  # The campaign's world's fronts not yet dealt into it, with their rows.
   def self.undealt_in(campaign)
     dealt = campaign.clocks.where.not(world_front_id: nil).distinct.pluck(:world_front_id) |
             campaign.secrets.where.not(world_front_id: nil).distinct.pluck(:world_front_id)
-    where.not(id: dealt).includes(:clocks, :secrets)
+    where(world_id: campaign.world_id).where.not(id: dealt).includes(:clocks, :secrets)
   end
 
   def dealt_into?(campaign)
@@ -60,6 +60,7 @@ class WorldFront < ApplicationRecord
   # are linked if the campaign has them (Atlas); a clock's mode is made on
   # its place's location when there is one.
   def deal!(campaign)
+    raise Refusal, "#{name} is #{world.name}'s, not #{campaign.world.name}'s" unless world_id == campaign.world_id
     raise Refusal, "#{name} is already in #{campaign.name}" if dealt_into?(campaign)
 
     nodes = campaign.map_nodes.where.not(world_place_id: nil).includes(:location).index_by(&:world_place_id)
