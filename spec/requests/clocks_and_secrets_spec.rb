@@ -69,6 +69,22 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(town.reload.mode).to eq("burning") # winding back doesn't put the fire out
     end
 
+    it "lets a check the GM calls make something happen on a success, once, whoever made it" do
+      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      get campaign_table_path(campaign)
+      expect(response.body).to include("On a success")
+      gil = campaign.gil
+      20.times do
+        post campaign_checks_path(campaign), params: { check: { characters: [ hero.id ], stat: "agi", difficulty: "easy", outcome: "money", amount: "15" } }
+        break if campaign.reload.gil > gil
+      end
+      expect(campaign.gil).to eq(gil + 15)
+      expect(campaign.messages.last.body).to eq("#{hero.name}: 15 gil.")
+
+      post campaign_checks_path(campaign), params: { check: { characters: [ hero.id ], stat: "agi", difficulty: "easy", outcome: "sneak" } }
+      expect(flash[:alert]).to eq("There's no encounter on the road to get past")
+    end
+
     it "ticks on a failed check, and keeps a hidden clock off the table until it fills" do
       clock = campaign.clocks.create!(name: "The guards close in", segments: 2, triggers: %w[failed_check], full_line: "Whistles in the street: the guards are here.")
       20.times do

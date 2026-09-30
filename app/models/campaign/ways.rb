@@ -86,7 +86,7 @@ module Campaign::Ways
     raise Refusal, "#{pastime.name} isn't something to do now (#{period})" unless pastime.open?(almanac, day, period)
     raise Refusal, "Not while a battle is on" if battle_on?
 
-    pastime.outcomes.each { |outcome| outcome.check!(self) }
+    pastime.outcomes.each { |outcome| outcome.can_happen!(self) }
     transaction do
       reload
       raise Refusal, "The party has #{money(gil)}; #{pastime.name} costs #{money(pastime.price)}" if pastime.price > gil

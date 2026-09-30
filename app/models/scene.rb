@@ -2,7 +2,8 @@
 
 # A scene the GM prepares before the session and plays at the table with one
 # press: its lines go out one after another through the dialogue box, then
-# it ends, in a battle or with a place revealed on the map.
+# it ends, in a battle, with a place revealed on the map, or with a place
+# changed (its ending is an Outcome, as a full clock's is).
 #
 # The script reads like a play, one line each:
 #
@@ -71,7 +72,7 @@ class Scene < ApplicationRecord
   # starts last, so everyone reads the scene before the stage takes them
   # there (stage.js waits for the dialogue box).
   def play!
-    raise Refusal, "Nobody is standing to fight" if ending == "battle" && campaign.characters.none?(&:conscious?)
+    outcome&.can_happen!(campaign)
 
     transaction do
       lines.each do |line|
@@ -79,20 +80,26 @@ class Scene < ApplicationRecord
 
         campaign.messages.create!(speaker: line["speaker"], expression: line["expression"], body: line["text"])
       end
-      if ending == "reveal" && map_node && !map_node.visible?
-        map_node.update!(visible: true)
-        campaign.narrate("#{map_node.name} appears on the map.")
-      end
-      # A place changes mode (MapNode#switch_mode!), or goes back to how it was.
-      if ending == "mode" && map_node
-        location_mode ? map_node.switch_mode!(location_mode.key) : (map_node.clear_mode! if map_node.current_mode)
+      unless ending == "battle"
+        said = outcome&.apply!(campaign, by: name)
+        campaign.narrate(said) if said
       end
       update!(played_at: Time.current)
     end
     return unless ending == "battle"
 
-    campaign.update!(pending_encounter: { "table" => name, "monsters" => encounter, "boss" => false })
-    campaign.start_pending_encounter!
+    outcome.apply!(campaign, by: name)
+    campaign.battles.order(:id).last # the fight it started
+  end
+
+  # How it ends, as the game's outcomes (Outcome): a fight, a place
+  # revealed, a place set in a mode or back to how it was. Nil for none.
+  def outcome
+    case ending
+    when "battle" then Outcome.of("battle", target: { "name" => name, "monsters" => encounter })
+    when "reveal" then map_node && Outcome.of("reveal", target: { "node" => map_node.id })
+    when "mode" then map_node && Outcome.of("mode", target: { "node" => map_node.id, "mode" => location_mode&.key })
+    end
   end
 
   def summary

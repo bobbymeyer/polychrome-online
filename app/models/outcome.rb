@@ -22,7 +22,13 @@
 #   safe road   the next dangerous path rolls no encounter
 #   uncover     one of the GM's secrets comes out
 #   story       the GM tells what happens
-Outcome = Data.define(:kind, :amount)
+#
+# Some act on something named (target), as a scene's ending or a full
+# clock's does (Scene#outcome, Clock):
+#   reveal      a place comes into view            { "node" => id }
+#   mode        a place is set in a mode, or back  { "node" => id, "mode" => key or nil }
+#   battle      a fight starts, now                { "name" => "...", "monsters" => { slug => count } }
+Outcome = Data.define(:kind, :amount, :target)
 
 class Outcome
   # kind => [what it does, its amount when none is given]
@@ -40,8 +46,14 @@ class Outcome
     "sneak" => [ "The encounter waiting on the road is avoided", nil ],
     "safe_road" => [ "The next dangerous path rolls no encounter", nil ],
     "uncover" => [ "One of the GM's secrets comes out, one about where the party is if there is one", nil ],
-    "story" => [ "The GM tells what happens", nil ]
+    "story" => [ "The GM tells what happens", nil ],
+    "mode" => [ "A place changes", nil ],
+    "battle" => [ "A fight", nil ]
   }.freeze
+
+  # What a check can make happen on a success (Campaign#check!): anything
+  # that needs nothing more to say than how much.
+  ON_A_CHECK = %w[money exp abp rumour restore reveal find learn sneak safe_road uncover].freeze
 
   # These need an encounter on the road to act on.
   NEEDS_ENCOUNTER = %w[sneak learn].freeze
@@ -56,10 +68,10 @@ class Outcome
     new(kind: kind, amount: number&.to_i)
   end
 
-  def self.of(kind, amount = nil) = new(kind: kind.to_s, amount: amount)
+  def self.of(kind, amount = nil, target: nil) = new(kind: kind.to_s, amount: amount, target: target)
 
-  def initialize(kind:, amount: nil)
-    super(kind: kind, amount: amount || KINDS.fetch(kind).last)
+  def initialize(kind:, amount: nil, target: nil)
+    super(kind: kind, amount: amount || KINDS.fetch(kind).last, target: target)
   end
 
   # How it's written in a thing to do's brackets: "money 40", "safe road".
@@ -74,9 +86,10 @@ class Outcome
   end
 
   # Whether it can happen now; raises Refusal if not (before anything is paid).
-  def check!(campaign)
+  def can_happen!(campaign)
     raise Refusal, "There's no encounter on the road to #{kind == 'sneak' ? 'get past' : 'size up'}" if NEEDS_ENCOUNTER.include?(kind) && !campaign.pending_encounter
-    raise Refusal, "The party isn't on the map" if kind == "reveal" && !campaign.current_node
+    raise Refusal, "The party isn't on the map" if kind == "reveal" && !target && !campaign.current_node
+    raise Refusal, "Nobody is standing to fight" if kind == "battle" && campaign.characters.none?(&:conscious?)
     raise Refusal, "Nobody is KO'd" if kind == "raise" && campaign.characters.none? { |c| !c.conscious? }
     raise Refusal, "Not while a battle is on" if kind == "rest" && campaign.battle_on?
   end
@@ -149,6 +162,13 @@ class Outcome
   end
 
   def reveal!(campaign, by, _who)
+    if target
+      place = campaign.map_nodes.find(target["node"])
+      return if place.visible?
+
+      place.update!(visible: true)
+      return "#{place.name} appears on the map."
+    end
     node = campaign.current_node or return "#{by} looks around, but there's no map to read."
     hidden = campaign.map_edges.select { |e| e.touches?(node) }.map { |e| e.other_end(node) }.reject(&:visible?)
     return "#{by} looks around: nothing new in sight." if hidden.empty?
@@ -201,4 +221,21 @@ class Outcome
   end
 
   def story!(_campaign, by, _who) = "#{by} manages it. What happens is the GM's to tell."
+
+  # A place set in a mode (MapNode#switch_mode!), or back to how it was.
+  # The place says so itself.
+  def mode!(campaign, _by, _who)
+    place = campaign.map_nodes.find(target["node"])
+    if target["mode"] then place.switch_mode!(target["mode"]) unless place.current_mode&.key == target["mode"]
+    elsif place.current_mode then place.clear_mode!
+    end
+    nil
+  end
+
+  # A fight, now: the stage takes everyone there.
+  def battle!(campaign, _by, _who)
+    campaign.update!(pending_encounter: { "table" => target["name"], "monsters" => target["monsters"], "boss" => false })
+    campaign.start_pending_encounter!
+    nil
+  end
 end

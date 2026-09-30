@@ -128,7 +128,8 @@ class Clock < ApplicationRecord
     card = { "date" => campaign.world.date(campaign.day), "clock" => name, "line" => line,
              "place" => (place && "#{place.name}: #{location_mode.name}") }.compact
     update!(full_at: campaign.narrate(line, cue: "deadline", data: card).created_at) if line
-    place.switch_mode!(location_mode.key) if location_mode && place.current_mode != location_mode
+    # What filling it does to the place (Outcome "mode", as a scene's ending can).
+    Outcome.of("mode", target: { "node" => place.id, "mode" => location_mode.key }).apply!(campaign, by: name) if location_mode
   end
 
   def place_is_the_campaigns

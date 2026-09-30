@@ -41,7 +41,7 @@ class FieldUse < ApplicationRecord
     raise Refusal, "#{character.name} is KO'd" unless character.conscious?
     raise Refusal, "Not while a battle is on" if campaign.battle_on?
     raise Refusal, "#{character.name} is already waiting on the GM" if campaign.field_uses.pending.exists?(character: character)
-    outcome_of(ability).check!(campaign)
+    outcome_of(ability).can_happen!(campaign)
 
     transaction do
       use = campaign.field_uses.create!(character: character, ability: ability)
@@ -58,28 +58,18 @@ class FieldUse < ApplicationRecord
     campaign.world.skill(ability.field_skill)
   end
 
-  # The GM's yes: roll, and on a success, the outcome.
+  # The GM's yes: a check with the ability's skill (Campaign#check!), and
+  # on a success, the outcome.
   def approve!(difficulty: ability.field_difficulty)
     raise Refusal, "Already settled" unless pending?
-    raise Refusal, "Pick a difficulty" unless Stats::Check::DIFFICULTIES.key?(difficulty)
 
     transaction do
       campaign.lock!
-      stat = skill ? skill["stat"] : "agi"
-      bonus = character.skill_bonus(ability.field_skill)
-      roll = campaign.roll do |dice|
-        Stats::Check.roll(stat_value: character.stats.fetch(stat), stat: stat, level: character.level,
-                          difficulty: difficulty, rng: dice, bonus: bonus)
-      end
-      label = "#{ability.name} (#{[ skill&.fetch('name'), difficulty, ("+#{bonus} #{character.job.name}" if bonus.positive?) ].compact.join(', ')})"
-      campaign.narrate("#{character.name}: #{label}. #{roll['chance']}% · rolled #{roll['roll']} · #{roll['success'] ? 'Success!' : 'Failure.'}",
-                       cue: "check", data: roll.merge("name" => character.name, "character_id" => character.id, "stat" => stat, "difficulty" => difficulty,
-                                                      "skill" => skill&.fetch("name"), "bonus" => bonus, "move" => ability.name).compact)
-      line = roll["success"] ? self.class.outcome_of(ability).apply!(campaign, by: character.name, source: "#{character.name}'s #{ability.name}") : nil
-      campaign.narrate(line) if line
-      campaign.happen!("failed_check") unless roll["success"]
+      stat = skill ? "skill:#{skill['slug']}" : "agi"
+      checked, line = campaign.check!(characters: [ character ], stat: stat, difficulty: difficulty, move: ability.name,
+                                      outcome: self.class.outcome_of(ability), source: "#{character.name}'s #{ability.name}")
       character.update!(field_used: true)
-      update!(status: "done", difficulty: difficulty, result: roll.merge("line" => line).compact)
+      update!(status: "done", difficulty: difficulty, result: checked.sole.data.merge("line" => line).compact)
     end
   end
 
