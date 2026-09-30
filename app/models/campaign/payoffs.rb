@@ -29,32 +29,14 @@ module Campaign::Payoffs
     end
   end
 
-  # At a rest: everyone is paid, and the count starts again.
+  # At a rest: everyone is paid, in the game's outcomes (Outcome), and the
+  # count starts again.
   def payday!
     owed = payoffs_owed
     update!(spent_parts: 0) if spent_parts.positive?
     owed.each do |character, payoff, amount|
-      narrate(payoff_line(character, payoff, pay!(character, payoff["kind"], amount)))
-    end
-  end
-
-  private
-
-  # Pays one character. Returns what the line fills in: { amount:, rumour: }.
-  def pay!(character, kind, amount)
-    case kind
-    when "money"
-      increment!(:gil, amount)
-      { amount: money(amount) }
-    when "exp", "abp"
-      gained = character.gain!(kind.to_sym => amount)
-      grew = gained["level"] ? " Level #{gained['level'].last}!" : (gained["job_level"] ? " #{character.job.name} level #{gained['job_level'].last}!" : "")
-      { amount: "#{amount} #{kind.upcase}", grew: grew }
-    when "rumour"
-      rumour = rumour_for_sale
-      rumour&.update!(heard: true)
-      hear_of!(rumour) if rumour
-      { rumour: rumour && "“#{rumour.body}”" }
+      line = payoff["line"].presence || DEFAULT_LINES.fetch(payoff["kind"])
+      narrate(Outcome.of(payoff["kind"], amount).apply!(self, by: character.name, who: [ character ], line: line))
     end
   end
 
@@ -62,11 +44,4 @@ module Campaign::Payoffs
     "money" => "{who} earns {amount}.", "exp" => "{who} gets better at it: {amount}.",
     "abp" => "{who} practises: {amount}.", "rumour" => "{who} hears something: {rumour}"
   }.freeze
-
-  def payoff_line(character, payoff, filled)
-    line = payoff["line"].presence || DEFAULT_LINES.fetch(payoff["kind"])
-    return "#{character.name} listens, but hears nothing new." if payoff["kind"] == "rumour" && filled[:rumour].nil?
-
-    Generators::Lore.fill(line, who: character.name, amount: filled[:amount], rumour: filled[:rumour]) + filled[:grew].to_s
-  end
 end

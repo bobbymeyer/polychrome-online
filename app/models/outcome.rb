@@ -1,0 +1,204 @@
+# frozen_string_literal: true
+
+# What happens: one closed set of outcomes, like the battle primitives, that
+# everything outside battle gives. A field ability's success (FieldUse), an
+# archetype's payoff at a rest (Job#payoff), and anything the party does
+# somewhere (Pastime, which is also what a town's inn, temple and guild
+# are). A world names and flavours them; the game knows what each does.
+#
+#   money 40    40 in the world's money, for the party
+#   exp 20      20 EXP for each of them (standing)
+#   abp 2       2 ABP for each of them, in their archetype
+#   rumour      a rumour the party hasn't heard yet
+#   rest 100    the night: sleep until the day begins. 100 is a bed (full
+#               HP and MP, the KO'd back on their feet); less is camp (full
+#               HP for those standing, that share of MP)
+#   restore 25  25% of HP and MP back for everyone standing
+#   raise       the KO'd back on their feet, whole
+#   reveal      every place next to the party's comes into view
+#   find 100    an item worth up to 100, into the bag
+#   learn       the waiting encounter's weaknesses are known
+#   sneak       the waiting encounter is avoided
+#   safe road   the next dangerous path rolls no encounter
+#   uncover     one of the GM's secrets comes out
+#   story       the GM tells what happens
+Outcome = Data.define(:kind, :amount)
+
+class Outcome
+  # kind => [what it does, its amount when none is given]
+  KINDS = {
+    "money" => [ "%{amount} for the party", 0 ],
+    "exp" => [ "%{amount} EXP each", 0 ],
+    "abp" => [ "%{amount} ABP each", 0 ],
+    "rumour" => [ "A rumour the party hasn't heard", nil ],
+    "rest" => [ "The night passes: %{rest}", 100 ],
+    "restore" => [ "Everyone standing gets %{amount}% of %{hp} and %{mp} back", 25 ],
+    "raise" => [ "The KO'd are back on their feet, whole", nil ],
+    "reveal" => [ "Every place next to the party's comes into view", nil ],
+    "find" => [ "An item worth up to %{amount}, into the bag", 100 ],
+    "learn" => [ "The waiting encounter's weaknesses are known before the fight", nil ],
+    "sneak" => [ "The encounter waiting on the road is avoided", nil ],
+    "safe_road" => [ "The next dangerous path rolls no encounter", nil ],
+    "uncover" => [ "One of the GM's secrets comes out, one about where the party is if there is one", nil ],
+    "story" => [ "The GM tells what happens", nil ]
+  }.freeze
+
+  # These need an encounter on the road to act on.
+  NEEDS_ENCOUNTER = %w[sneak learn].freeze
+
+  # "money 40", "+40 money", "rest", "safe road": an outcome, or nil.
+  def self.parse(text)
+    words = text.to_s.strip.downcase.sub(/\A\+/, "")
+    number = words[/\A\d+|\d+\z/]
+    kind = words.sub(/\A\d+\s*|\s*\d+\z/, "").strip.tr(" ", "_").sub(/\A\+/, "")
+    return unless KINDS.key?(kind)
+
+    new(kind: kind, amount: number&.to_i)
+  end
+
+  def self.of(kind, amount = nil) = new(kind: kind.to_s, amount: amount)
+
+  def initialize(kind:, amount: nil)
+    super(kind: kind, amount: amount || KINDS.fetch(kind).last)
+  end
+
+  # How it's written in a thing to do's brackets: "money 40", "safe road".
+  def to_s = [ kind.tr("_", " "), (amount unless KINDS.fetch(kind).last.nil?) ].compact.join(" ")
+
+  # What it does, in the world's words.
+  def describe(world)
+    template = KINDS.fetch(kind).first
+    shown = kind == "money" ? "#{amount} #{world.word('currency')}" : amount
+    rest = amount.to_i >= 100 ? "a bed, and everyone rested (the KO'd too)" : "camp, full #{world.word('hp')} for those standing and #{amount}% of #{world.word('mp')}"
+    { amount: shown, hp: world.word("hp"), mp: world.word("mp"), rest: rest }.reduce(template) { |text, (key, value)| text.gsub("%{#{key}}", value.to_s) }
+  end
+
+  # Whether it can happen now; raises Refusal if not (before anything is paid).
+  def check!(campaign)
+    raise Refusal, "There's no encounter on the road to #{kind == 'sneak' ? 'get past' : 'size up'}" if NEEDS_ENCOUNTER.include?(kind) && !campaign.pending_encounter
+    raise Refusal, "The party isn't on the map" if kind == "reveal" && !campaign.current_node
+    raise Refusal, "Nobody is KO'd" if kind == "raise" && campaign.characters.none? { |c| !c.conscious? }
+    raise Refusal, "Not while a battle is on" if kind == "rest" && campaign.battle_on?
+  end
+
+  # Makes it happen for the campaign. by: who did it ("Rook", "The party");
+  # who: the characters it's for (EXP, ABP: those standing, by default).
+  # line: the table's words, with {who}, {amount} and {rumour} filled in,
+  # instead of the plain line. Returns the line the table hears, or nil if
+  # something else already said it.
+  # source: what did it, for a secret it brings out ("Rook's Ask Around").
+  def apply!(campaign, by:, who: nil, line: nil, source: nil)
+    who ||= campaign.characters.order(:created_at).select(&:conscious?)
+    said = kind == "uncover" ? uncover!(campaign, by, source) : send(:"#{kind}!", campaign, by, who)
+    return said unless said.is_a?(Hash)
+    return said[:line] if line.blank? || (kind == "rumour" && said[:rumour].nil?)
+
+    Generators::Lore.fill(line, who: by, amount: said[:amount], rumour: said[:rumour]) + said[:grew].to_s
+  end
+
+  private
+
+  # Each returns the line, or { line:, amount:, rumour: } where a caller's
+  # own words can say it instead.
+  def money!(campaign, by, _who)
+    campaign.increment!(:gil, amount)
+    text = campaign.money(amount)
+    { line: "#{by}: #{text}.", amount: text }
+  end
+
+  def exp!(campaign, by, who) = gain(campaign, by, who, :exp)
+  def abp!(campaign, by, who) = gain(campaign, by, who, :abp)
+
+  def gain(_campaign, by, who, kind)
+    grew = who.filter_map do |character|
+      gained = character.gain!(kind => amount)
+      if gained["level"] then "#{character.name}: level #{gained['level'].last}!"
+      elsif gained["job_level"] then "#{character.name}: #{character.job.name} level #{gained['job_level'].last}!"
+      end
+    end
+    text = "#{amount} #{kind.upcase}"
+    { line: "#{by}: #{text}#{' each' if who.size > 1}.#{" #{grew.join(' ')}" if grew.any?}", amount: text, grew: grew.any? ? " #{grew.join(' ')}" : nil }
+  end
+
+  def rumour!(campaign, by, _who)
+    rumour = campaign.rumour_for_sale
+    return { line: "#{by} listens, but hears nothing new." } unless rumour
+
+    rumour.update!(heard: true)
+    campaign.hear_of!(rumour)
+    { line: "#{by} hears something: “#{rumour.body}”", rumour: "“#{rumour.body}”" }
+  end
+
+  def rest!(campaign, _by, _who)
+    campaign.sleep!(bed: amount >= 100, mp_share: amount.clamp(0, 100))
+    nil # the night says itself
+  end
+
+  def restore!(campaign, by, who)
+    who.each do |c|
+      c.update!(hp: [ c.current_hp + (c.stats["max_hp"] * amount / 100), c.stats["max_hp"] ].min,
+                mp: [ c.current_mp + (c.stats["max_mp"] * amount / 100), c.stats["max_mp"] ].min)
+    end
+    "#{by} sees to everyone: #{amount}% of #{campaign.world.word('hp')} and #{campaign.world.word('mp')} back."
+  end
+
+  def raise!(campaign, _by, _who)
+    fallen = campaign.characters.order(:created_at).reject(&:conscious?)
+    fallen.each { |c| c.update!(hp: nil, mp: nil) }
+    "#{fallen.map(&:name).to_sentence} #{fallen.one? ? 'is' : 'are'} raised, whole again."
+  end
+
+  def reveal!(campaign, by, _who)
+    node = campaign.current_node or return "#{by} looks around, but there's no map to read."
+    hidden = campaign.map_edges.select { |e| e.touches?(node) }.map { |e| e.other_end(node) }.reject(&:visible?)
+    return "#{by} looks around: nothing new in sight." if hidden.empty?
+
+    hidden.each { |n| n.update!(visible: true) }
+    "#{by} scouts ahead: #{hidden.map(&:name).to_sentence} come#{'s' if hidden.one?} into view."
+  end
+
+  def find!(campaign, by, _who)
+    finds = campaign.world.items.where(category: "consumable").where(price: 1..amount).order(:price, :id).to_a
+    return "#{by} searches, but finds nothing worth the carrying." if finds.empty?
+
+    item = campaign.roll { |dice| finds[dice.int(finds.size)] }
+    campaign.add_item!(item)
+    "#{by} finds #{item.name.start_with?(/[AEIOU]/i) ? 'an' : 'a'} #{item.name}."
+  end
+
+  def learn!(campaign, by, _who)
+    monsters = campaign.world.monsters.where(slug: campaign.pending_encounter.to_h.fetch("monsters", {}).keys)
+    return "There's nothing on the road to read." if monsters.empty?
+
+    known = campaign.known_affinities.deep_dup
+    engine = campaign.world.type_chart.to_engine
+    monsters.each do |monster|
+      notes = (known[monster.slug] ||= {})
+      notes["types"] = [ monster.base_type ]
+      Battle::Types.list(engine).each { |type| notes[type] = monster.affinities.fetch(type, "none") }
+      Battle::STATUSES.each { |status| notes[status] = monster.status_immune.include?(status) ? "immune" : "none" }
+    end
+    campaign.update!(known_affinities: known)
+    "#{by} sizes up #{monsters.map(&:name).to_sentence}: their weaknesses are known."
+  end
+
+  def sneak!(campaign, by, _who)
+    return "The road was already clear." unless campaign.pending_encounter
+
+    campaign.update!(pending_encounter: nil)
+    "#{by} gets the party past without a fight."
+  end
+
+  def safe_road!(campaign, by, _who)
+    campaign.update!(safe_road: true)
+    "#{by} finds a way through: the next dangerous path is safe."
+  end
+
+  def uncover!(campaign, by, source)
+    secret = Secret.next_for(campaign) or return "#{by} digs, but there's nothing more to find out."
+    secret.reveal!(by: source || by)
+    nil # the secret says itself
+  end
+
+  def story!(_campaign, by, _who) = "#{by} manages it. What happens is the GM's to tell."
+end

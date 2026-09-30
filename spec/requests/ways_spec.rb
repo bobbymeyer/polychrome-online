@@ -29,7 +29,7 @@ RSpec.describe "Where next", type: :request do
     post campaign_ways_path(campaign), params: { way: "To Greymere" }
     vote = campaign.open_choice
     expect(vote).to be_where_next
-    expect(vote.options).to eq([ "To Greymere", "To Port", Campaign::STAY ])
+    expect(vote.options).to eq([ "To Greymere", "To Port", "Make camp (overnight)", Campaign::STAY ])
     expect(vote.tally["To Greymere"]).to eq([ "Rook" ])
 
     sign_out
@@ -94,6 +94,25 @@ RSpec.describe "Where next", type: :request do
       expect { campaign.update!(time_of_day: "night") && campaign.rest! }.not_to(change { campaign.reload.gil })
     end
 
+    it "pays for what it costs and makes happen what it does" do
+      tule.update!(activities: "Work a shift (day, 2, money 40): Aprons.\nThe good tea (pay 25, 0, restore 50)\nStudy (day, abp 3)")
+      campaign.update!(gil: 20)
+      rook.update!(hp: 10)
+      expect(campaign.reload.ways_on.map { |w| w["label"] }).to include("Work a shift (until night)", "The good tea (25 gil)", "Study (until dusk)")
+      expect { campaign.take_way!("The good tea (25 gil)") }.to raise_error(Refusal, "The party has 20 gil; The good tea costs 25 gil")
+
+      campaign.take_way!("Work a shift (until night)")
+      expect(campaign.reload).to have_attributes(gil: 60, time_of_day: "night")
+      expect(campaign.messages.last(4).map(&:body)).to eq([ "Tule: Work a shift.", "Aprons.", "The party: 40 gil.", "Night." ])
+
+      campaign.update!(time_of_day: "day")
+      campaign.take_way!("The good tea (25 gil)")
+      expect(campaign.reload).to have_attributes(gil: 35, time_of_day: "day") # a moment: no time passes
+      expect(rook.reload.current_hp).to eq(10 + (rook.stats["max_hp"] / 2))
+      campaign.take_way!("Study (until dusk)")
+      expect(campaign.messages.pluck(:body)).to include(a_string_starting_with("The party: 3 ABP. Rook: Knight level"))
+    end
+
     it "won't do what isn't done at this time of day, or somewhere else" do
       expect { campaign.spend_time!(tule, "The Undertow") }.to raise_error(Refusal, /isn't something to do now \(day\)/)
       expect { campaign.spend_time!(mere, "Attend class") }.to raise_error(Refusal, /There's no Attend class at Greymere/)
@@ -104,8 +123,8 @@ RSpec.describe "Where next", type: :request do
       get edit_map_node_path(tule)
       expect(response.body).to include("Things to do here", "The setting's, too: Attend class and The Undertow")
       patch map_node_path(tule), params: { map_node: { name: "Tule", kind: "town", activities: "Attend class (day): Cancelled: a free period." } }
-      expect(tule.reload.pastimes.map(&:name)).to eq([ "The Undertow", "Attend class" ]) # the GM's replaces the setting's
-      expect(tule.pastimes.last.line).to eq("Cancelled: a free period.")
+      expect(tule.reload.pastimes.reject(&:service).map(&:name)).to eq([ "The Undertow", "Attend class" ]) # the GM's replaces the setting's
+      expect(tule.pastimes.find { |p| p.name == "Attend class" }.line).to eq("Cancelled: a free period.")
 
       place = tule.world_place
       patch world_world_place_path(world, place), params: { world_place: { name: place.name, kind: "landmark", activities: "Club (dusk)" } }
@@ -114,12 +133,12 @@ RSpec.describe "Where next", type: :request do
 
     it "takes a colon inside a name, when no space follows it" do
       tule.update!(activities: "Wait for the 0:13 (night): The last train.")
-      expect(tule.pastimes.last).to have_attributes(name: "Wait for the 0:13", times: %w[night], line: "The last train.")
+      expect(tule.pastimes.reject(&:service).last).to have_attributes(name: "Wait for the 0:13", times: %w[night], line: "The last train.")
     end
 
     it "checks how a place's things to do are written" do
       tule.update(activities: "Nap (noon)\n(no name)")
-      expect(tule.errors[:activities]).to include("“Nap”: noon isn't in the calendar (a part of the day, a day of the week, a month or a season) or a number of parts",
+      expect(tule.errors[:activities]).to include(a_string_starting_with("“Nap”: noon isn't in the calendar (a part of the day, a day of the week, a month or a season), a price (pay 20), an outcome"),
                                                   "“(no name)” needs a name before any brackets or colon")
     end
   end
@@ -143,6 +162,9 @@ RSpec.describe "Where next", type: :request do
     expect { campaign.ask_where_next! }.to raise_error(Refusal, /something else first/)
     campaign.open_choice.settle!("Yes")
     campaign.map_edges.update_all(state: "blocked")
+    expect(campaign.ask_where_next!.options).to eq([ "Make camp (overnight)", Campaign::STAY ]) # there's always the night
+    campaign.open_choice.settle!(Campaign::STAY)
+    campaign.update!(current_node: nil)
     expect { campaign.ask_where_next! }.to raise_error(Refusal, /nowhere to go/)
   end
 

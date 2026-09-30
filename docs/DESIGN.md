@@ -295,11 +295,19 @@ GM settling the vote takes the party there. The GM can also just go, from the sa
 calls a waiting encounter there too, so a session can run from the table without the map page.
 
 Staying is a way on as well. A place can list things to do there (`Pastime`): class, a shift, a
-visit, a night in the other world. Each says which parts of the day it can be done in and how
-long it takes. The ones open now head the list, under "Day in Tule": "Attend class (until
-dusk)". They go to the same vote, and settling one says its line and lets the time go by. This
-is the day schedule of a calendar game: each part of the day is spent on something, and the
-countdowns on the date card say what it costs.
+visit, a night in the other world. Each says when it can be done, how long it takes, what it
+costs and what it does ("Work a shift (day, 2, money 40)"). The place's own head the list, under
+"Day in Tule": "Attend class (until dusk)". They go to the same vote, and settling one pays, says
+its line, makes its outcome happen and lets the time go by. This is the day schedule of a
+calendar game: each part of the day is spent on something, and the countdowns on the date card
+say what it costs.
+
+A town's inn, temple and guild are things to do too, after the roads: "Rooms at the Gull (50
+gil, overnight)", "A raising at the Chapel (100 gil)" when someone is KO'd, "Rumours at the
+Guild (30 gil)". Where there's no inn, "Make camp (overnight)" takes its place. On the town page
+each service's building says what it does and what it costs, with the same button: the GM does
+it, a player suggests it. The party's purse pays for everyone at once, not one character at a
+time.
 
 ### Someone awakens
 

@@ -1,5 +1,0 @@
-<%# A temple's panel (locations/_town): the fallen raised, whole again. %>
-<p>The fallen are raised here, whole again.</p>
-<%= render layout: "locations/services/customers", locals: { location: location, kind: "temple", action: "Raise", shopping: shopping } do |character| %>
-  <%= "Standing" if character.conscious? %>
-<% end %>

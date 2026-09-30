@@ -73,16 +73,16 @@ RSpec.describe "Location modes", type: :request do
 
     # Day 1: a weekday in Thaw. Day 2: market day. Day 3: a weekday in Frost.
     expect(town.reload.modes_on).to be_empty
-    expect(campaign.reload.pastimes_here.map { |w| w["label"] }).to eq([])
+    expect(campaign.reload.pastimes_here.map { |w| w["label"] }.grep_v(/overnight/)) # the inn, or camp, aside.to eq([])
     campaign.pass_time!(3)
     expect(town.reload.modes_on.map(&:name)).to eq([ "Market" ])
     expect(town.shut_by("inn").name).to eq("Market")
-    expect(campaign.reload.pastimes_here.map { |w| w["label"] }).to eq([ "Browse the stalls (until Evening)" ])
+    expect(campaign.reload.pastimes_here.map { |w| w["label"] }.grep_v(/overnight/)).to eq([ "Browse the stalls (until Evening)" ])
     campaign.pass_time!(3)
     expect(campaign.messages.pluck(:body)).to include("Snow to the sills.")
     expect(town.reload.modes_on.map(&:name)).to eq([ "Snowbound" ])
     # Snowbound shuts the usual things to do (skating too) and has its own.
-    expect(campaign.reload.pastimes_here.map { |w| w["label"] }).to eq([ "Build a snow fort (until Late night)" ])
+    expect(campaign.reload.pastimes_here.map { |w| w["label"] }.grep_v(/overnight/)).to eq([ "Build a snow fort (until Late night)" ])
     campaign.pass_time!(3)
     expect(town.reload.modes_on.map(&:name)).to eq([ "Snowbound", "Market" ])
 
@@ -119,7 +119,8 @@ RSpec.describe "Location modes", type: :request do
     town.reload.switch_mode!("burning")
     campaign.place_party!(node)
     expect(campaign.reload.scene).to eq("battle")
-    expect { campaign.use_service!("inn", hero.tap { |h| h.update!(hp: 1) }, at: town, by: "Rook") }.to raise_error(Refusal, /shut: burning/)
+    expect(campaign.reload.pastimes_here.map { |way| way["label"] }.grep(/\ARooms at/)).to be_empty # the inn is shut: camp
+
     expect { campaign.buy!(world.items.find_by!(slug: "potion"), 1, at: town, by: "Rook") }.to raise_error(Refusal, /shop is shut/)
 
     campaign.place_party!(road)

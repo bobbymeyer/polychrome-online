@@ -41,11 +41,8 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
     rumour = campaign.rumours.sole
     expect(rumour).to have_attributes(body: "Smoke over Varn.", reached: [ varn.id ], heard: false)
 
-    guild = { "key" => "service-guild", "kind" => "guild", "name" => "The Compass Guild" }
-    allow(tule_town).to receive(:view).and_return(tule_town.view.merge("services" => [ guild ]))
-    campaign.update!(gil: 100)
-    campaign.use_service!("guild", hero, at: tule_town, by: "Rook")
-    expect(campaign.messages.last.body).to end_with("“Smoke over Varn.”")
+    # What the guild sells (Campaign::Services).
+    expect(Outcome.of("rumour").apply!(campaign, by: "Rook")).to end_with("“Smoke over Varn.”")
     expect(rumour.reload).to be_heard
   end
 

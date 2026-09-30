@@ -22,10 +22,14 @@ module Campaign::Ways
     elsif current_node
       inside = current_node.location
       way_in = inside&.dungeon? ? [ { "label" => "Into #{inside.name}", "move" => { "location" => inside.id, "enter" => true } } ] : []
-      pastimes_here + way_in + current_node.edges.includes(:from_node, :to_node).reject(&:blocked?).map do |edge|
+      # The place's own things to do first, then the ways out, then its inn,
+      # temple and guild, or camp (Campaign::Services).
+      own, services = pastimes_here.partition { |way| way["service"].nil? }
+      roads = current_node.edges.includes(:from_node, :to_node).reject(&:blocked?).map do |edge|
         there = edge.other_end(current_node)
         { "label" => "To #{there.name}#{' (by a dangerous road)' if edge.state == 'dangerous'}", "move" => { "edge" => edge.id } }
       end
+      own + way_in + roads + services.map { |way| way.except("service") }
     else
       []
     end
@@ -61,23 +65,41 @@ module Campaign::Ways
     return [] unless current_node && !dungeon_in_progress
 
     current_node.pastimes.select { |pastime| pastime.open?(almanac, day, period) }.map do |pastime|
-      { "label" => pastime.label(almanac, period), "move" => { "node" => current_node.id, "pastime" => pastime.name } }
+      { "label" => pastime_label(pastime), "move" => { "node" => current_node.id, "pastime" => pastime.name }, "service" => pastime.service }.compact
     end
   end
 
-  # The party spends part of the day on something here: the table hears it,
-  # and the time goes by.
+  # How the table sees a thing to do now: "Rooms at the Gull (50 gil, overnight)".
+  def pastime_label(pastime)
+    pastime.label(almanac, period, cost: (money(pastime.price) if pastime.price.positive?))
+  end
+
+  # The party does something here: it pays, the table hears it, what it
+  # does happens (Outcome), and the time goes by (a rest takes the night).
   def spend_time!(node, name)
     pastime = node.pastimes.find { |p| p.name == name } or raise Refusal, "There's no #{name} at #{node.name}"
     raise Refusal, "The party isn't at #{node.name}" unless current_node == node
     raise Refusal, "#{pastime.name} isn't something to do now (#{period})" unless pastime.open?(almanac, day, period)
+    raise Refusal, "Not while a battle is on" if battle_on?
 
+    pastime.outcomes.each { |outcome| outcome.check!(self) }
     transaction do
-      narrate("#{node.name}: #{pastime.name}.")
+      reload
+      raise Refusal, "The party has #{money(gil)}; #{pastime.name} costs #{money(pastime.price)}" if pastime.price > gil
+
+      decrement!(:gil, pastime.price) if pastime.price.positive?
+      narrate("#{node.name}: #{pastime.name}#{" (#{money(pastime.price)})" if pastime.price.positive?}.")
       messages.create!(body: pastime.line) if pastime.line
+      pastime.outcomes.each do |outcome|
+        said = outcome.apply!(self, by: "The party")
+        narrate(said) if said
+      end
+      next if pastime.rest? || pastime.takes.zero?
+
       spent_time!(pastime.takes) # paid at the next rest (Campaign::Payoffs)
       pass_time!(pastime.takes)
     end
+    table_changed # the purse, and whatever the outcome touched
   end
 
   # Make a way's move: travel a path, step into a room, or spend time here.

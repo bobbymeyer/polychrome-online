@@ -162,7 +162,6 @@ Rails.application.routes.draw do
       resources :reversions, only: :create
       resources :modes, only: %i[create destroy]
       resource :current_mode, only: %i[update destroy]
-      resources :services, only: :create
       resources :purchases, only: :create
       resources :sales, only: :create
     end

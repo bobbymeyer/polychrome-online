@@ -157,7 +157,7 @@ module BattleHelpers
     return campaign.rest! unless campaign.inn_here
 
     campaign.update!(gil: campaign.gil + 10_000)
-    campaign.rest_at_inn!(at: campaign.current_node.location, by: "The GM")
+    campaign.spend_time!(campaign.current_node, "Rooms at #{campaign.inn_here['name']}")
   end
 
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
