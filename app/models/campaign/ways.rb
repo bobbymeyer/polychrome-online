@@ -16,6 +16,7 @@ module Campaign::Ways
   # at a dungeon's door also { "label" => "Into Goblin Hollow", "move" => { "location" => id, "enter" => true } },
   # or, inside, [{ "label" => "The Ossuary", "move" => { "location" => id, "room" => key } }].
   # A room the players haven't seen is only "An unexplored way".
+  # warn: what the GM is asked before just going (a dangerous road, a night).
   def ways_on
     if (dungeon = dungeon_in_progress)
       dungeon_ways(dungeon)
@@ -26,7 +27,8 @@ module Campaign::Ways
       # temple and guild, or camp (Location::Town#services_for, Campaign::Services).
       own, services = pastimes_here.partition { |way| way["service"].nil? }
       roads = current_node.edges.includes(:from_node, :to_node).reject(&:blocked?).map do |edge|
-        { "label" => way_along(edge), "move" => { "edge" => edge.id } }
+        { "label" => way_along(edge), "move" => { "edge" => edge.id },
+          "warn" => ("The road to #{edge.other_end(current_node).name} is dangerous: the party may meet something on it." if edge.state == "dangerous") }.compact
       end
       own + way_in + roads + services.map { |way| way.except("service") }
     else
@@ -64,7 +66,8 @@ module Campaign::Ways
     return [] unless current_node && !dungeon_in_progress
 
     current_node.pastimes.select { |pastime| pastime.open?(almanac, day, period) }.map do |pastime|
-      { "label" => pastime_label(pastime), "move" => { "node" => current_node.id, "pastime" => pastime.name }, "service" => pastime.service }.compact
+      { "label" => pastime_label(pastime), "move" => { "node" => current_node.id, "pastime" => pastime.name }, "service" => pastime.service,
+        "warn" => ("The night passes: it's #{almanac.periods.first} when they're done." if pastime.rest?) }.compact
     end
   end
 

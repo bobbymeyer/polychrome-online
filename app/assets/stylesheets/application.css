@@ -335,8 +335,9 @@ details summary { cursor: pointer; color: var(--control); font-weight: 600; font
 details summary::-webkit-details-marker { display: none; }
 details summary::before { content: ""; display: inline-block; width: 0; height: 0; margin-right: 8px; vertical-align: 1px;
   border-left: 7px solid var(--control); border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
-details[open] summary::before { transform: rotate(90deg); }
-details[open] summary { margin-bottom: 16px; }
+/* Only a panel's own summary: a closed panel inside an open one stays closed-looking. */
+details[open] > summary::before { transform: rotate(90deg); }
+details[open] > summary { margin-bottom: 16px; }
 .inline-form { display: flex; flex-wrap: wrap; gap: 0 var(--gutter); align-items: flex-end; margin-top: 16px; }
 .inline-form .field { flex: 0 1 208px; }
 .inline-form input[type=submit] { margin-bottom: 16px; }

@@ -615,7 +615,7 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .scene-list__actions { display: flex; gap: 8px; align-items: center; }
 .table-scenes { margin-top: 12px; }
 .table-scenes summary { cursor: pointer; font-style: italic; font-weight: 900; font-size: 18px; }
-.table-scenes[open] summary { margin-bottom: 8px; }
+.table-scenes[open] > summary { margin-bottom: 8px; }
 .script-field { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 15px; line-height: 24px; }
 
 /* A desperation move's cut-in: the stage stops for the character. */
@@ -664,7 +664,7 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 /* Speaking from the battle page. */
 .battle-composer { margin-top: 12px; }
 .battle-composer summary { cursor: pointer; font-style: italic; font-weight: 900; }
-.battle-composer[open] summary { margin-bottom: 8px; }
+.battle-composer[open] > summary { margin-bottom: 8px; }
 
 /* A choice for the table: big red options, like a game's own prompt. Players see the picks,
    the GM sees "Settle", everyone sees who picked what. */
@@ -1046,3 +1046,40 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .battle-ready { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 12px; }
 .battle-ready form { margin: 0; }
 .battle-ready .hint { margin: 0; }
+
+/* The GM's time tool: a part of the day, until morning, or so many parts, on one line. */
+.time-tools { display: flex; flex-wrap: wrap; gap: 8px var(--gutter); align-items: center; }
+.time-tools form { margin: 0; }
+.time-tools__pass { display: flex; gap: 8px; align-items: center; }
+.time-tools__pass label { font-weight: 600; font-size: 14px; }
+.time-tools__pass input[type=number] { width: 72px; }
+.time-tools__pass input[type=submit] { margin: 0; }
+
+/* The GM's tools at the table (campaigns/tables/gm/_tools): tabs beside the
+ * play, one open at a time. Grey controls; the open one is ink, like a
+ * pressed button. */
+.gm-tools { margin-top: 24px; border-top: 3px solid var(--ink); padding-top: 12px; }
+.gm-tools__tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
+.gm-tools__tab {
+  padding: 6px 12px; min-height: 36px; border: 0; background: var(--control-fill); color: var(--ink);
+  font-weight: 700; font-size: 14px; cursor: pointer;
+}
+.gm-tools__tab:hover { background: var(--control-line); }
+.gm-tools__tab[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+.gm-tools__count {
+  display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 4px; font-size: 12px; line-height: 18px; text-align: center;
+  background: var(--sun-yellow); color: var(--ink);
+}
+.gm-tools__panel .field-row { flex-wrap: wrap; }
+.gm-tools__heading { margin: 24px 0 8px; font-style: italic; font-weight: 900; font-size: 18px; }
+.gm-tools__heading:first-child { margin-top: 0; }
+.gm-tools .field-requests, .gm-tools .recovery { margin: 0 0 16px; }
+
+/* The log pinned open (the GM's seat): a column beside the page, not over it. */
+.log-drawer__actions { display: flex; gap: 8px; }
+.log-drawer__pin[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+@media (max-width: 999px) { .log-drawer__pin { display: none; } }
+@media (min-width: 1000px) {
+  html.log-docked body { padding-right: min(440px, 36vw); }
+  .log-drawer.is-docked .log-drawer__panel { width: min(440px, 36vw); box-shadow: none; transition: none; z-index: 30; }
+}

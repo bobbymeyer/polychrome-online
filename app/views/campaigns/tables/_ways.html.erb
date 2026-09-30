@@ -26,7 +26,9 @@
     <div class="menu play">
       <% group.each do |way| %>
         <% if gm %>
-          <%= button_to way["label"], campaign_ways_path(campaign), params: { way: way["label"], go: 1 }, class: "menu__item", form: { data: { turbo_frame: "_top" } } %>
+          <%# Going straight there is one click: a dangerous road or a night asks first. %>
+          <%= button_to way["label"], campaign_ways_path(campaign), params: { way: way["label"], go: 1 }, class: "menu__item",
+                        form: { data: { turbo_frame: "_top", turbo_confirm: ("#{way['warn']} Go now?" if way["warn"]) }.compact } %>
         <% else %>
           <%= button_to campaign_ways_path(campaign), params: { way: way["label"] }, class: "menu__item", disabled: deciding do %>
             <%= way["label"] %> <span class="menu__cost">suggest</span>

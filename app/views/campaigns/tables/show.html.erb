@@ -62,13 +62,15 @@
         <%= render "campaigns/tables/here", campaign: @campaign %>
       </p>
     </section>
+    <%# The GM's tools beside the play, where they can be reached mid-scene. %>
+    <%= render "campaigns/tables/gm/tools", campaign: @campaign if @seat.gm? && !view %>
     <%= render "campaigns/tables/party", campaign: @campaign %>
     <% end %>
     <%= render "campaigns/tables/party_knows", campaign: @campaign %>
     </div>
   </div>
 
-  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name } do %>
+  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name, dockable: @seat&.gm? } do %>
     <%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %>
   <% end %>
 
@@ -88,18 +90,8 @@
       At the table as <strong><%= @seat.name %></strong>.
       <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
     </p>
-    <% if @seat.gm? %>
-      <%= render "campaigns/tables/gm/recovery", campaign: @campaign %>
-      <%= render "campaigns/field_uses/requests", campaign: @campaign %>
-      <%= render "campaigns/tables/coop_setup", campaign: @campaign unless view %>
-      <%= render "campaigns/tables/gm/time", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/clocks", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/secrets", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/job_grants", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/check", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/scenes", campaign: @campaign %>
-      <%= render "campaigns/tables/gm/music", campaign: @campaign %>
-    <% end %>
+    <%# On a phone as the GM's remote, the tools come after the play. %>
+    <%= render "campaigns/tables/gm/tools", campaign: @campaign, view: view if @seat.gm? && view == "controller" %>
   <% else %>
     <%= render "campaigns/tables/take_a_seat", campaign: @campaign %>
   <% end %>

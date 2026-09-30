@@ -69,7 +69,7 @@ RSpec.describe "Moments at the table", type: :system do
     seat(gm, "gm")
 
     as(gm) do
-      find("summary", text: "Call for a check").click
+      find("[role=tab]", text: "Check").click
       check "Rook"
       select "Agi", from: "check_stat"
       fill_in "check_reason", with: "scale the wall"

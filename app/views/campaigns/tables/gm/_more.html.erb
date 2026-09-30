@@ -1,0 +1,8 @@
+<%# What the GM reaches for less often at the table: an archetype to grant, the music, one shared screen. %>
+<h3 class="gm-tools__heading">Grant an archetype</h3>
+<%= render "campaigns/tables/gm/job_grants", campaign: campaign %>
+<%= render "campaigns/tables/gm/music", campaign: campaign %>
+<% unless local_assigns[:view] %>
+  <h3 class="gm-tools__heading">Play around one screen</h3>
+  <%= render "campaigns/tables/coop_setup", campaign: campaign %>
+<% end %>

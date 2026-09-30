@@ -38,7 +38,10 @@ deliberate divergence from much of what follows, and where the two disagree the 
 - **The log** lives in a drawer on the right edge, closed by default, so the play area stays
   the play area. A tab in the page's colour (or L) slides it open over the page; Esc or L
   closes it. While it's closed the tab counts new lines and gives a pulse. At the table it
-  holds the table's log; in battle, the battle's log with the table's beneath it.
+  holds the table's log; in battle, the battle's log with the table's beneath it. The GM can pin
+  it (on a screen at least 1000px wide): it stays open as a column beside the page, and the
+  page makes room for it. On a screen 1440px or wider it starts pinned for the GM. Closing it
+  unpins it.
 - **Dialogue in battle.** What's said at the table reaches the battle: a GM or NPC line appears
   as the same speech box beside the commands, typed out, and leaves once it's been read.
 - **Into battle.** When a battle starts, everyone at the table goes: on any game page of the
@@ -278,6 +281,14 @@ keyboard, a mouse or a finger.
 - **A phone controller** shows the last two lines, your own character's check and field rolls,
   and in battle a ticker of what just happened on the screen everyone's watching.
 - **"Previously on…"** opens by itself only for a session that's over, not the one being played.
+- **The GM's tools sit beside the play**, in the side column under the map: tabs for Scenes,
+  Check, Clocks, Time, Secrets and More (grants, music, one shared screen), one open at a time.
+  The open tab is ink, the rest grey controls; a count shows unplayed scenes and running clocks.
+  The tab the GM had open stays open, per campaign, in this browser. What needs an answer now
+  (everyone down, a field ability asked for) sits above the tabs. On a phone as the GM's remote,
+  the same tools come after the play.
+- **Going straight there asks first** for a dangerous road or a night, since one click moves the
+  whole party.
 
 ### Defeat
 
@@ -446,6 +457,9 @@ Record each place where the game needed more than the Swiss defaults: what chang
   (white on the enemies' side). Fading it to grey, as Swiss would, took it below a readable
   contrast on the battlefield's colours. The targeted enemy's name is ink on yellow for the same
   reason.
+- **The GM's log can be a column.** Swiss would keep the drawer closed and the page whole. The GM
+  follows whispers, rolls and the story at once, and at the table the log is their record, so on a
+  wide screen it's pinned open beside the page, which gets narrower for it.
 - **Grey controls, red moves.** The starting point made every interactive thing red, so
   navigation and admin drowned out the game. Controls are now grey, and red is kept for game
   moves (`.play`).
