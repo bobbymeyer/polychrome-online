@@ -75,8 +75,7 @@ module Campaign::Services
   # A night's sleep (Outcome "rest"), and the only one. In a bed, everyone
   # is rested, the KO'd too; at camp, those standing get full HP and a
   # share of MP, and the KO'd stay down. Field abilities come back, the
-  # day's work pays off (Campaign::Payoffs), the rest clocks tick and the
-  # night passes. Returns what the table heard.
+  # rest happens (Campaign::Happenings) and the night passes. Returns what the table heard.
   def sleep!(bed: false, mp_share: CAMP_MP)
     standing, fallen = characters.order(:created_at).partition(&:conscious?)
     if bed
@@ -89,8 +88,7 @@ module Campaign::Services
       fallen.each { |c| c.update!(field_used: false) }
     end
     line = narrate(bed ? bed_line(fallen) : camp_line(fallen, mp_share)).body
-    payday!
-    tick_clocks!("rest")
+    happen!("rest") # the day's work pays off, the rest clocks tick
     pass_time!(rest_time, announce: :new_day)
     table_changed # everyone's HP back
     line

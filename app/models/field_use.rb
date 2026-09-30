@@ -77,7 +77,7 @@ class FieldUse < ApplicationRecord
                                                       "skill" => skill&.fetch("name"), "bonus" => bonus, "move" => ability.name).compact)
       line = roll["success"] ? self.class.outcome_of(ability).apply!(campaign, by: character.name, source: "#{character.name}'s #{ability.name}") : nil
       campaign.narrate(line) if line
-      campaign.tick_clocks!("failed_check") unless roll["success"]
+      campaign.happen!("failed_check") unless roll["success"]
       character.update!(field_used: true)
       update!(status: "done", difficulty: difficulty, result: roll.merge("line" => line).compact)
     end

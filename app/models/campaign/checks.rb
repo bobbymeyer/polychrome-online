@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Checks the GM calls for at the table, and the clocks that tick when they fail.
+# Checks the GM calls for at the table; a failed one is an event (Campaign::Happenings).
 module Campaign::Checks
   extend ActiveSupport::Concern
 
@@ -29,14 +29,8 @@ module Campaign::Checks
         end
       end
       created = lines.map { |body, data| narrate(body, cue: "check", data: data) }
-      tick_clocks!("failed_check") if lines.any? { |_, data| !data["success"] }
+      happen!("failed_check") if lines.any? { |_, data| !data["success"] }
       created
     end
-  end
-
-  # Every running clock that ticks on this (Clock::TRIGGERS) goes on a segment.
-  def tick_clocks!(trigger)
-    clocks.running.order(:id).select { |clock| clock.ticks_on?(trigger) }
-          .each { |clock| clock.tick!(1, reason: Clock::REASONS[trigger]) }
   end
 end

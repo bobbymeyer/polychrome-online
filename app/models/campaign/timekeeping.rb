@@ -57,14 +57,9 @@ module Campaign::Timekeeping
         line = new_days.positive? ? "#{new_days > 1 ? "#{new_days} days pass. " : ''}#{world.date(day)}: #{period}." : "#{period.upcase_first}."
         narrate(line)
       end
-      follow_the_hours!(*was)
-      new_days.times do
-        tick_clocks!("dawn")
-        overnight!
-      end
-      # Time spent somewhere is time to hear what people there are saying
-      # (a new day hears it in #overnight!).
-      hear_rumours! if new_days.zero?
+      happen!("hours", was: was, new_day: new_days.positive?)
+      # Each day that began, in turn (a clock kept to Mondays ticks on the Monday).
+      new_days.times { |i| happen!("dawn", day: was.first + i + 1, period: almanac.periods.first) }
     end
     new_days
   end

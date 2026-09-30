@@ -10,6 +10,7 @@
 # A public clock is on the table for everyone to watch; a hidden one is the
 # GM's alone until it fills.
 class Clock < ApplicationRecord
+  # The events it can tick on (Campaign::Happenings), as the GM picks them.
   TRIGGERS = {
     "rest" => "each rest",
     "travel" => "each journey",
@@ -17,8 +18,6 @@ class Clock < ApplicationRecord
     "dawn" => "each new day",
     "now_and_then" => "now and then, overnight"
   }.freeze
-  # What ticked it, as the table hears it.
-  REASONS = { "rest" => "the party rested", "travel" => "time on the road", "failed_check" => "a failed check", "dawn" => "a new day", "now_and_then" => "time passing" }.freeze
 
   include CampaignPages
 
@@ -36,6 +35,7 @@ class Clock < ApplicationRecord
   validates :segments, numericality: { only_integer: true, in: 2..12 }
   validates :filled, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :triggers_known
+  validate :times_in_the_calendar, if: :will_save_change_to_times?
   validate :mode_is_the_locations
   validate :place_is_the_campaigns
 
@@ -64,8 +64,22 @@ class Clock < ApplicationRecord
     campaign.narrate("#{name}: not any more.") if public?
   end
 
-  def ticks_on?(trigger)
-    triggers.include?(trigger.to_s)
+  # Words from the calendar it keeps to, as modes and things to do do
+  # (Pointcrawl::Calendar#on?): "Monday", "winter". None: any time.
+  def times=(words)
+    super(Array(words).map { |word| word.to_s.strip }.reject(&:empty?).uniq(&:downcase))
+  end
+
+  # Whether this event, then, ticks it.
+  def ticks_on?(event, almanac = campaign.almanac, day = campaign.day, period = campaign.period)
+    triggers.include?(event.to_s) && almanac.on?(times, day, period)
+  end
+
+  # "each new day, on Monday or Friday": what ticks it, for the pages.
+  def ticking
+    return if triggers.empty?
+
+    "#{triggers.map { |t| TRIGGERS[t] }.to_sentence}#{", on #{times.to_sentence(two_words_connector: ' or ', last_word_connector: ' or ')}" if times.any?}"
   end
 
   # Advance (or, with a negative step, wind back) the clock. Filling it
@@ -119,6 +133,11 @@ class Clock < ApplicationRecord
 
   def place_is_the_campaigns
     errors.add(:map_node, "isn't on this campaign's map") if map_node && map_node.campaign_id != campaign_id
+  end
+
+  def times_in_the_calendar
+    unknown = campaign && campaign.almanac.unknown(times)
+    errors.add(:times, "#{unknown.to_sentence} #{unknown.one? ? "isn't" : "aren't"} in the calendar") if unknown.present?
   end
 
   def triggers_known

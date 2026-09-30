@@ -60,6 +60,18 @@ RSpec.describe Campaign::Timekeeping do
     expect { school.update!(time_of_day: "dawn") }.to raise_error(ActiveRecord::RecordInvalid, /isn't a part of the day/)
   end
 
+  it "ticks a clock kept to the calendar only then, for each day that begins in a long wait" do
+    world.update!(calendar: { weekdays: "Moonsday, Tidesday, Ashday", months: "Thaw (30, Spring)" })
+    market = campaign.clocks.create!(name: "Market day", segments: 5, triggers: %w[dawn], times: %w[Ashday])
+    daily = campaign.clocks.create!(name: "The tide", segments: 9, triggers: %w[dawn])
+    expect(market.ticking).to eq("each new day, on Ashday")
+    expect { campaign.clocks.create!(name: "Bad", segments: 2, times: %w[Funday]) }.to raise_error(ActiveRecord::RecordInvalid, /Funday isn't in the calendar/)
+
+    campaign.pass_time!(4 * 5) # five days begin: Tidesday, Ashday, Moonsday, Tidesday, Ashday
+    expect(market.reload.filled).to eq(2)
+    expect(daily.reload.filled).to eq(5)
+  end
+
   it "names the days the world's way" do
     world.update!(calendar: { weekdays: "Moonsday, Tidesday", months: "Thaw, Rainfall", month_length: 30 })
     campaign.update!(day: 32)

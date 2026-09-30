@@ -64,7 +64,7 @@ module Campaign::Overnight
         case event["kind"]
         when "clock"
           clock = clocks.find(event["clock"])
-          clock.tick!(1, reason: Clock::REASONS["now_and_then"])
+          clock.tick!(1, reason: Campaign::Happenings::EVENTS["now_and_then"])
           notes << "#{clock.name} moved on (#{clock.filled} of #{clock.segments})."
         when "spread"
           rumours.find(event["rumour"]).reach!(event["to"], day: day)

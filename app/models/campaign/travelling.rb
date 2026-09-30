@@ -44,7 +44,7 @@ module Campaign::Travelling
       messages.create!(body: edge.travel_event) if edge.travel_event
       narrate("The way is safe: nothing troubles the party on the road.") if safe
       narrate("Encounter! #{describe_encounter(rolled)}.") if rolled
-      tick_clocks!("travel")
+      happen!("travel")
       @arriving = destination # what it's like there is said once, on arrival
       pass_time!(edge.duration, announce: :new_day)
       @arriving = nil

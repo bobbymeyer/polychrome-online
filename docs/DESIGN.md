@@ -373,7 +373,7 @@ The date card says the date in display type, then the season and year in grey, t
 of the day in its own box. The box wears the light, not the name: the first part of the day is
 yellow, the night is blue-black, the part just before night is red, and the rest are white. A
 rest sleeps until the first part of the day. Things to do and modes are kept to times with the
-calendar's own words.
+calendar's own words, and so are clocks: a clock can tick each new day, but only on market day, or each rest, but only in winter.
 
 ### A deadline passes
 
