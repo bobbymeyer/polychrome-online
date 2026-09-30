@@ -115,6 +115,8 @@ module Campaign::Ways
       locations.find(move["location"]).enter!
     elsif move["room"]
       locations.find(move["location"]).move_to!(move["room"])
+    elsif move["recover"]
+      recover!(move["recover"])
     end
   end
 

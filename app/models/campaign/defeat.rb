@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# When the whole party is down, the GM decides what the story does with it
-# (docs/DESIGN.md, "Defeat"). Three ways on, each told at the table:
+# When the whole party is down, the table decides what the story does with
+# it (docs/DESIGN.md, "Defeat"): a choice like any other (Message kind
+# "choice"), which the GM settles. Three ways on, each told at the table:
 #
 #   retreat   — they come to in the nearest town, rested, and poorer: half
 #               the party's money is gone (Dragon Quest's way)
@@ -20,6 +21,26 @@ module Campaign::Defeat
   # fell, or any town on the map. Nil if there isn't one.
   def refuge
     nearest_town(current_node) || map_nodes.where(visible: true, kind: "town").order(:id).first
+  end
+
+  # "Everyone is KO'd. What happens now?", put to the table. Each option is
+  # a move (Campaign::Ways#make_move!) the GM's settling makes. Once: an
+  # open one is left as it is.
+  def ask_what_now!
+    return unless wiped_out? && !battle_on?
+
+    drop_stale_where_next!
+    return open_choice if open_choice
+
+    town = refuge
+    moves = { ("Retreat to #{town.name}" if town) => { "recover" => "retreat" }, "Everyone gets up" => { "recover" => "get_up" },
+              "Game over" => { "recover" => "game_over" } }.compact
+    Message.choice(self, options: moves.keys).tap do |ask|
+      ask.body = "Everyone is KO'd. What happens now? #{moves.keys.to_sentence(two_words_connector: ' or ', last_word_connector: ', or ')}."
+      ask.data = { "moves" => moves, "recovery" => true }
+      ask.save!
+      ask.broadcast_choice
+    end
   end
 
   def recover!(how)

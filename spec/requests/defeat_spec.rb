@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-# After a wipe, the GM decides what the story does with the party.
+# After a wipe, the table decides what the story does with the party, and the GM settles it.
 RSpec.describe "Defeat", type: :request do
   let(:campaign) { create_campaign.tap { |c| c.update!(gm: @admin, gil: 301) } }
   let!(:bartz) { create_character(campaign, name: "Bartz") }
@@ -18,36 +18,36 @@ RSpec.describe "Defeat", type: :request do
     [ bartz, faris ].each { |c| c.update!(hp: 0) }
   end
 
-  it "offers the GM a way on at the table and on the battle's results" do
+  it "puts what happens now to the table when a battle is lost, as a choice the GM settles" do
+    battle = start_battle(campaign: campaign)
+    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "defeat" }, actor: "gm")
+    ask = campaign.reload.open_choice
+    expect(ask).to be_what_now
+    expect(ask.options).to eq([ "Retreat to Tule", "Everyone gets up", "Game over" ])
+    expect(ask.body).to eq("Everyone is KO'd. What happens now? Retreat to Tule, Everyone gets up, or Game over.")
+    expect(campaign.ask_what_now!).to eq(ask) # once
+
     get campaign_table_path(campaign)
-    expect(response.body).to include("Everyone is KO'd. What happens now?", "Retreat to Tule", "Everyone gets up", "Game over")
-
-    battle = start_battle(campaign: campaign)
-    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "defeat" }, actor: "gm")
-    get battle_panel_path(battle)
-    expect(response.body).to include("Retreat to Tule")
-  end
-
-  it "tells the players the GM is deciding, then what the GM decided" do
-    battle = start_battle(campaign: campaign)
-    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "defeat" }, actor: "gm")
-    campaign.characters.update_all(hp: 0) # the battle wrote its HP back
-
-    sign_in_as(make_user("Kim"))
-    post battle_seat_path(battle), params: { seat: battle.party.first["id"] }
-    get battle_panel_path(battle)
-    expect(response.body).to include("The GM is deciding what happens next")
-    expect(response.body).not_to include("Retreat to Tule")
-
-    expect { campaign.recover!("get_up") }
+    expect(response.body).to include("Retreat to Tule", "Settle on this")
+    expect { ask.settle!("Everyone gets up") }
       .to have_broadcasted_to(stream(battle)).with(a_string_including("Somehow, one by one, everyone gets back up."))
+    expect([ bartz.reload.hp, faris.reload.hp ]).to eq([ 1, 1 ])
     get battle_panel_path(battle)
     expect(response.body).to include("Somehow, one by one, everyone gets back up.")
-    expect(response.body).not_to include("The GM is deciding")
+  end
+
+  it "lets the GM put it to the table when the party fell some other way" do
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Everyone is KO'd. What happens now?", "Put it to the table")
+    post campaign_recovery_path(campaign)
+    expect(campaign.open_choice).to be_what_now
+    sign_in_as(make_user("Kim"))
+    post campaign_recovery_path(campaign)
+    expect(response).to have_http_status(:forbidden).or redirect_to(root_path)
   end
 
   it "retreats to the nearest town by road, rested and half as rich" do
-    post campaign_recovery_path(campaign), params: { how: "retreat" }
+    campaign.ask_what_now!.settle!("Retreat to Tule")
     campaign.reload
     expect(campaign.current_node).to eq(tule)
     expect(campaign.gil).to eq(151)
@@ -57,26 +57,20 @@ RSpec.describe "Defeat", type: :request do
   end
 
   it "gets everyone up where they fell, with 1 HP" do
-    post campaign_recovery_path(campaign), params: { how: "get_up" }
+    campaign.ask_what_now!.settle!("Everyone gets up")
     expect([ bartz.reload.hp, faris.reload.hp ]).to eq([ 1, 1 ])
     expect(campaign.reload.current_node).to eq(ruins)
   end
 
   it "can end the story, and only when everyone is down" do
-    post campaign_recovery_path(campaign), params: { how: "game_over" }
-    expect(campaign.messages.last.body).to eq("The party has fallen. Their story ends here.")
+    ask = campaign.ask_what_now!
+    ask.settle!("Game over")
+    expect(campaign.messages.pluck(:body)).to include("The party has fallen. Their story ends here.")
     expect(bartz.reload).not_to be_conscious
 
     bartz.update!(hp: 5)
-    post campaign_recovery_path(campaign), params: { how: "get_up" }
-    expect(flash[:alert]).to eq("Someone is still standing")
-    expect(faris.reload.hp).to eq(0)
-  end
-
-  it "is the GM's call" do
-    sign_in_as(make_user("Kim"))
-    post campaign_recovery_path(campaign), params: { how: "get_up" }
-    expect(bartz.reload.hp).to eq(0)
+    expect(campaign.ask_what_now!).to be_nil
+    expect { campaign.recover!("get_up") }.to raise_error(Refusal, "Someone is still standing")
   end
 
   it "retreats by open roads only: never over a blocked pass" do

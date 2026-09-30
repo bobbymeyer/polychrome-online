@@ -281,9 +281,12 @@ keyboard, a mouse or a finger.
 
 ### Defeat
 
-When the whole party is down, the GM chooses what the story does with it, on the battle's
-results and at the table: retreat to the nearest town by road (rested, with half the party's
-money gone, as in Dragon Quest), everyone gets up where they fell with 1 HP, or game over.
+When the whole party is down, the table decides what the story does with it: "Everyone is KO'd.
+What happens now?" goes up as a choice like any other, with three ways on: retreat to the
+nearest town by road (rested, with half the party's money gone, as in Dragon Quest), everyone
+gets up where they fell with 1 HP, or game over. Players pick; the GM settles it, and the
+battle's results say what was decided. A lost battle asks by itself; if the party fell some
+other way, the GM puts it to the table.
 
 ### Players steer
 
@@ -381,7 +384,9 @@ calendar's own words, and so are clocks: a clock can tick each new day, but only
 When a clock the table can see fills, the table stops for it. A red card comes up over
 everything, the recap included. The date sits on a black band, the clock's line is set in
 display type, and a bell tolls three times. If the clock sets a place into a new state, the
-card names it ("Tule: Burning"). A click or a few seconds dismisses it. The day before, the
+card names it ("Tule: Burning"). A click or a few seconds dismisses it. Every card that stops the table (this one, an awakening)
+is played by one controller: a card is a dialog that says which cue brings it up, how long it
+holds, how its parts come in and whether it turns over. The day before, the
 countdown on the date card turns into a red band ("TOMORROW The spring tide comes in"), and on
 a phone that band stays pinned along the bottom of the screen.
 

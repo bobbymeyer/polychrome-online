@@ -50,6 +50,8 @@ module BattleRecord::Settlement
     update!(settlement: summary)
     announce!(settlement_line(summary))
     record_deeds!(summary, characters) if victory
+    # Everyone down: what now is the table's to decide (Campaign::Defeat).
+    campaign.ask_what_now! if status == "defeat" && campaign.wiped_out?
   end
 
   # Stolen items: the party's however it ended. Returns their names.

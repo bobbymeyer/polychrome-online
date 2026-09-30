@@ -93,8 +93,11 @@ class Message < ApplicationRecord
 
   # A "Where next?" (Campaign::Ways): its options carry the party's moves.
   def where_next?
-    choice? && data.key?("moves")
+    choice? && data.key?("moves") && !data["recovery"]
   end
+
+  # "Everyone is KO'd. What happens now?" (Campaign::Defeat#ask_what_now!).
+  def what_now? = choice? && data["recovery"].present?
 
   # { option => [character names] }, in the options' order.
   def tally
@@ -110,7 +113,7 @@ class Message < ApplicationRecord
 
     transaction do
       update!(settled: option)
-      campaign.make_move!(data.dig("moves", option)) if where_next? && data.dig("moves", option)
+      campaign.make_move!(data.dig("moves", option)) if data.dig("moves", option)
       if flag_key
         flag = campaign.flags.find_or_initialize_by(key: Flag.new(key: flag_key).key)
         flag.update!(value: option, public: true)

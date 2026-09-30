@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-# The GM's call after the whole party has fallen (Campaign::Defeat).
+# After the whole party has fallen outside a battle (the GM set their HP),
+# the GM puts "What happens now?" to the table (Campaign::Defeat); a lost
+# battle puts it there by itself.
 class Campaigns::RecoveriesController < ApplicationController
   include CampaignScoped
 
@@ -8,9 +10,7 @@ class Campaigns::RecoveriesController < ApplicationController
   before_action :require_campaign_gm
 
   def create
-    @campaign.recover!(params.expect(:how))
+    @campaign.ask_what_now!
     redirect_to campaign_table_path(@campaign), status: :see_other
-  rescue Refusal => e
-    redirect_to campaign_table_path(@campaign), alert: e.message, status: :see_other
   end
 end

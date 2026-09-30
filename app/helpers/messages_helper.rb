@@ -24,12 +24,12 @@ module MessagesHelper
     image ? url_for(image) : ""
   end
 
-  # What the awakening card shows (awakening_controller): the line's own
+  # What the awakening card shows (moment_controller): the line's own
   # words, and the character's face as it is now (their portrait, or their
   # plate).
   def awakening_card(message)
     character = message.campaign.characters.find_by(id: message.data["character"])
-    message.data.merge("portrait" => speaker_portrait_url(character, "neutral"),
+    message.data.merge("portrait" => speaker_portrait_url(character, "neutral"), "who" => ("#{message.data['name']} awakens" if message.data["name"]),
                        "plate" => (plate_style(character.name, character.try(:colour)) if character))
   end
 
