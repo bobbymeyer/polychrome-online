@@ -22,7 +22,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
   it "records a deed, and the towns the story reaches think better of the party, and sell cheaper" do
     post campaign_deeds_path(campaign), params: { deed: { body: "Rook pulled the miller's child from the weir.", map_node_id: varn.id, sway: 2 } }
     deed = campaign.deeds.sole
-    expect(deed).to have_attributes(day: 1, sway: 2, map_node: varn)
+    expect(deed).to have_attributes(day: 1, sway: 2, origin: varn, deed: "gm")
     expect(varn_town.reload.reputation).to eq(2)
     expect(tule_town.reload.reputation).to eq(0)
 
@@ -59,7 +59,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     struck = campaign.deeds.first
     delete campaign_deed_path(campaign, struck)
     expect(tule_town.reload.reputation).to eq(-2) # the sum of what's left, not a stored number undone
-    expect(campaign.rumours.where(deed_id: struck.id)).to be_empty
+    expect(Rumour.where(id: struck.id)).to be_empty
     expect { campaign.buy!(potion, 1, at: tule_town, by: "Rook") }.not_to raise_error
   end
 
@@ -67,7 +67,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     battle = campaign.battles.new(world: world, boss: true)
     battle.send(:record_deeds!, { "antagonists" => [ { "name" => "Mara", "fate" => "defeated" }, { "name" => "Gorn", "fate" => "escaped" } ] },
                 { hero.battle_unit_id => hero })
-    expect(campaign.deeds.pluck(:body, :kind, :sway)).to eq([ [ "Rook defeated Mara for good.", "antagonist", 1 ] ])
+    expect(campaign.deeds.pluck(:body, :deed, :sway)).to eq([ [ "Rook defeated Mara for good.", "antagonist", 1 ] ])
   end
 
   it "lets a secret out overnight, and shows the GM it's going round" do

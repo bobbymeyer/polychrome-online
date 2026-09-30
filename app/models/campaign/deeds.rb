@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-# What the party does becomes part of the world. A deed starts a rumour
-# where it happened, carrying its sway: every town the news reaches thinks
-# a little better, or worse, of the party (Location::Town#reputation). The
+# What the party does becomes part of the world. A deed is a rumour
+# (Rumour#deed) told from where it happened, carrying its sway: every town
+# the news reaches thinks a little better, or worse, of the party
+# (Location::Town#reputation). The
 # party hears about themselves on arriving somewhere the story got to
 # first. Beating an antagonist for good and clearing a dungeon are deeds
 # by themselves; the GM records the rest.
@@ -11,12 +12,11 @@ module Campaign::Deeds
 
   # seen: the party is there, and already knows (a town's thanks).
   def record_deed!(body, at: current_node, sway: 0, kind: "gm", seen: false)
-    transaction do
-      deed = deeds.create!(body: body, map_node: at, day: day, sway: sway.to_i, kind: kind)
-      start_rumour!(body, at: at, sway: deed.sway, deed: deed, seen: seen) if at
-      deed
-    end
+    start_rumour!(body, at: at, sway: sway.to_i, deed: kind, seen: seen)
   end
+
+  # What the party did, as a rumour each (striking one takes its story back).
+  def deeds = rumours.deeds
 
   # A dungeon's boss is beaten: the table hears it, with a fanfare, and the
   # world answers. The clocks the place was behind stop, unless the one
