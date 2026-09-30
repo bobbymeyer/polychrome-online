@@ -122,7 +122,6 @@ Rails.application.routes.draw do
       resources :checks, only: :create
       resources :field_uses, only: %i[create update]
       resources :job_grants, only: :create
-      resources :awakenings, only: :create
       resource :join_code, only: :create
       resource :forecast, only: :show
       resource :table_seat, only: %i[create destroy]
