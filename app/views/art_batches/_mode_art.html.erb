@@ -8,8 +8,9 @@
 <% mode = place.modes.find { |m| m["key"] == chosen } || place.modes.first %>
 <% sample = arts[mode["key"]] || location.mode_arts.new(mode: mode) %>
 <%= turbo_frame_tag "art_panel", data: { src: world_art_panel_path(world, entry_type: "mode", location_id: location.id, mode: chosen) } do %>
-<section class="window art-studio" id="art" aria-label="Pictures for modes">
-  <h2>Pictures for modes</h2>
+<%# Closed until there's something to look at (a batch running, or candidates to pick from). %>
+<details class="window art-studio" id="art" <%= "open" if batch %>>
+  <summary>Pictures for modes<%= tag.span(" · ComfyUI isn't answering", class: "art-studio__status") unless Comfy.capabilities.reachable? %></summary>
   <p class="hint">
     While a mode lasts, the table sees its picture instead of <%= location.location_template.name %>'s.
     Each is <%= location.location_template.name %>'s own picture with the mode's words added<%= ", starting from its seed so it stays recognisable" if location.location_template.image_seed %>.
@@ -57,5 +58,5 @@
 
   <%= render "art_batches/strip", batch: batch if batch %>
   <%= render "art_batches/strip", batch: batch.drafts if batch&.drafts %>
-</section>
+</details>
 <% end %>

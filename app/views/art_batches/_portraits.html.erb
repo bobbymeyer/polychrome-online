@@ -6,8 +6,9 @@
 <% sample = owner.portraits.find_by(expression: chosen) || Portrait.new(owner: owner, expression: chosen) %>
 <% neutral_seed = owner.portraits.find_by(expression: "neutral")&.image_seed %>
 <%= turbo_frame_tag "art_panel", data: { src: world_art_panel_path(world, entry_type: "portrait", owner_type: owner.model_name.singular, owner_id: owner.id) } do %>
-<section class="window art-studio" id="art" aria-label="Portrait art">
-  <h2>Generate portraits</h2>
+<%# Closed until there's something to look at (a batch running, or candidates to pick from). %>
+<details class="window art-studio" id="art" <%= "open" if batch %>>
+  <summary>Generate portraits<%= tag.span(" · ComfyUI isn't answering", class: "art-studio__status") unless Comfy.capabilities.reachable? %></summary>
   <p class="hint">Each expression is its own image: upload it in the form above, or generate it here.</p>
 
   <h3>The prompt, in layers</h3>
@@ -38,5 +39,5 @@
 
   <%= render "art_batches/strip", batch: batch if batch %>
   <%= render "art_batches/strip", batch: batch.drafts if batch&.drafts %>
-</section>
+</details>
 <% end %>

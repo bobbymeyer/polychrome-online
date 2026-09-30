@@ -289,6 +289,12 @@ keyboard, a mouse or a finger.
   the same tools come after the play.
 - **Going straight there asks first** for a dangerous road or a night, since one click moves the
   whole party.
+- **Inside a dungeon, the table's map is its floorplan**: every room and what waits there for the
+  GM, only what they've seen for players. The GM's buttons for the rooms say what's in each
+  (encounter, treasure, boss, done). Room names wrap onto up to three lines in their boxes.
+- **Pictures come last.** Generating a place's, a speaker's or an entry's picture sits in a closed
+  panel at the bottom of the page (open while a batch is running or waiting to be picked from),
+  and its summary says when ComfyUI isn't answering. The place or person comes first.
 
 ### Defeat
 

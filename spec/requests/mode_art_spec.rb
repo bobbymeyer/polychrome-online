@@ -29,6 +29,9 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
     get location_path(town)
     expect(response.body).to include("Pictures for modes", "on fire, thick smoke")
     expect(response.body).not_to include("location-picture")
+    expect(response.body).to match(/<details class="window art-studio" id="art" >/) # closed: nothing to look at yet
+    expect(response.body.index("Pictures for modes")).to be > response.body.index("Services") # the town first
+
 
     post world_art_batches_path(world), params: { entry_type: "mode", location_id: town.id, mode: "burning",
                                                   mode_art: "on fire, thick smoke, ash falling", count: 2 }
