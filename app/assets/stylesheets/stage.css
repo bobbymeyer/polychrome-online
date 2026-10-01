@@ -803,6 +803,8 @@ body[data-view="screen"] .page { max-width: none; padding-left: 32px; padding-ri
 .coop-party__list li > div { flex: 1; min-width: 0; }
 .coop-party__list li.is-ko { opacity: .55; }
 .coop-leave { margin-top: 24px; opacity: .6; }
+.coop-banner { margin: 0 0 12px; padding: 8px 12px; background: var(--sun-yellow); border: 3px solid var(--ink); font-size: 14px; }
+.coop-banner a { margin-left: 8px; font-weight: 700; }
 
 /* The controller: one column, big targets, no show. */
 body[data-view="controller"] .topbar__books { display: none; }
@@ -1104,6 +1106,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 @media (max-width: 999px) { .log-drawer__pin { display: none; } }
 @media (min-width: 1000px) {
   html.log-docked body { padding-right: min(440px, 36vw); }
+  html.log-docked .topbar { right: min(440px, 36vw); } /* the bar ends where the log begins, so your name stays in view */
   .log-drawer.is-docked .log-drawer__panel { width: min(440px, 36vw); box-shadow: none; transition: none; z-index: 30; }
 }
 
@@ -1568,7 +1571,11 @@ button.your-moves__tag { border: 0; cursor: default; }
   /* The GM's table and the shared screen. */
   .page:has(> .table) { padding-bottom: 0; }
   .table__main { grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); grid-template-areas: "side stage"; column-gap: var(--gutter); padding-right: var(--gutter); }
-  .table__side { grid-area: side; height: calc(100vh - var(--stage-top, 112px)); overflow-y: auto; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
+  .table:not(.table--controller) .table__side { grid-area: side; height: calc(100vh - var(--stage-top, 112px)); overflow-y: auto; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
+  /* A controller (a phone's view) opened on a wide screen is one column, as on the phone. */
+  .table--controller .table__main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "side"; padding: 0 var(--gutter); }
+  .table--controller .table__side { grid-area: side; }
+  .table--controller > .coop-banner, .table--controller > .coop-links { margin-left: var(--gutter); margin-right: var(--gutter); }
   /* The Stage is sacred: first in the column, never scrolled away; what's under it scrolls on its own. */
   .table__stage { grid-area: stage; display: grid; grid-template-rows: auto minmax(0, 1fr); height: calc(100vh - var(--stage-top, 112px)); }
   .table__under { min-height: 0; overflow-y: auto; padding-top: 12px; }
