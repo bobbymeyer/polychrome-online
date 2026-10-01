@@ -1046,6 +1046,11 @@ body[data-view="controller"] .page { padding-top: 16px; }
 @media (max-width: 640px) {
   .map-node__label { font-size: 38px; stroke-width: 9px; translate: 0 16px; }
   .map-node__label.is-above { translate: 0 -6px; }
+  /* Near an edge, a name runs inward from its place instead of off the map (MapsHelper#map_label_side). */
+  .map-node__label.is-left { text-anchor: start; translate: -24px 16px; }
+  .map-node__label.is-right { text-anchor: end; translate: 24px 16px; }
+  .map-node__label.is-left.is-above { translate: -24px -6px; }
+  .map-node__label.is-right.is-above { translate: 24px -6px; }
   .map-node__mode { font-size: 24px; translate: 0 30px; }
   .skyline__sign { font-size: 18px; }
 }
@@ -1144,3 +1149,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table-time__where a { color: inherit; }
 .table-time__pin { display: inline-block; width: 0; height: 0; margin-right: 6px; border: 7px solid transparent; border-top: 11px solid var(--signal); border-bottom: 0; vertical-align: 2px; }
 .table-time__room { font-weight: 600; color: var(--grey); }
+.table-now__phones, .table--screen .table-now__here { display: none; }
+.table--screen .table-now__phones { display: inline; }
+/* The shared screen goes edge to edge: keep its right side clear of the log's tab. */
+.table--screen { padding-right: 44px; }

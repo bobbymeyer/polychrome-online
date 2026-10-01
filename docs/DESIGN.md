@@ -313,6 +313,11 @@ keyboard, a mouse or a finger.
 - **Inside a dungeon, the table's map is its floorplan**: every room and what waits there for the
   GM, only what they've seen for players. The GM's buttons for the rooms say what's in each
   (encounter, treasure, boss, done). Room names wrap onto up to three lines in their boxes.
+- **Names on the map fit on a phone**, where they're drawn bigger: a place near the map's edge has
+  its name run inward from it, and names are placed (under their place, or over it) by the room
+  they take at the phone's size, so they clear each other there and everywhere.
+- **The shared screen sends the table to their phones** ("Pick on your phones"), and its right
+  edge stays clear of the log's tab.
 - **Pictures come last.** Generating a place's, a speaker's or an entry's picture sits in a closed
   panel at the bottom of the page (open while a batch is running or waiting to be picked from),
   and its summary says when ComfyUI isn't answering. The place or person comes first.

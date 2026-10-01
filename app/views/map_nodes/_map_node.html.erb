@@ -6,7 +6,7 @@
   <% body = capture do %>
     <%= render "map_nodes/shape", kind: node.kind %>
     <% label_y = local_assigns.fetch(:labels, {}).fetch(node.id, 38) %>
-    <text class="map-node__label<%= " is-above" if label_y.negative? %>" y="<%= label_y %>" text-anchor="middle"><%= node.name %></text>
+    <text class="<%= class_names("map-node__label", map_label_side(node), "is-above": label_y.negative?) %>" y="<%= label_y %>" text-anchor="middle"><%= node.name %></text>
     <% if in_mode %><text class="map-node__mode" y="<%= label_y.negative? ? label_y - 20 : label_y + 16 %>" text-anchor="middle"><%= in_mode %></text><% end %>
   <% end %>
   <% if !gm && node.location %>

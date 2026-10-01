@@ -20,6 +20,15 @@ RSpec.describe "Where next", type: :request do
     campaign.update!(current_node: tule)
   end
 
+  it "takes a Where next? off the table once time passes, since what it offered was for then" do
+    vote = campaign.ask_where_next!
+    expect(campaign.open_choice).to eq(vote)
+    campaign.pass_time!(1)
+    expect(campaign.reload.open_choice).to be_nil
+    expect(Message.exists?(vote.id)).to be(false)
+    expect(campaign.ask_where_next!.options).to include(Campaign::STAY) # asked again, with what there is now
+  end
+
   it "lets a player suggest a way: it goes to a vote, and settling it takes the party there" do
     sign_in_as(kim)
     get campaign_table_path(campaign)

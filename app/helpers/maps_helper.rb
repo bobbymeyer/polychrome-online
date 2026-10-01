@@ -6,6 +6,18 @@ module MapsHelper
   LABEL_HEIGHT = 26
   LABEL_CHAR_WIDTH = 12 # a rough width per letter at the map's label size
 
+  PHONE_CHAR_WIDTH = 21 # the same, at the bigger size a phone draws names (stage.css)
+
+  # Which way a place's name runs on a phone, where names are drawn bigger:
+  # from the place, inward, when centred it would run off the map's edge
+  # ("is-left": a place near the left edge). Nil when it fits centred.
+  def map_label_side(node)
+    half = node.name.length * PHONE_CHAR_WIDTH / 2
+    if node.x - half < 0 then "is-left"
+    elsif node.x + half > MapNode::WIDTH then "is-right"
+    end
+  end
+
   # Where each place's name goes on the map: under its marker, or over it
   # when the space under is taken by a name already placed (Varn and Goblin
   # Hollow side by side). { node_id => y offset }
@@ -20,10 +32,18 @@ module MapsHelper
 
   private
 
+  # The room a name takes, at the size a phone draws it (the larger of the
+  # two), running the way it runs there: names that clear each other on a
+  # phone clear each other everywhere.
   def label_box(node, dy)
-    half = node.name.length * LABEL_CHAR_WIDTH / 2
-    top = node.y + dy - LABEL_HEIGHT + 6
-    [ node.x - half, top, node.x + half, top + LABEL_HEIGHT ]
+    width = node.name.length * PHONE_CHAR_WIDTH
+    top = node.y + dy - (LABEL_HEIGHT * PHONE_CHAR_WIDTH / LABEL_CHAR_WIDTH) + 6
+    left = case map_label_side(node)
+    when "is-left" then node.x - 24
+    when "is-right" then node.x + 24 - width
+    else node.x - width / 2
+    end
+    [ left, top, left + width, node.y + dy + 6 ]
   end
 
   def overlap?(a, b)
