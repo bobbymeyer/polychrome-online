@@ -29,6 +29,7 @@
           <%= link_to "My sheet", character_path(mine) if mine %>
           <%= link_to "Prep", campaign_prep_path(in_campaign) if can_gm?(in_campaign) %>
           <%= link_to "Legends", campaign_legends_path(in_campaign) %>
+          <%= yield :table_menu %>
           <%= link_to "#{in_campaign.world.name}'s books", world_path(in_campaign.world), class: "muted" %>
         </nav>
       <% elsif @world&.persisted? %>

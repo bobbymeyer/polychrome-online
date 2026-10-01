@@ -5,14 +5,25 @@
 <% end %>
 
 <% view = coop_view %>
+<%# A player's table shows what they can do now; the rest is a tap away (docs/DESIGN.md, "What you can do now"). %>
+<% player = @seat.character? && view.nil? %>
+<% if player %>
+  <% content_for :table_menu do %>
+    <%= link_to "Previously on…", campaign_table_path(@campaign, recap: 1) if @recap %>
+    <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
+  <% end %>
+<% end %>
 <div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment<%= " heartbeat" if @seat.character? %>" <%= tag.attributes(data: { heartbeat_url_value: (campaign_presence_path(@campaign) if @seat.character?) }) %> <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
-     data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
+     data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>" data-recap-asked-value="<%= params[:recap].present? %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%= render "campaigns/tables/cards" %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= seat_streams_from @seat, @campaign %>
   <%= render "shared/stage_stream", campaign: @campaign %>
 
+  <% if player %>
+    <%= render "campaigns/tables/player_screen" %>
+  <% else %>
   <header class="battle__header">
     <div>
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= { "screen" => "Shared screen", "controller" => "Controller" }.fetch(view, "Table") %></p>
@@ -26,12 +37,6 @@
       <h1><%= view == "controller" && @seat.character? ? @seat.name : @campaign.name %></h1>
       <% if view == "controller" && @seat.character? %>
         <%= render "campaigns/tables/vitals", character: @seat.character %>
-      <% elsif @seat.character? && view != "screen" %>
-        <%# Who you are, up top: your own HP and MP, kept in step with your row in the party panel. %>
-        <div class="table-you" data-controller="mirror" data-mirror-from-value="#table_party [data-character='<%= @seat.character.id %>'] .vitals">
-          <span class="table-you__label">You</span> <strong><%= @seat.name %></strong>
-          <div data-mirror-target="slot"><%= render "campaigns/tables/vitals", character: @seat.character, copy: true %></div>
-        </div>
       <% end %>
       <% if @recap %>
         <button type="button" class="link-button recap-link" data-action="recap#open">Previously on <%= @campaign.name %>…</button>
@@ -51,17 +56,16 @@
              data-recent-lines-seat-value="<%= @seat.character&.name %>" data-recent-lines-count-value="<%= view == "controller" ? 2 : 4 %>">
       <ol data-recent-lines-target="list"></ol>
     </section>
-    <%# A player's moves sit together, under one tag: the vote, the ways on, their field ability, then talk. %>
-    <% moves = @seat.character? && view != "screen" %>
+    <%# A controller's moves sit together, under one tag: the vote, the ways on, their field ability. %>
+    <% moves = @seat.character? && view == "controller" %>
     <%= tag.section(class: "your-moves", aria: { label: "Your moves" }) do %>
       <% if moves %>
         <p class="your-moves__tag">Your moves</p>
-        <p class="hint your-moves__hint">Pick when the party decides, suggest where to go next, use your field ability, or talk at the table.</p>
       <% end %>
       <%= render "choices/panel", choice: @campaign.open_choice %>
       <%= render "campaigns/tables/ways", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
       <%# A controller has its field ability here too, with its other moves, not under the links. %>
-      <%= render "campaigns/field_uses/ability", character: @seat.character if @seat.character? && (!view || view == "controller") %>
+      <%= render "campaigns/field_uses/ability", character: @seat.character if moves %>
       <% if @seat.seated? && !view %>
         <%# Talk where the story is: right under it, not below the map. %>
         <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
@@ -97,7 +101,10 @@
     </div>
   </div>
 
-  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name, dockable: @seat&.gm? } do %>
+  <% end %>
+
+  <%# A player's log is the right-hand column on a wide screen (wide: pinned there, not a pin to press). %>
+  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name, dockable: @seat&.gm?, wide: player } do %>
     <%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %>
   <% end %>
 

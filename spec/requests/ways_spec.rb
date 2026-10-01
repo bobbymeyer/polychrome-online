@@ -142,6 +142,11 @@ RSpec.describe "Where next", type: :request do
       rook.update!(hp: 10)
       expect(campaign.reload.ways_on.map { |w| w["label"] }).to include("Work a shift (until night)", "The good tea (25 gil)", "Study (until dusk)")
       expect { campaign.take_way!("The good tea (25 gil)") }.to raise_error(Refusal, "The party has 20 gil; The good tea costs 25 gil")
+      sign_in_as(kim)
+      get campaign_table_path(campaign)
+      ways = Nokogiri::HTML(response.body).at("#table_ways").text
+      expect(ways).to include("Work a shift (until night)")
+      expect(ways).not_to include("The good tea") # not offered to players while the purse can't pay
 
       campaign.take_way!("Work a shift (until night)")
       expect(campaign.reload).to have_attributes(gil: 60, time_of_day: "night")

@@ -40,10 +40,66 @@ RSpec.describe "Moments at the table", type: :system do
     expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Trust Cid")
   end
 
+  it "shows a player what they can do now: tabs for what they look up, and a battle takes their moves" do
+    seat(player, rook)
+    as(player) do
+      expect(page).to have_css(".your-moves", visible: true)
+      expect(page).to have_no_css("#table_party", visible: true)
+      click_button "Party"
+      expect(page).to have_css("#table_party", visible: true, text: "Rook")
+      click_button "Map"
+      expect(page).to have_no_css("#table_party", visible: true)
+      click_button "Map"
+      expect(page).to have_no_css("#map_canvas", visible: true) # pressing the open one closes it
+      find("details.talk summary", text: "Say something").click
+      expect(page).to have_css("#composer textarea", visible: true)
+
+      wait_for_streams
+      rook.update!(hp: 0)
+      # The tab says so without opening it (its ::after, from the party panel it hides).
+      page.document.synchronize do
+        badge = page.evaluate_script(%(getComputedStyle(document.querySelector(".drawers__tab--party"), "::after").content))
+        raise Capybara::ExpectationNotMet, badge unless badge.include?("down")
+      end
+      start_battle(campaign: campaign)
+      expect(page).to have_css("#table_now[data-state=battle]")
+      expect(page).to have_no_css(".your-moves", visible: true)
+    end
+  end
+
+  it "pins a player's side columns and moves on a wide screen, and folds them away when unpinned" do
+    seat(player, rook)
+    as(player) do
+      expect(page).to have_css(".player-screen.is-pinned .player-screen__side", visible: true) # 1280 wide: you and your moves beside the scene
+      expect(page).to have_css(".log-drawer.is-docked") # and the log on the right
+      expect(page).to have_css("#drawer_map", visible: true) # the map starts open, the scene's art
+
+      within(".player-screen__card") { click_on "Unpin" }
+      expect(page).to have_no_css(".player-screen.is-pinned")
+      expect(page).to have_no_css(".player-screen__side", visible: true)
+      find(".player-screen__tab").click
+      expect(page).to have_css(".player-screen__side", visible: true)
+
+      visit current_path
+      expect(page).to have_no_css(".player-screen.is-pinned") # it stays as it was left
+      find(".player-screen__tab").click
+      within(".player-screen__card") { click_on "Pin" }
+      expect(page).to have_css(".player-screen.is-pinned")
+
+      # Your moves: pinned along the bottom of the scene, or folded to their bar until pressed.
+      expect(page).to have_css(".player-screen__moves.is-pinned .player-screen__moves-body", visible: true)
+      within(".player-screen__moves-bar") { click_on "Unpin" }
+      expect(page).to have_no_css(".player-screen__moves-body", visible: true)
+      find(".player-screen__moves-bar button.your-moves__tag").click
+      expect(page).to have_css(".player-screen__moves-body", visible: true)
+      within(".player-screen__moves-bar") { click_on "Pin" }
+    end
+  end
+
   it "keeps the player's own HP up top in step with the party panel" do
     seat(player, rook)
     as(player) do
-      expect(page).to have_css(".table-you", text: "Rook")
+      expect(page).to have_css(".player-screen__card", text: "Rook")
       wait_for_streams
       rook.update!(hp: 7)
       expect(page).to have_css(".table-you .vitals strong", text: /\A7\z/)

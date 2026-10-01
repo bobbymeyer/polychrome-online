@@ -1192,3 +1192,93 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* Long labels get wide buttons: a thing to do here reads on one or two lines, not four. */
 .menu--wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+
+/* What you can do now (docs/DESIGN.md): a player's moves follow the table's state (#table_now data-state).
+   A battle takes them all (the Now line has the way in); an encounter or a vote leaves only the vote and talk. */
+.table[data-seat="player"]:has(#table_now[data-state="battle"]) .your-moves { display: none; }
+.table[data-seat="player"]:has(#table_now[data-state="encounter"]) #field_ability,
+.table[data-seat="player"]:has(#table_now[data-state="choice"]) #field_ability { display: none; }
+.field-ability-status { margin: 8px 0; font-size: 14px; }
+/* Talk is a button until it's wanted. */
+.talk { margin: 12px 0; }
+.talk > summary { list-style: none; display: inline-flex; cursor: pointer; }
+.talk > summary::-webkit-details-marker { display: none; }
+.talk > summary::marker, .talk > summary::before { content: none; display: none; }
+.talk[open] > summary { display: none; }
+/* What a player looks up: tabs over closed panels. A tab says when someone's hurt or down. */
+.drawers__tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.drawers__tab { background: var(--control-fill); border: 0; padding: 8px 14px; font-weight: 800; cursor: pointer; }
+.drawers__tab[aria-expanded="true"] { background: var(--ink); color: var(--paper); }
+.table:has(#party_knows[hidden]) .drawers__tab--knows { display: none; }
+.table:has(#table_party .is-low) .drawers__tab--party::after { content: " · hurt"; color: var(--caution-ink); }
+.table:has(#table_party li.is-ko) .drawers__tab--party::after { content: " · someone's down"; color: var(--signal); }
+
+/* A player's screen (docs/DESIGN.md): you, the scene, your moves, and the log. On a phone, one column in
+   that order (you, the scene, your moves, what you look up). On a wide screen: you pinned on the left,
+   the scene in the middle with your moves pinned along its bottom, the log pinned on the right. Each
+   can be unpinned: the left column to a tab on its edge, your moves to a bar, the log to its tab. */
+.player-screen { display: flex; flex-direction: column; gap: 16px; }
+.player-screen__side { display: contents; }
+.player-screen__card { order: 1; display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; align-items: start; position: relative; }
+.player-screen__context { order: 2; }
+.player-screen__moves { order: 3; }
+.player-screen__lookup { order: 4; }
+.player-screen__label { margin: 0; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: var(--grey); }
+.player-screen__name { margin: 0; font: var(--display); font-size: 28px; }
+.player-screen__card .muted { margin: 0 0 6px; }
+.player-screen__card .table-you { margin: 0 0 6px; }
+.player-screen__sheet { font-size: 14px; font-weight: 700; }
+.player-screen__pin, .player-screen__tab { display: none; }
+.player-screen__moves-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+button.your-moves__tag { border: 0; cursor: default; }
+.table-scene { margin: 0 0 16px; border: 3px solid var(--ink); }
+.table-scene[hidden] { display: none; }
+.table-scene img { display: block; width: 100%; max-height: 320px; object-fit: cover; }
+@media (min-width: 1100px) {
+  .player-screen { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "context" "moves"; gap: 16px var(--gutter); align-items: start; }
+  .player-screen__context { grid-area: context; }
+  .player-screen__side { display: flex; flex-direction: column; gap: 16px; }
+  .player-screen__card, .player-screen__lookup { order: 0; }
+  .player-screen__pin { display: inline-flex; font-size: 13px; padding: 4px 10px; }
+  .player-screen__card .player-screen__pin { position: absolute; top: 8px; right: 8px; }
+  .player-screen__pin[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+  /* You, pinned: a column beside the scene, kept in view as the page scrolls. */
+  .player-screen.is-pinned { grid-template-columns: minmax(280px, 320px) minmax(0, 1fr); grid-template-areas: "side context" "side moves"; }
+  .player-screen.is-pinned .player-screen__side { grid-area: side; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+  /* Unpinned: a drawer on the left edge, with its tab. */
+  .player-screen:not(.is-pinned) .player-screen__side {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 45; width: 340px; overflow-y: auto; padding: 16px;
+    background: var(--paper); border-right: 4px solid var(--ink); translate: -100% 0; visibility: hidden;
+    transition: translate .28s var(--snap), visibility 0s linear .28s;
+  }
+  .player-screen.is-open:not(.is-pinned) .player-screen__side { translate: 0 0; visibility: visible; transition: translate .28s var(--snap), visibility 0s; }
+  .player-screen:not(.is-pinned) .player-screen__tab {
+    display: block; position: fixed; left: 0; bottom: 14vh; z-index: 40; writing-mode: vertical-rl; rotate: 180deg;
+    padding: 18px 8px 22px; border: 0; background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 900;
+    letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+  }
+  .player-screen.is-open .player-screen__tab { visibility: hidden; }
+  /* Your moves: a drawer along the bottom of the scene. Pinned, it stays in view as the page scrolls;
+     unpinned, it's its bar until pressed. */
+  .player-screen__moves { grid-area: moves; position: sticky; bottom: 0; z-index: 20; background: var(--paper); border-top: 4px solid var(--ink); padding: 8px 0 12px; }
+  .player-screen__moves:not(.is-pinned) button.your-moves__tag { cursor: pointer; }
+  .player-screen__moves:not(.is-pinned) button.your-moves__tag::after { content: " ▴"; }
+  .player-screen__moves.is-open:not(.is-pinned) button.your-moves__tag::after { content: " ▾"; }
+  .player-screen__moves.is-pinned .player-screen__moves-body, .player-screen__moves.is-open .player-screen__moves-body { max-height: 30vh; overflow-y: auto; }
+  /* A drawer's worth of moves: smaller headings, so the moves themselves fit. */
+  .player-screen__moves .choice h2, .player-screen__moves .table-ways h2 { font-size: 20px; margin: 4px 0 6px; }
+  .player-screen__moves .table-ways, .player-screen__moves .choice { padding-top: 8px; }
+  .player-screen__moves:not(.is-pinned):not(.is-open) .player-screen__moves-body { display: none; }
+}
+@media (min-width: 1100px) {
+  /* The scene's head is one row on a wide screen: the campaign's name is in the top bar already, and the
+     date, the place and the day sit side by side, so the story and your moves both fit on screen. */
+  .player-screen__context .battle__header { margin-bottom: 12px; }
+  .player-screen__context .battle__header > div:first-child { display: none; }
+  .player-screen__context .table-time { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; text-align: left; }
+  .player-screen__context .table-time__date { font-size: 32px; }
+  .player-screen__context .table-time__clock { margin: 0; }
+  .player-screen__context .day-clock { width: 44px; height: 44px; }
+  .player-screen__context .table-time__deadlines { margin: 0; flex-basis: 100%; }
+  .player-screen__context .table-now { margin-bottom: 12px; }
+}

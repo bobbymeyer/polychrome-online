@@ -9,12 +9,13 @@ const HEARTBEAT_MS = 60 * 1000
 
 export default class extends Controller {
   static targets = ["dialog"]
-  static values = { campaign: Number, auto: Boolean }
+  static values = { campaign: Number, auto: Boolean, asked: Boolean }
 
   connect() {
     const last = this.lastSeen
     const controller = document.body.dataset.view === "controller" // the shared screen shows it
-    if (this.hasDialogTarget && this.autoValue && !controller && (last === null || Date.now() - last > BREAK_MS)) {
+    // Asked for from the menu ("Previously on…": ?recap=1), or by itself after a break.
+    if (this.hasDialogTarget && (this.askedValue || (this.autoValue && !controller && (last === null || Date.now() - last > BREAK_MS)))) {
       // After the dialogue box has had its moment.
       this.timer = setTimeout(() => this.open(), 400)
     }
