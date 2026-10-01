@@ -51,7 +51,7 @@ RSpec.describe Battle::Effects do
       rng = ScriptedRng.new(99)
       ctx = Battle::Context.new(state, rng: rng)
       described_class.apply(ctx, ctx.unit("bartz"), ctx.unit("goblin_a"), effect("physical"))
-      expect(ctx.events).to eq([ { "type" => "miss", "actor" => "bartz", "target" => "goblin_a", "reason" => "evaded", "roll" => 100, "needed" => 97 } ])
+      expect(ctx.events).to eq([ { "type" => "miss", "actor" => "bartz", "target" => "goblin_a", "reason" => "evaded", "roll" => 1, "needed" => 4 } ])
     end
 
     it "halves hit chance when blind" do

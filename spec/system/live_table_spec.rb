@@ -22,6 +22,21 @@ RSpec.describe "The live table", type: :system do
     end
   end
 
+  it "moves the players' clock on when the GM passes time, through a new day, from their own table" do
+    campaign.set_out!(from_the_setting: true)
+    campaign.update!(time_of_day: "night") # so the next part is a new day, which saves the campaign again as the world moves on
+    seat(player, rook)
+    seat(gm, "gm")
+    as(player) { expect(page).to have_css("#table_time", text: /night/i) }
+
+    as(gm) do
+      within(".table__side .gm-tools") { find("[role=tab]", text: "Time").click }
+      click_on "A part of the day passes"
+    end
+
+    as(player) { expect(page).to have_css("#table_time", text: /day 2/i).and have_css("#table_time", text: /dawn/i) }
+  end
+
   it "whispers only to the GM and the character involved" do
     watcher = make_user("Watcher", admin: true)
     seat(gm, "gm")

@@ -66,9 +66,10 @@ deliberate divergence from much of what follows, and where the two disagree the 
 - **Choices** come up as a window with a red top edge under the dialogue: big italic options
   underlined in red that fill red when pressed, and who picked what in grey beside them. The GM
   sees "Settle on this" instead.
-- **A check** takes the middle of every screen: the character, the stat and the odds, then a
-  heavy number spinning to a stop and the verdict stamped in green or red, with a jingle.
-  Several go one after another.
+- **A check** takes the middle of every screen: the character, the stat and what it needs, then a
+  heavy number spinning to a stop, then each modifier in turn as a chip (+12 Agi, +15 Knight) while
+  the number moves by it, green up and red down, and the verdict stamped in green or red, with a
+  jingle. Several go one after another.
 - **The forecast** on the battle form is a tinted band with a heavy verdict word, coloured from
   green (Easy) to wine (Deadly).
 - **A town's services** are panels with a 3px frame, one per building: a white bar with the
@@ -344,21 +345,41 @@ The GM's table works the same way:
 
 The shared screen keeps its panels: it's watched, not played.
 
-### A player's screen
+### The Stage
 
-On a wide screen (1100px and up) a player's table is a game screen in three columns:
+The game is shown on one **Stage**: a 16:9 frame in the middle of every screen at the table, the
+same for everyone, and the one source of truth for what is happening. It takes the table's
+broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 
-- **Left: you.** A card with your portrait, name, level and archetype, HP and MP, and your sheet;
-  under it what you look up (Map · Party · What we know), the map open as a minimap.
-- **Middle: the scene.** The date, the place and the part of the day in one row, the Now line,
-  the place's picture when it has one, the dialogue box and the last lines said; and along its
-  bottom, **your moves**, a drawer kept in view as the page scrolls.
-- **Right: the log.**
+- **What it shows** is where the party is: the world map with the party's marker on it, or inside
+  a dungeon its floorplan; when the place has a picture, the picture fills the frame and the map
+  folds to a minimap in the top-left corner, so travel still reads. The date, the place and the
+  part of the day sit on a plate in the top-right corner. What's being said plays along the
+  bottom, in the dialogue box, and the map keeps clear of it.
+- **A battle plays on the same frame**, on its own page: the field fills it, the party's roster is
+  a band along its bottom, the round's rail along its top, and the lines said in the fight play
+  over it as at the table.
+- **The stage is display.** Nothing on it is pressed. Interaction and personal management (the
+  moves, the talk box, the GM's tools, what you look up, equipment, whispers) happen off the
+  stage: in the columns beside it and under it. Its links (open the map, visit the place) sit in
+  a caption under the frame.
 
-Each of the three side parts pins, the way the GM's log always has: pinned, it's a column (or the
+On a desktop (1100px and up) the page has no measure: it takes the whole width, and the screen is
+three columns with the pinned ones on the far edges:
+
+- **Left, on the edge: you** (a player's card with portrait, name, level and archetype, HP and MP,
+  and your sheet; under it what you look up, Party · What we know, the party open), or **the GM's
+  tools** with the same look-ups under them.
+- **Middle: the stage**, with the Now line over it and, under it, the last lines said and **your
+  moves** (a drawer kept in view as the page scrolls). The frame is as wide as the column allows,
+  or as tall as the screen allows, whichever comes first.
+- **Right, on the edge: the log.**
+
+The side parts pin, the way the GM's log always has: pinned, it's a column on its edge (or the
 drawer along the bottom); unpinned, it folds away (the left column to a "You" tab on the edge,
 your moves to their bar, the log to its tab) and opens when pressed. Each stays as you left it, in
-this browser. On a phone it's one column: you, the scene, your moves, what you look up.
+this browser. On a phone it's one column: you, the Now line, the stage, your moves, what you look
+up; the date sits under the frame there.
 
 ### The table
 
@@ -388,8 +409,8 @@ this browser. On a phone it's one column: you, the scene, your moves, what you l
   panel shows it, its line stays in the log only.
 - **A long sheet keeps its section links on screen**: stuck to the top, and on a phone on one line
   that scrolls sideways, fading at the edge where there's more.
-- **Dialogue first.** The table leads with the dialogue box; the map sits to the side with the
-  party's HP and MP, which follow battles and rests live.
+- **Dialogue on the stage.** What's said plays along the bottom of the stage, over the map or the
+  place; the party's HP and MP are in the left column, and follow battles and rests live.
 - **The last few lines** said at the table sit under the dialogue box, whoever said them, so
   nobody opens the log to follow the story. The log drawer is still the record. A whisper to you
   pops up for a moment.
@@ -425,8 +446,11 @@ this browser. On a phone it's one column: you, the scene, your moves, what you l
 - **Choosing a first move is being ready**: the Ready button says so, and goes once you've chosen.
 - **Guests play; accounts make games.** Someone in by an invite with just a name isn't offered
   "New world" or "New campaign", and is turned back if they go there.
-- **A check says its chance one way**: "needed 40 or under · rolled 99", on the card and in the
-  log alike. The GM's check form has "Everyone standing" over the names.
+- **High is good, everywhere.** Every die in the game is read the same way: a big roll is good
+  news and a small one bad, for the party and for its enemies alike. A check needs its total to
+  reach a number ("needed 66 or over · rolled 43 +12 Agi +15 Knight = 70"), on the card and in
+  the log alike, and a battle's dice come in when they reach what was needed. Nothing is ever
+  "under". The GM's check form has "Everyone standing" over the names.
 - **Things to do here get wide buttons** under Where next?, so "Wait for the train that isn't
   there (until day, tomorrow)" reads on a line or two; the roads keep their narrower ones.
 - **A rolled encounter is what's happening now.** The Now line says "Encounter! 2 × Empty
@@ -619,6 +643,9 @@ Record each place where the game needed more than the Swiss defaults: what chang
 - **The play layer** (above) adds a game-menu cursor, a help line, highlighted targets and key
   bindings. It changes behaviour rather than style, so it is less a break from Swiss than an
   addition to it.
+- **No measure on a desktop.** The page's 1200px measure goes at 1100px and up: a game is played
+  on the whole screen, with the pinned columns on its far edges and the Stage between them. The
+  books keep their own measures (prose at 64ch, forms at 1000px).
 - **Low HP turns amber.** At a quarter of max HP or less, the HP number and bar go amber
   (`--caution`), in the roster, the player's own panel, the GM's unit table and the table's party
   panel (still there, not blinking: nothing is urgent outside a fight). A bold black

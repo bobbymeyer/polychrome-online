@@ -298,11 +298,15 @@ everything outside battle.
   One choice is open at a time.
 - **Checks.** The GM calls for one from the table: who tries, a stat (Str,
   Mag, Vit, Spr, Agi), a difficulty (Easy, Normal, Hard, Heroic) and what
-  for. `Stats::Check` (pure) turns the character's stat into a chance: at
-  Normal, a stat typical for their level is an even chance, each point
-  counts for less at higher levels, and it's always 5–95%. The roll comes
-  from the campaign's RNG. Everyone at the table watches the number spin
-  and land; the log keeps the chance and the roll.
+  for. `Stats::Check` (pure) rolls a d100 and adds each modifier in turn:
+  the character's stat against what's typical for their level (each point
+  counts for less at higher levels), then any bonus (an archetype good at
+  the skill, an origin). The total has to reach what the difficulty needs
+  (51 at Normal: a typical stat is an even chance); a natural 1–5 always
+  fails and a natural 96–100 always succeeds, so it's always 5–95%. The
+  roll comes from the campaign's RNG. Everyone at the table watches the
+  number spin and land, then move with each modifier; the log keeps the
+  roll, the steps and the total.
 - **How a fight will go.** The battle form and a scene's battle ending show
   a forecast as the GM picks who fights and what they face:
   `Battle::Forecast` (pure) plays the fight out 20 times with everyone
@@ -994,10 +998,13 @@ defend buff_applied buff_expired turn_skipped action_failed timeout
 desperation unit_joined unit_left`.
 
 **Dice.** Every chance the engine rolls is a d100 (`Rng#d100`, the same
-single draw as before, so the stream and the replays are unchanged). The
-rolls that decide something are recorded in their events as `roll` and
-`needed`: hits that miss, crits, statuses landing or resisted, steals and
-getaways. The board shows each one as a die beside the unit (green when it
+single draw as before, so the stream and the replays are unchanged), and
+high is good, everywhere: a roll comes in when it reaches what was needed
+(`Rng.target`: the top `chance` percent of the die, so a 70% chance needs
+31 or over). The rolls that decide something are recorded in their events
+as `roll` and `needed`: hits that miss, crits, statuses landing or
+resisted, steals and getaways; a ruling's `custom_roll` also carries its
+`modifiers` and `total`. The board shows each one as a die beside the unit (green when it
 came in, wine when it didn't), and the log says "(rolled 98, needed 90 or
 under)". The property specs check the dice are honest.
 

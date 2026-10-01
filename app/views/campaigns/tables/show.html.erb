@@ -24,6 +24,8 @@
   <% if player %>
     <%= render "campaigns/tables/player_screen" %>
   <% else %>
+  <div class="table__main">
+    <div class="table__stage">
   <header class="battle__header">
     <div>
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= { "screen" => "Shared screen", "controller" => "Controller" }.fetch(view, "Table") %></p>
@@ -42,14 +44,12 @@
         <button type="button" class="link-button recap-link" data-action="recap#open">Previously on <%= @campaign.name %>…</button>
       <% end %>
     </div>
-    <%= render "campaigns/tables/time", campaign: @campaign %>
+    <%# A phone controller has no stage: the date sits in its head. %>
+    <%= render "campaigns/tables/time", campaign: @campaign if view == "controller" %>
   </header>
   <%= render "campaigns/tables/now", campaign: @campaign, gm: @seat.gm? %>
-
-  <div class="table__main">
-    <div class="table__stage">
     <% unless view == "controller" %>
-    <%= render "campaigns/tables/dialogue_box", last_dialogue: @last_dialogue %>
+    <%= render "campaigns/tables/stage", campaign: @campaign, gm: @seat.gm?, last_dialogue: @last_dialogue %>
     <% end %>
     <%# The last few lines said, whoever said them (on a controller, what just happened): the log drawer keeps everything. %>
     <section class="recent-lines" aria-label="Just said" hidden data-controller="recent-lines"
@@ -79,41 +79,22 @@
     <% if view == "screen" %>
       <%= render "campaigns/tables/coop_join", campaign: @campaign %>
     <% end %>
-    <% unless view == "controller" %>
-    <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
-    <% map = capture do %>
-    <section class="window table__map" aria-label="Map">
-      <%# Inside a dungeon, its floorplan stands in for the world map. %>
-      <%= render "campaigns/tables/floorplan", campaign: @campaign, gm: @seat.gm? %>
-      <%= render "campaigns/maps/canvas", campaign: @campaign, gm: @seat.gm? %>
-      <p class="hint">
-        <%= link_to(@seat.gm? ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %>
-        <%= render "campaigns/tables/here", campaign: @campaign %>
-      </p>
-      <% if @seat.gm? && @campaign.map_nodes.where(visible: false).exists? %>
-        <p class="hint gm-only-hint">Faded places are hidden: only you see them.</p>
-      <% end %>
-    </section>
-    <% end %>
     <% if @seat.gm? && !view %>
       <%# The GM's tools first, where they can be reached mid-scene; then what the GM looks up, in tabs:
-          the map open on a wide screen, the party and what the party knows a press away. %>
+          the party open on a wide screen, what the party knows a press away (the map is on the stage). %>
       <%= render "campaigns/tables/gm/tools", campaign: @campaign %>
-      <div class="drawers" data-controller="drawers" data-drawers-wide-value="map">
+      <div class="drawers" data-controller="drawers" data-drawers-wide-value="party">
         <div class="drawers__tabs" role="group" aria-label="Look up">
-          <% { "map" => "Map", "party" => "Party", "knows" => "What they know" }.each do |key, label| %>
+          <% { "party" => "Party", "knows" => "What they know" }.each do |key, label| %>
             <%= tag.button label, type: "button", class: "drawers__tab drawers__tab--#{key}", aria: { expanded: false, controls: "drawer_#{key}" },
                                   data: { drawers_target: "tab", key: key, action: "drawers#toggle" } %>
           <% end %>
         </div>
-        <div id="drawer_map" class="drawers__panel" hidden data-drawers-target="panel" data-key="map"><%= map %></div>
         <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party"><%= render "campaigns/tables/party", campaign: @campaign %></div>
         <div id="drawer_knows" class="drawers__panel" hidden data-drawers-target="panel" data-key="knows"><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: true %></div>
       </div>
-    <% else %>
-      <%= map %>
+    <% elsif view != "controller" %>
       <%= render "campaigns/tables/party", campaign: @campaign %>
-    <% end %>
     <% end %>
     <%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? unless @seat.gm? && !view %>
     </div>

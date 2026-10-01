@@ -65,6 +65,8 @@
     <%# What the round came to, once it's played, until the next one starts. %>
     <p class="round-tally" data-battle-player-target="tally" aria-live="polite" hidden></p>
     <div class="fx" data-battle-player-target="fx" aria-hidden="true"></div>
+    <%# What's said plays on the stage, along its bottom, as at the table. %>
+    <%= render "campaigns/tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
   </div>
 
   <div class="battle__lower">
@@ -88,8 +90,6 @@
         <% end %>
       </div>
     <% end %>
-
-    <%= render "campaigns/tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
   </div>
 
   <% if view == "controller" %>

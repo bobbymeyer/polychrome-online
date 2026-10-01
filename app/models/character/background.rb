@@ -9,7 +9,13 @@ module Character::Background
   # bonus, if it's good at it.
   # The job's bonus, and the origin's if it's this skill.
   def skill_bonus(slug)
-    (job.skills.include?(slug.to_s) ? Job::SKILL_BONUS : 0) + (origin_entry&.dig("skill") == slug.to_s ? World::ORIGIN_BONUS : 0)
+    skill_bonuses(slug).sum { |b| b["amount"] }
+  end
+
+  # Each bonus by name, for a check to add in turn: [{ "label" => "Knight", "amount" => 15 }].
+  def skill_bonuses(slug)
+    [ ({ "label" => job.name, "amount" => Job::SKILL_BONUS } if job.skills.include?(slug.to_s)),
+      ({ "label" => origin_entry["name"] || "Origin", "amount" => World::ORIGIN_BONUS } if origin_entry&.dig("skill") == slug.to_s) ].compact
   end
 
   def origin_entry

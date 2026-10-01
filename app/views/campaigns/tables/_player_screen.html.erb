@@ -1,6 +1,7 @@
-<%# A player's screen (docs/DESIGN.md, "A player's screen"): who you are, then what's going on, then what you
-    can do, then what you look up. On a wide screen: you and what you look up on the left, the scene in the middle
-    with your moves along its bottom, the log on the right, each pinned or folded away (stage.css); on a phone, one column. %>
+<%# A player's screen (docs/DESIGN.md, "The Stage"): who you are, then what's going on, then what you can do,
+    then what you look up. On a wide screen: you and what you look up on the left edge, the stage in the middle
+    with your moves along its bottom, the log on the right edge, each pinned or folded away (stage.css); on a
+    phone, one column. %>
 <% character = @seat.character %>
 <div class="player-screen" data-controller="pinnable" data-pinnable-key-value="polychrome.youPinned">
   <%# On a wide screen, unpinned, the left column slides out from this tab. %>
@@ -21,20 +22,13 @@
       <%= link_to "My sheet →", character_path(character), class: "player-screen__sheet" %>
     </div>
   </section>
-  <%# Not what you do, but what you look up: one at a time. On a wide screen it's under you, the map open as a minimap. %>
-  <div class="drawers player-screen__lookup" data-controller="drawers" data-drawers-wide-value="map">
+  <%# Not what you do, but what you look up: one at a time. On a wide screen it's under you, the party open (the map is on the stage). %>
+  <div class="drawers player-screen__lookup" data-controller="drawers" data-drawers-wide-value="party">
     <div class="drawers__tabs" role="group" aria-label="Look up">
-      <% { "map" => "Map", "party" => "Party", "knows" => "What we know" }.each do |key, label| %>
+      <% { "party" => "Party", "knows" => "What we know" }.each do |key, label| %>
         <%= tag.button label, type: "button", class: "drawers__tab drawers__tab--#{key}", aria: { expanded: false, controls: "drawer_#{key}" },
                               data: { drawers_target: "tab", key: key, action: "drawers#toggle" } %>
       <% end %>
-    </div>
-    <div id="drawer_map" class="drawers__panel" hidden data-drawers-target="panel" data-key="map">
-      <section class="window table__map" aria-label="Map">
-        <%= render "campaigns/tables/floorplan", campaign: @campaign, gm: false %>
-        <%= render "campaigns/maps/canvas", campaign: @campaign, gm: false %>
-        <p class="hint"><%= link_to "Open the map →", campaign_map_path(@campaign) %> <%= render "campaigns/tables/here", campaign: @campaign %></p>
-      </section>
     </div>
     <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party"><%= render "campaigns/tables/party", campaign: @campaign %></div>
     <div id="drawer_knows" class="drawers__panel" hidden data-drawers-target="panel" data-key="knows"><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: false %></div>
@@ -47,11 +41,9 @@
         <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · Table</p>
         <h1><%= @campaign.name %></h1>
       </div>
-      <%= render "campaigns/tables/time", campaign: @campaign %>
     </header>
     <%= render "campaigns/tables/now", campaign: @campaign, gm: false %>
-    <%= render "campaigns/tables/scene", campaign: @campaign %>
-    <%= render "campaigns/tables/dialogue_box", last_dialogue: @last_dialogue %>
+    <%= render "campaigns/tables/stage", campaign: @campaign, gm: false, last_dialogue: @last_dialogue %>
     <section class="recent-lines" aria-label="Just said" hidden data-controller="recent-lines"
              data-recent-lines-seat-value="<%= character.name %>" data-recent-lines-count-value="4">
       <ol data-recent-lines-target="list"></ol>

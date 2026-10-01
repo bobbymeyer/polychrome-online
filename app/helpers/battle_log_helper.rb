@@ -140,9 +140,13 @@ module BattleLogHelper
     "#{name.to_s.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{name}"
   end
 
-  # The d100 behind an outcome, for the log: " (rolled 98, needed 90 or under)".
+  # The d100 behind an outcome, for the log: " (rolled 3, needed 11 or over)"; a check's
+  # modifiers in turn: " (rolled 43 +12 Agi +15 Stealth = 70, needed 66 or over)".
   def dice_note(event)
-    " (rolled #{event['roll']}, needed #{event['needed']} or under)" if event["roll"]
+    return unless event["roll"]
+
+    steps = (event["modifiers"] || []).map { |m| " #{m['amount'].to_i.negative? ? '−' : '+'}#{m['amount'].to_i.abs} #{stat_label(m['label'])}" }.join
+    " (rolled #{event['roll']}#{"#{steps} = #{event['total']}" if steps.present?}, needed #{event['needed']} or over)"
   end
 
   def flee_line(event)

@@ -63,7 +63,7 @@ RSpec.describe "Field abilities", type: :request do
     kim = hero("thief", name: "Kim")
     use = use!(kim, difficulty: "hard")
     check = campaign.messages.where(cue: "check").last
-    expect(check.body).to match(/\AKim: Pick Lock \(Thievery, hard, \+15 Thief\)\. needed \d+ or under · rolled \d+/)
+    expect(check.body).to match(/\AKim: Pick Lock \(Thievery, hard, \+15 Thief\)\. needed \d+ or over · rolled \d+/)
     expect(use).to have_attributes(status: "done", difficulty: "hard")
     expect(kim.reload).to be_field_used
 

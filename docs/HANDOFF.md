@@ -51,6 +51,8 @@ Ability effects are a fixed set of named formulas with parameters. First set:
 
 Plus targeting: `self`, `single_ally`, `single_enemy`, `all_allies`, `all_enemies`, `random_enemy`. Add primitives only when the base world needs one. No expression language.
 
+**High is good.** Every die and every number the players read is big-good, little-bad: a d100 comes in when it reaches what was needed, a check adds its modifiers to the roll and has to reach a target, and no mechanic is ever roll-under. A shown roll is the honest die; what moves it is shown as steps, in order.
+
 Damage types and skills are **not** in the closed set: they are the world's nouns, not the engine's verbs. Each world lists its own types (one or many; the first is the plain one), the chart between them, which statuses each shrugs off and the type of each terrain (`worlds.damage_types`, `worlds.terrain_types`). A battle copies its world's chart into its state, so replays stay exact when the chart changes. Removing a type sends its uses to another and drops monsters' affinities with it (`TypeChange`). Each world also lists its skills, each on a stat (`worlds.skills`); a job adds +15 to the ones it's good at (`jobs.skills`). The statuses, stats and passives stay closed: the engine has code behind each.
 
 The effect library (`Battle::PRIMITIVES`) is meant to be broad, and flavoured by the world: damage (physical or typed, with bonuses against a status, type, the undead or bosses, recoil and grudge), heal (which hurts the undead), drain, status (including aggro, stop, berserk, confuse, charged, doom), buff and debuff, revive, cleanse, steal, scan, **away** (the user or the target leaves the field for some turns; Jump is one), shield, imbue, percent-of-HP damage and MP sap. An ability can cost HP and take turns to charge. The Grimoire writes tiered families (Fire, Fira, Firaga, Firaja) from one form. Outside battle, a job's **field ability** is a skill check the player asks for and the GM approves, with one of the game's outcomes on a success, once per rest (`FieldUse`); it rolls as any check does (`Campaign#check!`), and a check the GM calls can have an outcome on a success too.
@@ -132,6 +134,8 @@ Test both modules exhaustively with RSpec. Property-style tests on the resolver 
 - Sprites are SVG groups or PNGs in the DOM. No canvas.
 
 ## 7. Other surfaces
+
+**The Stage.** The game is shown on one 16:9 frame in the middle of every screen at the table, the same for everyone and the source of truth for what is happening: where the party is (the map or the floorplan, the place's picture behind them), the date, what's being said, and a battle when one is on. It takes the campaign's broadcasts, so it changes under everyone at once. The stage is display: interaction and personal management (moves, talk, the GM's tools, equipment, whispers) happen off it, in the columns beside it and under it.
 
 **World map.** SVG pointcrawl. Nodes and edges are Rails partials; GM edits (reveal, add/cut edge, change edge state, drop encounter table) land via Turbo Streams. FF world maps are pointcrawls with walking theater; drop the theater.
 
