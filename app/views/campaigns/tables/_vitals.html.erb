@@ -1,7 +1,7 @@
 <%# A character's HP and MP at a glance (the table's party panel, the local co-op controller). A quarter
     of HP or less is amber, as in battle (docs/DESIGN.md, "Low HP turns amber"). %>
 <% band = hp_band("hp" => character.current_hp, "stats" => character.stats) %>
-<p class="vitals" id="<%= dom_id(character, :vitals) %>">
+<p class="vitals" <%= tag.attributes(id: (dom_id(character, :vitals) unless local_assigns[:copy])) %>>
   <span class="label"><%= word("hp", character.campaign.world) %></span> <strong class="<%= 'is-low' if band == 'danger' %>"><%= character.current_hp %></strong><span class="muted">/<%= character.stats["max_hp"] %></span>
   <span class="bar"><span class="bar__fill bar__fill--<%= band %>" style="width: <%= (100.0 * character.current_hp / character.stats["max_hp"]).round %>%"></span></span>
   <span class="label"><%= word("mp", character.campaign.world) %></span> <strong><%= character.current_mp %></strong><span class="muted">/<%= character.stats["max_mp"] %></span>

@@ -75,6 +75,22 @@ RSpec.describe "The table", type: :request do
   describe "a player" do
     before { sit(bartz.id) }
 
+    it "has their moves together, themselves up top, and says who hears what they say" do
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      moves = page.at("section.your-moves")
+      expect(moves.text).to include("Your moves")
+      expect(moves.at("#table_choice")).to be_present
+      expect(moves.at("#composer")).to be_present
+      you = page.at(".table-you")
+      expect(you.text.squish).to include("You Bartz")
+      expect(you.at(".vitals")["id"]).to be_nil # the party panel's row keeps the id broadcasts look for
+      expect(page.css("##{ActionView::RecordIdentifier.dom_id(bartz, :vitals)}").size).to eq(1)
+
+      get campaign_composer_path(campaign)
+      expect(response.body).to include("Everyone at the table hears it, said as Bartz. Whisper and only the GM does.")
+    end
+
     it "always speaks as their own character, whatever the params say" do
       say(body: "Hi!", speaker: "npc:#{cid.id}", expression: "happy")
       expect(campaign.messages.last).to have_attributes(speaker: bartz, expression: "happy", scope: "table")
@@ -329,6 +345,14 @@ RSpec.describe "The table", type: :request do
 
       travel Character::HERE_FOR + 1.second
       expect(bartz.reload).not_to be_here
+    end
+
+    it "gives the GM no player's tag or You line, and says who hears a whisper" do
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(response.body).not_to include("your-moves__tag", "table-you")
+      get campaign_composer_path(campaign)
+      expect(response.body).to include("Everyone hears it, unless you whisper")
     end
 
     it "marks what only the GM sees" do

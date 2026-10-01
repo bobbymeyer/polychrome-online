@@ -26,6 +26,12 @@
       <h1><%= view == "controller" && @seat.character? ? @seat.name : @campaign.name %></h1>
       <% if view == "controller" && @seat.character? %>
         <%= render "campaigns/tables/vitals", character: @seat.character %>
+      <% elsif @seat.character? && view != "screen" %>
+        <%# Who you are, up top: your own HP and MP, kept in step with your row in the party panel. %>
+        <div class="table-you" data-controller="mirror" data-mirror-from-value="#table_party [data-character='<%= @seat.character.id %>'] .vitals">
+          <span class="table-you__label">You</span> <strong><%= @seat.name %></strong>
+          <div data-mirror-target="slot"><%= render "campaigns/tables/vitals", character: @seat.character, copy: true %></div>
+        </div>
       <% end %>
       <% if @recap %>
         <button type="button" class="link-button recap-link" data-action="recap#open">Previously on <%= @campaign.name %>…</button>
@@ -45,14 +51,22 @@
              data-recent-lines-seat-value="<%= @seat.character&.name %>" data-recent-lines-count-value="<%= view == "controller" ? 2 : 4 %>">
       <ol data-recent-lines-target="list"></ol>
     </section>
-    <%= render "choices/panel", choice: @campaign.open_choice %>
-    <%= render "campaigns/tables/ways", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
-    <% if @seat.seated? && !view %>
-      <%# Talk where the story is: right under it, not below the map. %>
-      <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
-        <div class="window"><p class="muted">Loading…</p></div>
+    <%# A player's moves sit together, under one tag: the vote, the ways on, their field ability, then talk. %>
+    <% moves = @seat.character? && view != "screen" %>
+    <%= tag.section(class: "your-moves", aria: { label: "Your moves" }) do %>
+      <% if moves %>
+        <p class="your-moves__tag">Your moves</p>
+        <p class="hint your-moves__hint">Pick when the party decides, suggest where to go next, use your field ability, or talk at the table.</p>
       <% end %>
-      <%= render "campaigns/field_uses/ability", character: @seat.character if @seat.character? %>
+      <%= render "choices/panel", choice: @campaign.open_choice %>
+      <%= render "campaigns/tables/ways", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
+      <% if @seat.seated? && !view %>
+        <%= render "campaigns/field_uses/ability", character: @seat.character if @seat.character? %>
+        <%# Talk where the story is: right under it, not below the map. %>
+        <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
+          <div class="window"><p class="muted">Loading…</p></div>
+        <% end %>
+      <% end %>
     <% end %>
     </div>
 

@@ -287,6 +287,12 @@ keyboard, a mouse or a finger.
 - **What only the GM sees is marked.** The tools column has its dashed tag; under the map, "Faded
   places are hidden: only you see them"; and "The party knows" says "Everyone at the table sees
   this" to the GM.
+- **A player's moves sit together** under a red "Your moves" tag: the vote, the ways on, their
+  field ability, then talk, in that order. The talk box says who hears it ("Everyone at the
+  table hears it, said as Hoshi. Whisper and only the GM does."), and the GM's says the same of
+  their whispers.
+- **You, up top.** Under the campaign's name a player sees "You · Hoshi" with their own HP and MP,
+  kept in step with their row in the party panel, so they never scroll to the bottom to see it.
 - **Dialogue first.** The table leads with the dialogue box; the map sits to the side with the
   party's HP and MP, which follow battles and rests live.
 - **The last few lines** said at the table sit under the dialogue box, whoever said them, so

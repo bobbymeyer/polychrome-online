@@ -10,7 +10,7 @@
   <% end %>
   <ol class="coop-party__list">
     <% party.each do |character| %>
-      <li class="<%= 'is-ko' unless character.conscious? %>">
+      <li class="<%= 'is-ko' unless character.conscious? %>" data-character="<%= character.id %>">
         <%= entry_portrait(character.job, size: :small) %>
         <div>
           <strong><%= link_to character.name, character_path(character), data: { turbo_frame: "_top" } %></strong>

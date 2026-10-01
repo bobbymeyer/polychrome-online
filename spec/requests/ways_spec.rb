@@ -36,7 +36,7 @@ RSpec.describe "Where next", type: :request do
     # Voting, the player sees the ways once: in the vote, not in Where next as well.
     get campaign_table_path(campaign)
     expect(response.body).to include("What will the party do?", "To Greymere")
-    expect(response.body).not_to include("suggest")
+    expect(response.body).not_to include(%(menu__cost">suggest)) # no suggest buttons
 
     sign_out
     sign_in_as(@admin)

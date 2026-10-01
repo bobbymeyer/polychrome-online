@@ -37,6 +37,16 @@ RSpec.describe "Moments at the table", type: :system do
     expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Trust Cid")
   end
 
+  it "keeps the player's own HP up top in step with the party panel" do
+    seat(player, rook)
+    as(player) do
+      expect(page).to have_css(".table-you", text: "Rook")
+      wait_for_streams
+      rook.update!(hp: 7)
+      expect(page).to have_css(".table-you .vitals strong", text: /\A7\z/)
+    end
+  end
+
   it "stops the table for a deadline and an awakening: one card at a time, up over everything, then put away" do
     seat(player, rook)
     clock = campaign.clocks.create!(name: "The tide", segments: 2, public: true, full_line: "The tide comes in over the platforms.")
