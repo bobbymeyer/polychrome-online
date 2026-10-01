@@ -3,7 +3,9 @@
     Replaced live with the table's panels, once for the GM and once for everyone else. %>
 <% battle = campaign.current_battle %>
 <% choice = campaign.open_choice %>
-<section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %>" aria-label="Right now" aria-live="polite">
+<%# data-state says which: a player's moves follow it (stage.css, "What you can do now"). %>
+<% state = battle ? "battle" : campaign.pending_encounter.present? ? "encounter" : choice ? "choice" : "free" %>
+<section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>">
   <p class="table-now__label">Now</p>
   <p class="table-now__what">
     <% if battle %>

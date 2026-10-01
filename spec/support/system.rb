@@ -44,7 +44,8 @@ module SystemHelpers
     return wait_for_streams unless seat
 
     within("section", text: "Take a seat") { click_on(seat == "gm" ? "Game Master" : seat.name, match: :prefer_exact) }
-    expect(page).to have_text("At the table as #{seat == 'gm' ? 'GM' : seat.name}")
+    # The GM's seat is said under the name; a player's is the "You" line (their Change seat is in the menu).
+    expect(page).to(seat == "gm" ? have_text("At the table as GM") : have_css(".table-you", text: seat.name))
     wait_for_streams
   end
 

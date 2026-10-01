@@ -5,8 +5,16 @@
 <% end %>
 
 <% view = coop_view %>
+<%# A player's table shows what they can do now; the rest is a tap away (docs/DESIGN.md, "What you can do now"). %>
+<% player = @seat.character? && view.nil? %>
+<% if player %>
+  <% content_for :table_menu do %>
+    <%= link_to "Previously on…", campaign_table_path(@campaign, recap: 1) if @recap %>
+    <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
+  <% end %>
+<% end %>
 <div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment<%= " heartbeat" if @seat.character? %>" <%= tag.attributes(data: { heartbeat_url_value: (campaign_presence_path(@campaign) if @seat.character?) }) %> <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
-     data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
+     data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>" data-recap-asked-value="<%= params[:recap].present? %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%= render "campaigns/tables/cards" %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
@@ -17,7 +25,7 @@
     <div>
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= { "screen" => "Shared screen", "controller" => "Controller" }.fetch(view, "Table") %></p>
       <%# Where you sit, up here with the name rather than under everything else. %>
-      <% if @seat.seated? && view != "screen" %>
+      <% if @seat.seated? && view != "screen" && !player %>
         <p class="hint table__seat">
           At the table as <strong><%= @seat.name %></strong> ·
           <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
@@ -33,7 +41,7 @@
           <div data-mirror-target="slot"><%= render "campaigns/tables/vitals", character: @seat.character, copy: true %></div>
         </div>
       <% end %>
-      <% if @recap %>
+      <% if @recap && !player %>
         <button type="button" class="link-button recap-link" data-action="recap#open">Previously on <%= @campaign.name %>…</button>
       <% end %>
     </div>
@@ -56,16 +64,18 @@
     <%= tag.section(class: "your-moves", aria: { label: "Your moves" }) do %>
       <% if moves %>
         <p class="your-moves__tag">Your moves</p>
-        <p class="hint your-moves__hint">Pick when the party decides, suggest where to go next, use your field ability, or talk at the table.</p>
       <% end %>
       <%= render "choices/panel", choice: @campaign.open_choice %>
       <%= render "campaigns/tables/ways", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
       <%# A controller has its field ability here too, with its other moves, not under the links. %>
       <%= render "campaigns/field_uses/ability", character: @seat.character if @seat.character? && (!view || view == "controller") %>
       <% if @seat.seated? && !view %>
-        <%# Talk where the story is: right under it, not below the map. %>
-        <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
-          <div class="window"><p class="muted">Loading…</p></div>
+        <%# Talk where the story is: right under it, not below the map. A player's is a button that opens it. %>
+        <% composer = turbo_frame_tag("composer", src: campaign_composer_path(@campaign)) { tag.div(tag.p("Loading…", class: "muted"), class: "window") } %>
+        <% if player %>
+          <details class="talk"><summary class="button button--quiet">Say something</summary><%= composer %></details>
+        <% else %>
+          <%= composer %>
         <% end %>
       <% end %>
     <% end %>
@@ -77,6 +87,7 @@
     <% end %>
     <% unless view == "controller" %>
     <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
+    <% map = capture do %>
     <section class="window table__map" aria-label="Map">
       <%# Inside a dungeon, its floorplan stands in for the world map. %>
       <%= render "campaigns/tables/floorplan", campaign: @campaign, gm: @seat.gm? %>
@@ -89,11 +100,28 @@
         <p class="hint gm-only-hint">Faded places are hidden: only you see them.</p>
       <% end %>
     </section>
+    <% end %>
+    <% if player %>
+      <%# Not what you do, but what you look up: one at a time, closed until asked for. %>
+      <div class="drawers" data-controller="drawers">
+        <div class="drawers__tabs" role="group" aria-label="Look up">
+          <% { "map" => "Map", "party" => "Party", "knows" => "What we know" }.each do |key, label| %>
+            <%= tag.button label, type: "button", class: "drawers__tab drawers__tab--#{key}", aria: { expanded: false, controls: "drawer_#{key}" },
+                                  data: { drawers_target: "tab", key: key, action: "drawers#toggle" } %>
+          <% end %>
+        </div>
+        <%= tag.div id: "drawer_map", class: "drawers__panel", hidden: true, data: { drawers_target: "panel", key: "map" } do %><%= map %><% end %>
+        <%= tag.div id: "drawer_party", class: "drawers__panel", hidden: true, data: { drawers_target: "panel", key: "party" } do %><%= render "campaigns/tables/party", campaign: @campaign %><% end %>
+        <%= tag.div id: "drawer_knows", class: "drawers__panel", hidden: true, data: { drawers_target: "panel", key: "knows" } do %><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: false %><% end %>
+      </div>
+    <% else %>
+    <%= map %>
     <%# The GM's tools beside the play, where they can be reached mid-scene. %>
     <%= render "campaigns/tables/gm/tools", campaign: @campaign if @seat.gm? && !view %>
     <%= render "campaigns/tables/party", campaign: @campaign %>
     <% end %>
-    <%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? %>
+    <% end %>
+    <%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? unless player %>
     </div>
   </div>
 

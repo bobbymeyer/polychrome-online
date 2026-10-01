@@ -40,6 +40,33 @@ RSpec.describe "Moments at the table", type: :system do
     expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Trust Cid")
   end
 
+  it "shows a player what they can do now: tabs for what they look up, and a battle takes their moves" do
+    seat(player, rook)
+    as(player) do
+      expect(page).to have_css(".your-moves", visible: true)
+      expect(page).to have_no_css("#table_party", visible: true)
+      click_button "Party"
+      expect(page).to have_css("#table_party", visible: true, text: "Rook")
+      click_button "Map"
+      expect(page).to have_no_css("#table_party", visible: true)
+      click_button "Map"
+      expect(page).to have_no_css("#map_canvas", visible: true) # pressing the open one closes it
+      find("details.talk summary", text: "Say something").click
+      expect(page).to have_css("#composer textarea", visible: true)
+
+      wait_for_streams
+      rook.update!(hp: 0)
+      # The tab says so without opening it (its ::after, from the party panel it hides).
+      page.document.synchronize do
+        badge = page.evaluate_script(%(getComputedStyle(document.querySelector(".drawers__tab--party"), "::after").content))
+        raise Capybara::ExpectationNotMet, badge unless badge.include?("down")
+      end
+      start_battle(campaign: campaign)
+      expect(page).to have_css("#table_now[data-state=battle]")
+      expect(page).to have_no_css(".your-moves", visible: true)
+    end
+  end
+
   it "keeps the player's own HP up top in step with the party panel" do
     seat(player, rook)
     as(player) do

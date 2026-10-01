@@ -16,7 +16,10 @@ RSpec.describe "The live table", type: :system do
 
     campaign.secrets.create!(body: "Met the king.").reveal!
 
-    as(player) { expect(page).to have_css("#party_knows", text: "Met the king") }
+    as(player) do
+      click_button "What we know" # the tab comes up once there's something to know
+      expect(page).to have_css("#party_knows", text: "Met the king")
+    end
   end
 
   it "whispers only to the GM and the character involved" do

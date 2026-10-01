@@ -271,6 +271,24 @@ keyboard, a mouse or a finger.
 - **Setting out.** A new campaign starts in its setting's first town, with three Potions and a
   Phoenix Down. The GM sees how a fight is likely to go beside every Fight button.
 
+### What you can do now
+
+A player's table offers what they can do at this moment, and nothing else up front:
+
+- **Moves follow the table's state** (the Now line's `data-state`). In a battle the moves go: the
+  Now line has the way in. With an encounter waiting or a vote open, only the vote and talk
+  are left. In free play: the ways on, the things to do here, the field ability, and talk.
+- **A move you can't make isn't offered.** A used field ability, or one asked for, is a line
+  saying so ("Pick Lock: used. It's back after a rest."). Things to do the purse can't pay for,
+  and doors still locked, aren't shown to players.
+- **Talk is a button**, "Say something", that opens the box (and its To and Expression).
+- **What you look up is in tabs**: Map · Party · What we know, closed until pressed, one at a
+  time. The Party tab says "hurt" or "someone's down" without opening; What we know appears
+  once there's something to know. Your own HP stays in the "You" line.
+- **The header's extras are in the menu**: "Previously on…" and "Change seat".
+
+The GM's table and the shared screen keep their panels for now.
+
 ### The table
 
 - **Now, in one line.** Under the header, a strip says what the table is doing and whose move it

@@ -51,7 +51,8 @@ RSpec.describe "Field abilities", type: :request do
     post campaign_field_uses_path(campaign)
     expect(campaign.messages.last.body).to eq("Kim wants to Pick Lock.")
     get campaign_table_path(campaign)
-    expect(response.body).to include("Waiting on the GM")
+    expect(response.body).to include("Pick Lock: asked for. Waiting on the GM…")
+    expect(response.body).not_to include("Use Pick Lock") # not a move you can make now
 
     sit("gm")
     get campaign_table_path(campaign)

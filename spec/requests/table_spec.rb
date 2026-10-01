@@ -30,7 +30,7 @@ RSpec.describe "The table", type: :request do
     sit(bartz.id)
     get campaign_table_path(campaign)
     expect(response.body.scan("<turbo-cable-stream-source").size).to eq(4) # + Bartz's whispers
-    expect(response.body).to include("At the table as <strong>Bartz</strong>")
+    expect(response.body).to include('<span class="table-you__label">You</span> <strong>Bartz</strong>')
     # The day clock: a slice per part of the day, turned so the part it is now is at the top.
     parts = campaign.almanac.periods
     expect(response.body).to include('class="day-clock"', %(data-day-clock-turn-value="#{-(campaign.parts_gone * 360.0 / parts.size)}"))
@@ -89,6 +89,23 @@ RSpec.describe "The table", type: :request do
 
       get campaign_composer_path(campaign)
       expect(response.body).to include("Everyone at the table hears it, said as Bartz. Whisper and only the GM does.")
+    end
+
+    it "shows what they can do now, and keeps the rest a tap away" do
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      expect(page.at("#table_now")["data-state"]).to eq("free")
+      expect(page.at("details.talk summary").text).to eq("Say something") # talk is a button until it's wanted
+      expect(page.at("details.talk #composer")).to be_present
+      %w[map party knows].each { |key| expect(page.at("#drawer_#{key}")["hidden"]).not_to be_nil } # looked up, not shown
+      expect(page.at("#drawer_map #map_canvas")).to be_present # still there for the broadcasts
+      expect(page.at("#drawer_party #table_party")).to be_present
+      expect(page.at(".topbar nav[aria-label=Campaign]").text).to include("Change seat") # the header's extras are in the menu
+      expect(response.body).not_to include("At the table as")
+
+      Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
+      get campaign_table_path(campaign)
+      expect(Nokogiri::HTML(response.body).at("#table_now")["data-state"]).to eq("choice")
     end
 
     it "always speaks as their own character, whatever the params say" do

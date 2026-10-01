@@ -5,7 +5,12 @@
     The GM keeps them here, to go straight there (and see what waits in a dungeon's rooms). %>
 <%# A rolled encounter waits for the GM's call before anyone goes on (Campaign::Ways#take_way!). %>
 <% ways = campaign.battle_on? || campaign.pending_encounter.present? || (!gm && choice&.where_next?) ? [] : campaign.ways_on %>
-<% locked = campaign.battle_on? ? [] : campaign.locked_ways %>
+<%# Players are offered only what they can do now: not what the purse can't pay for, nor doors still locked. %>
+<% unless gm || ways.empty? %>
+  <% prices = campaign.current_node ? campaign.current_node.pastimes.to_h { |pastime| [ pastime.name, pastime.price ] } : {} %>
+  <% ways = ways.reject { |way| (doing = way.dig("move", "pastime")) && prices[doing].to_i > campaign.gil } %>
+<% end %>
+<% locked = campaign.battle_on? || !gm ? [] : campaign.locked_ways %>
 <% dungeon = !campaign.battle_on? && campaign.dungeon_in_progress %>
 <% here = dungeon && dungeon.room(dungeon.progress["current"]) %>
 <% treasure = here && here.dig("decision", "kind") == "treasure" && !dungeon.resolved?(here["key"]) %>

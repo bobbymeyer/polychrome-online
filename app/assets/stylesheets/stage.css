@@ -1192,3 +1192,23 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* Long labels get wide buttons: a thing to do here reads on one or two lines, not four. */
 .menu--wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+
+/* What you can do now (docs/DESIGN.md): a player's moves follow the table's state (#table_now data-state).
+   A battle takes them all (the Now line has the way in); an encounter or a vote leaves only the vote and talk. */
+.table[data-seat="player"]:has(#table_now[data-state="battle"]) .your-moves { display: none; }
+.table[data-seat="player"]:has(#table_now[data-state="encounter"]) #field_ability,
+.table[data-seat="player"]:has(#table_now[data-state="choice"]) #field_ability { display: none; }
+.field-ability-status { margin: 8px 0; font-size: 14px; }
+/* Talk is a button until it's wanted. */
+.talk { margin: 12px 0; }
+.talk > summary { list-style: none; display: inline-flex; cursor: pointer; }
+.talk > summary::-webkit-details-marker { display: none; }
+.talk > summary::marker, .talk > summary::before { content: none; display: none; }
+.talk[open] > summary { display: none; }
+/* What a player looks up: tabs over closed panels. A tab says when someone's hurt or down. */
+.drawers__tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.drawers__tab { background: var(--control-fill); border: 0; padding: 8px 14px; font-weight: 800; cursor: pointer; }
+.drawers__tab[aria-expanded="true"] { background: var(--ink); color: var(--paper); }
+.table:has(#party_knows[hidden]) .drawers__tab--knows { display: none; }
+.table:has(#table_party .is-low) .drawers__tab--party::after { content: " · hurt"; color: var(--caution-ink); }
+.table:has(#table_party li.is-ko) .drawers__tab--party::after { content: " · someone's down"; color: var(--signal); }
