@@ -227,6 +227,25 @@ for the moments that end a fight (Victory, Defeat, Escaped) and for GM overrides
 auto for absent players gets no banner at all, only its log line.
 Captions are black bars with white type.
 
+## Motion with meaning
+
+Motion only ever says one of four things, and each has one shape, in every world's words:
+
+- **Enter:** something new is here. It slides in from the left, like a menu item (`.is-new`).
+- **Change:** a value you were looking at is different. A number counts to its new figure
+  (tabular, with a pale wash: red-pink down, green up); a bar eases to its new length and a
+  ghost of the old length stays a beat longer, so a loss or a gain can be read as a length; words
+  that changed get a yellow wash that settles. A clock's newly filled boxes pop in turn, and the
+  last one shakes the dial.
+- **Cause:** this acted on that. The battle's gestures, damage numbers and reticle.
+- **Attention:** you're needed. The timer and low HP, which blink; nothing else idles.
+
+The live panels say it themselves (`motion/changes.js`): a view marks what matters with
+`data-change` (number, bar, text, list, clock; keyed by `data-change-key` where order can move),
+and whenever a panel is replaced by a stream or a page is morphed, each mark is compared with
+what it said before. A number keeps where it came from in `data-changed-from`. Reduced motion
+keeps the facts and skips the movement. The tokens are `--t-enter`, `--t-change` and `--t-count`.
+
 ## Play
 
 The Swiss surface still has to play like a JRPG. Anything a player does in a turn works from the

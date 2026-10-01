@@ -1,4 +1,5 @@
 import { play } from "sound"
+import { animateBar } from "motion/changes"
 
 // The battle board while a beat plays (battle_player_controller): finding
 // units on it, changing it live as events land, and the transient effects
@@ -55,7 +56,9 @@ export class Board {
     row.querySelector("[data-hp]").textContent = hp
     const pct = Math.round((100 * hp) / Number(row.dataset.maxHp))
     const bar = row.querySelector("[data-hp-bar]")
+    const from = parseFloat(bar.style.width)
     bar.style.width = `${pct}%`
+    animateBar(bar, from) // a ghost of the old length, a beat longer (motion/changes)
     bar.className = `bar__fill bar__fill--${pct === 0 ? "ko" : pct <= 25 ? "danger" : pct <= 50 ? "warn" : "ok"}`
   }
 

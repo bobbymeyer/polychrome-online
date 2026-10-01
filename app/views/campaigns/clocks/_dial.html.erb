@@ -1,4 +1,4 @@
 <%# A clock's segments, filled ones solid (Clock). %>
-<span class="clock-dial<%= " is-full" if clock.full? %>" role="img" aria-label="<%= clock.filled %> of <%= clock.segments %>">
+<span class="clock-dial<%= " is-full" if clock.full? %>" data-change="clock" data-change-key="clock-<%= clock.id %>" role="img" aria-label="<%= clock.filled %> of <%= clock.segments %>">
   <% clock.segments.times do |i| %><i class="<%= 'is-filled' if i < clock.filled %>"></i><% end %>
 </span>

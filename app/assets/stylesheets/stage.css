@@ -1293,3 +1293,32 @@ button.your-moves__tag { border: 0; cursor: default; }
 .table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools__reveal { display: inline-flex; }
 .table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
 .gm-tools__reveal[aria-expanded="true"] { background: var(--ink); color: var(--paper); }
+
+/* ---------------------------------------------------------------------------
+ * Motion with meaning (docs/DESIGN.md): motion only ever says one of four
+ * things. Enter: something new is here (slides in from the left, like a
+ * menu item). Change: a value you were looking at is different (a number
+ * counts, a bar eases and leaves a ghost, words get a wash). Cause: this
+ * acted on that (the battle's gestures). Attention: you're needed (the
+ * timer, low HP). Nothing idles. The marks are set in motion/changes.js.
+ * ------------------------------------------------------------------------- */
+:root { --t-enter: .3s; --t-change: .6s; --t-count: .5s; --mark: #fff1b8; --mark-down: #fbd5d2; --mark-up: #dcefc6; }
+.is-new { animation: menu-in var(--t-enter) var(--snap) both; }
+.is-changed { animation: change-wash var(--t-change) ease-out; }
+@keyframes change-wash { from { background: var(--mark); box-shadow: 0 0 0 3px var(--mark); } }
+[data-change~="number"] { font-variant-numeric: tabular-nums; }
+[data-change~="number"].is-down { animation: change-down var(--t-change) ease-out; }
+[data-change~="number"].is-up { animation: change-up var(--t-change) ease-out; }
+@keyframes change-down { from { background: var(--mark-down); box-shadow: 0 0 0 3px var(--mark-down); } }
+@keyframes change-up { from { background: var(--mark-up); box-shadow: 0 0 0 3px var(--mark-up); } }
+.bar { position: relative; }
+.bar .bar__fill { position: relative; z-index: 1; transition: width var(--t-change) ease-out; }
+.bar .bar__ghost { position: absolute; inset: 0 auto 0 0; background: var(--ink); opacity: .3; transition: width var(--t-change) ease-in; }
+.clock-dial i.is-new { animation: box-pop .4s var(--snap) both; }
+@keyframes box-pop { 0% { scale: .4; } 60% { scale: 1.5; } }
+.clock-dial.is-just-full { animation: dial-shake .5s ease-in-out; }
+@keyframes dial-shake { 20%, 60% { translate: -3px 0; } 40%, 80% { translate: 3px 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .is-new, .is-changed, [data-change~="number"].is-down, [data-change~="number"].is-up, .clock-dial i.is-new, .clock-dial.is-just-full { animation: none; }
+  .bar .bar__fill, .bar .bar__ghost { transition: none; }
+}

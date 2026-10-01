@@ -62,6 +62,27 @@ RSpec.describe "The live table", type: :system do
     end
   end
 
+  # Motion with meaning (docs/DESIGN.md): a replaced panel says what changed in it.
+  it "says what changed when a panel is refreshed: HP counts from where it was, a clock's new box pops" do
+    clock = campaign.clocks.create!(name: "The tide", segments: 4, public: true)
+    seat(gm, "gm")
+    as(gm) do
+      visit campaign_table_path(campaign)
+      wait_for_streams
+      # The GM's party panel sits in a side column (folded on this screen): read it wherever it is.
+      expect(page).to have_css("#table_party [data-change~=number]", text: rook.stats["max_hp"].to_s, visible: :all)
+    end
+
+    rook.update!(hp: 40)
+    clock.tick!(2)
+    campaign.table_changed
+
+    as(gm) do
+      expect(page).to have_css("#table_party [data-change~=number][data-changed-from='#{rook.stats['max_hp']}']", text: "40", visible: :all, wait: 15)
+      expect(page).to have_css("#party_knows .clock-dial i.is-new", count: 2, visible: :all, wait: 15)
+    end
+  end
+
   # Beats play one after another, animated, so a later line waits on the
   # ones before it.
   it "plays a battle's beats as they happen" do

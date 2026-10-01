@@ -5,9 +5,9 @@
   <h2>The party knows</h2>
   <% if local_assigns[:gm] %><p class="hint">Everyone at the table sees this.</p><% end %>
   <% if clocks.any? %>
-    <ul class="clock-list">
+    <ul class="clock-list" data-change="list">
       <% clocks.each do |clock| %>
-        <li><%= render "campaigns/clocks/dial", clock: clock %> <span><%= clock.name %> <span class="muted">(<%= clock.filled %> of <%= clock.segments %>)</span></span></li>
+        <li data-change-key="clock-<%= clock.id %>"><%= render "campaigns/clocks/dial", clock: clock %> <span><%= clock.name %> <span class="muted">(<span data-change="number" data-change-key="clock-<%= clock.id %>-count"><%= clock.filled %></span> of <%= clock.segments %>)</span></span></li>
       <% end %>
     </ul>
     <p class="hint">Trouble on its way: each box fills as time passes or things go wrong, and when the last one fills, it happens.</p>
