@@ -1174,3 +1174,15 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .menu--stack .menu__item { flex-direction: column; align-items: flex-start; gap: 0; }
 
 .location-gm { margin-top: 24px; }
+
+/* A service's card says what it's for and what it costs before it's opened. */
+.service__offer { flex-basis: 100%; padding-left: 20px; font-weight: 800; font-size: 14px; color: var(--signal); }
+.service[open] .service__offer { color: var(--paper); }
+
+/* A long sheet keeps its section links at the top of the screen; on a phone they scroll sideways on one line. */
+.sheet-nav { position: sticky; top: 0; z-index: 20; background: var(--paper); border-bottom: 2px solid var(--ink); padding: 0 0 0; }
+:where(#stats, #items, #equipment, #abilities, #skills, #mastery, #jobs) { scroll-margin-top: 64px; }
+@media (max-width: 640px) {
+  .sheet-nav { flex-wrap: nowrap; overflow-x: auto; margin-left: -16px; margin-right: -16px; padding: 0 16px; scrollbar-width: none; mask-image: linear-gradient(to right, #000 85%, transparent); }
+  .sheet-nav a { flex: none; }
+}

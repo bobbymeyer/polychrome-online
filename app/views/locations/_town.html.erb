@@ -22,11 +22,18 @@
         <p class="hint">The party has to be here to use them.</p>
       <% end %>
       <div class="services">
+        <% here = @campaign.current_node&.location_id == location.id %>
+        <% pastimes = here ? @campaign.current_node.pastimes.index_by(&:service) : {} %>
         <% view["services"].each do |service| %>
-          <details class="service service--<%= service["kind"] %>" id="service-<%= service["kind"] %>">
+          <%# What it's for and what it costs, on the card's face: opening it is for doing it. %>
+          <% kind = service["kind"] %>
+          <% offer = location.shut_by(kind) ? "Shut" : { "inn" => "Rest the night", "temple" => "Raise the fallen", "guild" => "Hear what's being said", "shop" => "Buy and sell" }.fetch(kind, "The GM plays what happens") %>
+          <% price = !location.shut_by(kind) && pastimes[kind]&.price %>
+          <details class="service service--<%= kind %>" id="service-<%= kind %>">
             <summary>
               <span class="service__name"><%= service["name"] %></span>
-              <span class="service__kind"><%= term(service["kind"]) %><%= " · #{keepers[service['kind']]}" if keepers[service["kind"]] %></span>
+              <span class="service__kind"><%= term(kind) %><%= " · #{keepers[kind]}" if keepers[kind] %></span>
+              <span class="service__offer"><%= offer %><%= " · #{price.zero? ? 'free' : money(price)}" if price %></span>
             </summary>
             <div class="service__body">
               <% if location.shut_by(service["kind"]) %>

@@ -281,7 +281,7 @@ keyboard, a mouse or a finger.
 - **Who picked, and who can't.** The Now line names who has picked and who still has to, and says
   "Nobody plays Aoi" for characters with no player, so the GM doesn't wait on them; the GM's
   choice panel counts the picks ("1 of 3 players have picked").
-- **Who is here.** The party panel says who plays each character, or "nobody plays them", and
+- **Who is here.** The party panel says who plays each character, or "unplayed", and
   beside a player a dot: filled "here" while they have the table or a battle open (a heartbeat
   every 20 seconds), hollow "away" a minute after it stops.
 - **What only the GM sees is marked.** The tools column has its dashed tag; under the map, "Faded
@@ -293,6 +293,12 @@ keyboard, a mouse or a finger.
   their whispers.
 - **You, up top.** Under the campaign's name a player sees "You · Hoshi" with their own HP and MP,
   kept in step with their row in the party panel, so they never scroll to the bottom to see it.
+- **A service says what it's for before it's opened**: under its name and keeper, in red, "Rest
+  the night · 75 yen", "Buy and sell", "Raise the fallen", or "Shut".
+- **The "Just said" strip doesn't repeat the question** the table is deciding: while the choice
+  panel shows it, its line stays in the log only.
+- **A long sheet keeps its section links on screen**: stuck to the top, and on a phone on one line
+  that scrolls sideways, fading at the edge where there's more.
 - **Dialogue first.** The table leads with the dialogue box; the map sits to the side with the
   party's HP and MP, which follow battles and rests live.
 - **The last few lines** said at the table sit under the dialogue box, whoever said them, so

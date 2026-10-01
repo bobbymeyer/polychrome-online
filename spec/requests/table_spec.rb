@@ -335,7 +335,7 @@ RSpec.describe "The table", type: :request do
     it "says who nobody plays, and who is here or away, from a heartbeat the table and battles send" do
       bartz.update!(user: make_user("Kim"))
       get campaign_table_path(campaign)
-      expect(party).to include("Kim away", "nobody plays them")
+      expect(party).to include("Kim away", "unplayed")
 
       sit(bartz.id)
       get campaign_table_path(campaign)
