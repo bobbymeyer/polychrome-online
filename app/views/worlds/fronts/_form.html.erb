@@ -46,6 +46,18 @@
         <div class="field"><%= label_tag "front_secret_#{i}_place", "About a place" %><%= select_tag "#{n}[place_id]", options_for_select(places, s["place_id"]), include_blank: "Anywhere", id: "front_secret_#{i}_place" %></div>
         <div class="field"><%= label_tag "front_secret_#{i}_figure", "About someone" %><%= select_tag "#{n}[figure_id]", options_for_select(figures, s["figure_id"]), include_blank: "No one", id: "front_secret_#{i}_figure" %></div>
       </div>
+      <details class="front-row__steps" <%= "open" if s["steps"].present? %>>
+        <summary>A step at a time</summary>
+        <div class="field-row">
+          <div class="field"><%= label_tag "front_secret_#{i}_key", "Key, for rows to ask about" %><%= text_field_tag "#{n}[key]", s["key"], id: "front_secret_#{i}_key", placeholder: "goblin_silver" %></div>
+        </div>
+        <div class="field">
+          <%= label_tag "front_secret_#{i}_steps", "Its clues, vaguest first" %>
+          <%= text_area_tag "#{n}[steps]", s["steps"], rows: 3, id: "front_secret_#{i}_steps",
+                            placeholder: "Why do the goblins only take silver?\nThe coins they drop are old, and cold.\nGrol says the Barrow pays better than Tule. | Grol Tusk" %>
+          <p class="hint"><%= render "campaigns/secrets/steps_hint" %></p>
+        </div>
+      </details>
     <% end %>
   </fieldset>
   <div class="actions">

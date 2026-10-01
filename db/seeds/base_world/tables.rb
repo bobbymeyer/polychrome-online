@@ -115,7 +115,8 @@ module Seeds
                              { text: "The air at the mouth of {place} is {cold|stale|wet} and smells of old iron.", when: "dungeon, first_visit" },
                              { text: "{place} is quiet now. Water drips where the noise used to be.", when: "dungeon, cleared" },
                              { text: "The wind across {place} has teeth in it after dark.", when: "wilds, dark" },
-                             { text: "{place}. Someone has left flowers here, not long ago.", when: "landmark, first_visit" } ] },
+                             { text: "{place}. Someone has left flowers here, not long ago.", when: "landmark, first_visit" },
+                             { text: "A child in {place} is playing with a coin too old and too cold to be hers.", when: "town, goblin_silver >= 1, !goblin_silver_known" } ] },
       # The GM's moves when a check fails (Campaign::Remarks): the best soft
       # one (words) and the best hard one (what it takes) are offered.
       complications: { name: "Complications", kind: "complications",

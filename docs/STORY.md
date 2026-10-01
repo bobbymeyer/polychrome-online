@@ -83,6 +83,14 @@ options do what they say (`EventChoices`, `Message::Choice#settle!`) and a
 flag later events ask about. The party facts gained who's hurt, tied and
 from where. Motives stay free text, so events don't match on them yet.
 
+Item 11 is built: secrets with clues (`Clue`, `Secret#find_clue!`), found
+by an uncover, at the secret's place, from its person or by the GM, each
+the next wherever it was found; tellers mark clues that disagree; a
+secret's key lets every story row (arrivals, complications, signs, events)
+ask how far the party has got. Not yet: clues in single dungeon rooms,
+items' pasts and codex pages (a place's clue comes on arriving there),
+and rumours, which aren't story rows.
+
 6. **The story matcher** (`lib/`, pure). The same mechanism kept coming up: tagged rows
    with fallback (ch. 4), lines gated between what the party knows (ch. 7), event
    requirements that chain through flags (ch. 11), descriptions from a world model

@@ -134,7 +134,12 @@ module Seeds
         ],
         secrets: [
           { body: "The Great Kiln cracked along the crown in its last firing. Hollis Grell read it in the cones and told Vask; that is why the door was sealed. Lit again, it falls on Cone.",
-            place: "The Great Kiln", figure: "Hollis Grell" },
+            place: "The Great Kiln", figure: "Hollis Grell", key: "cracked_kiln", steps: <<~STEPS },
+              Why was the Great Kiln sealed forty years ago, if it fired true?
+              The old firing cones in the Guild's case have all slumped the same way: toward the crown.
+              It was sealed for the war, and that's all. | Kilnmaster Orrin Vask
+              Hollis Grell won't go within sight of the Kiln, and won't say why. | Sister Weld
+            STEPS
           { body: "Kilnmaster Vask was never fired. His glaze is paint.", figure: "Kilnmaster Orrin Vask" },
           { body: "The Choir in the Vaults wants the Kiln lit as much as the Guild does. Every misfire is another voice.", place: "The Misfire Vaults", figure: "The Choirmaster" },
           { body: "The loading list is in Sister Weld's hand. She copied it for the wardens, and left three names off.", place: "Bisque", figure: "Sister Weld" }

@@ -47,6 +47,17 @@ RSpec.describe "The GM's moves panel (Campaign::Moves)", type: :request do
     expect(page).to include("Oskar of Tule: “My father's fever won't break.” (Remedy)", "Lenne of Tule: “I'd give anything to see The Barrow quiet again.” (The Barrow)")
     expect(page).not_to include("Dorn", "Never met")
     expect(page).to include("Grol Tusk (1 time, 115% now) · at Tule")
+
+    secret = campaign.secrets.create!(body: "The reeve sold the mill.", steps: "Who owns the mill?\nThe mill's ledger is in a stranger's hand.")
+    get campaign_moves_path(campaign)
+    expect(Nokogiri::HTML(response.body).at("turbo-frame#gm_moves").text.squish).to include("Chains Who owns the mill? (0 of 2 found) Next: Who owns the mill? Let them find it")
+    post campaign_secret_clues_path(campaign, secret)
+    expect(secret.reload.found).to eq(1)
+
+    patch campaign_secret_path(campaign, secret), params: { secret: { key: "Mill Owner", steps: "Who owns the mill?\nA new clue." } }
+    expect(secret.reload).to have_attributes(key: "mill_owner", steps: "Who owns the mill?\nA new clue.")
+    get campaign_prep_path(campaign)
+    expect(response.body).to include("1 of 2 clues found · key mill_owner · next: A new clue.")
   end
 
   it "makes a move so: its words to the table, what it remembers, and what a hard one takes" do
