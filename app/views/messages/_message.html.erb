@@ -9,6 +9,7 @@
     data-chat-line-id-value="<%= message.id %>"
     data-said-at="<%= message.created_at.iso8601 %>"
     <%= tag.attributes(data: { moved: true }) if message.data.to_h["moved"] %>
+    <%= tag.attributes(data: { choice: true }) if message.choice? %>
     data-chat-line-dialogue-value="<%= message.dialogue? %>"
     data-chat-line-cue-value="<%= message.cue %>"
     <%= tag.attributes(data: { check_roll_result_value: message.data.to_json }) if message.cue == "check" %>

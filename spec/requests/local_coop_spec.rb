@@ -15,6 +15,10 @@ RSpec.describe "Local co-op", type: :request do
     expect(response.body).to include('data-view="screen"', "table--screen", "<svg", "Code <strong>#{campaign.join_code}</strong>", "coop-party")
     expect(response.body).not_to include('id="composer"')
 
+    Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
+    get campaign_table_path(campaign, view: "screen")
+    expect(response.body).to include('<span class="table-now__phones">Pick on your phones; the GM settles it.</span>')
+
     get campaign_table_path(campaign)
     expect(response.body).to include("table--screen")
     get campaign_table_path(campaign, view: "off")

@@ -99,7 +99,7 @@ RSpec.describe "Map pages", type: :request do
       campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "dangerous", encounter_table: world.encounter_tables.find_by!(slug: "grasslands"))
       post map_node_party_path(tule)
       get campaign_map_panel_path(campaign)
-      expect(response.body).to include("The party is at Tule", "To Secret Ruins", "dangerous · Grasslands")
+      expect(response.body).to include("The party is at Tule", "To Secret Ruins", "Dangerous road · Grasslands")
 
       post campaign_ways_path(campaign), params: { way: "To Secret Ruins (by a dangerous road)", go: 1, return_to: "map" }
       follow_redirect!
@@ -123,7 +123,7 @@ RSpec.describe "Map pages", type: :request do
       campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "dangerous")
       campaign.place_party!(tule)
       get campaign_map_panel_path(campaign)
-      expect(response.body).to include("dangerous · safe")
+      expect(response.body).to include("Go from here", "takes the party along it now", "menu--stack", "Dangerous road · safe")
     end
 
     it "reports a blocked path instead of travelling" do

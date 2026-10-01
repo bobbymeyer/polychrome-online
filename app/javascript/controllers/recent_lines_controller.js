@@ -22,10 +22,23 @@ export default class extends Controller {
     this.render()
     this.observer = new MutationObserver(() => this.changed())
     this.observer.observe(this.log, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "hidden"] })
+    // The choice panel can come or go after its line does: look again when it does.
+    this.asking = this.askingNow()
+    this.panelObserver = new MutationObserver(() => {
+      if (this.askingNow() === this.asking) return
+      this.asking = this.askingNow()
+      this.render()
+    })
+    this.panelObserver.observe(this.element.parentElement, { childList: true, subtree: true })
   }
 
   disconnect() {
     this.observer?.disconnect()
+    this.panelObserver?.disconnect()
+  }
+
+  askingNow() {
+    return Boolean(document.querySelector("#table_choice .choice"))
   }
 
   changed() {
@@ -38,7 +51,11 @@ export default class extends Controller {
   }
 
   render() {
-    const lines = [...this.log.children].filter((li) => !li.classList.contains("is-pending") && !li.hidden && li !== this.inTheBox()).slice(-this.countValue)
+    // A question the table is still deciding is in the choice panel, right under this: not twice.
+    const asking = this.askingNow()
+    const lines = [...this.log.children]
+      .filter((li) => !li.classList.contains("is-pending") && !li.hidden && li !== this.inTheBox() && !(asking && li.dataset.choice))
+      .slice(-this.countValue)
     this.listTarget.replaceChildren(...lines.map(quiet))
     this.element.hidden = lines.length === 0
   }

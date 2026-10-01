@@ -102,6 +102,9 @@ RSpec.describe "Items and shops", type: :request do
       label = "Rooms at #{inn['name']} (#{price} gil, overnight)"
       get location_path(town)
       expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', "Rooms at #{ERB::Util.h(inn['name'])}", "suggest")
+      # What each is for, and what it costs, before it's opened.
+      expect(response.body).to match(%r{<span class="service__offer">Rest the night · \d+ gil</span>})
+      expect(response.body).to include('<span class="service__offer">Buy and sell</span>')
 
       get campaign_table_path(campaign)
       post campaign_ways_path(campaign), params: { way: label }

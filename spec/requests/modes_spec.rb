@@ -24,6 +24,8 @@ RSpec.describe "Location modes", type: :request do
     expect(town.map_node.reload.modes.sole).to have_attributes(key: "burning", closed: %w[shop inn], music: "battle")
     get location_path(town)
     expect(response.body).to include("GM: modes", "Burning", "Set it off")
+    # The place first, then the GM's controls for it, under one tag.
+    expect(response.body.index("GM · only you see these")).to be > response.body.index("Services")
 
     patch map_node_current_mode_path(town.map_node), params: { key: "burning" }
     expect(town.map_node.reload.current_mode["name"]).to eq("Burning")

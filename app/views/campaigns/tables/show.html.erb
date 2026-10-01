@@ -60,8 +60,9 @@
       <% end %>
       <%= render "choices/panel", choice: @campaign.open_choice %>
       <%= render "campaigns/tables/ways", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
+      <%# A controller has its field ability here too, with its other moves, not under the links. %>
+      <%= render "campaigns/field_uses/ability", character: @seat.character if @seat.character? && (!view || view == "controller") %>
       <% if @seat.seated? && !view %>
-        <%= render "campaigns/field_uses/ability", character: @seat.character if @seat.character? %>
         <%# Talk where the story is: right under it, not below the map. %>
         <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>
           <div class="window"><p class="muted">Loading…</p></div>
@@ -108,9 +109,6 @@
         <%= link_to "My sheet", character_path(@seat.character), class: "button button--quiet" if @seat.character? %>
         <%= link_to "Leave controller view", campaign_table_path(@campaign, view: "off"), class: "link-button" %>
       </p>
-    <% end %>
-    <% if view == "controller" && @seat.character? %>
-      <%= render "campaigns/field_uses/ability", character: @seat.character %>
     <% end %>
     <%# On a phone as the GM's remote, the tools come after the play. %>
     <%= render "campaigns/tables/gm/tools", campaign: @campaign, view: view if @seat.gm? && view == "controller" %>

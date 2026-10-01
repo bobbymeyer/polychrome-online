@@ -57,6 +57,8 @@ module Campaign::Timekeeping
     now, new_days = almanac.later(period, parts)
     transaction do
       update!(day: day + new_days, time_of_day: now)
+      # A Where next? asked earlier offered what there was to do then ("until dusk"): it's gone.
+      drop_stale_where_next!
       if announce == true || (announce == :new_day && new_days.positive?)
         line = new_days.positive? ? "#{new_days > 1 ? "#{new_days} days pass. " : ''}#{world.date(day)}: #{period}." : "#{period.upcase_first}."
         narrate(line)

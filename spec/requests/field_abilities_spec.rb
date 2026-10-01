@@ -44,6 +44,9 @@ RSpec.describe "Field abilities", type: :request do
     sit(kim)
     get campaign_table_path(campaign)
     expect(response.body).to include("Pick Lock", "Thievery", "Use Pick Lock")
+    get campaign_table_path(campaign, view: "controller")
+    moves = Nokogiri::HTML(response.body).at("section.your-moves")
+    expect(moves.at("#field_ability").text).to include("Use Pick Lock") # with the controller's other moves
 
     post campaign_field_uses_path(campaign)
     expect(campaign.messages.last.body).to eq("Kim wants to Pick Lock.")

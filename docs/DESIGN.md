@@ -281,7 +281,7 @@ keyboard, a mouse or a finger.
 - **Who picked, and who can't.** The Now line names who has picked and who still has to, and says
   "Nobody plays Aoi" for characters with no player, so the GM doesn't wait on them; the GM's
   choice panel counts the picks ("1 of 3 players have picked").
-- **Who is here.** The party panel says who plays each character, or "nobody plays them", and
+- **Who is here.** The party panel says who plays each character, or "unplayed", and
   beside a player a dot: filled "here" while they have the table or a battle open (a heartbeat
   every 20 seconds), hollow "away" a minute after it stops.
 - **What only the GM sees is marked.** The tools column has its dashed tag; under the map, "Faded
@@ -293,6 +293,12 @@ keyboard, a mouse or a finger.
   their whispers.
 - **You, up top.** Under the campaign's name a player sees "You · Hoshi" with their own HP and MP,
   kept in step with their row in the party panel, so they never scroll to the bottom to see it.
+- **A service says what it's for before it's opened**: under its name and keeper, in red, "Rest
+  the night · 75 yen", "Buy and sell", "Raise the fallen", or "Shut".
+- **The "Just said" strip doesn't repeat the question** the table is deciding: while the choice
+  panel shows it, its line stays in the log only.
+- **A long sheet keeps its section links on screen**: stuck to the top, and on a phone on one line
+  that scrolls sideways, fading at the edge where there's more.
 - **Dialogue first.** The table leads with the dialogue box; the map sits to the side with the
   party's HP and MP, which follow battles and rests live.
 - **The last few lines** said at the table sit under the dialogue box, whoever said them, so
@@ -308,11 +314,25 @@ keyboard, a mouse or a finger.
   The tab the GM had open stays open, per campaign, in this browser. What needs an answer now
   (everyone down, a field ability asked for) sits above the tabs. On a phone as the GM's remote,
   the same tools come after the play.
+- **One list of ways while the party votes.** With a Where next? open, the GM's vote has each
+  option as a row, who picked it, and Settle beside it; under it the same places are a small row,
+  "Or go straight there, without the vote" (going now ends the vote), not a second Where next?.
+- **Narration is only as tall as its words**: with no portrait to make room for, the dialogue box
+  doesn't hold a speaker's height open under one line.
+- **A place's page is the place first.** The GM's controls for it (modes, rename) come after it,
+  under the dashed "GM · only you see these" tag. The map's panel lists the ways from where the
+  party is one to a row ("To Platform Zero / Dangerous road · Undertow Platforms") under "Go from
+  here", and says a path takes the party along it now.
 - **Going straight there asks first** for a dangerous road or a night, since one click moves the
   whole party.
 - **Inside a dungeon, the table's map is its floorplan**: every room and what waits there for the
   GM, only what they've seen for players. The GM's buttons for the rooms say what's in each
   (encounter, treasure, boss, done). Room names wrap onto up to three lines in their boxes.
+- **Names on the map fit on a phone**, where they're drawn bigger: a place near the map's edge has
+  its name run inward from it, and names are placed (under their place, or over it) by the room
+  they take at the phone's size, so they clear each other there and everywhere.
+- **The shared screen sends the table to their phones** ("Pick on your phones"), and its right
+  edge stays clear of the log's tab.
 - **Pictures come last.** Generating a place's, a speaker's or an entry's picture sits in a closed
   panel at the bottom of the page (open while a batch is running or waiting to be picked from),
   and its summary says when ComfyUI isn't answering. The place or person comes first.
@@ -507,7 +527,8 @@ Record each place where the game needed more than the Swiss defaults: what chang
   moves (`.play`).
 
 - **The date is the table's headline.** The day, in the setting's calendar, sits in the table's
-  header at display size. The part of the day is a tag in its own colour (dawn yellow, day white,
+  header at display size, and under it where the party is: the map's red party marker and the
+  place's name (a link to it), with the room inside a dungeon ("The Drowned Line · Entrance"). The part of the day is a tag in its own colour (dawn yellow, day white,
   dusk red, night blue), beside **the day clock**: a dial cut into a slice for each part of the
   setting's day, each in its light's colour, with the part it is now under a pointer at the top.
   When time passes the dial turns forward (never back: into the next day it keeps going round),

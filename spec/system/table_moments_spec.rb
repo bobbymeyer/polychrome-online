@@ -18,6 +18,9 @@ RSpec.describe "Moments at the table", type: :system do
     Message.choice(campaign, options: [ "Trust Cid", "Refuse" ], flag: "trusted_cid").save!
 
     as(player) do
+      # The question is in the choice panel, so the "Just said" strip doesn't say it again.
+      expect(page).to have_css("#table_choice .choice", visible: true)
+      expect(page).to have_no_css(".recent-lines li", text: "The party decides")
       within("#table_choice") do
         click_on "Trust Cid"
         expect(page).to have_css(".choice__option.is-mine", text: "Trust Cid")

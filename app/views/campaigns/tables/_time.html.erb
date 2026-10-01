@@ -6,6 +6,15 @@
 <section id="table_time" class="table-time time--<%= campaign.daylight %>" aria-label="The date">
   <p class="table-time__date"><%= campaign.world.date(campaign.day) %></p>
   <% if season_and_year.present? %><p class="table-time__season"><%= season_and_year %></p><% end %>
+  <%# Where the party is, with the when: inside a dungeon, the room too. %>
+  <% if (node = campaign.current_node) %>
+    <% dungeon = campaign.dungeon_in_progress %>
+    <% room = dungeon && dungeon.room(dungeon.progress["current"]) %>
+    <p class="table-time__where">
+      <span class="table-time__pin" aria-hidden="true"></span>
+      <%= node.location ? link_to(node.name, location_path(node.location), data: { turbo_frame: "_top" }) : node.name %><%= tag.span(" · #{room['name']}", class: "table-time__room") if room %>
+    </p>
+  <% end %>
   <div class="table-time__clock">
     <%= render "campaigns/tables/day_clock", campaign: campaign %>
     <% parts = campaign.almanac.periods %>

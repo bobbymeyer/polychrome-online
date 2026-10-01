@@ -10,7 +10,10 @@
 <% treasure = here && here.dig("decision", "kind") == "treasure" && !dungeon.resolved?(here["key"]) %>
 <% encounter = gm && campaign.pending_encounter %>
 <% deciding = ways.any? && !gm && choice && !choice.where_next? %>
-<section class="window table-ways" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter && !treasure %>>
+<%# While the party votes on where next, the GM's ways shrink to a row under the vote: the same
+    places, but going now, without waiting for the vote (which goes with them). %>
+<% voting = gm && choice&.where_next? %>
+<section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter && !treasure %>>
   <% if encounter %>
     <%= render "campaigns/encounters/call", campaign: campaign, encounter: encounter, return_to: campaign_table_path(campaign) %>
   <% end %>
@@ -20,7 +23,11 @@
       <%= button_to "Take it", location_treasures_path(dungeon), params: { room: here["key"], return_to: "table" }, class: "button play", form: { class: "inline", data: { turbo_frame: "_top" } } %></p>
   <% end %>
   <% if ways.any? %>
-    <h2>Where next?</h2>
+    <% if voting %>
+      <h3 class="table-ways__straight">Or go straight there, without the vote</h3>
+    <% else %>
+      <h2>Where next?</h2>
+    <% end %>
     <%# What there is to do here this part of the day (Pastime) comes first, under the time; then the roads out. %>
     <% doings, roads = ways.partition { |way| way.dig("move", "pastime") } %>
     <% [ [ doings, "#{campaign.period.upcase_first} in #{campaign.current_node&.name}" ], [ roads, (doings.any? ? "Or go" : nil) ] ].each do |group, heading| %>
@@ -55,7 +62,9 @@
     <% if locked.any? %>
       <p class="hint">Locked: <%= locked.to_sentence %>.</p>
     <% end %>
-    <% if gm %>
+    <% if voting %>
+      <p class="hint">Going now ends the vote.</p>
+    <% elsif gm %>
       <%= button_to "Put it to the table", campaign_ways_path(campaign), class: "button button--quiet" %>
       <p class="hint">Go straight there, or let the party vote: settling the vote takes them where they chose.</p>
     <% elsif deciding %>

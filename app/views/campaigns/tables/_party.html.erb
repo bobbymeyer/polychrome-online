@@ -20,7 +20,7 @@
               <%= tag.span(character.here? ? "here" : "away", class: [ "coop-party__here", { "is-here": character.here? } ],
                            data: { here_target: "who", seen_at: character.seen_at&.iso8601 }) %>
             <% else %>
-              nobody plays them
+              <span title="Nobody plays them yet: anyone can sit down as them">unplayed</span>
             <% end %>
           </span>
           <%= render "campaigns/tables/vitals", character: character %>
