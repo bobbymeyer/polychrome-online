@@ -1,0 +1,85 @@
+<% content_for :title, "#{@table.name} · Coverage · Generator Tables" %>
+<% report = @coverage.report %>
+<% rows = @table.entries %>
+<% label = ->(i) { "#{i + 1}. #{rows[i]['text'].to_s.truncate(70)}" } %>
+<div class="crumbs">
+  <%= link_to "Generator Tables", world_generation_generator_tables_path(@world) %> /
+  <%= link_to @table.name, world_generation_generator_table_path(@world, @table) %> / Coverage
+</div>
+<article class="book-page">
+  <header class="book-page__header book-page__header--plain">
+    <div>
+      <p class="eyebrow">Generator Tables · <%= @table.kind.humanize %> · Coverage</p>
+      <h1><%= @table.name %></h1>
+      <p class="hint">
+        The matcher run over <%= report["moments"] %> moments, not one: every kind of place, every part of <%= @world.name %>'s day, the party
+        hurt and whole, and each flag or key the rows ask about, set and not. Where nothing fits is a line nobody has written; a row that never
+        wins is a row players will never hear. <%= link_to "What rows can ask about", world_generation_facts_path(@world) %>.
+      </p>
+    </div>
+  </header>
+
+  <section class="window">
+    <h2>Where it's thin</h2>
+    <% empty = report["empty"].size %>
+    <p><%= empty.zero? ? "Something fits every moment." : "Nothing fits #{(100.0 * empty / report['moments']).round}% of the moments (#{empty} of #{report['moments']})." %></p>
+    <table class="book-table">
+      <thead><tr><th>Moment</th><th class="num">Moments</th><th class="num">Nothing fits</th></tr></thead>
+      <tbody>
+        <% @coverage.slots.each do |slot, (n, missing)| %>
+          <tr<%= ' class="is-thin"'.html_safe if missing.positive? %>>
+            <td><%= slot.upcase_first %></td><td class="num"><%= n %></td>
+            <td class="num"><%= missing.zero? ? "—" : "#{(100.0 * missing / n).round}%" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="window">
+    <h2>Rows</h2>
+    <p class="hint">How often each row fits a moment, and how often it's the one that comes up (a tie shares it). A row that fits but never wins is always beaten by something more specific.</p>
+    <table class="book-table">
+      <thead><tr><th>Row</th><th>When</th><th class="num">Fits</th><th class="num">Wins</th><th>Beaten by</th></tr></thead>
+      <tbody>
+        <% report["rows"].each_with_index do |stat, i| %>
+          <tr<%= ' class="is-thin"'.html_safe if stat["wins"].zero? %>>
+            <td><%= label.(i) %></td>
+            <td><code><%= rows[i]["when"].presence || "anything" %></code></td>
+            <td class="num"><%= stat["fits"].zero? ? "never" : "#{(100.0 * stat['fits'] / report['moments']).round}%" %></td>
+            <td class="num"><%= stat["wins"].zero? ? "never" : "#{(100.0 * stat['wins'] / report['moments']).round}%" %></td>
+            <td><% if stat["wins"].zero? && stat["beaten_by"].any? %><%= stat["beaten_by"].max_by(&:last).then { |j, _| label.(j) } %><% end %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="window" id="try">
+    <h2>Try a moment</h2>
+    <%= form_with url: world_generation_generator_table_coverage_path(@world, @table, anchor: "try"), method: :get, class: "inline-form" do %>
+      <div class="field"><%= label_tag :place, "Where" %><%= select_tag :place, options_for_select(StoryCoverage::PLACES.map { |k| [ k.humanize, k ] }, @place) %></div>
+      <div class="field"><%= label_tag :period, "When" %><%= select_tag :period, options_for_select(@coverage.periods, @period) %></div>
+      <div class="field field--wide"><%= label_tag :facts, "And" %><%= text_field_tag :facts, @extra, placeholder: "hurt = 2, smoke_seen, skill = stealth" %></div>
+      <%= submit_tag "Try it", name: nil, class: "button" %>
+    <% end %>
+    <% if @problems.any? %><p class="alert"><%= @problems.to_sentence %></p><% end %>
+    <% if @ranked.empty? %>
+      <p class="muted">Nothing fits. This is a line nobody has written yet.</p>
+    <% else %>
+      <% top = @ranked.first["score"] %>
+      <ol class="coverage-try">
+        <% @ranked.each do |c| %>
+          <li class="<%= 'is-winner' if c['score'] == top %>">
+            <%= rows[c["index"]]["text"] %> <span class="muted">(asks <%= c["score"] %>; <code><%= rows[c["index"]]["when"].presence || "anything" %></code>)</span>
+          </li>
+        <% end %>
+      </ol>
+      <% tied = @ranked.count { |c| c["score"] == top } %>
+      <p class="hint"><%= tied == 1 ? "The first comes up." : "The first #{tied} tie: the dice pick one, by weight." %></p>
+    <% end %>
+    <details><summary>The facts of this moment</summary>
+      <p class="muted"><%= @facts.sort.map { |k, v| v == true ? k : "#{k} = #{v}" }.join(", ") %></p>
+    </details>
+  </section>
+</article>

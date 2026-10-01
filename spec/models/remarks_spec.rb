@@ -29,8 +29,16 @@ RSpec.describe Campaign::Remarks do
     campaign.clocks.create!(name: "The wolves gather", segments: 6, filled: 2)
     facts = campaign.moment(at: hollin)
     expect(facts).to include("place" => "Hollin", "town" => true, "first_visit" => true, "visits" => 0, "time" => "night", "night" => true,
-                             "dark" => true, "day" => 1, "party" => 1, "hurt" => 0, "down" => 0, "home" => "Vivi", "standing" => "strangers",
+                             "dark" => true, "days" => 1, "party" => 1, "hurt" => 0, "down" => 0, "home" => "Vivi", "standing" => "strangers",
                              "reputation" => 0, "met_the_king" => "yes", "clock_the_wolves_gather" => 2)
+  end
+
+  it "keeps the light apart from the day count: a row for the day doesn't fit at night" do
+    campaign.update!(time_of_day: "night", day: 3)
+    facts = campaign.moment(at: hollin)
+    expect(facts).to include("days" => 3, "night" => true)
+    expect(facts).not_to have_key("day")
+    expect(Story::Matcher.best([ { "text" => "By day.", "when" => "day" } ], facts, 1).last).to be_nil
   end
 
   it "offers the GM the line that fits the arrival best, and says nothing for them" do

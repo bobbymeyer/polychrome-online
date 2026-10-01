@@ -22,7 +22,7 @@ module Campaign::Moment
     "time" => "The part of the day, as the setting names it; that name is true too (night, dusk).",
     "dawn, day, dusk, night, dark" => "The light, whatever the setting calls its parts of the day; dark is true in any of its night.",
     "weekday, month, season" => "The date, as the setting's calendar has it; each name is true too (winter, market_day).",
-    "day" => "Days since the story began, counting from 1.",
+    "days" => "Days since the story began, counting from 1 (day is the light).",
     "party" => "How many of the party are standing.",
     "hurt" => "How many of those are under half their HP.",
     "down" => "How many of the party are knocked out.",
@@ -75,7 +75,7 @@ module Campaign::Moment
 
   def time_facts
     at = almanac.moment(day)
-    facts = { "time" => period.downcase, "day" => day, daylight => true, "dark" => dark? }
+    facts = { "time" => period.downcase, "days" => day, daylight => true, "dark" => dark? }
     facts[Campaign::Moment.key(period)] = true
     { "weekday" => at.weekday, "month" => at.month, "season" => at.season }.each do |what, name|
       next if name.blank?

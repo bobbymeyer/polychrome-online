@@ -136,6 +136,11 @@ and rumours, which aren't story rows.
 
 ## Later: good, but after the above
 
+The coverage page is built: `StoryCoverage` over `Story::Coverage`, on each
+story table (where nothing fits, rows that never come up, and a moment to
+try). It found the moment's `day` meaning both the light and the day count,
+so a row for the day fitted at night: the count is `days` now.
+
 - **Fronts with a few possible truths.** A world's front carries two to four authored
   truths and a campaign draws one; the GM knows which. The same world plays differently
   twice. *(ch. 14; M, after 8 and 11)*

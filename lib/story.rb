@@ -5,6 +5,7 @@ require_relative "generators/pool"
 require_relative "story/criteria"
 require_relative "story/words"
 require_relative "story/matcher"
+require_relative "story/coverage"
 
 # The story matcher (docs/STORY.md, item 6; Ruskin's rule system for Left 4
 # Dead, ch. 25 of Procedural Storytelling in Game Design). Pure, like the

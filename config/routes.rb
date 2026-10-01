@@ -42,7 +42,10 @@ Rails.application.routes.draw do
       end
     end
     namespace :generation do
-      resources :generator_tables, param: :slug, path: "tables"
+      resources :generator_tables, param: :slug, path: "tables" do
+        # A story table over a few hundred moments, and one to try (StoryCoverage).
+        resource :coverage, only: :show, module: :generator_tables
+      end
       # Every fact a story row can ask about (Campaign::Moment).
       resource :facts, only: :show
     end
