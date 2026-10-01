@@ -77,7 +77,7 @@ RSpec.describe "Defeat", type: :request do
     expect([ bartz.reload.hp, faris.reload.hp ]).to eq([ 1, 1 ])
     expect(campaign.reload.current_node).to eq(ruins)
     get campaign_table_path(campaign)
-    expect(response.body).to include(%(<strong class="is-low">1</strong>)) # amber at the table, as in battle
+    expect(response.body).to include(%(<strong class="is-low" data-change="number">1</strong>)) # amber at the table, as in battle
   end
 
   it "can end the story, and only when everyone is down" do

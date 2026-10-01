@@ -335,7 +335,7 @@ RSpec.describe "The table", type: :request do
       post choice_picks_path(campaign.open_choice), params: { option: "Refuse" }
       get campaign_table_path(campaign)
       expect(now).to include("Pick below; the GM settles it.", "Picked: Bartz.", "Nobody plays Lenna: no pick from them.")
-      expect(response.body).to include("1 of 1 player has picked.")
+      expect(response.body).to include(%(<span data-change="number">1</span> of 1 player has picked.))
     end
 
     it "puts a battle first: the choice waits, and can't be settled until it's over" do

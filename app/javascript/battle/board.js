@@ -1,4 +1,5 @@
 import { play } from "sound"
+import { animateBar } from "motion/changes"
 
 // The battle board while a beat plays (battle_player_controller): finding
 // units on it, changing it live as events land, and the transient effects
@@ -7,8 +8,8 @@ import { play } from "sound"
 export class Board {
   // element: the battle page (its data-boss-down names the boss for the
   // victory banner); abilities: the beat's, set as each beat starts.
-  constructor({ element, container, stage, fx, words = {}, cries = {} }) {
-    Object.assign(this, { element, container, stage, fx, words, cries, abilities: {} })
+  constructor({ element, container, stage, fx, rail = null, tally = null, words = {}, cries = {} }) {
+    Object.assign(this, { element, container, stage, fx, rail, tally, words, cries, abilities: {}, deltas: {}, round: null })
   }
 
   get bossDown() {
@@ -40,9 +41,11 @@ export class Board {
 
   // --- live changes ---
 
-  setActive(id) {
+  setActive(id, { quick = false } = {}) {
+    if (id) this.actor = id // damage and healing name no actor: it's whoever is acting
     this.container.querySelectorAll(".is-active").forEach((el) => el.classList.remove("is-active"))
     if (id) [this.unitEl(id), this.rosterEl(id)].forEach((el) => el?.classList.add("is-active"))
+    this.railActive(id, quick)
   }
 
   setReady(id, ready) {
@@ -55,7 +58,9 @@ export class Board {
     row.querySelector("[data-hp]").textContent = hp
     const pct = Math.round((100 * hp) / Number(row.dataset.maxHp))
     const bar = row.querySelector("[data-hp-bar]")
+    const from = parseFloat(bar.style.width)
     bar.style.width = `${pct}%`
+    animateBar(bar, from) // a ghost of the old length, a beat longer (motion/changes)
     bar.className = `bar__fill bar__fill--${pct === 0 ? "ko" : pct <= 25 ? "danger" : pct <= 50 ? "warn" : "ok"}`
   }
 
@@ -72,20 +77,161 @@ export class Board {
     }
   }
 
-  setStatus(id, status, on) {
+  // A status on, with what it carries (turns left, a barrier's points, a
+  // blade's type), or off. The unit wears the ones that show on the sprite.
+  setStatus(id, status, on, { turns = null, amount = null, type = null } = {}) {
     ;[this.unitEl(id), this.rosterEl(id)].forEach((el) => {
       const badges = el?.querySelector("[data-badges]")
       if (!badges) return
-      const existing = badges.querySelector(`[data-status="${CSS.escape(status)}"]`)
-      if (on && !existing) {
-        const badge = document.createElement("li")
-        badge.className = `badge badge--${status}`
-        badge.dataset.status = status
-        badge.textContent = this.statusName(status)
-        badges.append(badge)
-      } else if (!on) {
-        existing?.remove()
+      let badge = badges.querySelector(`[data-status="${CSS.escape(status)}"]`)
+      if (on) {
+        if (!badge) {
+          badge = document.createElement("li")
+          badge.className = `badge badge--${status}`
+          badge.dataset.status = status
+          badges.append(badge)
+        }
+        const count = status === "shield" ? amount : turns
+        badge.replaceChildren(`${this.statusName(status)}${type ? ` ${type}` : ""}`)
+        if (count !== null && count !== undefined) {
+          const b = document.createElement("b")
+          b.textContent = count
+          badge.append(b)
+        }
+        if (turns !== null) badge.dataset.turns = turns
+      } else {
+        badge?.remove()
       }
+    })
+    const unit = this.unitEl(id)
+    const marks = { aggro: "is-guarding", cover: "is-guarding", charged: "is-charged", shield: "is-shielded", away: "is-away", airborne: "is-away", doom: "is-doomed" }
+    if (unit && marks[status]) unit.classList.toggle(marks[status], on)
+  }
+
+  // A stat up or down, as a badge with its arrow and turns.
+  setBuff(id, stat, on, { up = true, turns = null } = {}) {
+    ;[this.unitEl(id), this.rosterEl(id)].forEach((el) => {
+      const badges = el?.querySelector("[data-badges]")
+      if (!badges) return
+      let badge = badges.querySelector(`[data-buff="${CSS.escape(stat)}"]`)
+      if (!on) return badge?.remove()
+      if (!badge) {
+        badge = document.createElement("li")
+        badge.dataset.buff = stat
+        badges.append(badge)
+      }
+      badge.className = `badge badge--${up ? "up" : "down"}`
+      badge.replaceChildren(`${this.statName(stat)} ${up ? "↑" : "↓"}`)
+      if (turns !== null && turns !== undefined) {
+        const b = document.createElement("b")
+        b.textContent = turns
+        badge.append(b)
+        badge.dataset.turns = turns
+      }
+    })
+  }
+
+  // A barrier taking a blow: its points, on its badge.
+  setShield(id, left) {
+    ;[this.unitEl(id), this.rosterEl(id)].forEach((el) => {
+      const b = el?.querySelector('[data-status="shield"] b')
+      if (b) b.textContent = left
+    })
+  }
+
+  // --- this round: who goes when, and what it came to ---
+
+  // The round's order as plates on the rail: each unit's plate and name, to
+  // be lifted when they act and struck when they're done.
+  setOrder(order) {
+    if (!this.rail) return
+    this.rail.replaceChildren(...order.map((id) => {
+      const li = document.createElement("li")
+      li.className = "turn-rail__plate"
+      li.dataset.rail = id
+      const unit = this.unitEl(id)
+      const plate = unit?.querySelector(".sprite__plate, .sprite__image")?.cloneNode(true)
+      if (plate) li.append(plate)
+      const name = document.createElement("span")
+      name.textContent = unit?.querySelector(".unit__label")?.textContent || id
+      li.append(name)
+      if (unit?.classList.contains("unit--enemy")) li.classList.add("is-enemy")
+      return li
+    }))
+    this.rail.hidden = order.length === 0
+  }
+
+  railActive(id, quick) {
+    if (!this.rail) return
+    this.rail.querySelectorAll(".is-active").forEach((el) => el.classList.remove("is-active"))
+    if (!id) return
+    // A second go (haste, One More) gets a plate of its own, after the first.
+    let plate = [...this.rail.querySelectorAll(`[data-rail="${CSS.escape(id)}"]`)].find((el) => !el.classList.contains("is-done"))
+    if (!plate && quick) {
+      const first = this.rail.querySelector(`[data-rail="${CSS.escape(id)}"]`)
+      plate = first?.cloneNode(true)
+      if (plate) { plate.classList.remove("is-done", "is-active"); plate.classList.add("is-again"); first.after(plate) }
+    }
+    plate?.classList.add("is-active")
+  }
+
+  railDone(id) {
+    const plate = this.rail?.querySelector(`[data-rail="${CSS.escape(id)}"].is-active`)
+    plate?.classList.remove("is-active")
+    plate?.classList.add("is-done")
+  }
+
+  railGone(id) {
+    this.rail?.querySelectorAll(`[data-rail="${CSS.escape(id)}"]`).forEach((el) => el.classList.add("is-gone"))
+  }
+
+  // What the round comes to: each unit's net HP change (the roster's
+  // deltas), and the dealt, healed and fallen as one line under the field.
+  startRound(round) {
+    this.round = round
+    this.deltas = {}
+    this.tallies = { dealt: {}, healed: {}, fallen: [] }
+    if (this.tally) this.tally.hidden = true
+    this.container.querySelectorAll("[data-delta]").forEach((el) => { el.textContent = ""; el.className = "roster__delta" })
+  }
+
+  count(kind, actor, target, amount) {
+    if (!this.tallies) this.startRound(this.round)
+    actor ||= this.actor
+    if (kind === "damage") {
+      this.deltas[target] = (this.deltas[target] || 0) - amount
+      if (actor) this.tallies.dealt[actor] = (this.tallies.dealt[actor] || 0) + amount
+    } else if (kind === "heal") {
+      this.deltas[target] = (this.deltas[target] || 0) + amount
+      if (actor) this.tallies.healed[actor] = (this.tallies.healed[actor] || 0) + amount
+    } else if (kind === "ko") {
+      this.tallies.fallen.push(target)
+    }
+  }
+
+  endRound() {
+    this.restoreDeltas()
+    if (!this.tally || !this.tallies) return
+    const name = (id) => this.unitEl(id)?.querySelector(".unit__label")?.textContent || this.rosterEl(id)?.querySelector(".roster__name")?.firstChild?.textContent?.trim() || id
+    const parts = [
+      ...Object.entries(this.tallies.dealt).map(([id, n]) => `${name(id)} dealt ${n}`),
+      ...Object.entries(this.tallies.healed).map(([id, n]) => `${name(id)} healed ${n}`),
+      ...(this.tallies.fallen.length ? [`${this.tallies.fallen.map(name).join(", ")} ${this.tallies.fallen.length > 1 ? "fell" : "fell"}`] : []),
+    ]
+    this.tally.replaceChildren()
+    const label = document.createElement("strong")
+    label.textContent = `Round ${this.round ?? ""}`.trim()
+    this.tally.append(label, parts.length ? ` · ${parts.join(" · ")}` : " · nothing landed")
+    this.tally.hidden = false
+  }
+
+  // The roster's deltas for the round, on the board as it is now.
+  restoreDeltas() {
+    Object.entries(this.deltas || {}).forEach(([id, delta]) => {
+      const el = this.rosterEl(id)?.querySelector("[data-delta]")
+      if (!el || delta === 0) return
+      el.textContent = delta > 0 ? `+${delta}` : `−${-delta}`
+      el.className = `roster__delta ${delta > 0 ? "is-up" : "is-down"}`
     })
   }
 
@@ -93,6 +239,10 @@ export class Board {
 
   word(key) {
     return this.words[key] || key.toUpperCase()
+  }
+
+  statName(stat) {
+    return this.words.stats?.[stat] || stat.toUpperCase()
   }
 
   statusName(status) {
@@ -127,6 +277,35 @@ export class Board {
     el.style.left = `${Math.min(Math.max(centre, half + 4), Math.max(half + 4, stage.width - half - 4))}px`
     tl.add(el, { opacity: [0, 1, 1, 0], translateY: [8, -30, -34, -44], scale: [1.6, 1, 1, 0.9], duration: 900, ease: "outQuad" }, at)
     tl.call(() => el.remove(), at + 900)
+  }
+
+  // Cause: a streak from the actor to each target, in the move's kind (hit,
+  // magic, heal, sap), drawn and gone. Several targets are struck in turn.
+  streak(tl, from, targets, kind, at) {
+    const origin = this.sprite(from)
+    if (!origin || !targets?.length) return
+    const stage = this.stage.getBoundingClientRect()
+    const centre = (el) => { const r = el.getBoundingClientRect(); return [r.left - stage.left + r.width / 2, r.top - stage.top + r.height / 2] }
+    const [x1, y1] = centre(origin)
+    targets.forEach((id, i) => {
+      const target = this.sprite(id)
+      if (!target || target === origin) return
+      const [x2, y2] = centre(target)
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+      svg.setAttribute("class", `streak streak--${kind}`)
+      svg.setAttribute("viewBox", `0 0 ${stage.width} ${stage.height}`)
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line")
+      Object.entries({ x1, y1, x2, y2 }).forEach(([k, v]) => line.setAttribute(k, v))
+      const length = Math.hypot(x2 - x1, y2 - y1)
+      line.style.strokeDasharray = `${length}`
+      line.style.strokeDashoffset = `${length}`
+      svg.append(line)
+      this.fx.append(svg)
+      const start = at + i * 70
+      tl.add(line, { strokeDashoffset: [length, 0], duration: 160, ease: "outQuad" }, start)
+      tl.add(svg, { opacity: [1, 1, 0], duration: 320, ease: "inQuad" }, start + 160)
+      tl.call(() => svg.remove(), start + 500)
+    })
   }
 
   banner(tl, text, at, kind = "round") {

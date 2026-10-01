@@ -227,6 +227,50 @@ for the moments that end a fight (Victory, Defeat, Escaped) and for GM overrides
 auto for absent players gets no banner at all, only its log line.
 Captions are black bars with white type.
 
+## Motion with meaning
+
+Motion only ever says one of four things, and each has one shape, in every world's words:
+
+- **Enter:** something new is here. It slides in from the left, like a menu item (`.is-new`).
+- **Change:** a value you were looking at is different. A number counts to its new figure
+  (tabular, with a pale wash: red-pink down, green up); a bar eases to its new length and a
+  ghost of the old length stays a beat longer, so a loss or a gain can be read as a length; words
+  that changed get a yellow wash that settles. A clock's newly filled boxes pop in turn, and the
+  last one shakes the dial.
+- **Cause:** this acted on that. The battle's gestures, damage numbers and reticle.
+- **Attention:** you're needed. The timer and low HP, which blink; nothing else idles.
+
+**In battle, cause is drawn.** A move draws a streak from whoever makes it to whoever it lands
+on (red for a blow, dashed turquoise for an art, green for mending, violet for a drain), one per
+target in turn. The round's order rides a rail over the field: a plate per unit, lifted red while
+they act, struck through once they've gone, a yellow "again" plate for a second go (haste, One
+More), faded for the fallen. What lasts on a unit is on its badge with its count (turns left, a
+barrier's points, a blade's type), and a buff is an arrow with the stat's word in the world's own
+vocabulary; a guard wears a bracket before the party, a charge glows, a barrier rings the sprite,
+a doom underlines the name. Each party member's plan is a tag on them and in the roster ("Chip →
+Slip Hound A") from the moment they choose, so the table sees the round form. When the round ends,
+each roster row shows its net (−84, +25) and a line under the field says what the round came to
+("Round 3 · Rook dealt 84 · Pim healed 25 · Slip Hound B fell"), until the next round starts.
+
+**Before you commit.** In battle, the move under the cursor lights what it would reach on the
+field (every enemy, the whole party, yourself) with a dashed outline, and a target the party knows
+to be weak to it says "Weak!" in yellow ("Resists" the other way), from the chart and what they've
+seen of its types, never more. At the table, a way says what it sets off under its name: a thing
+to do its outcomes in the world's words, a night the clocks it ticks, a road the clocks a journey
+ticks. A clock shows the box it's about to fill by itself as a dashed one. **Arriving** somewhere
+is a card over the table: the place's kind, its name at display size, the modes it's in and its
+line, held for a few seconds (`arrival` cue). **The Now band** wipes across in the new state's
+colour when the table's state changes (ink, red for a fight, blue for a choice), and the party's
+marker on the map hops to where it went rather than reappearing. **Pressing** anything presses
+it: the lift on hover, a push on press, a red slab of focus; the vote's options wear the pickers
+as chips that pop on, with a bar of each option's share so far.
+
+The live panels say it themselves (`motion/changes.js`): a view marks what matters with
+`data-change` (number, bar, text, list, clock; keyed by `data-change-key` where order can move),
+and whenever a panel is replaced by a stream or a page is morphed, each mark is compared with
+what it said before. A number keeps where it came from in `data-changed-from`. Reduced motion
+keeps the facts and skips the movement. The tokens are `--t-enter`, `--t-change` and `--t-count`.
+
 ## Play
 
 The Swiss surface still has to play like a JRPG. Anything a player does in a turn works from the

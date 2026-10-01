@@ -5,9 +5,9 @@
 <% choice = campaign.open_choice %>
 <%# data-state says which: a player's moves follow it (stage.css, "What you can do now"). %>
 <% state = battle ? "battle" : campaign.pending_encounter.present? ? "encounter" : choice ? "choice" : "free" %>
-<section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>">
+<section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>" data-change="state" data-change-key="table-now">
   <p class="table-now__label">Now</p>
-  <p class="table-now__what">
+  <p class="table-now__what" data-change="text">
     <% if battle %>
       <strong>A battle is on: <%= battle.name %>.</strong>
       <%= gm ? "You run it from the battle page." : "Everyone at the table fights it." %>

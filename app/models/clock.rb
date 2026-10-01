@@ -75,6 +75,14 @@ class Clock < ApplicationRecord
     triggers.include?(event.to_s) && almanac.on?(times, day, period)
   end
 
+  # What ticks it by itself next, if anything does: "rest", "journey" or
+  # "new day", for the dashed box on its dial (campaigns/clocks/_dial).
+  def next_tick
+    return if full? || stopped?
+
+    { "rest" => "rest", "travel" => "journey", "dawn" => "new day" }.find { |event, _| ticks_on?(event) }&.last
+  end
+
   # "each new day, on Monday or Friday": what ticks it, for the pages.
   def ticking
     return if triggers.empty?

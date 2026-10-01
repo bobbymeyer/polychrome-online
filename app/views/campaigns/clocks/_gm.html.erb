@@ -16,7 +16,7 @@
                     ("Stopped#{": #{clock.map_node.name} was cleared" if clock.map_node}" if clock.stopped?) ].compact.join(" · ").presence || "Ticked by hand" %>
             </p>
           </div>
-          <%= render "campaigns/clocks/dial", clock: clock %>
+          <%= render "campaigns/clocks/dial", clock: clock, next: clock.next_tick.present? %>
           <div class="flag-tools">
             <%= button_to "−1", campaign_clock_ticks_path(campaign, clock), params: { by: -1 }, class: "pin", "aria-label": "Wind back #{clock.name}" %>
             <%= button_to "+1", campaign_clock_ticks_path(campaign, clock), params: { by: 1 }, class: "pin", "aria-label": "Tick #{clock.name}", disabled: clock.full? || clock.stopped? %>
@@ -26,6 +26,7 @@
         </li>
       <% end %>
     </ul>
+    <p class="hint">A dashed box fills by itself: at the next rest, journey or new day, whichever the clock keeps to.</p>
   <% else %>
     <p class="empty">No clocks. A clock is something that happens if the party doesn't stop it.</p>
   <% end %>

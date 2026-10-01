@@ -447,7 +447,7 @@ details[open] > summary { margin-bottom: 16px; }
 .roster__row:has(.bar__fill--danger) [data-hp], .command-panel__vitals .is-low { color: var(--caution-ink); font-weight: 800; }
 .bar .bar__fill--danger { background: var(--caution); }
 .roster .badges { justify-content: flex-start; }
-.bar { flex-basis: 100%; height: 4px; background: var(--rule); margin-top: 4px; }
+.bar { flex-basis: 100%; height: 4px; background: var(--rule); margin-top: 4px; position: relative; }
 .bar__fill { display: block; height: 100%; background: var(--ink); transition: width .25s; }
 .bar__fill--ko { background: transparent; }
 @media (max-width: 640px) {

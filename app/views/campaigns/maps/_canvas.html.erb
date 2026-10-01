@@ -19,7 +19,7 @@
       <%= render partial: "map_nodes/map_node", collection: nodes, as: :node, locals: { gm: gm, party: party, labels: map_label_offsets(nodes), shared_modes: shared_modes } %>
     </g>
     <% if party %>
-      <g class="map-party" transform="translate(<%= party.x %> <%= party.y - 22 %>)" aria-hidden="true">
+      <g class="map-party" transform="translate(<%= party.x %> <%= party.y - 22 %>)" data-change="marker" data-change-key="party" aria-hidden="true">
         <%= render "campaigns/maps/party_marker" %>
       </g>
     <% end %>

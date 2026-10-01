@@ -1293,3 +1293,162 @@ button.your-moves__tag { border: 0; cursor: default; }
 .table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools__reveal { display: inline-flex; }
 .table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
 .gm-tools__reveal[aria-expanded="true"] { background: var(--ink); color: var(--paper); }
+
+/* ---------------------------------------------------------------------------
+ * Motion with meaning (docs/DESIGN.md): motion only ever says one of four
+ * things. Enter: something new is here (slides in from the left, like a
+ * menu item). Change: a value you were looking at is different (a number
+ * counts, a bar eases and leaves a ghost, words get a wash). Cause: this
+ * acted on that (the battle's gestures). Attention: you're needed (the
+ * timer, low HP). Nothing idles. The marks are set in motion/changes.js.
+ * ------------------------------------------------------------------------- */
+:root { --t-enter: .3s; --t-change: .6s; --t-count: .5s; --mark: #fff1b8; --mark-down: #fbd5d2; --mark-up: #dcefc6; }
+.is-new { animation: menu-in var(--t-enter) var(--snap) both; }
+.is-changed { animation: change-wash var(--t-change) ease-out; }
+@keyframes change-wash { from { background: var(--mark); box-shadow: 0 0 0 3px var(--mark); } }
+[data-change~="number"] { font-variant-numeric: tabular-nums; }
+[data-change~="number"].is-down { animation: change-down var(--t-change) ease-out; }
+[data-change~="number"].is-up { animation: change-up var(--t-change) ease-out; }
+@keyframes change-down { from { background: var(--mark-down); box-shadow: 0 0 0 3px var(--mark-down); } }
+@keyframes change-up { from { background: var(--mark-up); box-shadow: 0 0 0 3px var(--mark-up); } }
+.bar { position: relative; }
+.bar .bar__fill { position: relative; z-index: 1; transition: width var(--t-change) ease-out; }
+.bar .bar__ghost { position: absolute; inset: 0 auto 0 0; background: var(--ink); opacity: .3; transition: width var(--t-change) ease-in; }
+.clock-dial i.is-new { animation: box-pop .4s var(--snap) both; }
+@keyframes box-pop { 0% { scale: .4; } 60% { scale: 1.5; } }
+.clock-dial.is-just-full { animation: dial-shake .5s ease-in-out; }
+@keyframes dial-shake { 20%, 60% { translate: -3px 0; } 40%, 80% { translate: 3px 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .is-new, .is-changed, [data-change~="number"].is-down, [data-change~="number"].is-up, .clock-dial i.is-new, .clock-dial.is-just-full { animation: none; }
+  .bar .bar__fill, .bar .bar__ghost { transition: none; }
+}
+
+/* ---------------------------------------------------------------------------
+ * The battle says who does what to whom (docs/DESIGN.md, "Motion with
+ * meaning": cause). The round's order rides a rail over the field; a move
+ * draws a streak from the one who makes it to the one it lands on; what
+ * lasts on a unit is on its badge, with its count; a buff is an arrow; each
+ * party member's plan is a tag on them; and the round ends with its tally.
+ * ------------------------------------------------------------------------- */
+.turn-rail { list-style: none; margin: 0; padding: 6px 16px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; background: var(--ink); border-top: 3px solid var(--ink); }
+.turn-rail__plate {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 2px; background: var(--paper); color: var(--ink);
+  font-size: 12px; line-height: 16px; font-weight: 800; font-style: italic; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  transition: translate var(--quick) var(--snap), opacity var(--quick); animation: menu-in var(--t-enter) var(--snap) both;
+}
+.turn-rail__plate .sprite__plate, .turn-rail__plate .sprite__image { width: 20px; height: 20px; font-size: 12px; line-height: 20px; clip-path: none; box-shadow: none; filter: none; }
+.turn-rail__plate.is-enemy { background: var(--light-grey); }
+.turn-rail__plate.is-active { translate: 0 -4px; background: var(--signal); color: var(--paper); box-shadow: 0 4px 0 var(--paper); }
+.turn-rail__plate.is-again { background: var(--sun-yellow); }
+.turn-rail__plate.is-again::before { content: "again"; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; font-style: normal; }
+.turn-rail__plate.is-done { opacity: .5; text-decoration: line-through; translate: 0 0; }
+.turn-rail__plate.is-gone { opacity: .25; text-decoration: line-through; }
+
+/* A move's streak: a line from the actor to the target, in the kind's colour, drawn and gone. */
+.streak { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.streak line { fill: none; stroke: var(--signal); stroke-width: 5; stroke-linecap: square; }
+.streak--magic line { stroke: var(--turquoise); stroke-dasharray: 10 6 !important; stroke-dashoffset: 0 !important; }
+.streak--heal line { stroke: var(--green); stroke-width: 4; }
+.streak--sap line { stroke: var(--silence); }
+
+/* What lasts: badges carry their count; buffs their arrow. */
+.badge b { font-weight: 900; margin-left: 4px; padding-left: 4px; border-left: 1px solid currentColor; }
+.badge--up { background: var(--green); color: var(--ink); border-color: transparent; }
+.badge--down { background: var(--bright-red); color: var(--paper); border-color: transparent; }
+.badge--shield { background: var(--turquoise); color: var(--ink); border-color: transparent; }
+.badge--charged { background: var(--sun-yellow); color: var(--ink); border-color: transparent; }
+.badge--aggro, .badge--cover { background: var(--paper); color: var(--ink); border-color: var(--ink); box-shadow: inset 0 -3px 0 var(--signal); }
+.badge--doom { background: var(--ink); color: var(--paper); border-color: var(--signal); }
+.badge--imbued { background: var(--orange); color: var(--ink); border-color: transparent; }
+.popup--buff-up, .popup--buff-down { font-size: 18px; -webkit-text-stroke: 0; text-shadow: none; padding: 2px 8px; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+.popup--buff-up { background: var(--green); color: var(--ink); }
+.popup--buff-down { background: var(--bright-red); color: var(--paper); }
+
+/* Worn on the sprite: a guard's bracket before the party, a charge's glow, a barrier's ring, a doom's edge. */
+.unit { position: relative; }
+.unit.is-guarding .sprite::before {
+  content: ""; position: absolute; top: -6px; bottom: -6px; left: -14px; width: 8px; border: 3px solid var(--ink); border-right: 0; pointer-events: none;
+}
+.unit--enemy.is-guarding .sprite::before { left: auto; right: -14px; border-right: 3px solid var(--paper); border-left: 0; border-color: var(--paper); }
+.unit.is-charged .sprite { filter: drop-shadow(0 0 6px var(--sun-yellow)) drop-shadow(0 0 2px var(--sun-yellow)); }
+.unit.is-shielded .sprite::after { content: ""; position: absolute; inset: -8px; border: 3px solid var(--turquoise); border-radius: 50%; pointer-events: none; }
+.unit.is-targeted.is-shielded .sprite::after { border-radius: 0; border-color: var(--signal); } /* the reticle wins */
+.unit.is-doomed .unit__label { box-shadow: inset 0 -3px 0 var(--signal); }
+.unit.is-away .sprite { opacity: .35; }
+
+/* The plan: what each of the party means to do, on them and in the roster. */
+.intent {
+  position: absolute; left: 50%; translate: -50% 0; bottom: 100%; margin-bottom: 4px; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 11px; line-height: 16px; font-weight: 800; font-style: italic; padding: 0 8px; background: var(--paper); color: var(--ink);
+  clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%); box-shadow: 2px 2px 0 var(--ink); animation: menu-in var(--t-enter) var(--snap) both;
+}
+.unit--party .intent { left: auto; right: 0; translate: 0 0; }
+.roster__intent { display: block; font-size: 12px; line-height: 16px; font-style: italic; font-weight: 600; color: var(--grey); animation: menu-in var(--t-enter) var(--snap) both; }
+.roster__intent::before { content: "→ "; color: var(--signal); }
+
+/* The round's net, beside each number; the round's tally, under the field. */
+.roster__delta { font-size: 12px; font-weight: 900; font-style: italic; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.roster__delta.is-down { color: var(--signal); }
+.roster__delta.is-up { color: var(--forest-green); }
+.round-tally { margin: 0; padding: 6px 16px; font-size: 13px; line-height: 18px; background: var(--wash); border-bottom: 3px solid var(--ink); animation: menu-in var(--t-enter) var(--snap) both; }
+.round-tally strong { font-style: italic; font-weight: 900; }
+@media (prefers-reduced-motion: reduce) {
+  .turn-rail__plate, .intent, .roster__intent, .round-tally { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Before you commit, and what pressing feels like (docs/DESIGN.md, "Motion
+ * with meaning": intention). A move's reach lights on the field under the
+ * cursor; a target the party knows is weak says so; a way says what it sets
+ * off; a clock shows the box it's about to fill; the party arrives on a
+ * card; the Now band wipes when the table's state changes; the vote fills.
+ * ------------------------------------------------------------------------- */
+.unit.is-reached .sprite { outline: 3px dashed var(--signal); outline-offset: 6px; }
+.unit--party.is-reached .sprite { outline-color: var(--ink); }
+.unit.is-targeted.is-reached .sprite { outline: none; } /* the reticle wins */
+.menu__item.is-weak { box-shadow: inset 0 -3px 0 var(--sun-yellow); }
+.menu__cost--edge { background: var(--sun-yellow); color: var(--ink); font-weight: 900; }
+
+.menu__note { display: block; flex-basis: 100%; font-size: 12px; line-height: 16px; font-style: normal; font-weight: 500; color: var(--grey); }
+.menu__item:has(.menu__note) { flex-wrap: wrap; }
+
+.clock-dial i.is-next { border-style: dashed; }
+
+/* The arrival: the place's name across the table, with its kind, its face now, and its line. */
+.arrival-stage { border: 0; padding: 0; background: transparent; max-width: none; width: 100vw; overflow: visible; }
+.arrival-stage::backdrop { background: rgba(17, 17, 17, .25); }
+.arrival-card { margin: 12vh auto 0; max-width: 760px; padding: 20px 32px 24px; background: var(--paper); border-top: 6px solid var(--ink); box-shadow: 10px 10px 0 var(--accent), 20px 20px 0 var(--ink); }
+.arrival-card p { margin: 0; }
+.arrival-card__kind { font-size: 13px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--grey); }
+.arrival-card__place { font: var(--display); font-size: clamp(36px, 7vw, 72px); line-height: 1; letter-spacing: -0.04em; }
+.arrival-card__modes { margin-top: 8px; font-weight: 900; font-style: italic; color: var(--signal); }
+.arrival-card__modes:empty, .arrival-card__modes[hidden] { display: none; }
+.arrival-card__line { margin-top: 10px; font-size: 16px; line-height: 22px; max-width: 48em; }
+
+/* The table's state changed: the band wipes across in the new state's colour. */
+.table-now { position: relative; overflow: hidden; }
+.table-now.is-restated::before {
+  content: ""; position: absolute; inset: 0; background: var(--ink); opacity: .9; pointer-events: none;
+  animation: band-wipe .9s var(--snap) both;
+}
+.table-now--battle.is-restated::before { background: var(--signal); }
+.table-now[data-state="choice"].is-restated::before { background: var(--dark-blue); }
+@keyframes band-wipe { 0% { translate: -100% 0; } 45% { translate: 0 0; } 100% { translate: 101% 0; } }
+.map-party { transition: transform var(--t-change) var(--snap); }
+
+/* Pressable things press: a lift on hover (already), a push on press, a red slab of focus. */
+.button:not(:disabled):active, .menu__item:not([aria-disabled="true"]):active, .pin:active, .choice__pick:active { translate: 0 2px; box-shadow: none; }
+.button:focus-visible, .menu__item:focus-visible:not(.is-cursor), .pin:focus-visible, .choice__pick:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+
+/* The vote: who picked, as chips that pop on; its share so far, as a bar. */
+.choice__chips { display: inline-flex; gap: 4px; vertical-align: middle; }
+.choice__chip { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; font: var(--display); font-size: 13px; background: var(--ink); color: var(--paper); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.choice__chip.is-new { animation: chip-pop .4s var(--snap) both; }
+@keyframes chip-pop { 0% { scale: .3; } 60% { scale: 1.3; } }
+.choice__tally { flex-basis: 100%; height: 4px; margin: 0; }
+.bar .bar__fill--vote { background: var(--signal); }
+@media (prefers-reduced-motion: reduce) {
+  .table-now.is-restated::before { animation: none; display: none; }
+  .map-party { transition: none; }
+  .choice__chip.is-new { animation: none; }
+}

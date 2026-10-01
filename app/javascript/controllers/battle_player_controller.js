@@ -26,7 +26,7 @@ const FAST_SPEED = 2
 const FAST_KEY = "polychrome.fastBattles"
 
 export default class extends Controller {
-  static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "ticker"]
+  static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "ticker", "rail", "tally"]
   static values = { panelUrl: String, next: Number, cries: Object, words: Object }
 
   connect() {
@@ -34,6 +34,7 @@ export default class extends Controller {
     this.current = null
     this.fast = this.readFast()
     this.board = new Board({ element: this.element, container: this.boardContainerTarget, stage: this.stageTarget, fx: this.fxTarget,
+                             rail: this.hasRailTarget ? this.railTarget : null, tally: this.hasTallyTarget ? this.tallyTarget : null,
                              words: this.hasWordsValue ? this.wordsValue : {}, cries: this.criesValue })
     this.showFast()
     this.scrollLog()
@@ -150,6 +151,7 @@ export default class extends Controller {
 
   finish(beat, events) {
     this.showBoard(beat.afterTarget)
+    this.board.restoreDeltas() // the board after the beat is fresh; the round's deltas aren't
     this.fxTarget.replaceChildren()
     beat.element.remove()
     this.refreshPanel(events)

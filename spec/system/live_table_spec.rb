@@ -62,6 +62,27 @@ RSpec.describe "The live table", type: :system do
     end
   end
 
+  # Motion with meaning (docs/DESIGN.md): a replaced panel says what changed in it.
+  it "says what changed when a panel is refreshed: HP counts from where it was, a clock's new box pops" do
+    clock = campaign.clocks.create!(name: "The tide", segments: 4, public: true)
+    seat(gm, "gm")
+    as(gm) do
+      visit campaign_table_path(campaign)
+      wait_for_streams
+      # The GM's party panel sits in a side column (folded on this screen): read it wherever it is.
+      expect(page).to have_css("#table_party [data-change~=number]", text: rook.stats["max_hp"].to_s, visible: :all)
+    end
+
+    rook.update!(hp: 40)
+    clock.tick!(2)
+    campaign.table_changed
+
+    as(gm) do
+      expect(page).to have_css("#table_party [data-change~=number][data-changed-from='#{rook.stats['max_hp']}']", text: "40", visible: :all, wait: 15)
+      expect(page).to have_css("#party_knows .clock-dial i.is-new", count: 2, visible: :all, wait: 15)
+    end
+  end
+
   # Beats play one after another, animated, so a later line waits on the
   # ones before it.
   it "plays a battle's beats as they happen" do
@@ -76,6 +97,11 @@ RSpec.describe "The live table", type: :system do
     battle.apply!({ "type" => "command", "actor" => rook.battle_unit_id, "command" => { "kind" => "ability", "ability" => "attack", "target" => goblin } },
                   actor: rook.battle_unit_id)
     as(gm) { expect(page).to have_css("[data-battle-player-target=log]", text: /Rook attacks/, visible: :all, wait: 15) }
+    # The round's order rode the rail, and the round ended with its tally (docs/DESIGN.md, "Motion with meaning").
+    as(gm) do
+      expect(page).to have_css(".turn-rail .turn-rail__plate", minimum: 2, wait: 15)
+      expect(page).to have_css(".round-tally", text: /Round 1 · \w+ dealt \d+/, wait: 15)
+    end
 
     # Fast animations sits in the Menu, outside the battle, and still reaches it.
     as(gm) do

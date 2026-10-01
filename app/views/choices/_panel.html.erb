@@ -8,13 +8,19 @@
       <p class="choice__hold">On hold until the battle is over.</p>
       <ol class="choice__options">
         <% pickers = choice.picks.group_by(&:option).transform_values { |ps| ps.map(&:character_id) } %>
+        <% voters = [ choice.picks.size, 1 ].max %>
         <% choice.tally.each do |option, names| %>
           <li class="choice__option" data-choice-panel-target="option" data-picked-by="<%= Array(pickers[option]).join(" ") %>">
             <%= button_to option, choice_picks_path(choice), params: { option: option }, class: "menu__item choice__pick",
                           form: { class: "choice__pick-form" } %>
             <span class="choice__settle-label"><%= option %></span>
             <span class="choice__mine" hidden>Your pick</span>
-            <span class="choice__who"><%= names.any? ? names.to_sentence : "" %></span>
+            <%# Who picked it, as chips that pop on as they do; the bar under it is its share of the picks so far. %>
+            <span class="choice__who" title="<%= names.to_sentence %>">
+              <span class="choice__chips" data-change="list"><% names.each do |name| %><i class="choice__chip" data-change-key="<%= name %>" aria-hidden="true"><%= name.first %></i><% end %></span>
+              <span class="visually-hidden"><%= names.to_sentence %></span>
+            </span>
+            <span class="bar choice__tally" aria-hidden="true"><span class="bar__fill bar__fill--vote" data-change="bar" style="width: <%= (100.0 * names.size / voters).round %>%"></span></span>
             <%= button_to "Settle on this", choice_settlement_path(choice), params: { option: option }, class: "link-button choice__settle",
                           form: { class: "choice__settle-form", data: { turbo_confirm: "The party chooses “#{option}”?" } } %>
           </li>
@@ -23,7 +29,7 @@
       <p class="hint choice__hint choice__hint--player">Pick for your character. You can change your mind until the GM settles it.</p>
       <p class="hint choice__hint choice__hint--gm">
         <% played = choice.campaign.characters.where.not(user_id: nil).count %>
-        <%= choice.picks.size %> of <%= played %> <%= played == 1 ? "player has" : "players have" %> picked.
+        <span data-change="number"><%= choice.picks.size %></span> of <%= played %> <%= played == 1 ? "player has" : "players have" %> picked.
         Everyone at the table picks; you settle it<%= ", and #{choice.flag_key.humanize} is set to the outcome" if choice.flag_key %>.
       </p>
     </section>
