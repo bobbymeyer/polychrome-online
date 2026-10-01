@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-// On a phone the top bar is one line: the links open from a Menu button.
+// The top bar: on a phone its links open from a Menu button; the account's
+// menu (your name) closes on a click elsewhere or Esc.
 export default class extends Controller {
   static targets = ["toggle"]
 
@@ -8,5 +9,13 @@ export default class extends Controller {
     const open = !this.element.classList.contains("is-open")
     this.element.classList.toggle("is-open", open)
     this.toggleTarget.setAttribute("aria-expanded", String(open))
+  }
+
+  outside(event) {
+    this.element.querySelectorAll("details[open]").forEach((menu) => { if (!menu.contains(event.target)) menu.open = false })
+  }
+
+  escape(event) {
+    if (event.key === "Escape") this.element.querySelectorAll("details[open]").forEach((menu) => { menu.open = false })
   }
 }
