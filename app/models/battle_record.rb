@@ -42,8 +42,9 @@ class BattleRecord < ApplicationRecord
   #   encounter: { "goblin" => 3, "wolf" => 1 }
   # antagonists: the campaign's NPCs who fight in it (Npc#battle_spec).
   # names: { "dark_mage" => "Sten Pike" }, a name for the first of a kind.
+  # room: the dungeon room this fight is for, dealt with when it is won (Settlement).
   def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false, terrain: nil,
-                  antagonists: [], names: {})
+                  antagonists: [], names: {}, room: nil)
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
     raise Refusal, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
@@ -55,7 +56,7 @@ class BattleRecord < ApplicationRecord
       unit["name"] = named if unit
     end
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
-                     input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id),
+                     input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id), room: room,
                      boss: boss || antagonists.any? || campaign.world.monsters.where(slug: encounter.keys, boss: true).exists?)
     battle.open_round!
     battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against " \
