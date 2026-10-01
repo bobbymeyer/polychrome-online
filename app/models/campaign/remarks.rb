@@ -9,6 +9,8 @@
 # written to the campaign's flags, so later rows can ask about it.
 #
 #   arrivals       on each arrival, the line that fits the place best
+#   signs          on each arrival, maybe a sign of a clock's latest step
+#                  (Portent), more likely the fuller the clock (item 8)
 #   complications  on a failed check, the GM's moves (Dungeon World's, ch.
 #                  20): the best soft one, words only (show signs, an
 #                  unwelcome truth, an opportunity), and the best hard one,
@@ -40,6 +42,32 @@ module Campaign::Remarks
 
     narrate("To say, arriving at #{node.name}: “#{line['text']}”", scope: "gm",
             data: { "offer" => line.slice("text", "sets") })
+  end
+
+  # Maybe a sign of trouble coming, on arriving somewhere: each running
+  # clock with steps written, fullest first, has its share filled as the
+  # chance (a clock 3 of 6 along, half the time); the first that comes up
+  # offers the sign of its latest step that fits the moment best, or an
+  # earlier step's. At most one a visit. Returns the note, or nil.
+  def offer_sign!(node)
+    candidates = clocks.running.where.not(portents: nil).where("filled > 0").to_a
+                       .sort_by { |clock| [ -clock.filled.fdiv(clock.segments), clock.id ] }
+    return nil if candidates.empty?
+
+    facts = moment(at: node)
+    dice = Battle::Rng.new(story_dice(node) ^ 0x5BD1_E995)
+    candidates.each do |clock|
+      next unless dice.percent?(100 * clock.filled / clock.segments)
+
+      clock.reached_portents.each do |portent, _segment|
+        _, line = Story::Matcher.best(portent.signs, facts, dice.state, avoid: every_line + every_veil)
+        next unless line
+
+        return narrate("A sign of “#{clock.name}” (#{clock.filled} of #{clock.segments}): “#{line['text']}”", scope: "gm",
+                       data: { "offer" => line.slice("text", "sets") })
+      end
+    end
+    nil
   end
 
   # A check failed (Campaign#check!): the GM is offered a soft move and a

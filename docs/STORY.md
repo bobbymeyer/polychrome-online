@@ -66,6 +66,12 @@ hold soft and hard moves, offered to the GM on a failed check
 (`Campaign::Remarks#offer_complications!`). Camp events (item 10) will draw
 on the same rows' outcomes.
 
+Item 8 is built: a clock's impulse and portents (`Portent`), each step
+told to the GM as its segment fills (`Clock#tick!`), and its signs offered
+on arrival, more often the fuller the clock
+(`Campaign::Remarks#offer_sign!`). Written on a front's clocks and dealt
+in, or on a campaign's own.
+
 6. **The story matcher** (`lib/`, pure). The same mechanism kept coming up: tagged rows
    with fallback (ch. 4), lines gated between what the party knows (ch. 7), event
    requirements that chain through flags (ch. 11), descriptions from a world model

@@ -57,9 +57,35 @@ module Seeds
         description: "Something under the Barrow wants Tule back, and pays the goblins to soften it up.",
         clocks: [
           { name: "The goblins raid Tule", segments: 4, public: true, triggers: %w[dawn], place: "Tule", source: "Goblin Hollow",
+            impulse: "To bleed Tule until it begs the Barrow for help",
+            portents: <<~STEPS,
+              Goblins steal from the outlying farms by night.
+              - A trampled hedge, and a pig that isn't there any more. | !dungeon
+              - Little muddy footprints across the road, all going the same way. | wilds
+              Tule's farmers stop going out after dusk.
+              - Shutters closed at {place} before the sun is down. | town
+              - A farmer at {place} with a pitchfork by the door, and nobody's laughing. | town
+              The goblins hit the mill, and someone is hurt.
+              - Flour on the road, and blood in the flour.
+              - A bandaged boy at {place}, and a crowd that wants someone to blame. | town
+            STEPS
             full_line: "The goblins burn Tule's granary. The village will go hungry this winter.",
             mode_name: "Raided", mode_line: "Smoke over Tule: the granary is ash.", mode_description: "Boarded windows and short tempers." },
           { name: "The Barrow Lord wakes", segments: 6, public: false, triggers: %w[now_and_then], source: "The Old Barrow",
+            impulse: "To take back what was buried with him",
+            portents: <<~STEPS,
+              The barrow's stones sweat in the cold.
+              - A frost on the grass at {place} that doesn't lift at noon. | day
+              Grave-coin turns up in Tule's market.
+              - A silver coin in the change at {place}, old, cold, with a face nobody knows. | town
+              The dogs won't go near the Greymere road.
+              - Dogs at {place} whining at the north road, all at once. | town
+              - The birds go quiet, all of them, for a moment. | wilds
+              Lamps burn blue near the water.
+              - A lamp at {place} burning blue, and nobody will look at it. | dark
+              Something walks the shore at night.
+              - Wet footprints coming up from the lake. Only coming up. | night
+            STEPS
             full_line: "Greymere freezes over in a night, and the dead walk its shore." }
         ],
         secrets: [

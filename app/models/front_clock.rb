@@ -10,11 +10,12 @@ class FrontClock < ApplicationRecord
   belongs_to :source, class_name: "WorldPlace", optional: true
 
   normalizes :name, with: ->(name) { name.to_s.strip }
-  normalizes :full_line, :mode_name, :mode_line, :mode_description, with: ->(text) { text.to_s.strip.presence }
+  normalizes :full_line, :mode_name, :mode_line, :mode_description, :impulse, :portents, with: ->(text) { text.to_s.strip.presence }
 
   validates :name, presence: true
   validates :segments, numericality: { only_integer: true, in: 2..12 }
   validate { errors.add(:place, "isn't in this setting's atlas") if place && place.world_id != world_front.world_id }
+  validate { Portent.parse(portents).last.each { |problem| errors.add(:portents, "#{name}: #{problem}") } }
 
   def triggers=(value)
     super(Array(value).map(&:to_s) & Clock::TRIGGERS.keys)
