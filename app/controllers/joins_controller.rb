@@ -22,9 +22,14 @@ class JoinsController < ApplicationController
   end
 
   def create
-    character = params[:character] ? new_character : @campaign.characters.find(params.expect(:character_id))
+    # One form: a GM-made character's button sends its id; "Join as them" sends the new one.
+    character = params[:character_id].present? ? @campaign.characters.find(params[:character_id]) : new_character
     return render_new_character(character) unless character.persisted?
+
+    arriving = character.user_id.nil? || character.previously_new_record?
     return redirect_to(join_path(@campaign.join_code, view: controller_view), alert: "#{character.name} is someone else's.") unless claim_table_seat(@campaign, character.id)
+
+    announce(character) if arriving
 
     redirect_to campaign_table_path(@campaign, view: controller_view || "off"), status: :see_other
   end
@@ -56,6 +61,13 @@ class JoinsController < ApplicationController
     character.user = current_user
     character.save!
     character
+  end
+
+  # A line at the table, so everyone sees who sat down. Coming back to your
+  # own character later says nothing.
+  def announce(character)
+    who = current_user.name == character.name ? character.name : "#{current_user.name}, as #{character.name},"
+    @campaign.narrate("#{who} joins the party.")
   end
 
   def render_new_character(character)

@@ -1,6 +1,11 @@
-<%# Choosing a job as a moment, not a dropdown: one card per open job with what it is good at, its own command and what it wears. f: the form; jobs; selected: the job id. %>
+<%# Choosing a job as a moment, not a dropdown: one card per open job with what it is good at, its own command and what it wears.
+    f: the form; jobs; selected: the job id; party: the characters already in it, so you can pick something that fits. %>
+<% party = Array(local_assigns[:party]).select(&:persisted?) %>
 <fieldset class="field job-picker">
   <legend>Archetype</legend>
+  <% if party.any? %>
+    <p class="hint job-picker__party">In the party: <%= party.map { |c| "#{c.name} (#{c.job.name})" }.to_sentence %>.</p>
+  <% end %>
   <div class="job-picker__cards">
     <% jobs.each do |job| %>
       <% strong = job.stat_multipliers.select { |_, pct| pct > 100 }.sort_by { |_, pct| -pct }.map(&:first) %>
@@ -11,6 +16,8 @@
           <%= entry_portrait(job, size: :small) %>
           <span>
             <strong class="job-card__name"><%= job.name %></strong>
+            <% taken = party.select { |c| c.job_id == job.id } %>
+            <% if taken.any? %><span class="job-card__taken"><%= taken.map(&:name).to_sentence %> <%= taken.one? ? "plays" : "play" %> this</span><% end %>
             <% if job.description.present? %><span class="job-card__blurb"><%= truncate(job.description.to_s.split(/(?<=[.!?])\s/).first, length: 110) %></span><% end %>
             <span class="job-card__facts">
               <% if strong.any? %><span>Strong in <%= strong.first(2).map { |s| stat_label(s) }.to_sentence %></span><% end %>

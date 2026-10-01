@@ -313,6 +313,8 @@ or, inside, the ways on from the room they're in (a room the players haven't see
 unexplored way"). A player's "suggest" puts the question to a vote with their pick in it; the
 GM settling the vote takes the party there. The GM can also just go, from the same panel, and
 calls a waiting encounter there too, so a session can run from the table without the map page.
+In any vote, the option your own character picked stays filled red with "✓ Your pick" beside it,
+so you can see your vote at a glance among everyone's names.
 
 Staying is a way on as well. A place can list things to do there (`Pastime`): class, a shift, a
 visit, a night in the other world. Each says when it can be done, how long it takes, what it

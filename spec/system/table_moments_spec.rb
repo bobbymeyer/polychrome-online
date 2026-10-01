@@ -18,11 +18,17 @@ RSpec.describe "Moments at the table", type: :system do
     Message.choice(campaign, options: [ "Trust Cid", "Refuse" ], flag: "trusted_cid").save!
 
     as(player) do
-      within("#table_choice") { click_on "Trust Cid" }
+      within("#table_choice") do
+        click_on "Trust Cid"
+        expect(page).to have_css(".choice__option.is-mine", text: "Trust Cid")
+        expect(page).to have_css(".is-mine .choice__mine", text: /your pick/i)
+        expect(page).to have_no_css(".choice__option.is-mine", text: "Refuse")
+      end
     end
     as(gm) do
       within("#table_choice") do
         expect(page).to have_css(".choice__option", text: /Trust Cid.*Rook/m)
+        expect(page).to have_no_css(".is-mine") # the GM didn't pick
         accept_confirm { find(".choice__option", text: "Trust Cid").click_on("Settle on this") }
       end
     end

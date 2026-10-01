@@ -679,6 +679,10 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .choice__pick:hover, .choice__pick:focus-visible { background: var(--signal); color: var(--paper); }
 .choice__settle-label { font-weight: 900; font-style: italic; font-size: 18px; }
 .choice__who { color: var(--grey); font-size: 14px; }
+.choice__option.is-mine .choice__pick { background: var(--signal); color: var(--paper); }
+.choice__mine { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+.choice__mine::before { content: "✓ "; }
+.choice__mine[hidden] { display: none; }
 .choice__settle-form { margin: 0 0 0 auto; }
 .table:not([data-seat="player"]) .choice__pick-form, .table:not([data-seat="player"]) .choice__hint--player,
 .table[data-seat="player"] .choice__settle-label, .table:not([data-seat="gm"]) .choice__settle-form,
@@ -1092,3 +1096,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table__seat .link-button { font-size: inherit; }
 /* A button that fits a table row (the battle's GM panel: auto every round). */
 .button--small { padding: 2px 10px; min-height: 0; font-size: 13px; }
+
+/* Who already plays an archetype, on its card (characters/_job_picker). */
+.job-picker__party { margin: 0 0 8px; }
+.job-card__taken { display: block; margin-top: 2px; font-size: 13px; font-weight: 800; color: var(--control); }
