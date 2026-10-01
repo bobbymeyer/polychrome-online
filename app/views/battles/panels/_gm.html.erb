@@ -4,6 +4,12 @@
   <h2>Game Master · Round <%= @battle.round %></h2>
   <%= render "battles/panels/countdown", battle: @battle %>
 </div>
+<%# What the round is waiting on, by its clock: the GM shouldn't read the table to find out. %>
+<% unless @battle.over? %>
+  <p class="command-panel__waiting">
+    <%= awaiting.any? ? "Waiting on #{awaiting.map { |id| unit_name(state, id) }.to_sentence}." : "Everyone has chosen: the round runs." %>
+  </p>
+<% end %>
 
 <% ideas = state["inputs"].select { |_, c| c["kind"] == "custom" && !c["ruling"] } %>
 <% if ideas.any? %>
@@ -42,14 +48,14 @@
   </section>
 <% end %>
 
-<%# Who's fighting, one table a side. The party's rows say who the round is waiting on and who's on
-    auto, with the buttons for each, so it's said once. %>
+<%# Who's fighting, one table a side. The party's rows say, in one column, who chooses each one's
+    command this round (their player, or auto) and the buttons to change it, so it's said once. %>
 <% conditions = ->(u) { (u["statuses"].map { |s| "#{term(s['kind'])} (#{s['turns']})" } + u["buffs"].map { |b| "#{stat_label(b['stat'])} #{signed(b['amount'])}%" }).join(", ") } %>
 <% party_ids = @battle.party.map { |u| u["id"] } %>
 <section>
   <h3>The party</h3>
   <table class="book-table book-table--plain gm-units">
-    <thead><tr><th>Unit</th><th class="num">HP</th><th class="num">MP</th><th>Status</th><th>This round</th><th>Every round</th></tr></thead>
+    <thead><tr><th>Unit</th><th class="num">HP</th><th class="num">MP</th><th>Status</th><th>Who chooses</th></tr></thead>
     <tbody>
       <% state["units"].select { |u| u["side"] == "party" && !u["gone"] }.each do |u| %>
         <tr class="<%= 'is-ko' if u['hp'].zero? %> <%= 'is-low' if hp_band(u) == 'danger' %>">
@@ -57,31 +63,36 @@
           <td class="num"><%= u["hp"] %>/<%= u["stats"]["max_hp"] %></td>
           <td class="num"><%= u["mp"] %>/<%= u["stats"]["max_mp"] %></td>
           <td><%= conditions.(u) %></td>
-          <td>
-            <% if awaiting.include?(u["id"]) %>
-              <%= button_to "Auto", battle_actions_path(@battle), class: "link-button", params: { gm: { op: "auto", unit: u["id"] } },
-                            title: "Their default command, this round only", form: { class: "inline" } %>
-              <span class="muted">· waiting</span>
-            <% elsif u["hp"].positive? && !u["guest"] %>
-              <span class="muted">chosen</span>
-            <% end %>
-          </td>
-          <td>
-            <% if party_ids.include?(u["id"]) %>
-              <% on = @battle.auto?(u["id"]) %>
-              <%= button_to on ? "Auto" : "Off", battle_auto_path(@battle), method: :patch, params: { unit: u["id"], on: on ? "0" : "1" },
-                            class: [ "button", "button--quiet", "button--small" ], aria: { pressed: on }, form: { class: "inline" },
-                            title: on ? "Auto every round: press to hand it back" : "Put them on auto every round" %>
-            <% elsif u["guest"] && u["hp"].positive? && !@battle.over? %>
-              <%= button_to "Send off", battle_actions_path(@battle), class: "link-button", params: { gm: { op: "dismiss", unit: u["id"] } },
-                            form: { class: "inline", data: { turbo_confirm: "#{u['name']} leaves the fight?" } } %>
+          <td class="gm-units__who">
+            <% if u["guest"] %>
+              <span class="muted">The GM's guest</span>
+              <% if u["hp"].positive? && !@battle.over? %>
+                <%= button_to "Send off", battle_actions_path(@battle), class: "link-button", params: { gm: { op: "dismiss", unit: u["id"] } },
+                              form: { class: "inline", data: { turbo_confirm: "#{u['name']} leaves the fight?" } } %>
+              <% end %>
+            <% elsif u["hp"].zero? %>
+              <span class="muted">KO'd</span>
+            <% elsif party_ids.include?(u["id"]) && @battle.auto?(u["id"]) %>
+              <strong>Auto, every round</strong>
+              <%= button_to "Hand back", battle_auto_path(@battle), method: :patch, params: { unit: u["id"], on: "0" },
+                            class: "link-button", form: { class: "inline" }, title: "Their player chooses again" %>
+            <% else %>
+              <%= awaiting.include?(u["id"]) ? tag.strong("Player · waiting") : tag.span("Player · chosen", class: "muted") %>
+              <% if awaiting.include?(u["id"]) %>
+                <%= button_to "Auto this round", battle_actions_path(@battle), class: "link-button", params: { gm: { op: "auto", unit: u["id"] } },
+                              title: "Their default command, this round only", form: { class: "inline" } %>
+              <% end %>
+              <% if party_ids.include?(u["id"]) %>
+                <%= button_to "Auto every round", battle_auto_path(@battle), method: :patch, params: { unit: u["id"], on: "1" },
+                              class: "link-button", form: { class: "inline" }, title: "For a character nobody is playing" %>
+              <% end %>
             <% end %>
           </td>
         </tr>
       <% end %>
     </tbody>
   </table>
-  <p class="hint">Auto every round is for characters nobody is playing: they take their default command as each round opens. Unclaimed characters start on auto; a player who sits down and chooses takes theirs back.</p>
+  <p class="hint">Auto takes a character's default command: their last one, or Attack. Every round is for characters nobody is playing (unclaimed characters start on it); a player who sits down and chooses takes theirs back.</p>
   <% if awaiting.any? %>
     <%= button_to "Run the round now", battle_actions_path(@battle), class: "button play", params: { gm: { op: "execute_round" } } %>
   <% end %>

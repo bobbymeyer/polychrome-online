@@ -499,8 +499,11 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .log-drawer.is-open .log-drawer__panel { translate: 0 0; visibility: visible; transition: translate .28s var(--snap), visibility 0s; }
 .log-drawer__head { display: flex; justify-content: space-between; align-items: center; }
 .log-drawer__head h2 { margin: 0; font: var(--display); font-size: 32px; text-shadow: 3px 3px 0 var(--echo); }
-.log-drawer__section { flex: 1 1 0; min-height: 0; overflow-y: auto; max-height: none; border-top: 3px solid var(--ink); padding-top: 8px; }
-.log-drawer__section h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 2px 0; }
+.log-drawer__section { flex: 1 1 0; min-height: 0; overflow-y: auto; max-height: none; border-top: 3px solid var(--ink); }
+/* The heading carries the gap above it, so nothing scrolled under it shows through. */
+.log-drawer__section h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 10px 0 2px; }
+/* A short battle log takes only the room it needs; the table's log has the rest. */
+.log-drawer__section.battle-log { flex: 0 1 auto; }
 @media (max-width: 640px) { .log-drawer__tab { padding: 12px 6px 16px; font-size: 13px; } }
 
 /* In battle the dialogue box stands beside the commands, and only while someone speaks. */
@@ -1130,3 +1133,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table-you__label { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: var(--grey); }
 .table-you .vitals { margin: 0; }
 .composer__to-hint { margin: 4px 0 0; max-width: 22em; }
+
+/* The battle's round, what its clock is for, and (for the GM) who it's waiting on. */
+.command-panel__round, .command-panel__waiting { margin: 4px 0 8px; font-size: 14px; }
+.gm-units__who { white-space: normal; }
+.gm-units__who form.inline { margin-left: 6px; }

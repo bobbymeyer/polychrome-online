@@ -137,4 +137,14 @@ module BattlesHelper
   def item_name(state, id)
     state.fetch("items", {}).dig(id, "name") || id.to_s.humanize
   end
+
+  # What a unit does if the round's clock runs out before they choose
+  # (Battle::Resolver.default_command): their last command again if it
+  # still works, else Attack. Said as the panel's warning.
+  def timeout_command(state, unit)
+    last = unit["last_command"]
+    return "Attack" unless last&.dig("kind") == "ability" && last["ability"] != "attack"
+
+    "#{ability_name(state, last['ability'])} again (or Attack, if it can't)"
+  end
 end

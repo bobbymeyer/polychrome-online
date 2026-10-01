@@ -317,6 +317,18 @@ keyboard, a mouse or a finger.
   panel at the bottom of the page (open while a batch is running or waiting to be picked from),
   and its summary says when ComfyUI isn't answering. The place or person comes first.
 
+### Battle, at a glance
+
+- **The round, and what its clock is for.** A player's command panel says "Round 2 · Choose
+  before the clock runs out, or you Attack" (or "… Fire again (or Attack, if it can't)" after
+  a spell), until they've chosen.
+- **The GM's panel says who the round waits on**, by its clock ("Waiting on Hoshi."), and the
+  party's table has one "Who chooses" column instead of two: "Auto, every round" with Hand back,
+  or "Player · waiting/chosen" with Auto this round and Auto every round.
+- **"Fast animations"**, not "Fast": the one control above a phone's battle says what it speeds up.
+- **The log's battle section takes only the room it needs**, and section headings carry their own
+  top gap, so nothing scrolled under them shows through.
+
 ### Defeat
 
 When the whole party is down, the table decides what the story does with it: "Everyone is KO'd.

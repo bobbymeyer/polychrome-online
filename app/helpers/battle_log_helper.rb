@@ -60,7 +60,7 @@ module BattleLogHelper
     when "flee" then "#{flee_line(event)}#{dice_note(event)}"
     when "turn_skipped" then skipped_line(event, name.("unit"))
     when "action_failed" then action_failed_line(event, name.("actor"), state)
-    when "timeout" then "Time's up! #{event['defaulted'].map { |id| unit_name(state, id) }.to_sentence} act on reflex." if event["defaulted"].any?
+    when "timeout" then "Time's up! #{event['defaulted'].map { |id| unit_name(state, id) }.to_sentence} #{event['defaulted'].one? ? 'acts' : 'act'} on reflex." if event["defaulted"].any?
     when "victory" then victory_line(event)
     when "defeat" then "The party has fallen…"
     when "gm_override" then gm_line(event, state)
