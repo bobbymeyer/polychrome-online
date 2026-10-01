@@ -146,12 +146,14 @@ RSpec.describe "Moments at the table", type: :system do
     as(gm) do
       find("[role=tab]", text: "Check").click
       check "Rook"
-      select "Agi", from: "check_stat"
+      select "Athletics", from: "check_stat"
       fill_in "check_reason", with: "scale the wall"
       click_on "Roll"
     end
 
-    [ gm, player ].each { |person| as(person) { expect(page).to logged?(/Rook: .*check.* to scale the wall\. needed \d+ or under · rolled \d+/) } }
+    # The die lands, then the modifier (Rook's Str above typical) moves it, for everyone.
+    as(player) { expect(page).to have_css(".check-moment .check-moment__step", text: /\+\d+ Str/, wait: 6) }
+    [ gm, player ].each { |person| as(person) { expect(page).to logged?(/Rook: Athletics check \(normal\) to scale the wall\. needed 51 or over · rolled \d+ \+\d+ Str = \d+/) } }
   end
 
   it "shows the players the road as the party travels it, and not before" do

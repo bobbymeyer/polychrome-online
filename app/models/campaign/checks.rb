@@ -23,13 +23,18 @@ module Campaign::Checks
     transaction do
       lines = roll do |dice|
         characters.map do |character|
-        bonus = skill ? character.skill_bonus(skill["slug"]) : 0
+        bonuses = skill ? character.skill_bonuses(skill["slug"]) : []
+        bonus = bonuses.sum { |b| b["amount"] }
         result = Stats::Check.roll(stat_value: character.stats.fetch(stat), stat: stat, level: character.level,
-                                   difficulty: difficulty, rng: dice, bonus: bonus)
+                                   difficulty: difficulty, rng: dice, bonuses: bonuses)
+        result["modifiers"].each { |m| m["label"] = stat.capitalize if m["label"] == stat }
         label = "#{move || "#{skill ? skill['name'] : stat.capitalize} check"} (#{[ (skill['name'] if move && skill), difficulty,
                                                                           ("+#{bonus} #{character.job.name}" if bonus.positive?) ].compact.join(', ')})"
+        # The roll, then each modifier in turn: "rolled 43 +12 Agi +15 Knight = 70".
+        steps = result["modifiers"].map { |m| " #{m['amount'].negative? ? '−' : '+'}#{m['amount'].abs} #{m['label']}" }.join
         body = "#{character.name}: #{label}#{" to #{reason.strip.sub(/\A(to\s+)+/i, '').sub(/\.\z/, '')}" if reason.present?}. " \
-               "needed #{result['chance']} or under · rolled #{result['roll']} · #{result['success'] ? 'Success!' : 'Failure.'}"
+               "needed #{result['needed']} or over · rolled #{result['roll']}#{"#{steps} = #{result['total']}" if steps.present?} · " \
+               "#{result['success'] ? 'Success!' : 'Failure.'}"
         [ body, result.merge("name" => character.name, "character_id" => character.id, "stat" => stat, "difficulty" => difficulty,
                              "skill" => skill&.fetch("name"), "bonus" => bonus, "move" => move,
                              "reason" => reason.to_s.strip.sub(/\.\z/, "").presence).compact ]

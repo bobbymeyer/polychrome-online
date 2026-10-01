@@ -536,7 +536,7 @@ RSpec.describe Battle::Resolver do
       _, events = apply(waiting, ruling)
       roll = of_type(events, :custom_roll).sole
       expect(roll).to include("actor" => "bartz", "stat" => "agi", "difficulty" => "easy")
-      expect(roll["roll"] <= roll["needed"]).to eq(roll["success"])
+      expect(roll["roll"] >= 96 || (roll["roll"] > 5 && roll["total"] >= roll["needed"])).to eq(roll["success"])
       expect(roll["line"]).to eq(roll["success"] ? "Burning coals everywhere!" : "It won't budge.")
       fire = of_type(events, :damage).select { |e| e["damage_type"] == "fire" }
       expect(fire.map { |e| e["target"] }.sort).to eq(roll["success"] ? %w[goblin_a goblin_b] : [])
@@ -564,7 +564,9 @@ RSpec.describe Battle::Resolver do
       waiting, = apply(state, idea)
       plain = of_type(apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "hard")).last, :custom_roll).sole
       skilled = of_type(apply(waiting, gm("rule", unit: "bartz", stat: "agi", difficulty: "hard", skill: "Stealth", bonus: 15)).last, :custom_roll).sole
-      expect(skilled["needed"]).to eq([ plain["needed"] + 15, 95 ].min)
+      expect(skilled["needed"]).to eq(plain["needed"])
+      expect(skilled["modifiers"] - plain["modifiers"]).to eq([ { "label" => "Stealth", "amount" => 15 } ])
+      expect(skilled["total"]).to eq(skilled["roll"] + skilled["modifiers"].sum { |m| m["amount"] })
       expect(skilled).to include("skill" => "Stealth")
       expect(plain).not_to have_key("skill")
     end
@@ -656,7 +658,7 @@ RSpec.describe Battle::Resolver do
       end
 
       it "shields: blows come out of the barrier first" do
-        _, events = cast("barrier", "mage")
+        _, events = cast("barrier", "mage", seed: 5) # a seed where the brute's blow lands
         shield = of_type(events, :status_applied).find { |e| e["status"] == "shield" }
         expect(shield["amount"]).to eq(6 * (20 + 8) / 12)
         expect(of_type(events, :shielded).first).to include("target" => "mage")

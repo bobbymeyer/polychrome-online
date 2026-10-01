@@ -35,16 +35,22 @@ module Battle
       (next_u32 * n) >> 32
     end
 
-    # True with the given percent chance. Always draws, so RNG consumption
-    # does not depend on the chance value.
-    # A d100 (1–100) against a chance: [whether it came in, the roll]. The
-    # same single draw as #percent?, so the stream is identical; the roll is
-    # for showing (the dice on the board).
+    # High is good, everywhere: a d100 (1–100) comes in when it reaches what
+    # was needed, and what's needed is the top `chance` percent of it (a 70%
+    # chance needs 31 or over). The same single draw as #percent?, so the
+    # stream is identical; the roll is for showing (the dice on the board).
     def d100(chance)
       roll = int(100) + 1
-      [ roll <= chance, roll ]
+      [ roll >= Rng.target(chance), roll ]
     end
 
+    # The roll a d100 needs for a percent chance: 101 for none, 1 for certain.
+    def self.target(chance)
+      (101 - chance).clamp(1, 101)
+    end
+
+    # True with the given percent chance. Always draws, so RNG consumption
+    # does not depend on the chance value.
     def percent?(chance)
       int(100) < chance
     end

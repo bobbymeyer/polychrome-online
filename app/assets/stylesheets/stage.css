@@ -702,7 +702,15 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .check-moment__odds { color: var(--grey); font-size: 14px; }
 .check-moment__why { font-size: 15px; }
 .check-moment__why:empty { display: none; }
-.check-moment__roll { font: var(--display); font-size: 96px; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.check-moment__roll { font: var(--display); font-size: 96px; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; transition: color var(--t-change); }
+.check-moment__roll.is-up { color: var(--forest-green); }
+.check-moment__roll.is-down { color: var(--signal); }
+/* The modifiers, as chips that come on one at a time while the number moves. */
+.check-moment__steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; min-height: 26px; }
+.check-moment__steps:empty { display: none; }
+.check-moment__step { font: var(--display); font-size: 16px; padding: 2px 8px; border: 2px solid var(--ink); background: var(--paper); font-variant-numeric: tabular-nums; }
+.check-moment__step.is-up { border-color: var(--forest-green); color: var(--forest-green); }
+.check-moment__step.is-down { border-color: var(--signal); color: var(--signal); }
 .check-moment__verdict { font: var(--display); font-size: 32px; min-height: 36px; }
 .check-moment.is-success { box-shadow: 8px 8px 0 var(--green), 16px 16px 0 var(--ink); }
 .check-moment.is-success .check-moment__verdict { color: var(--forest-green); }

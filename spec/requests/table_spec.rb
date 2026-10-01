@@ -419,7 +419,7 @@ RSpec.describe "The table", type: :request do
       rng = campaign.rng
       post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id, lenna.id ], stat: "agi", difficulty: "hard", reason: "scale the wall" } }
       lines = campaign.messages.where(cue: "check").chronological
-      expect(lines.map(&:body)).to all(match(/Agi check \(hard\) to scale the wall\. needed \d+ or under · rolled \d+ · (Success!|Failure\.)/))
+      expect(lines.map(&:body)).to all(match(/Agi check \(hard\) to scale the wall\. needed 66 or over · rolled \d+( [+−]\d+ Agi = -?\d+)? · (Success!|Failure\.)/))
       expect(lines.first.data).to include("name" => "Bartz", "stat" => "agi", "difficulty" => "hard")
       expect(campaign.reload.rng).not_to eq(rng)
 

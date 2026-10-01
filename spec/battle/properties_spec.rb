@@ -67,17 +67,18 @@ RSpec.describe "Battle resolver properties" do
     end
   end
 
-  it "shows honest dice: every roll is 1–100, and came in exactly when it's at or under what was needed" do
+  it "shows honest dice: every roll is 1–100, and came in exactly when it's at or over what was needed (high is good)" do
     seen = 0
     each_step do |_, _, _, _, events|
       events.select { |e| e.key?("roll") }.each do |e|
         seen += 1
         expect(e["roll"]).to be_between(1, 100)
-        came_in = e["roll"] <= e["needed"]
+        came_in = e["roll"] >= e["needed"]
         case e["type"]
         when "crit", "steal", "status_applied" then expect(came_in).to be(true)
         when "miss" then expect(came_in).to be(false)
-        when "flee", "custom_roll" then expect(came_in).to eq(e["success"])
+        when "flee" then expect(came_in).to eq(e["success"])
+        when "custom_roll" then expect(e["success"]).to eq(e["roll"] >= 96 || (e["roll"] > 5 && e["total"] >= e["needed"])) # the die, then the modifiers
         when "counter" then expect(came_in).to be(true)
         end
       end

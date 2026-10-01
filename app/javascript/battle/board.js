@@ -252,11 +252,14 @@ export class Board {
   // --- transient effects in the fx layer (created and removed) ---
 
   // A d100 beside a unit, for the rolls that decide something: a crit, a
-  // miss, a status, a steal, a getaway. Green when it came in.
+  // miss, a status, a steal, a getaway. High is good: green when it reached
+  // what was needed. A ruling's die shows its modifiers too ("43 +12 → 55").
   die(tl, id, e, at) {
     if (!e.roll) return
-    const cameIn = e.roll <= e.needed
-    this.popup(tl, id, String(e.roll), "die", at, cameIn ? "is-in" : "is-out")
+    const cameIn = e.success ?? (e.roll >= e.needed)
+    const steps = (e.modifiers || []).map((m) => `${m.amount < 0 ? "−" : "+"}${Math.abs(m.amount)}`).join(" ")
+    const text = steps ? `${e.roll} ${steps} → ${e.total}` : String(e.roll)
+    this.popup(tl, id, text, "die", at, cameIn ? "is-in" : "is-out")
   }
 
   popup(tl, id, text, kind, at, extra = "") {

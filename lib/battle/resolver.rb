@@ -391,12 +391,13 @@ module Battle
         return use_ability(unit, own(unit, ctx.ability("attack")), cmd["target"])
       end
 
-      needed = Stats::Check.chance(stat_value: ctx.stat(unit, ruling["stat"]), stat: ruling["stat"],
-                                   level: unit.fetch("level", 5), difficulty: ruling["difficulty"], bonus: ruling.fetch("bonus", 0))
-      success, roll = ctx.rng.d100(needed)
+      bonuses = ruling.fetch("bonus", 0).positive? ? [ { "label" => ruling["skill"] || "Bonus", "amount" => ruling["bonus"] } ] : []
+      result = Stats::Check.roll(stat_value: ctx.stat(unit, ruling["stat"]), stat: ruling["stat"], level: unit.fetch("level", 5),
+                                 difficulty: ruling["difficulty"], rng: ctx.rng, bonuses: bonuses)
+      success = result["success"]
       line = success ? ruling["success"] : ruling["failure"]
-      ctx.emit(:custom_roll, actor: unit["id"], success: success, roll: roll, needed: needed,
-                             stat: ruling["stat"], difficulty: ruling["difficulty"], line: line, **ruling.slice("skill").transform_keys(&:to_sym))
+      ctx.emit(:custom_roll, actor: unit["id"], success: success, stat: ruling["stat"], difficulty: ruling["difficulty"], line: line,
+                             **result.slice("roll", "modifiers", "total", "needed").transform_keys(&:to_sym), **ruling.slice("skill").transform_keys(&:to_sym))
       return unless success && ruling["effects"].any?
 
       idea = { "id" => "custom", "name" => cmd["text"], "kind" => "skill", "target" => ruling["aim"], "effects" => ruling["effects"] }

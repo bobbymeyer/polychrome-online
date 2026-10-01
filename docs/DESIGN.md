@@ -66,9 +66,10 @@ deliberate divergence from much of what follows, and where the two disagree the 
 - **Choices** come up as a window with a red top edge under the dialogue: big italic options
   underlined in red that fill red when pressed, and who picked what in grey beside them. The GM
   sees "Settle on this" instead.
-- **A check** takes the middle of every screen: the character, the stat and the odds, then a
-  heavy number spinning to a stop and the verdict stamped in green or red, with a jingle.
-  Several go one after another.
+- **A check** takes the middle of every screen: the character, the stat and what it needs, then a
+  heavy number spinning to a stop, then each modifier in turn as a chip (+12 Agi, +15 Knight) while
+  the number moves by it, green up and red down, and the verdict stamped in green or red, with a
+  jingle. Several go one after another.
 - **The forecast** on the battle form is a tinted band with a heavy verdict word, coloured from
   green (Easy) to wine (Deadly).
 - **A town's services** are panels with a 3px frame, one per building: a white bar with the
@@ -425,8 +426,11 @@ this browser. On a phone it's one column: you, the scene, your moves, what you l
 - **Choosing a first move is being ready**: the Ready button says so, and goes once you've chosen.
 - **Guests play; accounts make games.** Someone in by an invite with just a name isn't offered
   "New world" or "New campaign", and is turned back if they go there.
-- **A check says its chance one way**: "needed 40 or under · rolled 99", on the card and in the
-  log alike. The GM's check form has "Everyone standing" over the names.
+- **High is good, everywhere.** Every die in the game is read the same way: a big roll is good
+  news and a small one bad, for the party and for its enemies alike. A check needs its total to
+  reach a number ("needed 66 or over · rolled 43 +12 Agi +15 Knight = 70"), on the card and in
+  the log alike, and a battle's dice come in when they reach what was needed. Nothing is ever
+  "under". The GM's check form has "Everyone standing" over the names.
 - **Things to do here get wide buttons** under Where next?, so "Wait for the train that isn't
   there (until day, tomorrow)" reads on a line or two; the roads keep their narrower ones.
 - **A rolled encounter is what's happening now.** The Now line says "Encounter! 2 × Empty
