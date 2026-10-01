@@ -6,7 +6,9 @@
       <div class="field">
         <%= f.label :base_type, "Type" %>
         <%= f.select :base_type, type_options %>
-        <p class="hint">A character in the archetype takes hits as this type, and Attack and the signature command strike with it. <%= link_to "The chart", world_types_path(@world) %>.</p>
+        <p class="hint">A character in the archetype takes hits as this type. <%= link_to "The chart", world_types_path(@world) %>.</p>
+        <label class="check"><%= f.check_box :typed_attack %> Attack and the signature command strike as this type</label>
+        <p class="hint">Off for a caster whose staff is only a staff: their blows are plain, and never useless against what their type can't touch. A plain-typed archetype's blows are plain either way.</p>
       </div>
     <% else %>
       <%= f.hidden_field :base_type, value: type_chart.plain %>

@@ -38,9 +38,17 @@
     </table>
   </div>
 
+  <% soft = @chart.slugs.select { |other| @chart.percent(other, @chart.plain) == 200 } %>
+  <% if soft.size > 1 %>
+    <p class="hint hint--warning">
+      <%= @chart.name(@chart.plain) %> is the plain type, so most archetypes and creatures with no type of their own are it, and it's weak to
+      <%= safe_join(soft.map { |t| type_tag(t) }, " ") %>: <%= soft.size %> of <%= @chart.types.size %> types land double on them<%= ", and knock them down for One More" if @world.rule?("one_more") %>.
+      Meant or not, give bosses of it a resistance or two.
+    </p>
+  <% end %>
   <section class="window">
     <h2>Where the fight is</h2>
-    <p class="hint">Each terrain has a type: a Geomancer's arts take it. Anywhere else is <%= @chart.name(@chart.plain) %>.</p>
+    <p class="hint">Each terrain has a type: an art of the land (one whose type is "terrain") strikes with it. Anywhere else is <%= @chart.name(@chart.plain) %>.</p>
     <dl class="facts facts--wide">
       <% EncounterTable::TERRAINS.each do |place| %>
         <dt><%= place.capitalize %></dt><dd><%= type_tag(@world.terrain_type(place)) %></dd>

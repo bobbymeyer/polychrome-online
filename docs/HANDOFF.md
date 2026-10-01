@@ -29,7 +29,7 @@ This document is the design contract. Read it before writing code. Where it conf
 | Campaign | Between sessions | GM as author | Pointcrawl instance, NPC/location diffs, party, flags |
 | Session | Live | GM as narrator/improviser | Battles, chat, reveals, rerolls |
 
-Everything is a row. There is no YAML world. The base world is seed data: the first `World` and its children.
+Everything is a row. There is no YAML world. The base world is seed data: the first `World` and its children. Greenware (`db/seeds/greenware/`) is a second seeded setting, written against the same books through the same seeder (`Seeds::Setting`): the proof that another author can.
 
 ## 3. Closed vocabularies
 

@@ -52,7 +52,7 @@ class Past
        elsif data.dig("fall", "kind") == "abandoned" then "Left empty #{ago(fell)}, when #{data['holder'] ? "#{house(data['holder'])}" : 'its people'} went away."
        elsif data.dig("fall", "kind") then "It fell #{ago(fell)}: #{data.dig('fall', 'kind')}."
        end),
-      ("#{Array(data['lost']).to_sentence} never came out." if Array(data["lost"]).any?),
+      ("#{Array(data['lost']).to_sentence.upcase_first} never came out." if Array(data["lost"]).any?),
       ("#{house(data['holder'], cap: true)} bought it from #{house(data['family'])}." if data["holder"] && data["family"] && data["holder"] != data["family"]),
       *Array(data["heirlooms"]).map { |h| heirloom_line(h) },
       feud_line ].compact

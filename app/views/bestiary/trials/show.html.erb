@@ -1,0 +1,28 @@
+<% content_for :title, "#{@monster.name} · Trial" %>
+<nav class="crumbs"><%= link_to "Bestiary", world_bestiary_monsters_path(@world) %> / <%= link_to @monster.name, world_bestiary_monster_path(@world, @monster) %> / Trial</nav>
+<div class="book-header">
+  <div>
+    <p class="eyebrow">Bestiary · Trial</p>
+    <h1><%= @trial.count %> × <%= @monster.name %></h1>
+  </div>
+</div>
+<p>
+  Against a level-5 party of <%= @trial.party.map { |u| u[:name] }.to_sentence %> in starting gear, everyone on their default command
+  (Attack, so this is a floor: a table that uses its arts does better).
+  <strong><%= { "victory" => "The party won", "defeat" => "The party fell", "input" => "Still going" }.fetch(@trial.outcome, @trial.outcome) %></strong>
+  <%= @trial.outcome == "input" ? "after" : "in" %> <%= pluralize(@trial.rounds, "round") %>.
+</p>
+<table class="book-table book-table--plain">
+  <thead><tr><th>Who</th><th class="num"><%= word("hp") %></th><th class="num"><%= word("mp") %></th></tr></thead>
+  <tbody>
+    <% (@trial.standing + @trial.enemies).each do |u| %>
+      <tr class="<%= 'is-ko' if u['hp'].zero? %>"><td><%= u["name"] %></td><td class="num"><%= u["hp"] %>/<%= u["stats"]["max_hp"] %></td><td class="num"><%= u["mp"] %>/<%= u["stats"]["max_mp"] %></td></tr>
+    <% end %>
+  </tbody>
+</table>
+<p class="hint">
+  Seed <%= @trial.state["seed"] %>. Try
+  <% [ 1, 2, 3, 4 ].each do |n| %><%= link_to "#{n} of them", world_bestiary_monster_trial_path(@world, @monster, count: n) %><%= ", " unless n == 4 %><% end %>,
+  or <%= link_to "another roll", world_bestiary_monster_trial_path(@world, @monster, count: @trial.count, seed: @trial.state["seed"].to_i + 1) %>.
+  A first boss should take a party like this six rounds or more and cost it someone; a towpath creature, two or three.
+</p>

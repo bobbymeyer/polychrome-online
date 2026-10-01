@@ -1,0 +1,83 @@
+# frozen_string_literal: true
+
+# The Supply: what mends greenware on the road, and each kind of gear in
+# four steps, a potter's tools pressed into service. (Seeds::Greenware)
+module Seeds
+  module Greenware
+    ITEMS = {
+      slip_pot: { name: "Slip Pot", category: "consumable", price: 40, target: "single_ally",
+                  effects: [ { primitive: "heal", power: 30 } ], description: "A pot of wet slip. Rub it in; the small cracks close." },
+      grog_paste: { name: "Grog Paste", category: "consumable", price: 150, target: "single_ally",
+                    effects: [ { primitive: "heal", power: 80 } ], description: "Slip with ground fired clay in it. Fills the deep cracks, and holds." },
+      menders_gold: { name: "Mender's Gold", category: "consumable", price: 300, target: "single_ally",
+                      effects: [ { primitive: "revive", fraction: 20 } ], description: "A leaf of gold and a little glue. Laid along the break, it brings someone back to their feet, seamed and shining." },
+      smoke_pot: { name: "Smoke Pot", category: "consumable", price: 80, target: "self",
+                   effects: [ { primitive: "escape" } ], description: "Wet sawdust and a coal. For when the plan was bad." },
+      lime_wash: { name: "Lime Wash", category: "consumable", price: 50, target: "single_ally",
+                   effects: [ { primitive: "cleanse", kind: "poison" } ], description: "Stops the crazing where it is. Stings." },
+      clear_glaze: { name: "Clear Glaze", category: "consumable", price: 50, target: "single_ally",
+                     effects: [ { primitive: "cleanse", kind: "blind" } ], description: "A drop in each eye and the slip comes off them." },
+      draft_whistle: { name: "Draft Whistle", category: "consumable", price: 50, target: "single_ally",
+                       effects: [ { primitive: "cleanse", kind: "silence" } ], description: "One clear note, and a choked flue draws again." },
+      kintsugi_kit: { name: "Kintsugi Kit", category: "consumable", price: 250, target: "single_ally",
+                      effects: [ { primitive: "cleanse" } ], description: "Gold, glue, a brush and a steady hand. Cures everything that ails you, except being down." },
+
+      # The ladders: each kind of gear in four steps. The first is what a new
+      # character starts in; the second Bisque sells; the third Cone and
+      # Slipway; the fourth is found.
+      pin_tool: { name: "Pin Tool", category: "knife", price: 120, stats: { atk: 9, agi: 2 }, description: "A needle in a cork handle. Light enough to strike first." },
+      fettling_knife: { name: "Fettling Knife", category: "knife", price: 500, stats: { atk: 16, agi: 3 }, description: "For trimming seams off greenware. Trims other things." },
+      trimming_loop: { name: "Trimming Loop", category: "knife", price: 1400, stats: { atk: 24, agi: 4, def: 2 }, description: "A wire loop on a handle, for the off hand and the parry." },
+      shard_knife: { name: "Shard Knife", category: "knife", price: 3800, stats: { atk: 32, agi: 6 }, description: "A sliver of the Flats, bound in leather. Nobody admits to having picked it up." },
+      wooden_paddle: { name: "Wooden Paddle", category: "sword", price: 200, stats: { atk: 14 }, description: "For beating a pot into shape. A plain, honest tool." },
+      ironwood_paddle: { name: "Ironwood Paddle", category: "sword", price: 550, stats: { atk: 21 }, description: "A Thrower's first real paddle. Heavy, and it doesn't split." },
+      fired_paddle: { name: "Fired Paddle", category: "sword", price: 1500, stats: { atk: 29 }, description: "Stoneware, thrown as a blade and fired. Pale, cold and very light." },
+      glass_paddle: { name: "Glass Paddle", category: "sword", price: 4200, stats: { atk: 36, mag: 4 }, description: "Cut from the Flats. The light moves in it when nobody's looking." },
+      clay_spade: { name: "Clay Spade", category: "axe", price: 180, stats: { atk: 13 }, description: "For digging, mostly." },
+      pit_mattock: { name: "Pit Mattock", category: "axe", price: 520, stats: { atk: 22, agi: -1 }, description: "Not for digging." },
+      firebrick_maul: { name: "Firebrick Maul", category: "axe", price: 1450, stats: { atk: 30 }, description: "A firebrick on a handle. Swings like a lighter maul and lands like a heavier one." },
+      kiln_breaker: { name: "Kiln-Breaker", category: "axe", price: 4000, stats: { atk: 40, agi: -2 }, description: "Named for the job, and good at it." },
+      stoking_pole: { name: "Stoking Pole", category: "spear", price: 220, stats: { atk: 15 }, description: "Reach is its own kind of armour, at a firemouth or anywhere." },
+      ash_rake: { name: "Ash Rake", category: "spear", price: 600, stats: { atk: 22 }, description: "A rake with ideas: a hook, a spike, a blade." },
+      long_poker: { name: "Long Poker", category: "spear", price: 1600, stats: { atk: 30 }, description: "Iron, longer than you, and it hums when it's hot." },
+      draft_lance: { name: "Draft Lance", category: "spear", price: 4300, stats: { atk: 38, agi: 3 }, description: "Thrown once down a flue, it came back." },
+      cone_stick: { name: "Cone Stick", category: "rod", price: 150, stats: { atk: 4, mag: 4 }, description: "A stick with a bent cone wired to the end. A borrowed spark." },
+      ember_rod: { name: "Ember Rod", category: "rod", price: 500, stats: { atk: 6, mag: 7 }, description: "The tip is always a little too warm." },
+      glaze_rod: { name: "Glaze Rod", category: "rod", price: 1400, stats: { atk: 8, mag: 11 }, description: "Dipped and fired a hundred times. Arts leave it faster." },
+      cone_readers_rod: { name: "Cone-Reader's Rod", category: "rod", price: 4000, stats: { atk: 10, mag: 16 }, description: "It chose its reader, not the other way round." },
+      wedging_stick: { name: "Wedging Stick", category: "staff", price: 150, stats: { atk: 5, spr: 4 }, description: "A walking stick that's been through a lot of clay." },
+      ash_staff: { name: "Ash Staff", category: "staff", price: 480, stats: { atk: 7, spr: 7 }, description: "Cut from a tree the colliers spared. It remembers." },
+      menders_staff: { name: "Mender's Staff", category: "staff", price: 1300, stats: { atk: 9, spr: 11 }, description: "Warm to hold, even in Frost." },
+      gold_seamed_staff: { name: "Gold-Seamed Staff", category: "staff", price: 3900, stats: { atk: 11, spr: 15, mag: 5 }, description: "Broken and mended so often it's more gold than wood." },
+      wheel_bat: { name: "Wheel Bat", category: "shield", price: 100, stats: { def: 3, mdef: 1 }, description: "A round board off a potter's wheel. Small, often dented." },
+      kiln_shelf: { name: "Kiln Shelf", category: "shield", price: 380, stats: { def: 6, mdef: 2 }, description: "A proper shield. Heavy, and it has held up worse." },
+      saggar_lid: { name: "Saggar Lid", category: "shield", price: 1100, stats: { def: 9, mdef: 4 }, description: "Made to keep the fire's worst off what's inside. Arts skid off it." },
+      glass_pane: { name: "Glass Pane", category: "shield", price: 3600, stats: { def: 13, mdef: 9 }, description: "A sheet of the Flats. The face in it frowns at magic." },
+      clay_cap: { name: "Clay Cap", category: "helmet", price: 150, stats: { def: 3 }, description: "Rings when hit. Better than the alternative." },
+      firebrick_helm: { name: "Firebrick Helm", category: "helmet", price: 420, stats: { def: 5 }, description: "Hot work to wear, and worth it." },
+      saggar_helm: { name: "Saggar Helm", category: "helmet", price: 1150, stats: { def: 8, mdef: 2 }, description: "You forget you're wearing it." },
+      glazed_helm: { name: "Glazed Helm", category: "helmet", price: 3500, stats: { def: 11, mdef: 4 }, description: "Clear as a glaze and harder." },
+      potters_cap: { name: "Potter's Cap", category: "hat", price: 60, stats: { def: 1, mdef: 1 }, description: "Keeps the slip out of your hair." },
+      dust_scarf: { name: "Dust Scarf", category: "hat", price: 300, stats: { def: 2, mdef: 3, agi: 1 }, description: "Wound twice round. Jaunty, and it knows it." },
+      readers_hood: { name: "Reader's Hood", category: "hat", price: 900, stats: { def: 3, mdef: 5, mag: 2 }, description: "Deep, to shade the eyes for reading heat." },
+      gold_band: { name: "Gold Band", category: "hat", price: 3000, stats: { def: 4, mdef: 8, mag: 3, spr: 3 }, description: "A thin band of mender's gold that makes thinking easier." },
+      apron_and_plates: { name: "Apron and Plates", category: "heavy_armor", price: 400, stats: { def: 8, agi: -2 }, description: "A leather apron with fired tiles sewn in. Heavy, loud and reassuring." },
+      firebrick_jacket: { name: "Firebrick Jacket", category: "heavy_armor", price: 900, stats: { def: 12, agi: -2 }, description: "Everything the apron was, and more of it." },
+      saggar_plate: { name: "Saggar Plate", category: "heavy_armor", price: 2200, stats: { def: 17, agi: -1 }, description: "Plate that moves like cloth and keeps the fire out like a saggar." },
+      glass_mail: { name: "Glass Mail", category: "heavy_armor", price: 5500, stats: { def: 23, mdef: 5, agi: -1 }, description: "Light passes through it. Blades don't." },
+      canvas_apron: { name: "Canvas Apron", category: "light_armor", price: 150, stats: { def: 4, agi: 1 }, description: "Stiff with slip, and comfortable." },
+      leather_apron: { name: "Leather Apron", category: "light_armor", price: 450, stats: { def: 7 }, description: "A collier's. Smells of the woods." },
+      slip_coat: { name: "Slip Coat", category: "light_armor", price: 1200, stats: { def: 10, agi: 2 }, description: "A coat dipped in slip and dried. Worn under another, nobody knows." },
+      shardwalkers_wrap: { name: "Shardwalker's Wrap", category: "light_armor", price: 3600, stats: { def: 14, agi: 5 }, description: "Dark, close and silent, and nothing on the Flats cuts it." },
+      dust_robe: { name: "Dust Robe", category: "robe", price: 120, stats: { def: 2, mdef: 4 }, description: "Stitched with the small marks menders make against cracking." },
+      menders_robe: { name: "Mender's Robe", category: "robe", price: 400, stats: { def: 3, mdef: 7 }, description: "Pockets full of gold leaf and sponges." },
+      kiln_robe: { name: "Kiln Robe", category: "robe", price: 1100, stats: { def: 5, mdef: 10, spr: 2 }, description: "Worn at the firemouth. It has stopped being any colour." },
+      gold_thread_robe: { name: "Gold-Thread Robe", category: "robe", price: 3400, stats: { def: 7, mdef: 14, mag: 3, spr: 3 }, description: "Every seam in it is gold. It never needs mending." },
+      makers_ring: { name: "Maker's Ring", category: "accessory", price: 1000, stats: { str: 5 }, description: "A ring with a family's mark on it. Whose, nobody says." },
+      throwers_band: { name: "Thrower's Band", category: "accessory", price: 800, stats: { agi: 4 }, description: "A leather band for the wrist. The wheel seems to turn with you." },
+      cone_charm: { name: "Cone Charm", category: "accessory", price: 900, stats: { mag: 4 }, description: "A cone-six on a cord, bent exactly right. It whispers recipes." },
+      wire_bracer: { name: "Wire Bracer", category: "accessory", price: 700, stats: { def: 3, mdef: 3 }, description: "Cutting wire, wound round the forearm. Turns a blade once, then twice." },
+      gold_seam_ring: { name: "Gold Seam Ring", category: "accessory", price: 2400, stats: { def: 4, mdef: 6 }, description: "A ring that was broken and mended with gold. Warm when something is about to break." }
+    }.freeze
+  end
+end

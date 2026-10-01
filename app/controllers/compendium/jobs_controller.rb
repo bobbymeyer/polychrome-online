@@ -10,7 +10,7 @@ module Compendium
 
     def entry_params
       params.expect(job: [
-        :name, :slug, :description, :base_type, :ability_slots, :desperation, :signature, :passive, :field_ability, *art_params,
+        :name, :slug, :description, :base_type, :typed_attack, :ability_slots, :desperation, :signature, :passive, :field_ability, *art_params,
         { payoff: %i[kind amount line], stat_multipliers: Stats::NAMES, equip_categories: [], skills: [], innates: [ %i[stat add percent] ],
           job_levels_attributes: [ %i[id level ability_id _destroy] ] }
       ])

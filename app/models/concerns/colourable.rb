@@ -7,6 +7,6 @@ module Colourable
 
   included do
     normalizes :colour, with: ->(value) { value.presence }
-    validates :colour, inclusion: { in: Palette.names }, allow_nil: true
+    validates :colour, inclusion: { in: Palette.names, message: ->(*) { "must be one of the stage's colours: #{Palette.names.join(', ')}" } }, allow_nil: true
   end
 end

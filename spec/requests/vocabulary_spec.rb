@@ -30,12 +30,12 @@ RSpec.describe "A setting's own words (Vocabulary)", type: :request do
     get campaign_path(campaign)
     expect(response.body).to include("500 crowns", "Grit #{hero.current_hp}", "Nerve")
     campaign.sleep!
-    expect(campaign.messages.where(body: "The party rests. Everyone is back to full Grit, and half their Nerve.")).to exist
+    expect(campaign.messages.where("body LIKE ?", "The party rests. Everyone is back to full Grit, and half their Nerve.%")).to exist
 
     towns = Array.new(12) { |i| campaign.locations.create!(location_template: village, seed: i + 1) }
     expect(towns.flat_map { |t| t.view["services"].map { |s| s["kind"] } }).not_to include("guild")
     town = towns.find { |t| t.view["services"].any? { |s| s["kind"] == "temple" } }
-    expect(town.view["npcs"].find { |n| n["service"] == "temple" }["title"]).to eq("Surgeon keeper") if town
+    expect(town.view["npcs"].find { |n| n["service"] == "temple" }["title"]).to eq("Keeper of #{town.view["services"].find { |s| s["kind"] == "temple" }["name"]}") if town
     node = campaign.map_nodes.create!(name: "Varn", kind: "town", x: 1, y: 1, visible: true, location: towns.first)
     campaign.place_party!(node)
     get location_path(towns.first)

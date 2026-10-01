@@ -22,6 +22,11 @@
     <% if @gm %>
       <%= button_to "Reroll", location_reroll_path(@location), class: "button button--quiet",
                     form: { data: { turbo_confirm: "Reroll #{view['name']}? Pinned things stay; everything else changes#{', and exploration starts over' if @location.dungeon?}." } } %>
+      <% if @location.overrides.key?("tables") %>
+        <%= button_to "Take the world's tables again", location_memory_path(@location), method: :delete, class: "button button--quiet",
+                      title: "Rolled from the tables as they were when the party came. The seed stays; names and rooms follow the world's tables now.",
+                      form: { data: { turbo_confirm: "Roll #{view['name']} from the world's tables as they are now? Its people may change their names." } } %>
+      <% end %>
     <% end %>
   </div>
 </div>

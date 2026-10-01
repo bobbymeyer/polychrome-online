@@ -76,6 +76,12 @@ After a deploy, `bin/rails db:seed` adds any Base World entries that are new in
 survive. To put every Base World entry back to the seed data (after a
 rebalance, say), run `bin/rails base_world:update`. It overwrites edits.
 
+`db:seed` also seeds Greenware (`db/seeds/greenware/`), a second setting
+written against the same books: its own types, skills, origins, words,
+calendar, atlas, cast, fronts, codex and a written-in pocket history. Seed
+one setting alone with `bin/rails worlds:seed[greenware]`, or put it back to
+its seed data with `bin/rails worlds:update[greenware]`.
+
 ## Books
 
 Every book is a resource namespace inside a world, e.g.

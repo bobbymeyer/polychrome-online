@@ -90,6 +90,8 @@ a.play:hover { color: var(--signal-dark); }
 
 .muted, .hint, .empty { color: var(--grey); }
 .hint { font-size: 13px; line-height: 16px; margin: var(--unit) 0 16px; }
+/* A warning an author should read before saving: the accent, not an alarm. */
+.hint--warning { color: var(--ink); border-left: 4px solid var(--accent); padding-left: 10px; }
 .eyebrow { font-size: 13px; line-height: 16px; font-weight: 600; color: var(--grey); margin: 0 0 var(--unit); }
 .label { font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--grey); }
 .num { text-align: right !important; font-variant-numeric: tabular-nums; }
