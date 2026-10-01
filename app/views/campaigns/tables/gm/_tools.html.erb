@@ -2,11 +2,15 @@
     you had open). What needs an answer now comes first: everyone down, a field ability asked for. %>
 <% tabs = { "scenes" => [ "Scenes", campaign.scenes.where(played_at: nil).count ], "check" => [ "Check", nil ],
             "clocks" => [ "Clocks", campaign.clocks.running.count ], "time" => [ "Time", nil ],
-            "secrets" => [ "Secrets", nil ], "archetypes" => [ "Archetypes", nil ], "screen" => [ "Music & screen", nil ] } %>
-<section class="gm-tools" aria-label="GM tools" data-controller="gm-tools" data-gm-tools-campaign-value="<%= campaign.id %>">
+            "secrets" => [ "Secrets", nil ], "more" => [ "More", nil ] } %>
+<%# While the table is busy (a vote, an encounter, a battle: the Now line's data-state), the tabs fold behind
+    "Tools" (stage.css); the Now line's own buttons open the one they need (gm-tools:open). %>
+<section class="gm-tools" aria-label="GM tools" data-controller="gm-tools" data-gm-tools-campaign-value="<%= campaign.id %>"
+         data-action="gm-tools:open@window->gm-tools#open">
   <%= render "campaigns/tables/gm/recovery", campaign: campaign %>
   <%= render "campaigns/field_uses/requests", campaign: campaign %>
   <p class="gm-only">GM tools · only you see these</p>
+  <button type="button" class="button button--quiet gm-tools__reveal" data-action="gm-tools#reveal" aria-expanded="false">Tools</button>
   <div class="gm-tools__tabs" role="tablist" aria-label="GM tools">
     <% tabs.each_with_index do |(key, (label, count)), i| %>
       <%= tag.button type: "button", role: "tab", id: "gm_tab_#{key}", class: "gm-tools__tab",

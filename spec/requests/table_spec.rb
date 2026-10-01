@@ -381,13 +381,29 @@ RSpec.describe "The table", type: :request do
       expect(response.body).to include("Everyone hears it, unless you whisper")
     end
 
+    it "gives the GM the moves for what's happening, in the Now line, and folds the tools while the table is busy" do
+      sit("gm")
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      expect(page.at("#table_now .table-now__do").text.squish).to include("Call a check", "Play a scene")
+      expect(page.at("#table_now [data-tool-link-key-value=check]")).to be_present
+      expect(page.at(".gm-tools[data-action*='gm-tools:open@window']")).to be_present
+      expect(page.at(".gm-tools .gm-tools__reveal").text).to eq("Tools") # shown only while the table is busy (stage.css)
+      %w[map party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs
+      expect(page.at("#drawer_knows #party_knows")).to be_present
+
+      Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
+      get campaign_table_path(campaign)
+      expect(Nokogiri::HTML(response.body).at("#table_now .table-now__do a[href='#table_choice']").text).to eq("Settle it ↓")
+    end
+
     it "marks what only the GM sees" do
       campaign.map_nodes.create!(name: "Secret Grotto", x: 5, y: 5, visible: false)
       campaign.clocks.create!(name: "The tide", segments: 4, public: true)
       sit("gm")
       get campaign_table_path(campaign)
       expect(response.body).to include("GM tools · only you see these", "Faded places are hidden: only you see them.",
-                                       "Everyone at the table sees this.", "Archetypes", "Music &amp; screen")
+                                       "Everyone at the table sees this.", "gm_tab_more", "Grant an archetype", "Music for the table")
       sit(bartz.id)
       get campaign_table_path(campaign)
       expect(response.body).not_to include("only you see", "Everyone at the table sees this.")

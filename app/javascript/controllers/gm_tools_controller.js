@@ -35,6 +35,20 @@ export default class extends Controller {
     next.focus()
   }
 
+  // While the table is busy the tabs fold away (stage.css): "Tools" brings them back.
+  reveal(event) {
+    const shown = this.element.classList.toggle("is-shown")
+    event.currentTarget.setAttribute("aria-expanded", String(shown))
+  }
+
+  // From the Now line ("Call a check", "Play a scene"): that tool, open and in view.
+  open(event) {
+    this.show(event.detail.key)
+    this.store(this.current)
+    this.element.classList.add("is-shown")
+    this.element.scrollIntoView({ block: "start", behavior: "smooth" })
+  }
+
   show(key) {
     if (!this.tabTargets.some((tab) => tab.dataset.key === key)) key = this.tabTargets[0]?.dataset.key
     this.current = key

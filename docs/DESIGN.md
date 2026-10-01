@@ -287,7 +287,18 @@ A player's table offers what they can do at this moment, and nothing else up fro
   once there's something to know. Your own HP stays in the "You" line.
 - **The header's extras are in the menu**: "Previously on…" and "Change seat".
 
-The GM's table and the shared screen keep their panels for now.
+The GM's table works the same way:
+
+- **The Now line is the GM's prompt**, with the moves for what's happening: in free play "Ask
+  where next", "Call a check" and "Play a scene" (which open their tool); with a vote, "Settle it ↓";
+  with an encounter, "Fight or wave it off ↓" (to its panel, where the prelude can still be edited).
+- **The tools fold while the table is busy.** During a vote, an encounter or a battle the tabs
+  wait behind "Tools"; what needs an answer now (everyone down, a field ability asked for) stays
+  out in front. Granting archetypes, the music and the shared screen are under one "More".
+- **What the GM looks up is in tabs** under the tools: Map · Party · What they know, the map open
+  on a wide screen.
+
+The shared screen keeps its panels: it's watched, not played.
 
 ### A player's screen
 
@@ -341,9 +352,9 @@ this browser. On a phone it's one column: you, the scene, your moves, what you l
 - **A phone controller** shows the last two lines, your own character's check and field rolls,
   and in battle a ticker of what just happened on the screen everyone's watching.
 - **"Previously on…"** opens by itself only for a session that's over, not the one being played.
-- **The GM's tools sit beside the play**, in the side column under the map: tabs for Scenes,
-  Check, Clocks, Time, Secrets, Archetypes (grants) and Music & screen, one open at a time, under
-  a dashed tag: "GM tools · only you see these".
+- **The GM's tools sit beside the play**, at the top of the side column: tabs for Scenes, Check,
+  Clocks, Time, Secrets and More (grants, music, one shared screen), one open at a time, under a
+  dashed tag: "GM tools · only you see these".
   The open tab is ink, the rest grey controls; a count shows unplayed scenes and running clocks.
   The tab the GM had open stays open, per campaign, in this browser. What needs an answer now
   (everyone down, a field ability asked for) sits above the tabs. On a phone as the GM's remote,
