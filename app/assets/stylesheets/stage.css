@@ -1480,11 +1480,13 @@ button.your-moves__tag { border: 0; cursor: default; }
 /* The place's picture fills the frame when it has one; the map and the floorplan sit on it. */
 .stage--table #table_scene { position: absolute; inset: 0; margin: 0; border: 0; }
 .stage--table #table_scene img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
-.stage__map { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 12px; transition: inset var(--t-change) var(--snap); }
-.stage__map .map-canvas, .stage__map .table-floorplan { width: 100%; height: 100%; display: grid; grid-template-rows: minmax(0, 1fr) auto; place-items: center; }
-.stage__map .table-floorplan { grid-template-rows: auto minmax(0, 1fr); }
-.stage__map .map, .stage__map .floorplan { width: auto; max-width: 100%; height: 100%; max-height: 100%; }
-.stage__map .map-canvas__modes { margin: 0; }
+.stage__map { position: absolute; inset: 0; z-index: 1; padding: 12px; transition: inset var(--t-change) var(--snap); }
+/* The drawing fills its area absolutely (an SVG with a viewBox letterboxes itself inside its box). */
+.stage__map .map-canvas, .stage__map .table-floorplan { position: relative; width: 100%; height: 100%; }
+.stage__map .map, .stage__map .floorplan { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; }
+.stage__map .table-floorplan .floorplan { top: 28px; height: calc(100% - 28px); }
+.stage__map .table-floorplan__title { position: absolute; top: 0; left: 0; z-index: 2; margin: 0; padding: 2px 8px; background: var(--paper); border: 2px solid var(--ink); font-size: 13px; }
+.stage__map .map-canvas__modes { position: absolute; left: 0; bottom: 0; z-index: 2; margin: 0; padding: 2px 8px; background: var(--paper); }
 /* Inside a dungeon, the floorplan stands in for the world map. */
 .stage__map:has(#table_floorplan .floorplan) #map_canvas { display: none; }
 .stage__map #table_floorplan:not(:has(.floorplan)) { display: none; }
@@ -1525,7 +1527,8 @@ button.your-moves__tag { border: 0; cursor: default; }
 .stage__caption #table_here:empty { display: none; }
 @media (max-width: 640px) {
   .stage { width: 100%; min-width: 0; }
-  .stage__frame { box-shadow: 4px 4px 0 var(--ink); }
+  /* A phone's frame is 4:3, so the words along its bottom have room. */
+  .stage__frame { box-shadow: 4px 4px 0 var(--ink); aspect-ratio: 4 / 3; }
   .stage__hud .table-time { position: static; max-width: none; text-align: left; box-shadow: none; border-width: 0 0 3px; padding: 8px 0; margin-top: 8px; }
   .stage__frame .dialogue { left: 6px; right: 6px; bottom: 6px; padding: 8px 10px 12px; }
   .stage__frame .dialogue__body { font-size: 16px; line-height: 22px; }
@@ -1562,20 +1565,27 @@ button.your-moves__tag { border: 0; cursor: default; }
   .table > turbo-cable-stream-source { display: none; }
 
   /* The GM's table and the shared screen. */
+  .page:has(> .table) { padding-bottom: 0; }
   .table__main { grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); grid-template-areas: "side stage"; column-gap: var(--gutter); padding-right: var(--gutter); }
-  .table__side { grid-area: side; position: sticky; top: 0; max-height: 100vh; overflow-y: auto; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
-  .table__stage { grid-area: stage; }
+  .table__side { grid-area: side; height: calc(100vh - var(--stage-top, 112px)); overflow-y: auto; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
+  /* The Stage is sacred: first in the column, never scrolled away; what's under it scrolls on its own. */
+  .table__stage { grid-area: stage; display: grid; grid-template-rows: auto minmax(0, 1fr); height: calc(100vh - var(--stage-top, 112px)); }
+  .table__under { min-height: 0; overflow-y: auto; padding-top: 12px; }
+  .table--controller .table__stage { display: block; height: auto; }
+  .table--controller .table__under { overflow: visible; }
   /* The GM's head is one small row: the campaign's name is in the top bar already. */
-  .table:not(.table--controller) .table__stage > .battle__header { margin-bottom: 8px; }
-  .table:not(.table--controller) .table__stage > .battle__header > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
-  .table:not(.table--controller) .table__stage > .battle__header h1 { display: none; }
-  .table:not(.table--controller) .table__stage > .battle__header .eyebrow, .table:not(.table--controller) .table__stage > .battle__header .table__seat { margin: 0; }
+  .table:not(.table--controller) .table__under > .battle__header { margin-bottom: 8px; }
+  .table:not(.table--controller) .table__under > .battle__header > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+  .table:not(.table--controller) .table__under > .battle__header h1 { display: none; }
+  .table:not(.table--controller) .table__under > .battle__header .eyebrow, .table:not(.table--controller) .table__under > .battle__header .table__seat { margin: 0; }
   .table--screen .table__main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "side"; padding: 0 var(--gutter); }
   .table--screen .table__side { position: static; max-height: none; border: 0; padding: 0; }
 
   /* A player's screen: you on the left edge (or its tab), your moves under the stage, the log on the right. */
+  .player-screen { grid-template-rows: minmax(0, 1fr) auto; height: calc(100vh - var(--stage-top, 112px)); gap: 0 var(--gutter); }
+  .player-screen__context { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
   .player-screen.is-pinned { grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); }
-  .player-screen.is-pinned .player-screen__side { top: 0; max-height: 100vh; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
+  .player-screen.is-pinned .player-screen__side { top: 0; height: calc(100vh - var(--stage-top, 112px)); max-height: none; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
   .player-screen__context, .player-screen__moves { padding-right: var(--gutter); }
   .player-screen:not(.is-pinned) .player-screen__context, .player-screen:not(.is-pinned) .player-screen__moves { padding-left: 56px; }
 

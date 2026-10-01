@@ -377,19 +377,20 @@ three columns with the pinned ones on the far edges:
 - **Left, on the edge: you** (a player's card with portrait, name, level and archetype, HP and MP,
   and your sheet; under it what you look up, Party · What we know, the party open), or **the GM's
   tools** with the same look-ups under them.
-- **Middle: the stage**, with the Now line over it and, under it, the last lines said and **your
-  moves** (a drawer kept in view as the page scrolls). The frame fits the screen without
-  scrolling: as wide as the column allows, or as tall as the room under what's above it (the
-  top bar, the head, the Now line, measured as they change), whichever comes first, always 16:9
-  and never narrower than 480px. The dialogue box and the date plate are sized to the frame, so
-  a small frame keeps a small box.
+- **Middle: the stage, first and sacred.** Nothing sits above it but the top bar, and nothing
+  pushes it: the head, the Now line, the last lines said and the GM's moves and talk are in a
+  region under it that scrolls on its own, and a player's **moves** are a drawer along the
+  column's bottom. The frame fits the screen without scrolling: as wide as the column allows,
+  or as tall as the room under the top bar less a band for what's under it, whichever comes
+  first, always 16:9 and never narrower than 480px. The dialogue box and the date plate are
+  sized to the frame, so a small frame keeps a small box.
 - **Right, on the edge: the log.**
 
 The side parts pin, the way the GM's log always has: pinned, it's a column on its edge (or the
 drawer along the bottom); unpinned, it folds away (the left column to a "You" tab on the edge,
 your moves to their bar, the log to its tab) and opens when pressed. Each stays as you left it, in
-this browser. On a phone it's one column: you, the Now line, the stage, your moves, what you look
-up; the date sits under the frame there.
+this browser. On a phone it's one column: you, the stage (4:3 there, so the words along its
+bottom have room), the Now line, your moves, what you look up; the date sits under the frame.
 
 ### The table
 

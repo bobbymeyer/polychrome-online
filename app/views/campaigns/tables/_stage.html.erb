@@ -4,7 +4,7 @@
     and what's being said along its bottom. Display only: nothing on it is pressed; the moves are off the
     stage. Each part is replaced live (Campaign::Broadcasts), so every screen shows the same stage; a
     battle plays on the same frame, on its own page. %>
-<section class="stage stage--table" id="stage" aria-label="Stage" data-controller="stage-fit" data-stage-fit-below-value="<%= local_assigns.fetch(:caption, true) ? 48 : 0 %>">
+<section class="stage stage--table" id="stage" aria-label="Stage" data-controller="stage-fit" data-stage-fit-below-value="<%= local_assigns.fetch(:caption, true) ? 200 : 0 %>">
   <div class="stage__frame">
     <%= render "campaigns/tables/scene", campaign: campaign %>
     <div class="stage__map">

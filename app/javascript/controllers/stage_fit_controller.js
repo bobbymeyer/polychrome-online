@@ -1,10 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
 // The Stage fits the screen without scrolling (docs/DESIGN.md, "The Stage"):
-// it measures how far down the page the frame starts (the top bar, the head,
-// the Now line, which change height as the table changes) and tells the
-// stylesheet, which sizes the frame to the room left under it, keeping 16:9.
-// Narrower than its column, the column wins (stage.css).
+// it measures how far down the page the frame starts (under the top bar) and
+// tells the stylesheet (--stage-top, on the page, so the columns can take the
+// same height), which sizes the frame to the room left under it, keeping
+// 16:9. Narrower than its column, the column wins (stage.css).
 export default class extends Controller {
   static values = { below: { type: Number, default: 48 } } // room to leave under the frame (its caption)
 
@@ -23,7 +23,7 @@ export default class extends Controller {
 
   measure() {
     const top = Math.round(this.element.getBoundingClientRect().top + window.scrollY)
-    this.element.style.setProperty("--stage-top", `${top}px`)
+    document.documentElement.style.setProperty("--stage-top", `${top}px`)
     this.element.style.setProperty("--stage-below", `${this.belowValue}px`)
   }
 }

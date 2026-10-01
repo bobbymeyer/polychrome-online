@@ -36,6 +36,9 @@
   </aside>
 
   <div class="player-screen__context">
+    <%# The Stage first, sacred: nothing above it, and what's under it scrolls on its own (stage.css). %>
+    <%= render "campaigns/tables/stage", campaign: @campaign, gm: false, last_dialogue: @last_dialogue %>
+    <div class="table__under">
     <header class="battle__header">
       <div>
         <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · Table</p>
@@ -43,11 +46,11 @@
       </div>
     </header>
     <%= render "campaigns/tables/now", campaign: @campaign, gm: false %>
-    <%= render "campaigns/tables/stage", campaign: @campaign, gm: false, last_dialogue: @last_dialogue %>
     <section class="recent-lines" aria-label="Just said" hidden data-controller="recent-lines"
              data-recent-lines-seat-value="<%= character.name %>" data-recent-lines-count-value="4">
       <ol data-recent-lines-target="list"></ol>
     </section>
+    </div>
   </div>
 
   <%# Your actions: what you can do now. On a wide screen a drawer along the bottom of the scene, pinned there
