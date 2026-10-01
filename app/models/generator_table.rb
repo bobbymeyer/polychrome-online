@@ -36,12 +36,14 @@ class GeneratorTable < ApplicationRecord
     "sightings" => %w[text],
     "raids" => %w[text],
     # Lines matched to the moment (Story::Matcher), offered to the GM.
-    "arrivals" => %w[text when sets]
+    "arrivals" => %w[text when sets],
+    # The GM's moves on a failed check, soft (words) or hard (what it takes).
+    "complications" => %w[text when sets does]
   }.freeze
   LORE_KINDS = Generators::Lore::KINDS
   # Rows that say when they fit and what they remember (Campaign::Remarks).
-  STORY_KINDS = %w[arrivals].freeze
-  STORY_FIELDS = %w[when sets].freeze
+  STORY_KINDS = %w[arrivals complications].freeze
+  STORY_FIELDS = %w[when sets does].freeze
   # Fields that are lists, written with commas.
   LIST_FIELDS = %w[makes rooms keeps named].freeze
   INTEGER_FIELDS = %w[weight width height gil].freeze
@@ -75,7 +77,9 @@ class GeneratorTable < ApplicationRecord
     "sightings" => "what people say when someone who got away turns up, with {who} and {where} ({who} was seen in {where}.)",
     "raids" => "what people say when a road is raided overnight, with {from} and {to} (A caravan on the road between {from} and {to} was attacked.)",
     "arrivals" => "what the party notices arriving somewhere | when it fits | what it remembers " \
-                  "(Smoke hangs over {place}. | town, night, !smoke_seen | smoke_seen)"
+                  "(Smoke hangs over {place}. | town, night, !smoke_seen | smoke_seen)",
+    "complications" => "what goes wrong when a check fails | when it fits | what it remembers | what it takes, for a hard move " \
+                       "(The rope gives. | skill = climbing | | hurt 10; Somebody saw {who}. | town | seen_in_{place})"
   }.freeze
 
   attr_accessor :paste
@@ -168,6 +172,10 @@ class GeneratorTable < ApplicationRecord
       errors.add(:entries, "#{label}: unknown roof #{entry['roof']}") if entry["roof"] && !Generators::Town::ROOFS.include?(entry["roof"])
       Toll.read(entry["text"]).last.each { |problem| errors.add(:entries, "#{label}: #{problem}") } if kind == "forks"
       Story::Matcher.problems(entry).each { |problem| errors.add(:entries, "#{label}: #{problem}") } if STORY_KINDS.include?(kind)
+      if entry["does"].present? && !Outcome::TAKES.include?(Outcome.parse(entry["does"])&.kind)
+        errors.add(:entries, "#{label}: “#{entry['does']}” isn't something a hard move takes: " \
+                             "#{Outcome::TAKES.map { |kind| Outcome.of(kind).to_s }.join(', ')}")
+      end
       (INTEGER_FIELDS & entry.keys).each do |f|
         errors.add(:entries, "#{label}: #{f} must be a positive whole number") unless JsonCasting.integer?(entry[f]) && entry[f].positive?
       end

@@ -60,6 +60,12 @@ Item 6 is built: `Story::Matcher` (`lib/story`), the facts in
 mechanism of their own. Not yet: the coverage page (Later), and other
 moments than arriving, which items 8 and 10 bring.
 
+Item 7 is built: `Outcome` has what a hard move takes (hurt, weary,
+ambush, and now lose, time and tick), and a world's complications tables
+hold soft and hard moves, offered to the GM on a failed check
+(`Campaign::Remarks#offer_complications!`). Camp events (item 10) will draw
+on the same rows' outcomes.
+
 6. **The story matcher** (`lib/`, pure). The same mechanism kept coming up: tagged rows
    with fallback (ch. 4), lines gated between what the party knows (ch. 7), event
    requirements that chain through flags (ch. 11), descriptions from a world model

@@ -469,8 +469,10 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   (`Toll`): `pay 100`, a number of parts of the day, or outcomes from the one
   closed set (`Outcome`), which now has what takes as well as what gives:
   `hurt 10` (a share of everyone's HP, never the last), `weary 25` (of their
-  MP) and `ambush` (a fight from the place's encounter table, waiting for the
-  GM). It's taken the first time the party goes that way, refused if they
+  MP), `ambush` (a fight from the place's encounter table, waiting for the
+  GM), `lose 50` (money, as much as there is), `time 2` (parts of the day)
+  and `tick` (a running clock: the one at the party's place, else the one
+  nearest to full; a hidden one tells only the GM). It's taken the first time the party goes that way, refused if they
   can't pay, and "Where next?" names it ("(costs 10% of HP)"). A row without
   brackets is a cost the GM plays out. The generator makes the costly way the
   shortcut to the boss (when there's another way round) or the only way to
@@ -561,6 +563,17 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   **Say it** button. The engine never says it for them: said, it goes to
   the table in the narrator's voice and what the row remembers is set.
   Both seeded settings have a table of them.
+- **Complications** are the GM's moves (Dungeon World's) when a check
+  fails: a world's `complications` tables, pasted as
+  `text | when | sets | does`. A row that takes nothing is a **soft move**:
+  signs of trouble coming, an unwelcome truth, an opportunity at a cost. A
+  row whose `does` is one of what takes (`hurt`, `weary`, `ambush`, `lose`,
+  `time`, `tick`) is a **hard move**. On a failed check the GM is offered
+  the best soft one and the best hard one, each matched to the moment and
+  the check (`who` failed, how many, the stat, skill or field ability, the
+  difficulty). A hard move with nothing to take (no clock running, an empty
+  purse) isn't offered. **Say it** or **Make it so**: the words go to the
+  table, then what a hard move takes. Both seeded settings have a table.
 
 ## The setting: canon, voice, words, time and origins
 
