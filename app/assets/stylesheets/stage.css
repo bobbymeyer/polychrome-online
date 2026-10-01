@@ -1189,3 +1189,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* A mode across the map (night on every place) is said once, under it. */
 .map-canvas__modes { margin: 6px 0 0; line-height: 18px; font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: .06em; color: var(--signal); }
+
+/* Long labels get wide buttons: a thing to do here reads on one or two lines, not four. */
+.menu--wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }

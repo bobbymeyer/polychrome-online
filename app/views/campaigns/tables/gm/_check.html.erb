@@ -1,8 +1,9 @@
 <%= form_with url: campaign_checks_path(campaign), scope: :check, class: "book-form check-form" do |f| %>
-  <fieldset class="field">
+  <fieldset class="field" data-controller="check-all">
     <legend>Who tries</legend>
+    <label class="inline"><%= check_box_tag "check_everyone", "1", false, id: "check_everyone", data: { check_all_target: "all", action: "check-all#all" } %> <strong>Everyone standing</strong></label>
     <% campaign.conscious_characters.each do |character| %>
-      <label class="inline"><%= check_box_tag "check[characters][]", character.id, false, id: "check_character_#{character.id}" %> <%= character.name %></label>
+      <label class="inline"><%= check_box_tag "check[characters][]", character.id, false, id: "check_character_#{character.id}", data: { check_all_target: "one", action: "check-all#one" } %> <%= character.name %></label>
     <% end %>
   </fieldset>
   <div class="field-row">
@@ -11,7 +12,7 @@
     <div class="field"><%= f.label :reason, "To…" %><%= f.text_field :reason, placeholder: "scale the wall" %></div>
   </div>
   <div class="field-row">
-    <div class="field">
+    <div class="field field--wide">
       <%= f.label :outcome, "On a success" %>
       <%= f.select :outcome, Outcome::ON_A_CHECK.map { |kind| [ Outcome.of(kind).describe(campaign.world), kind ] }, include_blank: "Nothing: you tell what happens" %>
     </div>

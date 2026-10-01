@@ -95,7 +95,7 @@ RSpec.describe "Moments at the table", type: :system do
       click_on "Roll"
     end
 
-    [ gm, player ].each { |person| as(person) { expect(page).to logged?(/Rook: .*check.* to scale the wall\. \d+% · rolled \d+/) } }
+    [ gm, player ].each { |person| as(person) { expect(page).to logged?(/Rook: .*check.* to scale the wall\. needed \d+ or under · rolled \d+/) } }
   end
 
   it "shows the players the road as the party travels it, and not before" do

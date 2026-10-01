@@ -375,12 +375,12 @@ RSpec.describe "The table", type: :request do
     it "are called by the GM: each character rolls from the campaign's RNG, and the table sees it land" do
       sit("gm")
       get campaign_table_path(campaign)
-      expect(response.body).to include("gm_tab_check", "Who tries")
+      expect(response.body).to include("gm_tab_check", "Who tries", "Everyone standing", 'data-controller="check-all"')
 
       rng = campaign.rng
       post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id, lenna.id ], stat: "agi", difficulty: "hard", reason: "scale the wall" } }
       lines = campaign.messages.where(cue: "check").chronological
-      expect(lines.map(&:body)).to all(match(/Agi check \(hard\) to scale the wall\. \d+% · rolled \d+ · (Success!|Failure\.)/))
+      expect(lines.map(&:body)).to all(match(/Agi check \(hard\) to scale the wall\. needed \d+ or under · rolled \d+ · (Success!|Failure\.)/))
       expect(lines.first.data).to include("name" => "Bartz", "stat" => "agi", "difficulty" => "hard")
       expect(campaign.reload.rng).not_to eq(rng)
 

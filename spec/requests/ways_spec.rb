@@ -28,6 +28,12 @@ RSpec.describe "Where next", type: :request do
     expect(now).to include("Encounter! 2 × Goblin.", "The GM calls it: fight, or wave it off.")
     expect(response.body).not_to include(%(menu__cost">suggest))
     expect { campaign.ask_where_next! }.to raise_error(Refusal, /GM calls it/)
+    sign_out
+    sign_in_as(@admin)
+    get campaign_table_path(campaign)
+    frame = Nokogiri::HTML(response.body).at("turbo-frame#forecast")
+    expect(frame["src"]).to include("/forecast") # the odds load with the panel (a lazy frame never asked)
+    expect(frame["loading"]).to be_nil
     expect { campaign.take_way!("To Greymere") }.to raise_error(Refusal, /GM calls it/)
 
     campaign.wave_off_encounter!
@@ -87,6 +93,7 @@ RSpec.describe "Where next", type: :request do
       get campaign_table_path(campaign)
       expect(response.body).to include("Day in Tule", "Attend class (until night)", "Work a shift (until dusk)", "Or go", "To Greymere")
       expect(response.body).not_to include("The Undertow")
+      expect(response.body.scan("menu--wide").size).to eq(1) # things to do here get wide buttons; the roads don't
 
       post campaign_ways_path(campaign), params: { way: "Attend class (until night)" }
       vote = campaign.open_choice

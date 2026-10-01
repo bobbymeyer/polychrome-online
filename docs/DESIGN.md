@@ -330,6 +330,10 @@ keyboard, a mouse or a finger.
   (encounter, treasure, boss, done). Room names wrap onto up to three lines in their boxes.
 - **A mode across the map is said once**, under it ("By night: across the map."), not tagged on
   every place; a place's own tag, in red, is for what's different there.
+- **A check says its chance one way**: "needed 40 or under · rolled 99", on the card and in the
+  log alike. The GM's check form has "Everyone standing" over the names.
+- **Things to do here get wide buttons** under Where next?, so "Wait for the train that isn't
+  there (until day, tomorrow)" reads on a line or two; the roads keep their narrower ones.
 - **A rolled encounter is what's happening now.** The Now line says "Encounter! 2 × Empty
   Uniform." and who calls it, and nobody goes on (no ways, no suggestions, no travel) until the
   GM fights it or waves it off.

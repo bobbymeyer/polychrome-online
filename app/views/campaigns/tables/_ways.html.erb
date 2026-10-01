@@ -34,7 +34,8 @@
     <% [ [ doings, "#{campaign.period.upcase_first} in #{campaign.current_node&.name}" ], [ roads, (doings.any? ? "Or go" : nil) ] ].each do |group, heading| %>
     <% next if group.empty? %>
     <% if heading %><h3 class="table-ways__group"><%= heading %></h3><% end %>
-    <div class="menu play">
+    <%# Things to do here have long names ("Wait for the train that isn't there (until day, tomorrow)"): wider. %>
+    <div class="menu play<%= " menu--wide" if group.equal?(doings) %>">
       <% group.each do |way| %>
         <% if gm %>
           <%# Going straight there is one click: a dangerous road or a night asks first. In a dungeon, the GM
