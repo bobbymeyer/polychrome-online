@@ -89,6 +89,7 @@ module Campaign::Ways
 
   # The party does something here: it pays, the table hears it, what it
   # does happens (Outcome), and the time goes by (a rest takes the night).
+  # Returns the line the table heard.
   def spend_time!(node, name)
     pastime = node.pastimes.find { |p| p.name == name } or raise Refusal, "There's no #{name} at #{node.name}"
     raise Refusal, "The party isn't at #{node.name}" unless current_node == node
@@ -96,12 +97,13 @@ module Campaign::Ways
     raise Refusal, "Not while a battle is on" if battle_on?
 
     pastime.outcomes.each { |outcome| outcome.can_happen!(self) }
+    heard = nil
     transaction do
       reload
       raise Refusal, "The party has #{money(gil)}; #{pastime.name} costs #{money(pastime.price)}" if pastime.price > gil
 
       decrement!(:gil, pastime.price) if pastime.price.positive?
-      narrate("#{node.name}: #{pastime.name}#{" (#{money(pastime.price)})" if pastime.price.positive?}.")
+      heard = narrate("#{node.name}: #{pastime.name}#{" (#{money(pastime.price)})" if pastime.price.positive?}.")
       messages.create!(body: pastime.line) if pastime.line
       pastime.outcomes.each do |outcome|
         said = outcome.apply!(self, by: "The party")
@@ -113,6 +115,7 @@ module Campaign::Ways
       pass_time!(pastime.takes)
     end
     table_changed # the purse, and whatever the outcome touched
+    heard.body
   end
 
   # Make a way's move: travel a path, step into a room, or spend time here.

@@ -42,6 +42,7 @@
 
 <section class="window">
   <h2>Behavior</h2>
+  <p class="hint"><%= link_to "Try it against a level-5 party", world_bestiary_monster_trial_path(@world, entry) %>: how a fight with <%= entry.boss? ? "it" : "two of them" %> goes on default commands.</p>
   <% abilities = entry.abilities.index_by(&:slug) %>
   <ol class="ai-script">
     <% entry.ai_script.each do |rule| %>

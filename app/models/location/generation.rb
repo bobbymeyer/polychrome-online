@@ -72,12 +72,15 @@ module Location::Generation
     settings.merge("services" => settings.fetch("services", {}).merge(off.index_with(0)))
   end
 
-  # A keeper is named for the world's word for their service.
+  # Where the world has its own word for a service, its keeper goes by the
+  # place they keep ("Keeper of The Quiet Shelf"): "Menders keeper" reads
+  # badly, and the game's own "Priest" would be the wrong word.
   def in_the_worlds_words(town)
     world = campaign.world
+    names = town.fetch("services", []).to_h { |s| [ s["kind"], s["name"] ] }
     town.merge("npcs" => town["npcs"].map do |npc|
       kind = npc["service"]
-      kind && world.terms.dig("services", kind) ? npc.merge("title" => "#{world.word("service.#{kind}")} keeper") : npc
+      kind && world.terms.dig("services", kind) ? npc.merge("title" => "Keeper of #{names[kind] || world.word("service.#{kind}")}") : npc
     end)
   end
 

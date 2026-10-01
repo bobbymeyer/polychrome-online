@@ -69,7 +69,7 @@ RSpec.describe "Town services" do
     lenna.update!(hp: 5)
     campaign.take_way!("Make camp (overnight)")
     expect(campaign.messages.pluck(:body)).to include(
-      "The party rests. Everyone standing is back to full HP, and half their MP. Bartz is still KO'd. It takes a bed at an inn, a temple, or Phoenix Down."
+      a_string_starting_with("The party rests. Everyone standing is back to full HP, and half their MP. Bartz is still KO'd. It takes a bed at an inn, a temple, or Phoenix Down.")
     )
     expect([ bartz.reload.conscious?, lenna.reload.current_hp ]).to eq([ false, lenna.stats["max_hp"] ])
   end

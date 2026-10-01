@@ -62,6 +62,12 @@ class LocationTemplate < ApplicationRecord
     chosen.any? ? world.generator_tables.where(slug: chosen) : world.generator_tables
   end
 
+  # Kinds this template pools from more than one table (two rooms tables,
+  # say): usually a slip, since every place of this kind then mixes them.
+  def crowded_kinds
+    generator_tables.group(:kind).count.select { |kind, n| n > 1 && %w[rooms locks dungeon_names town_names].include?(kind) }.keys
+  end
+
   # { kind => pooled entries } for the generator. Read once per template
   # (every place made from it asks).
   def table_entries

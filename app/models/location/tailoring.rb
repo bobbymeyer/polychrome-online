@@ -12,6 +12,15 @@ module Location::Tailoring
     update!(seed: Location.new_seed, progress: {}, overrides: overrides.except("tables", "families"))
   end
 
+  # Take the world's tables again (Location::Generation#remember!): the
+  # seed stays, so an atlas place keeps its layout; the names and rooms
+  # are rolled from the tables as they are now.
+  def forget_tables!
+    raise Refusal, "#{view['name']} is rolled from the world's tables as they are" unless overrides.key?("tables")
+
+    update!(overrides: overrides.except("tables", "families"))
+  end
+
   def rename!(name)
     update!(overrides: overrides.merge("name" => name.to_s.strip.presence).compact)
   end

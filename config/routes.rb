@@ -18,7 +18,9 @@ Rails.application.routes.draw do
   resources :worlds, param: :slug do
     # Each book is a resource namespace inside its world (docs/HANDOFF.md §7).
     namespace :bestiary do
-      resources :monsters, param: :slug
+      resources :monsters, param: :slug do
+        resource :trial, only: :show # tried against a level-5 party (Monster::Trial)
+      end
     end
     namespace :compendium do
       resources :jobs, param: :slug
@@ -153,6 +155,7 @@ Rails.application.routes.draw do
   resources :locations, only: %i[show update] do
     scope module: :locations do
       resource :reroll, only: :create
+      resource :memory, only: :destroy # the tables it was rolled from when the party came
       resources :pins, only: %i[create destroy]
       resource :stock, only: %i[update destroy]
       resource :boss, only: :update

@@ -58,6 +58,9 @@
   <fieldset class="panel">
     <legend>Generator tables</legend>
     <p class="hint">Which tables to draw names, hooks, rooms and loot from. Tick none to draw on every table of the kinds this template uses.</p>
+    <% if entry.persisted? && (crowded = entry.crowded_kinds).any? %>
+      <p class="hint hint--warning">This template draws on more than one table of <%= crowded.map { |k| k.humanize.downcase }.to_sentence %>: every place rolled from it mixes them. Tick just its own.</p>
+    <% end %>
     <%= hidden_field_tag "#{f.object_name}[config][tables][]", "", id: nil %>
     <div class="checks">
       <% chosen = entry.config.fetch("tables", []) %>
