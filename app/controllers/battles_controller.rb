@@ -43,7 +43,7 @@ class BattlesController < ApplicationController
     return unless @battle.campaign
 
     # The table's log and dialogue come along, as this seat may see them.
-    @seat = coop_view(@battle.campaign) == "screen" ? Seat.nobody : current_seat # the shared screen sees what everyone sees
+    @seat = LocalCoop::WATCHED.include?(coop_view(@battle.campaign)) ? Seat.nobody : current_seat # a watched screen sees what everyone sees
     @messages = Message.visible_to(@battle.campaign, @seat).last(Campaigns::TablesController::LOG_LENGTH)
   end
 

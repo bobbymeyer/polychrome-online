@@ -21,11 +21,22 @@
   <%= seat_streams_from @seat, @campaign %>
   <%= render "shared/stage_stream", campaign: @campaign %>
 
-  <% if player %>
+  <% if view == "stage" %>
+    <%# Nothing but the Stage, for a TV or a stream: the lines still land here, unseen, so the moments they
+        cue (a check landing, an awakening, an arrival) play on it. %>
+    <%= render "campaigns/tables/stage", campaign: @campaign, gm: false, last_dialogue: @last_dialogue, caption: false %>
+    <div hidden><%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %></div>
+    <%= link_to "Leave the stage", campaign_table_path(@campaign, view: "off"), class: "stage-leave" %>
+  <% elsif player %>
     <%= render "campaigns/tables/player_screen" %>
   <% else %>
   <div class="table__main">
     <div class="table__stage">
+    <%# The Stage first, sacred: nothing above it, and what's under it scrolls on its own (stage.css). %>
+    <% unless view == "controller" %>
+    <%= render "campaigns/tables/stage", campaign: @campaign, gm: @seat.gm?, last_dialogue: @last_dialogue %>
+    <% end %>
+    <div class="table__under">
   <header class="battle__header">
     <div>
       <p class="eyebrow"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= { "screen" => "Shared screen", "controller" => "Controller" }.fetch(view, "Table") %></p>
@@ -48,9 +59,6 @@
     <%= render "campaigns/tables/time", campaign: @campaign if view == "controller" %>
   </header>
   <%= render "campaigns/tables/now", campaign: @campaign, gm: @seat.gm? %>
-    <% unless view == "controller" %>
-    <%= render "campaigns/tables/stage", campaign: @campaign, gm: @seat.gm?, last_dialogue: @last_dialogue %>
-    <% end %>
     <%# The last few lines said, whoever said them (on a controller, what just happened): the log drawer keeps everything. %>
     <section class="recent-lines" aria-label="Just said" hidden data-controller="recent-lines"
              data-recent-lines-seat-value="<%= @seat.character&.name %>" data-recent-lines-count-value="<%= view == "controller" ? 2 : 4 %>">
@@ -73,6 +81,7 @@
         <% end %>
       <% end %>
     <% end %>
+    </div>
     </div>
 
     <div class="table__side">
@@ -102,6 +111,7 @@
 
   <% end %>
 
+  <% unless view == "stage" %>
   <%# A player's log is the right-hand column on a wide screen (wide: pinned there, not a pin to press). %>
   <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name, dockable: @seat&.gm?, wide: player } do %>
     <%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %>
@@ -120,5 +130,6 @@
     <%= render "campaigns/tables/gm/tools", campaign: @campaign, view: view if @seat.gm? && view == "controller" %>
   <% else %>
     <%= render "campaigns/tables/take_a_seat", campaign: @campaign %>
+  <% end %>
   <% end %>
 </div>

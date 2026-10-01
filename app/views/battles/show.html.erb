@@ -39,6 +39,12 @@
     <%= render "shared/stage_stream", campaign: @battle.campaign %>
   <% end %>
 
+  <% if view == "stage" %>
+    <%# Nothing but the Stage: the player still needs somewhere to keep the log and its Skip (unseen). %>
+    <button type="button" class="button button--quiet" data-battle-player-target="skip" data-action="battle-player#skip" hidden>Skip</button>
+    <ol data-battle-player-target="log" hidden></ol>
+    <%= link_to "Leave the stage", battle_path(@battle, view: "off"), class: "stage-leave" %>
+  <% else %>
   <header class="battle__header">
     <div>
       <p class="eyebrow">
@@ -55,8 +61,9 @@
               data-action="battle-player#skip" title="Or press Enter, Space or Esc" hidden>Skip</button>
     </div>
   </header>
+  <% end %>
 
-  <div class="stage" data-battle-player-target="stage">
+  <div class="stage" data-battle-player-target="stage" data-controller="stage-fit" data-stage-fit-below-value="24">
     <%# This round's order, as it plays: who has gone, who's up, who's still to come (battle/board.js). %>
     <ol class="turn-rail" data-battle-player-target="rail" aria-label="This round" hidden></ol>
     <div data-battle-player-target="boardContainer">
@@ -69,6 +76,7 @@
     <%= render "campaigns/tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
   </div>
 
+  <% unless view == "stage" %>
   <div class="battle__lower">
     <% if view == "screen" %>
       <%= turbo_frame_tag "command_panel", src: battle_panel_path(@battle), class: "command-frame",
@@ -117,6 +125,7 @@
       </ol>
     </section>
     <%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat if @battle.campaign %>
+  <% end %>
   <% end %>
 
   <% if (boss = bosses.first) %>

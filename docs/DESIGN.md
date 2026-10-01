@@ -343,7 +343,8 @@ The GM's table works the same way:
 - **What the GM looks up is in tabs** under the tools: Map · Party · What they know, the map open
   on a wide screen.
 
-The shared screen keeps its panels: it's watched, not played.
+The shared screen keeps its panels: it's watched, not played. The stage-only view keeps nothing but
+the frame (see "The Stage").
 
 ### The Stage
 
@@ -363,6 +364,12 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   moves, the talk box, the GM's tools, what you look up, equipment, whispers) happen off the
   stage: in the columns beside it and under it. Its links (open the map, visit the place) sit in
   a caption under the frame.
+- **Stage only.** For a TV at the table or a stream on a call, `?view=stage` shows nothing but the
+  frame: on black, as big as the screen allows, with no top bar, log, panels or caption, and a
+  spectator's view of it (no GM secrets on the TV). The lines still arrive, unseen, so the moments
+  they cue (a check landing, an awakening, an arrival) play on it; a battle takes it over the same
+  way. "Leave the stage" shows in the corner when the mouse goes looking. The GM opens it from
+  the shared-screen setup under More.
 
 On a desktop (1100px and up) the page has no measure: it takes the whole width, and the screen is
 three columns with the pinned ones on the far edges:
@@ -370,16 +377,20 @@ three columns with the pinned ones on the far edges:
 - **Left, on the edge: you** (a player's card with portrait, name, level and archetype, HP and MP,
   and your sheet; under it what you look up, Party · What we know, the party open), or **the GM's
   tools** with the same look-ups under them.
-- **Middle: the stage**, with the Now line over it and, under it, the last lines said and **your
-  moves** (a drawer kept in view as the page scrolls). The frame is as wide as the column allows,
-  or as tall as the screen allows, whichever comes first.
+- **Middle: the stage, first and sacred.** Nothing sits above it but the top bar, and nothing
+  pushes it: the head, the Now line, the last lines said and the GM's moves and talk are in a
+  region under it that scrolls on its own, and a player's **moves** are a drawer along the
+  column's bottom. The frame fits the screen without scrolling: as wide as the column allows,
+  or as tall as the room under the top bar less a band for what's under it, whichever comes
+  first, always 16:9 and never narrower than 480px. The dialogue box and the date plate are
+  sized to the frame, so a small frame keeps a small box.
 - **Right, on the edge: the log.**
 
 The side parts pin, the way the GM's log always has: pinned, it's a column on its edge (or the
 drawer along the bottom); unpinned, it folds away (the left column to a "You" tab on the edge,
 your moves to their bar, the log to its tab) and opens when pressed. Each stays as you left it, in
-this browser. On a phone it's one column: you, the Now line, the stage, your moves, what you look
-up; the date sits under the frame there.
+this browser. On a phone it's one column: you, the stage (4:3 there, so the words along its
+bottom have room), the Now line, your moves, what you look up; the date sits under the frame.
 
 ### The table
 
