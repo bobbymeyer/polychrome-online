@@ -62,7 +62,10 @@
 <section class="window">
   <div class="book-header">
     <h2>Example: <%= example["name"] %></h2>
-    <%= link_to "Another example", entry_path(entry) + "?seed=#{seed + 1}", class: "button button--quiet" %>
+    <div class="actions">
+      <%= link_to "Another example", entry_path(entry) + "?seed=#{seed + 1}", class: "button button--quiet" %>
+      <%= link_to "A hundred rolls", world_gazetteer_location_template_report_path(@world, entry), class: "button button--quiet" %>
+    </div>
   </div>
   <% if entry.town? %>
     <%= render "locations/skyline", view: example %>

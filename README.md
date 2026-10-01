@@ -476,6 +476,16 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   shortcut to the boss (when there's another way round) or the only way to
   treasure on that side, and the fork says so. That draws nothing, so the rest
   of a dungeon rolls as it did.
+- **A hundred rolls:** each template's page links to a report of what it
+  makes over a hundred seeds (`Generators::Report`): sizes (least, average,
+  most), how often each service or decision comes up, what forks buy and
+  whether the game or the GM takes their cost, what a dungeon was and how it
+  fell (from the world's lore, as for a place the history never saw), locks
+  left out for want of somewhere to hide their key, how often the generator
+  had to make something up ("Stranger 1"), and for every table it draws on,
+  how many rows came up, the most common, and the rows that never did. It's
+  how a world builder finds thin tables before players do, and how a change to
+  a generator gets judged.
 - **GM controls (§7):**
   - **Reroll.**
   - **Pin:** pinned services and rooms survive a reroll. Pinning a

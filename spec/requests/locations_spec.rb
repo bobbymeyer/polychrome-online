@@ -156,6 +156,23 @@ RSpec.describe "Locations", type: :request do
       expect(response.body).to include(ERB::Util.html_escape(village["npcs"].first["hook"]), 'class="couplet"')
     end
 
+    it "reports what a template makes over a hundred rolls" do
+      get world_gazetteer_location_template_path(world, "goblin_cave")
+      expect(response.body).to include(world_gazetteer_location_template_report_path(world, "goblin_cave"))
+
+      get world_gazetteer_location_template_report_path(world, "goblin_cave")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("A hundred rolls", "Sizes", "Rooms", "Encounter:", "Room events", "Fork costs", "What they were", "How they fell", "Came up")
+
+      get world_gazetteer_location_template_report_path(world, "village")
+      expect(response.body).to include("Townsfolk", "Inn: 100%", "Town names", "Nothing: every roll drew from a table.")
+
+      empty = World.create!(name: "Empty", slug: "empty")
+      empty.location_templates.create!(name: "Hamlet", slug: "hamlet", kind: "town", config: {})
+      get world_gazetteer_location_template_report_path(empty, "hamlet")
+      expect(response.body).to include("Town name: 100%", "Townsperson&#39;s name: 100%")
+    end
+
     it "warns when a template has nothing to draw some things from" do
       empty = World.create!(name: "Empty", slug: "empty")
       empty.location_templates.create!(name: "Hamlet", slug: "hamlet", kind: "town", config: {})
