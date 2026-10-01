@@ -1282,3 +1282,13 @@ button.your-moves__tag { border: 0; cursor: default; }
   .player-screen__context .table-time__deadlines { margin: 0; flex-basis: 100%; }
   .player-screen__context .table-now { margin-bottom: 12px; }
 }
+
+/* The GM's table, what to do now (docs/DESIGN.md): the Now line has the moves for this state; while the
+   table is busy (a vote, an encounter, a battle) the tools fold behind "Tools", and what needs an answer
+   (everyone down, a field ability asked for) stays out in front. */
+.table-now__do { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
+.table-now__do form { margin: 0; }
+.gm-tools__reveal { display: none; margin: 0 0 8px; }
+.table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools__reveal { display: inline-flex; }
+.table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
+.gm-tools__reveal[aria-expanded="true"] { background: var(--ink); color: var(--paper); }

@@ -81,6 +81,7 @@
     <% end %>
     <% unless view == "controller" %>
     <%# Always present, even before the map has any places, so broadcasts have something to replace. %>
+    <% map = capture do %>
     <section class="window table__map" aria-label="Map">
       <%# Inside a dungeon, its floorplan stands in for the world map. %>
       <%= render "campaigns/tables/floorplan", campaign: @campaign, gm: @seat.gm? %>
@@ -93,11 +94,28 @@
         <p class="hint gm-only-hint">Faded places are hidden: only you see them.</p>
       <% end %>
     </section>
-    <%# The GM's tools beside the play, where they can be reached mid-scene. %>
-    <%= render "campaigns/tables/gm/tools", campaign: @campaign if @seat.gm? && !view %>
-    <%= render "campaigns/tables/party", campaign: @campaign %>
     <% end %>
-    <%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? %>
+    <% if @seat.gm? && !view %>
+      <%# The GM's tools first, where they can be reached mid-scene; then what the GM looks up, in tabs:
+          the map open on a wide screen, the party and what the party knows a press away. %>
+      <%= render "campaigns/tables/gm/tools", campaign: @campaign %>
+      <div class="drawers" data-controller="drawers" data-drawers-wide-value="map">
+        <div class="drawers__tabs" role="group" aria-label="Look up">
+          <% { "map" => "Map", "party" => "Party", "knows" => "What they know" }.each do |key, label| %>
+            <%= tag.button label, type: "button", class: "drawers__tab drawers__tab--#{key}", aria: { expanded: false, controls: "drawer_#{key}" },
+                                  data: { drawers_target: "tab", key: key, action: "drawers#toggle" } %>
+          <% end %>
+        </div>
+        <div id="drawer_map" class="drawers__panel" hidden data-drawers-target="panel" data-key="map"><%= map %></div>
+        <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party"><%= render "campaigns/tables/party", campaign: @campaign %></div>
+        <div id="drawer_knows" class="drawers__panel" hidden data-drawers-target="panel" data-key="knows"><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: true %></div>
+      </div>
+    <% else %>
+      <%= map %>
+      <%= render "campaigns/tables/party", campaign: @campaign %>
+    <% end %>
+    <% end %>
+    <%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? unless @seat.gm? && !view %>
     </div>
   </div>
 

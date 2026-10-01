@@ -32,6 +32,23 @@ RSpec.describe "The GM's tools at the table", type: :system do
     end
   end
 
+  it "opens a tool from the Now line, and folds the tools away while the table is busy" do
+    seat(gm, "gm")
+    as(gm) do
+      within("#table_now") { click_on "Call a check" }
+      expect(page).to have_css("#gm_panel_check", visible: true, text: "Who tries")
+
+      wait_for_streams
+      Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
+      expect(page).to have_css("#table_now[data-state=choice]")
+      expect(page).to have_link("Settle it ↓")
+      visit current_path # a fresh look, as the GM would have it mid-vote
+      expect(page).to have_no_css(".gm-tools__tabs", visible: true)
+      click_on "Tools"
+      expect(page).to have_css(".gm-tools__tabs", visible: true)
+    end
+  end
+
   it "pins the log open beside the page, and it stays pinned" do
     seat(gm, "gm")
     as(gm) do

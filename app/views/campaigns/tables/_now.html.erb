@@ -15,7 +15,7 @@
     <% elsif (encounter = campaign.pending_encounter).present? %>
       <% foes = (campaign.npcs.where(id: encounter.fetch("antagonists", [])).map(&:name) + [ (campaign.describe_encounter(encounter["monsters"]) if encounter["monsters"].present?) ]).compact %>
       <strong>Encounter! <%= foes.to_sentence %>.</strong>
-      <%= gm ? "Fight it or wave it off, below." : "The GM calls it: fight, or wave it off." %>
+      <%= gm ? "It's your call." : "The GM calls it: fight, or wave it off." %>
     <% elsif choice %>
       <% picked = choice.picks.includes(:character).map { |pick| pick.character.name } %>
       <% unplayed, waiting = campaign.characters.order(:created_at).reject { |c| picked.include?(c.name) }.partition { |c| c.user_id.nil? }.map { |cs| cs.map(&:name) } %>
@@ -28,10 +28,24 @@
         <%= "Nobody plays #{unplayed.to_sentence}: no pick from them." if unplayed.any? %>
       </span>
     <% elsif gm %>
-      <strong>The table is yours.</strong> Say something, play a scene, call a check, or ask where next.
+      <strong>The table is yours.</strong>
     <% else %>
       <strong>The GM has the floor.</strong> Talk at the table, or suggest where to go next.
     <% end %>
   </p>
   <%= render "campaigns/tables/current_battle", campaign: campaign %>
+  <%# The GM's prompt: the moves that fit this state, right here (the panels below have the detail). %>
+  <% if gm && !battle %>
+    <div class="table-now__do">
+      <% if state == "encounter" %>
+        <%= link_to "Fight or wave it off ↓", "#table_ways", class: "button play" %>
+      <% elsif state == "choice" %>
+        <%= link_to "Settle it ↓", "#table_choice", class: "button play" %>
+      <% else %>
+        <%= button_to "Ask where next", campaign_ways_path(campaign), class: "button play", form: { class: "inline" } if campaign.ways_on.any? %>
+        <%= tag.button "Call a check", type: "button", class: "button button--quiet", data: { controller: "tool-link", tool_link_key_value: "check", action: "tool-link#open" } %>
+        <%= tag.button "Play a scene", type: "button", class: "button button--quiet", data: { controller: "tool-link", tool_link_key_value: "scenes", action: "tool-link#open" } %>
+      <% end %>
+    </div>
+  <% end %>
 </section>
