@@ -5,7 +5,7 @@
 <% end %>
 
 <% view = coop_view %>
-<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment" <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment<%= " heartbeat" if @seat.character? %>" <%= tag.attributes(data: { heartbeat_url_value: (campaign_presence_path(@campaign) if @seat.character?) }) %> <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%= render "campaigns/tables/cards" %>
@@ -70,12 +70,15 @@
         <%= link_to(@seat.gm? ? "Edit the map / travel →" : "Open the map →", campaign_map_path(@campaign)) %>
         <%= render "campaigns/tables/here", campaign: @campaign %>
       </p>
+      <% if @seat.gm? && @campaign.map_nodes.where(visible: false).exists? %>
+        <p class="hint gm-only-hint">Faded places are hidden: only you see them.</p>
+      <% end %>
     </section>
     <%# The GM's tools beside the play, where they can be reached mid-scene. %>
     <%= render "campaigns/tables/gm/tools", campaign: @campaign if @seat.gm? && !view %>
     <%= render "campaigns/tables/party", campaign: @campaign %>
     <% end %>
-    <%= render "campaigns/tables/party_knows", campaign: @campaign %>
+    <%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? %>
     </div>
   </div>
 

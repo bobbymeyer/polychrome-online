@@ -21,7 +21,7 @@
     <%# Camp is for the road: in a town, the party takes rooms at the inn. %>
     <% if !party %>
     <% elsif (inn = @campaign.inn_here) %>
-      <%= link_to "Rooms at #{inn['name']}", location_path(@campaign.current_node.location, anchor: "service-inn"), class: "button button--quiet" %>
+      <%= link_to "Inn: #{inn['name']}", location_path(@campaign.current_node.location, anchor: "service-inn"), class: "button button--quiet" %>
     <% else %>
       <% if (camp = @campaign.camp_here) %>
         <%= button_to "Make camp", campaign_ways_path(@campaign), params: { way: camp["label"], go: 1 }, class: "button button--quiet",

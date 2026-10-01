@@ -16,6 +16,8 @@ RSpec.describe "The table", type: :request do
     Nokogiri::HTML(response.body).at("##{id} option[selected]")&.[]("value")
   end
 
+  def now = Nokogiri::HTML(response.body).at("#table_now").text.squish
+
   def say(fields)
     post campaign_messages_path(campaign), params: { message: fields }
   end
@@ -278,8 +280,6 @@ RSpec.describe "The table", type: :request do
   end
 
   describe "the Now line" do
-    def now = Nokogiri::HTML(response.body).at("#table_now").text.squish
-
     it "says what the table is doing and whose move it is, to the GM and to the players" do
       sit("gm")
       get campaign_table_path(campaign)
@@ -292,7 +292,8 @@ RSpec.describe "The table", type: :request do
       sit(bartz.id)
       post choice_picks_path(campaign.open_choice), params: { option: "Refuse" }
       get campaign_table_path(campaign)
-      expect(now).to include("Pick below; the GM settles it.", "Picked: Bartz. Still to pick: Lenna.")
+      expect(now).to include("Pick below; the GM settles it.", "Picked: Bartz.", "Nobody plays Lenna: no pick from them.")
+      expect(response.body).to include("1 of 1 player has picked.")
     end
 
     it "puts a battle first: the choice waits, and can't be settled until it's over" do
@@ -306,6 +307,40 @@ RSpec.describe "The table", type: :request do
 
       post choice_settlement_path(choice), params: { option: "Refuse" }
       expect(choice.reload.settled).to be_nil
+    end
+  end
+
+  describe "who is at the table" do
+    def party = Nokogiri::HTML(response.body).at("#table_party").text.squish
+
+    it "says who nobody plays, and who is here or away, from a heartbeat the table and battles send" do
+      bartz.update!(user: make_user("Kim"))
+      get campaign_table_path(campaign)
+      expect(party).to include("Kim away", "nobody plays them")
+
+      sit(bartz.id)
+      get campaign_table_path(campaign)
+      expect(response.body).to include("heartbeat", campaign_presence_path(campaign))
+      patch campaign_presence_path(campaign)
+      expect(response).to have_http_status(:no_content)
+      expect(bartz.reload).to be_here
+      get campaign_table_path(campaign)
+      expect(party).to include("Kim here")
+
+      travel Character::HERE_FOR + 1.second
+      expect(bartz.reload).not_to be_here
+    end
+
+    it "marks what only the GM sees" do
+      campaign.map_nodes.create!(name: "Secret Grotto", x: 5, y: 5, visible: false)
+      campaign.clocks.create!(name: "The tide", segments: 4, public: true)
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(response.body).to include("GM tools · only you see these", "Faded places are hidden: only you see them.",
+                                       "Everyone at the table sees this.", "Archetypes", "Music &amp; screen")
+      sit(bartz.id)
+      get campaign_table_path(campaign)
+      expect(response.body).not_to include("only you see", "Everyone at the table sees this.")
     end
   end
 

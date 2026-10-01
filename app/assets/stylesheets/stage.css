@@ -1113,3 +1113,12 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .choice__hold { display: none; margin: 0 0 8px; font-weight: 800; }
 .table:has(#table_battle a) .choice__hold { display: block; }
 .table:has(#table_battle a) .choice__options, .table:has(#table_battle a) .choice__hint { opacity: .45; pointer-events: none; }
+
+/* What only the GM sees is marked so: the tools column, hidden places on the map. */
+.gm-only { display: inline-block; margin: 0 0 8px; padding: 1px 8px; border: 2px dashed var(--ink); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+
+/* Who is here: a player with the table or a battle open has a filled dot; away is hollow. */
+.coop-party__here { font-size: 13px; color: var(--grey); white-space: nowrap; }
+.coop-party__here::before { content: ""; display: inline-block; width: 8px; height: 8px; margin: 0 4px 1px 2px; border: 2px solid var(--grey); border-radius: 50%; vertical-align: middle; }
+.coop-party__here.is-here { color: var(--ink); font-weight: 700; }
+.coop-party__here.is-here::before { background: var(--ink); border-color: var(--ink); }

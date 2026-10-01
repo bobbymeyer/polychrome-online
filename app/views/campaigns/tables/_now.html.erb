@@ -12,10 +12,14 @@
       <%= "The choice waits until it's over." if choice %>
     <% elsif choice %>
       <% picked = choice.picks.includes(:character).map { |pick| pick.character.name } %>
-      <% waiting = campaign.characters.order(:created_at).map(&:name) - picked %>
+      <% unplayed, waiting = campaign.characters.order(:created_at).reject { |c| picked.include?(c.name) }.partition { |c| c.user_id.nil? }.map { |cs| cs.map(&:name) } %>
       <strong><%= choice.where_next? ? "The party is choosing where to go next." : choice.what_now? ? "The party is down. What happens now?" : "The party has a choice to make." %></strong>
       <%= gm ? "Settle it when you're ready." : "Pick below; the GM settles it." %>
-      <span class="table-now__who"><%= picked.any? ? "Picked: #{picked.to_sentence}." : "Nobody has picked yet." %><%= " Still to pick: #{waiting.to_sentence}." if picked.any? && waiting.any? %></span>
+      <span class="table-now__who">
+        <%= picked.any? ? "Picked: #{picked.to_sentence}." : "Nobody has picked yet." %>
+        <%= "Still to pick: #{waiting.to_sentence}." if picked.any? && waiting.any? %>
+        <%= "Nobody plays #{unplayed.to_sentence}: no pick from them." if unplayed.any? %>
+      </span>
     <% elsif gm %>
       <strong>The table is yours.</strong> Say something, play a scene, call a check, or ask where next.
     <% else %>

@@ -278,6 +278,15 @@ keyboard, a mouse or a finger.
   who still has to, else whose floor it is ("The table is yours" for the GM, "The GM has the
   floor" for players). Each side reads what it can do. A battle goes red and holds everything
   else: an open choice greys out with "On hold until the battle is over", and can't be settled.
+- **Who picked, and who can't.** The Now line names who has picked and who still has to, and says
+  "Nobody plays Aoi" for characters with no player, so the GM doesn't wait on them; the GM's
+  choice panel counts the picks ("1 of 3 players have picked").
+- **Who is here.** The party panel says who plays each character, or "nobody plays them", and
+  beside a player a dot: filled "here" while they have the table or a battle open (a heartbeat
+  every 20 seconds), hollow "away" a minute after it stops.
+- **What only the GM sees is marked.** The tools column has its dashed tag; under the map, "Faded
+  places are hidden: only you see them"; and "The party knows" says "Everyone at the table sees
+  this" to the GM.
 - **Dialogue first.** The table leads with the dialogue box; the map sits to the side with the
   party's HP and MP, which follow battles and rests live.
 - **The last few lines** said at the table sit under the dialogue box, whoever said them, so
@@ -287,7 +296,8 @@ keyboard, a mouse or a finger.
   and in battle a ticker of what just happened on the screen everyone's watching.
 - **"Previously on…"** opens by itself only for a session that's over, not the one being played.
 - **The GM's tools sit beside the play**, in the side column under the map: tabs for Scenes,
-  Check, Clocks, Time, Secrets and More (grants, music, one shared screen), one open at a time.
+  Check, Clocks, Time, Secrets, Archetypes (grants) and Music & screen, one open at a time, under
+  a dashed tag: "GM tools · only you see these".
   The open tab is ink, the rest grey controls; a count shows unplayed scenes and running clocks.
   The tab the GM had open stays open, per campaign, in this browser. What needs an answer now
   (everyone down, a field ability asked for) sits above the tabs. On a phone as the GM's remote,

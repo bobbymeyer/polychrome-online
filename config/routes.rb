@@ -125,6 +125,8 @@ Rails.application.routes.draw do
       resource :join_code, only: :create
       resource :forecast, only: :show
       resource :table_seat, only: %i[create destroy]
+      # A seated player has the table open (heartbeat_controller): who is here.
+      resource :presence, only: :update
       resource :composer, only: :show
 
       # The pointcrawl map (§7). The side panel is a Turbo Frame; the SVG

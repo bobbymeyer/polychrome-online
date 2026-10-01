@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_01_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_01_150000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -233,6 +233,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_01_140000) do
     t.string "origin"
     t.integer "home_node_id"
     t.json "ties", default: [], null: false
+    t.datetime "seen_at"
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["home_node_id"], name: "index_characters_on_home_node_id"
     t.index ["job_id"], name: "index_characters_on_job_id"

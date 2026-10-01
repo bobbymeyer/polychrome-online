@@ -3,6 +3,7 @@
 <% secrets = campaign.secrets.revealed.order(:revealed_at) %>
 <section class="window party-knows" id="party_knows" aria-label="What the party knows" <%= "hidden" if clocks.none? && secrets.none? %>>
   <h2>The party knows</h2>
+  <% if local_assigns[:gm] %><p class="hint">Everyone at the table sees this.</p><% end %>
   <% if clocks.any? %>
     <ul class="clock-list">
       <% clocks.each do |clock| %>

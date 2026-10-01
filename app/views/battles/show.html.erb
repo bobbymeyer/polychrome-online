@@ -10,7 +10,7 @@
 <% villains = @battle.enemies.any? { |u| Npc.from_battle_unit(u["id"]) } %>
 <% bosses = villains ? [] : @battle.boss_monsters.to_a %>
 <% view = @battle.campaign && coop_view(@battle.campaign) %>
-<div class="battle<%= " battle--#{view}" if view %><%= " battle--boss" if boss_names.any? %>" data-controller="battle-player dialogue battle-watch<%= " recap" if @battle.campaign %>" data-battle-watch-url-value="<%= battle_watch_path(@battle) %>" <%= tag.attributes(data: { recap_campaign_value: @battle.campaign_id }) if @battle.campaign %>
+<div class="battle<%= " battle--#{view}" if view %><%= " battle--boss" if boss_names.any? %>" data-controller="battle-player dialogue heartbeat<%= " recap" if @battle.campaign %>" data-heartbeat-url-value="<%= battle_watch_path(@battle) %>" <%= tag.attributes(data: { recap_campaign_value: @battle.campaign_id }) if @battle.campaign %>
      <%= tag.attributes(data: { boss_down: ("#{boss_names.to_sentence} #{boss_names.size > 1 ? 'fall' : 'falls'}!" if boss_names.any?) }) %>
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
      data-battle-player-words-value="<%= battle_words(@battle.campaign.world).to_json %>"
