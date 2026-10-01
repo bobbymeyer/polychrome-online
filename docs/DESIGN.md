@@ -343,7 +343,8 @@ The GM's table works the same way:
 - **What the GM looks up is in tabs** under the tools: Map · Party · What they know, the map open
   on a wide screen.
 
-The shared screen keeps its panels: it's watched, not played.
+The shared screen keeps its panels: it's watched, not played. The stage-only view keeps nothing but
+the frame (see "The Stage").
 
 ### The Stage
 
@@ -363,6 +364,12 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   moves, the talk box, the GM's tools, what you look up, equipment, whispers) happen off the
   stage: in the columns beside it and under it. Its links (open the map, visit the place) sit in
   a caption under the frame.
+- **Stage only.** For a TV at the table or a stream on a call, `?view=stage` shows nothing but the
+  frame: on black, as big as the screen allows, with no top bar, log, panels or caption, and a
+  spectator's view of it (no GM secrets on the TV). The lines still arrive, unseen, so the moments
+  they cue (a check landing, an awakening, an arrival) play on it; a battle takes it over the same
+  way. "Leave the stage" shows in the corner when the mouse goes looking. The GM opens it from
+  the shared-screen setup under More.
 
 On a desktop (1100px and up) the page has no measure: it takes the whole width, and the screen is
 three columns with the pinned ones on the far edges:

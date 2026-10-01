@@ -8,6 +8,9 @@
 #                no menus, and a QR code to join
 #   controller — your part: your character, your commands, your picks;
 #                the show itself stays on the screen
+#   stage      — nothing but the Stage (docs/DESIGN.md, "The Stage"): for a
+#                TV or a stream where the table is played out loud, with no
+#                menus, log or panels around it
 #
 # A view is picked with ?view=screen|controller (off to leave) and kept for
 # the campaign in this browser's session, so it survives the jump into a
@@ -15,7 +18,9 @@
 module LocalCoop
   extend ActiveSupport::Concern
 
-  VIEWS = %w[screen controller].freeze
+  VIEWS = %w[screen controller stage].freeze
+  # The views for everyone to watch: a spectator's seat, whoever is signed in on the device.
+  WATCHED = %w[screen stage].freeze
 
   included do
     helper_method :coop_view

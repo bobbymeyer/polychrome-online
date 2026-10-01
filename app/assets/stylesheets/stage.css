@@ -1569,7 +1569,7 @@ button.your-moves__tag { border: 0; cursor: default; }
   .player-screen:not(.is-pinned) .player-screen__context, .player-screen:not(.is-pinned) .player-screen__moves { padding-left: 56px; }
 
   /* A battle: its head and the talk box in the left column, the frame and the commands in the middle. */
-  .battle:not(.battle--controller):not(.battle--screen) {
+  .battle:not(.battle--controller):not(.battle--screen):not(.battle--stage) {
     display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); column-gap: var(--gutter); align-items: start; padding-right: var(--gutter);
   }
   .battle:not(.battle--controller):not(.battle--screen) > * { grid-column: 2; }
@@ -1584,3 +1584,19 @@ button.your-moves__tag { border: 0; cursor: default; }
   .battle:not(.battle--controller):not(.battle--screen) > .battle__lower { margin-top: 24px; }
   .battle--screen { padding: 0 var(--gutter); }
 }
+
+/* Stage only (docs/DESIGN.md, "The Stage"): for a TV at the table or a stream, nothing but the frame,
+   on black, as big as the screen allows. The way out shows when the mouse goes looking for it. */
+body[data-view="stage"] { background: var(--ink); }
+body[data-view="stage"] .topbar, body[data-view="stage"] .flashes { display: none; }
+body[data-view="stage"] .page { max-width: none; min-height: 100vh; min-height: 100dvh; margin: 0; padding: 0 !important; display: grid; place-items: center; }
+body[data-view="stage"] .stage { width: min(100%, calc(100vh * 16 / 9)); min-width: 0; margin: 0 auto; }
+body[data-view="stage"] .stage__frame, body[data-view="stage"] .battle .stage { border: 0; box-shadow: none; aspect-ratio: 16 / 9; container-type: size; overflow: hidden; }
+body[data-view="stage"] .stage__hud .table-time { top: 16px; right: 16px; }
+body[data-view="stage"] .table, body[data-view="stage"] .battle { width: 100%; display: block; padding: 0; }
+.stage-leave {
+  position: fixed; top: 12px; left: 12px; z-index: 90; padding: 6px 12px; background: var(--paper); color: var(--ink);
+  font-size: 13px; font-weight: 700; text-decoration: none; opacity: 0; transition: opacity .2s;
+}
+body[data-view="stage"]:hover .stage-leave { opacity: .5; }
+.stage-leave:hover, .stage-leave:focus-visible { opacity: 1 !important; }

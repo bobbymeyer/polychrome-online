@@ -14,7 +14,8 @@
     <%= render "campaigns/tables/dialogue_box", last_dialogue: last_dialogue, extra: "dialogue--stage" %>
   </div>
   <div class="stage__hud"><%= render "campaigns/tables/time", campaign: campaign %></div>
-  <%# Under the frame, the links: the stage itself is never pressed. %>
+  <%# Under the frame, the links: the stage itself is never pressed. (Not on a stage-only screen.) %>
+  <% if local_assigns.fetch(:caption, true) %>
   <p class="stage__caption hint">
     <%= link_to(gm ? "Edit the map / travel →" : "Open the map →", campaign_map_path(campaign)) %>
     <%= render "campaigns/tables/here", campaign: campaign %>
@@ -22,4 +23,5 @@
       <span class="gm-only-hint">Faded places are hidden: only you see them.</span>
     <% end %>
   </p>
+  <% end %>
 </section>

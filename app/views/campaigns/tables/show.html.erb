@@ -21,7 +21,13 @@
   <%= seat_streams_from @seat, @campaign %>
   <%= render "shared/stage_stream", campaign: @campaign %>
 
-  <% if player %>
+  <% if view == "stage" %>
+    <%# Nothing but the Stage, for a TV or a stream: the lines still land here, unseen, so the moments they
+        cue (a check landing, an awakening, an arrival) play on it. %>
+    <%= render "campaigns/tables/stage", campaign: @campaign, gm: false, last_dialogue: @last_dialogue, caption: false %>
+    <div hidden><%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %></div>
+    <%= link_to "Leave the stage", campaign_table_path(@campaign, view: "off"), class: "stage-leave" %>
+  <% elsif player %>
     <%= render "campaigns/tables/player_screen" %>
   <% else %>
   <div class="table__main">
@@ -102,6 +108,7 @@
 
   <% end %>
 
+  <% unless view == "stage" %>
   <%# A player's log is the right-hand column on a wide screen (wide: pinned there, not a pin to press). %>
   <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name, dockable: @seat&.gm?, wide: player } do %>
     <%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %>
@@ -120,5 +127,6 @@
     <%= render "campaigns/tables/gm/tools", campaign: @campaign, view: view if @seat.gm? && view == "controller" %>
   <% else %>
     <%= render "campaigns/tables/take_a_seat", campaign: @campaign %>
+  <% end %>
   <% end %>
 </div>

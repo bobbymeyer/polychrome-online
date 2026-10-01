@@ -25,6 +25,22 @@ RSpec.describe "Local co-op", type: :request do
     expect(response.body).not_to include("table--screen")
   end
 
+  it "shows nothing but the stage, for a TV or a stream, at the table and in a battle" do
+    get campaign_table_path(campaign, view: "stage")
+    expect(response.body).to include('data-view="stage"', "table--stage", 'id="stage"', 'id="map_canvas"', 'id="table_time"', "Leave the stage")
+    page = Nokogiri::HTML(response.body)
+    expect(page.at(".gm-tools, .log-drawer__tab, #table_now, .stage__caption, #composer, .player-screen")).to be_nil # no chrome, no interface
+    expect(page.at("div[hidden] #chat_log")).to be_present # the lines land unseen, for the moments they cue
+
+    battle = start_battle(campaign: campaign)
+    get battle_path(battle) # the view is remembered
+    expect(response.body).to include("battle--stage", 'data-battle-player-target="boardContainer"', 'data-battle-player-target="skip"', 'data-battle-player-target="log"', "Leave the stage")
+    expect(Nokogiri::HTML(response.body).at("#command_panel, .log-drawer__tab, .battle__header, .battle__lower")).to be_nil
+
+    get campaign_table_path(campaign, view: "off")
+    expect(response.body).not_to include("table--stage")
+  end
+
   it "shows the screen as a spectator sees it, even when the GM's laptop drives it" do
     campaign.map_nodes.create!(name: "Secret Grotto", x: 5, y: 5, visible: false)
     campaign.messages.create!(scope: "whisper", recipient: bartz, body: "Psst, the king is a fake")

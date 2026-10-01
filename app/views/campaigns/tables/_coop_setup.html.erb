@@ -7,5 +7,7 @@
     <li>Players scan its QR code, or open <strong><%= join_url(campaign.join_code, view: "controller") %></strong>, and pick their character. No account needed.</li>
     <li>Want your phone as a GM remote? <%= link_to "Use this device as a controller", campaign_table_path(campaign, view: "controller") %>.</li>
   </ol>
+  <p>Playing at a table, or on a call, with nothing to press on the screen? <%= link_to "Open the stage only", campaign_table_path(campaign, view: "stage"), class: "button button--quiet", target: "_blank", rel: "noopener" %>:
+    nothing but the Stage, filling the screen, for a TV or a stream.</p>
   <p class="hint">Players somewhere else join with the invite link on <%= link_to "the campaign page", campaign_path(campaign, anchor: "invite") %>.</p>
 </div>

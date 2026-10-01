@@ -14,7 +14,7 @@ class Campaigns::TablesController < ApplicationController
     remember_coop_view(@campaign)
     # The shared screen is for everyone to see: a spectator's view, whoever is
     # signed in on it, so no GM map, notes or whispers end up on the TV.
-    @seat = coop_view(@campaign) == "screen" ? Seat.nobody : table_seat
+    @seat = LocalCoop::WATCHED.include?(coop_view(@campaign)) ? Seat.nobody : table_seat
     @messages = Message.visible_to(@campaign, @seat).last(LOG_LENGTH)
     # The last thing said stays up in the dialogue box, unless the party has
     # moved on since: then it was said somewhere else (Campaign::MOVED).
