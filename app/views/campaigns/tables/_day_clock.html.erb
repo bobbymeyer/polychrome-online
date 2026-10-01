@@ -1,0 +1,16 @@
+<%# The day as a clock (docs/DESIGN.md, "The day clock"): one slice for each part of the day, in its
+    light's colour, and the part it is now under the pointer at the top. Time passing turns the
+    dial forward, round into the next day (day_clock_controller). %>
+<% parts = campaign.almanac.periods %>
+<% step = 360.0 / parts.size %>
+<% turn = -(campaign.parts_gone * step) %>
+<svg class="day-clock" viewBox="0 0 100 100" role="img" aria-label="<%= "#{campaign.period}: part #{parts.index(campaign.period).to_i + 1} of #{parts.size}" %>"
+     data-controller="day-clock" data-day-clock-turn-value="<%= turn %>" data-day-clock-campaign-value="<%= campaign.id %>">
+  <g class="day-clock__dial" data-day-clock-target="dial" style="--turn: <%= turn %>deg">
+    <% parts.each_with_index do |part, i| %>
+      <g class="day-clock__part day-clock__part--<%= campaign.daylight(part) %>"><path d="<%= clock_slice(i, parts.size) %>" /></g>
+    <% end %>
+  </g>
+  <circle class="day-clock__hub" cx="50" cy="50" r="6" />
+  <path class="day-clock__pointer" d="M50 12 L43 0 H57 Z" />
+</svg>

@@ -47,6 +47,6 @@ RSpec.describe "A world's skills", type: :request do
 
   it "shows a character's skills, and the chance of a normal check with each" do
     get character_path(bartz)
-    expect(response.body).to include("Skills", "Athletics", "+15", "Normal check")
+    expect(response.body).to include("Skills", "Athletics", "+15", "Chance")
   end
 end

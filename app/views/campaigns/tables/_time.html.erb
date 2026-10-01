@@ -6,7 +6,10 @@
 <section id="table_time" class="table-time time--<%= campaign.daylight %>" aria-label="The date">
   <p class="table-time__date"><%= campaign.world.date(campaign.day) %></p>
   <% if season_and_year.present? %><p class="table-time__season"><%= season_and_year %></p><% end %>
-  <p class="table-time__part"><%= campaign.period %></p>
+  <div class="table-time__clock">
+    <%= render "campaigns/tables/day_clock", campaign: campaign %>
+    <p class="table-time__part"><%= campaign.period %></p>
+  </div>
   <% if deadlines.any? %>
     <ul class="table-time__deadlines">
       <% deadlines.each do |days, clock| %>

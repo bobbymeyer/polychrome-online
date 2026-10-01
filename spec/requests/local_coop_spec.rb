@@ -51,6 +51,13 @@ RSpec.describe "Local co-op", type: :request do
     expect(response.body).not_to include("Your name")
   end
 
+  it "shows what you're sitting down to before you join: the setting, and its lines and veils", :signed_out do
+    campaign.world.update!(description: "A crystal world, going out.", lines: "Harm to children", veils: "Torture")
+    get join_path(campaign.join_code)
+    expect(response.body).to include("A crystal world, going out.", "Lines and veils", "Harm to children", "Torture")
+    expect(response.body.index("Lines and veils")).to be < response.body.index("Play someone the GM made")
+  end
+
   it "won't let someone join as a character that's taken, or with an old code", :signed_out do
     bartz.update!(user: make_user("Someone"))
     code = campaign.join_code

@@ -5,6 +5,11 @@
 module Campaign::Travelling
   extend ActiveSupport::Concern
 
+  # Marks a line that says the party moved (a road, a room, a door): what
+  # was said before it was said somewhere else (the table's dialogue box
+  # doesn't keep it up).
+  MOVED = { "moved" => true }.freeze
+
   # Move the party along an edge from where it stands. Arriving reveals the
   # destination. If the edge has an encounter table, roll on it with the
   # campaign's RNG; a hit waits as the pending encounter for the GM to start
@@ -39,7 +44,7 @@ module Campaign::Travelling
       end
       save!
 
-      narrate("The party travels from #{origin.name} to #{destination.name}.")
+      narrate("The party travels from #{origin.name} to #{destination.name}.", data: MOVED)
       messages.create!(body: edge.travel_event) if edge.travel_event
       narrate("The way is safe: nothing troubles the party on the road.") if safe
       narrate("Encounter! #{describe_encounter(rolled)}.") if rolled
@@ -117,7 +122,7 @@ module Campaign::Travelling
       moved = current_node != node
       current_node&.location&.leave! if moved
       update!(current_node: node)
-      narrate("The party is at #{node.name}.")
+      narrate("The party is at #{node.name}.", data: MOVED)
       how_it_is_here!(node) if moved
       node.location&.remember!
       hear_rumours!(node)

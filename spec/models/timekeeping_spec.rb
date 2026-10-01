@@ -9,12 +9,16 @@ RSpec.describe Campaign::Timekeeping do
   it "passes the parts of the day, and each new day ticks the dawn clocks" do
     festival = campaign.clocks.create!(name: "The festival", segments: 3, triggers: %w[dawn], public: true, full_line: "Lanterns everywhere: the festival begins.")
     expect(campaign.when_it_is).to eq("Day 1 · dawn")
+    expect(campaign.parts_gone).to eq(0)
     campaign.pass_time!(2)
     expect([ campaign.day, campaign.time_of_day ]).to eq([ 1, "dusk" ])
+    expect(campaign.parts_gone).to eq(2) # the day clock's turn: only ever forward
     expect(campaign.messages.last.body).to eq("Dusk.")
 
     expect(campaign.pass_time!(campaign.until_the_day_begins)).to eq(1)
     expect([ campaign.day, campaign.time_of_day ]).to eq([ 2, "dawn" ])
+    expect(campaign.parts_gone).to eq(4) # round into the next day, not back to 0
+    expect(campaign.almanac.periods.map { |part| campaign.daylight(part) }).to eq(%w[dawn day dusk night])
     expect(festival.reload.filled).to eq(1)
 
     campaign.pass_time!(8)
