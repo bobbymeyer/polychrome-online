@@ -30,7 +30,9 @@ module Location::Exploration
   # Somewhere an antagonist can be met (Campaign::Overnight moves them only here).
   def lair? = !master_room.nil?
 
-  # Its master has been dealt with (in any master's room the GM added, too).
+  # Its master has been beaten (in any master's room the GM added, too). A
+  # room's fight is dealt with when it is won (BattleRecord::Settlement), or
+  # an ordinary one waved off; called, lost or fled, it waits there still.
   def cleared?
     view.fetch("rooms", []).any? { |r| r.dig("decision", "kind") == "boss" && resolved?(r["key"]) }
   end
@@ -182,7 +184,6 @@ module Location::Exploration
     waiting = campaign.pending_encounter
     return unless waiting && waiting["location"] == id && waiting["room"] != to
 
-    update!(progress: progress.merge("resolved" => progress.fetch("resolved", []) - [ waiting["room"] ]))
     campaign.update!(pending_encounter: nil)
   end
 
@@ -210,6 +211,7 @@ module Location::Exploration
   end
 
   # A room's fight waits for the GM to call or wave off (like on the map).
+  # The room is dealt with when the fight is won, not here.
   def call_encounter(target)
     decision = target["decision"]
     boss = decision["kind"] == "boss"
@@ -222,7 +224,6 @@ module Location::Exploration
                                                   names: ({ leader.slug => who } if leader), location: id, room: target["key"],
                                                   prelude: (boss_prelude(target, who) if boss))
     campaign.narrate("#{boss ? 'Boss' : 'Encounter'}! #{"#{who}: " if leader}#{campaign.describe_encounter(decision['monsters'])}.")
-    resolve!(target["key"])
   end
 
   # The one the story has been about lives here (the setting's cast, brought
@@ -241,7 +242,6 @@ module Location::Exploration
                                                                prelude: villain_prelude(target, villain))
     with = monsters.any? ? ", with #{campaign.describe_encounter(monsters)}" : ""
     campaign.narrate("Boss! #{villain.name}#{", #{villain.title}" if villain.title.present?}#{with}.")
-    resolve!(target["key"])
   end
 
   # The antagonist who calls this place home and is still at large.

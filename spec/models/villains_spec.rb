@@ -57,6 +57,31 @@ RSpec.describe "Villains and what clearing a place changes" do
     expect(lair.reload.resolved?(lair.view["boss"])).to be(false)
   end
 
+  it "counts the master's room dealt with only when the fight there is won: lost, the boss waits for the party to come back" do
+    walk_into_the_throne_room
+    lair = barrow.location
+    room = campaign.pending_encounter["room"]
+    battle = campaign.start_pending_encounter!
+    expect(battle.room).to eq(room)
+
+    battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => battle.party.first["id"], "value" => 0 }, actor: "gm")
+    expect(battle.reload.status).to eq("defeat")
+    expect(lair.reload.resolved?(room)).to be(false)
+    expect(lair).not_to be_cleared
+    expect(campaign.messages.pluck(:body)).not_to include("The Old Barrow is cleared!")
+
+    # Back on their feet and through the door again: the boss is still there.
+    campaign.recover!("get_up")
+    lair.move_to!(lair.view["entrance"])
+    lair.move_to!(room)
+    expect(campaign.reload.pending_encounter).to include("room" => room, "boss" => true)
+
+    win!(campaign.start_pending_encounter!)
+    expect(lair.reload.resolved?(room)).to be(true)
+    expect(lair).to be_cleared
+    expect(campaign.messages.pluck(:body)).to include("The Old Barrow is cleared!")
+  end
+
   it "lets the villain slip away the first time, their trouble still running; the second time, down is down" do
     walk_into_the_throne_room
     win!(campaign.start_pending_encounter!)

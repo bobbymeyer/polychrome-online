@@ -462,7 +462,10 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
 - **Exploring a dungeon** (a nested pointcrawl):
   - The GM leads the party in and moves them room to room, and each room plays
     its decision at the table. Events are narrated in the dialogue box.
-  - Encounters and the boss wait to be fought or waved off, as on the map.
+  - Encounters and the boss wait to be fought or waved off, as on the map. A
+    room is dealt with when its fight is won (an ordinary one, when waved off
+    too): lost or fled, the boss waits there still, and the place isn't
+    cleared.
   - The GM hands treasure over to the party bag. Taking a costly way posts its
     cost.
   - Players see only the rooms they've been in, plus the exits out of them.

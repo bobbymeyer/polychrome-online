@@ -49,6 +49,9 @@ module BattleRecord::Settlement
     end
     update!(settlement: summary)
     announce!(settlement_line(summary))
+    # The room this fight was for is dealt with now, and only now: lost or
+    # fled, what waits there waits still (Location::Exploration#cleared?).
+    campaign.dungeon_in_progress&.resolve!(room) if victory && room
     record_deeds!(summary, characters) if victory
     # Everyone down: what now is the table's to decide (Campaign::Defeat).
     campaign.ask_what_now! if status == "defeat" && campaign.wiped_out?
