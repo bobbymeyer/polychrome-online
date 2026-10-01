@@ -1,0 +1,26 @@
+<%# What the table is doing right now, in one line, and whose move it is: a battle first (it holds
+    everything else), then an open choice and who still has to pick, else whose floor it is.
+    Replaced live with the table's panels, once for the GM and once for everyone else. %>
+<% battle = campaign.current_battle %>
+<% choice = campaign.open_choice %>
+<section id="table_now" class="table-now<%= " table-now--battle" if battle %>" aria-label="Right now" aria-live="polite">
+  <p class="table-now__label">Now</p>
+  <p class="table-now__what">
+    <% if battle %>
+      <strong>A battle is on: <%= battle.name %>.</strong>
+      <%= gm ? "You run it from the battle page." : "Everyone at the table fights it." %>
+      <%= "The choice waits until it's over." if choice %>
+    <% elsif choice %>
+      <% picked = choice.picks.includes(:character).map { |pick| pick.character.name } %>
+      <% waiting = campaign.characters.order(:created_at).map(&:name) - picked %>
+      <strong><%= choice.where_next? ? "The party is choosing where to go next." : choice.what_now? ? "The party is down. What happens now?" : "The party has a choice to make." %></strong>
+      <%= gm ? "Settle it when you're ready." : "Pick below; the GM settles it." %>
+      <span class="table-now__who"><%= picked.any? ? "Picked: #{picked.to_sentence}." : "Nobody has picked yet." %><%= " Still to pick: #{waiting.to_sentence}." if picked.any? && waiting.any? %></span>
+    <% elsif gm %>
+      <strong>The table is yours.</strong> Say something, play a scene, call a check, or ask where next.
+    <% else %>
+      <strong>The GM has the floor.</strong> Talk at the table, or suggest where to go next.
+    <% end %>
+  </p>
+  <%= render "campaigns/tables/current_battle", campaign: campaign %>
+</section>

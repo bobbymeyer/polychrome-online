@@ -5,6 +5,7 @@
   <% if choice %>
     <section class="window choice" aria-label="A choice for the party" data-choice-panel-target="panel" hidden>
       <h2>What will the party do?</h2>
+      <p class="choice__hold">On hold until the battle is over.</p>
       <ol class="choice__options">
         <% pickers = choice.picks.group_by(&:option).transform_values { |ps| ps.map(&:character_id) } %>
         <% choice.tally.each do |option, names| %>

@@ -152,11 +152,11 @@ RSpec.describe "The table", type: :request do
     campaign.messages.create!(body: "Lanterns.", speaker: cid)
     get campaign_table_path(campaign)
     header = response.body[/<header class="battle__header">.*?<\/header>/m]
-    expect(header).to include("Day 3", "time--dusk", "5 days</strong> The spring tide comes in")
+    expect(header).to include("Day 3", "time--dusk", "5 days</strong> until The spring tide comes in", "table-time__next\">Next: ")
     expect(header).not_to include("The count schemes", "The guard grows wary")
     campaign.clocks.find_by!(name: "The spring tide comes in").update!(filled: 5)
     get campaign_table_path(campaign)
-    expect(response.body).to include(%(<li class="is-tomorrow"><strong>Tomorrow</strong> The spring tide comes in</li>))
+    expect(response.body).to include(%(<li class="is-tomorrow"><strong>Tomorrow</strong> it happens: The spring tide comes in</li>))
     expect(response.body).to match(%r{<time class="muted" datetime="[^"]+" title="Day 3 · [^"]+">Dusk</time>})
   end
 
@@ -274,6 +274,38 @@ RSpec.describe "The table", type: :request do
       post choice_settlement_path(choice), params: { option: "Refuse" }
       expect(choice.reload.settled).to eq("Refuse")
       expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Refuse")
+    end
+  end
+
+  describe "the Now line" do
+    def now = Nokogiri::HTML(response.body).at("#table_now").text.squish
+
+    it "says what the table is doing and whose move it is, to the GM and to the players" do
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(now).to include("The table is yours.")
+
+      Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
+      get campaign_table_path(campaign)
+      expect(now).to include("The party has a choice to make.", "Settle it when you're ready.", "Nobody has picked yet.")
+
+      sit(bartz.id)
+      post choice_picks_path(campaign.open_choice), params: { option: "Refuse" }
+      get campaign_table_path(campaign)
+      expect(now).to include("Pick below; the GM settles it.", "Picked: Bartz. Still to pick: Lenna.")
+    end
+
+    it "puts a battle first: the choice waits, and can't be settled until it's over" do
+      choice = Message.choice(campaign, options: [ "Trust Cid", "Refuse" ])
+      choice.save!
+      battle = start_battle(campaign: campaign)
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(now).to include("A battle is on: #{battle.name}.", "The choice waits until it's over.", "Go to the battle")
+      expect(response.body).to include("On hold until the battle is over.")
+
+      post choice_settlement_path(choice), params: { option: "Refuse" }
+      expect(choice.reload.settled).to be_nil
     end
   end
 

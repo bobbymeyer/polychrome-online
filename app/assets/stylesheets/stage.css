@@ -1100,3 +1100,16 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* Who already plays an archetype, on its card (characters/_job_picker). */
 .job-picker__party { margin: 0 0 8px; }
 .job-card__taken { display: block; margin-top: 2px; font-size: 13px; font-weight: 800; color: var(--control); }
+
+/* Now: one line for what the table is doing and whose move it is, under the header. A battle
+   holds everything else, so the line goes red and the open choice waits, greyed, until it's over. */
+.table-now { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 20px; padding: 10px 0; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--rule); }
+.table-now__label { margin: 0; padding: 2px 10px; background: var(--ink); color: var(--paper); font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; }
+.table-now__what { margin: 0; flex: 1 1 20em; }
+.table-now__who { display: block; color: var(--grey); font-size: 14px; }
+.table-now--battle { border-top-color: var(--signal); }
+.table-now--battle .table-now__label { background: var(--signal); }
+.table-now #table_battle:empty { display: none; }
+.choice__hold { display: none; margin: 0 0 8px; font-weight: 800; }
+.table:has(#table_battle a) .choice__hold { display: block; }
+.table:has(#table_battle a) .choice__options, .table:has(#table_battle a) .choice__hint { opacity: .45; pointer-events: none; }

@@ -32,8 +32,8 @@
       <% end %>
     </div>
     <%= render "campaigns/tables/time", campaign: @campaign %>
-    <%= render "campaigns/tables/current_battle", campaign: @campaign %>
   </header>
+  <%= render "campaigns/tables/now", campaign: @campaign, gm: @seat.gm? %>
 
   <div class="table__main">
     <div class="table__stage">

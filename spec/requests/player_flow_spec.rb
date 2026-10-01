@@ -177,7 +177,7 @@ RSpec.describe "The player's way through", type: :request do
     old = battle_with(bartz)
     streams = capture_turbo_stream_broadcasts([ campaign, :table ]) { @new = battle_with(bartz) }
     header = streams.find { |s| s["target"] == "table_battle" }
-    expect(header.to_html).to include("Road is on", "/battles/#{@new.id}")
+    expect(header.to_html).to include("Go to the battle", "/battles/#{@new.id}")
 
     get campaign_table_path(campaign)
     expect(response.body[%r{<div id="table_battle">.*?</div>}m]).to include("/battles/#{@new.id}")
@@ -189,7 +189,7 @@ RSpec.describe "The player's way through", type: :request do
     expect(response.body[%r{<div id="table_battle">.*?</div>}m]).to include("/battles/#{old.id}")
     post battle_call_off_path(old)
     get campaign_table_path(campaign)
-    expect(response.body).not_to include("is on →")
+    expect(response.body).not_to include("Go to the battle")
   end
 
   it "calling off changes nothing: no settlement, HP and items as they were" do

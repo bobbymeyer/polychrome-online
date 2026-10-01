@@ -273,6 +273,11 @@ keyboard, a mouse or a finger.
 
 ### The table
 
+- **Now, in one line.** Under the header, a strip says what the table is doing and whose move it
+  is: a battle ("A battle is on: …", with the way in), else an open choice and who has picked and
+  who still has to, else whose floor it is ("The table is yours" for the GM, "The GM has the
+  floor" for players). Each side reads what it can do. A battle goes red and holds everything
+  else: an open choice greys out with "On hold until the battle is over", and can't be settled.
 - **Dialogue first.** The table leads with the dialogue box; the map sits to the side with the
   party's HP and MP, which follow battles and rests live.
 - **The last few lines** said at the table sit under the dialogue box, whoever said them, so
@@ -478,8 +483,9 @@ Record each place where the game needed more than the Swiss defaults: what chang
   dusk red, night blue), beside **the day clock**: a dial cut into a slice for each part of the
   setting's day, each in its light's colour, with the part it is now under a pointer at the top.
   When time passes the dial turns forward (never back: into the next day it keeps going round),
-  so the table sees the day move. Under them, the days left on each public clock that only a new
-  day ticks ("5 days · The spring tide comes in"). The party plans around the calendar, so it
+  so the table sees the day move, and "Next: Dusk" beside it says where it's going. Under them,
+  the days left on each public clock that only a new day ticks, said as a sentence ("5 days until
+  The spring tide comes in"; on the last day, "Tomorrow it happens: …"). The party plans around the calendar, so it
   shouldn't be a line of small print in the side column.
 - **Name tags in the speaker's colour.** The dialogue box's name tag wears the speaker's plate
   colour instead of a fixed yellow. The narrator has no portrait: narration is a voice, and its

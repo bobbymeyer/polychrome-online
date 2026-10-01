@@ -8,13 +8,15 @@
   <% if season_and_year.present? %><p class="table-time__season"><%= season_and_year %></p><% end %>
   <div class="table-time__clock">
     <%= render "campaigns/tables/day_clock", campaign: campaign %>
+    <% parts = campaign.almanac.periods %>
     <p class="table-time__part"><%= campaign.period %></p>
+    <p class="table-time__next">Next: <%= parts[(parts.index(campaign.period).to_i + 1) % parts.size].upcase_first %></p>
   </div>
   <% if deadlines.any? %>
-    <ul class="table-time__deadlines">
+    <ul class="table-time__deadlines" aria-label="Coming up">
       <% deadlines.each do |days, clock| %>
         <%# The last day is a red band, and on a phone it stays in view (stage.css). %>
-        <li class="<%= "is-tomorrow" if days == 1 %>"><strong><%= days == 1 ? "Tomorrow" : "#{days} days" %></strong> <%= clock.name %></li>
+        <li class="<%= "is-tomorrow" if days == 1 %>"><strong><%= days == 1 ? "Tomorrow" : "#{days} days" %></strong> <%= days == 1 ? "it happens:" : "until" %> <%= clock.name %></li>
       <% end %>
     </ul>
   <% end %>
