@@ -125,7 +125,7 @@ module Location::Exploration
         campaign.narrate("#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.", cue: "door")
       end
       update!(progress: progress.merge("current" => key, "visited" => (visited | [ key ])))
-      campaign.narrate("#{name}: the party enters #{target['name']}.")
+      campaign.narrate("#{name}: the party enters #{target['name']}.", data: Campaign::MOVED)
       campaign.narrate("The cost of that way: #{path['cost']}") if path&.dig("cost")
       announce(target) unless resolved?(key)
       campaign.drop_stale_where_next!

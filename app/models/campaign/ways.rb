@@ -51,7 +51,8 @@ module Campaign::Ways
 
     options = ways.map { |way| way["label"] } + [ STAY ]
     Message.choice(self, options: options).tap do |ask|
-      ask.body = "Where next? #{options.to_sentence(two_words_connector: ' or ', last_word_connector: ', or ')}."
+      # The ways are in the vote's panel; the log says only that it's asked.
+      ask.body = "Where next? #{options.size} ways to choose from."
       ask.data = { "moves" => ways.to_h { |way| [ way["label"], way["move"] ] } }
       ask.save!
     end
@@ -120,7 +121,7 @@ module Campaign::Ways
       travel!(map_edges.find(move["edge"]))
     elsif move["leave"]
       locations.find(move["location"]).leave!
-      narrate("The party comes back out of #{locations.find(move['location']).name}.")
+      narrate("The party comes back out of #{locations.find(move['location']).name}.", data: Campaign::MOVED)
     elsif move["enter"]
       locations.find(move["location"]).enter!
     elsif move["room"]

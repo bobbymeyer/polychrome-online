@@ -31,6 +31,12 @@ RSpec.describe "Where next", type: :request do
     expect(vote).to be_where_next
     expect(vote.options).to eq([ "To Greymere", "To Port", "Make camp (overnight)", Campaign::STAY ])
     expect(vote.tally["To Greymere"]).to eq([ "Rook" ])
+    expect(vote.body).to eq("Where next? 4 ways to choose from.") # the ways are in the panel, not the log
+
+    # Voting, the player sees the ways once: in the vote, not in Where next as well.
+    get campaign_table_path(campaign)
+    expect(response.body).to include("What will the party do?", "To Greymere")
+    expect(response.body).not_to include("suggest")
 
     sign_out
     sign_in_as(@admin)

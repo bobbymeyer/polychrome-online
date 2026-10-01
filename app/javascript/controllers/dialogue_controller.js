@@ -53,6 +53,9 @@ export default class extends Controller {
     // nothing holds the line back: it's readable in the log straight away.
     if (!line.dialogueValue || !this.hasBoxTarget) {
       line.element.classList.remove("is-pending")
+      // The party moved on: what was last said was said somewhere else, so
+      // the box puts it away (unless it's still typing something out).
+      if (line.element.dataset.moved && this.hasBoxTarget && !this.current && this.queue.length === 0) this.boxTarget.hidden = true
       return this.scrollLog()
     }
 

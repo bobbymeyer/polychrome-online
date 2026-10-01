@@ -7,6 +7,12 @@
     <%= controller ? "Pick who you're playing. This phone becomes your controller; the game itself plays on the shared screen." :
                      "Pick who you're playing, or make someone new, and take your seat at the table." %>
   </p>
+  <%# What you're sitting down to, before you do: the setting in a line, and what it never shows. %>
+  <% world = @campaign.world %>
+  <% if world.description.present? %>
+    <p class="join__setting"><strong><%= world.name %>.</strong> <%= world.description %></p>
+  <% end %>
+  <%= render "worlds/lines_and_veils", world: world %>
 
   <% if @characters.any? %>
     <%= form_with url: join_path(@campaign.join_code), class: "book-form join__form" do |f| %>

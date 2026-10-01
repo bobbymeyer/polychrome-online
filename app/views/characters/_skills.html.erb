@@ -6,15 +6,18 @@
       <span class="muted">(<%= @world.skill_name(field.field_skill) %>; <%= @character.field_used? ? "used, back after a rest" : "ready" %>)</span>
     </p>
   <% end %>
-  <p class="hint">The chance of a Normal check with each of <%= @world.name %>'s skills. The GM can call it easier or harder.</p>
-  <table class="book-table book-table--plain">
-    <thead><tr><th>Skill</th><th>Stat</th><th class="num">Archetype</th><th class="num">Normal check</th></tr></thead>
+  <p class="hint">The chance of a Normal check with each of <%= @world.name %>'s skills, and what your archetype adds. The GM can call it easier or harder.</p>
+  <%# Three columns, the stat under the skill's name, so it fits a phone without scrolling sideways. %>
+  <table class="book-table book-table--plain sheet-table">
+    <thead><tr><th>Skill</th><th class="num">Archetype</th><th class="num">Chance</th></tr></thead>
     <tbody>
       <% Array(@world.skills).each do |skill| %>
         <% bonus = @character.skill_bonus(skill["slug"]) %>
         <tr class="<%= 'is-current' if bonus.positive? %>">
-          <td><%= tag.span(skill["name"], class: ("gloss" if skill["description"].present?), tabindex: (0 if skill["description"].present?), data: { gloss: skill["description"].presence }) %></td>
-          <td><%= stat_term(skill["stat"]) %></td>
+          <td>
+            <%= tag.span(skill["name"], class: ("gloss" if skill["description"].present?), tabindex: (0 if skill["description"].present?), data: { gloss: skill["description"].presence }) %>
+            <br><span class="muted"><%= stat_term(skill["stat"]) %></span>
+          </td>
           <td class="num"><%= bonus.positive? ? "+#{bonus}" : "—" %></td>
           <td class="num"><%= Stats::Check.chance(stat_value: @character.stats[skill["stat"]], stat: skill["stat"], level: @character.level, difficulty: "normal", bonus: bonus) %>%</td>
         </tr>

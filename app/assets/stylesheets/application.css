@@ -918,3 +918,10 @@ details[open] > summary { margin-bottom: 16px; }
 .day-clock__hub { fill: var(--ink); }
 .day-clock__pointer { fill: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .day-clock__dial { transition: none; } }
+
+/* The character sheet's skills and mastery: three narrow columns that fit a phone, no sideways scroll. */
+@media (max-width: 640px) {
+  .book-table.sheet-table { display: table; }
+  .sheet-table th, .sheet-table td { padding-right: 8px; }
+  .sheet-table .mastery-bar { width: 72px; }
+}

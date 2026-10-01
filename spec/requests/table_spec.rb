@@ -120,6 +120,14 @@ RSpec.describe "The table", type: :request do
     box = response.body[/<section class="dialogue window".*?<\/section>/m]
     expect(box).to include("Cid", "Old news.")
     expect(box).not_to include("Player chatter.")
+
+    # Once the party has moved on, it was said somewhere else: the box doesn't keep it up.
+    campaign.place_party!(campaign.map_nodes.create!(name: "Walse", kind: "town", x: 5, y: 5, visible: true))
+    get campaign_table_path(campaign)
+    box = response.body[/<section class="dialogue window.*?<\/section>/m]
+    expect(box).to include("hidden")
+    expect(box).not_to include("Old news.")
+    expect(response.body).to include("data-moved") # and a page that's open puts it away as the move arrives
   end
 
   it "gives the narrator the whole box, and a speaker's name tag their colour" do
