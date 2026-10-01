@@ -99,20 +99,15 @@ module Campaign::Remarks
     raise Refusal, "That isn't a line to say." unless note.campaign_id == id && note.gm_only? && offer
     raise Refusal, "Already said." if note.data["said"]
 
-    outcome = Outcome.parse(offer["does"]) if offer["does"]
-    outcome&.can_happen!(self)
     transaction do
-      messages.create!(kind: "say", body: offer["text"])
-      Array(offer["sets"]).each { |write| remember_fact!(write) }
-      if outcome && (said = outcome.apply!(self, by: "The party"))
-        narrate(said)
-      end
+      say_line!(offer["text"], sets: offer["sets"], does: offer["does"])
       note.update!(data: note.data.merge("said" => true))
     end
   end
 
   private
 
+  # Rows of a kind from every one of the world's tables of it.
   def story_rows(kind)
     world.generator_tables.where(kind: kind).order(:id).flat_map(&:entries)
   end

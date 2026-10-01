@@ -962,3 +962,11 @@ details[open] > summary { margin-bottom: 16px; }
   .sheet-table th, .sheet-table td { padding-right: 8px; }
   .sheet-table .mastery-bar { width: 72px; }
 }
+
+/* The GM's moves panel (Campaign::Moves). */
+.moves h3 { margin: 16px 0 4px; font-size: 14px; }
+.moves ul { list-style: none; margin: 0; padding: 0; }
+.moves li { padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.moves__list { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
+.moves__list dt { color: var(--grey); font-size: 13px; }
+.moves__list dd { margin: 0; }

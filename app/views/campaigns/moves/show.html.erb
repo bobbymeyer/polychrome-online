@@ -1,0 +1,72 @@
+<%# What's live for the GM to make a move from (Campaign::Moves). Inside the GM tools' frame. %>
+<%= turbo_frame_tag "gm_moves" do %>
+  <div class="moves">
+    <p class="hint">When the table stalls: what the game can see that's live. Make one, or none. <%= link_to "Look again", campaign_moves_path(@campaign) %></p>
+    <% if flash[:alert] %><p class="alert"><%= flash[:alert] %></p><% end %>
+
+    <% say = lambda do |line, label, does: nil| %>
+      <%= button_to label, campaign_moves_path(@campaign), params: { move: { text: line["text"], sets: line["row"]["sets"], does: does } }, class: "link-button", form: { class: "inline" } %>
+    <% end %>
+
+    <section aria-label="Moves">
+      <h3>A move</h3>
+      <% soft, hard = @moves.values_at("soft", "hard") %>
+      <% if soft || hard %>
+        <dl class="moves__list">
+          <% if soft %>
+            <dt>Soft</dt>
+            <dd>“<%= soft["text"] %>” <% say.(soft, "Say it") %></dd>
+          <% end %>
+          <% if hard %>
+            <% does = hard["row"]["does"] %>
+            <dt>Hard</dt>
+            <dd>“<%= hard["text"] %>” <span class="muted">(<%= Outcome.parse(does).describe(@world) %>)</span> <% say.(hard, "Make it so", does: does) %></dd>
+          <% end %>
+        </dl>
+      <% else %>
+        <p class="muted">No complications fit just now. <%= link_to "Write some", world_generation_generator_tables_path(@world), data: { turbo_frame: "_top" } %>.</p>
+      <% end %>
+    </section>
+
+    <% if @dangers.any? %>
+      <section aria-label="Dangers">
+        <h3>Dangers</h3>
+        <ul class="moves__dangers">
+          <% @dangers.each do |danger| %>
+            <% clock = danger.clock %>
+            <li>
+              <strong><%= clock.name %></strong> <span class="muted">(<%= clock.filled %> of <%= clock.segments %>)</span>
+              <% if clock.impulse %><br>Wants <%= clock.impulse.downcase_first %>.<% end %>
+              <% if (step = clock.next_portent) %><br><span class="muted">Next:</span> <%= step.text %><% end %>
+              <% if danger.sign %><br><span class="muted">A sign:</span> “<%= danger.sign["text"] %>” <% say.(danger.sign, "Show it") %><% end %>
+              <%= button_to "Tick it", campaign_clock_ticks_path(@campaign, clock), params: { by: 1 }, class: "link-button",
+                            form: { class: "inline", data: { turbo_frame: "_top" } } %>
+            </li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+
+    <% if @wants.any? %>
+      <section aria-label="Wishes not met">
+        <h3>Heard, not met</h3>
+        <ul class="moves__wants">
+          <% @wants.each do |want| %>
+            <li><strong><%= want.who %></strong> of <%= want.place %>: “<%= want.wish %>” <span class="muted">(<%= want.wants %>)</span></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+
+    <% if @got_away.any? %>
+      <section aria-label="Who got away">
+        <h3>Got away</h3>
+        <ul class="moves__away">
+          <% @got_away.each do |npc| %>
+            <li><strong><%= npc.name %></strong> <span class="muted">(<%= pluralize(npc.escapes, "time") %>, <%= npc.strength_percent %>% now)</span><%= " · at #{npc.location.map_node&.name || npc.location.name}" if npc.location %></li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+  </div>
+<% end %>
