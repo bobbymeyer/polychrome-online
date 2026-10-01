@@ -20,6 +20,21 @@ RSpec.describe "Where next", type: :request do
     campaign.update!(current_node: tule)
   end
 
+  it "puts a rolled encounter first: the Now line says so, and nobody goes on until the GM calls it" do
+    campaign.update!(pending_encounter: { "monsters" => { "goblin" => 2 }, "table" => "The road" })
+    sign_in_as(kim)
+    get campaign_table_path(campaign)
+    now = Nokogiri::HTML(response.body).at("#table_now").text.squish
+    expect(now).to include("Encounter! 2 × Goblin.", "The GM calls it: fight, or wave it off.")
+    expect(response.body).not_to include(%(menu__cost">suggest))
+    expect { campaign.ask_where_next! }.to raise_error(Refusal, /GM calls it/)
+    expect { campaign.take_way!("To Greymere") }.to raise_error(Refusal, /GM calls it/)
+
+    campaign.wave_off_encounter!
+    campaign.reload.take_way!("To Greymere")
+    expect(campaign.current_node).to eq(mere)
+  end
+
   it "takes a Where next? off the table once time passes, since what it offered was for then" do
     vote = campaign.ask_where_next!
     expect(campaign.open_choice).to eq(vote)

@@ -328,6 +328,11 @@ keyboard, a mouse or a finger.
 - **Inside a dungeon, the table's map is its floorplan**: every room and what waits there for the
   GM, only what they've seen for players. The GM's buttons for the rooms say what's in each
   (encounter, treasure, boss, done). Room names wrap onto up to three lines in their boxes.
+- **A mode across the map is said once**, under it ("By night: across the map."), not tagged on
+  every place; a place's own tag, in red, is for what's different there.
+- **A rolled encounter is what's happening now.** The Now line says "Encounter! 2 × Empty
+  Uniform." and who calls it, and nobody goes on (no ways, no suggestions, no travel) until the
+  GM fights it or waves it off.
 - **Names on the map fit on a phone**, where they're drawn bigger: a place near the map's edge has
   its name run inward from it, and names are placed (under their place, or over it) by the room
   they take at the phone's size, so they clear each other there and everywhere.

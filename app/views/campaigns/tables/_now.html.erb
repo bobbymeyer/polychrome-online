@@ -3,13 +3,17 @@
     Replaced live with the table's panels, once for the GM and once for everyone else. %>
 <% battle = campaign.current_battle %>
 <% choice = campaign.open_choice %>
-<section id="table_now" class="table-now<%= " table-now--battle" if battle %>" aria-label="Right now" aria-live="polite">
+<section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %>" aria-label="Right now" aria-live="polite">
   <p class="table-now__label">Now</p>
   <p class="table-now__what">
     <% if battle %>
       <strong>A battle is on: <%= battle.name %>.</strong>
       <%= gm ? "You run it from the battle page." : "Everyone at the table fights it." %>
       <%= "The choice waits until it's over." if choice %>
+    <% elsif (encounter = campaign.pending_encounter).present? %>
+      <% foes = (campaign.npcs.where(id: encounter.fetch("antagonists", [])).map(&:name) + [ (campaign.describe_encounter(encounter["monsters"]) if encounter["monsters"].present?) ]).compact %>
+      <strong>Encounter! <%= foes.to_sentence %>.</strong>
+      <%= gm ? "Fight it or wave it off, below." : "The GM calls it: fight, or wave it off." %>
     <% elsif choice %>
       <% picked = choice.picks.includes(:character).map { |pick| pick.character.name } %>
       <% unplayed, waiting = campaign.characters.order(:created_at).reject { |c| picked.include?(c.name) }.partition { |c| c.user_id.nil? }.map { |cs| cs.map(&:name) } %>

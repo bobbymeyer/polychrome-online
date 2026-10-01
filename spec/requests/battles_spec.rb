@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "turbo/broadcastable/test_helper"
 
 RSpec.describe "Battle screen", type: :request do
+  include Turbo::Broadcastable::TestHelper
+
   let(:battle) { start_battle }
   let(:bartz) { battle.party.first["id"] }
   let(:faris) { battle.party.second["id"] }
@@ -397,6 +400,21 @@ RSpec.describe "Battle screen", type: :request do
       expect(battle.reload.arrived_units).to eq([ bartz ])
       get battle_path(battle)
       expect(response.body).not_to include('id="battle_ready"')
+    end
+
+    it "takes everyone's Ready button away once the clock runs, or the fight is over" do
+      table = nil
+      streams = capture_turbo_stream_broadcasts(battle) do
+        table = capture_turbo_stream_broadcasts([ campaign, :table ]) do
+          battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+        end
+      end
+      expect(streams.any? { |s| s["action"] == "remove" && s["target"] == "battle_ready" }).to be(true)
+      expect(table.find { |s| s["target"] == "table_battle" }.to_html).not_to include("Go to the battle") # won: the table stops pointing at it
+
+      other = start_battle(campaign: campaign, input_seconds: 30)
+      streams = capture_turbo_stream_broadcasts(other) { other.party.each { |u| other.arrive!(u["id"]) } }
+      expect(streams.any? { |s| s["action"] == "remove" && s["target"] == "battle_ready" }).to be(true)
     end
 
     it "keeps the clock going while someone has the battle open, and says when it's held" do

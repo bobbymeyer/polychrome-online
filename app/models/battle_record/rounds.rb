@@ -84,6 +84,13 @@ module BattleRecord::Rounds
 
   def broadcast_countdown
     broadcast_replace_to self, target: "battle_countdown", partial: "battles/panels/countdown", locals: { battle: self }
+    clear_ready_buttons unless waiting_for_arrivals?
+  end
+
+  # Once the clock runs, or the fight is over, nobody is asked to be Ready
+  # (a page opened earlier still has its button: battles/show).
+  def clear_ready_buttons
+    broadcast_remove_to self, target: "battle_ready"
   end
 
   def waiting_for_arrivals?
