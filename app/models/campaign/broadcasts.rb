@@ -16,10 +16,18 @@ module Campaign::Broadcasts
 
   AUDIENCES = { false => :players, true => :gm }.freeze
 
+  # What the table shows of the campaign itself: a change to any of these
+  # renders its panels again.
+  TABLE_FACTS = %w[current_node_id pending_encounter day time_of_day gil].freeze
+
   included do
+    include TableFacts
+
     after_update_commit :broadcast_music, if: :saved_change_to_music?
     after_update_commit :refresh_pages
-    after_update_commit :table_changed, if: -> { (saved_changes.keys & %w[current_node_id pending_encounter day time_of_day gil]).any? }
+    # Counting every save in the transaction (TableFacts): passing time saves
+    # the campaign again, after the time, as the world moves on.
+    table_facts(TABLE_FACTS) { |changed| table_changed if changed && !previously_new_record? } # a new campaign has no table yet
   end
 
   # The table's live panels (and the map's canvas), each rendered once for

@@ -42,4 +42,20 @@ RSpec.describe Campaign::Broadcasts do
     streams = capture_turbo_stream_broadcasts([ campaign, :players ]) { campaign.broadcast_table }
     expect(streams.map { |s| s["target"] }).to match_array(Campaign::TABLE_PANELS.keys)
   end
+
+  it "still refreshes the table when the campaign is saved again in the same transaction, after the change that matters" do
+    campaign.set_out!(from_the_setting: true)
+    campaign.update!(time_of_day: "night")
+    clear_enqueued_jobs
+    # A new day rolls the world on (Campaign#overnight!), saving the RNG state after the time: the time still reaches the table.
+    expect { campaign.pass_time!(1) }.to have_enqueued_job(TableRefreshJob).with(campaign)
+    expect(campaign.reload.day).to eq(2)
+
+    clear_enqueued_jobs
+    expect { campaign.transaction { campaign.update!(gil: campaign.gil + 10); campaign.update!(name: "Renamed") } }
+      .to have_enqueued_job(TableRefreshJob).with(campaign)
+    clear_enqueued_jobs
+    expect { campaign.transaction { campaign.update!(name: "Renamed again"); raise ActiveRecord::Rollback } }.not_to have_enqueued_job(TableRefreshJob)
+    expect { campaign.update!(name: "And again") }.not_to have_enqueued_job(TableRefreshJob)
+  end
 end
