@@ -143,7 +143,7 @@ RSpec.describe "Local co-op", type: :request do
       expect(empty.messages.last.body).to eq("Sam, as Faris, joins the party.")
       expect(response).to redirect_to(campaign_table_path(empty, view: "off"))
       follow_redirect!
-      expect(response.body).to include('<span class="table-you__label">You</span> <strong>Faris</strong>')
+      expect(response.body).to include('<h2 class="player-screen__name">Faris</h2>')
     end
 
     it "joins a new character at the party's lowest level, and says what's missing", :signed_out do

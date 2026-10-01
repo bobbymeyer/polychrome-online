@@ -29,7 +29,7 @@ module Campaign::Broadcasts
   TABLE_PANELS = {
     "map_canvas" => "campaigns/maps/canvas", "table_here" => "campaigns/tables/here", "table_party" => "campaigns/tables/party",
     "table_ways" => "campaigns/tables/ways", "table_time" => "campaigns/tables/time", "party_knows" => "campaigns/tables/party_knows",
-    "table_floorplan" => "campaigns/tables/floorplan", "table_now" => "campaigns/tables/now"
+    "table_floorplan" => "campaigns/tables/floorplan", "table_now" => "campaigns/tables/now", "table_scene" => "campaigns/tables/scene"
   }.freeze
 
   # Something the table shows changed: its panels render again, once for a

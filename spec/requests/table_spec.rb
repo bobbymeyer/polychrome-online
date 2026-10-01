@@ -30,7 +30,7 @@ RSpec.describe "The table", type: :request do
     sit(bartz.id)
     get campaign_table_path(campaign)
     expect(response.body.scan("<turbo-cable-stream-source").size).to eq(4) # + Bartz's whispers
-    expect(response.body).to include('<span class="table-you__label">You</span> <strong>Bartz</strong>')
+    expect(response.body).to include('<h2 class="player-screen__name">Bartz</h2>')
     # The day clock: a slice per part of the day, turned so the part it is now is at the top.
     parts = campaign.almanac.periods
     expect(response.body).to include('class="day-clock"', %(data-day-clock-turn-value="#{-(campaign.parts_gone * 360.0 / parts.size)}"))
@@ -82,9 +82,15 @@ RSpec.describe "The table", type: :request do
       expect(moves.text).to include("Your moves")
       expect(moves.at("#table_choice")).to be_present
       expect(moves.at("#composer")).to be_present
-      you = page.at(".table-you")
-      expect(you.text.squish).to include("You Bartz")
+      you = page.at(".player-screen__card")
+      expect(you.text.squish).to include("You Bartz", "Lv 5 Knight", "My sheet")
       expect(you.at(".vitals")["id"]).to be_nil # the party panel's row keeps the id broadcasts look for
+      # One screen: you (a column that pins), the scene, your moves (a drawer that pins along its bottom), the log.
+      expect(page.at(".player-screen__side .player-screen__card")).to be_present
+      expect(page.at(".player-screen__moves[data-pinnable-key-value='polychrome.actionsPinned'] #table_choice")).to be_present
+      expect(page.at(".player-screen__context #table_now")).to be_present
+      expect(page.at(".player-screen__context #table_scene")).to be_present
+      expect(page.at(".log-drawer")["data-log-drawer-pin-from-value"]).to eq("1100")
       expect(page.css("##{ActionView::RecordIdentifier.dom_id(bartz, :vitals)}").size).to eq(1)
 
       get campaign_composer_path(campaign)

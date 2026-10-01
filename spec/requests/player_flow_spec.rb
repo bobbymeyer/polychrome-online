@@ -81,7 +81,7 @@ RSpec.describe "The player's way through", type: :request do
 
     sign_in_as(krile)
     get campaign_table_path(campaign)
-    expect(response.body).to include('<span class="table-you__label">You</span> <strong>Krile</strong>')
+    expect(response.body).to include('<h2 class="player-screen__name">Krile</h2>')
     delete campaign_table_seat_path(campaign)
     get campaign_table_path(campaign)
     expect(response.body).to include("Take a seat")

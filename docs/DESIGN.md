@@ -289,6 +289,22 @@ A player's table offers what they can do at this moment, and nothing else up fro
 
 The GM's table and the shared screen keep their panels for now.
 
+### A player's screen
+
+On a wide screen (1100px and up) a player's table is a game screen in three columns:
+
+- **Left: you.** A card with your portrait, name, level and archetype, HP and MP, and your sheet;
+  under it what you look up (Map · Party · What we know), the map open as a minimap.
+- **Middle: the scene.** The date, the place and the part of the day in one row, the Now line,
+  the place's picture when it has one, the dialogue box and the last lines said; and along its
+  bottom, **your moves**, a drawer kept in view as the page scrolls.
+- **Right: the log.**
+
+Each of the three side parts pins, the way the GM's log always has: pinned, it's a column (or the
+drawer along the bottom); unpinned, it folds away (the left column to a "You" tab on the edge,
+your moves to their bar, the log to its tab) and opens when pressed. Each stays as you left it, in
+this browser. On a phone it's one column: you, the scene, your moves, what you look up.
+
 ### The table
 
 - **Now, in one line.** Under the header, a strip says what the table is doing and whose move it

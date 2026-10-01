@@ -45,7 +45,7 @@ module SystemHelpers
 
     within("section", text: "Take a seat") { click_on(seat == "gm" ? "Game Master" : seat.name, match: :prefer_exact) }
     # The GM's seat is said under the name; a player's is the "You" line (their Change seat is in the menu).
-    expect(page).to(seat == "gm" ? have_text("At the table as GM") : have_css(".table-you", text: seat.name))
+    expect(page).to(seat == "gm" ? have_text("At the table as GM") : have_css(".player-screen__card", text: seat.name))
     wait_for_streams
   end
 

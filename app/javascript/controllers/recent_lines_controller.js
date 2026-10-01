@@ -29,7 +29,7 @@ export default class extends Controller {
       this.asking = this.askingNow()
       this.render()
     })
-    this.panelObserver.observe(this.element.parentElement, { childList: true, subtree: true })
+    this.panelObserver.observe(this.element.closest(".table") || document.body, { childList: true, subtree: true })
   }
 
   disconnect() {

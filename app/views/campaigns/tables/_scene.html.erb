@@ -1,0 +1,6 @@
+<%# The place the party is in, as a picture (Location#picture: its mode's, or its template's), at the
+    head of a player's screen. Replaced live with the table's panels as the party moves. %>
+<% picture = campaign.current_node&.location&.picture %>
+<figure id="table_scene" class="table-scene" <%= "hidden" unless picture %>>
+  <%= image_tag url_for(picture), alt: campaign.current_node.name if picture %>
+</figure>

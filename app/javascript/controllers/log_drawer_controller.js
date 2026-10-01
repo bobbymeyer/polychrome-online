@@ -5,8 +5,9 @@ import { Controller } from "@hotwired/stimulus"
 // While it's closed, the tab counts the lines that arrive and gives a pulse,
 // so nothing happens unseen.
 //
-// Dockable (the GM's seat): Pin keeps it open as a column beside the page,
-// and it stays pinned in this browser. On a wide screen it starts pinned.
+// Dockable (the GM's seat, and a player's screen): Pin keeps it open as a
+// column beside the page, and it stays pinned in this browser. On a wide
+// screen (pinFrom) it starts pinned.
 const PINNED_KEY = "polychrome.logPinned"
 const DOCK_WIDTH = 1000 // narrower than this, there's no room beside the page
 const WIDE = 1440
@@ -14,7 +15,7 @@ const WIDE = 1440
 export default class extends Controller {
   static targets = ["panel", "tab", "count", "list", "pin"]
   // Your own lines aren't news to you: they don't count.
-  static values = { self: String, dockable: Boolean }
+  static values = { self: String, dockable: Boolean, pinFrom: { type: Number, default: WIDE } }
 
   connect() {
     this.unread = 0
@@ -63,8 +64,8 @@ export default class extends Controller {
   pinned() {
     try {
       const stored = localStorage.getItem(PINNED_KEY)
-      return stored === null ? window.innerWidth >= WIDE : stored === "1"
-    } catch { return window.innerWidth >= WIDE }
+      return stored === null ? window.innerWidth >= this.pinFromValue : stored === "1"
+    } catch { return window.innerWidth >= this.pinFromValue }
   }
 
   remember(pinned) {
