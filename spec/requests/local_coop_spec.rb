@@ -69,6 +69,7 @@ RSpec.describe "Local co-op", type: :request do
 
     follow_redirect!
     expect(response.body).to include('data-view="controller"', "table--controller", "<h1>Bartz</h1>", "vitals", "My sheet")
+    expect(response.body).to include("This device is a <strong>controller</strong>", "Leave controller view") # said up top, so a laptop left in it knows
     expect(response.body).not_to include("table__map", 'id="composer"')
 
     expect { post join_path(code), params: { character_id: bartz.id } }.not_to(change { campaign.messages.count }) # back again: no new line

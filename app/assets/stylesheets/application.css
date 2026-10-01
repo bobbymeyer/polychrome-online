@@ -106,12 +106,12 @@ a.play:hover { color: var(--signal-dark); }
 body { padding-top: var(--topbar); }
 .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 40; min-height: var(--topbar);
-  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); align-items: center;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: var(--gutter); align-items: center;
   margin: 0; padding: 4px var(--gutter);
   border-bottom: 2px solid var(--ink);
 }
-.topbar__brand { grid-column: span 3; font-size: 20px; line-height: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
-.topbar__account { grid-column: 10 / -1; justify-self: end; display: flex; flex-wrap: wrap; gap: 0 16px; align-items: center; font-size: 13px; }
+.topbar__brand { font-size: 20px; line-height: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
+.topbar__account { justify-self: end; display: flex; gap: 0 16px; align-items: center; font-size: 13px; white-space: nowrap; }
 .topbar__account form { margin: 0; }
 /* Your name, and under it what's yours: a menu that drops from the bar. */
 .topbar__user { position: relative; margin: 0; padding: 0; border: 0; }
@@ -127,7 +127,7 @@ body { padding-top: var(--topbar); }
 .topbar__user-menu form { display: contents; }
 .topbar__user-menu .link-button { font: inherit; font-weight: 600; min-height: 32px; }
 .topbar__user-menu .muted { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
-.topbar__books { grid-column: 4 / 12; display: flex; flex-wrap: wrap; gap: 0 20px; font-size: 14px; font-weight: 600; }
+.topbar__books { display: flex; flex-wrap: wrap; gap: 0 20px; font-size: 14px; font-weight: 600; }
 .topbar__world { color: var(--ink); margin-right: 8px; }
 .topbar a { text-decoration: none; }
 .topbar a:hover { text-decoration: underline; }

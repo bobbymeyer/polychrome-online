@@ -11,6 +11,7 @@ export default class extends Controller {
   connect() {
     this.fit = () => this.measure()
     window.addEventListener("resize", this.fit)
+    window.addEventListener("layout:changed", this.fit) // the top bar's height, measured
     this.observer = new ResizeObserver(this.fit)
     if (this.element.parentElement) this.observer.observe(this.element.parentElement)
     this.measure()
@@ -18,6 +19,7 @@ export default class extends Controller {
 
   disconnect() {
     window.removeEventListener("resize", this.fit)
+    window.removeEventListener("layout:changed", this.fit)
     this.observer?.disconnect()
   }
 

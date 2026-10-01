@@ -30,6 +30,11 @@
   <% elsif player %>
     <%= render "campaigns/tables/player_screen" %>
   <% else %>
+  <% if view == "controller" %>
+    <%# This device was made a controller (a phone's view) and stays one until told otherwise: say so, up top. %>
+    <p class="coop-banner">This device is a <strong>controller</strong>: your part, without the show.
+      <%= link_to "Leave controller view", campaign_table_path(@campaign, view: "off") %></p>
+  <% end %>
   <div class="table__main">
     <div class="table__stage">
     <%# The Stage first, sacred: nothing above it, and what's under it scrolls on its own (stage.css). %>
