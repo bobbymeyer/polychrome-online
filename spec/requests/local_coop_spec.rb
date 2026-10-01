@@ -36,16 +36,22 @@ RSpec.describe "Local co-op", type: :request do
     get join_path(code.downcase, view: "controller")
     expect(response.body).to include("Bartz", "Lenna", "Your name", "This phone becomes your controller")
 
-    expect { post join_path(code), params: { name: "Sam", character_id: bartz.id, view: "controller" } }.to change(User, :count).by(1)
+    # One form: picking Bartz sends the (empty) make-your-own fields too, and it's Bartz they get.
+    characters = Character.count
+    expect { post join_path(code), params: { name: "Sam", character_id: bartz.id, view: "controller", character: { name: "", motive: "" } } }
+      .to change(User, :count).by(1)
+    expect(Character.count).to eq(characters)
     sam = User.last
     expect(sam).to have_attributes(name: "Sam", guest: true, admin: false)
     expect(bartz.reload.user).to eq(sam)
     expect(response).to redirect_to(campaign_table_path(campaign, view: "controller"))
+    expect(campaign.messages.last.body).to eq("Sam, as Bartz, joins the party.")
 
     follow_redirect!
     expect(response.body).to include('data-view="controller"', "table--controller", "<h1>Bartz</h1>", "vitals", "My sheet")
     expect(response.body).not_to include("table__map", 'id="composer"')
 
+    expect { post join_path(code), params: { character_id: bartz.id } }.not_to(change { campaign.messages.count }) # back again: no new line
     get join_path(code)
     expect(response.body).to include("Bartz", "yours", "Joining as <strong>Sam</strong>")
     expect(response.body).not_to include("Your name")
@@ -56,6 +62,13 @@ RSpec.describe "Local co-op", type: :request do
     get join_path(campaign.join_code)
     expect(response.body).to include("A crystal world, going out.", "Lines and veils", "Harm to children", "Torture")
     expect(response.body.index("Lines and veils")).to be < response.body.index("Play someone the GM made")
+    expect(response.body.scan("Your name").size).to eq(1) # asked once, for picking or making
+  end
+
+  it "shows who's in the party while you pick an archetype, and who plays each", :signed_out do
+    get join_path(campaign.join_code)
+    expect(response.body).to include("In the party: Bartz (#{bartz.job.name}) and Lenna (#{lenna.job.name}).")
+    expect(response.body).to match(/Bartz (and Lenna )?plays? this/)
   end
 
   it "won't let someone join as a character that's taken, or with an old code", :signed_out do
@@ -116,6 +129,7 @@ RSpec.describe "Local co-op", type: :request do
       faris = empty.characters.find_by!(name: "Faris")
       expect(faris).to have_attributes(user: User.last, level: Campaign::FIRST_LEVEL, motive: "For my crew.")
       expect(User.last.name).to eq("Sam")
+      expect(empty.messages.last.body).to eq("Sam, as Faris, joins the party.")
       expect(response).to redirect_to(campaign_table_path(empty, view: "off"))
       follow_redirect!
       expect(response.body).to include("At the table as <strong>Faris</strong>")

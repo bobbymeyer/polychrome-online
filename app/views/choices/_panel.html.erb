@@ -1,15 +1,19 @@
 <%# The choice the table is deciding (Message kind "choice"). Broadcast the same to everyone:
-    the seat on .table decides who sees the picks and who sees "Settle" (stage.css). %>
+    the seat on .table decides who sees the picks and who sees "Settle" (stage.css), and
+    choice_panel_controller marks the pick that's the seat's own. %>
 <div id="table_choice" data-controller="choice-panel">
   <% if choice %>
     <section class="window choice" aria-label="A choice for the party" data-choice-panel-target="panel" hidden>
       <h2>What will the party do?</h2>
+      <p class="choice__hold">On hold until the battle is over.</p>
       <ol class="choice__options">
+        <% pickers = choice.picks.group_by(&:option).transform_values { |ps| ps.map(&:character_id) } %>
         <% choice.tally.each do |option, names| %>
-          <li class="choice__option">
+          <li class="choice__option" data-choice-panel-target="option" data-picked-by="<%= Array(pickers[option]).join(" ") %>">
             <%= button_to option, choice_picks_path(choice), params: { option: option }, class: "menu__item choice__pick",
                           form: { class: "choice__pick-form" } %>
             <span class="choice__settle-label"><%= option %></span>
+            <span class="choice__mine" hidden>Your pick</span>
             <span class="choice__who"><%= names.any? ? names.to_sentence : "" %></span>
             <%= button_to "Settle on this", choice_settlement_path(choice), params: { option: option }, class: "link-button choice__settle",
                           form: { class: "choice__settle-form", data: { turbo_confirm: "The party chooses “#{option}”?" } } %>
@@ -18,6 +22,8 @@
       </ol>
       <p class="hint choice__hint choice__hint--player">Pick for your character. You can change your mind until the GM settles it.</p>
       <p class="hint choice__hint choice__hint--gm">
+        <% played = choice.campaign.characters.where.not(user_id: nil).count %>
+        <%= choice.picks.size %> of <%= played %> <%= played == 1 ? "player has" : "players have" %> picked.
         Everyone at the table picks; you settle it<%= ", and #{choice.flag_key.humanize} is set to the outcome" if choice.flag_key %>.
       </p>
     </section>

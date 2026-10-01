@@ -64,6 +64,30 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include("Auto is on")
   end
 
+  it "tells a player the round, and what the clock does if they don't choose" do
+    timed = start_battle(input_seconds: 30)
+    me = timed.party.first["id"]
+    post battle_seat_path(timed), params: { seat: me }
+    get battle_panel_path(timed)
+    expect(response.body).to include("Round 1", "Choose before the clock runs out, or you Attack.")
+    post battle_actions_path(timed), params: { command: { kind: "defend" }, actor: me }
+    get battle_panel_path(timed)
+    expect(response.body).not_to include("Choose before the clock runs out")
+  end
+
+  it "tells the GM who the round waits on, and who chooses for each, in one column" do
+    battle.set_auto!(bartz, false)
+    battle.set_auto!(faris, true)
+    sit("gm")
+    get battle_panel_path(battle)
+    expect(response.body).to include("Waiting on Bartz.", "Who chooses", "Player · waiting", "Auto this round", "Auto every round",
+                                     "Auto, every round", "Hand back")
+    expect(response.body).not_to include("Every round</th>")
+
+    get battle_path(battle)
+    expect(response.body).to include("Fast animations")
+  end
+
   it "takes a Perfect from the timing meter with a player's move" do
     sit(bartz)
     get battle_panel_path(battle)
@@ -161,7 +185,7 @@ RSpec.describe "Battle screen", type: :request do
     it "renders the board from the current state, with a lazily loaded command panel" do
       get battle_path(battle)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('data-controller="battle-player dialogue battle-watch recap"', "turbo-cable-stream-source",
+      expect(response.body).to include('data-controller="battle-player dialogue heartbeat recap"', "turbo-cable-stream-source",
                                         'data-unit="goblin_a"', %(data-roster="#{bartz}"), 'id="command_panel"')
     end
 
@@ -313,7 +337,8 @@ RSpec.describe "Battle screen", type: :request do
     it "sees every unit's HP and who the round is waiting on" do
       get battle_panel_path(battle)
       expect(response.body).to include("The party", "waiting", "Run the round now", "The other side", "Goblin A", "50/50")
-      expect(response.body).not_to include("Waiting on", "On auto every round") # said once, in the party's rows
+      expect(response.body).to include("Waiting on") # by the round's clock, as well as in the rows
+      expect(response.body).not_to include("On auto every round")
     end
 
     it "auto-pilots an absent player and runs the round, all logged" do
@@ -377,7 +402,7 @@ RSpec.describe "Battle screen", type: :request do
     it "keeps the clock going while someone has the battle open, and says when it's held" do
       sit(bartz)
       get battle_path(battle)
-      expect(response.body).to include("battle-watch", battle_watch_path(battle))
+      expect(response.body).to include("heartbeat", battle_watch_path(battle))
 
       patch battle_watch_path(battle)
       expect(response).to have_http_status(:no_content)

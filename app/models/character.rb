@@ -48,6 +48,19 @@ class Character < ApplicationRecord
   normalizes :motive, with: ->(line) { line.to_s.strip.delete_prefix("“").delete_prefix('"').delete_suffix("”").delete_suffix('"').strip.presence }
   validates :motive, length: { maximum: MOTIVE_LENGTH }
 
+  # Who is here: a player with the table or a battle in front of them says
+  # so now and then (heartbeat_controller). Coming back redraws the party
+  # panel; going away is the panel's own clock (here_controller).
+  HERE_FOR = 1.minute
+
+  def here? = seen_at.present? && seen_at > HERE_FOR.ago
+
+  def seen!
+    back = !here?
+    update_column(:seen_at, Time.current)
+    campaign.table_changed if back
+  end
+
   validates :name, presence: true
   validates :exp, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :starting_level, numericality: { in: 1..Stats::Growth::MAX_LEVEL }, allow_nil: true, on: :create

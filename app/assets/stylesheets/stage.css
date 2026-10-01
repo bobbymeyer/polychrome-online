@@ -499,8 +499,11 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .log-drawer.is-open .log-drawer__panel { translate: 0 0; visibility: visible; transition: translate .28s var(--snap), visibility 0s; }
 .log-drawer__head { display: flex; justify-content: space-between; align-items: center; }
 .log-drawer__head h2 { margin: 0; font: var(--display); font-size: 32px; text-shadow: 3px 3px 0 var(--echo); }
-.log-drawer__section { flex: 1 1 0; min-height: 0; overflow-y: auto; max-height: none; border-top: 3px solid var(--ink); padding-top: 8px; }
-.log-drawer__section h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 2px 0; }
+.log-drawer__section { flex: 1 1 0; min-height: 0; overflow-y: auto; max-height: none; border-top: 3px solid var(--ink); }
+/* The heading carries the gap above it, so nothing scrolled under it shows through. */
+.log-drawer__section h3 { margin: 0 0 4px; font-style: italic; font-weight: 900; position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 10px 0 2px; }
+/* A short battle log takes only the room it needs; the table's log has the rest. */
+.log-drawer__section.battle-log { flex: 0 1 auto; }
 @media (max-width: 640px) { .log-drawer__tab { padding: 12px 6px 16px; font-size: 13px; } }
 
 /* In battle the dialogue box stands beside the commands, and only while someone speaks. */
@@ -679,6 +682,10 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .choice__pick:hover, .choice__pick:focus-visible { background: var(--signal); color: var(--paper); }
 .choice__settle-label { font-weight: 900; font-style: italic; font-size: 18px; }
 .choice__who { color: var(--grey); font-size: 14px; }
+.choice__option.is-mine .choice__pick { background: var(--signal); color: var(--paper); }
+.choice__mine { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+.choice__mine::before { content: "✓ "; }
+.choice__mine[hidden] { display: none; }
 .choice__settle-form { margin: 0 0 0 auto; }
 .table:not([data-seat="player"]) .choice__pick-form, .table:not([data-seat="player"]) .choice__hint--player,
 .table[data-seat="player"] .choice__settle-label, .table:not([data-seat="gm"]) .choice__settle-form,
@@ -1092,3 +1099,42 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table__seat .link-button { font-size: inherit; }
 /* A button that fits a table row (the battle's GM panel: auto every round). */
 .button--small { padding: 2px 10px; min-height: 0; font-size: 13px; }
+
+/* Who already plays an archetype, on its card (characters/_job_picker). */
+.job-picker__party { margin: 0 0 8px; }
+.job-card__taken { display: block; margin-top: 2px; font-size: 13px; font-weight: 800; color: var(--control); }
+
+/* Now: one line for what the table is doing and whose move it is, under the header. A battle
+   holds everything else, so the line goes red and the open choice waits, greyed, until it's over. */
+.table-now { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 20px; padding: 10px 0; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--rule); }
+.table-now__label { margin: 0; padding: 2px 10px; background: var(--ink); color: var(--paper); font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; }
+.table-now__what { margin: 0; flex: 1 1 20em; }
+.table-now__who { display: block; color: var(--grey); font-size: 14px; }
+.table-now--battle { border-top-color: var(--signal); }
+.table-now--battle .table-now__label { background: var(--signal); }
+.table-now #table_battle:empty { display: none; }
+.choice__hold { display: none; margin: 0 0 8px; font-weight: 800; }
+.table:has(#table_battle a) .choice__hold { display: block; }
+.table:has(#table_battle a) .choice__options, .table:has(#table_battle a) .choice__hint { opacity: .45; pointer-events: none; }
+
+/* What only the GM sees is marked so: the tools column, hidden places on the map. */
+.gm-only { display: inline-block; margin: 0 0 8px; padding: 1px 8px; border: 2px dashed var(--ink); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+
+/* Who is here: a player with the table or a battle open has a filled dot; away is hollow. */
+.coop-party__here { font-size: 13px; color: var(--grey); white-space: nowrap; }
+.coop-party__here::before { content: ""; display: inline-block; width: 8px; height: 8px; margin: 0 4px 1px 2px; border: 2px solid var(--grey); border-radius: 50%; vertical-align: middle; }
+.coop-party__here.is-here { color: var(--ink); font-weight: 700; }
+.coop-party__here.is-here::before { background: var(--ink); border-color: var(--ink); }
+
+/* A player's moves, together under one tag; and who they are, up top. */
+.your-moves__tag { display: inline-block; margin: 0 0 4px; padding: 2px 10px; background: var(--signal); color: var(--paper); font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; }
+.your-moves__hint { margin: 0 0 12px; }
+.table-you { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 8px 0 0; }
+.table-you__label { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: var(--grey); }
+.table-you .vitals { margin: 0; }
+.composer__to-hint { margin: 4px 0 0; max-width: 22em; }
+
+/* The battle's round, what its clock is for, and (for the GM) who it's waiting on. */
+.command-panel__round, .command-panel__waiting { margin: 4px 0 8px; font-size: 14px; }
+.gm-units__who { white-space: normal; }
+.gm-units__who form.inline { margin-left: 6px; }

@@ -908,6 +908,7 @@ details[open] > summary { margin-bottom: 16px; }
    colour, turned so the part it is now sits under the pointer. The name beside it says which. */
 .table-time__clock { display: inline-flex; align-items: center; gap: 12px; margin-top: 6px; }
 .table-time__clock .table-time__part { margin: 0; }
+.table-time__next { margin: 0; font-size: 13px; color: var(--grey); }
 .day-clock { width: 64px; height: 64px; overflow: visible; flex: none; }
 .day-clock__dial { transform: rotate(var(--turn)); transform-origin: 50px 50px; transition: transform .9s cubic-bezier(.2, .8, .2, 1); }
 .day-clock__dial.is-still { transition: none; }

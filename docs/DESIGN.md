@@ -273,6 +273,26 @@ keyboard, a mouse or a finger.
 
 ### The table
 
+- **Now, in one line.** Under the header, a strip says what the table is doing and whose move it
+  is: a battle ("A battle is on: …", with the way in), else an open choice and who has picked and
+  who still has to, else whose floor it is ("The table is yours" for the GM, "The GM has the
+  floor" for players). Each side reads what it can do. A battle goes red and holds everything
+  else: an open choice greys out with "On hold until the battle is over", and can't be settled.
+- **Who picked, and who can't.** The Now line names who has picked and who still has to, and says
+  "Nobody plays Aoi" for characters with no player, so the GM doesn't wait on them; the GM's
+  choice panel counts the picks ("1 of 3 players have picked").
+- **Who is here.** The party panel says who plays each character, or "nobody plays them", and
+  beside a player a dot: filled "here" while they have the table or a battle open (a heartbeat
+  every 20 seconds), hollow "away" a minute after it stops.
+- **What only the GM sees is marked.** The tools column has its dashed tag; under the map, "Faded
+  places are hidden: only you see them"; and "The party knows" says "Everyone at the table sees
+  this" to the GM.
+- **A player's moves sit together** under a red "Your moves" tag: the vote, the ways on, their
+  field ability, then talk, in that order. The talk box says who hears it ("Everyone at the
+  table hears it, said as Hoshi. Whisper and only the GM does."), and the GM's says the same of
+  their whispers.
+- **You, up top.** Under the campaign's name a player sees "You · Hoshi" with their own HP and MP,
+  kept in step with their row in the party panel, so they never scroll to the bottom to see it.
 - **Dialogue first.** The table leads with the dialogue box; the map sits to the side with the
   party's HP and MP, which follow battles and rests live.
 - **The last few lines** said at the table sit under the dialogue box, whoever said them, so
@@ -282,7 +302,8 @@ keyboard, a mouse or a finger.
   and in battle a ticker of what just happened on the screen everyone's watching.
 - **"Previously on…"** opens by itself only for a session that's over, not the one being played.
 - **The GM's tools sit beside the play**, in the side column under the map: tabs for Scenes,
-  Check, Clocks, Time, Secrets and More (grants, music, one shared screen), one open at a time.
+  Check, Clocks, Time, Secrets, Archetypes (grants) and Music & screen, one open at a time, under
+  a dashed tag: "GM tools · only you see these".
   The open tab is ink, the rest grey controls; a count shows unplayed scenes and running clocks.
   The tab the GM had open stays open, per campaign, in this browser. What needs an answer now
   (everyone down, a field ability asked for) sits above the tabs. On a phone as the GM's remote,
@@ -295,6 +316,18 @@ keyboard, a mouse or a finger.
 - **Pictures come last.** Generating a place's, a speaker's or an entry's picture sits in a closed
   panel at the bottom of the page (open while a batch is running or waiting to be picked from),
   and its summary says when ComfyUI isn't answering. The place or person comes first.
+
+### Battle, at a glance
+
+- **The round, and what its clock is for.** A player's command panel says "Round 2 · Choose
+  before the clock runs out, or you Attack" (or "… Fire again (or Attack, if it can't)" after
+  a spell), until they've chosen.
+- **The GM's panel says who the round waits on**, by its clock ("Waiting on Hoshi."), and the
+  party's table has one "Who chooses" column instead of two: "Auto, every round" with Hand back,
+  or "Player · waiting/chosen" with Auto this round and Auto every round.
+- **"Fast animations"**, not "Fast": the one control above a phone's battle says what it speeds up.
+- **The log's battle section takes only the room it needs**, and section headings carry their own
+  top gap, so nothing scrolled under them shows through.
 
 ### Defeat
 
@@ -313,6 +346,8 @@ or, inside, the ways on from the room they're in (a room the players haven't see
 unexplored way"). A player's "suggest" puts the question to a vote with their pick in it; the
 GM settling the vote takes the party there. The GM can also just go, from the same panel, and
 calls a waiting encounter there too, so a session can run from the table without the map page.
+In any vote, the option your own character picked stays filled red with "✓ Your pick" beside it,
+so you can see your vote at a glance among everyone's names.
 
 Staying is a way on as well. A place can list things to do there (`Pastime`): class, a shift, a
 visit, a night in the other world. Each says when it can be done, how long it takes, what it
@@ -476,8 +511,9 @@ Record each place where the game needed more than the Swiss defaults: what chang
   dusk red, night blue), beside **the day clock**: a dial cut into a slice for each part of the
   setting's day, each in its light's colour, with the part it is now under a pointer at the top.
   When time passes the dial turns forward (never back: into the next day it keeps going round),
-  so the table sees the day move. Under them, the days left on each public clock that only a new
-  day ticks ("5 days · The spring tide comes in"). The party plans around the calendar, so it
+  so the table sees the day move, and "Next: Dusk" beside it says where it's going. Under them,
+  the days left on each public clock that only a new day ticks, said as a sentence ("5 days until
+  The spring tide comes in"; on the last day, "Tomorrow it happens: …"). The party plans around the calendar, so it
   shouldn't be a line of small print in the side column.
 - **Name tags in the speaker's colour.** The dialogue box's name tag wears the speaker's plate
   colour instead of a fixed yellow. The narrator has no portrait: narration is a voice, and its

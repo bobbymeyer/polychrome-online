@@ -62,6 +62,7 @@ module Message::Choice
   def settle!(option)
     raise Refusal, "That isn't one of the options" unless options.include?(option)
     raise Refusal, "This was settled already" unless open_choice?
+    raise Refusal, "Not while a battle is on: settle it once the battle is over" if campaign.battle_on?
 
     transaction do
       update!(settled: option)

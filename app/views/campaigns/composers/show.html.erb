@@ -17,12 +17,14 @@
           <%= select_tag "message[whisper_to]",
                          options_for_select([ [ "Everyone", "" ] ] + @campaign.characters.order(:created_at).map { |c| [ "Whisper to #{c.name}", c.id ] }, @message.recipient&.id),
                          id: "message_whisper_to" %>
+          <p class="hint composer__to-hint">Everyone hears it, unless you whisper: then only that player and you.</p>
         </div>
       <% else %>
         <div class="field">
           <label for="message_whisper_to">To</label>
           <%= select_tag "message[whisper_to]", options_for_select([ [ "Everyone", "" ], [ "Whisper to the GM", "gm" ] ], @message.whisper? ? "gm" : ""),
                          id: "message_whisper_to" %>
+          <p class="hint composer__to-hint">Everyone at the table hears it, said as <%= seat.name %>. Whisper and only the GM does.</p>
         </div>
       <% end %>
       <%# How it's said: optional, so it waits behind a word until wanted. %>

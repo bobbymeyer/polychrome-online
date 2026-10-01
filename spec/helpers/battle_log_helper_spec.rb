@@ -32,6 +32,8 @@ RSpec.describe BattleLogHelper, type: :helper do
   it "names units and abilities" do
     state = build_battle
     expect(helper.battle_log_line({ "type" => "cast", "actor" => "vivi", "ability" => "fire" }, state)).to eq("Vivi casts Fire.")
+    expect(helper.battle_log_line({ "type" => "timeout", "defaulted" => [ "bartz" ] }, state)).to eq("Time's up! Bartz acts on reflex.")
+    expect(helper.battle_log_line({ "type" => "timeout", "defaulted" => %w[bartz vivi] }, state)).to eq("Time's up! Bartz and Vivi act on reflex.")
     expect(helper.battle_log_line({ "type" => "cast", "actor" => "bartz", "ability" => "double_cut" }, state)).to eq("Bartz uses Double Cut.")
     expect(helper.battle_log_line({ "type" => "miss", "target" => "goblin_a", "actor" => "bartz", "reason" => "evaded", "roll" => 98, "needed" => 90 }, state))
       .to eq("Goblin A dodges. (rolled 98, needed 90 or under)")

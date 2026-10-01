@@ -1,6 +1,6 @@
-<%# The table's link to the battle being fought, if any. Broadcast whenever a battle starts or ends. %>
+<%# The table's link to the battle being fought, if any, in the Now line. Broadcast whenever a battle starts or ends. %>
 <div id="table_battle">
   <% if (battle = campaign.current_battle) %>
-    <%= link_to "#{battle.name} is on →", battle_path(battle), class: "button play" %>
+    <%= link_to "Go to the battle →", battle_path(battle), class: "button play", title: "#{battle.name} is on" %>
   <% end %>
 </div>

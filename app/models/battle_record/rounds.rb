@@ -90,7 +90,7 @@ module BattleRecord::Rounds
     input_seconds.present? && !over? && round == 1 && deadline_at.nil?
   end
 
-  # Anyone with the battle open says so now and then (battle_watch_controller,
+  # Anyone with the battle open says so now and then (heartbeat_controller,
   # every WATCH_BEAT); gone for longer than WATCHERS_GONE, nobody's watching.
   WATCH_BEAT = 20.seconds
   WATCHERS_GONE = 50.seconds

@@ -9,6 +9,13 @@
   </span>
   <%= render "battles/panels/countdown", battle: @battle %>
 </div>
+<%# Which round, and what the clock is for: without a choice when it runs out, the default goes in. %>
+<p class="command-panel__round">
+  <strong>Round <%= @battle.round %></strong>
+  <% if @battle.input_seconds && !@battle.over? && !command && unit["hp"].positive? %>
+    · Choose before the clock runs out, or you <%= timeout_command(state, unit) %>.
+  <% end %>
+</p>
 <%# Everyone's HP at a glance, for a phone whose pinned panel covers the roster. %>
 <ol class="party-strip" aria-label="Party">
   <% @battle.party.reject { |u| u["gone"] }.each do |member| %>

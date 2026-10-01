@@ -16,6 +16,8 @@ RSpec.describe "The table", type: :request do
     Nokogiri::HTML(response.body).at("##{id} option[selected]")&.[]("value")
   end
 
+  def now = Nokogiri::HTML(response.body).at("#table_now").text.squish
+
   def say(fields)
     post campaign_messages_path(campaign), params: { message: fields }
   end
@@ -72,6 +74,22 @@ RSpec.describe "The table", type: :request do
 
   describe "a player" do
     before { sit(bartz.id) }
+
+    it "has their moves together, themselves up top, and says who hears what they say" do
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      moves = page.at("section.your-moves")
+      expect(moves.text).to include("Your moves")
+      expect(moves.at("#table_choice")).to be_present
+      expect(moves.at("#composer")).to be_present
+      you = page.at(".table-you")
+      expect(you.text.squish).to include("You Bartz")
+      expect(you.at(".vitals")["id"]).to be_nil # the party panel's row keeps the id broadcasts look for
+      expect(page.css("##{ActionView::RecordIdentifier.dom_id(bartz, :vitals)}").size).to eq(1)
+
+      get campaign_composer_path(campaign)
+      expect(response.body).to include("Everyone at the table hears it, said as Bartz. Whisper and only the GM does.")
+    end
 
     it "always speaks as their own character, whatever the params say" do
       say(body: "Hi!", speaker: "npc:#{cid.id}", expression: "happy")
@@ -152,11 +170,11 @@ RSpec.describe "The table", type: :request do
     campaign.messages.create!(body: "Lanterns.", speaker: cid)
     get campaign_table_path(campaign)
     header = response.body[/<header class="battle__header">.*?<\/header>/m]
-    expect(header).to include("Day 3", "time--dusk", "5 days</strong> The spring tide comes in")
+    expect(header).to include("Day 3", "time--dusk", "5 days</strong> until The spring tide comes in", "table-time__next\">Next: ")
     expect(header).not_to include("The count schemes", "The guard grows wary")
     campaign.clocks.find_by!(name: "The spring tide comes in").update!(filled: 5)
     get campaign_table_path(campaign)
-    expect(response.body).to include(%(<li class="is-tomorrow"><strong>Tomorrow</strong> The spring tide comes in</li>))
+    expect(response.body).to include(%(<li class="is-tomorrow"><strong>Tomorrow</strong> it happens: The spring tide comes in</li>))
     expect(response.body).to match(%r{<time class="muted" datetime="[^"]+" title="Day 3 · [^"]+">Dusk</time>})
   end
 
@@ -274,6 +292,79 @@ RSpec.describe "The table", type: :request do
       post choice_settlement_path(choice), params: { option: "Refuse" }
       expect(choice.reload.settled).to eq("Refuse")
       expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Refuse")
+    end
+  end
+
+  describe "the Now line" do
+    it "says what the table is doing and whose move it is, to the GM and to the players" do
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(now).to include("The table is yours.")
+
+      Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
+      get campaign_table_path(campaign)
+      expect(now).to include("The party has a choice to make.", "Settle it when you're ready.", "Nobody has picked yet.")
+
+      sit(bartz.id)
+      post choice_picks_path(campaign.open_choice), params: { option: "Refuse" }
+      get campaign_table_path(campaign)
+      expect(now).to include("Pick below; the GM settles it.", "Picked: Bartz.", "Nobody plays Lenna: no pick from them.")
+      expect(response.body).to include("1 of 1 player has picked.")
+    end
+
+    it "puts a battle first: the choice waits, and can't be settled until it's over" do
+      choice = Message.choice(campaign, options: [ "Trust Cid", "Refuse" ])
+      choice.save!
+      battle = start_battle(campaign: campaign)
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(now).to include("A battle is on: #{battle.name}.", "The choice waits until it's over.", "Go to the battle")
+      expect(response.body).to include("On hold until the battle is over.")
+
+      post choice_settlement_path(choice), params: { option: "Refuse" }
+      expect(choice.reload.settled).to be_nil
+    end
+  end
+
+  describe "who is at the table" do
+    def party = Nokogiri::HTML(response.body).at("#table_party").text.squish
+
+    it "says who nobody plays, and who is here or away, from a heartbeat the table and battles send" do
+      bartz.update!(user: make_user("Kim"))
+      get campaign_table_path(campaign)
+      expect(party).to include("Kim away", "nobody plays them")
+
+      sit(bartz.id)
+      get campaign_table_path(campaign)
+      expect(response.body).to include("heartbeat", campaign_presence_path(campaign))
+      patch campaign_presence_path(campaign)
+      expect(response).to have_http_status(:no_content)
+      expect(bartz.reload).to be_here
+      get campaign_table_path(campaign)
+      expect(party).to include("Kim here")
+
+      travel Character::HERE_FOR + 1.second
+      expect(bartz.reload).not_to be_here
+    end
+
+    it "gives the GM no player's tag or You line, and says who hears a whisper" do
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(response.body).not_to include("your-moves__tag", "table-you")
+      get campaign_composer_path(campaign)
+      expect(response.body).to include("Everyone hears it, unless you whisper")
+    end
+
+    it "marks what only the GM sees" do
+      campaign.map_nodes.create!(name: "Secret Grotto", x: 5, y: 5, visible: false)
+      campaign.clocks.create!(name: "The tide", segments: 4, public: true)
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(response.body).to include("GM tools · only you see these", "Faded places are hidden: only you see them.",
+                                       "Everyone at the table sees this.", "Archetypes", "Music &amp; screen")
+      sit(bartz.id)
+      get campaign_table_path(campaign)
+      expect(response.body).not_to include("only you see", "Everyone at the table sees this.")
     end
   end
 
