@@ -402,6 +402,16 @@ RSpec.describe "Battle screen", type: :request do
       expect(response.body).not_to include('id="battle_ready"')
     end
 
+    it "counts choosing a first move as being ready" do
+      sit(bartz)
+      get battle_path(battle)
+      expect(response.body).to include("Choosing your first move counts too.")
+      post battle_actions_path(battle), params: { command: { kind: "defend" } }
+      expect(battle.reload.arrived_units).to eq([ bartz ])
+      get battle_panel_path(battle)
+      expect(response.body).to include("data-chosen")
+    end
+
     it "takes everyone's Ready button away once the clock runs, or the fight is over" do
       table = nil
       streams = capture_turbo_stream_broadcasts(battle) do

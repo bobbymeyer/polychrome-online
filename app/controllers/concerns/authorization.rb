@@ -6,7 +6,7 @@ module Authorization
   extend ActiveSupport::Concern
 
   included do
-    helper_method :current_user, :admin?, :can_gm?, :can_play?, :can_manage?, :can_generate?, :can_edit_world?, :knows_the_lore?
+    helper_method :current_user, :admin?, :can_make_games?, :can_gm?, :can_play?, :can_manage?, :can_generate?, :can_edit_world?, :knows_the_lore?
   end
 
   private
@@ -17,6 +17,17 @@ module Authorization
 
   def admin?
     current_user&.admin? || false
+  end
+
+  # Making worlds and campaigns is for accounts: a guest (in by an invite,
+  # with just a name) plays in someone else's game.
+  def can_make_games?
+    current_user.present? && !current_user.guest?
+  end
+
+  # before_action :require_account
+  def require_account
+    redirect_to root_path, alert: "Running your own game needs an account: you're here as a guest, to play." unless can_make_games?
   end
 
   def can_gm?(campaign)

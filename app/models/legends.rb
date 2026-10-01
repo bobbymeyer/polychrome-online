@@ -29,13 +29,26 @@ class Legends
     end
   end
 
-  # The party's story, by day.
+  # The party's story, by day: deeds, rumours heard, the fights they saw
+  # through (as the table heard each end), and what they chose together
+  # (not where to go: that's the road, not the story).
   def story
     names = campaign.map_nodes.pluck(:id, :name).to_h
     deeds = campaign.deeds.in_order.map { |d| Entry.new(day: d.day, kind: "deed", text: d.body, where: names[d.origin_id]) }
     heard = campaign.rumours.talk.where(heard: true).where.not(heard_day: nil).order(:heard_day, :id)
                     .map { |r| Entry.new(day: r.heard_day, kind: "rumour", text: r.body, where: names[r.heard_at_id]) }
-    (deeds + heard).sort_by(&:day).group_by(&:day)
+    (deeds + heard + fights + choices).sort_by(&:day).group_by(&:day)
+  end
+
+  def fights
+    over = campaign.battles.where(status: %w[victory defeat fled]).select(:id)
+    campaign.messages.where(battle_id: over).where.not(day: nil).order(:id).group_by(&:battle_id)
+            .map { |_, said| said.last }.map { |line| Entry.new(day: line.day, kind: "battle", text: line.body, where: nil) }
+  end
+
+  def choices
+    campaign.messages.where(kind: "choice").where.not(settled: nil).where.not(day: nil).order(:id)
+            .reject { |choice| choice.where_next? }.map { |choice| Entry.new(day: choice.day, kind: "choice", text: "Chose: #{choice.settled}.", where: nil) }
   end
 
   def uncovered

@@ -330,6 +330,12 @@ keyboard, a mouse or a finger.
   (encounter, treasure, boss, done). Room names wrap onto up to three lines in their boxes.
 - **A mode across the map is said once**, under it ("By night: across the map."), not tagged on
   every place; a place's own tag, in red, is for what's different there.
+- **The party's story on the Legends page** has its fights (as the table heard each end:
+  "Undertow Platforms: Victory! 70 yen…") and what it chose together ("Chose: Refuse."), beside
+  its deeds and the rumours it heard. Where it went is the road, not the story.
+- **Choosing a first move is being ready**: the Ready button says so, and goes once you've chosen.
+- **Guests play; accounts make games.** Someone in by an invite with just a name isn't offered
+  "New world" or "New campaign", and is turned back if they go there.
 - **A check says its chance one way**: "needed 40 or under · rolled 99", on the card and in the
   log alike. The GM's check form has "Everyone standing" over the names.
 - **Things to do here get wide buttons** under Where next?, so "Wait for the train that isn't

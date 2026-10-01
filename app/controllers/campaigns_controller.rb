@@ -5,6 +5,7 @@ class CampaignsController < ApplicationController
 
   before_action :set_campaign, only: %i[show edit update]
   before_action :require_campaign_gm, only: %i[edit update]
+  before_action :require_account, only: %i[new create]
 
   def new
     @world = World.find_by!(slug: params[:world_slug])
