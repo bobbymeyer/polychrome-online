@@ -532,6 +532,36 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   current tables, so editing a table changes places already rolled, except
   what's pinned. To fork a world instead, start a new one from its books.
 
+## Story rows: lines matched to the moment
+
+- **The story matcher** (`lib/story`, pure, like the resolver) takes facts
+  about the moment as a flat hash and a table's rows. Each row says when it
+  fits: `town, night, !smoke_seen, hurt >= 2`. Every row that fits
+  competes. The one that asks the most of the moment wins, a row that asks
+  nothing is the fallback, and ties go to the campaign's dice, by weight.
+- **A little grammar:** `{place}` in a row's text says a fact, and a row
+  whose fact isn't there doesn't fit, so "{home} slows down at the gate"
+  only comes up when someone is home. `{cold|stale|wet}` picks one word.
+- **Rows remember:** `sets: smoke_seen, visits + 1, mood = grim` writes the
+  campaign's flags once the line is said. Rows rule each other out through
+  them: one sets `smoke_seen`, the next asks for it.
+- **Lines and veils:** a row that names one of the table's (or the
+  world's) never comes up. It needs every word in the line that carries
+  meaning, plurals folded, so "spiders" rules out "a spider".
+- **The facts** (`Campaign::Moment`): the place (name, kind, modes, first
+  visit and how many before, cleared, a town's standing), the time (the
+  part of the day by its name, the light, weekday, month and season, the
+  day), the party (standing, hurt, down, who is home, money), every running
+  clock's fill, and every flag. The Generator Tables have a page listing
+  them all ("What rows can ask about"), and Prep shows the moment as it is
+  now.
+- **Arrival lines** are the first use: a world's `arrivals` tables, one
+  row per line, pasted as `text | when | sets`. On each arrival the best
+  fit goes to the GM as a note ("To say, arriving at Hollin: …") with a
+  **Say it** button. The engine never says it for them: said, it goes to
+  the table in the narrator's voice and what the row remembers is set.
+  Both seeded settings have a table of them.
+
 ## The setting: canon, voice, words, time and origins
 
 A world is a setting, not only rulebooks. Its editors write these once, and

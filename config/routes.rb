@@ -43,6 +43,8 @@ Rails.application.routes.draw do
     end
     namespace :generation do
       resources :generator_tables, param: :slug, path: "tables"
+      # Every fact a story row can ask about (Campaign::Moment).
+      resource :facts, only: :show
     end
 
     # The setting's damage types and chart, and the skills its checks use.
@@ -177,7 +179,10 @@ Rails.application.routes.draw do
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"
 
   resources :npcs, only: %i[edit update destroy]
-  resources :messages, only: :destroy
+  resources :messages, only: :destroy do
+    # The GM says a line the world offered (Campaign::Remarks).
+    resource :saying, only: :create, module: :messages
+  end
   resources :choices, only: [] do
     scope module: :choices do
       resources :picks, only: :create

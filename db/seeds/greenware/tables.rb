@@ -105,6 +105,23 @@ module Seeds
                                      { text: "I've lost my voice to the flue dust, and I'm meant to call the names on Firing day.", item: "draft_whistle" },
                                      { text: "My sister cracked through, falling off the shed roof. Grog would hold her.", item: "grog_paste" },
                                      { text: "I promised my brother gold for his seams if he ever came home.", item: "menders_gold" } ] },
+      # Offered to the GM on each arrival, the one that fits the moment best
+      # (Campaign::Remarks).
+      arrivals: { name: "Arrivals", kind: "arrivals",
+                  entries: [ { text: "{place}. Dust on everything, and the kilns ticking as they cool." },
+                             { text: "{place} again. The same pots on the same sills, a little drier.", when: "town, visits >= 2" },
+                             { text: "{place} is wedging: the whole street slapping clay on boards.", when: "town, wedging" },
+                             { text: "Wheels hum behind every door in {place}.", when: "town, throwing" },
+                             { text: "Racks of greenware in the lanes of {place}, and everybody walking soft so nothing falls.", when: "town, drying" },
+                             { text: "{place} after Cooling: the chimneys ticking, and a lamp in the old kiln that nobody admits to lighting.",
+                               when: "town, cooling, !old_kiln_lamp", sets: "old_kiln_lamp" },
+                             { text: "The lamp in the old kiln of {place} again. It moves, if you watch it long enough.", when: "town, cooling, old_kiln_lamp" },
+                             { text: "The Firing is coming and {place} knows it: names chalked on doors, and some of them rubbed off.", when: "town, firing" },
+                             { text: "{home} touches the doorpost of {place}, the way everyone here does, and finds it's still warm.", when: "town, first_visit" },
+                             { text: "People in {place} crack a little, watching them pass. They've heard.", when: "town, standing = heroes" },
+                             { text: "They come into {place} crazed and chipped. Somebody brings out the slip without asking.", when: "town, hurt >= 2" },
+                             { text: "The air at the mouth of {place} is {damp|gritty|still} and tastes of iron.", when: "dungeon, first_visit" },
+                             { text: "{place} is quiet now. The shoring creaks, and nothing answers.", when: "dungeon, cleared" } ] },
       service_names: { name: "Service names", kind: "service_names",
                        entries: texts("The Leaning Pot", "The Warm Shelf", "Cone Six", "The Cracked Jug", "The Long Rack", "Leather-Hard", service: "inn") +
                                 texts("Slip & Grog", "Harrow Supply", "The Fettling Bench", "Kaolin & Daughters", "Odd Shelves", service: "shop") +

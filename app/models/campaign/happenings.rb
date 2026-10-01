@@ -12,7 +12,9 @@
 #   dawn          new-day clocks; the world moves on overnight
 #                 (Campaign::Overnight), which ticks the now-and-then clocks
 #   arrive        the party gets somewhere (at:): whoever is from there is
-#                 home, and ties to people there come up (Campaign::Belonging)
+#                 home, and ties to people there come up (Campaign::Belonging);
+#                 the world's arrival line that fits best goes to the GM
+#                 (Campaign::Remarks); the visit is counted (Campaign::Moment)
 #
 # A clock listens for events (Clock#triggers), and can keep to the
 # calendar's words as modes and things to do do ("each new day, on
@@ -34,6 +36,8 @@ module Campaign::Happenings
     case event
     when "arrive"
       arrive_among_their_own!(at)
+      offer_arrival_line!(at)
+      count_visit!(at)
     when "rest"
       payday!
       tick_clocks!("rest", day: day, period: period)

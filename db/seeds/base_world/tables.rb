@@ -97,6 +97,25 @@ module Seeds
                                    { text: "I've lost my voice, and the choir sings on Sunday.", item: "echo_screen" },
                                    { text: "My wife is laid up with a wound that won't close.", item: "hi_potion" },
                                    { text: "I promised my brother a feather that brings you back.", item: "phoenix_down" } ] },
+      # Offered to the GM on each arrival, the one that fits the moment best
+      # (Campaign::Remarks). Facts: the generation book's "What rows can ask
+      # about" page.
+      arrivals: { name: "Arrivals", kind: "arrivals",
+                  entries: [ { text: "{place}. The road ends here, for now." },
+                             { text: "{place} again. The same dogs bark at the same gate.", when: "town, visits >= 2" },
+                             { text: "Smoke from the chimneys of {place}, and somebody frying onions.", when: "town, first_visit, day" },
+                             { text: "{place} at dawn: shutters banging open, a baker already shouting.", when: "town, dawn" },
+                             { text: "Lamps going on in {place}, one window at a time.", when: "town, dusk" },
+                             { text: "{place} is asleep. One window is lit, and someone in it watches the road.", when: "town, night, !watcher_seen", sets: "watcher_seen" },
+                             { text: "The lit window in {place} again. Whoever it is, they waited up.", when: "town, night, watcher_seen" },
+                             { text: "People in {place} stop talking as the party passes. They know the name.", when: "town, standing = heroes" },
+                             { text: "A child in {place} runs ahead to tell everyone who's coming. Nobody runs to greet them.", when: "town, reputation <= -1" },
+                             { text: "{home} slows down at the gate of {place}. Nothing's changed, and everything has.", when: "town, first_visit" },
+                             { text: "They limp into {place}. Somebody points them to the temple without being asked.", when: "town, hurt >= 2" },
+                             { text: "The air at the mouth of {place} is {cold|stale|wet} and smells of old iron.", when: "dungeon, first_visit" },
+                             { text: "{place} is quiet now. Water drips where the noise used to be.", when: "dungeon, cleared" },
+                             { text: "The wind across {place} has teeth in it after dark.", when: "wilds, dark" },
+                             { text: "{place}. Someone has left flowers here, not long ago.", when: "landmark, first_visit" } ] },
       service_names: { name: "Service names", kind: "service_names",
                        entries: texts("The Sleepy Chocobo", "The Crossed Keys", "Last Light Inn", "The Wandering Moogle", "The Hearth & Kettle",
                                       "The Tipsy Wyvern", service: "inn") +

@@ -14,7 +14,7 @@ module Generation
 
     def entry_params
       params.expect(generator_table: [ :name, :slug, :kind, :description, :paste,
-                                       { entries: [ %i[text key weight service item gil width height roof makes rooms heart keeps named did sealed trace dead town] ] } ])
+                                       { entries: [ %i[text key weight service item gil width height roof makes rooms heart keeps named did sealed trace dead town when sets] ] } ])
     end
   end
 end

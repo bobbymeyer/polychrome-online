@@ -12,13 +12,17 @@
   <% columns = { "text" => "Text", "key" => "Key", "item" => "Item", "gil" => word("currency").upcase_first, "service" => "Service", "width" => "Width", "height" => "Height", "roof" => "Roof",
                  "makes" => "Makes (commas)", "rooms" => "Rooms (commas)", "heart" => "Heart", "keeps" => "Keeps (commas)", "named" => "Named (commas)",
                  "did" => "Did", "sealed" => "Left", "trace" => "What's still there", "dead" => "Who died there", "town" => "In a town (%s)",
-                 "weight" => "Weight" } %>
-  <% lore_columns = %w[makes rooms heart keeps named did sealed trace dead town] %>
+                 "when" => "When it fits", "sets" => "What it remembers", "weight" => "Weight" } %>
+  <% lore_columns = %w[makes rooms heart keeps named did sealed trace dead town when sets] %>
   <fieldset class="panel">
     <legend>Rows</legend>
     <p class="hint" data-show-for="treasure">Each row is an item or an amount of <%= word("currency") %>.</p>
     <p class="hint" data-show-for="<%= GeneratorTable::LORE_KINDS.join(' ') %>">This is the world's lore: what its pocket history and the pasts of its places are made of. A world with none of a kind has none of that happen (no feuds without quarrels, no fallen dungeons without falls).</p>
     <p class="hint" data-show-for="forks">A fork's costly way can take something the first time the party goes that way. Write it in brackets after the text, as a thing to do's are: <code>pay 100</code> in <%= word("currency") %>, a number of parts of the day, <code>hurt 10</code> (a share of everyone's <%= word("hp") %>), <code>weary 25</code> (of their <%= word("mp") %>), or <code>ambush</code> (a fight from the place's encounter table). Without brackets, it's a cost the GM plays out.</p>
+    <p class="hint" data-show-for="<%= GeneratorTable::STORY_KINDS.join(' ') %>">Each arrival, the row that fits the moment best is offered to the GM to say or skip: the one asking the most of it wins, and a row that asks nothing is the fallback.
+      <strong>When it fits</strong> is facts with commas (<code>town, night, !smoke_seen, hurt >= 2</code>); <strong>what it remembers</strong> is flags it sets once said
+      (<code>smoke_seen, visits + 1</code>), so rows can rule each other out. <code>{place}</code> in the text says a fact; <code>{cold|still}</code> picks one.
+      A row that names one of a table's lines or veils never comes up. <%= link_to "Every fact a row can ask about", world_generation_facts_path(@world) %>.</p>
     <p class="hint" data-show-for="locks">Each row is a lock and the key that opens it, in any flavour: Portal and Blue crystal, Altar and Goat's skull.</p>
     <p class="hint"><strong>Worlds are live:</strong> towns and dungeons already rolled from this table change with it, except the people and rooms a GM has pinned.</p>
     <p class="hint" data-show-for="<%= show_for.("weight") %>">Weight defaults to 1: a row with weight 3 comes up three times as often.</p>
