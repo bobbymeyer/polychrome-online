@@ -10,7 +10,7 @@ import { Controller } from "@hotwired/stimulus"
 // screen (pinFrom) it starts pinned.
 const PINNED_KEY = "polychrome.logPinned"
 const DOCK_WIDTH = 1000 // narrower than this, there's no room beside the page
-const WIDE = 1440
+const WIDE = 1400 // a 1440 screen, less its scrollbar
 
 export default class extends Controller {
   static targets = ["panel", "tab", "count", "list", "pin"]

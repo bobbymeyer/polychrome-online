@@ -1108,6 +1108,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* Inside a dungeon, the table's map is its floorplan (campaigns/tables/_floorplan). */
 .table__map:has(#table_floorplan .floorplan) #map_canvas { display: none; }
+.table-floorplan:empty { display: none; }
 .table-floorplan__title { margin: 0 0 8px; font-size: 14px; }
 .table__seat { margin: 0 0 4px; }
 .table__seat .link-button { font-size: inherit; }
@@ -1459,4 +1460,127 @@ button.your-moves__tag { border: 0; cursor: default; }
   .table-now.is-restated::before { animation: none; display: none; }
   .map-party { transition: none; }
   .choice__chip.is-new { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+ * The Stage (docs/DESIGN.md, "The Stage"): one 16:9 frame in the middle of
+ * every screen at the table, the same for everyone, where the game is shown.
+ * At the table it holds where the party is (the map, or a dungeon's
+ * floorplan, the place's picture behind them), the date in its corner and
+ * what's said along its bottom; a battle plays on the same frame. Display
+ * only: the moves are off the stage, in the columns and under it.
+ * ------------------------------------------------------------------------- */
+.stage { position: relative; width: min(100%, calc((100vh - 220px) * 16 / 9)); min-width: min(100%, 560px); margin: 0 auto; }
+.stage__frame, .battle .stage {
+  position: relative; aspect-ratio: 16 / 9; overflow: hidden; container-type: size;
+  border: 3px solid var(--ink); background: var(--paper); box-shadow: 8px 8px 0 var(--ink);
+}
+/* The place's picture fills the frame when it has one; the map and the floorplan sit on it. */
+.stage--table #table_scene { position: absolute; inset: 0; margin: 0; border: 0; }
+.stage--table #table_scene img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
+.stage__map { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: 12px; transition: inset var(--t-change) var(--snap); }
+.stage__map .map-canvas, .stage__map .table-floorplan { width: 100%; height: 100%; display: grid; grid-template-rows: minmax(0, 1fr) auto; place-items: center; }
+.stage__map .table-floorplan { grid-template-rows: auto minmax(0, 1fr); }
+.stage__map .map, .stage__map .floorplan { width: auto; max-width: 100%; height: 100%; max-height: 100%; }
+.stage__map .map-canvas__modes { margin: 0; }
+/* Inside a dungeon, the floorplan stands in for the world map. */
+.stage__map:has(#table_floorplan .floorplan) #map_canvas { display: none; }
+.stage__map #table_floorplan:not(:has(.floorplan)) { display: none; }
+/* With a picture, the map folds to a minimap in the frame's corner, so travel still reads. */
+.stage__frame:has(#table_scene:not([hidden])) .stage__map {
+  inset: 12px auto auto 12px; width: 28%; aspect-ratio: 10 / 7; padding: 4px; place-items: stretch;
+  background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+}
+/* What's said plays along the bottom of the frame; the map keeps clear of it. */
+.stage__frame .dialogue, .battle .stage .dialogue--battle {
+  position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 6; margin: 0; min-height: 0; max-height: 46cqh; overflow-y: auto;
+  padding: 12px 16px 16px; box-shadow: 6px 6px 0 var(--ink);
+}
+.stage__frame .speaker-portrait--large, .battle .stage .speaker-portrait--large { width: 96px; height: 96px; }
+.stage__frame .speaker-portrait--large.speaker-portrait--plate, .battle .stage .speaker-portrait--large.speaker-portrait--plate { font-size: 56px; }
+.stage__frame .dialogue__body, .battle .stage .dialogue__body { font-size: 22px; line-height: 30px; max-width: none; }
+.stage__frame:has(.dialogue:not([hidden])):not(:has(#table_scene:not([hidden]))) .stage__map { bottom: 32cqh; }
+/* The date, in the frame's corner. */
+.stage__hud .table-time {
+  position: absolute; top: 12px; right: 12px; z-index: 7; margin: 0; padding: 8px 12px 10px; max-width: 280px; text-align: right;
+  background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+}
+.stage__hud .table-time__date { font-size: 24px; }
+.stage__hud .table-time__where { font-size: 15px; }
+.stage__hud .table-time__clock { justify-content: flex-end; margin-top: 2px; }
+.stage__hud .day-clock { width: 40px; height: 40px; }
+.stage__hud .table-time__deadlines li { font-size: 13px; }
+.stage__caption { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 10px 0 0; font-size: 14px; line-height: 20px; }
+.stage__caption #table_here:empty { display: none; }
+@media (max-width: 640px) {
+  .stage { width: 100%; min-width: 0; }
+  .stage__frame { box-shadow: 4px 4px 0 var(--ink); }
+  .stage__hud .table-time { position: static; max-width: none; text-align: left; box-shadow: none; border-width: 0 0 3px; padding: 8px 0; margin-top: 8px; }
+  .stage__frame .dialogue { left: 6px; right: 6px; bottom: 6px; padding: 8px 10px 12px; }
+  .stage__frame .dialogue__body { font-size: 16px; line-height: 22px; }
+  .stage__frame .speaker-portrait--large { width: 56px; height: 56px; }
+  .stage__frame .speaker-portrait--large.speaker-portrait--plate { font-size: 32px; }
+}
+
+/* A battle on the frame: the field fills it, the party's roster is a band along its bottom, the
+   round's rail along its top, the tally just over the roster. On a phone it's the flow it was. */
+@media (min-width: 641px) {
+  .battle .stage .board { position: absolute; inset: 0; }
+  .battle .stage .battlefield { position: absolute; inset: 0; min-height: 0; padding: 48px 16px 32cqh; border: 0; }
+  .battle .stage .unit--enemy { --sprite: clamp(var(--sprite-min, 140px), calc(100cqi / var(--count, 1) - 40px), min(320px, 40cqh)); }
+  .battle .stage .roster {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; margin: 0; max-height: 32cqh; overflow-y: auto; padding: 0 12px;
+    background: color-mix(in srgb, var(--paper) 94%, transparent); border: 0; border-top: 3px solid var(--ink);
+  }
+  .battle .stage .roster__row { padding: 3px 0 2px; }
+  .battle .stage .turn-rail { position: absolute; top: 0; left: 0; right: 0; z-index: 5; border-top: 0; }
+  .battle .stage .round-tally { position: absolute; left: 0; right: 0; bottom: 32cqh; z-index: 5; border-bottom: 0; border-top: 3px solid var(--ink); }
+}
+@media (max-width: 640px) {
+  .battle .stage { aspect-ratio: auto; container-type: normal; border: 0; box-shadow: none; overflow: visible; }
+  .battle .stage .dialogue--battle { margin-top: 12px; }
+}
+.battle--controller .stage { aspect-ratio: auto; border: 0; box-shadow: none; }
+
+/* Full real estate on a desktop: no measure on the page; the pinned columns sit on the far edges of
+   the screen (you, or the GM's tools, on the left; the log on the right), the stage between them. */
+@media (min-width: 1100px) {
+  .topbar, .page { max-width: none; }
+  .page:has(> .table), .page:has(> .battle) { padding: 16px 0 96px; }
+  html:not(.log-docked) .page:has(> .table), html:not(.log-docked) .page:has(> .battle) { padding-right: 32px; } /* clear of the log's tab */
+  .table > turbo-cable-stream-source { display: none; }
+
+  /* The GM's table and the shared screen. */
+  .table__main { grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); grid-template-areas: "side stage"; column-gap: var(--gutter); padding-right: var(--gutter); }
+  .table__side { grid-area: side; position: sticky; top: 0; max-height: 100vh; overflow-y: auto; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
+  .table__stage { grid-area: stage; }
+  /* The GM's head is one small row: the campaign's name is in the top bar already. */
+  .table:not(.table--controller) .table__stage > .battle__header { margin-bottom: 8px; }
+  .table:not(.table--controller) .table__stage > .battle__header > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
+  .table:not(.table--controller) .table__stage > .battle__header h1 { display: none; }
+  .table:not(.table--controller) .table__stage > .battle__header .eyebrow, .table:not(.table--controller) .table__stage > .battle__header .table__seat { margin: 0; }
+  .table--screen .table__main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "side"; padding: 0 var(--gutter); }
+  .table--screen .table__side { position: static; max-height: none; border: 0; padding: 0; }
+
+  /* A player's screen: you on the left edge (or its tab), your moves under the stage, the log on the right. */
+  .player-screen.is-pinned { grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); }
+  .player-screen.is-pinned .player-screen__side { top: 0; max-height: 100vh; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
+  .player-screen__context, .player-screen__moves { padding-right: var(--gutter); }
+  .player-screen:not(.is-pinned) .player-screen__context, .player-screen:not(.is-pinned) .player-screen__moves { padding-left: 56px; }
+
+  /* A battle: its head and the talk box in the left column, the frame and the commands in the middle. */
+  .battle:not(.battle--controller):not(.battle--screen) {
+    display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); column-gap: var(--gutter); align-items: start; padding-right: var(--gutter);
+  }
+  .battle:not(.battle--controller):not(.battle--screen) > * { grid-column: 2; }
+  .battle > turbo-cable-stream-source { display: none; }
+  /* The head spans the rows the middle takes (the spare ones are empty); the talk box comes under it. */
+  .battle:not(.battle--controller):not(.battle--screen) > .battle__header {
+    grid-column: 1; grid-row: 1 / span 12; position: sticky; top: 0; margin: 0; padding: 0 16px 16px;
+    flex-direction: column; align-items: stretch; border-right: 3px solid var(--ink); min-height: 40vh;
+  }
+  .battle:not(.battle--controller):not(.battle--screen) > .battle__header .battle__controls { flex-wrap: wrap; }
+  .battle:not(.battle--controller):not(.battle--screen) > .battle-composer { grid-column: 1; grid-row: 13; margin: 0; padding: 12px 16px 0; }
+  .battle:not(.battle--controller):not(.battle--screen) > .battle__lower { margin-top: 24px; }
+  .battle--screen { padding: 0 var(--gutter); }
 }

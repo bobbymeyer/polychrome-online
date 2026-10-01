@@ -89,7 +89,8 @@ RSpec.describe "The table", type: :request do
       expect(page.at(".player-screen__side .player-screen__card")).to be_present
       expect(page.at(".player-screen__moves[data-pinnable-key-value='polychrome.actionsPinned'] #table_choice")).to be_present
       expect(page.at(".player-screen__context #table_now")).to be_present
-      expect(page.at(".player-screen__context #table_scene")).to be_present
+      expect(page.at(".player-screen__context #stage #table_scene")).to be_present # the stage, in the middle
+      expect(page.at("#stage .dialogue")).to be_present # what's said plays on it
       expect(page.at(".log-drawer")["data-log-drawer-pin-from-value"]).to eq("1100")
       expect(page.css("##{ActionView::RecordIdentifier.dom_id(bartz, :vitals)}").size).to eq(1)
 
@@ -103,8 +104,9 @@ RSpec.describe "The table", type: :request do
       expect(page.at("#table_now")["data-state"]).to eq("free")
       expect(page.at("details.talk summary").text).to eq("Say something") # talk is a button until it's wanted
       expect(page.at("details.talk #composer")).to be_present
-      %w[map party knows].each { |key| expect(page.at("#drawer_#{key}")["hidden"]).not_to be_nil } # looked up, not shown
-      expect(page.at("#drawer_map #map_canvas")).to be_present # still there for the broadcasts
+      %w[party knows].each { |key| expect(page.at("#drawer_#{key}")["hidden"]).not_to be_nil } # looked up, not shown
+      expect(page.at("#stage #map_canvas")).to be_present # the map is on the stage, where the broadcasts find it
+      expect(page.at("#stage #table_time")).to be_present # with the date in its corner
       expect(page.at("#drawer_party #table_party")).to be_present
       expect(page.at(".topbar nav[aria-label=Campaign]").text).to include("Change seat") # the header's extras are in the menu
       expect(response.body).not_to include("At the table as")
@@ -158,7 +160,7 @@ RSpec.describe "The table", type: :request do
     campaign.messages.create!(body: "Old news.", speaker: cid)
     campaign.messages.create!(body: "Player chatter.", speaker: bartz)
     get campaign_table_path(campaign)
-    box = response.body[/<section class="dialogue window".*?<\/section>/m]
+    box = response.body[/<section class="dialogue window dialogue--stage".*?<\/section>/m]
     expect(box).to include("Cid", "Old news.")
     expect(box).not_to include("Player chatter.")
 
@@ -185,14 +187,14 @@ RSpec.describe "The table", type: :request do
     expect(box).to include("speaker-portrait", 'class="dialogue__name" data-dialogue-target="name" style="--plate: ')
   end
 
-  it "puts the date up top, with the days left on the clocks a new day ticks, and story time in the log" do
+  it "puts the date on the stage, with the days left on the clocks a new day ticks, and story time in the log" do
     campaign.update!(day: 3, time_of_day: "dusk")
     campaign.clocks.create!(name: "The spring tide comes in", segments: 6, filled: 1, triggers: %w[dawn], public: true)
     campaign.clocks.create!(name: "The count schemes", segments: 4, triggers: %w[dawn], public: false)
     campaign.clocks.create!(name: "The guard grows wary", segments: 4, triggers: %w[rest dawn], public: true)
     campaign.messages.create!(body: "Lanterns.", speaker: cid)
     get campaign_table_path(campaign)
-    header = response.body[/<header class="battle__header">.*?<\/header>/m]
+    header = response.body[/<div class="stage__hud">.*?<\/section>/m] # the date, in the stage's corner
     expect(header).to include("Day 3", "time--dusk", "5 days</strong> until The spring tide comes in", "table-time__next\">Next: ")
     expect(header).not_to include("The count schemes", "The guard grows wary")
     campaign.update!(current_node: campaign.map_nodes.create!(name: "Varn", x: 10, y: 10, visible: true))
@@ -389,7 +391,8 @@ RSpec.describe "The table", type: :request do
       expect(page.at("#table_now [data-tool-link-key-value=check]")).to be_present
       expect(page.at(".gm-tools[data-action*='gm-tools:open@window']")).to be_present
       expect(page.at(".gm-tools .gm-tools__reveal").text).to eq("Tools") # shown only while the table is busy (stage.css)
-      %w[map party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs
+      %w[party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs (the map is on the stage)
+      expect(page.at(".table__stage #stage #map_canvas")).to be_present
       expect(page.at("#drawer_knows #party_knows")).to be_present
 
       Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!

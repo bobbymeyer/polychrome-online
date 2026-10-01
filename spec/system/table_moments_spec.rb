@@ -44,13 +44,13 @@ RSpec.describe "Moments at the table", type: :system do
     seat(player, rook)
     as(player) do
       expect(page).to have_css(".your-moves", visible: true)
-      expect(page).to have_no_css("#table_party", visible: true)
+      expect(page).to have_css("#table_party", visible: true, text: "Rook") # 1280 wide: the party starts open in the column
+      expect(page).to have_no_button("What we know") # nothing to know yet: no tab for it
+      click_button "Party"
+      expect(page).to have_no_css("#table_party", visible: true) # pressing the open one closes it
       click_button "Party"
       expect(page).to have_css("#table_party", visible: true, text: "Rook")
-      click_button "Map"
-      expect(page).to have_no_css("#table_party", visible: true)
-      click_button "Map"
-      expect(page).to have_no_css("#map_canvas", visible: true) # pressing the open one closes it
+      expect(page).to have_css("#stage #map_canvas", visible: true) # the map is on the stage, whatever's looked up
       find("details.talk summary", text: "Say something").click
       expect(page).to have_css("#composer textarea", visible: true)
 
@@ -72,7 +72,7 @@ RSpec.describe "Moments at the table", type: :system do
     as(player) do
       expect(page).to have_css(".player-screen.is-pinned .player-screen__side", visible: true) # 1280 wide: you and your moves beside the scene
       expect(page).to have_css(".log-drawer.is-docked") # and the log on the right
-      expect(page).to have_css("#drawer_map", visible: true) # the map starts open, the scene's art
+      expect(page).to have_css("#drawer_party", visible: true) # the party starts open; the map is on the stage
 
       within(".player-screen__card") { click_on "Unpin" }
       expect(page).to have_no_css(".player-screen.is-pinned")
