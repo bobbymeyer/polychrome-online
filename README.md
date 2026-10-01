@@ -754,6 +754,19 @@ every campaign in it uses them.
     as a row of squares, filled black, red when full. Hidden clocks are the
     GM's alone and are never sent to players; nothing is said when they
     tick, and only their line when they fill.
+  - **Dangers** (Dungeon World's fronts): a clock can say what it wants
+    ("To own every berth on the river") and its steps, one per segment,
+    each a little worse than the last (`Portent`). Under each step go its
+    signs, one per line starting with a dash, each a story row that can
+    say when it fits (`- Empty berths at {place}. | town`). The GM hears a
+    step when its segment fills ("The Syndicate takes the docks, 2 of 4:
+    Ships start mooring elsewhere."), and sees what it wants and the next
+    step in their clock list. On arriving somewhere, each running clock
+    with steps may offer the GM a sign of its latest step (or an earlier
+    one's, if none of the latest's fit), as often as the clock is full: a
+    clock half along, half the time; at most one a visit. Written on a
+    front's clocks in the setting and dealt in with them, or on a
+    campaign's own clock in prep. Both seeded settings' fronts have them.
 - **Secrets** are things that are true ("the mayor pays the goblins"),
   written in prep and not tied to a scene, so the party finds them out
   however it gets there.

@@ -12,7 +12,8 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     post world_world_fronts_path(world), params: { world_front: {
       name: "The Syndicate's grab", description: "Mara wants the docks.",
       clocks: { "0" => { name: "The Syndicate takes the docks", segments: "4", public: "1", triggers: [ "rest" ], full_line: "Brass seals on every door.",
-                         place_id: varn.id, mode_name: "Syndicate town", mode_line: "Varn belongs to Mara now.", mode_description: "Toll on every street." },
+                         place_id: varn.id, mode_name: "Syndicate town", mode_line: "Varn belongs to Mara now.", mode_description: "Toll on every street.",
+                         impulse: "To own every berth", portents: "Dockhands go quiet.\n- Brass paint on the doors. | town" },
                 "1" => { name: "" } },
       secrets: { "0" => { body: "Mara's ledger is fake.", figure_id: mara.id, place_id: varn.id }, "1" => { body: "" } }
     } }
@@ -43,6 +44,17 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     expect(clock).to have_attributes(name: "The Syndicate takes the docks", place: town.map_node, mode: have_attributes(key: "syndicate_town"), world_front: front)
     expect(town.map_node.modes.sole).to have_attributes(name: "Syndicate town", line: "Varn belongs to Mara now.")
     expect(campaign.secrets.sole).to have_attributes(body: "Mara's ledger is fake.", npc: campaign.npcs.sole, location: town)
+
+    expect(clock).to have_attributes(impulse: "To own every berth", portents: "Dockhands go quiet.\n- Brass paint on the doors. | town")
+
+    # The GM can rewrite its steps from prep without losing what it sets off.
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    get campaign_prep_path(campaign)
+    expect(response.body).to include("Wants to own every berth", "Next: Dockhands go quiet.")
+    patch campaign_clock_path(campaign, clock), params: { clock: { impulse: "To own the river", portents: "Gulls go quiet." } }
+    expect(clock.reload).to have_attributes(impulse: "To own the river", portents: "Gulls go quiet.", mode: have_attributes(key: "syndicate_town"))
+    patch campaign_clock_path(campaign, clock), params: { clock: { portents: "- a sign with no step" } }
+    expect(flash[:alert]).to include("there's no step above it")
 
     clock.tick!(4)
     expect(town.map_node.reload.current_mode["name"]).to eq("Syndicate town")

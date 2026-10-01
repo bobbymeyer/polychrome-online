@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -271,6 +271,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
     t.integer "map_node_id"
     t.datetime "stopped_at"
     t.json "times", default: [], null: false
+    t.string "impulse"
+    t.text "portents"
     t.index ["campaign_id"], name: "index_clocks_on_campaign_id"
     t.index ["map_node_id"], name: "index_clocks_on_map_node_id"
     t.index ["mode_id"], name: "index_clocks_on_mode_id"
@@ -372,6 +374,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "source_id"
+    t.string "impulse"
+    t.text "portents"
     t.index ["place_id"], name: "index_front_clocks_on_place_id"
     t.index ["source_id"], name: "index_front_clocks_on_source_id"
     t.index ["world_front_id"], name: "index_front_clocks_on_world_front_id"

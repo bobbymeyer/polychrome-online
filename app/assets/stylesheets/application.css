@@ -821,6 +821,9 @@ details[open] > summary { margin-bottom: 16px; }
 .clock-row > div:first-child, .secret-rows li > div:first-child { flex: 1 1 240px; }
 .clock-row p { margin: 2px 0 0; }
 .clock-row .label { margin-left: 8px; }
+.clock-row__impulse { font-weight: 600; }
+.clock-row__steps { flex: 1 0 100%; }
+.clock-row__steps summary { font-size: 13px; color: var(--grey); cursor: pointer; }
 .secret-rows li.is-revealed { color: var(--grey); }
 .secret-list li { font-style: italic; }
 

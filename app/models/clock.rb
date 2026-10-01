@@ -29,7 +29,7 @@ class Clock < ApplicationRecord
   belongs_to :map_node, optional: true
 
   normalizes :name, with: ->(name) { name.to_s.strip }
-  normalizes :full_line, with: ->(line) { line.to_s.strip.presence }
+  normalizes :full_line, :impulse, :portents, with: ->(text) { text.to_s.strip.presence }
 
   validates :name, presence: true, length: { maximum: 120 }
   validates :segments, numericality: { only_integer: true, in: 2..12 }
@@ -38,6 +38,8 @@ class Clock < ApplicationRecord
   validate :times_in_the_calendar, if: :will_save_change_to_times?
   validate :mode_is_the_locations
   validate :place_is_the_campaigns
+  validates :impulse, length: { maximum: 200 }
+  validate { Portent.parse(portents).last.each { |problem| errors.add(:portents, problem) } }
 
   scope :running, -> { where(full_at: nil, stopped_at: nil) }
   scope :shown_to_players, -> { where(public: true) }
@@ -102,7 +104,9 @@ class Clock < ApplicationRecord
     return self if now == filled
 
     transaction do
+      was = filled
       update!(filled: now, full_at: now == segments ? (full_at || Time.current) : nil)
+      tell_the_portents!(was) if by.positive?
       if full? && !was_full
         fill!
       elsif public? && by.positive?
@@ -111,6 +115,15 @@ class Clock < ApplicationRecord
     end
     self
   end
+
+  # Its steps on the way to full, one for each segment (Portent).
+  def portent_list = Portent.list(portents)
+
+  # The step its next segment brings, if it has one written.
+  def next_portent = (portent_list[filled] unless full? || stopped?)
+
+  # The signs of the steps it has reached, the latest first: [[portent, segment]].
+  def reached_portents = portent_list.first(filled).each_with_index.map { |portent, i| [ portent, i + 1 ] }.reverse
 
   # What stops it: "The Terminal is cleared", or, while an antagonist who
   # lives there is at large, "Kurosaki is beaten at The Drowned Line".
@@ -127,6 +140,16 @@ class Clock < ApplicationRecord
   def mode_name = mode&.name
 
   private
+
+  # The steps the segments just filled bring, for the GM: the table only
+  # sees their signs (Campaign::Remarks#offer_sign!).
+  def tell_the_portents!(was)
+    list = portent_list
+    ((was + 1)..filled).each do |segment|
+      portent = list[segment - 1] or next
+      campaign.narrate("#{name}, #{segment} of #{segments}: #{portent.text}", scope: "gm")
+    end
+  end
 
   def fill!
     line = full_line || ("#{name}: it has happened." if public?)
