@@ -32,6 +32,8 @@
 #   time 2      two parts of the day go by
 #   tick        a running clock goes on a segment: one at the party's place
 #               if there is one, else the one nearest to full
+#   give potion one of that item, out of the bag (a camp or road event's
+#               choice: Campaign::Remarks)
 #
 # What takes is the GM's hard moves (Dungeon World's, ch. 20 of
 # Procedural Storytelling in Game Design): a complication on a failed
@@ -69,7 +71,8 @@ class Outcome
     "ambush" => [ "Something there hears them: a fight", nil ],
     "lose" => [ "The party loses %{amount}", 50 ],
     "time" => [ "Time goes by: %{amount} of the day's parts", 1 ],
-    "tick" => [ "A clock that matters goes on a segment", nil ]
+    "tick" => [ "A clock that matters goes on a segment", nil ],
+    "give" => [ "The party gives up %{item}", nil ]
   }.freeze
 
   # What takes from the party, rather than giving: the hard moves.
@@ -79,12 +82,19 @@ class Outcome
   # that needs nothing more to say than how much.
   ON_A_CHECK = %w[money exp abp rumour restore reveal find learn sneak safe_road uncover].freeze
 
+  # What a camp or road event's choice can do: what a check can, what takes,
+  # and giving something from the bag (Campaign::Remarks).
+  ON_A_CHOICE = (ON_A_CHECK + TAKES + %w[give]).freeze
+
   # These need an encounter on the road to act on.
   NEEDS_ENCOUNTER = %w[sneak learn].freeze
 
   # "money 40", "+40 money", "rest", "safe road": an outcome, or nil.
   def self.parse(text)
     words = text.to_s.strip.downcase.sub(/\A\+/, "")
+    # "give potion", "give phoenix down": an item, by its slug.
+    return new(kind: "give", target: { "item" => words.delete_prefix("give").strip.tr(" -", "__") }) if words.match?(/\Agive\s+\S/)
+
     number = words[/\A\d+|\d+\z/]
     kind = words.sub(/\A\d+\s*|\s*\d+\z/, "").strip.tr(" ", "_").sub(/\A\+/, "")
     return unless KINDS.key?(kind)
@@ -99,14 +109,20 @@ class Outcome
   end
 
   # How it's written in a thing to do's brackets: "money 40", "safe road".
-  def to_s = [ kind.tr("_", " "), (amount unless KINDS.fetch(kind).last.nil?) ].compact.join(" ")
+  def to_s
+    return "give #{target['item'].tr('_', ' ')}" if kind == "give"
+
+    [ kind.tr("_", " "), (amount unless KINDS.fetch(kind).last.nil?) ].compact.join(" ")
+  end
 
   # What it does, in the world's words.
   def describe(world)
     template = KINDS.fetch(kind).first
     shown = %w[money lose].include?(kind) ? "#{amount} #{world.word('currency')}" : amount
     rest = amount.to_i >= 100 ? "a bed, and everyone rested (the KO'd too)" : "camp, full #{world.word('hp')} for those standing and #{amount}% of #{world.word('mp')}"
-    { amount: shown, hp: world.word("hp"), mp: world.word("mp"), rest: rest }.reduce(template) { |text, (key, value)| text.gsub("%{#{key}}", value.to_s) }
+    item = (world.items.find_by(slug: target["item"])&.name || target["item"].to_s.tr("_", " ") if kind == "give")
+    { amount: shown, hp: world.word("hp"), mp: world.word("mp"), rest: rest, item: (item && "#{item.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{item}") }
+      .reduce(template) { |text, (key, value)| text.gsub("%{#{key}}", value.to_s) }
   end
 
   # Whether it can happen now; raises Refusal if not (before anything is paid).
@@ -127,6 +143,7 @@ class Outcome
     when "hurt" then standing.any? { |c| c.current_hp > 1 }
     when "weary" then standing.any? { |c| c.current_mp.positive? }
     when "lose" then campaign.gil.positive?
+    when "give" then (item = campaign.world.items.find_by(slug: target["item"])) && campaign.quantity_of(item).positive?
     when "tick" then !campaign.clock_to_tick.nil?
     when "ambush" then !(campaign.dungeon_in_progress || campaign.current_node&.location)&.location_template&.encounter_table.nil?
     else true
@@ -314,6 +331,14 @@ class Outcome
 
     campaign.decrement!(:gil, taken)
     "The party loses #{campaign.money(taken)}."
+  end
+
+  def give!(campaign, by:, **)
+    item = campaign.world.items.find_by(slug: target["item"])
+    return "#{by} has nothing like that to give." unless item && campaign.quantity_of(item).positive?
+
+    campaign.take_item!(item)
+    "#{by} gives up #{item.name.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{item.name}."
   end
 
   def time!(campaign, **)

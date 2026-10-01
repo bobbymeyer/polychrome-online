@@ -16,6 +16,9 @@
 #                  unwelcome truth, an opportunity), and the best hard one,
 #                  which takes something too (an Outcome::TAKES: hurt,
 #                  weary, lose, time, tick, ambush)
+#   events         on a rest or a journey (one without a fight), what
+#                  happens at camp or on the road, with a choice for the
+#                  table whose options do what they say (EventChoices; item 10)
 module Campaign::Remarks
   extend ActiveSupport::Concern
 
@@ -70,6 +73,45 @@ module Campaign::Remarks
     nil
   end
 
+  # Where an event happens, as facts a row can ask about.
+  EVENT_FACTS = {
+    "rest, camp, inn" => "On a rest: true; camp when it's not a bed, inn when it is.",
+    "road, journey" => "On a journey: true.",
+    "to" => "On a journey: where the party is going."
+  }.freeze
+
+  # Something happens at camp or on the road (Campaign#happen!): the event
+  # that fits best, with the options the party could take now, is offered
+  # to the GM to put to the table. on: "rest" (bed: whether it's a bed) or
+  # "travel". A journey with a fight on it has had its event. Returns the
+  # note, or nil.
+  def offer_event!(on, bed: false)
+    return nil if on == "travel" && pending_encounter
+
+    rows = story_rows("events")
+    return nil if rows.empty?
+
+    facts = on == "rest" ? moment.merge("rest" => true, (bed ? "inn" : "camp") => true) : moment(at: nil).merge("road" => true, "journey" => true, "to" => current_node&.name)
+    choosable = rows.filter_map do |row|
+      choices, problems = EventChoices.parse(row["choices"])
+      next row if choices.nil?
+      next if problems.any?
+
+      options = choices.possible(self)
+      row.merge("choices" => EventChoices.new(options: options, flag: choices.flag)) if options.size >= 2
+    end
+    state = Battle::Rng.seed_state(rng ^ (parts_gone * 2_246_822_519) ^ (on == "rest" ? 1 : 2))
+    _, line = Story::Matcher.best(choosable, facts.compact, state, avoid: every_line + every_veil)
+    return nil unless line
+
+    choices = line["row"]["choices"]
+    offer = line.slice("text", "sets")
+    offer = offer.merge("choices" => choices.options, "flag" => choices.flag).compact if choices
+    where = on == "rest" ? (bed ? "at the inn" : "at camp") : "on the road"
+    said = choices ? " #{choices.options.map { |o| [ o['label'], (o['does'].map { |w| Outcome.parse(w).describe(world).downcase_first }.join(', ').presence) ].compact.join(': ') }.join(' · ')}" : ""
+    narrate("An event, #{where}: “#{line['text']}”#{said}", scope: "gm", data: { "offer" => offer })
+  end
+
   # A check failed (Campaign#check!): the GM is offered a soft move and a
   # hard one, each the row that fits best, to make or to let go by.
   # results: the check's lines' data. Returns the notes.
@@ -101,6 +143,7 @@ module Campaign::Remarks
 
     transaction do
       say_line!(offer["text"], sets: offer["sets"], does: offer["does"])
+      put_to_the_table!(offer["choices"], flag: offer["flag"]) if offer["choices"]
       note.update!(data: note.data.merge("said" => true))
     end
   end
@@ -131,6 +174,16 @@ module Campaign::Remarks
       facts[Campaign::Moment.key(name)] = true
     end
     facts.compact
+  end
+
+  # An event's choice, for the party to pick and the GM to settle: the
+  # option settled on does what it says (Message::Choice#settle!).
+  def put_to_the_table!(options, flag: nil)
+    raise Refusal, "Settle the choice the table has open first." if open_choice
+
+    choice = Message.choice(self, options: options.map { |o| o["label"] }, flag: flag)
+    choice.data = { "outcomes" => options.to_h { |o| [ o["label"], o["does"] ] } }
+    choice.save!
   end
 
   def remember_fact!(write)

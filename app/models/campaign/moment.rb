@@ -27,6 +27,9 @@ module Campaign::Moment
     "hurt" => "How many of those are under half their HP.",
     "down" => "How many of the party are knocked out.",
     "home" => "Who of the party is from here, by name (Vivi, or Vivi and Bartz); true when anyone is.",
+    "hurt_one" => "The one of the party standing who is worst hurt, under half their HP, by name.",
+    "tied, tied_to" => "One of the party with a tie, by name, and who they're tied to.",
+    "from_<origin>" => "Who of the party is of that origin, by name (from_highlands = Vivi).",
     "gil" => "What the party has to spend.",
     "clock_<name>" => "How many segments of a running or full clock are filled (clock_the_wolves_gather >= 4).",
     "<flag>" => "Every flag the GM has set, and every one a row has remembered, by its key."
@@ -85,8 +88,17 @@ module Campaign::Moment
     everyone = characters.includes(:job, :character_jobs, equipment_slots: :item).to_a
     standing = everyone.select(&:conscious?)
     home = node ? everyone.select { |c| c.home_node_id == node.id }.map(&:name) : []
-    { "party" => standing.size, "hurt" => standing.count { |c| c.current_hp * 2 < c.stats["max_hp"] },
-      "down" => everyone.size - standing.size, "gil" => gil, "home" => home.to_sentence.presence }.compact
+    hurt = standing.select { |c| c.current_hp * 2 < c.stats["max_hp"] }
+    tie_npcs = everyone.any? { |c| c.ties.any? } ? npcs.pluck(:id, :name).to_h : {}
+    tied = everyone.find { |c| c.ties.any? { |tie| tie_npcs[tie["npc_id"]] } }
+    facts = { "party" => standing.size, "hurt" => hurt.size, "down" => everyone.size - standing.size, "gil" => gil,
+              "home" => home.to_sentence.presence, "hurt_one" => hurt.min_by { |c| c.current_hp.fdiv(c.stats["max_hp"]) }&.name,
+              "tied" => tied&.name, "tied_to" => tied && tie_npcs[tied.ties.find { |tie| tie_npcs[tie["npc_id"]] }["npc_id"]] }
+    everyone.select(&:origin).group_by(&:origin).each do |origin, people|
+      key = Campaign::Moment.key(origin) or next
+      facts["from_#{key}"] = people.map(&:name).to_sentence
+    end
+    facts.compact
   end
 
   def clock_facts

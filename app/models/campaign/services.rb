@@ -40,7 +40,7 @@ module Campaign::Services
     said = bed ? bed_line(fallen) : camp_line(fallen, mp_share)
     said += " The day has only begun: a rest, not a night." if until_the_day_begins.zero?
     line = narrate(said).body
-    happen!("rest") # the day's work pays off, the rest clocks tick
+    happen!("rest", bed: bed) # the day's work pays off, the rest clocks tick
     pass_time!(rest_time, announce: :new_day)
     table_changed # everyone's HP back
     line

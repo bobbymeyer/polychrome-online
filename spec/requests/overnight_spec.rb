@@ -65,7 +65,7 @@ RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :reques
     expect(campaign.rumours.pluck(:body)).to contain_exactly("Mara was seen in Tule.", "A caravan on the road between Varn and Tule was attacked.")
     expect(campaign.messages.where(body: "In Tule, people are saying: “Mara was seen in Tule.”")).to exist
 
-    note = campaign.messages.find_by!(scope: "gm")
+    note = campaign.messages.where(scope: "gm").find_by!("body LIKE ?", "Overnight:%")
     expect(note.body).to start_with("Overnight: The feud comes to blood moved on (1 of 6).").and include("Mara went from Varn to Tule.", "Prices in Tule: +15%.")
     expect(Message.visible_to(campaign, Seat.of(hero))).not_to include(note)
     expect(Message.visible_to(campaign, Seat.gm)).to include(note)

@@ -55,6 +55,25 @@ RSpec.describe "Story rows: arrival lines, the facts page and the moment", type:
     expect(response.body).to include("The moment", "lamp_seen", "first_visit")
   end
 
+  it "pastes an event with its choice, and lets the GM put it to the table" do
+    post world_generation_generator_tables_path(world), params: { generator_table: {
+      name: "Road events", slug: "road_events", kind: "events",
+      paste: "A cart in the ditch. | road | cart_seen | Help: time 1, money 30; Leave it: tick -> helped_cart"
+    } }
+    table = world.generator_tables.find_by!(slug: "road_events")
+    expect(table.entries.sole).to eq("text" => "A cart in the ditch.", "when" => "road", "sets" => "cart_seen",
+                                     "choices" => "Help: time 1, money 30 | Leave it: tick -> helped_cart")
+
+    note = campaign.narrate("An event, on the road: “A cart in the ditch.”", scope: "gm",
+                            data: { "offer" => { "text" => "A cart in the ditch.", "flag" => "helped_cart",
+                                                 "choices" => [ { "label" => "Help", "does" => [ "money 30" ] }, { "label" => "Leave it", "does" => [] } ] } })
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Put it to the table")
+    post message_saying_path(note)
+    expect(campaign.reload.open_choice).to have_attributes(options: [ "Help", "Leave it" ], flag_key: "helped_cart")
+  end
+
   it "lets the GM make a hard move so, and says what it takes on the facts page" do
     campaign.update!(gil: 100)
     note = campaign.narrate("A hard move, for the failed check: “A purse goes missing.”", scope: "gm",

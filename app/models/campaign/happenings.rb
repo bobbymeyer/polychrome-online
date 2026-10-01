@@ -4,8 +4,9 @@
 # (the party rests, travels or fails a check; a part of the day passes; a
 # day begins) and #happen! does everything that listens for it:
 #
-#   rest          the day's work pays off (Campaign::Payoffs); rest clocks
-#   travel        journey clocks
+#   rest          the day's work pays off (Campaign::Payoffs); rest clocks;
+#                 what happens at camp or the inn goes to the GM (Remarks)
+#   travel        journey clocks; what happens on the road goes to the GM
 #   failed_check  failed-check clocks
 #   hours         places change with the calendar (a mode with times); what
 #                 people are saying where the party is (unless a day began)
@@ -33,7 +34,8 @@ module Campaign::Happenings
   # the last one). was: [day, period] before time passed (hours).
   # new_day: whether the hours that passed began a day (hours).
   # at: where the party got to (arrive).
-  def happen!(event, day: self.day, period: self.period, was: nil, new_day: false, at: nil)
+  # bed: whether a rest was in a bed (rest).
+  def happen!(event, day: self.day, period: self.period, was: nil, new_day: false, at: nil, bed: false)
     case event
     when "arrive"
       arrive_among_their_own!(at)
@@ -43,6 +45,7 @@ module Campaign::Happenings
     when "rest"
       payday!
       tick_clocks!("rest", day: day, period: period)
+      offer_event!("rest", bed: bed)
     when "hours"
       follow_the_hours!(*was)
       # Time spent somewhere is time to hear what people there are saying
@@ -51,6 +54,9 @@ module Campaign::Happenings
     when "dawn"
       tick_clocks!("dawn", day: day, period: period)
       overnight!
+    when "travel"
+      tick_clocks!("travel", day: day, period: period)
+      offer_event!("travel")
     else
       tick_clocks!(event, day: day, period: period)
     end

@@ -574,6 +574,25 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   difficulty). A hard move with nothing to take (no clock running, an empty
   purse) isn't offered. **Say it** or **Make it so**: the words go to the
   table, then what a hard move takes. Both seeded settings have a table.
+- **Camp and road events** happen on a rest (at camp or the inn) and on a
+  journey with no fight on it: a world's `events` tables, pasted as
+  `text | when | sets | choice`.
+  - **The choice** is options with what each does, and the flag the
+    table's answer sets: `Share the fire: give potion, rumour | Send her
+    off: tick -> shared_fire` (`EventChoices`; in a pasted line the options
+    are split with `;`). Options can do what a check can, what takes, and
+    `give potion` (an item out of the bag, a new outcome).
+  - **Offered to the GM:** the event that fits best, with the options the
+    party could take now; one that can't happen (nothing to give) drops
+    out, and an event left with fewer than two isn't offered.
+    **Put it to the table** says it and opens a choice; the option the GM
+    settles on does what it says, and the flag remembers it, so a later
+    event can ask (`shared_the_fire = Let her sit`).
+  - **About the party:** events can also ask `rest`, `camp`, `inn`, `road`
+    and `to`, and name who they matched: `hurt_one` (the worst hurt),
+    `tied` and `tied_to` (a tie and who it's to), `from_<origin>`.
+  - Both seeded settings have a table, with small arcs that chain through
+    flags (the stranger at the fire turns up again on the road).
 
 ## The setting: canon, voice, words, time and origins
 

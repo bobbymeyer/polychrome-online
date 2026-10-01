@@ -77,6 +77,12 @@ hard move for the moment, each danger's impulse, next step and a sign,
 wishes heard and not met, and antagonists who got away. A chain's next
 step joins it with item 11.
 
+Item 10 is built: a world's events tables, offered on a rest or a journey
+(`Campaign::Remarks#offer_event!`), with a choice put to the table whose
+options do what they say (`EventChoices`, `Message::Choice#settle!`) and a
+flag later events ask about. The party facts gained who's hurt, tied and
+from where. Motives stay free text, so events don't match on them yet.
+
 6. **The story matcher** (`lib/`, pure). The same mechanism kept coming up: tagged rows
    with fallback (ch. 4), lines gated between what the party knows (ch. 7), event
    requirements that chain through flags (ch. 11), descriptions from a world model

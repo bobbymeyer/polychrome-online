@@ -137,6 +137,22 @@ module Seeds
                                   { text: "The kilns are being lit early. Whatever's coming, it's coming hotter.", does: "tick" },
                                   { text: "The noise carries down the gallery. Something comes up it.", when: "dungeon", does: "ambush" },
                                   { text: "It dries {who} out to the slip.", does: "weary 25" } ] },
+      # What happens at camp or on the road (Campaign::Remarks).
+      events: { name: "Camp and road", kind: "events",
+                entries: [ { text: "A runaway from the loading list creeps up to the fire, still wet from the slip, and asks for nothing.",
+                             when: "camp, !runaway_met", sets: "runaway_met",
+                             choices: "Hide him: give lime_wash, rumour | Send him back: tick -> hid_the_runaway" },
+                           { text: "Wardens on the road, checking names against a list. The runaway's name is on it.",
+                             when: "road, hid_the_runaway = Hide him",
+                             choices: "Talk them round: lose 50 | Go round by the pits: time 1, ambush -> passed_the_wardens" },
+                           { text: "{hurt_one} is crazing badly. Every step opens it further.", when: "road, hurt_one",
+                             choices: "Stop and mend: time 1, restore 25 | Keep walking: hurt 10, exp 20 -> walked_on_cracked" },
+                           { text: "{from_pit_born} hears the slip singing under the road, and knows the tune.", when: "road, from_pit_born" },
+                           { text: "{from_kiln_family} smells the kiln-wood on the wind and won't say what it means.", when: "from_kiln_family" },
+                           { text: "{tied} dreams of {tied_to}, fired and glazed and smiling.", when: "camp, tied" },
+                           { text: "A barge stuck on the shallows, and a bargewoman who'll pay for a shove.", when: "road, !barge_helped", sets: "barge_helped",
+                             choices: "Wade in: weary 25, money 40 | Leave her: tick -> helped_the_barge" },
+                           { text: "The sheds around the fire are all chalked. One door has been rubbed clean.", when: "camp" } ] },
       service_names: { name: "Service names", kind: "service_names",
                        entries: texts("The Leaning Pot", "The Warm Shelf", "Cone Six", "The Cracked Jug", "The Long Rack", "Leather-Hard", service: "inn") +
                                 texts("Slip & Grog", "Harrow Supply", "The Fettling Bench", "Kaolin & Daughters", "Odd Shelves", service: "shop") +
