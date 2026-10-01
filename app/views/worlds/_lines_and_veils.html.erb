@@ -1,11 +1,19 @@
-<%# What this setting never does, and keeps off-screen, for everyone who plays in it. world. %>
-<% if world.lines.present? || world.veils.present? %>
+<%# What this setting never does, and keeps off-screen, for everyone who plays in it: world, and for a campaign, its
+    table's own beside the world's (Campaign::Limits). draw: whether to offer drawing one more. %>
+<% campaign = local_assigns[:campaign] %>
+<% draw = local_assigns[:draw] && campaign %>
+<% lines = campaign ? campaign.every_line : world.lines.to_s.lines.map(&:strip).compact_blank %>
+<% veils = campaign ? campaign.every_veil : world.veils.to_s.lines.map(&:strip).compact_blank %>
+<% if lines.any? || veils.any? || draw %>
   <section class="window lines-and-veils" aria-label="Lines and veils">
     <h2>Lines and veils</h2>
-    <dl class="facts">
-      <%# One per line, as the GM wrote them. %>
-      <% if world.lines.present? %><dt>Never</dt><dd><%= safe_join(world.lines.lines.map(&:strip).compact_blank, tag.br) %></dd><% end %>
-      <% if world.veils.present? %><dt>Off-screen</dt><dd><%= safe_join(world.veils.lines.map(&:strip).compact_blank, tag.br) %></dd><% end %>
-    </dl>
+    <% if lines.any? || veils.any? %>
+      <dl class="facts">
+        <%# One per line, as they were written. %>
+        <% if lines.any? %><dt>Never</dt><dd><%= safe_join(lines, tag.br) %></dd><% end %>
+        <% if veils.any? %><dt>Off-screen</dt><dd><%= safe_join(veils, tag.br) %></dd><% end %>
+      </dl>
+    <% end %>
+    <%= render "campaigns/limits/form", campaign: campaign if draw %>
   </section>
 <% end %>

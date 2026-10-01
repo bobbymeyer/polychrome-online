@@ -33,7 +33,8 @@
   </div>
 </div>
 
-<%= render "worlds/lines_and_veils", world: @world %>
+<%= render "worlds/lines_and_veils", world: @world, campaign: @campaign,
+                                     draw: can_gm?(@campaign) || @characters.any? { |c| current_user && c.user_id == current_user.id } %>
 
 <%= render "campaigns/first_steps", campaign: @campaign if can_gm?(@campaign) && !@campaign.messages.where(kind: "say").exists? %>
 

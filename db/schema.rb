@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_100000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -197,6 +197,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_090000) do
     t.string "time_of_day", default: "dawn", null: false
     t.json "welcomes", default: {}, null: false
     t.integer "spent_parts", default: 0, null: false
+    t.text "lines"
+    t.text "veils"
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true

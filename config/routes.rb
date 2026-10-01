@@ -133,6 +133,8 @@ Rails.application.routes.draw do
       # A seated player has the table open (heartbeat_controller): who is here.
       resource :presence, only: :update
       resource :composer, only: :show
+      # A line or a veil for this table, from any seat, unsigned (Campaign::Limits).
+      resources :limits, only: :create, path: "lines-and-veils"
 
       # The pointcrawl map (§7). The side panel is a Turbo Frame; the SVG
       # updates by broadcast for every viewer.

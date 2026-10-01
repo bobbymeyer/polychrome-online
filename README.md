@@ -608,6 +608,12 @@ every campaign in it uses them.
 - **Lines and veils:** lines never happen in the setting; veils happen
   off-screen. They are shown on the world and campaign pages, and the model
   never writes them, image prompts included.
+  - **A table's own** (`Campaign::Limits`): anyone who plays in a campaign
+    can add a line or a veil from the campaign page or the table's "What we
+    know" drawer. No name is recorded; the table hears "New for this table,
+    never: spiders." They are shown beside the world's (on the join page
+    too), and the model is told both when it drafts for that campaign. Only
+    the GM takes one off, on the campaign's edit page.
 - **Words** (on the world's edit page): the setting's names for the game's
   fixed things.
   - **What can be renamed:** money, HP and MP, the five stats, the four town

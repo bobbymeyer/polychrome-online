@@ -369,6 +369,8 @@ details[open] > summary { margin-bottom: 16px; }
 .inline-form { display: flex; flex-wrap: wrap; gap: 0 var(--gutter); align-items: flex-end; margin-top: 16px; }
 .inline-form .field { flex: 0 1 208px; }
 .inline-form input[type=submit] { margin-bottom: 16px; }
+.limits-form { align-items: center; gap: 8px; }
+.limits-form input[type=text] { flex: 1 1 200px; }
 
 /* ---------------------------------------------------------------------------
  * Campaigns and characters

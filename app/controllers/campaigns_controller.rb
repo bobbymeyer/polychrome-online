@@ -32,7 +32,7 @@ class CampaignsController < ApplicationController
 
   def update
     # Only an admin hands a campaign to another GM.
-    if @campaign.update(params.expect(campaign: admin? ? %i[name gil gm_id] : %i[name gil]).merge(open_jobs: posted_open_jobs))
+    if @campaign.update(params.expect(campaign: admin? ? %i[name gil lines veils gm_id] : %i[name gil lines veils]).merge(open_jobs: posted_open_jobs))
       redirect_to @campaign, notice: "#{@campaign.name} was updated."
     else
       render :edit, status: :unprocessable_content

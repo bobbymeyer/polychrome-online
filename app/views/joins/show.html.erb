@@ -12,7 +12,7 @@
   <% if world.description.present? %>
     <p class="join__setting"><strong><%= world.name %>.</strong> <%= world.description %></p>
   <% end %>
-  <%= render "worlds/lines_and_veils", world: world %>
+  <%= render "worlds/lines_and_veils", world: world, campaign: @campaign %>
 
   <%# One form, one name: pick someone the GM made (each is a button), or make your own below. %>
   <%= form_with model: @character, url: join_path(@campaign.join_code), method: :post, class: "book-form join__form" do |f| %>

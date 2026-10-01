@@ -105,12 +105,13 @@
           <% end %>
         </div>
         <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party"><%= render "campaigns/tables/party", campaign: @campaign %></div>
-        <div id="drawer_knows" class="drawers__panel" hidden data-drawers-target="panel" data-key="knows"><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: true %></div>
+        <div id="drawer_knows" class="drawers__panel" hidden data-drawers-target="panel" data-key="knows"><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: true %><%= render "campaigns/tables/limits", campaign: @campaign %></div>
       </div>
     <% elsif view != "controller" %>
       <%= render "campaigns/tables/party", campaign: @campaign %>
     <% end %>
     <%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? unless @seat.gm? && !view %>
+    <%= render "campaigns/tables/limits", campaign: @campaign if @seat.seated? && view == "controller" %>
     </div>
   </div>
 
