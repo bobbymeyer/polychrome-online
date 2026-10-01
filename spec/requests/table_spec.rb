@@ -29,6 +29,10 @@ RSpec.describe "The table", type: :request do
     get campaign_table_path(campaign)
     expect(response.body.scan("<turbo-cable-stream-source").size).to eq(4) # + Bartz's whispers
     expect(response.body).to include("At the table as <strong>Bartz</strong>")
+    # The day clock: a slice per part of the day, turned so the part it is now is at the top.
+    parts = campaign.almanac.periods
+    expect(response.body).to include('class="day-clock"', %(data-day-clock-turn-value="#{-(campaign.parts_gone * 360.0 / parts.size)}"))
+    expect(response.body.scan("day-clock__part--").size).to eq(parts.size)
   end
 
   describe "the GM" do

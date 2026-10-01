@@ -29,14 +29,18 @@ module Campaign::Timekeeping
 
   # The light, whatever the setting calls the part of the day: "dawn" for
   # its first, "night" in its dark, "dusk" just before, else "day". The
-  # date card wears its colour.
-  def daylight
-    index = almanac.period_index(period)
-    return "night" if dark?
+  # date card wears its colour, and the day clock paints each part in its own.
+  def daylight(part = period)
+    index = almanac.period_index(part)
+    return "night" if almanac.dark?(part)
     return "dawn" if index.zero?
 
     almanac.dark?(almanac.periods[(index + 1) % almanac.periods.size]) ? "dusk" : "day"
   end
+
+  # How many parts of the day have gone by since the story began: the day
+  # clock's turn, which only ever goes forward, round into the next day.
+  def parts_gone = ((day - 1) * almanac.periods.size) + almanac.period_index(period)
 
   # "Moonsday, 12 Rainfall · dusk", or "Day 12 · dusk".
   def when_it_is

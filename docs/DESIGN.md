@@ -473,8 +473,11 @@ Record each place where the game needed more than the Swiss defaults: what chang
 
 - **The date is the table's headline.** The day, in the setting's calendar, sits in the table's
   header at display size. The part of the day is a tag in its own colour (dawn yellow, day white,
-  dusk red, night blue), and under it the days left on each public clock that only a new day
-  ticks ("5 days · The spring tide comes in"). The party plans around the calendar, so it
+  dusk red, night blue), beside **the day clock**: a dial cut into a slice for each part of the
+  setting's day, each in its light's colour, with the part it is now under a pointer at the top.
+  When time passes the dial turns forward (never back: into the next day it keeps going round),
+  so the table sees the day move. Under them, the days left on each public clock that only a new
+  day ticks ("5 days · The spring tide comes in"). The party plans around the calendar, so it
   shouldn't be a line of small print in the side column.
 - **Name tags in the speaker's colour.** The dialogue box's name tag wears the speaker's plate
   colour instead of a fixed yellow. The narrator has no portrait: narration is a voice, and its

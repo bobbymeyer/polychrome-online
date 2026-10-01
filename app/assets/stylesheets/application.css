@@ -903,3 +903,18 @@ details[open] > summary { margin-bottom: 16px; }
 /* Generating pictures (art_batches): a closed panel until there's something to look at. */
 .art-studio > summary { font-style: italic; font-weight: 900; font-size: 20px; color: var(--ink); }
 .art-studio__status { font-style: normal; font-weight: 400; font-size: 14px; color: var(--control); }
+
+/* The day clock (campaigns/tables/_day_clock): a slice for each part of the day in its light's
+   colour, turned so the part it is now sits under the pointer. The name beside it says which. */
+.table-time__clock { display: inline-flex; align-items: center; gap: 12px; margin-top: 6px; }
+.table-time__clock .table-time__part { margin: 0; }
+.day-clock { width: 64px; height: 64px; overflow: visible; flex: none; }
+.day-clock__dial { transform: rotate(var(--turn)); transform-origin: 50px 50px; transition: transform .9s cubic-bezier(.2, .8, .2, 1); }
+.day-clock__dial.is-still { transition: none; }
+.day-clock__part path { stroke: var(--ink); stroke-width: 2.5; fill: var(--paper); }
+.day-clock__part--dawn path { fill: var(--sun-yellow); }
+.day-clock__part--dusk path { fill: var(--bright-red); }
+.day-clock__part--night path { fill: var(--dark-blue); }
+.day-clock__hub { fill: var(--ink); }
+.day-clock__pointer { fill: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .day-clock__dial { transition: none; } }
