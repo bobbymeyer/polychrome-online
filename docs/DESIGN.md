@@ -378,8 +378,11 @@ three columns with the pinned ones on the far edges:
   and your sheet; under it what you look up, Party · What we know, the party open), or **the GM's
   tools** with the same look-ups under them.
 - **Middle: the stage**, with the Now line over it and, under it, the last lines said and **your
-  moves** (a drawer kept in view as the page scrolls). The frame is as wide as the column allows,
-  or as tall as the screen allows, whichever comes first.
+  moves** (a drawer kept in view as the page scrolls). The frame fits the screen without
+  scrolling: as wide as the column allows, or as tall as the room under what's above it (the
+  top bar, the head, the Now line, measured as they change), whichever comes first, always 16:9
+  and never narrower than 480px. The dialogue box and the date plate are sized to the frame, so
+  a small frame keeps a small box.
 - **Right, on the edge: the log.**
 
 The side parts pin, the way the GM's log always has: pinned, it's a column on its edge (or the
