@@ -130,6 +130,31 @@ module BattlesHelper
     state["units"].find { |u| u["id"] == id }&.dig("name") || id.to_s.humanize
   end
 
+  # What a party member means to do this round, for the board's intent tag
+  # (docs/DESIGN.md, "Motion with meaning"): "Chip → Slip Hound A". Nothing
+  # for a unit on nobody's side of the plan (an enemy, the KO'd).
+  def intent_label(state, unit, command)
+    return if command.blank? || unit["side"] != "party" || unit["hp"].to_i.zero?
+
+    what = case command["kind"]
+    when "ability" then ability_name(state, command["ability"])
+    when "item" then item_name(state, command["item"])
+    when "custom" then "“#{command['text'].to_s.truncate(24)}”"
+    else command["kind"].to_s.humanize
+    end
+    target = command["target"] && command["target"] != unit["id"] ? " → #{unit_name(state, command['target'])}" : ""
+    "#{what}#{target}"
+  end
+
+  # Classes for what lasts on a unit and shows on its sprite: guarding the
+  # party (aggro, cover), charged, barriered, off the field.
+  def unit_marks(unit)
+    kinds = unit["statuses"].map { |s| s["kind"] }
+    [ ("is-guarding" if kinds.intersect?(Battle::AGGRO_STATUSES)), ("is-charged" if kinds.include?("charged")),
+      ("is-shielded" if kinds.include?("shield")), ("is-away" if kinds.intersect?(Battle::OUT_OF_REACH_STATUSES)),
+      ("is-doomed" if kinds.include?("doom")) ].compact.join(" ")
+  end
+
   def ability_name(state, id)
     state["abilities"].dig(id, "name") || id.to_s.humanize
   end

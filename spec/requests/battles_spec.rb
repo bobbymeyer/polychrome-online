@@ -114,6 +114,20 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body[/<ol class="party-strip".*?<\/ol>/m]).to include("is-hurt")
   end
 
+  it "shows each party member's plan on the board, and what lasts on a unit with its count" do
+    sit(bartz)
+    command!(kind: "ability", ability: "attack", target: "goblin_a")
+    get battle_path(battle)
+    expect(response.body).to include(%(<span class="intent" data-intent>Attack → Goblin A</span>))
+    expect(response.body.scan(/data-intent/).size).to eq(2) # on the unit, and in the roster
+
+    sit("gm")
+    gm!(op: "add_status", unit: "goblin_a", status: "poison", turns: 3)
+    get battle_path(battle)
+    expect(response.body).to match(/data-status="poison" data-turns="3"[^>]*>\s*Poison\s*<b>3<\/b>/)
+    expect(response.body).to include("turn-rail", "round-tally")
+  end
+
   it "takes a Perfect from the timing meter with a player's move" do
     sit(bartz)
     get battle_panel_path(battle)

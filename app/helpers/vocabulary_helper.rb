@@ -19,6 +19,7 @@ module VocabularyHelper
 
   # What the battle player shows as it animates (battle_player_controller.js).
   def battle_words(world)
-    { hp: word("hp", world), mp: word("mp", world), statuses: Battle::STATUSES.to_h { |s| [ s, word("status.#{s}", world) ] } }
+    { hp: word("hp", world), mp: word("mp", world), statuses: Battle::STATUSES.to_h { |s| [ s, word("status.#{s}", world) ] },
+      stats: Stats::NAMES.to_h { |s| [ s, World::Vocabulary::STATS.include?(s) ? word("stat.#{s}", world) : s.upcase ] } }
   end
 end

@@ -8,15 +8,25 @@ import { humanize } from "battle/board"
 // the event; nothing here decides an outcome (§12).
 const STEPS = {
   round_start(b, tl, e, at) {
+    tl.call(() => b.startRound(e.round), at)
     b.banner(tl, `Round ${e.round}`, at)
     return 400
   },
+  round_end(b, tl, e, at) {
+    tl.call(() => b.endRound(), at)
+    return 200
+  },
+  // This round's order, on the rail above the field.
+  turn_order(b, tl, e, at) {
+    tl.call(() => b.setOrder(e.order), at)
+    return 160
+  },
   turn_start(b, tl, e, at) {
-    tl.call(() => b.setActive(e.unit), at)
+    tl.call(() => b.setActive(e.unit, { quick: e.quick }), at)
     return 120
   },
   turn_end(b, tl, e, at) {
-    tl.call(() => b.setActive(null), at)
+    tl.call(() => { b.railDone(e.unit); b.setActive(null) }, at)
     return 60
   },
   command_accepted(b, tl, e, at) {
@@ -35,6 +45,7 @@ const STEPS = {
     return 420
   },
   shielded(b, tl, e, at) {
+    tl.call(() => b.setShield(e.target, e.left), at)
     b.popup(tl, e.target, e.left > 0 ? `BARRIER −${e.absorbed}` : "BARRIER BROKEN", "status", at)
     return 260
   },
@@ -120,9 +131,11 @@ const STEPS = {
   },
   attack(b, tl, e, at) {
     if (e.perfect) b.popup(tl, e.actor, "PERFECT!", "perfect", at)
+    b.streak(tl, e.actor, e.targets, "hit", at + 120)
     return gesture(tl, b.sprite(e.actor), "lunge", at, b.facing(e.actor))
   },
   item_used(b, tl, e, at) {
+    b.streak(tl, e.actor, e.targets, "heal", at + 200)
     b.caption(tl, e.name || e.item, at, "item")
     return Math.max(gesture(tl, b.sprite(e.actor), "bounce", at), 450)
   },
@@ -131,10 +144,16 @@ const STEPS = {
     b.caption(tl, ability.name || e.ability, at, ability.kind)
     if (e.perfect) b.popup(tl, e.actor, "PERFECT!", "perfect", at)
     if (e.mp_cost) tl.call(() => b.addMp(e.actor, -e.mp_cost), at)
+    // What it's doing to whom: a streak in the move's kind.
+    const primitives = (ability.effects || []).map((x) => x.primitive)
+    const streak = primitives.some((x) => ["heal", "revive", "shield", "buff", "cleanse"].includes(x)) ? "heal"
+      : primitives.some((x) => ["drain", "sap"].includes(x)) ? "sap"
+      : ability.kind === "magic" ? "magic" : "hit"
+    b.streak(tl, e.actor, e.targets, streak, at + 200)
     return Math.max(gesture(tl, b.sprite(e.actor), ability.gesture || "flash", at, b.facing(e.actor)), 450)
   },
   damage(b, tl, e, at) {
-    tl.call(() => b.setHp(e.target, e.hp), at)
+    tl.call(() => { b.setHp(e.target, e.hp); b.count("damage", e.actor, e.target, e.amount) }, at)
     b.popup(tl, e.target, String(e.amount), e.status === "poison" ? "poison" : "damage", at)
     gesture(tl, b.sprite(e.target), e.status === "poison" ? "tint" : "shake", at)
     // The type chart, said out loud.
@@ -150,7 +169,7 @@ const STEPS = {
     return 380
   },
   heal(b, tl, e, at) {
-    tl.call(() => b.setHp(e.target, e.hp), at)
+    tl.call(() => { b.setHp(e.target, e.hp); b.count("heal", e.actor, e.target, e.amount) }, at)
     b.popup(tl, e.target, String(e.amount), "heal", at)
     gesture(tl, b.sprite(e.target), "float", at)
     return 380
@@ -190,7 +209,7 @@ const STEPS = {
       return 360
     }
     b.die(tl, e.target, e, at)
-    tl.call(() => b.setStatus(e.target, e.status, true), at)
+    tl.call(() => b.setStatus(e.target, e.status, true, { turns: e.turns, amount: e.amount, type: e.damage_type }), at)
     b.popup(tl, e.target, b.statusName(e.status), "status", at, `status-${e.status}`)
     gesture(tl, b.sprite(e.target), "tint", at)
     return 450
@@ -203,15 +222,20 @@ const STEPS = {
     }
     return 250
   },
+  // A stat up or down: an arrow with the stat's word, and a badge that lasts.
   buff_applied(b, tl, e, at) {
-    b.popup(tl, e.target, `${e.stat.toUpperCase()} ${e.amount > 0 ? "up" : "down"}`, "status", at)
-    return 380
+    const up = e.amount > 0
+    tl.call(() => b.setBuff(e.target, e.stat, true, { up, turns: e.turns }), at)
+    b.popup(tl, e.target, `${b.statName(e.stat)} ${up ? "↑" : "↓"}`, up ? "buff-up" : "buff-down", at)
+    gesture(tl, b.sprite(e.target), up ? "bounce" : "shake", at)
+    return 420
   },
   buff_expired(b, tl, e, at) {
+    tl.call(() => b.setBuff(e.target, e.stat, false), at)
     return 120
   },
   ko(b, tl, e, at) {
-    tl.call(() => b.setKo(e.target, true), at)
+    tl.call(() => { b.setKo(e.target, true); b.count("ko", null, e.target); b.railGone(e.target) }, at)
     b.popup(tl, e.target, "KO", "miss", at)
     return gesture(tl, b.sprite(e.target), "fade", at)
   },

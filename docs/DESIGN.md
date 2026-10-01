@@ -240,6 +240,18 @@ Motion only ever says one of four things, and each has one shape, in every world
 - **Cause:** this acted on that. The battle's gestures, damage numbers and reticle.
 - **Attention:** you're needed. The timer and low HP, which blink; nothing else idles.
 
+**In battle, cause is drawn.** A move draws a streak from whoever makes it to whoever it lands
+on (red for a blow, dashed turquoise for an art, green for mending, violet for a drain), one per
+target in turn. The round's order rides a rail over the field: a plate per unit, lifted red while
+they act, struck through once they've gone, a yellow "again" plate for a second go (haste, One
+More), faded for the fallen. What lasts on a unit is on its badge with its count (turns left, a
+barrier's points, a blade's type), and a buff is an arrow with the stat's word in the world's own
+vocabulary; a guard wears a bracket before the party, a charge glows, a barrier rings the sprite,
+a doom underlines the name. Each party member's plan is a tag on them and in the roster ("Chip →
+Slip Hound A") from the moment they choose, so the table sees the round form. When the round ends,
+each roster row shows its net (−84, +25) and a line under the field says what the round came to
+("Round 3 · Rook dealt 84 · Pim healed 25 · Slip Hound B fell"), until the next round starts.
+
 The live panels say it themselves (`motion/changes.js`): a view marks what matters with
 `data-change` (number, bar, text, list, clock; keyed by `data-change-key` where order can move),
 and whenever a panel is replaced by a stream or a page is morphed, each mark is compared with
