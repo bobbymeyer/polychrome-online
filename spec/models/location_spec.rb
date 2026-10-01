@@ -208,6 +208,28 @@ RSpec.describe Location do
       expect(campaign.reload.pending_encounter).to include("room" => key, "monsters" => { "goblin" => 2 })
     end
 
+    it "deals with a room's ordinary fight when it is won or waved off, not when it is called" do
+      create_character(campaign, name: "Bartz") if campaign.characters.none?
+      dungeon.enter!
+      key = dungeon.add_room!(name: "Guardroom", connect: entrance, decision: { "kind" => "encounter", "monsters" => { "goblin" => 2 } })
+      dungeon.move_to!(key)
+      expect(dungeon.resolved?(key)).to be(false)
+
+      battle = campaign.reload.start_pending_encounter!
+      battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "fled" }, actor: "gm")
+      expect(dungeon.reload.resolved?(key)).to be(false)
+
+      dungeon.move_to!(entrance)
+      dungeon.move_to!(key)
+      campaign.reload.wave_off_encounter!
+      expect(campaign.messages.last.body).to eq("The GM waves off the encounter.")
+      expect(dungeon.reload.resolved?(key)).to be(true)
+
+      dungeon.move_to!(entrance)
+      dungeon.move_to!(key)
+      expect(campaign.reload.pending_encounter).to be_nil
+    end
+
     it "offers the way out at the entrance, and names the doors still locked" do
       dungeon.enter!
       out = campaign.ways_on.find { |way| way["label"] == "Leave #{dungeon.name}" }

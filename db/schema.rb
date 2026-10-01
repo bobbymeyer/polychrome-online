@@ -174,6 +174,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
     t.boolean "boss", default: false, null: false
     t.json "arrived_units", default: [], null: false
     t.datetime "watched_at"
+    t.string "room"
     t.index ["campaign_id"], name: "index_battles_on_campaign_id"
     t.index ["world_id"], name: "index_battles_on_world_id"
   end

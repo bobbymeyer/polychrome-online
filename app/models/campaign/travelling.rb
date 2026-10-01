@@ -166,23 +166,25 @@ module Campaign::Travelling
     # The fallen come too, down: their players watch, and a raise brings them in.
     battle = BattleRecord.start!(campaign: self, characters: party, name: encounter["table"],
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
-                                 terrain: encounter["terrain"], names: encounter.fetch("names", {}),
+                                 terrain: encounter["terrain"], names: encounter.fetch("names", {}), room: encounter["room"],
                                  antagonists: npcs.where(id: encounter.fetch("antagonists", [])).to_a)
     update!(pending_encounter: nil)
     battle
   end
 
-  # A boss waved off isn't gone: it goes back to its room, to wait for the
-  # party (a road's or a room's ordinary fight just doesn't happen).
+  # A boss waved off isn't gone: it stays in its room, waiting for the party
+  # (a road's fight just doesn't happen, and a room's ordinary fight is
+  # dealt with: Location::Exploration).
   def wave_off_encounter!
     waiting = pending_encounter or return
 
     transaction do
       update!(pending_encounter: nil)
-      if waiting["boss"] && waiting["location"] && (lair = locations.find_by(id: waiting["location"]))
-        lair.reopen_room!(waiting["room"])
+      lair = waiting["location"] && waiting["room"] && locations.find_by(id: waiting["location"])
+      if lair && waiting["boss"]
         narrate("The GM holds the fight back: it waits in #{lair.room(waiting['room'])&.dig('name') || lair.name}.")
       else
+        lair&.resolve!(waiting["room"])
         narrate("The GM waves off the encounter.")
       end
     end
