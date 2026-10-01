@@ -244,7 +244,8 @@ are now (see "Campaign flags and GM changes").
 - **The end of a fight** shows a card for each ability learned (with what it
   does) and for each job mastered (with the passive now kept).
 - **Why they're here:** a character has one line in their own words
-  (`characters.motive`), on their card and sheet. It is also their battle cry.
+  (`characters.motive`), on their card and sheet, and under their name on
+  their "You" card at the table. It is also their battle cry.
 - **Desperation moves** (FF6-style): a job can name any offensive Grimoire
   entry as its desperation move (`jobs.desperation`; each Base World job has
   one, found rather than learned). At a quarter HP or less, a character's
@@ -648,6 +649,11 @@ every campaign in it uses them.
     people in the cast ("owes her money").
   - These show on the sheet, and the language model sees the party this
     way.
+  - Play notices them (`Campaign::Belonging`, on the "arrive" event in
+    `Campaign::Happenings`). Arriving somewhere is a homecoming for anyone
+    from there ("Vivi is home."). A tie is whispered to its player (and so to
+    the GM) when the party arrives where the tied NPC lives, or when that NPC
+    first speaks; once a session.
 - **Copying a world** copies all of this with its books.
 
 ## Pressure and prep: modes, clocks, secrets

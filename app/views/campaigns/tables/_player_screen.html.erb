@@ -15,6 +15,7 @@
       <p class="player-screen__label">You</p>
       <h2 class="player-screen__name"><%= character.name %></h2>
       <p class="muted">Lv <%= character.level %> <%= character.job.name %></p>
+      <% if character.motive.present? %><p class="motive motive--card"><%= character.motive %></p><% end %>
       <%# Kept in step with your row in the party panel, which the table's broadcasts replace. %>
       <div class="table-you" data-controller="mirror" data-mirror-from-value="#table_party [data-character='<%= character.id %>'] .vitals">
         <div data-mirror-target="slot"><%= render "campaigns/tables/vitals", character: character, copy: true %></div>

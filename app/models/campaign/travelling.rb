@@ -57,6 +57,7 @@ module Campaign::Travelling
       @arriving = nil
       how_it_is_here!(destination)
       destination.location&.remember!
+      happen!("arrive", at: destination)
       hear_rumours!(destination)
       welcome_back!(destination)
       drop_stale_where_next!
@@ -128,6 +129,7 @@ module Campaign::Travelling
       narrate("The party is at #{node.name}.", data: MOVED)
       how_it_is_here!(node) if moved
       node.location&.remember!
+      happen!("arrive", at: node) if moved
       hear_rumours!(node)
       welcome_back!(node)
       drop_stale_where_next!

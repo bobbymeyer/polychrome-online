@@ -76,6 +76,7 @@ RSpec.describe "The table", type: :request do
     before { sit(bartz.id) }
 
     it "has their moves together, themselves up top, and says who hears what they say" do
+      bartz.update!(motive: "My sister's debt is mine now.")
       get campaign_table_path(campaign)
       page = Nokogiri::HTML(response.body)
       moves = page.at("section.your-moves")
@@ -83,7 +84,7 @@ RSpec.describe "The table", type: :request do
       expect(moves.at("#table_choice")).to be_present
       expect(moves.at("#composer")).to be_present
       you = page.at(".player-screen__card")
-      expect(you.text.squish).to include("You Bartz", "Lv 5 Knight", "My sheet")
+      expect(you.text.squish).to include("You Bartz", "Lv 5 Knight", "My sister's debt is mine now.", "My sheet")
       expect(you.at(".vitals")["id"]).to be_nil # the party panel's row keeps the id broadcasts look for
       # One screen: you (a column that pins), the scene, your moves (a drawer that pins along its bottom), the log.
       expect(page.at(".player-screen__side .player-screen__card")).to be_present
