@@ -10,6 +10,12 @@
 <% villains = @battle.enemies.any? { |u| Npc.from_battle_unit(u["id"]) } %>
 <% bosses = villains ? [] : @battle.boss_monsters.to_a %>
 <% view = @battle.campaign && coop_view(@battle.campaign) %>
+<%# A setting for this device, not a move: in the Menu with the rest of the way around (DESIGN.md, "Only the battle"). %>
+<% if @battle.campaign %>
+  <% content_for :table_menu do %>
+    <button type="button" class="link-button" data-battle-fast aria-pressed="false" title="Play battles twice as fast on this device">Fast animations</button>
+  <% end %>
+<% end %>
 <div class="battle<%= " battle--#{view}" if view %><%= " battle--boss" if boss_names.any? %>" data-controller="battle-player dialogue heartbeat<%= " recap" if @battle.campaign %>" data-heartbeat-url-value="<%= battle_watch_path(@battle) %>" <%= tag.attributes(data: { recap_campaign_value: @battle.campaign_id }) if @battle.campaign %>
      <%= tag.attributes(data: { boss_down: ("#{boss_names.to_sentence} #{boss_names.size > 1 ? 'fall' : 'falls'}!" if boss_names.any?) }) %>
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
@@ -17,7 +23,7 @@
      data-battle-player-next-value="<%= @battle.battle_actions.count %>"
      data-battle-player-cries-value="<%= (@battle.campaign ? @battle.characters_by_unit.transform_values(&:motive).compact : {}).to_json %>"
      data-dialogue-auto-hide-value="true"
-     data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
+     data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key click@window->battle-player#fastClick chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
   <%= turbo_stream_from @battle %>
   <%# The first round's clock waits for each player to say they're ready (BattleRecord#arrive!). %>
   <% if @seat.unit_id && @battle.waiting_for_arrivals? && @battle.still_coming.include?(@seat.unit_id) %>
@@ -42,8 +48,9 @@
     </div>
     <div class="battle__controls">
       <%= render "battles/playback", battle: @battle %>
-      <button type="button" class="button button--quiet" data-battle-player-target="fast"
-              data-action="battle-player#toggleFast" aria-pressed="false" title="Play battles twice as fast on this device">Fast animations</button>
+      <% unless @battle.campaign %>
+        <button type="button" class="button button--quiet" data-battle-fast aria-pressed="false" title="Play battles twice as fast on this device">Fast animations</button>
+      <% end %>
       <button type="button" class="button button--quiet" data-battle-player-target="skip"
               data-action="battle-player#skip" title="Or press Enter, Space or Esc" hidden>Skip</button>
     </div>
@@ -66,7 +73,7 @@
       <%# Commands, and above them what just happened (on a phone the stage may be off-screen, or under your thumb). Pinned on a phone. %>
       <div class="battle__dock">
         <ol class="battle-ticker" data-battle-player-target="ticker" aria-label="What just happened">
-          <% @log.last(3).each do |event| %>
+          <% @log.last(1).each do |event| %>
             <% line = battle_log_line(event.payload, @battle.state) %>
             <% if line %><li><%= line %></li><% end %>
           <% end %>

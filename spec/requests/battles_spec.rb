@@ -91,6 +91,29 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include("Fast animations")
   end
 
+  it "shows only the battle: overrides, reinforcements and pacing behind GM controls, Fast animations in the Menu" do
+    sit("gm")
+    get battle_panel_path(battle)
+    folded = response.body[/<details class="gm-controls">.*?\n<\/details>/m]
+    expect(folded).to include("GM controls", "Someone joins", "Override", "Pacing")
+    expect(response.body.sub(folded, "")).to include("Run the round now", "End the battle", "Call it off")
+    expect(response.body.sub(folded, "")).not_to include("Apply override", "Bring them in")
+
+    get battle_path(battle)
+    menu = response.body[/<nav class="topbar__books".*?<\/nav>/m]
+    expect(menu).to include("data-battle-fast", "Fast animations")
+    expect(response.body[/<header class="battle__header">.*?<\/header>/m]).not_to include("Fast animations")
+  end
+
+  it "marks the hurt in the party strip, which only shows once someone is" do
+    sit(bartz)
+    get battle_panel_path(battle)
+    expect(response.body[/<ol class="party-strip".*?<\/ol>/m]).not_to include("is-hurt", "is-ko")
+    battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => faris, "value" => 1 }, actor: "gm")
+    get battle_panel_path(battle)
+    expect(response.body[/<ol class="party-strip".*?<\/ol>/m]).to include("is-hurt")
+  end
+
   it "takes a Perfect from the timing meter with a player's move" do
     sit(bartz)
     get battle_panel_path(battle)
