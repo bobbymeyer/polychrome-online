@@ -172,6 +172,9 @@ RSpec.describe "The table", type: :request do
     header = response.body[/<header class="battle__header">.*?<\/header>/m]
     expect(header).to include("Day 3", "time--dusk", "5 days</strong> until The spring tide comes in", "table-time__next\">Next: ")
     expect(header).not_to include("The count schemes", "The guard grows wary")
+    campaign.update!(current_node: campaign.map_nodes.create!(name: "Varn", x: 10, y: 10, visible: true))
+    get campaign_table_path(campaign)
+    expect(Nokogiri::HTML(response.body).at("#table_time .table-time__where").text.squish).to eq("Varn") # where, beside when
     campaign.clocks.find_by!(name: "The spring tide comes in").update!(filled: 5)
     get campaign_table_path(campaign)
     expect(response.body).to include(%(<li class="is-tomorrow"><strong>Tomorrow</strong> it happens: The spring tide comes in</li>))

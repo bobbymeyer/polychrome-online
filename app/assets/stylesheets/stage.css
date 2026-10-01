@@ -1138,3 +1138,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .command-panel__round, .command-panel__waiting { margin: 4px 0 8px; font-size: 14px; }
 .gm-units__who { white-space: normal; }
 .gm-units__who form.inline { margin-left: 6px; }
+
+/* Where the party is, beside when: the map's red party marker, then the place (and room). */
+.table-time__where { margin: 2px 0 0; font-weight: 800; font-size: 18px; }
+.table-time__where a { color: inherit; }
+.table-time__pin { display: inline-block; width: 0; height: 0; margin-right: 6px; border: 7px solid transparent; border-top: 11px solid var(--signal); border-bottom: 0; vertical-align: 2px; }
+.table-time__room { font-weight: 600; color: var(--grey); }

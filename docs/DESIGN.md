@@ -507,7 +507,8 @@ Record each place where the game needed more than the Swiss defaults: what chang
   moves (`.play`).
 
 - **The date is the table's headline.** The day, in the setting's calendar, sits in the table's
-  header at display size. The part of the day is a tag in its own colour (dawn yellow, day white,
+  header at display size, and under it where the party is: the map's red party marker and the
+  place's name (a link to it), with the room inside a dungeon ("The Drowned Line · Entrance"). The part of the day is a tag in its own colour (dawn yellow, day white,
   dusk red, night blue), beside **the day clock**: a dial cut into a slice for each part of the
   setting's day, each in its light's colour, with the part it is now under a pointer at the top.
   When time passes the dial turns forward (never back: into the next day it keeps going round),
