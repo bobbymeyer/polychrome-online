@@ -45,6 +45,7 @@ module Campaign::Ways
     choice = open_choice
     return choice if choice&.where_next?
     raise Refusal, "The table is deciding something else first" if choice
+    refuse_while_encounter_waits!
 
     ways = ways_on
     raise Refusal, "There's nowhere to go from here" if ways.empty?
@@ -61,6 +62,7 @@ module Campaign::Ways
   # The GM takes a way straight off (no vote): the move is made, and any
   # vote on it is over.
   def take_way!(label)
+    refuse_while_encounter_waits!
     way = ways_on.find { |w| w["label"] == label } or raise Refusal, "That isn't a way on from here"
     make_move!(way["move"])
   end
@@ -139,6 +141,11 @@ module Campaign::Ways
 
     stale.destroy!
     stale.broadcast_choice
+  end
+
+  # A rolled encounter is the table's now: the GM fights it or waves it off before the party goes on.
+  def refuse_while_encounter_waits!
+    raise Refusal, "Something waits on the road: the GM calls it (fight, or wave it off) first" if pending_encounter.present?
   end
 
   # Doors on from here the party can't open yet: shown, so they know what

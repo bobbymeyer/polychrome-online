@@ -144,6 +144,14 @@ RSpec.describe "Location modes", type: :request do
     expect(town.map_node.reload.current_mode["key"]).to eq("burning")
   end
 
+  it "says a mode across the map once, under it, and keeps each place's tag for what's different there" do
+    places = %w[Ash Birch Cedar].map.with_index { |name, i| campaign.map_nodes.create!(name: name, x: 100 + (i * 200), y: 300, visible: true) }
+    places.each { |place| place.switch_mode!(place.modes.create!(name: "By night").key) }
+    get campaign_map_path(campaign)
+    expect(response.body).to include('<p class="map-canvas__modes">By night: across the map.</p>')
+    expect(response.body).not_to include('class="map-node__mode"')
+  end
+
   it "shows a in_mode place on the map" do
     prepare_burning
     town.map_node.reload.switch_mode!("burning")

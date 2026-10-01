@@ -4,6 +4,7 @@
 class WorldsController < ApplicationController
   before_action :set_world, only: %i[show edit update destroy]
   before_action :require_world_editor, only: %i[edit update]
+  before_action :require_account, only: %i[new create]
 
   # Home: your campaigns (the ones you play in or GM), then the worlds and
   # their books. Other people's games are theirs: players come in by the

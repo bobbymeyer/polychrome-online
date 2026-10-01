@@ -2,10 +2,10 @@
 <section class="window" aria-label="Your campaigns">
   <div class="book-header">
     <h2>Your campaigns</h2>
-    <%= link_to "New campaign", new_world_campaign_path(@worlds.first), class: "button" if @worlds.one? %>
+    <%= link_to "New campaign", new_world_campaign_path(@worlds.first), class: "button" if @worlds.one? && can_make_games? %>
   </div>
   <% if @my_campaigns.empty? %>
-    <p class="empty">None yet. Start one<%= " in a world below" unless @worlds.one? %> and you run it as its GM, or ask your GM for their invite link to play in theirs.</p>
+    <p class="empty"><%= can_make_games? ? "None yet. Start one#{" in a world below" unless @worlds.one?} and you run it as its GM, or ask" : "None yet. Ask" %> your GM for their invite link to play in theirs.</p>
   <% else %>
     <%= render "worlds/campaign_list", campaigns: @my_campaigns %>
   <% end %>
@@ -20,7 +20,7 @@
 
 <div class="book-header">
   <h2>Worlds</h2>
-  <%= link_to "New world", new_world_path, class: "button" %>
+  <%= link_to "New world", new_world_path, class: "button" if can_make_games? %>
 </div>
 <% if @worlds.empty? %>
   <p class="empty">No worlds yet. Run <code>bin/rails db:seed</code> for the base world.</p>
@@ -29,7 +29,7 @@
     <% @worlds.each do |world| %>
       <li class="window">
         <h2><%= link_to world.name, world %></h2>
-        <% unless @worlds.one? %><p><%= link_to "New campaign in #{world.name}", new_world_campaign_path(world) %></p><% end %>
+        <% if !@worlds.one? && can_make_games? %><p><%= link_to "New campaign in #{world.name}", new_world_campaign_path(world) %></p><% end %>
         <% if world.description.present? %><p><%= world.description %></p><% end %>
       </li>
     <% end %>

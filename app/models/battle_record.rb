@@ -149,6 +149,9 @@ class BattleRecord < ApplicationRecord
       settle!(events) if over?
     end
     campaign&.learn_from!(events, state)
+    # Settling saves again, so by the commit the status change isn't the last one (refresh_table_header's
+    # condition misses it): the table and the Ready buttons hear it's over from here.
+    refresh_table_header if over? && before["status"] == "input"
     new_round = !over? && round != before["round"]
     new_round ? open_round! : resume_clock!
     broadcast_beat(before, events, record.position)
@@ -216,6 +219,7 @@ class BattleRecord < ApplicationRecord
   # and the campaign's documents list it. Only when it starts or ends: a
   # battle's own beats have their own stream.
   def refresh_table_header
+    clear_ready_buttons if over?
     return unless campaign
 
     Turbo::StreamsChannel.broadcast_replace_to(campaign, :table, target: "table_battle",

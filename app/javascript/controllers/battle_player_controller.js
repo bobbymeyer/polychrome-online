@@ -182,6 +182,8 @@ export default class extends Controller {
       return
     }
     this.settled()
+    // Choosing a move is being ready (Battles::ActionsController): the Ready button goes.
+    if (this.panelTarget.querySelector("[data-chosen]")) document.getElementById("battle_ready")?.remove()
     // The results let go of a phone's bottom edge: bring them into view.
     const over = this.panelTarget.querySelector(".command-panel--over")
     if (over && !this.shownOver && window.matchMedia("(max-width: 640px)").matches) {

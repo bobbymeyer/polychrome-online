@@ -18,6 +18,7 @@ class Battles::ActionsController < ApplicationController
 
     @battle.apply!(action, actor: actor)
     @battle.set_auto!(actor, false) if @battle.auto?(actor) # someone is here to play them now
+    @battle.arrive!(actor) unless actor == "gm" # choosing a move is being ready
     # The panel must not show the new state before the beat has played
     # (§6), so the response is a placeholder. The battle player reloads the
     # real panel once the animation finishes.

@@ -25,7 +25,7 @@ RSpec.describe "A world's skills", type: :request do
 
     post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id ], stat: "skill:athletics", difficulty: "normal" } }
     line = campaign.messages.where(cue: "check").last
-    expect(line.body).to match(/\ABartz: Athletics check \(normal, \+15 Knight\)\. \d+% · rolled \d+/)
+    expect(line.body).to match(/\ABartz: Athletics check \(normal, \+15 Knight\)\. needed \d+ or under · rolled \d+/)
     expect(line.data).to include("skill" => "Athletics", "stat" => "str", "bonus" => 15)
     chance = Stats::Check.chance(stat_value: bartz.stats["str"], stat: "str", level: bartz.level, difficulty: "normal", bonus: 15)
     expect(line.data["chance"]).to eq(chance)

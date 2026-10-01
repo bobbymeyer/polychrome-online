@@ -111,4 +111,22 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     expect(response.body).not_to include(about_unknown["text"].split(".").first, "GM:")
     expect(response.body).to include("Heard in Varnhold:", "The abbey bells rang at midnight.")
   end
+
+  it "tells the fights the party saw through and what it chose together, not where it went" do
+    battle = start_battle(campaign: campaign)
+    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+    trust = Message.choice(campaign, options: [ "Trust Cid", "Refuse" ])
+    trust.save!
+    trust.settle!("Refuse")
+    stay = Message.choice(campaign, options: [ "To A", Campaign::STAY ])
+    stay.data = { "moves" => {} }
+    stay.save!
+    stay.update!(settled: Campaign::STAY)
+
+    story = Legends.new(campaign).story.values.flatten
+    expect(story.map(&:kind)).to include("battle", "choice")
+    expect(story.find { |e| e.kind == "battle" }.text).to start_with("#{battle.name}: Victory!")
+    expect(story.map(&:text)).to include("Chose: Refuse.")
+    expect(story.map(&:text)).not_to include("Chose: #{Campaign::STAY}.")
+  end
 end

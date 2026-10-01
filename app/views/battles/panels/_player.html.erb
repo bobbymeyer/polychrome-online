@@ -88,7 +88,7 @@
     <%= link_to "Back", battle_panel_path(@battle), class: "link-button", data: { menu_back: true } %>
   </div>
 <% elsif command && !params[:change] %>
-  <p>
+  <p data-chosen>
     <% if command["kind"] == "custom" %>
       Ready to try: <strong>“<%= command["text"] %>”</strong>.
       <%= command["ruling"] ? "The GM has ruled: #{stat_label(command['ruling']['stat'])}, #{command['ruling']['difficulty']}." : "Waiting for the GM to rule on it." %>

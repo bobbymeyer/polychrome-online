@@ -7,7 +7,7 @@
     <span class="muted">(<%= encounter["table"] %>)</span></p>
   <%# How it's likely to go for whoever is standing, as on the battle form. %>
   <% rows = encounter["monsters"].each_with_index.to_h { |(slug, count), i| [ i, { monster: slug, count: count } ] } %>
-  <%= turbo_frame_tag "forecast", src: campaign_forecast_path(campaign, battle: { encounter: rows, antagonists: villains.map(&:id) }), loading: "lazy" do %>
+  <%= turbo_frame_tag "forecast", src: campaign_forecast_path(campaign, battle: { encounter: rows, antagonists: villains.map(&:id) }) do %>
     <p class="hint">Weighing the odds…</p>
   <% end %>
   <%= form_with url: campaign_encounter_path(campaign), class: "encounter-call__fight", data: { turbo_frame: "_top" } do |f| %>

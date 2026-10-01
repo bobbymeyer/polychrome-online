@@ -56,6 +56,13 @@ RSpec.describe "Local co-op", type: :request do
     expect(response.body).not_to include("table__map", 'id="composer"')
 
     expect { post join_path(code), params: { character_id: bartz.id } }.not_to(change { campaign.messages.count }) # back again: no new line
+    # A guest plays in someone else's game: making worlds and campaigns is for accounts.
+    get root_path
+    expect(response.body).not_to include("New world", "New campaign")
+    get new_world_path
+    expect(response).to redirect_to(root_path)
+    expect { post worlds_path, params: { world: { name: "Mine", slug: "mine" } } }.not_to(change { World.count })
+
     get join_path(code)
     expect(response.body).to include("Bartz", "yours", "Joining as <strong>Sam</strong>")
     expect(response.body).not_to include("Your name")

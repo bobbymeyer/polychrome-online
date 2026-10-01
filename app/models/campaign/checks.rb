@@ -29,7 +29,7 @@ module Campaign::Checks
         label = "#{move || "#{skill ? skill['name'] : stat.capitalize} check"} (#{[ (skill['name'] if move && skill), difficulty,
                                                                           ("+#{bonus} #{character.job.name}" if bonus.positive?) ].compact.join(', ')})"
         body = "#{character.name}: #{label}#{" to #{reason.strip.sub(/\A(to\s+)+/i, '').sub(/\.\z/, '')}" if reason.present?}. " \
-               "#{result['chance']}% · rolled #{result['roll']} · #{result['success'] ? 'Success!' : 'Failure.'}"
+               "needed #{result['chance']} or under · rolled #{result['roll']} · #{result['success'] ? 'Success!' : 'Failure.'}"
         [ body, result.merge("name" => character.name, "character_id" => character.id, "stat" => stat, "difficulty" => difficulty,
                              "skill" => skill&.fetch("name"), "bonus" => bonus, "move" => move,
                              "reason" => reason.to_s.strip.sub(/\.\z/, "").presence).compact ]
