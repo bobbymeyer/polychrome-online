@@ -43,18 +43,6 @@
   </section>
 <% end %>
 
-<% if @gm %>
-  <%= render "map_nodes/modes", node: @location.map_node if @location.map_node %>
-  <details class="window gm-tools">
-    <summary>GM: rename</summary>
-    <%= form_with model: @location, url: location_path(@location), class: "book-form inline-form" do |f| %>
-      <div class="field"><%= f.label :name %><%= f.text_field :name, value: view["name"] %></div>
-      <%= f.submit "Rename", class: "button" %>
-    <% end %>
-    <p class="hint">Rolled from <strong><%= @location.generated["name"] %></strong>. Leave blank to go back to that.</p>
-  </details>
-<% end %>
-
 <%= render(@location.town? ? "locations/town" : "locations/dungeon", location: @location, view: view, gm: @gm) %>
 
 <% if (past = Past.new(view["past"], lore: @location.campaign.world.lore)).lines.any? %>
@@ -70,6 +58,22 @@
         <% end %>
       </p>
     <% end %>
+  </section>
+<% end %>
+
+<%# The GM's controls for the place come after it, under one tag: the place is what the page is for. %>
+<% if @gm %>
+  <section class="location-gm" aria-label="GM controls">
+    <p class="gm-only">GM · only you see these</p>
+    <%= render "map_nodes/modes", node: @location.map_node if @location.map_node %>
+    <details class="window gm-tools">
+      <summary>Rename</summary>
+      <%= form_with model: @location, url: location_path(@location), class: "book-form inline-form" do |f| %>
+        <div class="field"><%= f.label :name %><%= f.text_field :name, value: view["name"] %></div>
+        <%= f.submit "Rename", class: "button" %>
+      <% end %>
+      <p class="hint">Rolled from <strong><%= @location.generated["name"] %></strong>. Leave blank to go back to that.</p>
+    </details>
   </section>
 <% end %>
 

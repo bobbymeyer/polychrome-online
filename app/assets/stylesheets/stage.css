@@ -1153,3 +1153,24 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table--screen .table-now__phones { display: inline; }
 /* The shared screen goes edge to edge: keep its right side clear of the log's tab. */
 .table--screen { padding-right: 44px; }
+
+/* While the party votes on where next, the GM's way straight there is a small row under the vote. */
+.table-ways--straight { padding-top: 8px; }
+.table-ways__straight { margin: 0 0 4px; font-size: 15px; font-weight: 800; }
+.table-ways--straight .table-ways__group { font-size: 13px; margin: 6px 0 0; }
+.table-ways--straight .menu { grid-template-columns: repeat(auto-fill, minmax(140px, max-content)); margin: 4px 0 8px; }
+.table-ways--straight .menu__item { font-size: 13px; line-height: 18px; padding: 4px 10px; font-style: normal; }
+
+/* The GM's vote: each option a row, with who picked it and Settle beside it. */
+.table[data-seat="gm"] .choice__option { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 12px; align-items: baseline; }
+.table[data-seat="gm"] .choice__settle-form { margin: 0; }
+
+/* Narration has no portrait to make room for: the box is only as tall as its words. */
+.dialogue.is-narration { min-height: 0; }
+.dialogue.is-narration .dialogue__text { min-height: 88px; }
+
+/* A list read top to bottom, one to a row, with the detail under each (the map's ways from a place). */
+.menu--stack { grid-template-columns: 1fr; }
+.menu--stack .menu__item { flex-direction: column; align-items: flex-start; gap: 0; }
+
+.location-gm { margin-top: 24px; }

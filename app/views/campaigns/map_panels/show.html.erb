@@ -9,15 +9,16 @@
     <% end %>
 
     <% if here %>
-      <h3>Paths from here</h3>
+      <h3>Go from here</h3>
+      <p class="hint">A path takes the party along it now: time passes on the way, and something may be waiting.</p>
       <% paths = here.edges.includes(:from_node, :to_node, :encounter_table) %>
       <% if paths.empty? %>
         <p class="empty">None yet. Select <%= here.name %> and connect it.</p>
       <% else %>
-        <div class="menu play">
+        <div class="menu menu--stack play">
           <% paths.each do |edge| %>
             <% there = edge.other_end(here) %>
-            <% risk = edge.encounter_table ? "#{edge.state} · #{edge.encounter_table.name}" : "#{edge.state} · safe" %>
+            <% risk = edge.encounter_table ? "#{edge.state.capitalize} road · #{edge.encounter_table.name}" : "#{edge.state.capitalize} road · safe" %>
             <% label = safe_join([ "To #{there.name}", tag.span(edge.blocked? ? edge.state : risk, class: "menu__cost") ], " ") %>
             <% if edge.blocked? %>
               <button class="menu__item" disabled><%= label %></button>

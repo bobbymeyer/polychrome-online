@@ -49,6 +49,11 @@ RSpec.describe "Where next", type: :request do
 
     sign_out
     sign_in_as(@admin)
+    # The GM has the vote, and under it a small way straight there instead of a second Where next.
+    get campaign_table_path(campaign)
+    ways = Nokogiri::HTML(response.body).at("#table_ways")
+    expect(ways.text).to include("Or go straight there, without the vote", "To Greymere", "Going now ends the vote.")
+    expect(ways.text).not_to include("Where next?", "Put it to the table")
     post choice_settlement_path(vote), params: { option: "To Greymere" }
     expect(campaign.reload.current_node).to eq(mere)
     expect(campaign.messages.pluck(:body)).to include("The party chose: To Greymere.", "The party travels from Tule to Greymere.")

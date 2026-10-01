@@ -308,6 +308,15 @@ keyboard, a mouse or a finger.
   The tab the GM had open stays open, per campaign, in this browser. What needs an answer now
   (everyone down, a field ability asked for) sits above the tabs. On a phone as the GM's remote,
   the same tools come after the play.
+- **One list of ways while the party votes.** With a Where next? open, the GM's vote has each
+  option as a row, who picked it, and Settle beside it; under it the same places are a small row,
+  "Or go straight there, without the vote" (going now ends the vote), not a second Where next?.
+- **Narration is only as tall as its words**: with no portrait to make room for, the dialogue box
+  doesn't hold a speaker's height open under one line.
+- **A place's page is the place first.** The GM's controls for it (modes, rename) come after it,
+  under the dashed "GM · only you see these" tag. The map's panel lists the ways from where the
+  party is one to a row ("To Platform Zero / Dangerous road · Undertow Platforms") under "Go from
+  here", and says a path takes the party along it now.
 - **Going straight there asks first** for a dangerous road or a night, since one click moves the
   whole party.
 - **Inside a dungeon, the table's map is its floorplan**: every room and what waits there for the
