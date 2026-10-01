@@ -32,7 +32,8 @@
 </section>
 
 <% if GeneratorTable::STORY_KINDS.include?(entry.kind) %>
-  <p class="hint">Offered to the GM <%= { "complications" => "when a check fails, as a soft move and a hard one", "events" => "on a rest or a journey, to put to the table" }.fetch(entry.kind, "on each arrival") %>, matched to the moment. <%= link_to "Every fact a row can ask about", world_generation_facts_path(@world) %>.</p>
+  <p class="hint">Offered to the GM <%= { "complications" => "when a check fails, as a soft move and a hard one", "events" => "on a rest or a journey, to put to the table" }.fetch(entry.kind, "on each arrival") %>, matched to the moment. <%= link_to "Every fact a row can ask about", world_generation_facts_path(@world) %> ·
+    <%= link_to "Coverage: where it's thin, and a moment to try", world_generation_generator_table_coverage_path(@world, entry) %>.</p>
 <% end %>
 <% users = GeneratorTable::STORY_KINDS.include?(entry.kind) ? [] : @world.location_templates.order(:name).select { |t| t.config.fetch("tables", []).empty? || t.config["tables"].include?(entry.slug) } %>
 <% if users.any? %>

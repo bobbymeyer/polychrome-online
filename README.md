@@ -552,9 +552,9 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   meaning, plurals folded, so "spiders" rules out "a spider".
 - **The facts** (`Campaign::Moment`): the place (name, kind, modes, first
   visit and how many before, cleared, a town's standing), the time (the
-  part of the day by its name, the light, weekday, month and season, the
-  day), the party (standing, hurt, down, who is home, money), every running
-  clock's fill, and every flag. The Generator Tables have a page listing
+  part of the day by its name, the light, weekday, month and season, and
+  the day count as `days`), the party (standing, hurt, down, who is home,
+  money), every running clock's fill, and every flag. The Generator Tables have a page listing
   them all ("What rows can ask about"), and Prep shows the moment as it is
   now.
 - **Arrival lines** are the first use: a world's `arrivals` tables, one
@@ -563,6 +563,19 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   **Say it** button. The engine never says it for them: said, it goes to
   the table in the narrator's voice and what the row remembers is set.
   Both seeded settings have a table of them.
+- **Coverage** (each story table's page links to it, `StoryCoverage`,
+  `Story::Coverage`): the matcher run over 300 seeded moments, spread over
+  every kind of place, every part of the world's day and its calendar, the
+  party hurt and whole, the moment the table is for (a failed check, camp
+  or the road), and each flag or secret key its rows ask about, set and
+  not.
+  - **Where it's thin:** each kind of place at each light, and how often
+    nothing fits there: a line nobody has written yet.
+  - **Rows:** how often each fits and wins, and which never come up: never
+    fitting, or always beaten (and by which row).
+  - **Try a moment:** a place, a part of the day and facts written as a
+    row remembers them (`hurt = 2, smoke_seen`), and every row that fits,
+    the winner first, with ties marked.
 - **Complications** are the GM's moves (Dungeon World's) when a check
   fails: a world's `complications` tables, pasted as
   `text | when | sets | does`. A row that takes nothing is a **soft move**:
