@@ -54,6 +54,12 @@ event, `Generators::Town#couplets` and `Location::Wishes`,
 
 ## Next: the foundations, then what stands on them
 
+Item 6 is built: `Story::Matcher` (`lib/story`), the facts in
+`Campaign::Moment`, and its first use, arrival lines offered to the GM
+(`Campaign::Remarks`). Rule-outs are done through what rows remember, not a
+mechanism of their own. Not yet: the coverage page (Later), and other
+moments than arriving, which items 8 and 10 bring.
+
 6. **The story matcher** (`lib/`, pure). The same mechanism kept coming up: tagged rows
    with fallback (ch. 4), lines gated between what the party knows (ch. 7), event
    requirements that chain through flags (ch. 11), descriptions from a world model

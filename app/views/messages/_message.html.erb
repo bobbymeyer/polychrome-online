@@ -42,6 +42,14 @@
         <%= link_to(joinable ? "Join the battle →" : "See the battle", battle_path(message.battle), class: ("play" if joinable), data: { turbo_frame: "_top" }) %>
       <% end %>
     </p>
+    <% if message.data.to_h["offer"] && message.gm_only? %>
+      <%# Offered to the GM alone (Campaign::Remarks): say it, or let it go by. %>
+      <% if message.data["said"] %>
+        <p class="hint">Said.</p>
+      <% else %>
+        <%= button_to "Say it", message_saying_path(message), class: "link-button", form: { class: "chat-line__offer" } %>
+      <% end %>
+    <% end %>
   <% else %>
     <%= speaker_portrait(message.speaker, message.expression) %>
     <div>

@@ -100,9 +100,9 @@ RSpec.describe "Location modes", type: :request do
     town.map_node.add_mode!("name" => "By night", "line" => "The shutters come down.", "times" => %w[night])
     campaign.update!(time_of_day: "night")
     campaign.place_party!(node)
-    expect(campaign.messages.last(2).map(&:body)).to eq([ "The party is at #{node.name}.", "The shutters come down." ])
+    expect(campaign.messages.where(scope: "table").last(2).map(&:body)).to eq([ "The party is at #{node.name}.", "The shutters come down." ])
     campaign.place_party!(lantern)
-    expect(campaign.messages.last.body).to eq("Foxfire between the torii.")
+    expect(campaign.messages.where(scope: "table").last.body).to eq("Foxfire between the torii.")
 
     campaign.update!(time_of_day: "dusk")
     campaign.pass_time!(1) # night falls at the shrine

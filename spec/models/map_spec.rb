@@ -57,8 +57,8 @@ RSpec.describe "The pointcrawl map" do
       expect(campaign.travel!(tule.edges.first)).to be_nil
       expect(campaign.reload.current_node).to eq(ruins)
       expect(ruins.reload).to be_visible
-      expect(campaign.messages.last(2).map(&:body)).to eq([ "The party travels from Tule to Ruins.", "Wind hisses through the stones." ])
-      expect(campaign.messages.last).to be_dialogue # the travel event is narrated in the dialogue box
+      expect(campaign.messages.where(scope: "table").last(2).map(&:body)).to eq([ "The party travels from Tule to Ruins.", "Wind hisses through the stones." ])
+      expect(campaign.messages.where(scope: "table").last).to be_dialogue # the travel event is narrated in the dialogue box
     end
 
     it "refuses blocked paths and paths that don't start here" do
@@ -79,7 +79,7 @@ RSpec.describe "The pointcrawl map" do
       expect(rolled).to eq(expected)
       expect(campaign.reload.rng).to eq(expected_state)
       expect(campaign.pending_encounter).to eq("table" => "Grasslands", "monsters" => expected, "terrain" => "normal")
-      expect(campaign.messages.last.body).to start_with("Encounter! ")
+      expect(campaign.messages.where(scope: "table").last.body).to start_with("Encounter! ")
     end
 
     it "starts the pending encounter as a battle for the party, the fallen KO'd, or lets the GM wave it off" do

@@ -34,9 +34,14 @@ class GeneratorTable < ApplicationRecord
     "waters" => %w[text],
     "owners" => %w[text],
     "sightings" => %w[text],
-    "raids" => %w[text]
+    "raids" => %w[text],
+    # Lines matched to the moment (Story::Matcher), offered to the GM.
+    "arrivals" => %w[text when sets]
   }.freeze
   LORE_KINDS = Generators::Lore::KINDS
+  # Rows that say when they fit and what they remember (Campaign::Remarks).
+  STORY_KINDS = %w[arrivals].freeze
+  STORY_FIELDS = %w[when sets].freeze
   # Fields that are lists, written with commas.
   LIST_FIELDS = %w[makes rooms keeps named].freeze
   INTEGER_FIELDS = %w[weight width height gil].freeze
@@ -68,7 +73,9 @@ class GeneratorTable < ApplicationRecord
     "fortunes" => "what goes well for a family (a good harvest)", "waters" => "somewhere to drown, when the map has no water of its own (the millpond)",
     "owners" => "how a thing changed hands, with %s for the family (Pawned by a %s, who never came back for it)",
     "sightings" => "what people say when someone who got away turns up, with {who} and {where} ({who} was seen in {where}.)",
-    "raids" => "what people say when a road is raided overnight, with {from} and {to} (A caravan on the road between {from} and {to} was attacked.)"
+    "raids" => "what people say when a road is raided overnight, with {from} and {to} (A caravan on the road between {from} and {to} was attacked.)",
+    "arrivals" => "what the party notices arriving somewhere | when it fits | what it remembers " \
+                  "(Smoke hangs over {place}. | town, night, !smoke_seen | smoke_seen)"
   }.freeze
 
   attr_accessor :paste
@@ -86,7 +93,7 @@ class GeneratorTable < ApplicationRecord
   # Form rows or plain hashes; blank rows are dropped, numbers cast.
   def entries=(rows)
     super(JsonCasting.rows(rows).filter_map do |row|
-      entry = row.slice("text", "key", "service", "item", "roof", *lore_fields, *INTEGER_FIELDS).transform_values(&:presence).compact
+      entry = row.slice("text", "key", "service", "item", "roof", *lore_fields, *STORY_FIELDS, *INTEGER_FIELDS).transform_values(&:presence).compact
       next if entry.slice("text", "item", "gil").empty?
 
       INTEGER_FIELDS.each { |f| entry[f] = JsonCasting.integer(entry[f]) if entry.key?(f) }
@@ -106,7 +113,8 @@ class GeneratorTable < ApplicationRecord
 
     items = world.items.to_a
     rows = lines.each_with_index.filter_map do |line, i|
-      parts = line.split("|").map(&:strip)
+      # A story row's own {cold|still} is one part, not three.
+      parts = line.split(STORY_KINDS.include?(kind) ? /\|(?![^{]*\})/ : "|").map(&:strip)
       row = parts.size > 1 && parts.last.match?(/\A\d+\z/) ? { "weight" => parts.pop.to_i } : {}
       value = parts.first.to_s
       case kind
@@ -125,7 +133,7 @@ class GeneratorTable < ApplicationRecord
         wanted = parts.second.presence && items.find { |it| [ it.slug, it.name.downcase ].include?(parts.second.downcase) }
         (@paste_errors ||= []) << "line #{i + 1}: nothing in the Armory is called #{parts.second}" if parts.second.present? && !wanted
         row.merge("text" => value, "item" => wanted&.slug).compact
-      when *LORE_KINDS then row.merge(fields.zip(parts).to_h { |field, part| [ field, part.to_s.presence ] }.compact)
+      when *LORE_KINDS, *STORY_KINDS then row.merge(fields.zip(parts).to_h { |field, part| [ field, part.to_s.presence ] }.compact)
       else row.merge("text" => value)
       end
     end
@@ -159,6 +167,7 @@ class GeneratorTable < ApplicationRecord
       errors.add(:entries, "#{label}: unknown service #{entry['service']}") if entry["service"] && !Generators::Town::SERVICES.include?(entry["service"])
       errors.add(:entries, "#{label}: unknown roof #{entry['roof']}") if entry["roof"] && !Generators::Town::ROOFS.include?(entry["roof"])
       Toll.read(entry["text"]).last.each { |problem| errors.add(:entries, "#{label}: #{problem}") } if kind == "forks"
+      Story::Matcher.problems(entry).each { |problem| errors.add(:entries, "#{label}: #{problem}") } if STORY_KINDS.include?(kind)
       (INTEGER_FIELDS & entry.keys).each do |f|
         errors.add(:entries, "#{label}: #{f} must be a positive whole number") unless JsonCasting.integer?(entry[f]) && entry[f].positive?
       end
