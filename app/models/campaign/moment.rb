@@ -32,6 +32,8 @@ module Campaign::Moment
     "from_<origin>" => "Who of the party is of that origin, by name (from_highlands = Vivi).",
     "gil" => "What the party has to spend.",
     "clock_<name>" => "How many segments of a running or full clock are filled (clock_the_wolves_gather >= 4).",
+    "<secret key>, <secret key>_known" => "For a secret with a key: how many of its clues the party has found, and true once they know the " \
+                                          "secret itself (mayors_lamp >= 1, !mayors_lamp_known: they're asking, but don't know yet).",
     "<flag>" => "Every flag the GM has set, and every one a row has remembered, by its key."
   }.freeze
 
@@ -39,7 +41,7 @@ module Campaign::Moment
   def moment(at: current_node)
     facts = flags.to_h { |flag| [ flag.key, flag.counter? ? flag.value.to_i : flag.value ] }
     facts.merge!(place_facts(at)) if at
-    facts.merge!(time_facts, party_facts(at), clock_facts)
+    facts.merge!(time_facts, party_facts(at), clock_facts, secret_facts)
   end
 
   # How many times the party had arrived at a place before.
@@ -99,6 +101,13 @@ module Campaign::Moment
       facts["from_#{key}"] = people.map(&:name).to_sentence
     end
     facts.compact
+  end
+
+  def secret_facts
+    secrets.where.not(key: nil).each_with_object({}) do |secret, facts|
+      facts[secret.key] = secret.found
+      facts["#{secret.key}_known"] = secret.revealed?
+    end
   end
 
   def clock_facts

@@ -16,6 +16,8 @@
 #                  unwelcome truth, an opportunity), and the best hard one,
 #                  which takes something too (an Outcome::TAKES: hurt,
 #                  weary, lose, time, tick, ambush)
+#   clues          on arriving where a secret is, or when its person speaks,
+#                  the next of its clues (Secret#find_clue!; item 11)
 #   events         on a rest or a journey (one without a fight), what
 #                  happens at camp or on the road, with a choice for the
 #                  table whose options do what they say (EventChoices; item 10)
@@ -71,6 +73,21 @@ module Campaign::Remarks
       end
     end
     nil
+  end
+
+  # The next clue of a secret about a place the party arrives at (or about
+  # someone who lives there), for the GM to let them find. One a visit.
+  def offer_clue_at!(node)
+    location = node.location or return nil
+    chained = secrets.kept.where.not(steps: nil)
+    secret = chained.where(location: location).or(chained.where(npc: npcs.where(location: location))).order(:id).find(&:next_clue)
+    offer_clue!(secret, at: "at #{node.name}", by: "In #{node.name}") if secret
+  end
+
+  # The next clue of a secret about someone who just spoke at the table.
+  def offer_clue_from!(npc)
+    secret = secrets.kept.where.not(steps: nil).where(npc: npc).order(:id).find(&:next_clue)
+    offer_clue!(secret, at: "from #{npc.name}", by: npc.name) if secret
   end
 
   # Where an event happens, as facts a row can ask about.
@@ -135,11 +152,13 @@ module Campaign::Remarks
   end
 
   # The GM says an offered line: it goes to the table, what its row
-  # remembers is remembered, and a hard move's outcome happens.
+  # remembers is remembered, and a hard move's outcome happens. An offered
+  # clue is found, if it's still the next one.
   def say_offer!(note)
     offer = note.data.to_h["offer"]
     raise Refusal, "That isn't a line to say." unless note.campaign_id == id && note.gm_only? && offer
     raise Refusal, "Already said." if note.data["said"]
+    return let_them_find!(note, offer) if offer["clue"]
 
     transaction do
       say_line!(offer["text"], sets: offer["sets"], does: offer["does"])
@@ -174,6 +193,28 @@ module Campaign::Remarks
       facts[Campaign::Moment.key(name)] = true
     end
     facts.compact
+  end
+
+  # A clue offered once at a time for each step: none while one is waiting.
+  def offer_clue!(secret, at:, by:)
+    clue = secret.next_clue or return nil
+    waiting = messages.where(scope: "gm").where("json_extract(data, '$.offer.clue') = ? AND json_extract(data, '$.offer.step') = ?", secret.id, secret.found)
+                      .where("json_extract(data, '$.said') IS NULL")
+    return nil if waiting.exists?
+
+    said = secret.found.zero? ? "A question #{at}: #{clue}" : "A clue #{at}, toward “#{secret.question}”: #{clue}"
+    narrate(said, scope: "gm",
+            data: { "offer" => { "clue" => secret.id, "step" => secret.found, "text" => clue.to_s, "by" => by } })
+  end
+
+  def let_them_find!(note, offer)
+    secret = secrets.find_by(id: offer["clue"])
+    raise Refusal, "The party has found that one already." if secret.nil? || secret.revealed? || secret.found != offer["step"]
+
+    transaction do
+      secret.find_clue!(by: offer["by"])
+      note.update!(data: note.data.merge("said" => true))
+    end
   end
 
   # An event's choice, for the party to pick and the GM to settle: the

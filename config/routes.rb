@@ -108,8 +108,10 @@ Rails.application.routes.draw do
       resources :clocks, only: %i[create update destroy] do
         resources :ticks, only: :create, module: :clocks
       end
-      resources :secrets, only: %i[create destroy] do
+      resources :secrets, only: %i[create update destroy] do
         resource :revelation, only: %i[create destroy], module: :secrets
+        # The next of its clues comes out (Secret#find_clue!).
+        resources :clues, only: :create, module: :secrets
       end
       resources :rumours, only: %i[create destroy]
       resources :deeds, only: %i[create destroy]

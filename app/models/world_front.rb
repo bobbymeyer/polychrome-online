@@ -36,13 +36,14 @@ class WorldFront < ApplicationRecord
     end
   end
 
-  #   { "body", "place_id", "figure_id" }
+  #   { "body", "place_id", "figure_id", "steps", "key" }
   def secrets=(rows)
     secrets.each(&:mark_for_destruction)
     rows_from(rows).each do |row|
       next if row["body"].to_s.strip.empty?
 
-      secrets.build(body: row["body"], place_id: row["place_id"].presence, figure_id: row["figure_id"].presence)
+      secrets.build(body: row["body"], place_id: row["place_id"].presence, figure_id: row["figure_id"].presence,
+                    steps: row["steps"], key: row["key"])
     end
   end
 
@@ -75,7 +76,9 @@ class WorldFront < ApplicationRecord
                                 impulse: row["impulse"], portents: row["portents"])
       end
       secrets.each do |row|
-        campaign.secrets.create!(body: row["body"], location: nodes[row["place_id"]]&.location, npc: npcs[row["figure_id"]], world_front: self)
+        key = row["key"] unless row["key"] && campaign.secrets.exists?(key: row["key"]) # a key already in use there is left off
+        campaign.secrets.create!(body: row["body"], location: nodes[row["place_id"]]&.location, npc: npcs[row["figure_id"]], world_front: self,
+                                 steps: row["steps"], key: key)
       end
     end
   end

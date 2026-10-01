@@ -89,9 +89,19 @@ module Seeds
             full_line: "Greymere freezes over in a night, and the dead walk its shore." }
         ],
         secrets: [
-          { body: "The goblins raid for silver, not food: something under the Barrow pays them in grave-coin.", place: "Goblin Hollow", figure: "Grol Tusk" },
+          { body: "The goblins raid for silver, not food: something under the Barrow pays them in grave-coin.", place: "Goblin Hollow", figure: "Grol Tusk",
+            key: "goblin_silver", steps: <<~STEPS },
+              Why do the goblins leave the grain and take the spoons?
+              The coins the raiders drop are old, and cold to the touch, and nobody alive minted them.
+              They're poor, that's all. Silver's easy to carry. | Tule's reeve
+              Grol boasts the Barrow pays better than any village ever did. | Grol Tusk
+            STEPS
           { body: "Morrow was Tule's reeve a hundred years ago, buried with the village charter. Whoever holds it rules Tule.",
-            place: "The Old Barrow", figure: "Morrow" },
+            place: "The Old Barrow", figure: "Morrow", key: "barrow_charter", steps: <<~STEPS },
+              Who was buried in the Old Barrow, that Tule still leaves it flowers?
+              The oldest stone in Tule's square has a name scratched off it.
+              A reeve, her grandmother said, and he took something with him. | Tule's oldest widow
+            STEPS
           { body: "The warden at Stonepass is paid to say the pass is snowed in.", place: "Stonepass" }
         ]
       }

@@ -15,7 +15,8 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
                          place_id: varn.id, mode_name: "Syndicate town", mode_line: "Varn belongs to Mara now.", mode_description: "Toll on every street.",
                          impulse: "To own every berth", portents: "Dockhands go quiet.\n- Brass paint on the doors. | town" },
                 "1" => { name: "" } },
-      secrets: { "0" => { body: "Mara's ledger is fake.", figure_id: mara.id, place_id: varn.id }, "1" => { body: "" } }
+      secrets: { "0" => { body: "Mara's ledger is fake.", figure_id: mara.id, place_id: varn.id, key: "fake_ledger",
+                          steps: "Why does Mara count twice?\nThe ink in the ledger is too new. | A clerk" }, "1" => { body: "" } }
     } }
     world.world_fronts.find_by!(name: "The Syndicate's grab")
   end
@@ -43,7 +44,8 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     clock = campaign.clocks.sole
     expect(clock).to have_attributes(name: "The Syndicate takes the docks", place: town.map_node, mode: have_attributes(key: "syndicate_town"), world_front: front)
     expect(town.map_node.modes.sole).to have_attributes(name: "Syndicate town", line: "Varn belongs to Mara now.")
-    expect(campaign.secrets.sole).to have_attributes(body: "Mara's ledger is fake.", npc: campaign.npcs.sole, location: town)
+    expect(campaign.secrets.sole).to have_attributes(body: "Mara's ledger is fake.", npc: campaign.npcs.sole, location: town,
+                                                     key: "fake_ledger", steps: "Why does Mara count twice?\nThe ink in the ledger is too new. | A clerk")
 
     expect(clock).to have_attributes(impulse: "To own every berth", portents: "Dockhands go quiet.\n- Brass paint on the doors. | town")
 

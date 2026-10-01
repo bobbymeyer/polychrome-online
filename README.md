@@ -795,6 +795,20 @@ every campaign in it uses them.
     slip.
   - **Field abilities:** a field ability with the `uncover` outcome brings
     one out on a success, preferring one about where the party stands.
+  - **A step at a time** (`Clue`): a secret can have clues, one per line,
+    vaguest first, the first a question; a clue someone tells says who
+    after `|` (`The lamp is for the doctor. | Mara Vell`), so clues can
+    disagree. Each clue found gives the party the next, wherever it was
+    found, and after the last, the secret itself:
+    - an `uncover` finds the next clue rather than the whole secret;
+    - arriving where it is, or its person speaking at the table, offers
+      the GM the next clue ("Let them find it"), one at a time;
+    - the GM's **Next clue**, in their secrets and the Moves panel.
+    The party sees what it's asking, with its clues so far, under "The
+    party knows". A secret's **key** lets story rows ask how far the party
+    has got (`goblin_silver >= 1, !goblin_silver_known`: a line that makes
+    sense once they're asking, and would be redundant once they know).
+    Written on a campaign's secrets, or a front's (and dealt in with them).
 - **Where:** clocks and secrets are on the campaign's Prep page, and in
   the GM's panels at the table for play. Both update live.
 - **Moves** (a tab in the GM's tools, `Campaign::Moves`) is what's live

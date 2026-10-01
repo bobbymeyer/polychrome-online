@@ -47,6 +47,22 @@
       </section>
     <% end %>
 
+    <% if @chains.any? %>
+      <section aria-label="Chains">
+        <h3>Chains</h3>
+        <ul class="moves__chains">
+          <% @chains.each do |secret| %>
+            <li>
+              <strong><%= secret.question %></strong> <span class="muted">(<%= secret.found %> of <%= secret.clues.size %> found<%= ", about #{secret.about}" if secret.about %>)</span>
+              <br><span class="muted">Next:</span> <%= secret.next_clue %>
+              <%= button_to "Let them find it", campaign_secret_clues_path(@campaign, secret), class: "link-button",
+                            form: { class: "inline", data: { turbo_frame: "_top" } } %>
+            </li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+
     <% if @wants.any? %>
       <section aria-label="Wishes not met">
         <h3>Heard, not met</h3>

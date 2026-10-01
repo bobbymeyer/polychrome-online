@@ -62,7 +62,7 @@ class Outcome
     "learn" => [ "The waiting encounter's weaknesses are known before the fight", nil ],
     "sneak" => [ "The encounter waiting on the road is avoided", nil ],
     "safe_road" => [ "The next dangerous path rolls no encounter", nil ],
-    "uncover" => [ "One of the GM's secrets comes out, one about where the party is if there is one", nil ],
+    "uncover" => [ "One of the GM's secrets comes out (its next clue, if it comes a step at a time), one about where the party is if there is one", nil ],
     "story" => [ "The GM tells what happens", nil ],
     "mode" => [ "A place changes", nil ],
     "battle" => [ "A fight", nil ],
@@ -281,7 +281,7 @@ class Outcome
 
   def uncover!(campaign, by:, source:, **)
     secret = Secret.next_for(campaign) or return "#{by} digs, but there's nothing more to find out."
-    secret.reveal!(by: source || by)
+    secret.find_clue!(by: source || by)
     nil # the secret says itself
   end
 

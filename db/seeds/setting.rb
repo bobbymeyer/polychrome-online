@@ -106,7 +106,9 @@ module Seeds
         clocks = attrs.fetch(:clocks, []).map do |c|
           c.except(:place, :source).merge(place_id: places[c[:place]]&.id, source_id: places[c[:source]]&.id).transform_keys(&:to_s)
         end
-        secrets = attrs.fetch(:secrets, []).map { |x| { "body" => x[:body], "place_id" => places[x[:place]]&.id, "figure_id" => figures[x[:figure]]&.id } }
+        secrets = attrs.fetch(:secrets, []).map do |x|
+          { "body" => x[:body], "place_id" => places[x[:place]]&.id, "figure_id" => figures[x[:figure]]&.id, "steps" => x[:steps], "key" => x[:key] }
+        end
         front.update!(description: attrs[:description], clocks: clocks, secrets: secrets)
       end
     end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_130000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -388,6 +388,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
     t.integer "figure_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "steps"
+    t.string "key"
     t.index ["figure_id"], name: "index_front_secrets_on_figure_id"
     t.index ["place_id"], name: "index_front_secrets_on_place_id"
     t.index ["world_front_id"], name: "index_front_secrets_on_world_front_id"
@@ -708,6 +710,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "world_front_id"
+    t.text "steps"
+    t.integer "found", default: 0, null: false
+    t.string "key"
     t.index ["campaign_id"], name: "index_secrets_on_campaign_id"
     t.index ["location_id"], name: "index_secrets_on_location_id"
     t.index ["npc_id"], name: "index_secrets_on_npc_id"

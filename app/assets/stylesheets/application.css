@@ -970,3 +970,6 @@ details[open] > summary { margin-bottom: 16px; }
 .moves__list { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
 .moves__list dt { color: var(--grey); font-size: 13px; }
 .moves__list dd { margin: 0; }
+.secret-row__steps { flex: 1 0 100%; }
+.secret-row__steps summary { font-size: 13px; color: var(--grey); cursor: pointer; }
+.secret-row__clues { margin: 2px 0 0; }

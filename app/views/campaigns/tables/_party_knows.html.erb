@@ -1,7 +1,9 @@
 <%# What the party knows and can see coming: public clocks, and its secrets, revealed. Replaced live as they change. %>
 <% clocks = campaign.clocks.shown_to_players.where(stopped_at: nil).order(:full_at, :id) %>
 <% secrets = campaign.secrets.revealed.order(:revealed_at) %>
-<section class="window party-knows" id="party_knows" aria-label="What the party knows" <%= "hidden" if clocks.none? && secrets.none? %>>
+<%# What it's asking: a secret coming out a clue at a time, its clues so far (Secret#find_clue!). %>
+<% asking = campaign.secrets.kept.where("found > 0").order(:id) %>
+<section class="window party-knows" id="party_knows" aria-label="What the party knows" <%= "hidden" if clocks.none? && secrets.none? && asking.none? %>>
   <h2>The party knows</h2>
   <% if local_assigns[:gm] %><p class="hint">Everyone at the table sees this.</p><% end %>
   <% if clocks.any? %>
@@ -11,6 +13,14 @@
       <% end %>
     </ul>
     <p class="hint">Trouble on its way: each box fills as time passes or things go wrong, and when the last one fills, it happens.</p>
+  <% end %>
+  <% if asking.any? %>
+    <ul class="refs secret-list secret-list--asking">
+      <% asking.each do |secret| %>
+        <% question, *clues = secret.found_clues %>
+        <li><strong><%= question %></strong><% if clues.any? %><br><span class="muted"><%= safe_join(clues.map(&:to_s), tag.br) %></span><% end %></li>
+      <% end %>
+    </ul>
   <% end %>
   <% if secrets.any? %>
     <ul class="refs secret-list">

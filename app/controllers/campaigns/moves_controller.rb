@@ -14,6 +14,7 @@ class Campaigns::MovesController < ApplicationController
     @dangers = @campaign.dangers
     @wants = @campaign.wants_heard
     @got_away = @campaign.got_away
+    @chains = @campaign.chains
   end
 
   # A line from the panel: its words, what its row remembers ("smoke_seen,

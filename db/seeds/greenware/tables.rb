@@ -121,7 +121,8 @@ module Seeds
                              { text: "People in {place} crack a little, watching them pass. They've heard.", when: "town, standing = heroes" },
                              { text: "They come into {place} crazed and chipped. Somebody brings out the slip without asking.", when: "town, hurt >= 2" },
                              { text: "The air at the mouth of {place} is {damp|gritty|still} and tastes of iron.", when: "dungeon, first_visit" },
-                             { text: "{place} is quiet now. The shoring creaks, and nothing answers.", when: "dungeon, cleared" } ] },
+                             { text: "{place} is quiet now. The shoring creaks, and nothing answers.", when: "dungeon, cleared" },
+                             { text: "Somebody in {place} has chalked a crack across the drawing of the Kiln on the Guild's notice.", when: "town, cracked_kiln >= 1, !cracked_kiln_known" } ] },
       # The GM's moves when a check fails (Campaign::Remarks).
       complications: { name: "Complications", kind: "complications",
                        entries: [ { text: "A tick in the clay somewhere close, like a pot cooling too fast." },

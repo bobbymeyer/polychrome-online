@@ -42,6 +42,8 @@ class Message < ApplicationRecord
   include Choice # after the line itself goes out, the choice panel
   # An NPC speaking at the table reminds whoever is tied to them (Campaign::Belonging).
   after_create_commit -> { campaign.remind_ties!(speaker) }, if: -> { speaker.is_a?(Npc) && scope == "table" && kind == "say" }
+  # And, if they're behind a secret, its next clue is offered to the GM (Campaign::Remarks).
+  after_create_commit -> { campaign.offer_clue_from!(speaker) }, if: -> { speaker.is_a?(Npc) && scope == "table" && kind == "say" }
   after_destroy_commit { streams.each { |stream| broadcast_remove_to(*stream) } }
 
   def whisper?

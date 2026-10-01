@@ -10,6 +10,7 @@
 #   wants          wishes the party has heard and not met: an item someone
 #                  wants brought, or the nearest dungeon cleared
 #   got away       antagonists who got away, and where they are
+#   chains         secrets coming out a clue at a time: the next clue
 #
 # Nothing here happens by itself: the GM says a line (#say_line!), ticks a
 # clock, or lets it all go by.
@@ -59,6 +60,9 @@ module Campaign::Moves
       end
     end
   end
+
+  # Secrets coming out a step at a time with a clue still to find.
+  def chains = secrets.kept.where.not(steps: nil).includes(:npc, location: :map_node).order(:id).select(&:next_clue)
 
   # Antagonists who have got away at least once, and are still out there.
   def got_away = npcs.at_large.where("escapes > 0").includes({ location: :map_node }, :monster).order(:name)
