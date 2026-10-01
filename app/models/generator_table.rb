@@ -38,12 +38,14 @@ class GeneratorTable < ApplicationRecord
     # Lines matched to the moment (Story::Matcher), offered to the GM.
     "arrivals" => %w[text when sets],
     # The GM's moves on a failed check, soft (words) or hard (what it takes).
-    "complications" => %w[text when sets does]
+    "complications" => %w[text when sets does],
+    # What happens at camp or on the road, with a choice for the table.
+    "events" => %w[text when sets choices]
   }.freeze
   LORE_KINDS = Generators::Lore::KINDS
   # Rows that say when they fit and what they remember (Campaign::Remarks).
-  STORY_KINDS = %w[arrivals complications].freeze
-  STORY_FIELDS = %w[when sets does].freeze
+  STORY_KINDS = %w[arrivals complications events].freeze
+  STORY_FIELDS = %w[when sets does choices].freeze
   # Fields that are lists, written with commas.
   LIST_FIELDS = %w[makes rooms keeps named].freeze
   INTEGER_FIELDS = %w[weight width height gil].freeze
@@ -79,7 +81,10 @@ class GeneratorTable < ApplicationRecord
     "arrivals" => "what the party notices arriving somewhere | when it fits | what it remembers " \
                   "(Smoke hangs over {place}. | town, night, !smoke_seen | smoke_seen)",
     "complications" => "what goes wrong when a check fails | when it fits | what it remembers | what it takes, for a hard move " \
-                       "(The rope gives. | skill = climbing | | hurt 10; Somebody saw {who}. | town | seen_in_{place})"
+                       "(The rope gives. | skill = climbing | | hurt 10; Somebody saw {who}. | town | seen_in_{place})",
+    "events" => "what happens at camp or on the road | when it fits | what it remembers | the choice, as " \
+                "option: what it does, with ; between options (A stranger asks to share the fire. | camp, !stranger_met | stranger_met | " \
+                "Let her: give potion, rumour; Send her off: tick -> shared_fire)"
   }.freeze
 
   attr_accessor :paste
@@ -137,7 +142,11 @@ class GeneratorTable < ApplicationRecord
         wanted = parts.second.presence && items.find { |it| [ it.slug, it.name.downcase ].include?(parts.second.downcase) }
         (@paste_errors ||= []) << "line #{i + 1}: nothing in the Armory is called #{parts.second}" if parts.second.present? && !wanted
         row.merge("text" => value, "item" => wanted&.slug).compact
-      when *LORE_KINDS, *STORY_KINDS then row.merge(fields.zip(parts).to_h { |field, part| [ field, part.to_s.presence ] }.compact)
+      when *LORE_KINDS, *STORY_KINDS
+        row = row.merge(fields.zip(parts).to_h { |field, part| [ field, part.to_s.presence ] }.compact)
+        # A pasted line keeps | between its fields, so an event's options are split with ; there.
+        row["choices"] = row["choices"].split(";").map(&:strip).join(" | ") if row["choices"]
+        row
       else row.merge("text" => value)
       end
     end
@@ -172,6 +181,9 @@ class GeneratorTable < ApplicationRecord
       errors.add(:entries, "#{label}: unknown roof #{entry['roof']}") if entry["roof"] && !Generators::Town::ROOFS.include?(entry["roof"])
       Toll.read(entry["text"]).last.each { |problem| errors.add(:entries, "#{label}: #{problem}") } if kind == "forks"
       Story::Matcher.problems(entry).each { |problem| errors.add(:entries, "#{label}: #{problem}") } if STORY_KINDS.include?(kind)
+      EventChoices.parse(entry["choices"]).last.each { |problem| errors.add(:entries, "#{label}: #{problem}") } if kind == "events"
+      Array(EventChoices.parse(entry["choices"]).first&.options).flat_map { |o| o["does"] }.filter_map { |word| Outcome.parse(word)&.target&.dig("item") }
+        .reject { |slug| items.include?(slug) }.each { |slug| errors.add(:entries, "#{label}: nothing in the Armory is called #{slug.tr('_', ' ')}") }
       if entry["does"].present? && !Outcome::TAKES.include?(Outcome.parse(entry["does"])&.kind)
         errors.add(:entries, "#{label}: “#{entry['does']}” isn't something a hard move takes: " \
                              "#{Outcome::TAKES.map { |kind| Outcome.of(kind).to_s }.join(', ')}")
