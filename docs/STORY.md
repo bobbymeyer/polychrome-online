@@ -20,10 +20,11 @@ What "fits" means here:
 
 ## Now: small, and they fix things that are thin today
 
-Items 1–4 are built: `Toll` and `Generators::Dungeon#worth_the_cost` (with
+Items 1–5 are built: `Toll` and `Generators::Dungeon#worth_the_cost` (with
 `Outcome`'s hurt, weary and ambush), `Campaign::Belonging` on the "arrive"
-event, `Generators::Town#couplets` and `Location::Wishes`, and
-`Generators::Report` (each template's "A hundred rolls" page). See README.
+event, `Generators::Town#couplets` and `Location::Wishes`,
+`Generators::Report` (each template's "A hundred rolls" page), and
+`Campaign::Limits`. See README.
 
 1. **Forks that cost something.** Every room must carry a decision (§7), but a fork's
    "visible cost" is only a narrated line (`Location::Exploration`), and the costly way

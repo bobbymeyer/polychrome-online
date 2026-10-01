@@ -12,6 +12,14 @@
       <% end %>
     <% end %>
   </div>
+  <% if campaign.persisted? %>
+    <fieldset class="panel">
+      <legend>This table's lines and veils</legend>
+      <p class="hint">Beside <%= @world.name %>'s, and drawn by anyone at the table, with no name on them. One per line: take one off here.</p>
+      <div class="field"><%= f.label :lines, "Never" %><%= f.text_area :lines, rows: 2 %></div>
+      <div class="field"><%= f.label :veils, "Off-screen" %><%= f.text_area :veils, rows: 2 %></div>
+    </fieldset>
+  <% end %>
   <% chosen = campaign.open_jobs %>
   <fieldset class="panel" data-controller="check-all">
     <legend>Archetypes open from the start</legend>

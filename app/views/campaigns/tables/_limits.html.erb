@@ -1,0 +1,5 @@
+<%# The table's lines and veils, the world's with its own, and a way to draw one more from this seat. Replaced live
+    (Campaign::Broadcasts); only rendered for a seat, since anyone seated may draw. campaign. %>
+<div id="table_limits">
+  <%= render "worlds/lines_and_veils", world: campaign.world, campaign: campaign, draw: true %>
+</div>

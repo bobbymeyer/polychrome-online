@@ -27,12 +27,15 @@ module Drafts
       { system: [ voice, instructions ].join(" "), user: [ context, ("The GM's idea: #{idea}" unless idea.empty?) ].compact.join("\n\n") }
     end
 
-    # The world's own voice and limits (World#voice, #avoid, #lines, #veils).
+    # The world's own voice and limits (World#voice, #avoid), and the lines
+    # and veils of the world and, for a campaign, its table's too
+    # (Campaign::Limits).
     def voice
+      lines, veils = campaign ? [ campaign.every_line, campaign.every_veil ] : [ world.lines, world.veils ].map { |t| t.to_s.lines.map(&:strip).compact_blank }
       [ "The setting's voice: #{world.voice.presence&.squish || VOICE}", RULES,
         ("Avoid: #{world.avoid.squish}." if world.avoid.present?),
-        ("Never include, in any form: #{world.lines.squish}." if world.lines.present?),
-        ("Keep these off-screen, never described: #{world.veils.squish}." if world.veils.present?) ].compact.join(" ")
+        ("Never include, in any form: #{lines.join('; ')}." if lines.any?),
+        ("Keep these off-screen, never described: #{veils.join('; ')}." if veils.any?) ].compact.join(" ")
     end
 
     private

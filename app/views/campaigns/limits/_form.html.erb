@@ -1,0 +1,9 @@
+<%# Draw a line or a veil for this table: no name goes on it (Campaign::Limits). campaign. %>
+<%= form_with url: campaign_limits_path(campaign), class: "inline-form limits-form" do |f| %>
+  <%= f.label :text, "Add one for this table", class: "visually-hidden" %>
+  <%= f.text_field :text, required: true, maxlength: Campaign::Limits::MAX_LENGTH, placeholder: "Add one for this table", autocomplete: "off",
+                         id: "limit_text_#{campaign.id}" %>
+  <%= f.button "Never", name: "kind", value: "line", class: "button button--quiet" %>
+  <%= f.button "Off-screen", name: "kind", value: "veil", class: "button button--quiet" %>
+<% end %>
+<p class="hint">Nobody's name goes on it, and nobody has to say why. Only the GM can take one off.</p>
