@@ -535,6 +535,9 @@ details[open] > summary { margin-bottom: 16px; }
 .gm-units tr.is-ko td { color: var(--grey); text-decoration: line-through; }
 .gm-units tr.is-low td:nth-child(2) { color: var(--caution-ink); font-weight: 800; }
 .gm-override { margin-top: 24px; }
+.gm-controls { margin-top: 24px; }
+.gm-controls > summary { font-weight: 700; }
+.gm-controls > .gm-override:first-of-type { margin-top: 12px; }
 .gm-override form { margin-top: 8px; }
 .battle-log { max-height: 360px; overflow-y: auto; }
 .battle-log ol { list-style: none; margin: 0; padding: 0; font-size: 14px; line-height: 24px; }

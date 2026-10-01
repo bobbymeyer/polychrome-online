@@ -405,9 +405,22 @@ this browser. On a phone it's one column: you, the scene, your moves, what you l
 - **The GM's panel says who the round waits on**, by its clock ("Waiting on Hoshi."), and the
   party's table has one "Who chooses" column instead of two: "Auto, every round" with Hand back,
   or "Player · waiting/chosen" with Auto this round and Auto every round.
-- **"Fast animations"**, not "Fast": the one control above a phone's battle says what it speeds up.
+- **"Fast animations"**, not "Fast": the toggle says what it speeds up. In a campaign it sits in
+  the Menu with the way around the game (it's a setting for this device, not a move); a battle
+  with no campaign keeps it above the field.
 - **The log's battle section takes only the room it needs**, and section headings carry their own
   top gap, so nothing scrolled under them shows through.
+
+### Only the battle
+
+What's on screen in a fight is what you can do in it now (see "What you can do now").
+
+- **The ticker on a phone is one line**: the last thing that happened. The log has the rest.
+- **The party strip comes in with the first hit.** While everyone is at full HP it says nothing,
+  so it stays hidden; once someone is hurt or KO'd it shows everyone.
+- **The GM's panel keeps the round in sight**: who it waits on, rulings, both sides' tables, Run
+  the round now and End the battle. Someone joins, Override and Pacing go behind one "GM controls"
+  fold, opened when wanted.
 
 ### Defeat
 

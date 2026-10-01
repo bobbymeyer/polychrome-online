@@ -26,7 +26,7 @@ const FAST_SPEED = 2
 const FAST_KEY = "polychrome.fastBattles"
 
 export default class extends Controller {
-  static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "fast", "ticker"]
+  static targets = ["boardContainer", "stage", "fx", "log", "panel", "playback", "skip", "ticker"]
   static values = { panelUrl: String, next: Number, cries: Object, words: Object }
 
   connect() {
@@ -47,14 +47,20 @@ export default class extends Controller {
     if (this.current) this.current.timeline.speed = this.speed
   }
 
+  // The toggle lives in the Menu, outside this element, so its click is caught on the window.
+  fastClick(event) {
+    if (event.target.closest?.("[data-battle-fast]")) this.toggleFast()
+  }
+
   readFast() {
     try { return localStorage.getItem(FAST_KEY) === "1" } catch { return false }
   }
 
   showFast() {
-    if (!this.hasFastTarget) return
-    this.fastTarget.setAttribute("aria-pressed", String(this.fast))
-    this.fastTarget.classList.toggle("is-current", this.fast)
+    document.querySelectorAll("[data-battle-fast]").forEach(button => {
+      button.setAttribute("aria-pressed", String(this.fast))
+      button.classList.toggle("is-current", this.fast)
+    })
   }
 
   disconnect() {
@@ -163,7 +169,7 @@ export default class extends Controller {
     // A phone may not show the stage: the last lines say what happened.
     if (this.hasTickerTarget) {
       this.tickerTarget.append(line.cloneNode(true))
-      while (this.tickerTarget.children.length > 3) this.tickerTarget.firstElementChild.remove()
+      while (this.tickerTarget.children.length > 1) this.tickerTarget.firstElementChild.remove()
     }
   }
 

@@ -996,7 +996,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .battle:not(.battle--controller):not(.battle--screen) .battle__dock:has(.command-panel--over, .try-form) { position: static; max-height: none; box-shadow: none; padding: 8px 0 0; }
   /* Let go of the edge, the results' title sits below the last line of the fight, not over it. */
   .battle__dock .command-panel--over > h2:first-child { margin-top: 12px; }
-  .party-strip { display: grid; }
+  /* Nobody hurt, nothing to watch: the strip comes in with the first hit. */
+  .party-strip:has(.is-hurt, .is-ko) { display: grid; }
   /* The end of a fight lands in the part of the screen the pinned panel leaves open. */
   .battle:not(.battle--controller):not(.battle--screen) :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down, .banner--all-out) {
     position: fixed; top: 22vh; z-index: 35; font-size: 56px;

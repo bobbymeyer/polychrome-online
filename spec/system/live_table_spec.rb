@@ -77,6 +77,15 @@ RSpec.describe "The live table", type: :system do
                   actor: rook.battle_unit_id)
     as(gm) { expect(page).to have_css("[data-battle-player-target=log]", text: /Rook attacks/, visible: :all, wait: 15) }
 
+    # Fast animations sits in the Menu, outside the battle, and still reaches it.
+    as(gm) do
+      fast = find("#topbar_menu [data-battle-fast]", visible: :all)
+      expect(fast[:"aria-pressed"]).to eq("false")
+      execute_script("arguments[0].click()", fast)
+      expect(page).to have_css("#topbar_menu [data-battle-fast][aria-pressed=true]", visible: :all)
+      expect(page).to have_css("details.gm-controls:not([open])", text: "GM controls")
+    end
+
     battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
     as(gm) { expect(page).to have_css("[data-battle-player-target=log]", text: "Victory!", visible: :all, wait: 15) }
   end

@@ -16,10 +16,10 @@
     · Choose before the clock runs out, or you <%= timeout_command(state, unit) %>.
   <% end %>
 </p>
-<%# Everyone's HP at a glance, for a phone whose pinned panel covers the roster. %>
+<%# Everyone's HP at a glance, for a phone whose pinned panel covers the roster: shown once someone is hurt. %>
 <ol class="party-strip" aria-label="Party">
   <% @battle.party.reject { |u| u["gone"] }.each do |member| %>
-    <li class="party-strip__member <%= 'is-ko' if member['hp'].zero? %> <%= 'is-you' if member['id'] == unit['id'] %>">
+    <li class="party-strip__member <%= 'is-ko' if member['hp'].zero? %> <%= 'is-hurt' if member['hp'].positive? && member['hp'] < member['stats']['max_hp'] %> <%= 'is-you' if member['id'] == unit['id'] %>">
       <span class="party-strip__name"><%= member["name"] %></span>
       <span class="party-strip__hp"><%= member["hp"] %><span class="muted">/<%= member["stats"]["max_hp"] %></span></span>
       <span class="bar"><span class="bar__fill bar__fill--<%= hp_band(member) %>" style="width: <%= hp_percent(member) %>%"></span></span>
