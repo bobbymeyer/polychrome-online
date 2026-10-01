@@ -1,0 +1,4 @@
+<%# The moves panel (Campaign::Moves): fetched when the tab is opened, so it's what's live now. campaign. %>
+<%= turbo_frame_tag "gm_moves", src: campaign_moves_path(campaign), loading: :lazy do %>
+  <p class="muted">Looking at what's live…</p>
+<% end %>

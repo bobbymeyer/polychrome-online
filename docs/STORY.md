@@ -72,6 +72,11 @@ on arrival, more often the fuller the clock
 (`Campaign::Remarks#offer_sign!`). Written on a front's clocks and dealt
 in, or on a campaign's own.
 
+Item 9 is built: the GM's Moves tab (`Campaign::Moves`), with a soft and a
+hard move for the moment, each danger's impulse, next step and a sign,
+wishes heard and not met, and antagonists who got away. A chain's next
+step joins it with item 11.
+
 6. **The story matcher** (`lib/`, pure). The same mechanism kept coming up: tagged rows
    with fallback (ch. 4), lines gated between what the party knows (ch. 7), event
    requirements that chain through flags (ch. 11), descriptions from a world model

@@ -778,6 +778,18 @@ every campaign in it uses them.
     one out on a success, preferring one about where the party stands.
 - **Where:** clocks and secrets are on the campaign's Prep page, and in
   the GM's panels at the table for play. Both update live.
+- **Moves** (a tab in the GM's tools, `Campaign::Moves`) is what's live
+  when the table stalls, fetched each time it's opened:
+  - **A move:** the soft and the hard complication that fit the moment
+    best, with **Say it** and **Make it so**.
+  - **Dangers:** each running clock with something to say: what it wants,
+    its next step, a sign of where it has got to (**Show it**) and
+    **Tick it**.
+  - **Heard, not met:** wishes from towns the party has been to that it
+    could meet: an item brought, a dungeon cleared.
+  - **Got away:** antagonists who have escaped, how much stronger they
+    are, and where.
+  Nothing on it happens by itself.
 
 ## Suggestions from a language model
 

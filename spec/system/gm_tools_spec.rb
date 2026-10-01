@@ -32,6 +32,24 @@ RSpec.describe "The GM's tools at the table", type: :system do
     end
   end
 
+  it "shows the moves that are live when the Moves tab is opened, and makes one so" do
+    campaign.world.generator_tables.where(kind: "complications").destroy_all
+    campaign.world.generator_tables.create!(name: "Moves", slug: "moves_system", kind: "complications", entries: [ { "text" => "Somebody's watching." } ])
+    seat(gm, "gm")
+
+    as(gm) do
+      within(".table__side .gm-tools") do
+        find("[role=tab]", text: "Moves").click
+        within("#gm_moves") do
+          expect(page).to have_text("“Somebody's watching.”")
+          click_on "Say it"
+        end
+      end
+      expect(page).to logged?("Somebody's watching.")
+      expect(page).to have_css("#gm_moves", text: "Somebody's watching.") # the panel is still there, fetched again
+    end
+  end
+
   it "opens a tool from the Now line, and folds the tools away while the table is busy" do
     seat(gm, "gm")
     as(gm) do

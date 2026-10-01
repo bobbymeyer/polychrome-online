@@ -135,6 +135,8 @@ Rails.application.routes.draw do
       # A seated player has the table open (heartbeat_controller): who is here.
       resource :presence, only: :update
       resource :composer, only: :show
+      # What's live, for the GM to make a move from (Campaign::Moves).
+      resource :moves, only: %i[show create]
       # A line or a veil for this table, from any seat, unsigned (Campaign::Limits).
       resources :limits, only: :create, path: "lines-and-veils"
 

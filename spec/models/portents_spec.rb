@@ -64,7 +64,9 @@ RSpec.describe "Dangers: what a clock wants, its steps and their signs" do
       signs.size > before
     end
     expect(offered).to be_between(4, 12)
-    expect(signs.last).to eq("A sign of “The Syndicate takes the docks” (3 of 4): “Empty berths at Hollin.”")
+    # In town, the latest step's sign; at the crossing, it doesn't fit, so an earlier step's.
+    expect(signs).to include("A sign of “The Syndicate takes the docks” (3 of 4): “Empty berths at Hollin.”")
+    expect(signs.uniq).to all(end_with("“Empty berths at Hollin.”").or(end_with("“Fresh brass paint on every warehouse door.”")))
 
     clock.update!(stopped_at: Time.current)
     expect { 4.times { campaign.place_party!(crossing); campaign.place_party!(hollin) } }.not_to(change { signs.size })
