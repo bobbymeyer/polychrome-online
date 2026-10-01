@@ -1,0 +1,22 @@
+<%# One beat as the table will see it: the stage, and its line in the box. beat: the one chosen. %>
+<% if beat %>
+<div class="stage stage--preview" aria-label="Preview">
+  <div class="stage__frame">
+    <figure class="table-scene is-scene"><%= render "campaigns/tables/beat_stage", beat: beat %></figure>
+    <% if beat.choice? %>
+      <section class="dialogue window dialogue--stage is-narration" aria-label="Dialogue">
+        <div class="dialogue__text"><p class="dialogue__name">The table</p><p class="dialogue__body">The party decides: <%= beat.options.to_sentence(two_words_connector: " or ", last_word_connector: ", or ") %>.</p></div>
+      </section>
+    <% elsif beat.says? %>
+      <section class="dialogue window dialogue--stage<%= ' is-narration' unless beat.speaker %>" aria-label="Dialogue">
+        <div class="dialogue__portrait"><%= speaker_portrait(beat.speaker, beat.expression, size: :large) if beat.speaker %></div>
+        <div class="dialogue__text">
+          <p class="dialogue__name" style="<%= plate_style(beat.speaker.name, beat.speaker.try(:colour)) if beat.speaker %>"><%= beat.speaker&.name || "Narrator" %></p>
+          <p class="dialogue__body"><%= beat.text %></p>
+        </div>
+      </section>
+    <% end %>
+  </div>
+</div>
+<p class="hint">Beat <%= beat.position + 1 %> of <%= beat.scene.beats.size %>, as the table will see it<%= ", with #{beat.campaign.current_node.name}'s picture behind it as the party is there now" if beat.effective_backdrop.nil? && beat.campaign.current_node&.location&.picture %>.</p>
+<% end %>

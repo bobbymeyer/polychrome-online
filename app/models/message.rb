@@ -60,10 +60,14 @@ class Message < ApplicationRecord
     !speaker.is_a?(Character)
   end
 
-  # GM and NPC lines at the table play through the dialogue box.
+  # GM and NPC lines at the table play through the dialogue box; so does
+  # every line of a scene, a character's included (the GM wrote it for them).
   def dialogue?
-    kind == "say" && !whisper? && from_gm?
+    kind == "say" && !whisper? && (from_gm? || scene?)
   end
+
+  # Said by a scene's beat (Scene#show!).
+  def scene? = data.to_h["scene"].present?
 
   # The character on the other end of a whisper.
   def whisper_character

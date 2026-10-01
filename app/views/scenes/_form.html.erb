@@ -3,14 +3,15 @@
   <%= render "book_entries/errors", entry: scene %>
   <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, placeholder: "The airship falls" %></div>
   <div class="field">
-    <%= f.label :script %>
-    <%= f.text_area :script, rows: 10, class: "script-field",
+    <%= f.label :script, scene.persisted? ? "Add beats from a script" : "Script" %>
+    <%= f.text_area :script, rows: scene.persisted? ? 4 : 10, class: "script-field",
                     placeholder: "Cid (worried): The airship won't hold.\nThe wind picks up.\nNarrator: A shadow crosses the moon." %>
     <p class="hint">
-      One line each, like a play. Start with an NPC's name and a colon to speak as them, with an expression in brackets if you like
+      One line each, like a play; each becomes a beat<%= " after the ones below" if scene.persisted? %>. Start with a name and a colon to speak as someone from the cast or the party, with an expression in brackets if you like
       (<%= Portrait::EXPRESSIONS.to_sentence(last_word_connector: " or ") %>). Anything else is narration.
       End on <code>? Trust Cid | Refuse -&gt; trusted_cid</code> to put a choice to the table: players pick, you settle it, and the flag is set to what they chose.
       <% if (cast = @campaign.npcs.order(:name).pluck(:name)).any? %>The cast: <%= cast.to_sentence %>.<% else %>There's no cast yet: add NPCs on the campaign page.<% end %>
+      <% if (party = @campaign.characters.order(:created_at).pluck(:name)).any? %>The party: <%= party.to_sentence %>.<% end %>
     </p>
   </div>
 

@@ -18,6 +18,13 @@ class Campaign < ApplicationRecord
   has_many :messages, dependent: :delete_all # at battles and characters
   has_many :field_uses, dependent: :destroy # at characters
   has_many :scenes, dependent: :destroy # at places and their modes
+  # The scene on the stage right now, if one is (Scene#start!).
+  belongs_to :staged_scene, class_name: "Scene", optional: true
+
+  # The beat on the stage right now, if a scene is.
+  def staged_beat
+    staged_scene&.current_beat
+  end
   has_many :clocks, dependent: :delete_all # at modes
   has_many :secrets, dependent: :delete_all # at places and NPCs
   has_many :rumours, dependent: :destroy # at places and secrets

@@ -1,0 +1,16 @@
+<%# The beats of a scene, in order, one to the next (Beat): the sequencer. scene; chosen: the beat the
+    preview is on. %>
+<section class="sequencer" id="beats">
+  <div class="book-header">
+    <h2>Beats</h2>
+    <%= button_to "Add a beat", scene_beats_path(scene), class: "button button--quiet", form: { class: "inline", data: { turbo_frame: "_top" } } %>
+  </div>
+  <% if scene.beats.empty? %>
+    <p class="empty">No beats yet. Add one, or paste a script above: each line becomes a beat.</p>
+  <% else %>
+    <p class="hint">Each beat is saved as you change it. Who speaks, with what face, and what they say; behind them a place, a panel made for the beat, black, or whatever was there; and who stands on the stage (the speaker always does). A beat can say nothing and only change the stage.</p>
+    <ol class="beat-list">
+      <%= render partial: "scenes/beat", collection: scene.beats, locals: { chosen_id: chosen&.id } %>
+    </ol>
+  <% end %>
+</section>
