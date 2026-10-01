@@ -101,15 +101,33 @@ a.play:hover { color: var(--signal-dark); }
  * The page: a masthead and a 12-column field.
  * ------------------------------------------------------------------------- */
 
+/* Fixed to the top of the screen, one thin line: the page starts under it (--topbar). */
+:root { --topbar: 44px; }
+body { padding-top: var(--topbar); }
 .topbar {
-  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); align-items: baseline;
-  max-width: var(--measure); margin: 0 auto; padding: 24px var(--gutter) 16px;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40; min-height: var(--topbar);
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gutter); align-items: center;
+  margin: 0; padding: 4px var(--gutter);
   border-bottom: 2px solid var(--ink);
 }
 .topbar__brand { grid-column: span 3; font-size: 20px; line-height: 24px; font-weight: 800; letter-spacing: -0.02em; color: var(--ink); }
-.topbar__account { grid-column: 10 / -1; justify-self: end; display: flex; flex-wrap: wrap; gap: 0 16px; align-items: baseline; font-size: 13px; }
+.topbar__account { grid-column: 10 / -1; justify-self: end; display: flex; flex-wrap: wrap; gap: 0 16px; align-items: center; font-size: 13px; }
 .topbar__account form { margin: 0; }
-.topbar__books { grid-column: 4 / 10; display: flex; flex-wrap: wrap; gap: 0 20px; font-size: 14px; font-weight: 600; }
+/* Your name, and under it what's yours: a menu that drops from the bar. */
+.topbar__user { position: relative; margin: 0; padding: 0; border: 0; }
+.topbar__user > summary { list-style: none; cursor: pointer; font-size: 13px; font-weight: 700; color: inherit; padding: 6px 0; }
+.topbar__user > summary::before { display: none; }
+.topbar__user > summary::after { content: " ▾"; font-size: 11px; }
+.topbar__user[open] > summary::after { content: " ▴"; }
+.topbar__user-menu {
+  position: absolute; right: 0; top: 100%; z-index: 1; min-width: 180px; display: grid; gap: 2px; padding: 8px 12px 10px;
+  background: var(--paper); color: var(--ink); border: 2px solid var(--ink); font-size: 14px;
+}
+.topbar__user-menu > * { display: flex; align-items: center; min-height: 32px; margin: 0; white-space: nowrap; }
+.topbar__user-menu form { display: contents; }
+.topbar__user-menu .link-button { font: inherit; font-weight: 600; min-height: 32px; }
+.topbar__user-menu .muted { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+.topbar__books { grid-column: 4 / 12; display: flex; flex-wrap: wrap; gap: 0 20px; font-size: 14px; font-weight: 600; }
 .topbar__world { color: var(--ink); margin-right: 8px; }
 .topbar a { text-decoration: none; }
 .topbar a:hover { text-decoration: underline; }
@@ -133,12 +151,15 @@ a.play:hover { color: var(--signal-dark); }
 }
 /* A phone either way up: the top bar is one line with a Menu. */
 @media (max-width: 640px), (max-height: 500px) and (orientation: landscape) {
-  .topbar { padding: 16px; grid-template-columns: 1fr auto; align-items: center; }
+  .topbar { padding: 4px 16px; grid-template-columns: 1fr auto; align-items: center; }
   .topbar__brand { grid-column: 1; }
-  .topbar__toggle { display: inline-flex; align-items: center; grid-column: 2; min-height: 44px; padding: 0 14px;
+  .topbar__toggle { display: inline-flex; align-items: center; grid-column: 2; min-height: 34px; padding: 0 12px; font-size: 14px;
                     border: 2px solid currentColor; background: none; color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
-  .topbar__menu { display: none; grid-column: 1 / -1; }
+  .topbar__menu { display: none; grid-column: 1 / -1; max-height: calc(100vh - var(--topbar)); overflow-y: auto; padding-bottom: 12px; }
   .topbar.is-open .topbar__menu { display: block; }
+  /* On a phone the account's menu is part of the list, not a drop-down. */
+  .topbar__user-menu { position: static; border: 0; padding: 0 0 0 16px; background: none; color: inherit; }
+  .topbar__user > summary { min-height: 44px; display: flex; align-items: center; font-size: 16px; }
   .topbar__books, .topbar__account { flex-direction: column; align-items: stretch; margin-top: var(--unit); font-size: 16px; }
   .topbar__books a, .topbar__account a, .topbar__account .link-button, .topbar__account > span { display: flex; align-items: center; min-height: 44px; }
   .topbar__account form { display: block; }

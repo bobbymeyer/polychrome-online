@@ -13,7 +13,7 @@
   </head>
 
   <body data-book="<%= current_book %>" style="<%= accent_style %>" <%= tag.attributes(data: { view: coop_view(@campaign || @battle&.campaign) }) %>>
-    <header class="topbar" data-controller="topbar">
+    <header class="topbar" data-controller="topbar" data-action="click@window->topbar#outside keydown@window->topbar#escape">
       <%= link_to "Polychrome", root_path, class: "topbar__brand" %>
       <%# On a phone the links fold behind one button. %>
       <button type="button" class="topbar__toggle" data-action="topbar#toggle" data-topbar-target="toggle" aria-expanded="false" aria-controls="topbar_menu">Menu</button>
@@ -44,16 +44,24 @@
           <%= book_nav_link "Generators", world_generation_generator_tables_path(@world), :generation %>
         </nav>
       <% end %>
-      <% if current_user %>
-        <nav class="topbar__account" aria-label="Account">
-          <%= link_to "How to play", how_to_play_path %>
-          <button type="button" class="link-button" data-controller="mute" data-action="mute#toggle" aria-pressed="false"
-                  title="Sound on this device">Sound on</button>
-          <span><%= current_user.name %><%= tag.span(" · admin", class: "muted") if admin? %></span>
-          <% if admin? %><%= link_to "Accounts", users_path %> <%= link_to "Settings", settings_path %><% end %>
-          <%= button_to "Sign out", session_path, method: :delete, class: "link-button topbar__sign-out", form: { class: "inline" } %>
-        </nav>
-      <% end %>
+      <%# The account is one item: your name, with everything about you and this device under it. %>
+      <nav class="topbar__account" aria-label="Account">
+        <% if current_user %>
+          <details class="topbar__user">
+            <summary><%= current_user.name %></summary>
+            <div class="topbar__user-menu">
+              <% if admin? %><span class="muted">Admin</span><% end %>
+              <%= link_to "How to play", how_to_play_path %>
+              <button type="button" class="link-button" data-controller="mute" data-action="mute#toggle" aria-pressed="false"
+                      title="Sound on this device">Sound on</button>
+              <% if admin? %><%= link_to "Accounts", users_path %> <%= link_to "Settings", settings_path %><% end %>
+              <%= button_to "Sign out", session_path, method: :delete, class: "link-button topbar__sign-out", form: { class: "inline" } %>
+            </div>
+          </details>
+        <% elsif controller_name != "sessions" %>
+          <%= link_to "Sign in", new_session_path %>
+        <% end %>
+      </nav>
       </div>
     </header>
 

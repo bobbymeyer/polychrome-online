@@ -21,7 +21,10 @@ deliberate divergence from much of what follows, and where the two disagree the 
 - **Type.** Display type (h1, banners, damage numbers, names in the roster) is Inter at 900,
   italic, tracked tight. A page title carries a grey echo, offset 4px.
 - **Tabs.** A section's heading is a tab in the page's accent colour, hanging from its 3px rule.
-- **The masthead** is a black band, full bleed, with the palette as a stripe under it.
+- **The masthead** is a thin black band fixed to the top of the screen, full bleed, with the
+  palette as a stripe under it: the brand small and heavy, the way around the game, and one
+  item for you (your name; under it How to play, Sound, Accounts and Settings for an admin, and
+  Sign out), or Sign in.
 - **Ground.** A halftone falls from the top right of every page and fills the enemies' side of the
   battlefield; the party's side is a slanted grey wash.
 - **Shadows.** Only hard ones, offset, never blurred: a focused field, the dialogue box.
