@@ -54,4 +54,19 @@ RSpec.describe "Story rows: arrival lines, the facts page and the moment", type:
     get campaign_prep_path(campaign)
     expect(response.body).to include("The moment", "lamp_seen", "first_visit")
   end
+
+  it "lets the GM make a hard move so, and says what it takes on the facts page" do
+    campaign.update!(gil: 100)
+    note = campaign.narrate("A hard move, for the failed check: “A purse goes missing.”", scope: "gm",
+                            data: { "offer" => { "text" => "A purse goes missing.", "does" => "lose 50" } })
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Make it so")
+    post message_saying_path(note)
+    expect(campaign.reload.gil).to eq(50)
+    expect(campaign.messages.where(scope: "table").last(2).map(&:body)).to eq([ "A purse goes missing.", "The party loses 50 gil." ])
+
+    get world_generation_facts_path(world)
+    expect(response.body).to include("When a check fails", "lose 50", "difficulty")
+  end
 end

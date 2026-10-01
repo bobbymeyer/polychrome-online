@@ -122,6 +122,21 @@ module Seeds
                              { text: "They come into {place} crazed and chipped. Somebody brings out the slip without asking.", when: "town, hurt >= 2" },
                              { text: "The air at the mouth of {place} is {damp|gritty|still} and tastes of iron.", when: "dungeon, first_visit" },
                              { text: "{place} is quiet now. The shoring creaks, and nothing answers.", when: "dungeon, cleared" } ] },
+      # The GM's moves when a check fails (Campaign::Remarks).
+      complications: { name: "Complications", kind: "complications",
+                       entries: [ { text: "A tick in the clay somewhere close, like a pot cooling too fast." },
+                                  { text: "{who} feels a hairline run somewhere it shouldn't. Nothing yet. Yet.", when: "failed >= 2" },
+                                  { text: "It goes wrong, and the wrong way shows {who} a seam in the wall nobody fired shut. It'll cost to open.", when: "!dungeon" },
+                                  { text: "Shoring creaks all along the gallery. The pit knows they're here.", when: "dungeon" },
+                                  { text: "Someone on the racks saw {who}. They won't say who they tell.", when: "skill = softfoot, town" },
+                                  { text: "The glaze in the ledger has run: the one line {who} wanted is a smear.", when: "skill = reading" },
+                                  { text: "They nod and keep counting, and {who} understands the price just went up.", when: "skill = haggling" },
+                                  { text: "{who} takes the weight wrong and something chips.", when: "skill = heft", does: "hurt 10" },
+                                  { text: "The road gives out into slurry. The day goes with it.", when: "skill = roadcraft", does: "time 1" },
+                                  { text: "Cones go missing from a pocket in the crush.", when: "town", does: "lose 50" },
+                                  { text: "The kilns are being lit early. Whatever's coming, it's coming hotter.", does: "tick" },
+                                  { text: "The noise carries down the gallery. Something comes up it.", when: "dungeon", does: "ambush" },
+                                  { text: "It dries {who} out to the slip.", does: "weary 25" } ] },
       service_names: { name: "Service names", kind: "service_names",
                        entries: texts("The Leaning Pot", "The Warm Shelf", "Cone Six", "The Cracked Jug", "The Long Rack", "Leather-Hard", service: "inn") +
                                 texts("Slip & Grog", "Harrow Supply", "The Fettling Bench", "Kaolin & Daughters", "Odd Shelves", service: "shop") +

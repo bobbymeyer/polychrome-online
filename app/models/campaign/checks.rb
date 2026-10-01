@@ -45,6 +45,7 @@ module Campaign::Checks
       winner = lines.find { |_, data| data["success"] }&.last
       said = outcome && winner && outcome.apply!(self, by: winner["name"], source: source)
       narrate(said) if said
+      offer_complications!(lines.map(&:last))
       [ created, said ]
     end
   end

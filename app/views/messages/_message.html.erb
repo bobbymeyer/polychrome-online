@@ -47,7 +47,7 @@
       <% if message.data["said"] %>
         <p class="hint">Said.</p>
       <% else %>
-        <%= button_to "Say it", message_saying_path(message), class: "link-button", form: { class: "chat-line__offer" } %>
+        <%= button_to message.data["offer"]["does"] ? "Make it so" : "Say it", message_saying_path(message), class: "link-button", form: { class: "chat-line__offer" } %>
       <% end %>
     <% end %>
   <% else %>

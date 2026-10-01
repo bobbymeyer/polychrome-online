@@ -54,6 +54,12 @@ module Campaign::Happenings
     end
   end
 
+  # The running clock a hard move ticks (Outcome "tick"): one at the
+  # party's place if there is one, else the one nearest to full.
+  def clock_to_tick
+    clocks.running.to_a.min_by { |clock| [ clock.map_node_id == current_node_id ? 0 : 1, -clock.filled.fdiv(clock.segments), clock.id ] }
+  end
+
   private
 
   # Every running clock that listens for this, and keeps to the calendar
