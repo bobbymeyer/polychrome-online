@@ -29,8 +29,10 @@ module Campaign::Ways
       # The place's own things to do first, then the ways out, then its inn,
       # temple and guild, or camp (Location::Town#services_for, Campaign::Services).
       own, services = pastimes_here.partition { |way| way["service"].nil? }
+      travel_ticks = ticking_on("travel")
       roads = current_node.edges.includes(:from_node, :to_node).reject(&:blocked?).map do |edge|
         { "label" => way_along(edge), "move" => { "edge" => edge.id },
+          "note" => ("ticks #{travel_ticks.to_sentence}" if travel_ticks.any?),
           "warn" => ("The road to #{edge.other_end(current_node).name} is dangerous: the party may meet something on it." if edge.state == "dangerous") }.compact
       end
       own + way_in + roads + services.map { |way| way.except("service") }
@@ -71,10 +73,25 @@ module Campaign::Ways
   def pastimes_here
     return [] unless current_node && !dungeon_in_progress
 
+    rest_ticks = ticking_on("rest")
     current_node.pastimes.select { |pastime| pastime.open?(almanac, day, period) }.map do |pastime|
       { "label" => pastime_label(pastime), "move" => { "node" => current_node.id, "pastime" => pastime.name }, "service" => pastime.service,
+        "note" => way_note(pastime, rest_ticks),
         "warn" => ("The night passes: it's #{almanac.periods.first} when they're done." if pastime.rest?) }.compact
     end
+  end
+
+  # What a thing to do sets off, said before it's chosen (docs/DESIGN.md,
+  # "Motion with meaning"): its outcomes, and the clocks a night ticks.
+  def way_note(pastime, rest_ticks = ticking_on("rest"))
+    parts = pastime.outcomes.map { |outcome| outcome.kind == "rest" ? "the night passes" : outcome.describe(world).downcase_first }
+    parts << "ticks #{rest_ticks.to_sentence}" if pastime.rest? && rest_ticks.any?
+    parts.join(" · ").presence
+  end
+
+  # The names of the clocks an event would tick now, for the ways' notes.
+  def ticking_on(event)
+    clocks.where(stopped_at: nil).reject(&:full?).select { |clock| clock.ticks_on?(event) }.map(&:name)
   end
 
   # How the table sees a road from here: "To Greymere (by a dangerous road)".

@@ -252,6 +252,19 @@ Slip Hound A") from the moment they choose, so the table sees the round form. Wh
 each roster row shows its net (−84, +25) and a line under the field says what the round came to
 ("Round 3 · Rook dealt 84 · Pim healed 25 · Slip Hound B fell"), until the next round starts.
 
+**Before you commit.** In battle, the move under the cursor lights what it would reach on the
+field (every enemy, the whole party, yourself) with a dashed outline, and a target the party knows
+to be weak to it says "Weak!" in yellow ("Resists" the other way), from the chart and what they've
+seen of its types, never more. At the table, a way says what it sets off under its name: a thing
+to do its outcomes in the world's words, a night the clocks it ticks, a road the clocks a journey
+ticks. A clock shows the box it's about to fill by itself as a dashed one. **Arriving** somewhere
+is a card over the table: the place's kind, its name at display size, the modes it's in and its
+line, held for a few seconds (`arrival` cue). **The Now band** wipes across in the new state's
+colour when the table's state changes (ink, red for a fight, blue for a choice), and the party's
+marker on the map hops to where it went rather than reappearing. **Pressing** anything presses
+it: the lift on hover, a push on press, a red slab of focus; the vote's options wear the pickers
+as chips that pop on, with a bar of each option's share so far.
+
 The live panels say it themselves (`motion/changes.js`): a view marks what matters with
 `data-change` (number, bar, text, list, clock; keyed by `data-change-key` where order can move),
 and whenever a panel is replaced by a stream or a page is morphed, each mark is compared with

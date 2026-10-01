@@ -35,6 +35,8 @@ export function snapshot(root) {
       else if (kind === "bar") entry.bar = parseFloat(el.style.width)
       else if (kind === "text") entry.text = el.textContent.trim()
       else if (kind === "list") entry.list = new Set(Array.from(el.children, childKey))
+      else if (kind === "state") entry.state = el.dataset.state
+      else if (kind === "marker") entry.marker = el.getAttribute("transform")
       else if (kind === "clock") Object.assign(entry, { clock: el.querySelectorAll(".is-filled").length, popped: Array.from(el.querySelectorAll("i.is-new"), (box) => Array.prototype.indexOf.call(box.parentElement.children, box)) })
     })
     before[keyOf(el, i)] = entry
@@ -54,6 +56,8 @@ export function settle(root, before) {
       else if (kind === "text" && was.text !== undefined && was.text !== el.textContent.trim()) flash(el, "is-changed")
       else if (kind === "list" && was.list) Array.from(el.children).forEach((child, j) => { if (!was.list.has(childKey(child, j))) enter(child) })
       else if (kind === "clock" && was.clock !== undefined) fillClock(el, was.clock, was.popped)
+      else if (kind === "state" && was.state && was.state !== el.dataset.state) { el.dataset.changedState = was.state; flash(el, "is-restated", 900) }
+      else if (kind === "marker" && was.marker && was.marker !== el.getAttribute("transform")) hop(el, was.marker)
     })
   })
 }
@@ -121,6 +125,22 @@ function fillClock(dial, from, popped = []) {
     boxes[i].classList.add("is-new")
   }
   if (to === boxes.length && from < to) flash(dial, "is-just-full", 800)
+}
+
+// A marker that moved hops from where it was to where it is (an SVG group
+// with a translate transform: the party on the map).
+function hop(el, fromTransform) {
+  const parse = (t) => (t || "").match(/translate\(\s*(-?[\d.]+)[ ,]+(-?[\d.]+)/)?.slice(1, 3).map(Number)
+  const from = parse(fromTransform)
+  const to = parse(el.getAttribute("transform"))
+  if (!from || !to || reduced()) return
+  el.style.transition = "none"
+  el.style.transform = `translate(${from[0]}px, ${from[1]}px)`
+  void el.getBoundingClientRect()
+  el.style.transition = ""
+  el.classList.add("is-hopping")
+  el.style.transform = `translate(${to[0]}px, ${to[1]}px)`
+  setTimeout(() => { el.style.transform = ""; el.style.transition = ""; el.classList.remove("is-hopping") }, SETTLE_MS + 100)
 }
 
 function enter(el) {

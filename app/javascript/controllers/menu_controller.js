@@ -55,6 +55,7 @@ export default class extends Controller {
     this.element.removeEventListener("mouseover", this.onOver)
     this.element.removeEventListener("focusin", this.onFocus)
     this.highlight(null)
+    this.reach(null)
     this.unbindTargets()
     this.markYou(false)
   }
@@ -125,6 +126,7 @@ export default class extends Controller {
     remember(this.label(item))
     if (this.hasHelpTarget) this.helpTarget.textContent = item.dataset.help || ""
     this.highlight(item.dataset.unitId || null)
+    this.reach(item.dataset.reach || null)
   }
 
   // Up/down go to the nearest item in the row above/below; left/right step
@@ -181,6 +183,19 @@ export default class extends Controller {
   highlight(id) {
     this.board()?.querySelectorAll(".is-targeted").forEach((el) => el.classList.remove("is-targeted"))
     if (id) this.unitEls(id).forEach((el) => el.classList.add("is-targeted"))
+  }
+
+  // What the move under the cursor would reach, lit on the field before it's
+  // chosen: every enemy, the whole party, yourself. A single target is
+  // picked next, so nothing lights for it yet.
+  reach(scope) {
+    const board = this.board()
+    if (!board) return
+    board.querySelectorAll(".is-reached").forEach((el) => el.classList.remove("is-reached"))
+    if (!scope) return
+    const selector = { all_enemies: ".unit--enemy:not(.is-ko)", random_enemy: ".unit--enemy:not(.is-ko)", all_allies: ".unit--party:not(.is-ko)" }[scope]
+    if (selector) board.querySelectorAll(selector).forEach((el) => el.classList.add("is-reached"))
+    else if (scope === "self" && this.youValue) this.unitEls(this.youValue).forEach((el) => el.classList.add("is-reached"))
   }
 
   markYou(on) {

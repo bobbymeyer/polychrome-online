@@ -44,7 +44,10 @@ module Campaign::Travelling
       end
       save!
 
-      narrate("The party travels from #{origin.name} to #{destination.name}.", data: MOVED)
+      # The arrival is a card over the table (campaigns/tables/_cards): the place's name, its kind, its face now.
+      narrate("The party travels from #{origin.name} to #{destination.name}.", cue: "arrival",
+              data: MOVED.merge("place" => destination.name, "kind" => destination.kind.humanize,
+                                "modes" => destination.modes_on.map(&:name).join(" · "), "line" => destination.description.to_s.truncate(160)))
       messages.create!(body: edge.travel_event) if edge.travel_event
       narrate("The way is safe: nothing troubles the party on the road.") if safe
       narrate("Encounter! #{describe_encounter(rolled)}.") if rolled

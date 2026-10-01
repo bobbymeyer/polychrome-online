@@ -128,6 +128,25 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include("turn-rail", "round-tally")
   end
 
+  it "says what a move would reach, and what the party knows a target is weak to" do
+    sit(bartz)
+    get battle_panel_path(battle)
+    expect(response.body).to include('data-menu-key="Attack" data-reach="single_enemy"', 'data-menu-key="Cure" data-reach="single_ally"')
+    expect(response.body).to include(%(data-help="Halve the damage you take this round." data-reach="self"))
+
+    # The party has seen the goblin take fire: a fire-typed blow says "Weak!" before it's chosen.
+    battle.campaign.update!(known_affinities: { "goblin" => { "types" => %w[normal], "fire" => "weak" } })
+    knight = battle.state["units"].find { |u| u["id"] == bartz }
+    goblin = battle.state["units"].find { |u| u["id"] == "goblin_a" }
+    fire = battle.state["abilities"]["fire"] || { "effects" => [ { "primitive" => "elemental", "type" => "fire" } ] }
+    expect(helper_edge_note(battle, knight, fire, goblin)).to eq("Weak!")
+    expect(helper_edge_note(battle, knight, { "effects" => [ { "primitive" => "elemental", "type" => "water" } ] }, goblin)).to be_nil # not seen
+  end
+
+  def helper_edge_note(battle, actor, move, target)
+    Class.new { include BattlesHelper, BooksHelper, ApplicationHelper }.new.edge_note(battle, battle.state, actor, move, target)
+  end
+
   it "takes a Perfect from the timing meter with a player's move" do
     sit(bartz)
     get battle_panel_path(battle)

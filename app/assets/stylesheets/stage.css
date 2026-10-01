@@ -1395,3 +1395,60 @@ button.your-moves__tag { border: 0; cursor: default; }
 @media (prefers-reduced-motion: reduce) {
   .turn-rail__plate, .intent, .roster__intent, .round-tally { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+ * Before you commit, and what pressing feels like (docs/DESIGN.md, "Motion
+ * with meaning": intention). A move's reach lights on the field under the
+ * cursor; a target the party knows is weak says so; a way says what it sets
+ * off; a clock shows the box it's about to fill; the party arrives on a
+ * card; the Now band wipes when the table's state changes; the vote fills.
+ * ------------------------------------------------------------------------- */
+.unit.is-reached .sprite { outline: 3px dashed var(--signal); outline-offset: 6px; }
+.unit--party.is-reached .sprite { outline-color: var(--ink); }
+.unit.is-targeted.is-reached .sprite { outline: none; } /* the reticle wins */
+.menu__item.is-weak { box-shadow: inset 0 -3px 0 var(--sun-yellow); }
+.menu__cost--edge { background: var(--sun-yellow); color: var(--ink); font-weight: 900; }
+
+.menu__note { display: block; flex-basis: 100%; font-size: 12px; line-height: 16px; font-style: normal; font-weight: 500; color: var(--grey); }
+.menu__item:has(.menu__note) { flex-wrap: wrap; }
+
+.clock-dial i.is-next { border-style: dashed; }
+
+/* The arrival: the place's name across the table, with its kind, its face now, and its line. */
+.arrival-stage { border: 0; padding: 0; background: transparent; max-width: none; width: 100vw; overflow: visible; }
+.arrival-stage::backdrop { background: rgba(17, 17, 17, .25); }
+.arrival-card { margin: 12vh auto 0; max-width: 760px; padding: 20px 32px 24px; background: var(--paper); border-top: 6px solid var(--ink); box-shadow: 10px 10px 0 var(--accent), 20px 20px 0 var(--ink); }
+.arrival-card p { margin: 0; }
+.arrival-card__kind { font-size: 13px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--grey); }
+.arrival-card__place { font: var(--display); font-size: clamp(36px, 7vw, 72px); line-height: 1; letter-spacing: -0.04em; }
+.arrival-card__modes { margin-top: 8px; font-weight: 900; font-style: italic; color: var(--signal); }
+.arrival-card__modes:empty, .arrival-card__modes[hidden] { display: none; }
+.arrival-card__line { margin-top: 10px; font-size: 16px; line-height: 22px; max-width: 48em; }
+
+/* The table's state changed: the band wipes across in the new state's colour. */
+.table-now { position: relative; overflow: hidden; }
+.table-now.is-restated::before {
+  content: ""; position: absolute; inset: 0; background: var(--ink); opacity: .9; pointer-events: none;
+  animation: band-wipe .9s var(--snap) both;
+}
+.table-now--battle.is-restated::before { background: var(--signal); }
+.table-now[data-state="choice"].is-restated::before { background: var(--dark-blue); }
+@keyframes band-wipe { 0% { translate: -100% 0; } 45% { translate: 0 0; } 100% { translate: 101% 0; } }
+.map-party { transition: transform var(--t-change) var(--snap); }
+
+/* Pressable things press: a lift on hover (already), a push on press, a red slab of focus. */
+.button:not(:disabled):active, .menu__item:not([aria-disabled="true"]):active, .pin:active, .choice__pick:active { translate: 0 2px; box-shadow: none; }
+.button:focus-visible, .menu__item:focus-visible:not(.is-cursor), .pin:focus-visible, .choice__pick:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+
+/* The vote: who picked, as chips that pop on; its share so far, as a bar. */
+.choice__chips { display: inline-flex; gap: 4px; vertical-align: middle; }
+.choice__chip { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; font: var(--display); font-size: 13px; background: var(--ink); color: var(--paper); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+.choice__chip.is-new { animation: chip-pop .4s var(--snap) both; }
+@keyframes chip-pop { 0% { scale: .3; } 60% { scale: 1.3; } }
+.choice__tally { flex-basis: 100%; height: 4px; margin: 0; }
+.bar .bar__fill--vote { background: var(--signal); }
+@media (prefers-reduced-motion: reduce) {
+  .table-now.is-restated::before { animation: none; display: none; }
+  .map-party { transition: none; }
+  .choice__chip.is-new { animation: none; }
+}

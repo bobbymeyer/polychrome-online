@@ -50,10 +50,12 @@
           <%= button_to campaign_ways_path(campaign), params: { way: way["label"], go: 1 }, class: "menu__item",
                         form: { data: { turbo_frame: "_top", turbo_confirm: ("#{way['warn']} Go now?" if way["warn"]) }.compact } do %>
             <%= way["label"] %><%= tag.span(ahead, class: "menu__cost") if ahead %>
+            <%= tag.span(way["note"], class: "menu__note") if way["note"] %>
           <% end %>
         <% else %>
           <%= button_to campaign_ways_path(campaign), params: { way: way["label"] }, class: "menu__item", disabled: deciding do %>
             <%= way["label"] %> <span class="menu__cost">suggest</span>
+            <%= tag.span(way["note"], class: "menu__note") if way["note"] %>
           <% end %>
         <% end %>
       <% end %>

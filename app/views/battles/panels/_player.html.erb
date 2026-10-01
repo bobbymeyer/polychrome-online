@@ -38,10 +38,12 @@
     <div class="menu play">
       <% (Battle::State.target_options(state, unit, @choosing) || []).each do |target_id| %>
         <% command = item ? { kind: "item", item: @choosing["id"], target: target_id } : { kind: "ability", ability: @choosing["id"], target: target_id } %>
-        <% futile = !item && futile_note(@battle, state, unit, @choosing, state["units"].find { |u| u["id"] == target_id }) %>
-        <%= button_to battle_actions_path(@battle), class: "menu__item#{' is-futile' if futile}",
-                      data: { unit_id: target_id, help: [ futile, target_help(@battle, state, target_id) ].compact_blank.join(" · ") }, params: { command: command } do %>
-          <%= unit_name(state, target_id) %><% if futile %> <span class="menu__cost">Won't work</span><% end %>
+        <% target_unit = state["units"].find { |u| u["id"] == target_id } %>
+        <% futile = !item && futile_note(@battle, state, unit, @choosing, target_unit) %>
+        <% edge = !item && !futile && edge_note(@battle, state, unit, @choosing, target_unit) %>
+        <%= button_to battle_actions_path(@battle), class: "menu__item#{' is-futile' if futile}#{' is-weak' if edge == 'Weak!'}",
+                      data: { unit_id: target_id, help: [ futile, edge, target_help(@battle, state, target_id) ].compact_blank.join(" · ") }, params: { command: command } do %>
+          <%= unit_name(state, target_id) %><% if futile %> <span class="menu__cost">Won't work</span><% elsif edge %> <span class="menu__cost menu__cost--edge"><%= edge %></span><% end %>
         <% end %>
       <% end %>
     </div>
@@ -57,11 +59,11 @@
         <% label = safe_join([ it["name"], tag.span("×#{left}", class: "menu__cost") ], " ") %>
         <% help = item_help(it, left) %>
         <% if left <= 0 %>
-          <button type="button" class="menu__item" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= it['name'] %>"><%= label %></button>
+          <button type="button" class="menu__item" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= it['name'] %>" data-reach="<%= it['target'] %>"><%= label %></button>
         <% elsif Battle::State.target_options(state, unit, it) %>
-          <%= link_to label, battle_panel_path(@battle, item: it["id"]), class: "menu__item", data: { help: help, menu_key: it["name"] } %>
+          <%= link_to label, battle_panel_path(@battle, item: it["id"]), class: "menu__item", data: { help: help, menu_key: it["name"], reach: it["target"] } %>
         <% else %>
-          <%= button_to label, battle_actions_path(@battle), class: "menu__item", data: { help: help, menu_key: it["name"] },
+          <%= button_to label, battle_actions_path(@battle), class: "menu__item", data: { help: help, menu_key: it["name"], reach: it["target"] },
                         params: { command: { kind: "item", item: it["id"] } } %>
         <% end %>
       <% end %>
@@ -105,12 +107,13 @@
       <% cost = Battle::State.ability_cost(ability) %>
       <% label = safe_join([ ability["name"], (tag.span("#{cost} #{word('mp')}", class: "menu__cost") if cost.positive?) ].compact, " ") %>
       <% help = ability_help(unit, ability) %>
+      <%# data-reach: what the move would reach, lit on the field while the cursor is on it (menu_controller). %>
       <% if !usable %>
-        <button type="button" class="menu__item" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= ability['name'] %>"><%= label %></button>
+        <button type="button" class="menu__item" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= ability['name'] %>" data-reach="<%= ability['target'] %>"><%= label %></button>
       <% elsif Battle::State.target_options(state, unit, ability) %>
-        <%= link_to label, battle_panel_path(@battle, ability: ability["id"]), class: "menu__item", data: { help: help, menu_key: ability["name"] } %>
+        <%= link_to label, battle_panel_path(@battle, ability: ability["id"]), class: "menu__item", data: { help: help, menu_key: ability["name"], reach: ability["target"] } %>
       <% else %>
-        <%= button_to label, battle_actions_path(@battle), class: "menu__item", data: { help: help, menu_key: ability["name"] },
+        <%= button_to label, battle_actions_path(@battle), class: "menu__item", data: { help: help, menu_key: ability["name"], reach: ability["target"] },
                       params: { command: { kind: "ability", ability: ability["id"] } } %>
       <% end %>
     <% end %>
@@ -121,7 +124,7 @@
     <% end %>
     <%= link_to "Try something", battle_panel_path(@battle, custom: 1), class: "menu__item",
                 data: { help: "Anything that isn't on the menu. Say what you do; the GM rules on it, and you roll.", menu_key: "Try" } %>
-    <%= button_to "Defend", battle_actions_path(@battle), class: "menu__item", data: { help: "Halve the damage you take this round." },
+    <%= button_to "Defend", battle_actions_path(@battle), class: "menu__item", data: { help: "Halve the damage you take this round.", reach: "self" },
                   params: { command: { kind: "defend" } } %>
     <% if state["escapable"] %>
       <%= button_to "Flee", battle_actions_path(@battle), class: "menu__item", data: { help: "Try to get the whole party away. It can fail.", menu_forget: true },

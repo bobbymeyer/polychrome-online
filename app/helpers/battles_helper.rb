@@ -101,6 +101,23 @@ module BattlesHelper
     end
   end
 
+  # What the party knows a move will do to a target, beside "Won't work":
+  # "Weak!" or "Resists", from the chart and what they've seen of the
+  # target's types. Never more than they've found out.
+  def edge_note(battle, state, actor, move, target)
+    return unless target["side"] == "enemy" && target["hp"].positive?
+
+    type = move_type(state, actor, move) or return
+    known = battle&.campaign&.known_affinities&.fetch(target.dig("image", "slug").to_s, nil) or return
+    return if Array(known["types"]).empty? && !known.key?(type)
+
+    seen = { "types" => Array(known["types"]), "affinities" => known.select { |_, v| %w[weak resist].include?(v) } }
+    percent = Battle::Types.effectiveness(type, seen, state["types"] || Battle::Types::DEFAULT)
+    return unless percent.is_a?(Integer) && percent != 100
+
+    percent > 100 ? "Weak!" : "Resists"
+  end
+
   # The type a move deals damage with, as the resolver will: its own, or
   # for Attack and the signature, the unit's (Battle::Resolver#own).
   def move_type(state, actor, move)
