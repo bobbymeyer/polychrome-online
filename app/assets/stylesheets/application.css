@@ -727,6 +727,9 @@ details[open] > summary { margin-bottom: 16px; }
 .location-list li.is-resolved { color: var(--grey); }
 .location-list form { margin: 0; }
 .hook { margin: 4px 0 0; font-style: italic; color: var(--grey); }
+.couplet { margin: 4px 0 8px; }
+.couplet span { display: block; }
+.couplet--met { color: var(--grey); text-decoration: line-through; }
 .gm-tools { padding-bottom: 8px; }
 
 .floorplan__path line { stroke: var(--ink); stroke-width: 2; }

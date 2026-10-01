@@ -37,6 +37,9 @@ RSpec.describe "Locations", type: :request do
     expect(response).to have_http_status(:ok)
     hooks = town.view["npcs"].map { |n| n["hook"] }
     expect(response.body).not_to include(*hooks.map { |h| ERB::Util.html_escape(h) })
+    # Townsfolk couplets are everyone's: their memory and their wish.
+    folk = town.townsfolk.first
+    expect(response.body).to include('class="couplet"', ERB::Util.html_escape(town.fill_in(folk["memory"])), ERB::Util.html_escape(town.fill_in(folk["wish"])))
     expect(response.body).not_to include("Reroll", "seed")
   end
 
@@ -150,7 +153,7 @@ RSpec.describe "Locations", type: :request do
       expect(response.body).to include("skyline", "seed=8", "People", "For sale")
       village = Generators::Town.generate(seed: 7, template: world.location_templates.find_by!(slug: "village").settings,
                                           tables: world.location_templates.find_by!(slug: "village").table_entries)
-      expect(response.body).to include(ERB::Util.html_escape(village["npcs"].first["hook"]))
+      expect(response.body).to include(ERB::Util.html_escape(village["npcs"].first["hook"]), 'class="couplet"')
     end
 
     it "warns when a template has nothing to draw some things from" do

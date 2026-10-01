@@ -13,6 +13,9 @@ class GeneratorTable < ApplicationRecord
     "names" => %w[text],
     "families" => %w[text],
     "hooks" => %w[text],
+    # Townsfolk couplets (Generators::Town#couplets).
+    "memories" => %w[text],
+    "wishes" => %w[text item],
     "service_names" => %w[text service],
     "buildings" => %w[text service width height roof],
     "stock" => %w[item],
@@ -39,13 +42,19 @@ class GeneratorTable < ApplicationRecord
   INTEGER_FIELDS = %w[weight width height gil].freeze
   # What each generator draws on.
   TOWN_KINDS = %w[town_names names hooks service_names buildings stock].freeze
+  # A town draws on these too, but does without them (no couplets).
+  COUPLET_KINDS = %w[memories wishes].freeze
   DUNGEON_KINDS = %w[dungeon_names rooms room_events forks treasure].freeze
 
   # What a line of "Add many at once" holds, per kind; buildings are too
   # fiddly to paste. Any line can end in "| 3" for a weight.
   PASTE_FORMATS = {
     "town_names" => "a town's name", "dungeon_names" => "a dungeon's name", "names" => "a name",
-    "families" => "a family's name (Vell)", "hooks" => "a hook", "rooms" => "a room's name", "room_events" => "what happens there",
+    "families" => "a family's name (Vell)", "hooks" => "a hook",
+    "memories" => "a townsperson's memory, in their own words (I lost my brother on the road to {place}.)",
+    "wishes" => "a townsperson's wish, in their own words, then | and an item's name if it's a thing the party could bring them " \
+                "({dungeon} names the nearest dungeon: clearing it is what they wish for)",
+    "rooms" => "a room's name", "room_events" => "what happens there",
     "forks" => "what the costly way costs, then in brackets what it takes, if the game takes it (A sealed door. (pay 100); Poison gas. (hurt 10); A long climb. (2); Loose rock. (ambush))", "locks" => "the lock, then | and its key (Portal | Blue crystal)",
     "service_names" => "a name, then | and the service (inn, shop, guild or temple)",
     "stock" => "an item's name", "treasure" => "an item's name, or an amount like 150 gil",
@@ -112,6 +121,10 @@ class GeneratorTable < ApplicationRecord
         end
       when "service_names" then row.merge("text" => value, "service" => parts.second.to_s.downcase.presence).compact
       when "locks" then row.merge("text" => value, "key" => parts.second.presence).compact
+      when "wishes"
+        wanted = parts.second.presence && items.find { |it| [ it.slug, it.name.downcase ].include?(parts.second.downcase) }
+        (@paste_errors ||= []) << "line #{i + 1}: nothing in the Armory is called #{parts.second}" if parts.second.present? && !wanted
+        row.merge("text" => value, "item" => wanted&.slug).compact
       when *LORE_KINDS then row.merge(fields.zip(parts).to_h { |field, part| [ field, part.to_s.presence ] }.compact)
       else row.merge("text" => value)
       end
@@ -142,7 +155,7 @@ class GeneratorTable < ApplicationRecord
       errors.add(:entries, "#{label} needs text") if fields.include?("text") && entry["text"].blank?
       errors.add(:entries, "#{label} needs a key") if fields.include?("key") && entry["key"].blank?
       errors.add(:entries, "#{label}: #{entry['item']} is not in the Armory") if entry["item"] && !items.include?(entry["item"])
-      errors.add(:entries, "#{label} needs an item#{' or gil' if fields.include?('gil')}") if fields.include?("item") && entry.slice("item", "gil").empty?
+      errors.add(:entries, "#{label} needs an item#{' or gil' if fields.include?('gil')}") if %w[stock treasure].include?(kind) && entry.slice("item", "gil").empty?
       errors.add(:entries, "#{label}: unknown service #{entry['service']}") if entry["service"] && !Generators::Town::SERVICES.include?(entry["service"])
       errors.add(:entries, "#{label}: unknown roof #{entry['roof']}") if entry["roof"] && !Generators::Town::ROOFS.include?(entry["roof"])
       Toll.read(entry["text"]).last.each { |problem| errors.add(:entries, "#{label}: #{problem}") } if kind == "forks"

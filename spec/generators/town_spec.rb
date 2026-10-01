@@ -31,6 +31,39 @@ RSpec.describe Generators::Town do
     end
   end
 
+  describe "couplets" do
+    let(:tables) do
+      town_tables.merge("memories" => texts("I lost my brother on the road to {place}.", "I was a soldier once.", "I grew up by the sea.",
+                                         "I burned the mill down. It was an accident.", "I sang at the old king's wedding.",
+                                         "I found a key I can't find a lock for."),
+                        "wishes" => texts("I'd give anything to see {dungeon} quiet.", "I keep a lantern lit for him.",
+                                        "I'm saving for a sword I'll never lift.", "I want the mill rebuilt.", "I need to leave before winter.") +
+                                  [ { "text" => "My father's fever won't break.", "item" => "remedy" } ])
+    end
+
+    it "gives townsfolk a memory and a wish, different from their neighbours'" do
+      (1..60).each do |seed|
+        npcs = town(seed, tables: tables)["npcs"]
+        expect(npcs).to all(include("memory", "wish"))
+        expect(npcs.map { |n| n["memory"] }.uniq.size).to eq(npcs.size)
+        expect(npcs.map { |n| n["wish"] }.uniq.size).to eq(npcs.size)
+      end
+    end
+
+    it "carries what a wish wants" do
+      wanting = (1..60).flat_map { |seed| town(seed, tables: tables)["npcs"] }.select { |n| n["wish"].start_with?("My father") }
+      expect(wanting).not_to be_empty
+      expect(wanting).to all(include("wants" => "remedy"))
+    end
+
+    it "leaves the rest of a town as it was rolled before couplets" do
+      (1..30).each do |seed|
+        with = town(seed, tables: tables)
+        expect(with.merge("npcs" => with["npcs"].map { |n| n.except("memory", "wish", "wants") })).to eq(town(seed))
+      end
+    end
+  end
+
   it "stocks the shop from the stock table, without repeats" do
     (1..100).each do |seed|
       stock = town(seed)["stock"]

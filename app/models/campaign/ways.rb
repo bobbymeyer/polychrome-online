@@ -126,6 +126,7 @@ module Campaign::Ways
         said = outcome.apply!(self, by: "The party")
         narrate(said) if said
       end
+      node.location.meet_wish!(pastime.wish) if pastime.wish
       next if pastime.rest? || pastime.takes.zero?
 
       spent_time!(pastime.takes) # paid at the next rest (Campaign::Payoffs)

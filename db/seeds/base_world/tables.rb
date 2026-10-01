@@ -66,6 +66,37 @@ module Seeds
                                    "Sold something to the wrong person and regrets it.", "Hasn't slept since the lights went out on the hill.",
                                    "Will trade anything for news from the capital.", "Keeps staring at one of the party as if they know them.",
                                    "Buried something by the old mill and forgot which tree.", "Thinks the river is running backwards. It is.") },
+      # Townsfolk couplets (Generators::Town#couplets): a memory and a wish,
+      # in their own words. Any two go together. A wish can be for something
+      # the party can bring: an item, or the nearest dungeon ({dungeon})
+      # cleared (Location::Wishes).
+      townsfolk_memories: { name: "Townsfolk memories", kind: "memories",
+                         entries: texts("I lost my brother on the road to {place}.", "I was a soldier once. I won't say for which side.",
+                                        "I grew up by the sea. I still dream about it.", "I burned the old mill down. It was an accident.",
+                                        "I sang at a king's wedding, once.", "I found a key I can't find a lock for.",
+                                        "I was the one who sealed {dungeon}. I had my reasons.", "I ran away from {town} with nothing but these boots.",
+                                        "I raised six children in that house. None of them write.", "I cheated at cards for twenty years and never lost.",
+                                        "I saw the crystal go dark. Everyone says I was dreaming.", "I buried my husband with his sword. I regret it now.",
+                                        "I was a thief. The temple took me in.", "I carried letters on that road for thirty years.",
+                                        "I lost a bet to a moogle and I'm still paying it off.", "I built half the houses on this street.",
+                                        "I was born the night the bells rang by themselves.", "I walked out of {dungeon} alone. The others didn't.",
+                                        "I used to guard the pass. Then the pass stopped needing guards.", "I married for money. It went badly.",
+                                        "I've never left this town. Not once.", "I was a cook for a band of heroes. They didn't come back.") },
+      townsfolk_wishes: { name: "Townsfolk wishes", kind: "wishes",
+                        entries: texts("I keep a lantern in the window for him.", "I'm saving for a sword I'll never be able to lift.",
+                                       "I want to see the sea before I die.", "I'm writing it all down, in case nobody believes me.",
+                                       "I'd leave tomorrow if anyone would buy the house.", "I'm teaching my granddaughter the old songs.",
+                                       "I'm looking for my apprentice. She went toward {place}.", "I'd trade anything for news from {town}.",
+                                       "I don't go out after dark any more.", "I'm building a boat. Don't ask where I'll sail it.",
+                                       "Half this town owes me money, and I mean to collect.", "I'm trying to be a better person. It's slow going.") +
+                                 texts("I'd give anything to see {dungeon} quiet again.", "Nobody sleeps here for the noise from {dungeon}.",
+                                       "My son went into {dungeon}. I want to know it's safe to look for him.") +
+                                 [ { text: "My father's fever won't break. The temple's out of remedies.", item: "remedy" },
+                                   { text: "A snake got my dog. I need an antidote, and quickly.", item: "antidote" },
+                                   { text: "My eyes are going. A drop of the good stuff would help.", item: "eye_drops" },
+                                   { text: "I've lost my voice, and the choir sings on Sunday.", item: "echo_screen" },
+                                   { text: "My wife is laid up with a wound that won't close.", item: "hi_potion" },
+                                   { text: "I promised my brother a feather that brings you back.", item: "phoenix_down" } ] },
       service_names: { name: "Service names", kind: "service_names",
                        entries: texts("The Sleepy Chocobo", "The Crossed Keys", "Last Light Inn", "The Wandering Moogle", "The Hearth & Kettle",
                                       "The Tipsy Wyvern", service: "inn") +

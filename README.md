@@ -448,6 +448,17 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
 - **Towns:** a service roster (inn, shop, guild, temple), townsfolk with
   one-line hooks (GM-only), shop stock with Armory prices, and an SVG skyline
   built from the building archetypes.
+- **Townsfolk couplets:** each townsperson also has two lines in their own
+  words, a memory and a wish, from a world's memories and wishes tables ("I
+  lost my brother on the road to Greyford." / "I keep a lantern in the window
+  for him."), shown to everyone. Any two go together. A wish can be for
+  something the party can bring (`Location::Wishes`): an item, which is a thing
+  to do in that town while the bag holds it ("Bring Oskar a Remedy", voted on
+  like any other), or the nearest dungeon cleared (`{dungeon}`), and then
+  they're the one who welcomes the party back for it. Either is a deed, so the
+  town thinks better of the party. Couplets are drawn after everything else,
+  so towns rolled before them keep their people, stock and skyline; a place
+  the party has been keeps the tables it was found with until it's rerolled.
 - **Dungeons:** a room graph that branches and loops, drawn as an SVG
   floorplan. Every room carries a decision (§7): an encounter from the
   template's encounter table, an event, treasure, or a fork with a visible

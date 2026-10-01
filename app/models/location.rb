@@ -12,7 +12,7 @@ class Location < ApplicationRecord
   has_one :map_node, dependent: :nullify
   has_many :npcs, dependent: :nullify
 
-  include Generation, Tailoring, Town, Exploration
+  include Generation, Tailoring, Town, Wishes, Exploration
 
   validates :seed, numericality: { only_integer: true }
   validate :template_from_this_world

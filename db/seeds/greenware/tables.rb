@@ -76,6 +76,35 @@ module Seeds
                               "Sold their place on the loading list and regrets it.", "Hasn't slept since the lamps went out at the Vaults.",
                               "Will trade anything for news from Slipway.", "Keeps staring at one of the party as if they know their maker.",
                               "Buried something by the slip tank and forgot which post.", "Thinks the river is running salt. It is.") },
+      # Townsfolk couplets (Generators::Town#couplets): a memory and a wish,
+      # in their own words, in a valley where the old are fired and the
+      # young aren't. A wish can be for something the party can bring.
+      townsfolk_memories: { name: "Townsfolk memories", kind: "memories",
+                            entries: texts("I was fired the year before the Kiln went cold. I was nineteen. I'm still nineteen.",
+                                           "I watched my mother go into the Great Kiln. She came out a teapot.",
+                                           "I threw pots for the Kilnmasters for thirty years and never signed one.",
+                                           "I was on the loading list once. My brother took my place.",
+                                           "I've been leather-hard since the floods. I don't bend the way I did.",
+                                           "I mended my own arm with gold the winter the Menders went away.",
+                                           "I walked out of {dungeon} alone. The others are still drying in there.",
+                                           "I ran from {town} the night they started measuring us for the shelves.",
+                                           "I sold the cones my father left me. I needed the bread more than the pride.",
+                                           "I was the last apprentice at the Works before they bricked it up.",
+                                           "I heard the Choir sing once, from the road. I haven't slept well since.",
+                                           "I kept the drying shed for forty years. I know every crack in it.",
+                                           "I've never been fired and I never will be. I've made sure.",
+                                           "I lost a finger to a kiln shelf. Nobody remembers whose fault it was.") },
+      townsfolk_wishes: { name: "Townsfolk wishes", kind: "wishes",
+                          entries: texts("I want to be soft again, just for a day.", "I'm saving for a seat at the Firing, and I hope I never use it.",
+                                         "I want my daughter off the loading list before the first of Cone.", "I'm teaching the children to throw, while they still can.",
+                                         "I'd trade anything for news from {town}.", "I don't go near the chimneys after Cooling any more.",
+                                         "I want to know who keeps lighting the old kilns at night.", "I'm going to leave the valley. I just haven't started.") +
+                                   texts("I'd give anything to hear {dungeon} go quiet.", "My son went into {dungeon} for shards. I want it safe to look for him.") +
+                                   [ { text: "My husband is crazing from the feet up. A little lime wash would buy him a season.", item: "lime_wash" },
+                                     { text: "My grandmother's glaze has run into her eyes. She can't see the street.", item: "clear_glaze" },
+                                     { text: "I've lost my voice to the flue dust, and I'm meant to call the names on Firing day.", item: "draft_whistle" },
+                                     { text: "My sister cracked through, falling off the shed roof. Grog would hold her.", item: "grog_paste" },
+                                     { text: "I promised my brother gold for his seams if he ever came home.", item: "menders_gold" } ] },
       service_names: { name: "Service names", kind: "service_names",
                        entries: texts("The Leaning Pot", "The Warm Shelf", "Cone Six", "The Cracked Jug", "The Long Rack", "Leather-Hard", service: "inn") +
                                 texts("Slip & Grog", "Harrow Supply", "The Fettling Bench", "Kaolin & Daughters", "Odd Shelves", service: "shop") +
