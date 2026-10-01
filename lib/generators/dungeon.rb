@@ -57,6 +57,7 @@ module Generators
 
       name = pool.pick(tables.fetch("dungeon_names", []))&.fetch("text") || "Nameless Depths"
       add_locks(pool, template.fetch("locks", 0).to_i, tables.fetch("locks", []), rooms, edges, edge_list, boss)
+      worth_the_cost(rooms, edges, edge_list, boss)
       {
         "kind" => "dungeon",
         "name" => name,
@@ -103,6 +104,68 @@ module Generators
         taken << room
         i += 1
       end
+    end
+
+    # A fork's cost should buy something, or nobody pays it. The costly way
+    # becomes the shortcut to the boss (a way that gets there sooner, when
+    # there's another way round), or else the way to treasure that only lies
+    # down that side. Draws nothing, so the rest of the dungeon rolls as it
+    # did; when neither fits, the cost stays where it fell.
+    def worth_the_cost(rooms, edges, edge_list, boss)
+      count = rooms.size
+      rooms.each_with_index do |room, i|
+        decision = room["decision"]
+        next unless decision["kind"] == "fork"
+
+        onward = neighbours(edges, i).select { |n| rooms[n]["depth"] > room["depth"] }
+        path_to = ->(n) { edge_list[edges.index { |edge| edge.sort == [ i, n ].sort }] }
+        gain, costly = shortcut(edges, count, i, onward, boss)
+        gain, costly = hoard(rooms, edges, i, onward) unless costly
+        next unless costly
+
+        old = edge_list.find { |p| p["key"] == decision["costly_path"] }
+        path_to.(costly).merge!("cost" => old.delete("cost"), "gain" => gain)
+        decision["costly_path"] = path_to.(costly)["key"]
+      end
+    end
+
+    # The onward room nearest the boss, if it's strictly nearer than every
+    # other way out of the fork (back the way the party came included) and
+    # the boss can still be reached without going that way.
+    def shortcut(edges, count, from, onward, boss)
+      return if onward.size < 2
+
+      near = onward.min_by { |n| [ distance(edges, count, n, boss), n ] }
+      others = neighbours(edges, from) - [ near ]
+      return unless others.all? { |n| distance(edges, count, n, boss) > distance(edges, count, near, boss) }
+
+      edge = edges.index { |e| e.sort == [ from, near ].sort }
+      [ "shortcut", near ] if reachable(edges, [ edge ]).include?(boss)
+    end
+
+    # The onward room whose side alone holds treasure.
+    def hoard(rooms, edges, from, onward)
+      sides = onward.to_h { |n| [ n, beyond(edges, from, n) ] }
+      rich = onward.find do |n|
+        others = (onward - [ n ]).flat_map { |m| sides[m] }
+        (sides[n] - others).any? { |r| rooms[r]["decision"]["kind"] == "treasure" }
+      end
+      [ "treasure", rich ] if rich
+    end
+
+    # Rooms reachable from `start` without going back through `from`.
+    def beyond(edges, from, start)
+      seen = [ start ]
+      queue = [ start ]
+      while (room = queue.shift)
+        neighbours(edges, room).each do |n|
+          next if n == from || seen.include?(n)
+
+          seen << n
+          queue << n
+        end
+      end
+      seen
     end
 
     # The edges (by index) of a shortest way from the entrance to `to`.

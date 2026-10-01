@@ -6,10 +6,10 @@ module Seeds
     LOCATION_TEMPLATES = {
       village: { name: "Village", kind: "town", description: "A small town on the road: an inn, a shop, a handful of worried people.",
                  config: { services: { inn: 100, shop: 90, guild: 20, temple: 40 }, npcs: [ 3, 5 ], stock: [ 6, 9 ], buildings: [ 8, 11 ],
-                           tables: %w[town_names given_names town_hooks service_names buildings village_stock] } },
+                           tables: %w[town_names given_names town_hooks townsfolk_memories townsfolk_wishes service_names buildings village_stock] } },
       port_town: { name: "Port town", kind: "town", description: "Busy, crowded, full of rumours from the sea.",
                    config: { services: { inn: 100, shop: 100, guild: 80, temple: 60 }, npcs: [ 5, 8 ], stock: [ 9, 14 ], buildings: [ 12, 16 ],
-                             tables: %w[town_names given_names town_hooks service_names buildings shop_stock] } },
+                             tables: %w[town_names given_names town_hooks townsfolk_memories townsfolk_wishes service_names buildings shop_stock] } },
       goblin_cave: { name: "Goblin cave", kind: "dungeon", encounter_table: "goblin_cave",
                      description: "A short, twisting cave. A good first dungeon.",
                      config: { rooms: [ 5, 7 ], loops: 1, locks: 1, decisions: { encounter: 4, event: 2, treasure: 2, fork: 1 }, boss: { goblin_chief: 1 },

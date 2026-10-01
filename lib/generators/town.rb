@@ -7,7 +7,8 @@ module Generators
   #
   # template: { "services" => { "inn" => 100, "shop" => 80, ... },   percent chance each
   #             "npcs" => [min, max], "stock" => [min, max], "buildings" => [min, max] }
-  # tables:   { "town_names" | "names" | "hooks" | "service_names" | "buildings" | "stock" => [entries] }
+  # tables:   { "town_names" | "names" | "hooks" | "service_names" | "buildings" | "stock"
+  #             | "memories" | "wishes" => [entries] }
   #
   # Every generated element has a stable "key", which GM pins refer to.
   module Town
@@ -19,7 +20,7 @@ module Generators
     def generate(seed:, template:, tables:)
       pool = Pool.new(Battle::Rng.new(seed))
       services = services(pool, template, tables)
-      {
+      town = {
         "kind" => "town",
         "name" => pool.pick(tables.fetch("town_names", []))&.fetch("text") || "Nameless Town",
         "services" => services,
@@ -27,6 +28,24 @@ module Generators
         "stock" => stock(pool, template, tables, services),
         "skyline" => skyline(pool, template, tables, services)
       }
+      couplets(pool, tables, town["npcs"])
+      town
+    end
+
+    # Each townsperson's two lines in their own words (Saltsman's couplets),
+    # one a memory and one a wish: "I lost my brother on the road to
+    # Greyford." / "I keep a lantern in the window for him." Any two go
+    # together. A wish can be for something the party can bring: an item
+    # (its "item"), or the dungeon a {dungeon} names cleared. Drawn after
+    # everything else, so a town rolled before couplets keeps the rest.
+    def couplets(pool, tables, npcs)
+      memories = pool.sample(tables.fetch("memories", []), npcs.size)
+      wishes = pool.sample(tables.fetch("wishes", []), npcs.size)
+      npcs.each_with_index do |npc, i|
+        npc["memory"] = memories[i]["text"] if memories[i]
+        npc["wish"] = wishes[i]["text"] if wishes[i]
+        npc["wants"] = wishes[i]["item"] if wishes[i]&.dig("item")
+      end
     end
 
     def services(pool, template, tables)

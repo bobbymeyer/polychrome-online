@@ -59,7 +59,7 @@ RSpec.describe Location do
     end
 
     it "draws only from the template's chosen tables" do
-      expect(village.table_entries.keys).to match_array(%w[town_names names hooks service_names buildings stock])
+      expect(village.table_entries.keys).to match_array(%w[town_names names hooks memories wishes service_names buildings stock])
       names = village.table_entries["town_names"].map { |e| e["text"] }
       expect(names).to include("Tule")
       expect(names).not_to include("Wind Shrine")

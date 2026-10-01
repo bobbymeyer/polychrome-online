@@ -37,6 +37,9 @@ RSpec.describe "Locations", type: :request do
     expect(response).to have_http_status(:ok)
     hooks = town.view["npcs"].map { |n| n["hook"] }
     expect(response.body).not_to include(*hooks.map { |h| ERB::Util.html_escape(h) })
+    # Townsfolk couplets are everyone's: their memory and their wish.
+    folk = town.townsfolk.first
+    expect(response.body).to include('class="couplet"', ERB::Util.html_escape(town.fill_in(folk["memory"])), ERB::Util.html_escape(town.fill_in(folk["wish"])))
     expect(response.body).not_to include("Reroll", "seed")
   end
 
@@ -150,7 +153,24 @@ RSpec.describe "Locations", type: :request do
       expect(response.body).to include("skyline", "seed=8", "People", "For sale")
       village = Generators::Town.generate(seed: 7, template: world.location_templates.find_by!(slug: "village").settings,
                                           tables: world.location_templates.find_by!(slug: "village").table_entries)
-      expect(response.body).to include(ERB::Util.html_escape(village["npcs"].first["hook"]))
+      expect(response.body).to include(ERB::Util.html_escape(village["npcs"].first["hook"]), 'class="couplet"')
+    end
+
+    it "reports what a template makes over a hundred rolls" do
+      get world_gazetteer_location_template_path(world, "goblin_cave")
+      expect(response.body).to include(world_gazetteer_location_template_report_path(world, "goblin_cave"))
+
+      get world_gazetteer_location_template_report_path(world, "goblin_cave")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("A hundred rolls", "Sizes", "Rooms", "Encounter:", "Room events", "Fork costs", "What they were", "How they fell", "Came up")
+
+      get world_gazetteer_location_template_report_path(world, "village")
+      expect(response.body).to include("Townsfolk", "Inn: 100%", "Town names", "Nothing: every roll drew from a table.")
+
+      empty = World.create!(name: "Empty", slug: "empty")
+      empty.location_templates.create!(name: "Hamlet", slug: "hamlet", kind: "town", config: {})
+      get world_gazetteer_location_template_report_path(empty, "hamlet")
+      expect(response.body).to include("Town name: 100%", "Townsperson&#39;s name: 100%")
     end
 
     it "warns when a template has nothing to draw some things from" do

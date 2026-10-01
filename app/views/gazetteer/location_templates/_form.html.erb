@@ -65,7 +65,7 @@
     <div class="checks">
       <% chosen = entry.config.fetch("tables", []) %>
       <% @world.generator_tables.order(:kind, :name).each do |table| %>
-        <label data-show-for="<%= GeneratorTable::TOWN_KINDS.include?(table.kind) ? "town" : "dungeon" %>">
+        <label data-show-for="<%= (GeneratorTable::TOWN_KINDS + GeneratorTable::COUPLET_KINDS).include?(table.kind) ? "town" : "dungeon" %>">
           <%= check_box_tag "#{f.object_name}[config][tables][]", table.slug, chosen.include?(table.slug), id: "config_tables_#{table.slug}" %>
           <%= table.name %> <span class="muted">(<%= table.kind.humanize.downcase %>)</span>
         </label>

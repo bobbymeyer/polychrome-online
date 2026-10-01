@@ -1,0 +1,82 @@
+<% content_for :title, "#{@template.name} · A hundred rolls · Gazetteer" %>
+<% items = @world.items.to_h { |i| [ i.slug, i.name ] } %>
+<% name_of = ->(label) { items[label] || label.sub(/\A(\d+) gil\z/) { money(Regexp.last_match(1)) } } %>
+<% words = { "hp" => word("hp"), "mp" => word("mp"), "gil" => word("currency").upcase_first } %>
+<% share_label = ->(value) { words.fetch(value.to_s) { value.to_s.tr("_", " ").upcase_first } } %>
+<div class="crumbs">
+  <%= link_to "Gazetteer", world_gazetteer_location_templates_path(@world) %> /
+  <%= link_to @template.name, world_gazetteer_location_template_path(@world, @template) %> / A hundred rolls
+</div>
+<article class="book-page">
+  <header class="book-page__header book-page__header--plain">
+    <div>
+      <p class="eyebrow">Gazetteer · <%= term(@template.kind) %> · A hundred rolls</p>
+      <h1><%= @template.name %></h1>
+      <p class="hint">
+        What this template makes over <%= @report["rolls"] %> seeds, not one: how big, how often each thing comes up,
+        which rows never do, and where the generator had nothing to draw and made something up.
+      </p>
+    </div>
+  </header>
+
+  <section class="window">
+    <h2>Sizes</h2>
+    <dl class="facts">
+      <% @report["sizes"].each do |what, (min, mean, max)| %>
+        <dt><%= what.upcase_first %></dt><dd><%= min == max ? min : "#{min}–#{max}" %> <span class="muted">(<%= mean %> on average)</span></dd>
+      <% end %>
+    </dl>
+  </section>
+
+  <section class="window">
+    <h2>How often</h2>
+    <% @report["shares"].each do |what, shares| %>
+      <h3><%= what.upcase_first %></h3>
+      <% if shares.empty? %>
+        <p class="muted">None came up.</p>
+      <% else %>
+        <ul class="refs refs--inline"><% shares.each do |value, percent| %><li><%= share_label.(value) %>: <%= percent %>%</li><% end %></ul>
+      <% end %>
+    <% end %>
+    <% if (locks = @report["locks"]) && locks["asked"].positive? %>
+      <% dropped = locks["asked"] - locks["placed"] %>
+      <p><%= dropped.zero? ? "Every lock found a place." : "#{dropped} of #{locks['asked']} locks were left out: there was nowhere to hide their key before them." %></p>
+    <% end %>
+    <% if (lore = @report["lore"]) && lore.values.any?(&:any?) %>
+      <p class="hint">Never came up in the world's lore (a place in the atlas takes its past from the world's history instead):
+        <%= [ ("what a dungeon was: #{lore['pasts'].join(', ')}" if lore["pasts"].any?), ("how it fell: #{lore['falls'].join(', ')}" if lore["falls"].any?) ].compact.join("; ") %>.</p>
+    <% end %>
+  </section>
+
+  <section class="window">
+    <h2>Made up</h2>
+    <% made_up = @report["placeholders"].select { |_, percent| percent.positive? } %>
+    <% if made_up.empty? %>
+      <p>Nothing: every roll drew from a table.</p>
+    <% else %>
+      <p class="hint">Where a table was missing or ran dry, and the generator filled in its own stand-in ("Stranger 1", "Nameless Depths").</p>
+      <ul class="refs refs--inline"><% made_up.each do |what, percent| %><li><%= what.upcase_first %>: <%= percent %>%</li><% end %></ul>
+    <% end %>
+  </section>
+
+  <section class="window">
+    <h2>Rows</h2>
+    <p class="hint">Each table this template draws on: how many of its rows came up in <%= @report["rolls"] %> rolls, the one that came up most, and the ones that never did. A row that never comes up is a row players will never see.</p>
+    <table class="book-table">
+      <thead><tr><th>Table</th><th class="num">Rows</th><th class="num">Came up</th><th>Most often</th><th>Never</th></tr></thead>
+      <tbody>
+        <% @report["tables"].each do |kind, use| %>
+          <% top, top_count = use["drawn"].first %>
+          <% draws = use["drawn"].values.sum %>
+          <tr>
+            <td><%= kind.humanize %></td>
+            <td class="num"><%= use["rows"] %></td>
+            <td class="num"><%= use["rows"] - use["never"].size %></td>
+            <td><% if draws.positive? %><%= name_of.(top).truncate(60) %> <span class="muted">(<%= (100.0 * top_count / draws).round %>% of <%= draws %>)</span><% end %></td>
+            <td><%= use["never"].empty? ? "—" : use["never"].map { |l| name_of.(l).truncate(60) }.join(" · ") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+</article>

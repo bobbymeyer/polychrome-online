@@ -11,6 +11,8 @@
 #                 people are saying where the party is (unless a day began)
 #   dawn          new-day clocks; the world moves on overnight
 #                 (Campaign::Overnight), which ticks the now-and-then clocks
+#   arrive        the party gets somewhere (at:): whoever is from there is
+#                 home, and ties to people there come up (Campaign::Belonging)
 #
 # A clock listens for events (Clock#triggers), and can keep to the
 # calendar's words as modes and things to do do ("each new day, on
@@ -27,8 +29,11 @@ module Campaign::Happenings
   # day, period: when it happened (a day that began in a long wait, not
   # the last one). was: [day, period] before time passed (hours).
   # new_day: whether the hours that passed began a day (hours).
-  def happen!(event, day: self.day, period: self.period, was: nil, new_day: false)
+  # at: where the party got to (arrive).
+  def happen!(event, day: self.day, period: self.period, was: nil, new_day: false, at: nil)
     case event
+    when "arrive"
+      arrive_among_their_own!(at)
     when "rest"
       payday!
       tick_clocks!("rest", day: day, period: period)

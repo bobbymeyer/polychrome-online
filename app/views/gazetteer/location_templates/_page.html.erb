@@ -62,7 +62,10 @@
 <section class="window">
   <div class="book-header">
     <h2>Example: <%= example["name"] %></h2>
-    <%= link_to "Another example", entry_path(entry) + "?seed=#{seed + 1}", class: "button button--quiet" %>
+    <div class="actions">
+      <%= link_to "Another example", entry_path(entry) + "?seed=#{seed + 1}", class: "button button--quiet" %>
+      <%= link_to "A hundred rolls", world_gazetteer_location_template_report_path(@world, entry), class: "button button--quiet" %>
+    </div>
   </div>
   <% if entry.town? %>
     <%= render "locations/skyline", view: example %>
@@ -78,7 +81,9 @@
         <h3>People</h3>
         <ul class="refs">
           <% example["npcs"].each do |npc| %>
-            <li><strong><%= npc["name"] %></strong> <span class="muted"><%= npc["title"] %></span><% if npc["hook"] %><br><%= npc["hook"].gsub(/\{(\w+)\}/) { "(the nearest #{Regexp.last_match(1)})" } %><% end %></li>
+            <% nearest = ->(text) { text.gsub(/\{(\w+)\}/) { "(the nearest #{Regexp.last_match(1)})" } } %>
+            <li><strong><%= npc["name"] %></strong> <span class="muted"><%= npc["title"] %></span><% if npc["hook"] %><br><%= nearest.(npc["hook"]) %><% end %>
+              <% if npc["memory"] || npc["wish"] %><span class="couplet"><% [ npc["memory"], npc["wish"] ].compact.each do |line| %><span><%= nearest.(line) %></span><% end %></span><% end %></li>
           <% end %>
         </ul>
       </div>

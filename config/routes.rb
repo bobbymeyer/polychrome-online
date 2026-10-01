@@ -36,7 +36,10 @@ Rails.application.routes.draw do
       resources :encounter_tables, param: :slug, path: "tables"
     end
     namespace :gazetteer do
-      resources :location_templates, param: :slug, path: "templates"
+      resources :location_templates, param: :slug, path: "templates" do
+        # What the template makes over a hundred seeds (Generators::Report).
+        resource :report, only: :show, module: :location_templates
+      end
     end
     namespace :generation do
       resources :generator_tables, param: :slug, path: "tables"

@@ -244,7 +244,8 @@ are now (see "Campaign flags and GM changes").
 - **The end of a fight** shows a card for each ability learned (with what it
   does) and for each job mastered (with the passive now kept).
 - **Why they're here:** a character has one line in their own words
-  (`characters.motive`), on their card and sheet. It is also their battle cry.
+  (`characters.motive`), on their card and sheet, and under their name on
+  their "You" card at the table. It is also their battle cry.
 - **Desperation moves** (FF6-style): a job can name any offensive Grimoire
   entry as its desperation move (`jobs.desperation`; each Base World job has
   one, found rather than learned). At a quarter HP or less, a character's
@@ -447,11 +448,44 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
 - **Towns:** a service roster (inn, shop, guild, temple), townsfolk with
   one-line hooks (GM-only), shop stock with Armory prices, and an SVG skyline
   built from the building archetypes.
+- **Townsfolk couplets:** each townsperson also has two lines in their own
+  words, a memory and a wish, from a world's memories and wishes tables ("I
+  lost my brother on the road to Greyford." / "I keep a lantern in the window
+  for him."), shown to everyone. Any two go together. A wish can be for
+  something the party can bring (`Location::Wishes`): an item, which is a thing
+  to do in that town while the bag holds it ("Bring Oskar a Remedy", voted on
+  like any other), or the nearest dungeon cleared (`{dungeon}`), and then
+  they're the one who welcomes the party back for it. Either is a deed, so the
+  town thinks better of the party. Couplets are drawn after everything else,
+  so towns rolled before them keep their people, stock and skyline; a place
+  the party has been keeps the tables it was found with until it's rerolled.
 - **Dungeons:** a room graph that branches and loops, drawn as an SVG
   floorplan. Every room carries a decision (§7): an encounter from the
   template's encounter table, an event, treasure, or a fork with a visible
   cost on one of its ways onward. The deepest room holds the boss. The
   generator specs check this over hundreds of seeds.
+- **Forks cost something, and buy something.** A fork-costs row says in
+  brackets what the costly way takes, the way a thing to do's are written
+  (`Toll`): `pay 100`, a number of parts of the day, or outcomes from the one
+  closed set (`Outcome`), which now has what takes as well as what gives:
+  `hurt 10` (a share of everyone's HP, never the last), `weary 25` (of their
+  MP) and `ambush` (a fight from the place's encounter table, waiting for the
+  GM). It's taken the first time the party goes that way, refused if they
+  can't pay, and "Where next?" names it ("(costs 10% of HP)"). A row without
+  brackets is a cost the GM plays out. The generator makes the costly way the
+  shortcut to the boss (when there's another way round) or the only way to
+  treasure on that side, and the fork says so. That draws nothing, so the rest
+  of a dungeon rolls as it did.
+- **A hundred rolls:** each template's page links to a report of what it
+  makes over a hundred seeds (`Generators::Report`): sizes (least, average,
+  most), how often each service or decision comes up, what forks buy and
+  whether the game or the GM takes their cost, what a dungeon was and how it
+  fell (from the world's lore, as for a place the history never saw), locks
+  left out for want of somewhere to hide their key, how often the generator
+  had to make something up ("Stranger 1"), and for every table it draws on,
+  how many rows came up, the most common, and the rows that never did. It's
+  how a world builder finds thin tables before players do, and how a change to
+  a generator gets judged.
 - **GM controls (§7):**
   - **Reroll.**
   - **Pin:** pinned services and rooms survive a reroll. Pinning a
@@ -636,6 +670,11 @@ every campaign in it uses them.
     people in the cast ("owes her money").
   - These show on the sheet, and the language model sees the party this
     way.
+  - Play notices them (`Campaign::Belonging`, on the "arrive" event in
+    `Campaign::Happenings`). Arriving somewhere is a homecoming for anyone
+    from there ("Vivi is home."). A tie is whispered to its player (and so to
+    the GM) when the party arrives where the tied NPC lives, or when that NPC
+    first speaks; once a session.
 - **Copying a world** copies all of this with its books.
 
 ## Pressure and prep: modes, clocks, secrets

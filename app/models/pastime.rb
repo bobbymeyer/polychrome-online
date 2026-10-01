@@ -24,13 +24,16 @@
 #
 # A town's inn, temple and guild are things to do as well, made from the
 # town (Location::Town#services_for), and so is making camp on the road.
-Pastime = Data.define(:name, :times, :takes, :line, :price, :outcomes, :service)
+#
+# A townsperson's wish the party can meet is one too (Location::Wishes):
+# its wish is the townsperson's key, and doing it hands over what they want.
+Pastime = Data.define(:name, :times, :takes, :line, :price, :outcomes, :service, :wish)
 
 class Pastime
   # A colon only ends the name when a space follows it: "Wait for the 0:13 (night)".
   FORMAT = /\A(?<name>(?:[^():]|:(?!\s))+?)\s*(?:\((?<when>[^)]*)\))?\s*(?::\s+(?<line>.*)|:)?\z/
 
-  def initialize(name:, times: [], takes: 1, line: nil, price: 0, outcomes: [], service: nil)
+  def initialize(name:, times: [], takes: 1, line: nil, price: 0, outcomes: [], service: nil, wish: nil)
     super
   end
 

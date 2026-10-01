@@ -118,15 +118,19 @@ module Location::Exploration
     lock = path && locked?(path) ? path["lock"] : nil
     raise Refusal, "#{lock['name']} bars the way. It needs #{lock['key_name']}." if lock && !has_key?(lock)
 
+    toll = toll_of(path)
+    toll&.outcomes&.each { |outcome| outcome.can_happen!(campaign) }
+    raise Refusal, "The party has #{campaign.money(campaign.gil)}; that way costs #{campaign.money(toll.price)}" if toll && toll.price > campaign.gil
+
     transaction do
       walk_away_from_fight!(to: key)
+      pay!(path, toll) if path&.dig("cost") && !paid?(path)
       if lock
         update!(progress: progress.merge("unlocked" => progress.fetch("unlocked", []) | [ lock["id"] ]))
         campaign.narrate("#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.", cue: "door")
       end
       update!(progress: progress.merge("current" => key, "visited" => (visited | [ key ])))
       campaign.narrate("#{name}: the party enters #{target['name']}.", data: Campaign::MOVED)
-      campaign.narrate("The cost of that way: #{path['cost']}") if path&.dig("cost")
       announce(target) unless resolved?(key)
       campaign.drop_stale_where_next!
     end
@@ -170,11 +174,41 @@ module Location::Exploration
     "#{found}, with #{heirloom['name']}#{" (#{made})" if made.present?}"
   end
 
+  # A costly way is paid the first time the party goes that way, either way
+  # round; after that it's just a way.
+  def paid?(path)
+    progress.fetch("paid", []).include?(path["key"])
+  end
+
+  # What a costly way still takes (Toll), or nil: none, or paid.
+  def toll_of(path)
+    return unless path&.dig("cost") && !paid?(path)
+
+    toll = Toll.of(path["cost"])
+    toll unless toll.free?
+  end
+
   def resolve!(key)
     update!(progress: progress.merge("resolved" => (progress.fetch("resolved", []) | [ key ])))
   end
 
   private
+
+  # The way's toll: the table hears what it costs, the party pays, what it
+  # takes happens (Outcome), and the time goes by.
+  def pay!(path, toll)
+    campaign.narrate("The cost of that way: #{Toll.of(path['cost']).words}")
+    if toll
+      campaign.decrement!(:gil, toll.price) if toll.price.positive?
+      campaign.narrate("The party pays #{campaign.money(toll.price)}.") if toll.price.positive?
+      toll.outcomes.each do |outcome|
+        said = outcome.apply!(campaign, by: "The party")
+        campaign.narrate(said) if said
+      end
+      campaign.pass_time!(toll.takes) if toll.takes.positive?
+    end
+    update!(progress: progress.merge("paid" => progress.fetch("paid", []) | [ path["key"] ]))
+  end
 
   # The party walked on without fighting what waits in a room here: it
   # stays in its room for when they come back, and doesn't follow them.
@@ -199,7 +233,9 @@ module Location::Exploration
     when "treasure"
       campaign.narrate("There is treasure in #{target['name']}.")
     when "fork"
-      campaign.narrate("The way splits. One path has a cost: #{decision['text']}")
+      path = view.fetch("paths", []).find { |p| p["key"] == decision["costly_path"] }
+      worth = { "shortcut" => " It looks like the quicker way down.", "treasure" => " Something glints that way." }[path&.dig("gain")]
+      campaign.narrate("The way splits. One path has a cost: #{Toll.of(decision['text']).words}#{worth}")
       resolve!(target["key"])
     when "key"
       update!(progress: progress.merge("keys" => keys_found | [ decision["lock"] ]))

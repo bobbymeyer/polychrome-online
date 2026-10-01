@@ -40,11 +40,14 @@ module Campaign::Deeds
   def welcome_back!(node)
     place = welcomes[node.id.to_s] or return
     folk = node.location&.town? ? node.location.townsfolk : []
-    host = folk.find { |f| f["service"] == "inn" } || folk.first
+    # Whoever wished it cleared is the one who says so (Location::Wishes).
+    wisher = node.location.wished_cleared(place) if node.location&.town?
+    host = wisher || folk.find { |f| f["service"] == "inn" } || folk.first
     transaction do
+      node.location.met!(wisher["key"]) if wisher
       update!(welcomes: welcomes.except(node.id.to_s))
       messages.create!(body: "#{host ? host['name'] : 'The whole street'} meets the party: “You cleared #{place}? " \
-                             "Then you've friends in #{node.name}, and friends pay less.”")
+                             "#{"I'd given up asking anyone. " if wisher}Then you've friends in #{node.name}, and friends pay less.”")
       record_deed!("#{node.name} is grateful for #{place}", at: node, sway: 2, kind: "cleared", seen: true)
       hook = folk.find { |f| f != host && f["hook"].present? }
       messages.create!(body: "#{hook['name']}, #{hook['title'].downcase}: “#{hook['hook']}”") if hook

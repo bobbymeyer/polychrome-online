@@ -18,7 +18,7 @@
     <% b = rooms[path["to"]] %>
     <% next unless a && b && (full.(a["key"]) || full.(b["key"])) %>
     <g class="floorplan__path <%= 'floorplan__path--costly' if path['cost'] %>">
-      <title><%= if path["lock"] then "#{path['lock']['name']}: needs #{path['lock']['key_name']}" elsif path["cost"] then "Cost: #{path['cost']}" else [ a, b ].map { |r| full.(r["key"]) ? r["name"] : "an unexplored way" }.join(" – ") end %></title>
+      <title><%= if path["lock"] then "#{path['lock']['name']}: needs #{path['lock']['key_name']}" elsif path["cost"] then "Cost: #{Toll.of(path['cost']).words}" else [ a, b ].map { |r| full.(r["key"]) ? r["name"] : "an unexplored way" }.join(" – ") end %></title>
       <line x1="<%= a['x'] %>" y1="<%= a['y'] %>" x2="<%= b['x'] %>" y2="<%= b['y'] %>" />
       <% if path["lock"] %>
         <%# A padlock on the path, a little off its middle so a cost marker still shows; hollow once opened. %>

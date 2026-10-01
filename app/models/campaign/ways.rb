@@ -126,6 +126,7 @@ module Campaign::Ways
         said = outcome.apply!(self, by: "The party")
         narrate(said) if said
       end
+      node.location.meet_wish!(pastime.wish) if pastime.wish
       next if pastime.rest? || pastime.takes.zero?
 
       spent_time!(pastime.takes) # paid at the next rest (Campaign::Payoffs)
@@ -194,7 +195,10 @@ module Campaign::Ways
       elsif unseen.one? then "An unexplored way"
       else "An unexplored way (#{unseen.index(key) + 1})"
       end
-      label += " (costly)" if path&.dig("cost")
+      if path&.dig("cost") && !dungeon.paid?(path)
+        toll = dungeon.toll_of(path)
+        label += toll ? " (costs #{toll.describe(self)})" : " (costly)"
+      end
       { "label" => label, "move" => { "location" => dungeon.id, "room" => key } }
     end + way_out
   end

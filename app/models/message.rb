@@ -40,6 +40,8 @@ class Message < ApplicationRecord
   before_create :mark_story_time
   after_create_commit :broadcast
   include Choice # after the line itself goes out, the choice panel
+  # An NPC speaking at the table reminds whoever is tied to them (Campaign::Belonging).
+  after_create_commit -> { campaign.remind_ties!(speaker) }, if: -> { speaker.is_a?(Npc) && scope == "table" && kind == "say" }
   after_destroy_commit { streams.each { |stream| broadcast_remove_to(*stream) } }
 
   def whisper?

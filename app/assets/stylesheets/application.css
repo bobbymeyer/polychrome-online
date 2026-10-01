@@ -218,6 +218,7 @@ form.inline { display: inline; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: 24px 0; }
 .actions form { margin: 0; }
+.book-header .actions { margin: 0; }
 
 .menu { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--unit); margin: var(--unit) 0 16px; }
 .menu form { margin: 0; }
@@ -727,6 +728,9 @@ details[open] > summary { margin-bottom: 16px; }
 .location-list li.is-resolved { color: var(--grey); }
 .location-list form { margin: 0; }
 .hook { margin: 4px 0 0; font-style: italic; color: var(--grey); }
+.couplet { margin: 4px 0 8px; }
+.couplet span { display: block; }
+.couplet--met { color: var(--grey); text-decoration: line-through; }
 .gm-tools { padding-bottom: 8px; }
 
 .floorplan__path line { stroke: var(--ink); stroke-width: 2; }

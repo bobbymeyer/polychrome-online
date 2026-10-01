@@ -67,6 +67,12 @@
             <span class="muted"><%= npc&.title || generated["title"] %></span>
             <% hook = npc ? npc.description : location.fill_in(generated["hook"]) %>
             <% if hook.present? && gm %><p class="hook"><%= hook %></p><% end %>
+            <% if generated && (generated["memory"] || generated["wish"]) %>
+              <p class="couplet">
+                <% if generated["memory"] %><span><%= location.fill_in(generated["memory"]) %></span><% end %>
+                <% if generated["wish"] %><span class="<%= 'couplet--met' if location.met?(generated['key']) %>"><%= location.fill_in(generated["wish"]) %></span><% end %>
+              </p>
+            <% end %>
           </div>
           <% if gm %>
             <div class="location-list__tools">

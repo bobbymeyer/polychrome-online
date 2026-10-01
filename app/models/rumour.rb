@@ -11,7 +11,7 @@
 # has got there: heroic up, dark down. deed: what kind (the GM's, an
 # antagonist beaten for good, a place cleared), or nil for any other rumour.
 class Rumour < ApplicationRecord
-  DEEDS = %w[gm antagonist cleared].freeze
+  DEEDS = %w[gm antagonist cleared favour].freeze
   SWAYS = -2..2
 
   include CampaignPages

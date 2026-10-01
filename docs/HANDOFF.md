@@ -17,7 +17,6 @@ This document is the design contract. Read it before writing code. Where it conf
 
 - No AI GM. Automating the improviser seat makes it a video game.
 - No tile maps, no tile movement, no pixel-art pipeline.
-- No open scripting language for world authors. Behavior is a closed primitive set.
 - No AAA animation. Motion is gestural.
 - No second-author features (export/import, edition tooling) until there is a second author. Keep the seams; don't build the features.
 

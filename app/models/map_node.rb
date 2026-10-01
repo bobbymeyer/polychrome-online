@@ -46,7 +46,7 @@ class MapNode < ApplicationRecord
     almanac = campaign.world.almanac
     usual = shut_by("pastimes") ? [] : Pastime.list(world_place&.activities, almanac) + Pastime.list(activities, almanac)
     in_modes = modes_on.flat_map { |mode| Pastime.list(mode.activities, almanac) }
-    services = location ? location.services_for(campaign.characters.to_a) : []
+    services = location ? location.services_for(campaign.characters.to_a) + location.wishes : []
     services << campaign.camp_pastime unless services.any? { |pastime| pastime.service == "inn" }
     (usual + in_modes).reverse.uniq(&:name).reverse + services
   end
