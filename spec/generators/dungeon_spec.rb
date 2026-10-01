@@ -143,6 +143,51 @@ RSpec.describe Generators::Dungeon do
       expect([ path["from"], path["to"] ]).to include(room["key"])
       expect(path["cost"]).to eq(room["decision"]["text"])
       expect(graph(d)[room["key"]].size).to be >= 2
+      expect(d["paths"].count { |p| p["cost"] && [ p["from"], p["to"] ].include?(room["key"]) && p["cost"] == room["decision"]["text"] }).to eq(1)
+    end
+  end
+
+  describe "a fork's cost buys something" do
+    def distances(g, from)
+      dist = { from => 0 }
+      queue = [ from ]
+      while (room = queue.shift)
+        g[room].each { |n| dist[n] ||= (queue << n; dist[room] + 1) }
+      end
+      dist
+    end
+
+    let(:costly) do
+      dungeons.flat_map do |d|
+        d["rooms"].select { |r| r["decision"]["kind"] == "fork" }.map { |r| [ d, r, d["paths"].find { |p| p["key"] == r["decision"]["costly_path"] } ] }
+      end
+    end
+
+    it "makes the costly way a real shortcut to the boss, with another way round" do
+      shortcuts = costly.select { |_, _, path| path["gain"] == "shortcut" }
+      expect(shortcuts).not_to be_empty
+      shortcuts.each do |d, room, path|
+        g = graph(d)
+        through = ([ path["from"], path["to"] ] - [ room["key"] ]).first
+        to_boss = distances(g, d["boss"])
+        others = g[room["key"]].reject { |n| n == through }.map { |n| to_boss.fetch(n, Float::INFINITY) }
+        expect(to_boss[through]).to be < others.min
+        without = g.transform_values { |ns| ns.dup }
+        without[room["key"]].delete(through)
+        without[through].delete(room["key"])
+        expect(distances(without, d["entrance"])).to include(d["boss"])
+      end
+    end
+
+    it "otherwise puts treasure down the costly way" do
+      hoards = costly.select { |_, _, path| path["gain"] == "treasure" }
+      expect(hoards).not_to be_empty
+      hoards.each do |d, room, path|
+        through = ([ path["from"], path["to"] ] - [ room["key"] ]).first
+        g = graph(d).transform_values { |ns| ns - [ room["key"] ] }
+        side = distances(g, through).keys
+        expect(side.any? { |key| d["rooms"].find { |r| r["key"] == key }["decision"]["kind"] == "treasure" }).to be true
+      end
     end
   end
 

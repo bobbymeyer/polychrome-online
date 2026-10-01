@@ -452,6 +452,18 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   template's encounter table, an event, treasure, or a fork with a visible
   cost on one of its ways onward. The deepest room holds the boss. The
   generator specs check this over hundreds of seeds.
+- **Forks cost something, and buy something.** A fork-costs row says in
+  brackets what the costly way takes, the way a thing to do's are written
+  (`Toll`): `pay 100`, a number of parts of the day, or outcomes from the one
+  closed set (`Outcome`), which now has what takes as well as what gives:
+  `hurt 10` (a share of everyone's HP, never the last), `weary 25` (of their
+  MP) and `ambush` (a fight from the place's encounter table, waiting for the
+  GM). It's taken the first time the party goes that way, refused if they
+  can't pay, and "Where next?" names it ("(costs 10% of HP)"). A row without
+  brackets is a cost the GM plays out. The generator makes the costly way the
+  shortcut to the boss (when there's another way round) or the only way to
+  treasure on that side, and the fork says so. That draws nothing, so the rest
+  of a dungeon rolls as it did.
 - **GM controls (§7):**
   - **Reroll.**
   - **Pin:** pinned services and rooms survive a reroll. Pinning a

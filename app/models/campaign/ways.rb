@@ -194,7 +194,10 @@ module Campaign::Ways
       elsif unseen.one? then "An unexplored way"
       else "An unexplored way (#{unseen.index(key) + 1})"
       end
-      label += " (costly)" if path&.dig("cost")
+      if path&.dig("cost") && !dungeon.paid?(path)
+        toll = dungeon.toll_of(path)
+        label += toll ? " (costs #{toll.describe(self)})" : " (costly)"
+      end
       { "label" => label, "move" => { "location" => dungeon.id, "room" => key } }
     end + way_out
   end

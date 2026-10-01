@@ -46,7 +46,7 @@ class GeneratorTable < ApplicationRecord
   PASTE_FORMATS = {
     "town_names" => "a town's name", "dungeon_names" => "a dungeon's name", "names" => "a name",
     "families" => "a family's name (Vell)", "hooks" => "a hook", "rooms" => "a room's name", "room_events" => "what happens there",
-    "forks" => "what the costly way costs", "locks" => "the lock, then | and its key (Portal | Blue crystal)",
+    "forks" => "what the costly way costs, then in brackets what it takes, if the game takes it (A sealed door. (pay 100); Poison gas. (hurt 10); A long climb. (2); Loose rock. (ambush))", "locks" => "the lock, then | and its key (Portal | Blue crystal)",
     "service_names" => "a name, then | and the service (inn, shop, guild or temple)",
     "stock" => "an item's name", "treasure" => "an item's name, or an amount like 150 gil",
     "trades" => "a trade, then | and what it makes, with commas (smith | blade, helm; nothing, for a trade that makes nothing to remember)",
@@ -145,6 +145,7 @@ class GeneratorTable < ApplicationRecord
       errors.add(:entries, "#{label} needs an item#{' or gil' if fields.include?('gil')}") if fields.include?("item") && entry.slice("item", "gil").empty?
       errors.add(:entries, "#{label}: unknown service #{entry['service']}") if entry["service"] && !Generators::Town::SERVICES.include?(entry["service"])
       errors.add(:entries, "#{label}: unknown roof #{entry['roof']}") if entry["roof"] && !Generators::Town::ROOFS.include?(entry["roof"])
+      Toll.read(entry["text"]).last.each { |problem| errors.add(:entries, "#{label}: #{problem}") } if kind == "forks"
       (INTEGER_FIELDS & entry.keys).each do |f|
         errors.add(:entries, "#{label}: #{f} must be a positive whole number") unless JsonCasting.integer?(entry[f]) && entry[f].positive?
       end

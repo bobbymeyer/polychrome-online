@@ -61,10 +61,10 @@
                 <%= room["name"] %> <span class="menu__cost">locked: <%= path["lock"]["name"] %></span>
               </button>
             <% else %>
-              <%= button_to location_position_path(location), method: :patch, params: { room: key }, class: "menu__item", title: cost do %>
+              <%= button_to location_position_path(location), method: :patch, params: { room: key }, class: "menu__item", title: (Toll.of(cost).words if cost) do %>
                 <%= room["name"] %>
                 <% if location.locked?(path) %><span class="menu__cost">open with <%= path["lock"]["key_name"] %></span>
-                <% elsif cost %><span class="menu__cost">costly</span>
+                <% elsif cost && !location.paid?(path) %><span class="menu__cost"><%= (toll = location.toll_of(path)) ? "costs #{toll.describe(@campaign)}" : "costly" %></span>
                 <% elsif location.visited.include?(key) %><span class="menu__cost">visited</span><% end %>
               <% end %>
             <% end %>

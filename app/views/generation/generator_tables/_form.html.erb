@@ -18,6 +18,7 @@
     <legend>Rows</legend>
     <p class="hint" data-show-for="treasure">Each row is an item or an amount of <%= word("currency") %>.</p>
     <p class="hint" data-show-for="<%= GeneratorTable::LORE_KINDS.join(' ') %>">This is the world's lore: what its pocket history and the pasts of its places are made of. A world with none of a kind has none of that happen (no feuds without quarrels, no fallen dungeons without falls).</p>
+    <p class="hint" data-show-for="forks">A fork's costly way can take something the first time the party goes that way. Write it in brackets after the text, as a thing to do's are: <code>pay 100</code> in <%= word("currency") %>, a number of parts of the day, <code>hurt 10</code> (a share of everyone's <%= word("hp") %>), <code>weary 25</code> (of their <%= word("mp") %>), or <code>ambush</code> (a fight from the place's encounter table). Without brackets, it's a cost the GM plays out.</p>
     <p class="hint" data-show-for="locks">Each row is a lock and the key that opens it, in any flavour: Portal and Blue crystal, Altar and Goat's skull.</p>
     <p class="hint"><strong>Worlds are live:</strong> towns and dungeons already rolled from this table change with it, except the people and rooms a GM has pinned.</p>
     <p class="hint" data-show-for="<%= show_for.("weight") %>">Weight defaults to 1: a row with weight 3 comes up three times as often.</p>

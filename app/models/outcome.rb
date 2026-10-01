@@ -23,6 +23,12 @@
 #   uncover     one of the GM's secrets comes out
 #   story       the GM tells what happens
 #
+# And what a way can take (a fork's costly way in a dungeon: Toll), which a
+# thing to do can ask too:
+#   hurt 10     everyone standing loses 10% of their HP, never the last of it
+#   weary 25    everyone standing loses 25% of their MP
+#   ambush      a fight from the place's encounter table waits for the GM
+#
 # Some act on something named (target), as a scene's ending or a full
 # clock's does (Scene#outcome, Clock):
 #   reveal      a place comes into view            { "node" => id }
@@ -49,8 +55,14 @@ class Outcome
     "uncover" => [ "One of the GM's secrets comes out, one about where the party is if there is one", nil ],
     "story" => [ "The GM tells what happens", nil ],
     "mode" => [ "A place changes", nil ],
-    "battle" => [ "A fight", nil ]
+    "battle" => [ "A fight", nil ],
+    "hurt" => [ "Everyone standing loses %{amount}% of %{hp}", 10 ],
+    "weary" => [ "Everyone standing loses %{amount}% of %{mp}", 25 ],
+    "ambush" => [ "Something there hears them: a fight", nil ]
   }.freeze
+
+  # What takes from the party, rather than giving.
+  TAKES = %w[hurt weary ambush].freeze
 
   # What a check can make happen on a success (Campaign#check!): anything
   # that needs nothing more to say than how much.
@@ -240,6 +252,34 @@ class Outcome
     elsif place.current_mode then place.clear_mode!
     end
     nil
+  end
+
+  # Everyone standing loses a share of their HP (never the last of it) or MP.
+  def hurt!(campaign, **) = toll(campaign, "hp", floor: 1)
+  def weary!(campaign, **) = toll(campaign, "mp", floor: 0)
+
+  def toll(campaign, stat, floor:)
+    lost = campaign.conscious_characters.filter_map do |character|
+      now = stat == "hp" ? character.current_hp : character.current_mp
+      take = [ (character.stats["max_#{stat}"].to_i * amount / 100.0).ceil, now - floor ].min
+      next unless take.positive?
+
+      character.update!(stat => now - take)
+      "#{character.name} −#{take}"
+    end
+    "It takes its toll: #{lost.join(', ')} #{campaign.world.word(stat)}." if lost.any?
+  end
+
+  # Something at the place the party is (the dungeon they're in, or the
+  # place on the map) hears them: a fight from its encounter table waits
+  # for the GM, as one on the road does.
+  def ambush!(campaign, **)
+    place = campaign.dungeon_in_progress || campaign.current_node&.location
+    table = place&.location_template&.encounter_table or return "Nothing comes. This time."
+    monsters = campaign.roll_with { |state| Pointcrawl::Encounters.roll(state, table.entries, "dangerous") } or return "Nothing comes. This time."
+
+    campaign.waylay!("#{place.name}: on the way", monsters, terrain: table.terrain_type)
+    "Encounter! #{campaign.describe_encounter(monsters)}."
   end
 
   # A fight, now: the stage takes everyone there.
