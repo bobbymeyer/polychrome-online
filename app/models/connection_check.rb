@@ -45,7 +45,8 @@ class ConnectionCheck
       require "vips"
       started = Time.current
       png = Cutout.client.remove(Vips::Image.black(8, 8, bands: 3).pngsave_buffer)
-      "cuts out with #{Cutout.label} (#{(Time.current - started).round(1)}s#{', no transparency back' unless Cutout.png_alpha?(png)})."
+      "cuts out with #{Cutout.label} (#{(Time.current - started).round(1)}s#{', no transparency back' unless Cutout.png_alpha?(png)})" \
+        "#{Cutout.ground ? "; pictures are rendered on a #{Cutout.ground} ground" : '; pictures stay on white (no CUTOUT_GROUND)'}."
     })
   end
 

@@ -18,7 +18,8 @@ RSpec.describe ArtBatchJob, type: :job do
 
     run(batch)
     expect(comfy.submitted.map { |g| g.values.find { |n| n["class_type"] == "KSampler" }["inputs"]["seed"] }).to eq(seeds)
-    expect(comfy.submitted.first.values.find { |n| n["class_type"] == "CLIPTextEncode" }["inputs"]["text"]).to eq(goblin.art_recipe["positive"])
+    # The goblin's type loses its background, so it's rendered on the cut-out's ground, not white (Cutout.on_ground).
+    expect(comfy.submitted.first.values.find { |n| n["class_type"] == "CLIPTextEncode" }["inputs"]["text"]).to eq(Cutout.on_ground(goblin.art_recipe)["positive"])
     expect(batch.reload.status).to eq("running")
     expect(enqueued_jobs.count { |j| j["job_class"] == "ArtBatchJob" }).to be >= 2 # the start, then a check-back
 
