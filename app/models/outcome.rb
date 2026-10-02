@@ -28,6 +28,16 @@
 #   hurt 10     everyone standing loses 10% of their HP, never the last of it
 #   weary 25    everyone standing loses 25% of their MP
 #   ambush      a fight from the place's encounter table waits for the GM
+#   lose 50     the party loses 50 of its money (what it has, at most)
+#   time 2      two parts of the day go by
+#   tick        a running clock goes on a segment: one at the party's place
+#               if there is one, else the one nearest to full
+#   give potion one of that item, out of the bag (a camp or road event's
+#               choice: Campaign::Remarks)
+#
+# What takes is the GM's hard moves (Dungeon World's, ch. 20 of
+# Procedural Storytelling in Game Design): a complication on a failed
+# check can make one happen (Campaign::Remarks).
 #
 # Some act on something named (target), as a scene's ending or a full
 # clock's does (Scene#outcome, Clock):
@@ -52,21 +62,29 @@ class Outcome
     "learn" => [ "The waiting encounter's weaknesses are known before the fight", nil ],
     "sneak" => [ "The encounter waiting on the road is avoided", nil ],
     "safe_road" => [ "The next dangerous path rolls no encounter", nil ],
-    "uncover" => [ "One of the GM's secrets comes out, one about where the party is if there is one", nil ],
+    "uncover" => [ "One of the GM's secrets comes out (its next clue, if it comes a step at a time), one about where the party is if there is one", nil ],
     "story" => [ "The GM tells what happens", nil ],
     "mode" => [ "A place changes", nil ],
     "battle" => [ "A fight", nil ],
     "hurt" => [ "Everyone standing loses %{amount}% of %{hp}", 10 ],
     "weary" => [ "Everyone standing loses %{amount}% of %{mp}", 25 ],
-    "ambush" => [ "Something there hears them: a fight", nil ]
+    "ambush" => [ "Something there hears them: a fight", nil ],
+    "lose" => [ "The party loses %{amount}", 50 ],
+    "time" => [ "Time goes by: %{amount} of the day's parts", 1 ],
+    "tick" => [ "A clock that matters goes on a segment", nil ],
+    "give" => [ "The party gives up %{item}", nil ]
   }.freeze
 
-  # What takes from the party, rather than giving.
-  TAKES = %w[hurt weary ambush].freeze
+  # What takes from the party, rather than giving: the hard moves.
+  TAKES = %w[hurt weary ambush lose time tick].freeze
 
   # What a check can make happen on a success (Campaign#check!): anything
   # that needs nothing more to say than how much.
   ON_A_CHECK = %w[money exp abp rumour restore reveal find learn sneak safe_road uncover].freeze
+
+  # What a camp or road event's choice can do: what a check can, what takes,
+  # and giving something from the bag (Campaign::Remarks).
+  ON_A_CHOICE = (ON_A_CHECK + TAKES + %w[give]).freeze
 
   # These need an encounter on the road to act on.
   NEEDS_ENCOUNTER = %w[sneak learn].freeze
@@ -74,6 +92,9 @@ class Outcome
   # "money 40", "+40 money", "rest", "safe road": an outcome, or nil.
   def self.parse(text)
     words = text.to_s.strip.downcase.sub(/\A\+/, "")
+    # "give potion", "give phoenix down": an item, by its slug.
+    return new(kind: "give", target: { "item" => words.delete_prefix("give").strip.tr(" -", "__") }) if words.match?(/\Agive\s+\S/)
+
     number = words[/\A\d+|\d+\z/]
     kind = words.sub(/\A\d+\s*|\s*\d+\z/, "").strip.tr(" ", "_").sub(/\A\+/, "")
     return unless KINDS.key?(kind)
@@ -88,14 +109,20 @@ class Outcome
   end
 
   # How it's written in a thing to do's brackets: "money 40", "safe road".
-  def to_s = [ kind.tr("_", " "), (amount unless KINDS.fetch(kind).last.nil?) ].compact.join(" ")
+  def to_s
+    return "give #{target['item'].tr('_', ' ')}" if kind == "give"
+
+    [ kind.tr("_", " "), (amount unless KINDS.fetch(kind).last.nil?) ].compact.join(" ")
+  end
 
   # What it does, in the world's words.
   def describe(world)
     template = KINDS.fetch(kind).first
-    shown = kind == "money" ? "#{amount} #{world.word('currency')}" : amount
+    shown = %w[money lose].include?(kind) ? "#{amount} #{world.word('currency')}" : amount
     rest = amount.to_i >= 100 ? "a bed, and everyone rested (the KO'd too)" : "camp, full #{world.word('hp')} for those standing and #{amount}% of #{world.word('mp')}"
-    { amount: shown, hp: world.word("hp"), mp: world.word("mp"), rest: rest }.reduce(template) { |text, (key, value)| text.gsub("%{#{key}}", value.to_s) }
+    item = (world.items.find_by(slug: target["item"])&.name || target["item"].to_s.tr("_", " ") if kind == "give")
+    { amount: shown, hp: world.word("hp"), mp: world.word("mp"), rest: rest, item: (item && "#{item.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{item}") }
+      .reduce(template) { |text, (key, value)| text.gsub("%{#{key}}", value.to_s) }
   end
 
   # Whether it can happen now; raises Refusal if not (before anything is paid).
@@ -105,6 +132,22 @@ class Outcome
     raise Refusal, "Nobody is standing to fight" if kind == "battle" && campaign.characters.none?(&:conscious?)
     raise Refusal, "Nobody is KO'd" if kind == "raise" && campaign.characters.none? { |c| !c.conscious? }
     raise Refusal, "Not while a battle is on" if kind == "rest" && campaign.battle_on?
+  end
+
+  # Whether it would do anything now, for what takes: a hard move with
+  # nothing to take is no move at all (no clock running, an empty purse,
+  # nowhere for an ambush to come from).
+  def bites?(campaign)
+    standing = campaign.conscious_characters
+    case kind
+    when "hurt" then standing.any? { |c| c.current_hp > 1 }
+    when "weary" then standing.any? { |c| c.current_mp.positive? }
+    when "lose" then campaign.gil.positive?
+    when "give" then (item = campaign.world.items.find_by(slug: target["item"])) && campaign.quantity_of(item).positive?
+    when "tick" then !campaign.clock_to_tick.nil?
+    when "ambush" then !(campaign.dungeon_in_progress || campaign.current_node&.location)&.location_template&.encounter_table.nil?
+    else true
+    end
   end
 
   # Makes it happen for the campaign. by: who did it ("Rook", "The party");
@@ -238,7 +281,7 @@ class Outcome
 
   def uncover!(campaign, by:, source:, **)
     secret = Secret.next_for(campaign) or return "#{by} digs, but there's nothing more to find out."
-    secret.reveal!(by: source || by)
+    secret.find_clue!(by: source || by)
     nil # the secret says itself
   end
 
@@ -280,6 +323,35 @@ class Outcome
 
     campaign.waylay!("#{place.name}: on the way", monsters, terrain: table.terrain_type)
     "Encounter! #{campaign.describe_encounter(monsters)}."
+  end
+
+  def lose!(campaign, **)
+    taken = [ amount, campaign.gil ].min
+    return "The party has nothing to lose." unless taken.positive?
+
+    campaign.decrement!(:gil, taken)
+    "The party loses #{campaign.money(taken)}."
+  end
+
+  def give!(campaign, by:, **)
+    item = campaign.world.items.find_by(slug: target["item"])
+    return "#{by} has nothing like that to give." unless item && campaign.quantity_of(item).positive?
+
+    campaign.take_item!(item)
+    "#{by} gives up #{item.name.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{item.name}."
+  end
+
+  def time!(campaign, **)
+    campaign.pass_time!(amount)
+    nil # the time says itself
+  end
+
+  # A public clock says so itself; a hidden one tells the GM alone.
+  def tick!(campaign, **)
+    clock = campaign.clock_to_tick or return "Nothing gets worse. This time."
+    clock.tick!(1, reason: "things went wrong")
+    campaign.narrate("#{clock.name}: #{clock.filled} of #{clock.segments}.", scope: "gm") unless clock.public? || clock.full?
+    nil
   end
 
   # A fight, now: the stage takes everyone there.

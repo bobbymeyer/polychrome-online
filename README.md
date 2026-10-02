@@ -491,8 +491,10 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   (`Toll`): `pay 100`, a number of parts of the day, or outcomes from the one
   closed set (`Outcome`), which now has what takes as well as what gives:
   `hurt 10` (a share of everyone's HP, never the last), `weary 25` (of their
-  MP) and `ambush` (a fight from the place's encounter table, waiting for the
-  GM). It's taken the first time the party goes that way, refused if they
+  MP), `ambush` (a fight from the place's encounter table, waiting for the
+  GM), `lose 50` (money, as much as there is), `time 2` (parts of the day)
+  and `tick` (a running clock: the one at the party's place, else the one
+  nearest to full; a hidden one tells only the GM). It's taken the first time the party goes that way, refused if they
   can't pay, and "Where next?" names it ("(costs 10% of HP)"). A row without
   brackets is a cost the GM plays out. The generator makes the costly way the
   shortcut to the boss (when there's another way round) or the only way to
@@ -553,6 +555,79 @@ A map place can hold a **location**, rolled from a Gazetteer template (§7).
   needs when it starts). Towns and dungeons are rebuilt from their seed and the
   current tables, so editing a table changes places already rolled, except
   what's pinned. To fork a world instead, start a new one from its books.
+
+## Story rows: lines matched to the moment
+
+- **The story matcher** (`lib/story`, pure, like the resolver) takes facts
+  about the moment as a flat hash and a table's rows. Each row says when it
+  fits: `town, night, !smoke_seen, hurt >= 2`. Every row that fits
+  competes. The one that asks the most of the moment wins, a row that asks
+  nothing is the fallback, and ties go to the campaign's dice, by weight.
+- **A little grammar:** `{place}` in a row's text says a fact, and a row
+  whose fact isn't there doesn't fit, so "{home} slows down at the gate"
+  only comes up when someone is home. `{cold|stale|wet}` picks one word.
+- **Rows remember:** `sets: smoke_seen, visits + 1, mood = grim` writes the
+  campaign's flags once the line is said. Rows rule each other out through
+  them: one sets `smoke_seen`, the next asks for it.
+- **Lines and veils:** a row that names one of the table's (or the
+  world's) never comes up. It needs every word in the line that carries
+  meaning, plurals folded, so "spiders" rules out "a spider".
+- **The facts** (`Campaign::Moment`): the place (name, kind, modes, first
+  visit and how many before, cleared, a town's standing), the time (the
+  part of the day by its name, the light, weekday, month and season, and
+  the day count as `days`), the party (standing, hurt, down, who is home,
+  money), every running clock's fill, and every flag. The Generator Tables have a page listing
+  them all ("What rows can ask about"), and Prep shows the moment as it is
+  now.
+- **Arrival lines** are the first use: a world's `arrivals` tables, one
+  row per line, pasted as `text | when | sets`. On each arrival the best
+  fit goes to the GM as a note ("To say, arriving at Hollin: …") with a
+  **Say it** button. The engine never says it for them: said, it goes to
+  the table in the narrator's voice and what the row remembers is set.
+  Both seeded settings have a table of them.
+- **Coverage** (each story table's page links to it, `StoryCoverage`,
+  `Story::Coverage`): the matcher run over 300 seeded moments, spread over
+  every kind of place, every part of the world's day and its calendar, the
+  party hurt and whole, the moment the table is for (a failed check, camp
+  or the road), and each flag or secret key its rows ask about, set and
+  not.
+  - **Where it's thin:** each kind of place at each light, and how often
+    nothing fits there: a line nobody has written yet.
+  - **Rows:** how often each fits and wins, and which never come up: never
+    fitting, or always beaten (and by which row).
+  - **Try a moment:** a place, a part of the day and facts written as a
+    row remembers them (`hurt = 2, smoke_seen`), and every row that fits,
+    the winner first, with ties marked.
+- **Complications** are the GM's moves (Dungeon World's) when a check
+  fails: a world's `complications` tables, pasted as
+  `text | when | sets | does`. A row that takes nothing is a **soft move**:
+  signs of trouble coming, an unwelcome truth, an opportunity at a cost. A
+  row whose `does` is one of what takes (`hurt`, `weary`, `ambush`, `lose`,
+  `time`, `tick`) is a **hard move**. On a failed check the GM is offered
+  the best soft one and the best hard one, each matched to the moment and
+  the check (`who` failed, how many, the stat, skill or field ability, the
+  difficulty). A hard move with nothing to take (no clock running, an empty
+  purse) isn't offered. **Say it** or **Make it so**: the words go to the
+  table, then what a hard move takes. Both seeded settings have a table.
+- **Camp and road events** happen on a rest (at camp or the inn) and on a
+  journey with no fight on it: a world's `events` tables, pasted as
+  `text | when | sets | choice`.
+  - **The choice** is options with what each does, and the flag the
+    table's answer sets: `Share the fire: give potion, rumour | Send her
+    off: tick -> shared_fire` (`EventChoices`; in a pasted line the options
+    are split with `;`). Options can do what a check can, what takes, and
+    `give potion` (an item out of the bag, a new outcome).
+  - **Offered to the GM:** the event that fits best, with the options the
+    party could take now; one that can't happen (nothing to give) drops
+    out, and an event left with fewer than two isn't offered.
+    **Put it to the table** says it and opens a choice; the option the GM
+    settles on does what it says, and the flag remembers it, so a later
+    event can ask (`shared_the_fire = Let her sit`).
+  - **About the party:** events can also ask `rest`, `camp`, `inn`, `road`
+    and `to`, and name who they matched: `hurt_one` (the worst hurt),
+    `tied` and `tied_to` (a tie and who it's to), `from_<origin>`.
+  - Both seeded settings have a table, with small arcs that chain through
+    flags (the stranger at the fire turns up again on the road).
 
 ## The setting: canon, voice, words, time and origins
 
@@ -733,6 +808,19 @@ every campaign in it uses them.
     as a row of squares, filled black, red when full. Hidden clocks are the
     GM's alone and are never sent to players; nothing is said when they
     tick, and only their line when they fill.
+  - **Dangers** (Dungeon World's fronts): a clock can say what it wants
+    ("To own every berth on the river") and its steps, one per segment,
+    each a little worse than the last (`Portent`). Under each step go its
+    signs, one per line starting with a dash, each a story row that can
+    say when it fits (`- Empty berths at {place}. | town`). The GM hears a
+    step when its segment fills ("The Syndicate takes the docks, 2 of 4:
+    Ships start mooring elsewhere."), and sees what it wants and the next
+    step in their clock list. On arriving somewhere, each running clock
+    with steps may offer the GM a sign of its latest step (or an earlier
+    one's, if none of the latest's fit), as often as the clock is full: a
+    clock half along, half the time; at most one a visit. Written on a
+    front's clocks in the setting and dealt in with them, or on a
+    campaign's own clock in prep. Both seeded settings' fronts have them.
 - **Secrets** are things that are true ("the mayor pays the goblins"),
   written in prep and not tied to a scene, so the party finds them out
   however it gets there.
@@ -742,8 +830,34 @@ every campaign in it uses them.
     slip.
   - **Field abilities:** a field ability with the `uncover` outcome brings
     one out on a success, preferring one about where the party stands.
+  - **A step at a time** (`Clue`): a secret can have clues, one per line,
+    vaguest first, the first a question; a clue someone tells says who
+    after `|` (`The lamp is for the doctor. | Mara Vell`), so clues can
+    disagree. Each clue found gives the party the next, wherever it was
+    found, and after the last, the secret itself:
+    - an `uncover` finds the next clue rather than the whole secret;
+    - arriving where it is, or its person speaking at the table, offers
+      the GM the next clue ("Let them find it"), one at a time;
+    - the GM's **Next clue**, in their secrets and the Moves panel.
+    The party sees what it's asking, with its clues so far, under "The
+    party knows". A secret's **key** lets story rows ask how far the party
+    has got (`goblin_silver >= 1, !goblin_silver_known`: a line that makes
+    sense once they're asking, and would be redundant once they know).
+    Written on a campaign's secrets, or a front's (and dealt in with them).
 - **Where:** clocks and secrets are on the campaign's Prep page, and in
   the GM's panels at the table for play. Both update live.
+- **Moves** (a tab in the GM's tools, `Campaign::Moves`) is what's live
+  when the table stalls, fetched each time it's opened:
+  - **A move:** the soft and the hard complication that fit the moment
+    best, with **Say it** and **Make it so**.
+  - **Dangers:** each running clock with something to say: what it wants,
+    its next step, a sign of where it has got to (**Show it**) and
+    **Tick it**.
+  - **Heard, not met:** wishes from towns the party has been to that it
+    could meet: an item brought, a dungeon cleared.
+  - **Got away:** antagonists who have escaped, how much stronger they
+    are, and where.
+  Nothing on it happens by itself.
 
 ## Suggestions from a language model
 

@@ -8,6 +8,8 @@
           <div>
             <strong><%= clock.name %></strong>
             <span class="label"><%= clock.public? ? "Everyone sees it" : "GM only" %></span>
+            <% if clock.impulse %><p class="clock-row__impulse">Wants <%= clock.impulse.downcase_first %></p><% end %>
+            <% if (step = clock.next_portent) %><p class="clock-row__next">Next: <%= step.text %></p><% end %>
             <p class="muted">
               <%= [ ("Ticks on #{clock.ticking}" if clock.ticking),
                     ("then #{clock.place.name}: #{clock.mode_name}" if clock.mode_name),
@@ -23,6 +25,18 @@
             <%= button_to "Remove", campaign_clock_path(campaign, clock), method: :delete, class: "link-button",
                           form: { data: { turbo_confirm: "Take away the clock “#{clock.name}”?" } } %>
           </div>
+          <details class="clock-row__steps">
+            <summary>What it wants, its steps<%= " (#{clock.portent_list.size})" if clock.portents %></summary>
+            <%= form_with model: clock, url: campaign_clock_path(campaign, clock), method: :patch, class: "book-form" do |f| %>
+              <div class="field"><%= f.label :impulse, "What it wants", for: "clock_impulse_#{clock.id}" %><%= f.text_field :impulse, id: "clock_impulse_#{clock.id}" %></div>
+              <div class="field">
+                <%= f.label :portents, "Its steps, and their signs", for: "clock_portents_#{clock.id}" %>
+                <%= f.text_area :portents, rows: 5, id: "clock_portents_#{clock.id}" %>
+                <p class="hint">One step per line, for each segment in turn, each a little worse than the last; a step's signs under it, each starting with a dash, and optionally <code>| when</code> it fits (<code>town, night</code>). The GM hears a step when its segment fills; its signs may come up as the party arrives somewhere, more often the fuller the clock.</p>
+              </div>
+              <%= f.submit "Save", class: "button button--quiet" %>
+            <% end %>
+          </details>
         </li>
       <% end %>
     </ul>
@@ -60,6 +74,12 @@
           <p class="hint">Keep it to the calendar: ticked in one row, any of them (Monday or Friday); in different rows, all at once (Mondays in winter).</p>
         </details>
       <% end %>
+      <div class="field"><%= f.label :impulse, "What it wants", for: "clock_impulse_#{campaign.id}" %><%= f.text_field :impulse, id: "clock_impulse_#{campaign.id}", placeholder: "To own every berth on the river" %></div>
+      <div class="field">
+        <%= f.label :portents, "Its steps, and their signs", for: "clock_portents_#{campaign.id}" %>
+        <%= f.text_area :portents, rows: 4, id: "clock_portents_#{campaign.id}" %>
+        <p class="hint">One step per line, for each segment in turn, each a little worse than the last; a step's signs under it, each starting with a dash, and optionally <code>| when</code> it fits (<code>town, night</code>). The GM hears a step when its segment fills; its signs may come up as the party arrives somewhere, more often the fuller the clock.</p>
+      </div>
       <div class="field"><%= f.label :full_line, "When it fills, the table hears", for: "clock_full_line_#{campaign.id}" %><%= f.text_field :full_line, id: "clock_full_line_#{campaign.id}", placeholder: "Smoke over the harbour: the Syndicate holds the docks." %></div>
       <%# Each named with its place (the group labels don't show everywhere); not modes that follow the hours, which come and go by themselves. %>
       <% modes = campaign.map_nodes.includes(:modes).order(:name).filter_map do |n|

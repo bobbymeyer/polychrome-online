@@ -42,7 +42,12 @@ Rails.application.routes.draw do
       end
     end
     namespace :generation do
-      resources :generator_tables, param: :slug, path: "tables"
+      resources :generator_tables, param: :slug, path: "tables" do
+        # A story table over a few hundred moments, and one to try (StoryCoverage).
+        resource :coverage, only: :show, module: :generator_tables
+      end
+      # Every fact a story row can ask about (Campaign::Moment).
+      resource :facts, only: :show
     end
 
     # The setting's damage types and chart, and the skills its checks use.
@@ -106,8 +111,10 @@ Rails.application.routes.draw do
       resources :clocks, only: %i[create update destroy] do
         resources :ticks, only: :create, module: :clocks
       end
-      resources :secrets, only: %i[create destroy] do
+      resources :secrets, only: %i[create update destroy] do
         resource :revelation, only: %i[create destroy], module: :secrets
+        # The next of its clues comes out (Secret#find_clue!).
+        resources :clues, only: :create, module: :secrets
       end
       resources :rumours, only: %i[create destroy]
       resources :deeds, only: %i[create destroy]
@@ -133,6 +140,8 @@ Rails.application.routes.draw do
       # A seated player has the table open (heartbeat_controller): who is here.
       resource :presence, only: :update
       resource :composer, only: :show
+      # What's live, for the GM to make a move from (Campaign::Moves).
+      resource :moves, only: %i[show create]
       # A line or a veil for this table, from any seat, unsigned (Campaign::Limits).
       resources :limits, only: :create, path: "lines-and-veils"
 
@@ -177,7 +186,10 @@ Rails.application.routes.draw do
   resources :map_edges, only: %i[edit update destroy], path: "map/paths"
 
   resources :npcs, only: %i[edit update destroy]
-  resources :messages, only: :destroy
+  resources :messages, only: :destroy do
+    # The GM says a line the world offered (Campaign::Remarks).
+    resource :saying, only: :create, module: :messages
+  end
   resources :choices, only: [] do
     scope module: :choices do
       resources :picks, only: :create

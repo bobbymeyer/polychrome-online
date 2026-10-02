@@ -31,9 +31,12 @@ class Campaigns::ClocksController < ApplicationController
   end
 
   # The mode it sets off when full, from one picker: one of the campaign's
-  # places' modes, or nothing.
+  # places' modes, or nothing. A form without the picker (a clock's
+  # portents) leaves its mode as it is.
   def clock_params
-    attrs = params.expect(clock: [ :name, :segments, :public, :full_line, :when_full, :map_node_id, { triggers: [], times: [] } ])
+    attrs = params.expect(clock: [ :name, :segments, :public, :full_line, :impulse, :portents, :when_full, :map_node_id, { triggers: [], times: [] } ])
+    return attrs unless attrs.key?(:when_full) || action_name == "create" # a form that doesn't pick one leaves it be
+
     mode_id = attrs.delete(:when_full).presence
     attrs.merge(mode: mode_id && Mode.joins(:map_node).where(map_nodes: { campaign_id: @campaign.id }).find_by(id: mode_id))
   end

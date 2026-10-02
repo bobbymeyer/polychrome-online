@@ -58,7 +58,7 @@ RSpec.describe "Campaigns and characters", type: :request do
       post campaign_ways_path(campaign), params: { way: "Make camp (overnight)", go: 1 }
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
       expect(bartz.current_mp).to eq(bartz.stats["max_mp"] / 2) # a bed brings the rest
-      expect(campaign.messages.order(:id).last(2).map(&:body)).to eq([ "The party rests. Everyone is back to full HP, and half their MP.", "Day 2: dawn." ])
+      expect(campaign.messages.where(scope: "table").order(:id).last(2).map(&:body)).to eq([ "The party rests. Everyone is back to full HP, and half their MP.", "Day 2: dawn." ])
 
       bartz.update!(hp: 5)
       BattleRecord.start!(campaign: campaign, characters: [ bartz ], name: "Road", encounter: { "goblin" => 1 }, seed: 1)

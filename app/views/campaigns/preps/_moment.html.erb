@@ -1,0 +1,15 @@
+<%# The moment as the story matcher sees it now (Campaign::Moment): what a story row's "when" is asked against. campaign. %>
+<section class="window" id="moment">
+  <h2>The moment</h2>
+  <p class="hint">What an arrival line is matched against, right now, where the party is. <%= link_to "What each fact is", world_generation_facts_path(campaign.world) %>.</p>
+  <% facts = campaign.moment %>
+  <% if facts.empty? %>
+    <p class="muted">Nothing yet.</p>
+  <% else %>
+    <dl class="facts">
+      <% facts.sort_by { |key, _| key }.each do |key, value| %>
+        <dt><code><%= key %></code></dt><dd><%= value == true ? "true" : value == false ? "false" : value %></dd>
+      <% end %>
+    </dl>
+  <% end %>
+</section>

@@ -1,0 +1,68 @@
+<% content_for :title, "#{@world.name} · What rows can ask about" %>
+<div class="crumbs"><%= link_to "Generator Tables", world_generation_generator_tables_path(@world) %> / What rows can ask about</div>
+<article class="book-page">
+  <header class="book-page__header book-page__header--plain">
+    <div>
+      <p class="eyebrow">Generator Tables · Story rows</p>
+      <h1>What rows can ask about</h1>
+      <p class="hint">
+        A story row (an arrival line, a complication on a failed check, or an event at camp or on the road) says when it fits, as facts with commas: <code>town, night, !smoke_seen, hurt >= 2</code>.
+        Every row that fits competes; the one asking the most of the moment wins, a row that asks nothing is the fallback, and ties go to the dice.
+        <code>{place}</code> in a row's text says a fact, and a row whose fact isn't there doesn't fit; <code>{cold|still}</code> picks one word.
+        What a row remembers (<code>smoke_seen</code>, <code>visits + 1</code>, <code>mood = grim</code>) is set as a flag once the GM says it.
+      </p>
+    </div>
+  </header>
+
+  <section class="window">
+    <h2>Facts</h2>
+    <dl class="facts">
+      <% Campaign::Moment::FACTS.each do |key, what| %>
+        <dt><code><%= key %></code></dt><dd><%= what %></dd>
+      <% end %>
+    </dl>
+    <p class="hint">
+      A bare fact holds when it's true, a number other than 0, or any words but <code>no</code>; <code>!fact</code> when it isn't, or isn't there.
+      Numbers compare with <code>= != &gt; &gt;= &lt; &lt;=</code>, words with <code>=</code> and <code>!=</code>, in any case.
+      Names become keys as flags do: <em>Market day</em> is <code>market_day</code>.
+    </p>
+  </section>
+
+  <section class="window">
+    <h2>When a check fails</h2>
+    <p class="hint">A complication can ask about the moment, and about the check too. A row with something in <em>what it takes</em> is a hard move:
+      <%= safe_join(Outcome::TAKES.map { |kind| tag.code(Outcome.of(kind).to_s) }, ", ") %>.</p>
+    <dl class="facts">
+      <% Campaign::Remarks::CHECK_FACTS.each do |key, what| %>
+        <dt><code><%= key %></code></dt><dd><%= what %></dd>
+      <% end %>
+    </dl>
+  </section>
+
+  <section class="window">
+    <h2>At camp and on the road</h2>
+    <p class="hint">An event can ask about the moment, and where it happens. Its choice's options can do any of
+      <%= safe_join(Outcome::ON_A_CHOICE.reject { |kind| kind == "give" }.map { |kind| tag.code(Outcome.of(kind).to_s) }, ", ") %>, and <code>give potion</code> (an item from the bag).</p>
+    <dl class="facts">
+      <% Campaign::Remarks::EVENT_FACTS.each do |key, what| %>
+        <dt><code><%= key %></code></dt><dd><%= what %></dd>
+      <% end %>
+    </dl>
+  </section>
+
+  <section class="window">
+    <h2>In <%= @world.name %></h2>
+    <dl class="facts">
+      <% words = @world.almanac.words %>
+      <% { "Parts of the day" => words["periods"], "Weekdays" => words["weekdays"], "Months" => words["months"], "Seasons" => words["seasons"] }.each do |label, names| %>
+        <% next if names.blank? %>
+        <dt><%= label %></dt><dd><%= names.map { |name| tag.code(Campaign::Moment.key(name)) }.then { |codes| safe_join(codes, ", ") } %></dd>
+      <% end %>
+    </dl>
+    <% if @tables.any? %>
+      <p>Tables of story rows: <%= safe_join(@tables.map { |table| link_to(table.name, world_generation_generator_table_path(@world, table)) }, ", ") %>.</p>
+    <% else %>
+      <p class="muted">No story rows yet. Make a Generator Table of the kind <em>Arrivals</em>, <em>Complications</em> or <em>Events</em>.</p>
+    <% end %>
+  </section>
+</article>

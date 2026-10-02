@@ -80,10 +80,12 @@ module World::Copying
     source.world_fronts.find_each do |front|
       world_fronts.create!(name: front.name, description: front.description, history_key: front.history_key,
                            clocks: front.clocks.map { |c|
-                             c.attributes.slice("name", "segments", "triggers", "full_line", "public", "mode_name", "mode_line", "mode_description")
+                             c.attributes.slice("name", "segments", "triggers", "full_line", "public", "mode_name", "mode_line", "mode_description", "impulse", "portents")
                               .merge("place_id" => places[c.place_id]&.id)
                            },
-                           secrets: front.secrets.map { |s| { "body" => s.body, "place_id" => places[s.place_id]&.id, "figure_id" => figures[s.figure_id] } })
+                           secrets: front.secrets.map { |s|
+                             { "body" => s.body, "place_id" => places[s.place_id]&.id, "figure_id" => figures[s.figure_id], "steps" => s.steps, "key" => s.key }
+                           })
     end
   end
 end

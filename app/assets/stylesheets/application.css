@@ -615,6 +615,7 @@ details[open] > summary { margin-bottom: 16px; }
 .chat-line__head { margin: 0; font-size: 13px; line-height: 16px; display: flex; flex-wrap: wrap; gap: 0 8px; align-items: baseline; }
 .chat-line__head time { margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; }
 .chat-line__body p { margin: 4px 0 0; }
+.chat-line__offer { margin: 4px 0 0 14px; }
 .chat-line__tag { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .chat-line--whisper .chat-line__body { font-style: italic; color: var(--grey); }
 .chat-line--system { grid-template-columns: 1fr; }
@@ -820,6 +821,9 @@ details[open] > summary { margin-bottom: 16px; }
 .clock-row > div:first-child, .secret-rows li > div:first-child { flex: 1 1 240px; }
 .clock-row p { margin: 2px 0 0; }
 .clock-row .label { margin-left: 8px; }
+.clock-row__impulse { font-weight: 600; }
+.clock-row__steps { flex: 1 0 100%; }
+.clock-row__steps summary { font-size: 13px; color: var(--grey); cursor: pointer; }
 .secret-rows li.is-revealed { color: var(--grey); }
 .secret-list li { font-style: italic; }
 
@@ -958,3 +962,21 @@ details[open] > summary { margin-bottom: 16px; }
   .sheet-table th, .sheet-table td { padding-right: 8px; }
   .sheet-table .mastery-bar { width: 72px; }
 }
+
+/* The GM's moves panel (Campaign::Moves). */
+.moves h3 { margin: 16px 0 4px; font-size: 14px; }
+.moves ul { list-style: none; margin: 0; padding: 0; }
+.moves li { padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.moves__list { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; }
+.moves__list dt { color: var(--grey); font-size: 13px; }
+.moves__list dd { margin: 0; }
+.secret-row__steps { flex: 1 0 100%; }
+.secret-row__steps summary { font-size: 13px; color: var(--grey); cursor: pointer; }
+.secret-row__clues { margin: 2px 0 0; }
+
+/* A story table's coverage (StoryCoverage). */
+.book-table tr.is-thin td:first-child { box-shadow: inset 3px 0 0 var(--caution); }
+.coverage-try { margin: 12px 0; padding-left: 20px; }
+.coverage-try li { padding: 4px 0; color: var(--grey); }
+.coverage-try li.is-winner { color: inherit; font-weight: 600; }
+.inline-form .field--wide { flex: 1 1 280px; }

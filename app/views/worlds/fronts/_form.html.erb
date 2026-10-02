@@ -18,6 +18,13 @@
             <label><%= check_box_tag "#{n}[triggers][]", key, Array(c["triggers"]).include?(key), id: "front_clock_#{i}_#{key}" %> <%= label.capitalize %></label>
           <% end %>
         </div>
+        <div class="field"><%= label_tag "front_clock_#{i}_impulse", "What it wants" %><%= text_field_tag "#{n}[impulse]", c["impulse"], id: "front_clock_#{i}_impulse", placeholder: "To own every berth on the river" %></div>
+        <div class="field">
+          <%= label_tag "front_clock_#{i}_portents", "Its steps, and their signs" %>
+          <%= text_area_tag "#{n}[portents]", c["portents"], rows: 4, id: "front_clock_#{i}_portents",
+                            placeholder: "The dockhands stop talking to strangers.\n- Fresh brass paint on every warehouse door.\nShips start mooring elsewhere.\n- Empty berths at {place}. | town" %>
+          <p class="hint">One step per line, for each segment in turn, each a little worse than the last; a step's signs under it, each starting with a dash, and optionally <code>| when</code> it fits (<code>town, night</code>). The GM hears a step when its segment fills; its signs may come up as the party arrives somewhere, more often the fuller the clock.</p>
+        </div>
         <div class="field"><%= label_tag "front_clock_#{i}_full_line", "When it fills, the table hears" %><%= text_field_tag "#{n}[full_line]", c["full_line"], id: "front_clock_#{i}_full_line" %></div>
         <div class="field-row">
           <div class="field"><%= label_tag "front_clock_#{i}_place", "And this place changes" %><%= select_tag "#{n}[place_id]", options_for_select(places, c["place_id"]), include_blank: "Nowhere", id: "front_clock_#{i}_place" %></div>
@@ -39,6 +46,18 @@
         <div class="field"><%= label_tag "front_secret_#{i}_place", "About a place" %><%= select_tag "#{n}[place_id]", options_for_select(places, s["place_id"]), include_blank: "Anywhere", id: "front_secret_#{i}_place" %></div>
         <div class="field"><%= label_tag "front_secret_#{i}_figure", "About someone" %><%= select_tag "#{n}[figure_id]", options_for_select(figures, s["figure_id"]), include_blank: "No one", id: "front_secret_#{i}_figure" %></div>
       </div>
+      <details class="front-row__steps" <%= "open" if s["steps"].present? %>>
+        <summary>A step at a time</summary>
+        <div class="field-row">
+          <div class="field"><%= label_tag "front_secret_#{i}_key", "Key, for rows to ask about" %><%= text_field_tag "#{n}[key]", s["key"], id: "front_secret_#{i}_key", placeholder: "goblin_silver" %></div>
+        </div>
+        <div class="field">
+          <%= label_tag "front_secret_#{i}_steps", "Its clues, vaguest first" %>
+          <%= text_area_tag "#{n}[steps]", s["steps"], rows: 3, id: "front_secret_#{i}_steps",
+                            placeholder: "Why do the goblins only take silver?\nThe coins they drop are old, and cold.\nGrol says the Barrow pays better than Tule. | Grol Tusk" %>
+          <p class="hint"><%= render "campaigns/secrets/steps_hint" %></p>
+        </div>
+      </details>
     <% end %>
   </fieldset>
   <div class="actions">

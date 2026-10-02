@@ -112,6 +112,20 @@ module Seeds
         description: "The Kilnmasters' Guild has voted to light the Great Kiln on the first of Cone, and every unfired soul in the valley is on the loading list.",
         clocks: [
           { name: "The Kiln is loaded", segments: 12, public: true, triggers: %w[dawn], place: "Cone", source: "The Great Kiln",
+            impulse: "To fire every unfired soul in the valley, and call it mercy",
+            portents: <<~STEPS,
+              The Guild posts the loading list.
+              - A list nailed up at {place}, and a crowd reading it without a word. | town
+              The wardens start counting sheds.
+              - Chalk marks on doors at {place}. Some have been rubbed off. | town
+              Wood comes down the valley in carts, day and night.
+              - Carts of kiln-wood on the road, more than anyone has seen. | wilds
+              - The smell of cut pine at {place}, and nobody building anything. | town
+              The Kiln's door is unsealed.
+              - A warm wind from the north, wrong for the season.
+              The first names are walked up the ramp.
+              - An empty shed at {place}, door open, a cup still on the shelf. | town
+            STEPS
             full_line: "The first of Cone. The Great Kiln is lit, and smoke stands over the valley for the first time in forty years. The wardens go shed to shed with the loading list.",
             mode_name: "Firing", mode_line: "Cone glows. The Supply is shuttered, the yards are full, and the heat comes down the streets from the Kiln.",
             mode_description: "The Kiln is lit. Every shop is shut, the wardens are everywhere, and the unfired are being walked up the ramp." },
@@ -120,7 +134,12 @@ module Seeds
         ],
         secrets: [
           { body: "The Great Kiln cracked along the crown in its last firing. Hollis Grell read it in the cones and told Vask; that is why the door was sealed. Lit again, it falls on Cone.",
-            place: "The Great Kiln", figure: "Hollis Grell" },
+            place: "The Great Kiln", figure: "Hollis Grell", key: "cracked_kiln", steps: <<~STEPS },
+              Why was the Great Kiln sealed forty years ago, if it fired true?
+              The old firing cones in the Guild's case have all slumped the same way: toward the crown.
+              It was sealed for the war, and that's all. | Kilnmaster Orrin Vask
+              Hollis Grell won't go within sight of the Kiln, and won't say why. | Sister Weld
+            STEPS
           { body: "Kilnmaster Vask was never fired. His glaze is paint.", figure: "Kilnmaster Orrin Vask" },
           { body: "The Choir in the Vaults wants the Kiln lit as much as the Guild does. Every misfire is another voice.", place: "The Misfire Vaults", figure: "The Choirmaster" },
           { body: "The loading list is in Sister Weld's hand. She copied it for the wardens, and left three names off.", place: "Bisque", figure: "Sister Weld" }
@@ -130,6 +149,15 @@ module Seeds
         description: "The Harrow slip has woken, and it is pulling the valley's children home.",
         clocks: [
           { name: "The Harrow galleries spread", segments: 4, public: true, triggers: %w[travel], place: "Bisque", source: "Clay Pits of Harrow",
+            impulse: "To take the valley's children back into the slip",
+            portents: <<~STEPS,
+              Wells taste of clay.
+              - The water at {place} comes up cloudy, and warm. | town
+              Children talk in their sleep about the pits.
+              - A child at {place} humming a tune nobody taught her. | town
+              The ground hums under Bisque.
+              - Something under the road, felt in the feet, like a wheel turning slow. | wilds
+            STEPS
             full_line: "The ground under Bisque goes soft. A drying shed leans, then sinks to its eaves.",
             mode_name: "Sinking", mode_line: "Bisque's sheds lean. There is slip in the lanes, and it is warm.",
             mode_description: "The pits have reached under the village. Sheds sink, the Menders' house is shut, and the unfired are moving out." }

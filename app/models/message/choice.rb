@@ -72,6 +72,7 @@ module Message::Choice
         flag.update!(value: option)
       end
       campaign.narrate("The party chose: #{option}.")
+      do_what_it_says!(option)
     end
     broadcast_choice
     streams.each { |stream| broadcast_replace_to(*stream, target: self, partial: "messages/message", locals: { message: self }) }
@@ -85,6 +86,19 @@ module Message::Choice
   end
 
   private
+
+  # An event's option does what it says (Outcome), each in turn; what
+  # can't happen any more (the potion was drunk meanwhile) is let go.
+  def do_what_it_says!(option)
+    Array(data.dig("outcomes", option)).each do |word|
+      outcome = Outcome.parse(word) or next
+      outcome.can_happen!(campaign)
+      said = outcome.apply!(campaign, by: "The party")
+      campaign.narrate(said) if said
+    rescue Refusal
+      next
+    end
+  end
 
   def choices_have_options
     return unless choice?

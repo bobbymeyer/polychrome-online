@@ -2,7 +2,7 @@
     you had open). What needs an answer now comes first: everyone down, a field ability asked for. %>
 <% tabs = { "scenes" => [ "Scenes", campaign.scenes.where(played_at: nil).count ], "check" => [ "Check", nil ],
             "clocks" => [ "Clocks", campaign.clocks.running.count ], "time" => [ "Time", nil ],
-            "secrets" => [ "Secrets", nil ], "more" => [ "More", nil ] } %>
+            "secrets" => [ "Secrets", nil ], "moves" => [ "Moves", nil ], "more" => [ "More", nil ] } %>
 <%# While the table is busy (a vote, an encounter, a battle: the Now line's data-state), the tabs fold behind
     "Tools" (stage.css); the Now line's own buttons open the one they need (gm-tools:open). %>
 <section class="gm-tools" aria-label="GM tools" data-controller="gm-tools" data-gm-tools-campaign-value="<%= campaign.id %>"

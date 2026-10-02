@@ -3,6 +3,7 @@
 require_relative "../lib/battle"
 require_relative "../lib/pointcrawl"
 require_relative "../lib/generators"
+require_relative "../lib/story"
 Dir[File.join(__dir__, "support", "**", "*.rb")].sort.each { |f| require f }
 
 RSpec.configure do |config|

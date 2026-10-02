@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_140000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -223,6 +223,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
     t.integer "staged_scene_id"
     t.text "lines"
     t.text "veils"
+    t.json "visits", default: {}, null: false
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true
@@ -293,6 +294,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
     t.integer "map_node_id"
     t.datetime "stopped_at"
     t.json "times", default: [], null: false
+    t.string "impulse"
+    t.text "portents"
     t.index ["campaign_id"], name: "index_clocks_on_campaign_id"
     t.index ["map_node_id"], name: "index_clocks_on_map_node_id"
     t.index ["mode_id"], name: "index_clocks_on_mode_id"
@@ -394,6 +397,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "source_id"
+    t.string "impulse"
+    t.text "portents"
     t.index ["place_id"], name: "index_front_clocks_on_place_id"
     t.index ["source_id"], name: "index_front_clocks_on_source_id"
     t.index ["world_front_id"], name: "index_front_clocks_on_world_front_id"
@@ -406,6 +411,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
     t.integer "figure_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "steps"
+    t.string "key"
     t.index ["figure_id"], name: "index_front_secrets_on_figure_id"
     t.index ["place_id"], name: "index_front_secrets_on_place_id"
     t.index ["world_front_id"], name: "index_front_secrets_on_world_front_id"
@@ -728,6 +735,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_110000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "world_front_id"
+    t.text "steps"
+    t.integer "found", default: 0, null: false
+    t.string "key"
     t.index ["campaign_id"], name: "index_secrets_on_campaign_id"
     t.index ["location_id"], name: "index_secrets_on_location_id"
     t.index ["npc_id"], name: "index_secrets_on_npc_id"

@@ -54,6 +54,43 @@ event, `Generators::Town#couplets` and `Location::Wishes`,
 
 ## Next: the foundations, then what stands on them
 
+Item 6 is built: `Story::Matcher` (`lib/story`), the facts in
+`Campaign::Moment`, and its first use, arrival lines offered to the GM
+(`Campaign::Remarks`). Rule-outs are done through what rows remember, not a
+mechanism of their own. Not yet: the coverage page (Later), and other
+moments than arriving, which items 8 and 10 bring.
+
+Item 7 is built: `Outcome` has what a hard move takes (hurt, weary,
+ambush, and now lose, time and tick), and a world's complications tables
+hold soft and hard moves, offered to the GM on a failed check
+(`Campaign::Remarks#offer_complications!`). Camp events (item 10) will draw
+on the same rows' outcomes.
+
+Item 8 is built: a clock's impulse and portents (`Portent`), each step
+told to the GM as its segment fills (`Clock#tick!`), and its signs offered
+on arrival, more often the fuller the clock
+(`Campaign::Remarks#offer_sign!`). Written on a front's clocks and dealt
+in, or on a campaign's own.
+
+Item 9 is built: the GM's Moves tab (`Campaign::Moves`), with a soft and a
+hard move for the moment, each danger's impulse, next step and a sign,
+wishes heard and not met, and antagonists who got away. A chain's next
+step joins it with item 11.
+
+Item 10 is built: a world's events tables, offered on a rest or a journey
+(`Campaign::Remarks#offer_event!`), with a choice put to the table whose
+options do what they say (`EventChoices`, `Message::Choice#settle!`) and a
+flag later events ask about. The party facts gained who's hurt, tied and
+from where. Motives stay free text, so events don't match on them yet.
+
+Item 11 is built: secrets with clues (`Clue`, `Secret#find_clue!`), found
+by an uncover, at the secret's place, from its person or by the GM, each
+the next wherever it was found; tellers mark clues that disagree; a
+secret's key lets every story row (arrivals, complications, signs, events)
+ask how far the party has got. Not yet: clues in single dungeon rooms,
+items' pasts and codex pages (a place's clue comes on arriving there),
+and rumours, which aren't story rows.
+
 6. **The story matcher** (`lib/`, pure). The same mechanism kept coming up: tagged rows
    with fallback (ch. 4), lines gated between what the party knows (ch. 7), event
    requirements that chain through flags (ch. 11), descriptions from a world model
@@ -98,6 +135,11 @@ event, `Generators::Town#couplets` and `Location::Wishes`,
     (ch. 8, 18). *(ch. 6, 7, 8, 14, 18; L)*
 
 ## Later: good, but after the above
+
+The coverage page is built: `StoryCoverage` over `Story::Coverage`, on each
+story table (where nothing fits, rows that never come up, and a moment to
+try). It found the moment's `day` meaning both the light and the day count,
+so a row for the day fitted at night: the count is `days` now.
 
 - **Fronts with a few possible truths.** A world's front carries two to four authored
   truths and a campaign draws one; the GM knows which. The same world plays differently

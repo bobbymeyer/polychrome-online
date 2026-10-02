@@ -131,7 +131,7 @@ RSpec.describe "Field abilities", type: :request do
       campaign.place_party!(tule)
       edge = campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "dangerous", encounter_table: world.encounter_tables.first)
       expect(campaign.reload.travel!(edge)).to be_nil
-      expect(campaign.messages.last.body).to eq("The way is safe: nothing troubles the party on the road.")
+      expect(campaign.messages.where(scope: "table").last.body).to eq("The way is safe: nothing troubles the party on the road.")
       expect(campaign.reload).not_to be_safe_road
     end
   end
