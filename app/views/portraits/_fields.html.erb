@@ -20,4 +20,23 @@
       </div>
     <% end %>
   </div>
+  <%# The full-body figure for the stage: one image, cut out. %>
+  <div class="sprite-field">
+    <% figure = owner.sprite %>
+    <% if figure&.image&.attached? %>
+      <%= image_tag url_for(figure.image), alt: "", class: "sprite-field__image" %>
+    <% elsif owner.sprite_image %>
+      <%= image_tag url_for(owner.sprite_image), alt: "", class: "sprite-field__image sprite-field__image--fallback", title: "Standing in: #{owner.fallback_sprite_entry.name}'s figure" %>
+    <% else %>
+      <span class="speaker-portrait speaker-portrait--small speaker-portrait--plate speaker-portrait--empty">?</span>
+    <% end %>
+    <div>
+      <label for="portraits_sprite">Full-body sprite, for the stage</label>
+      <%= file_field_tag "portraits[sprite]", accept: "image/*", id: "portraits_sprite" %>
+      <p class="hint">Standing, cut out (a PNG with transparency). Without one, <%= owner.is_a?(Character) ? "the archetype's figure stands in" : "the portrait does" %><%= ", then the portrait" if owner.is_a?(Character) %>.</p>
+      <% if figure %>
+        <label class="checks"><%= check_box_tag "portraits[remove_sprite]", "1", false, id: "portraits_remove_sprite" %> Remove</label>
+      <% end %>
+    </div>
+  </div>
 </fieldset>

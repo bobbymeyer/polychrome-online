@@ -338,8 +338,11 @@ and only change the stage.
   (`Artwork`): the place the beat stands in is the subject and the beat's
   words are the layer after it, so the burning inn is still the inn; the GM
   picks from candidates on the scene's page, and the panel is the beat's own
-  image. Figures are the speakers' portraits, enlarged on the stage, the
-  speaker lit and the rest dimmed.
+  image. Figures stand full body as their **sprite** (`Sprite`: one per
+  speaker, uploaded in their form beside the portraits or generated like one,
+  cut out, the same face by starting from the Neutral portrait's seed; a
+  character without one stands as their archetype's figure), else as their
+  portrait; the speaker is lit and a step larger, the rest dimmed.
 - **Playing.** The GM puts the scene on the stage (`Scene#start!`) and steps
   it beat by beat from the Now line (`#advance!`), or lets it **play on** at
   reading pace (`#play_on!`, `SceneStepJob`) and pauses it. Everyone's Stage

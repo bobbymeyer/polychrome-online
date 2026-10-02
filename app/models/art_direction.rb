@@ -8,7 +8,7 @@ module ArtDirection
             "location_template" => :gazetteer, "encounter_table" => :encounters }.freeze
 
   # Every kind of image slot: the books, and speaker portraits.
-  KINDS = (BOOKS.keys + %w[portrait beat]).freeze
+  KINDS = (BOOKS.keys + %w[portrait sprite beat]).freeze
 
   module_function
 

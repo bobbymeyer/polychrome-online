@@ -241,6 +241,42 @@ RSpec.describe "Generated portraits (§8)", type: :request do
     expect(response).to have_http_status(:not_found)
   end
 
+  it "makes a full-body sprite the same way, same face, cut out, and the stage stands it in a beat" do
+    neutral = generate(cid, "neutral")
+    finish(neutral)
+    post world_art_candidate_pick_path(world, neutral.candidates.first)
+    seed = cid.portraits.find_by!(expression: "neutral").image_seed
+
+    post world_art_batches_path(world), params: { entry_type: "sprite", owner_type: "npc", owner_id: cid.id, count: 2 }
+    expect(response).to redirect_to(edit_npc_path(cid, anchor: "art"))
+    sprite = cid.reload.sprite
+    batch = sprite.art_batch
+    expect(batch.recipe["positive"]).to include("full body", "Cid, Engineer, white beard, goggles")
+    expect(batch.recipe["positive"]).not_to include("expression")
+    expect(batch.recipe["transparent"]).to be(true)
+    expect(batch.recipe["height"]).to be > batch.recipe["width"]
+    expect(batch.candidates.first.seed).to eq(seed)
+    expect(ArtBatch.exists?(neutral.id)).to be(false) # one strip a speaker
+
+    get edit_npc_path(cid)
+    expect(response.body).to include("The sprite: full body, for the stage", "Candidates for the sprite", "Full-body sprite, for the stage")
+
+    finish(batch)
+    post world_art_candidate_pick_path(world, batch.candidates.last)
+    expect(sprite.reload.image).to be_attached
+    expect(cid.sprite_image.blob).to eq(sprite.image.blob)
+
+    # On the stage, the sprite stands where the portrait would; a character without one stands as their archetype.
+    scene = campaign.scenes.create!(name: "The quay", script: "Cid: Ready?")
+    scene.beats.first.update!(figures: [ { type: "Character", id: bartz.id, side: "left" } ])
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    scene.start!
+    get campaign_table_path(campaign)
+    expect(response.body).to include("beat-stage__figure--sprite is-speaking", "beat-stage__sprite")
+    expect(response.body).to include("beat-stage__figure--portrait") # Bartz: the Knight has no image in the base world
+    expect(bartz.sprite_image).to be_nil
+  end
+
   it "covers the Encounter and Generator tables too" do
     table = world.encounter_tables.first
     get world_encounters_encounter_table_path(world, table)

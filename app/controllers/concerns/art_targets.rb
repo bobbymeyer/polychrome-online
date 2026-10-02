@@ -31,6 +31,10 @@ module ArtTargets
     params[:entry_type] == "portrait"
   end
 
+  def sprite_request?
+    params[:entry_type] == "sprite"
+  end
+
   def mode_request?
     params[:entry_type] == "mode"
   end

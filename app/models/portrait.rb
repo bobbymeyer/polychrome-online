@@ -5,6 +5,7 @@
 # engine's other vocabularies, so every speaker can be asked for any of them.
 class Portrait < ApplicationRecord
   EXPRESSIONS = %w[neutral happy sad angry surprised worried determined].freeze
+  OWNER_TYPES = %w[Npc Character].freeze
 
   belongs_to :owner, polymorphic: true
   has_one_attached :image

@@ -185,6 +185,14 @@ shared: &shared
       width: 1024
       height: 1024
       transparent: false
+    # A speaker's full-body figure for the stage (Sprite): the same face as
+    # their portraits, standing, cut out.
+    sprite:
+      prompt: "a single figure, full body, standing, facing the viewer, centered, plain white background"
+      negative: "multiple people, cropped, text"
+      width: 832
+      height: 1216
+      transparent: true
     # A scene's panels (Beat): the stage behind a beat, wide, like a cutscene's
     # painted backdrop. The place is the subject when the beat stands in one.
     beat:

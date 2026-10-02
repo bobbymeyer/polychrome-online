@@ -54,7 +54,7 @@ module Authorization
 
   def can_generate?(entry)
     case entry
-    when Portrait then can_gm?(entry.owner.campaign)
+    when Portrait, Sprite then can_gm?(entry.owner.campaign)
     when ModeArt then can_gm?(entry.location.campaign)
     when Beat then can_gm?(entry.campaign)
     else admin?
