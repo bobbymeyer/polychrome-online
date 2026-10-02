@@ -19,18 +19,22 @@ class ScenesController < ApplicationController
   def create
     @scene = @campaign.scenes.new(scene_params)
     if @scene.save
-      redirect_to campaign_prep_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} is ready to play.", status: :see_other
+      redirect_to edit_scene_path(@scene), notice: "#{@scene.name} is ready: set its stage beat by beat, or play it as it is.", status: :see_other
     else
       render :new, status: :unprocessable_content
     end
   end
 
-  def edit; end
+  # beat: the one the preview and the panel studio are on.
+  def edit
+    @beat = @scene.beats.find_by(id: params[:beat]) || @scene.beats.first
+  end
 
   def update
     if @scene.update(scene_params)
-      redirect_to campaign_prep_path(@campaign, anchor: "scenes"), notice: "#{@scene.name} was updated.", status: :see_other
+      redirect_to edit_scene_path(@scene), notice: "#{@scene.name} was updated.", status: :see_other
     else
+      @beat = @scene.beats.first
       render :edit, status: :unprocessable_content
     end
   end

@@ -35,6 +35,15 @@ module ArtTargets
     params[:entry_type] == "mode"
   end
 
+  def beat_request?
+    params[:entry_type] == "beat"
+  end
+
+  # A scene's beat, whose panel is being made.
+  def art_beat
+    Beat.joins(scene: :campaign).where(campaigns: { world_id: @world.id }).find(params[:beat_id])
+  end
+
   # The picture for one of a location's modes, made when first asked for.
   def art_mode
     location = Location.joins(:campaign).where(campaigns: { world_id: @world.id }).find(params[:location_id])

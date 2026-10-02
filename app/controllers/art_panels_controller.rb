@@ -8,7 +8,12 @@ class ArtPanelsController < ApplicationController
   before_action :set_world
 
   def show
-    if mode_request?
+    if beat_request?
+      beat = art_beat
+      return head :forbidden unless can_gm?(beat.campaign)
+
+      render partial: "art_batches/beat_panel", locals: { beat: beat }
+    elsif mode_request?
       art = art_mode
       return head :forbidden unless can_gm?(art.location.campaign)
 

@@ -360,6 +360,12 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   folds to a minimap in the top-left corner, so travel still reads. The date, the place and the
   part of the day sit on a plate in the top-right corner. What's being said plays along the
   bottom, in the dialogue box, and the map keeps clear of it.
+- **A scene plays on the same frame.** While the GM has a scene on the stage, its beat is what the
+  frame shows: the backdrop (a place's picture, a panel painted for the beat, or black) fills it, the
+  map steps aside, and whoever stands in the beat is along the bottom, left and right, as their
+  portraits, the speaker lit and a step larger, the rest dimmed. The line plays in the dialogue box
+  as any line does. The GM steps beats from the Now line, or lets the scene play on; the scene's
+  page in prep previews each beat on the same frame.
 - **A battle plays on the same frame**, on its own page: the field fills it, the party's roster is
   a band along its bottom, the round's rail along its top, and the lines said in the fight play
   over it as at the table.

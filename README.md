@@ -317,18 +317,40 @@ everything outside battle.
 
 ## Scenes
 
-The GM writes scenes before the session, on the campaign's Prep page, and plays
-them from the table with one press (`Scene#play!`). A script reads like a
-play, one line each: `Cid (worried): The airship won't hold.` speaks as
-the NPC with that expression, and anything else is narration (a name that
-isn't in the cast is an error, unless it's clearly a sentence). The lines
-become table messages in order, so every viewer's dialogue box types them
-out one after another. The scene can then end:
+The GM writes scenes before the session, on the campaign's Prep page, as a
+sequence of **beats** (`Beat`), and plays them from the table. Each beat is
+one line said (by someone from the cast, one of the party, or the narrator,
+with an expression), what the stage shows behind it, who stands on the
+stage, and a jingle or a change of music as it lands. A beat can say nothing
+and only change the stage.
 
-- **In a battle** against the monsters chosen for it. The battle starts
-  straight away, and each viewer is taken to it once their dialogue box has
-  finished the scene (`stage.js` waits for it).
-- **With a place revealed** on the map.
+- **Writing.** The scene's page is a sequencer: beats in order, each its own
+  small form saved as it changes, with move up and down, insert after,
+  duplicate and delete; beside it a preview of the beat chosen, on a Stage,
+  as the table will see it. Lines can also be pasted as a script that reads
+  like a play, one line each (`Cid (worried): The airship won't hold.`
+  speaks as the NPC with that expression; `Bartz: Hold on!` as a party
+  member; anything else is narration): each line becomes a beat after the
+  ones there. End on `? Trust Cid | Refuse -> trusted_cid` for a choice.
+- **The stage behind a beat** is a place on the map (its picture as it is
+  now, mode and all), a **panel made for the beat**, black, or whatever the
+  beat before left there. A panel is generated like a mode's picture
+  (`Artwork`): the place the beat stands in is the subject and the beat's
+  words are the layer after it, so the burning inn is still the inn; the GM
+  picks from candidates on the scene's page, and the panel is the beat's own
+  image. Figures are the speakers' portraits, enlarged on the stage, the
+  speaker lit and the rest dimmed.
+- **Playing.** The GM puts the scene on the stage (`Scene#start!`) and steps
+  it beat by beat from the Now line (`#advance!`), or lets it **play on** at
+  reading pace (`#play_on!`, `SceneStepJob`) and pauses it. Everyone's Stage
+  shows the same beat (`campaigns/tables/_scene`, a table panel), and each
+  line goes through the dialogue box, a party member's included. A choice
+  beat stops the play-on; the table decides. The scene can be taken down
+  without its ending.
+- **Then** it ends, after the last beat: in a battle against the monsters
+  chosen for it (everyone is taken to it once their dialogue box has
+  finished the scene: `stage.js` waits for it), with a place revealed on the
+  map, or with a place changed.
 
 A played scene stays in the list, greyed, and can be played again.
 

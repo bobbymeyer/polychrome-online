@@ -18,7 +18,7 @@ class ArtType < ApplicationRecord
   end
 
   LABELS = { "location_template" => "Locations", "encounter_table" => "Encounter tables",
-             "portrait" => "Portraits" }.freeze
+             "portrait" => "Portraits", "beat" => "Scene panels" }.freeze
 
   def label
     LABELS.fetch(kind) { kind.pluralize.humanize }

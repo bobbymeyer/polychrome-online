@@ -197,7 +197,15 @@ Rails.application.routes.draw do
     end
   end
   resources :scenes, only: %i[edit update destroy] do
-    resource :play, only: :create, module: :scenes
+    resource :play, only: %i[create update destroy], module: :scenes
+    resources :beats, only: :create
+  end
+  # A scene's beats (Beat): the sequencer on the scene's page.
+  resources :beats, only: %i[update destroy] do
+    scope module: :beats do
+      resource :move, only: :create
+      resource :copy, only: :create
+    end
   end
 
   resources :characters, only: %i[show edit update destroy] do

@@ -185,6 +185,14 @@ shared: &shared
       width: 1024
       height: 1024
       transparent: false
+    # A scene's panels (Beat): the stage behind a beat, wide, like a cutscene's
+    # painted backdrop. The place is the subject when the beat stands in one.
+    beat:
+      prompt: "a wide painted backdrop for a story moment, cinematic, no people in the foreground"
+      negative: "text, speech bubbles, frames, borders"
+      width: 1280
+      height: 720
+      transparent: false
 
   expressions:
     neutral: "calm neutral expression"

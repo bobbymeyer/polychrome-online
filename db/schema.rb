@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_140000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -179,6 +179,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_130000) do
     t.index ["world_id"], name: "index_battles_on_world_id"
   end
 
+  create_table "beats", force: :cascade do |t|
+    t.integer "scene_id", null: false
+    t.integer "position", null: false
+    t.string "kind", default: "say", null: false
+    t.string "speaker_type"
+    t.integer "speaker_id"
+    t.string "expression"
+    t.text "text"
+    t.string "backdrop", default: "keep", null: false
+    t.integer "map_node_id"
+    t.json "figures", default: [], null: false
+    t.string "cue"
+    t.string "music"
+    t.json "options", default: [], null: false
+    t.string "flag_key"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["map_node_id"], name: "index_beats_on_map_node_id"
+    t.index ["scene_id", "position"], name: "index_beats_on_scene_id_and_position"
+    t.index ["scene_id"], name: "index_beats_on_scene_id"
+  end
+
   create_table "campaigns", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "name", null: false
@@ -198,6 +220,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_130000) do
     t.string "time_of_day", default: "dawn", null: false
     t.json "welcomes", default: {}, null: false
     t.integer "spent_parts", default: 0, null: false
+    t.integer "staged_scene_id"
     t.text "lines"
     t.text "veils"
     t.json "visits", default: {}, null: false
@@ -695,6 +718,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_130000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "mode_id"
+    t.integer "cursor"
+    t.boolean "auto", default: false, null: false
     t.index ["campaign_id"], name: "index_scenes_on_campaign_id"
     t.index ["map_node_id"], name: "index_scenes_on_map_node_id"
     t.index ["mode_id"], name: "index_scenes_on_mode_id"
@@ -860,6 +885,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_130000) do
   add_foreign_key "battle_events", "battles"
   add_foreign_key "battles", "campaigns"
   add_foreign_key "battles", "worlds"
+  add_foreign_key "beats", "map_nodes"
+  add_foreign_key "beats", "scenes"
   add_foreign_key "campaigns", "map_nodes", column: "current_node_id"
   add_foreign_key "campaigns", "users", column: "gm_id", on_delete: :nullify
   add_foreign_key "campaigns", "worlds"

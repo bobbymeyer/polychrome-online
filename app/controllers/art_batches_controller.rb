@@ -19,9 +19,11 @@ class ArtBatchesController < ApplicationController
       subject.update!(subject.has_attribute?(:edited) ? changes.merge(edited: true) : changes)
     end
     entry.mode.update!(art: params[:mode_art]) if entry.is_a?(ModeArt) && params.key?(:mode_art)
+    entry.update!(art_notes: params[:beat_words]) if entry.is_a?(Beat) && params.key?(:beat_words)
     # A speaker shows one strip at a time, whichever expression it is for.
     ArtBatch.where(entry: subject.portraits).destroy_all if entry.is_a?(Portrait)
     ArtBatch.where(entry: entry.location.mode_arts).destroy_all if entry.is_a?(ModeArt)
+    ArtBatch.where(entry: entry.scene.beats).destroy_all if entry.is_a?(Beat) # one strip a scene
     transparent = { "1" => true, "0" => false }[params[:transparent]]
     ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0", transparent: transparent,
                                 draft: params[:draft] == "1")
@@ -44,6 +46,7 @@ class ArtBatchesController < ApplicationController
   # subject is the Gazetteer entry, edited in the book)]
   def target
     return [ art_mode, nil ] if mode_request?
+    return [ art_beat, nil ] if beat_request?
 
     if speaker_request?
       owner = art_speaker
