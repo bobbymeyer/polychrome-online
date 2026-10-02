@@ -115,4 +115,9 @@ class Character < ApplicationRecord
   def fallback_portrait_entry
     job
   end
+
+  # On the stage, the archetype's full figure stands in for a sprite.
+  def fallback_sprite_entry
+    job
+  end
 end

@@ -1642,7 +1642,20 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .beat-stage { position: absolute; inset: 0; background: var(--paper); }
 .beat-stage--black { background: var(--ink); }
 .beat-stage__backdrop { display: block; width: 100%; height: 100%; object-fit: cover; }
-.beat-stage__figures { position: absolute; left: 2cqw; right: 2cqw; bottom: 26cqh; display: flex; justify-content: space-between; align-items: flex-end; gap: 2cqw; pointer-events: none; }
+/* Figures stand on the frame's floor: sprites with their feet behind the dialogue box, as on a visual
+   novel's stage; portraits (no sprite yet) sit just above it. */
+.beat-stage__figures { position: absolute; left: 2cqw; right: 2cqw; bottom: 0; display: flex; justify-content: space-between; align-items: flex-end; gap: 2cqw; pointer-events: none; }
+.beat-stage__figure--portrait { margin-bottom: 26cqh; }
+.beat-stage__sprite {
+  display: block; height: 78cqh; width: auto; max-width: 34cqw; object-fit: contain; object-position: bottom;
+  filter: brightness(.6) saturate(.6) drop-shadow(4px 4px 0 var(--ink));
+  transition: height var(--t-change) var(--snap), filter var(--t-change) var(--snap);
+}
+.beat-stage__figure--sprite.is-speaking .beat-stage__sprite { height: 92cqh; filter: drop-shadow(6px 6px 0 var(--ink)); }
+/* A speaker's figure in the form: the one uploaded, or the one standing in. */
+.sprite-field { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: start; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rule); }
+.sprite-field__image { width: 64px; height: 96px; object-fit: contain; object-position: bottom; background: var(--wash); }
+.sprite-field__image--fallback { opacity: .6; }
 .beat-stage__side { display: flex; align-items: flex-end; gap: 1cqw; min-width: 0; }
 .beat-stage__side--right { flex-direction: row-reverse; }
 .beat-stage__figure .speaker-portrait--large {

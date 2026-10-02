@@ -22,6 +22,21 @@ RSpec.describe Portrait do
     expect(bartz.reload.portrait_image("happy").blob).to eq(bartz.job.image.blob)
   end
 
+  it "stands a speaker on the stage as their sprite, uploaded or removed with the portraits; a character as their archetype's figure" do
+    expect(cid.sprite_image).to be_nil
+    cid.update_portraits!(sprite_upload: image)
+    expect(cid.sprite_image.blob).to eq(cid.sprite.image.blob)
+    cid.update_portraits!(remove_sprite: true)
+    expect(cid.reload.sprite).to be_nil
+
+    bartz = create_character(campaign)
+    expect(bartz.sprite_image).to be_nil
+    bartz.job.image.attach(image)
+    expect(bartz.reload.sprite_image.blob).to eq(bartz.job.image.blob)
+    bartz.update_portraits!(sprite_upload: Rack::Test::UploadedFile.new(file_fixture("goblin.png"), "image/png"))
+    expect(bartz.reload.sprite_image.blob).to eq(bartz.sprite.image.blob)
+  end
+
   it "removes portraits and ignores unknown expressions" do
     cid.update_portraits!(uploads: { "sad" => image })
     cid.update_portraits!(removals: [ "sad" ])
