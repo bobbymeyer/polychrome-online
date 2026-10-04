@@ -89,9 +89,10 @@ module Cutout
   end
 
   # The cut-out with what was taken out of the subject made opaque again,
-  # in the colours of the picture as rendered when it's given. PNG bytes in
-  # and out. tolerance: how far from the ground's colour still counts as
-  # ground.
+  # in the colours of the picture as rendered when it's given (under the
+  # cleared pixels too, so dropping the alpha gives the render back: see
+  # #opaque). PNG bytes in and out. tolerance: how far from the ground's
+  # colour still counts as ground.
   def self.keep_interior(removed, plain = nil, tolerance: self.tolerance)
     require "vips" # libvips: in the image (Dockerfile), loaded only when mending
     cut = Vips::Image.new_from_buffer(removed, "")
@@ -99,7 +100,8 @@ module Cutout
 
     alpha = cut.extract_band(cut.bands - 1)
     width, height = cut.width, cut.height
-    colours = plain_colours(plain, cut) || cut.extract_band(0, n: cut.bands - 1)
+    rendered = plain_colours(plain, cut)
+    colours = rendered || cut.extract_band(0, n: cut.bands - 1)
     ground = ground_colour(colours)
     clear = alpha < CLEAR
     groundish = near(colours, ground, tolerance)
@@ -118,9 +120,17 @@ module Cutout
     # Specks and pinholes aside (a 3×3 open, then close).
     kernel = Vips::Image.new_from_array(Array.new(3) { Array.new(3, 255) })
     restore = restore.ifthenelse(255, 0).cast(:uchar).morph(kernel, :erode).morph(kernel, :dilate).morph(kernel, :dilate).morph(kernel, :erode)
-    return removed if restore.max.zero?
+    return removed if restore.max.zero? && rendered.nil?
 
     colours.bandjoin(restore.ifthenelse(255, alpha).cast(:uchar)).pngsave_buffer
+  end
+
+  # The picture without its alpha: a cut-out back as it was rendered, on its
+  # ground, for redrawing from (a draft made properly). PNG bytes in and out.
+  def self.opaque(bytes)
+    require "vips"
+    image = Vips::Image.new_from_buffer(bytes, "")
+    image.has_alpha? ? image.extract_band(0, n: image.bands - 1).pngsave_buffer : bytes
   end
 
   # The ground's colour: the picture's border, averaged.

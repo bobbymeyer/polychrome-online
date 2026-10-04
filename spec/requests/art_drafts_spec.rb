@@ -17,7 +17,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
     post world_art_batches_path(world), params: { entry_type: "monster", entry_slug: "goblin", count: 2, draft: "1", transparent: "1" }
     drafts = goblin.art_batch
     expect(drafts).to be_draft
-    expect(drafts.recipe).to include("steps" => 16, "width" => 512, "height" => 512, "transparent" => false)
+    expect(drafts.recipe).to include("steps" => 16, "width" => 512, "height" => 512, "transparent" => true)
     expect(drafts.recipe["full"]).to include("width" => 1024, "height" => 1024, "transparent" => true)
 
     run(drafts)
@@ -26,7 +26,8 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
     expect(node(graph, "EmptyLatentImage")["inputs"]).to include("width" => 512, "height" => 512)
     comfy.finish!("prompt-1", "prompt-2")
     run(drafts)
-    expect(cutout.sent).to be_empty # the background waits for the full render
+    expect(cutout.sent.size).to eq(2) # a draft is cut out too: it can be used as it is
+    expect(drafts.candidates.map(&:transparent)).to all(be(true))
     chosen = drafts.candidates.reload.second
     expect(chosen.run_seconds).to eq(42.5)
 
@@ -41,6 +42,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
 
     run(refinement)
     expect(comfy.uploads.sole.first).to eq("polychrome-draft-#{chosen.id}-#{chosen.seed}.png")
+    expect(Cutout.png_alpha?(comfy.uploads.sole.last)).to be(false) # redrawn from the render on its ground, not the cut-out
     graph = comfy.submitted.last
     expect(node(graph, "LoadImage")["inputs"]).to eq("image" => "polychrome-draft-#{chosen.id}-#{chosen.seed}.png")
     expect(node(graph, "ImageScale")["inputs"]).to include("width" => 1024, "height" => 1024)
@@ -52,7 +54,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
 
     comfy.finish!("prompt-3")
     run(refinement)
-    expect(cutout.sent.size).to eq(1)
+    expect(cutout.sent.size).to eq(3)
     expect(refinement.candidates.sole.transparent).to be(true)
     post world_art_candidate_pick_path(world, refinement.candidates.sole)
     expect(goblin.reload.image).to be_attached
