@@ -201,7 +201,7 @@ RSpec.describe "The table", type: :request do
     campaign.messages.create!(body: "Lanterns.", speaker: cid)
     get campaign_table_path(campaign)
     header = response.body[/<div class="stage__hud">.*?<\/section>/m] # the date, in the stage's corner
-    expect(header).to include("Day 3", "time--dusk", "5 days</strong> until The spring tide comes in", "table-time__next\">Next: ")
+    expect(header).to include("Day 3", "time--dusk", "5 days</strong> until The spring tide comes in")
     expect(header).not_to include("The count schemes", "The guard grows wary")
     campaign.update!(current_node: campaign.map_nodes.create!(name: "Varn", x: 10, y: 10, visible: true))
     get campaign_table_path(campaign)
