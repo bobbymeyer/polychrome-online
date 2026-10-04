@@ -79,7 +79,11 @@ RSpec.describe "Scenes", type: :request do
     expect(inserted.effective_backdrop).to eq("kind" => "black")
 
     get edit_scene_path(scene, beat: inserted.id)
-    expect(response.body).to include("Step 6 of 7: Bartz: Always.", "beat-stage--black", "is-speaking", 'data-fx="shake"', "Effect on: shake")
+    expect(response.body).to include("Step 6 of 7", "Bartz: Always.", "beat-stage--black", "is-speaking", 'data-fx="shake"', "Effect on: shake")
+    # Run through from here: the next step rides a frame load, playing on at reading pace until the choice.
+    expect(response.body).to include("Play from here", 'data-scene-preview-playing-value="false"', 'data-scene-preview-stops-value="false"')
+    get edit_scene_path(scene, beat: scene.beats.in_order[5].id, playing: 1)
+    expect(response.body).to include("Pause", 'data-scene-preview-playing-value="true"', 'data-scene-preview-seconds-value="3.6"')
 
     post beat_copy_path(inserted)
     expect(scene.beats.reload.map(&:text).compact_blank).to eq([ "Ready?", "Always.", "Always.", "The fog lifts." ])
@@ -88,6 +92,8 @@ RSpec.describe "Scenes", type: :request do
 
     # A choice is written as its line.
     patch beat_path(scene.beats.last), params: { beat: { speaker: "", text: "? Fight | Flee -> quay" } }
+    get edit_scene_path(scene, beat: scene.beats.last.id)
+    expect(response.body).to include("The table decides here: playing on stops.", "Play from the start", 'data-scene-preview-stops-value="true"')
     expect(scene.beats.last.reload).to have_attributes(kind: "choice", options: %w[Fight Flee], flag_key: "quay")
     expect(scene.reload.summary).to eq("2 lines, 4 changes, then a choice: Fight / Flee")
   end

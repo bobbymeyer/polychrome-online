@@ -1,22 +1,58 @@
-<%# One step as the table will see it: the stage as it is at that step, and a line in the box. beat: the one chosen. %>
-<% if beat %>
-<div class="stage stage--preview" aria-label="Preview">
-  <div class="stage__frame">
-    <figure class="table-scene is-scene"><%= render "campaigns/tables/beat_stage", beat: beat %></figure>
-    <% if beat.choice? %>
-      <section class="dialogue window dialogue--stage is-narration" aria-label="Dialogue">
-        <div class="dialogue__text"><p class="dialogue__name">The table</p><p class="dialogue__body">The party decides: <%= beat.options.to_sentence(two_words_connector: " or ", last_word_connector: ", or ") %>.</p></div>
-      </section>
-    <% elsif beat.says? %>
-      <section class="dialogue window dialogue--stage<%= ' is-narration' unless beat.speaker %>" aria-label="Dialogue">
-        <div class="dialogue__portrait"><%= speaker_portrait(beat.speaker, beat.expression, size: :large) if beat.speaker %></div>
-        <div class="dialogue__text">
-          <p class="dialogue__name" style="<%= plate_style(beat.speaker.name, beat.speaker.try(:colour)) if beat.speaker %>"><%= beat.speaker&.name || "Narrator" %></p>
-          <p class="dialogue__body"><%= beat.text %></p>
-        </div>
-      </section>
-    <% end %>
+<%# The scene as the table will see it, one step at a time, played through from here: the stage as it
+    is at the step, the line typed out in the box, and Back / Next / Play to run it (scene_preview
+    controller). beat: the step chosen (nil: no steps yet); scene; playing: running on by itself. %>
+<% steps = scene.beats.to_a %>
+<% at = beat && steps.index(beat) %>
+<% before = at && at.positive? ? steps[at - 1] : nil %>
+<% after = at && steps[at + 1] %>
+<div class="scene-preview" data-controller="scene-preview"
+     data-scene-preview-playing-value="<%= playing && after.present? %>"
+     data-scene-preview-seconds-value="<%= beat ? (beat.waits? ? beat.seconds : 1.2) : 0 %>"
+     data-scene-preview-stops-value="<%= beat&.choice? || after.nil? %>">
+  <div class="stage stage--preview" aria-label="Preview">
+    <div class="stage__frame">
+      <% if beat %>
+        <figure class="table-scene is-scene"><%= render "campaigns/tables/beat_stage", beat: beat %></figure>
+        <% if beat.choice? %>
+          <section class="dialogue window dialogue--stage is-narration" aria-label="Dialogue">
+            <div class="dialogue__text"><p class="dialogue__name">The table</p><p class="dialogue__body" data-scene-preview-target="text">The party decides: <%= beat.options.to_sentence(two_words_connector: " or ", last_word_connector: ", or ") %>.</p></div>
+          </section>
+        <% elsif beat.says? %>
+          <section class="dialogue window dialogue--stage<%= ' is-narration' unless beat.speaker %>" aria-label="Dialogue" data-action="click->scene-preview#finish">
+            <div class="dialogue__portrait"><%= speaker_portrait(beat.speaker, beat.expression, size: :large) if beat.speaker %></div>
+            <div class="dialogue__text">
+              <p class="dialogue__name" style="<%= plate_style(beat.speaker.name, beat.speaker.try(:colour)) if beat.speaker %>"><%= beat.speaker&.name || "Narrator" %></p>
+              <p class="dialogue__body" data-scene-preview-target="text"><%= beat.text %></p>
+            </div>
+          </section>
+        <% end %>
+      <% else %>
+        <figure class="table-scene is-scene"><div class="beat-stage beat-stage--black"></div></figure>
+        <p class="scene-preview__empty">Add a step: it plays here as the table will see it.</p>
+      <% end %>
+    </div>
   </div>
+  <% if beat %>
+    <div class="scene-preview__bar">
+      <% if before %>
+        <%= link_to "◀ Back", edit_scene_path(scene, beat: before.id), class: "link-button", data: { turbo_frame: "scene_preview" } %>
+      <% else %>
+        <span class="muted">◀ Back</span>
+      <% end %>
+      <span class="scene-preview__count">Step <%= at + 1 %> of <%= steps.size %></span>
+      <% if after %>
+        <%= link_to "Next ▶", edit_scene_path(scene, beat: after.id), class: "link-button", data: { turbo_frame: "scene_preview", scene_preview_target: "next" } %>
+      <% else %>
+        <span class="muted">Next ▶</span>
+      <% end %>
+      <% if playing && after %>
+        <%= link_to "Pause", edit_scene_path(scene, beat: beat.id), class: "button button--quiet", data: { turbo_frame: "scene_preview" } %>
+      <% elsif after %>
+        <%= link_to "Play from here", edit_scene_path(scene, beat: beat.id, playing: 1), class: "button button--quiet play", data: { turbo_frame: "scene_preview" } %>
+      <% elsif steps.size > 1 %>
+        <%= link_to "Play from the start", edit_scene_path(scene, beat: steps.first.id, playing: 1), class: "button button--quiet play", data: { turbo_frame: "scene_preview" } %>
+      <% end %>
+    </div>
+    <p class="hint"><%= beat.describe %><%= "." unless beat.describe.end_with?(".", "!", "?", "…") %><%= " The stage shows #{beat.campaign.current_node.name}'s picture, as the party is there now." if beat.effective_backdrop.nil? && beat.campaign.current_node&.location&.picture %><%= " Effect on: #{beat.effect} (not played yet)." if beat.effect %><%= " The table decides here: playing on stops." if beat.choice? %></p>
+  <% end %>
 </div>
-<p class="hint">Step <%= beat.position + 1 %> of <%= beat.scene.beats.size %>: <%= beat.describe %>.<%= " The stage shows #{beat.campaign.current_node.name}'s picture, as the party is there now." if beat.effective_backdrop.nil? && beat.campaign.current_node&.location&.picture %><%= " Effect on: #{beat.effect} (not played yet)." if beat.effect %></p>
-<% end %>

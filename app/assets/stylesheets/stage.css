@@ -1575,7 +1575,12 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .beat-stage__figure.is-speaking .speaker-portrait--large.speaker-portrait--plate { font-size: 26cqh; }
 /* The preview on the scene's page: as wide as its column, no caption under it. */
 .stage--preview { width: 100%; min-width: 0; margin: 0 0 8px; }
-.stage--preview .stage__frame .dialogue { position: absolute; }
+.stage--preview .stage__frame .dialogue { position: absolute; cursor: pointer; }
+.scene-preview__empty { position: absolute; inset: auto 8% 12%; z-index: 2; margin: 0; text-align: center; color: var(--paper); font-weight: 600; }
+.scene-preview__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 8px; font-size: 14px; }
+.scene-preview__bar .muted { color: var(--grey); }
+.scene-preview__count { font-weight: 700; }
+.scene-preview__bar .button { margin-left: auto; }
 
 /* The sequencer (scenes/_sequencer): the beats in order, each its own form, with the moves around it;
    beside it, on a wide screen, the preview and the panel studio for the beat chosen. */

@@ -380,7 +380,10 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   for each kind of change) so the script's shape reads from the margin: speech, then a change, then
   speech. "Add a step" after any step opens a row of the six kinds. Beside the column the step
   chosen is previewed on the same frame as the table's, a change shown as the stage it leaves
-  behind. Effects are a placeholder: a name on the step, nothing played yet.
+  behind. The preview plays: the line types out as it will at the table (click to finish), a bar
+  under the frame steps Back and Next with the count between, and "Play from here" runs the scene
+  on at reading pace, a change passing in a beat, until a choice, where the table would decide. An
+  empty scene shows the black stage with the invitation to add a step on it. Effects are a placeholder: a name on the step, nothing played yet.
 - **A battle plays on the same frame**, on its own page: the field fills it, the party's roster is
   a band along its bottom, the round's rail along its top, the round's tally right over the
   roster (seated on its actual top, however many rows it has), and the lines said in the fight
