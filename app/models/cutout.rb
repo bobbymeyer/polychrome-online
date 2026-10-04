@@ -11,6 +11,10 @@
 # - The picture is rendered on a ground of its own colour (#on_ground: a
 #   flat green by default, in place of the type's "white background"), so
 #   white in the design is never the ground's colour.
+# The remover is hardwired: its address is this machine's port 7000 unless
+# told otherwise, and the app starts bin/cutout there itself when nothing
+# answers (Cutout::Launcher), so there is nothing to set.
+#
 # - The cut-out is mended (#keep_interior): a cleared pixel counts as
 #   background only if its colour is the ground's and it reaches the edge
 #   of the picture through ground-coloured pixels. Anything else the model
@@ -69,7 +73,10 @@ module Cutout
 
   # The picture with its background taken off and its inside mended.
   # Raises Cutout::Error (or Unreachable) when the service can't do it.
+  # A remover on this machine that isn't running yet is started first
+  # (Launcher).
   def self.remove(bytes, client: self.client)
+    Launcher.ensure_running!
     keep_interior(client.remove(bytes), bytes)
   end
 
