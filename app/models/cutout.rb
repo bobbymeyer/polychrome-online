@@ -11,7 +11,7 @@
 # - The picture is rendered on a ground of its own colour (#on_ground: a
 #   flat green by default, in place of the type's "white background"), so
 #   white in the design is never the ground's colour.
-# The remover is hardwired: its address is this machine's port 7000 unless
+# The remover is hardwired: its address is this machine's port 7071 unless
 # told otherwise, and the app starts bin/cutout there itself when nothing
 # answers (Cutout::Launcher), so there is nothing to set.
 #

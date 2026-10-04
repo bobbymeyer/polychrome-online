@@ -19,7 +19,7 @@
           <% else %>
             <span class="candidate__empty"><%= candidate.status == "failed" ? "Failed" : "…" %></span>
           <% end %>
-          <figcaption>Seed <%= candidate.seed %><%= tag.span(" · #{candidate.run_seconds < 60 ? "#{candidate.run_seconds.round}s" : "#{(candidate.run_seconds / 60).floor}m #{(candidate.run_seconds % 60).round}s"}", class: "muted", title: "Time ComfyUI spent on it") if candidate.run_seconds %><%= tag.span(" · background kept", class: "muted", title: candidate.error || "The background remover gave back an image with no transparency") if candidate.transparent == false || (candidate.error && candidate.status == "done") %><%= tag.span(" · #{candidate.error}", class: "muted") if candidate.error && candidate.status == "failed" && batch.status != "failed" %></figcaption>
+          <figcaption>Seed <%= candidate.seed %><%= tag.span(" · #{candidate.run_seconds < 60 ? "#{candidate.run_seconds.round}s" : "#{(candidate.run_seconds / 60).floor}m #{(candidate.run_seconds % 60).round}s"}", class: "muted", title: "Time ComfyUI spent on it") if candidate.run_seconds %><%= tag.span(" · background kept: #{candidate.error || "the background remover gave back an image with no transparency"}", class: "muted") if candidate.transparent == false || (candidate.error && candidate.status == "done") %><%= tag.span(" · #{candidate.error}", class: "muted") if candidate.error && candidate.status == "failed" && batch.status != "failed" %></figcaption>
         </figure>
         <% if candidate.image.attached? %>
           <%# The whole page, since the new image shows outside this frame too. %>

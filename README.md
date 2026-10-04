@@ -1067,8 +1067,8 @@ Every image slot can be uploaded or generated with
   full recipe on the entry's `Art`, including the workflow's outline,
   so it can be regenerated exactly. Uploading an image by hand clears them.
 - **Drafts first** (on by default for each batch): rough previews of about
-  512 × 512 (the same pixel count, keeping the shape) in 16 steps, with
-  background removal left for later.
+  512 × 512 (the same pixel count, keeping the shape) in 16 steps, cut out
+  like the full render when the batch removes the background.
   - **"Make this one properly"** re-renders a chosen draft at full size and
     steps, starting from the draft image itself. It scales the draft up and
     re-noises it in part (`draft.denoise` in `config/comfy.yml`), so it
@@ -1085,16 +1085,20 @@ Every image slot can be uploaded or generated with
   content types marked to remove it. It happens outside ComfyUI, with a
   background-removal service of its own (`Cutout`, `config/cutout.yml`),
   called on each image once ComfyUI has rendered it. It is **hardwired**:
-  the address is this machine's port 7000 unless told otherwise, and when
+  the address is this machine's port 7071 unless told otherwise, and when
   nothing answers there the app starts `bin/cutout` itself the first time
   a picture needs cutting out (`Cutout::Launcher`: the pid in
   `tmp/pids/cutout.pid`, its output in `log/cutout.log`), waits a little
   for it, and otherwise lets the batch wait and try again while it installs
   and fetches the model. Nothing to set on the Settings page or in the
   environment. From a container the remover is on the host
-  (`http://host.docker.internal:7000` is the default there), which the app
+  (`http://host.docker.internal:7071` is the default there), which the app
   can't start: run `bin/cutout` on the host. `CUTOUT_AUTOSTART=0` leaves
-  starting it to you; a blank `CUTOUT_URL` turns removal off.
+  starting it to you; a blank `CUTOUT_URL` turns removal off. Only the
+  remover itself answering counts as running (rembg's `/api` page): if
+  something else holds the port, every picture says so rather than going
+  to it. (The port was 7000, which a Mac's AirPlay Receiver holds, so each
+  picture came back with its background.)
   - **Which service:** rembg, the standalone tool that runs the removal
     models (ISNet, BiRefNet, BRIA RMBG, U²-Net) behind one HTTP API. Its
     models, as the app has measured them on a 4-core CPU: `isnet-anime`
@@ -1110,7 +1114,7 @@ Every image slot can be uploaded or generated with
     `danielgatis/rembg` image when there is one; the CUDA build of
     onnxruntime when `nvidia-smi` is found or `CUTOUT_GPU=1`), fetches the
     model first so the first picture isn't a download, serves it on port
-    7000 (`CUTOUT_PORT`) and warms the model up. `bin/cutout check` sends a
+    7071 (`CUTOUT_PORT`) and warms the model up. `bin/cutout check` sends a
     picture through whatever answers at `CUTOUT_URL` and says whether a
     transparent PNG came back; "Check the connection" on Settings does the
     same from the app, and starts the remover if it should be here and
@@ -1179,13 +1183,13 @@ Every image slot can be uploaded or generated with
   | `COMFY_TOKEN` | blank | Sent as `Authorization: Bearer …` |
   | `COMFY_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
   | `COMFY_MODEL` | `anima-preview.safetensors` | The model when no layer names one |
-  | `CUTOUT_URL` | `http://127.0.0.1:7000` (in a container, `http://host.docker.internal:7000`) | The background remover; blank turns removal off |
+  | `CUTOUT_URL` | `http://127.0.0.1:7071` (in a container, `http://host.docker.internal:7071`) | The background remover; blank turns removal off |
   | `CUTOUT_AUTOSTART` | `1` | Start `bin/cutout` from the app when the address is this machine's and nothing answers |
   | `CUTOUT_MODEL` | `isnet-anime` | The model it should use (`bin/cutout` fetches it) |
   | `CUTOUT_PATH` | `/api/remove` | Where on it the image goes |
   | `CUTOUT_TOKEN` | blank | Sent as a bearer token |
   | `CUTOUT_TIMEOUT` | `300` | Seconds to wait for one picture |
-  | `CUTOUT_PORT`, `CUTOUT_MODELS`, `CUTOUT_GPU` | `7000`, `~/.rembg`, auto | `bin/cutout` only: the port, where models are kept, the CUDA build |
+  | `CUTOUT_PORT`, `CUTOUT_MODELS`, `CUTOUT_GPU` | `7071`, `~/.rembg`, auto | `bin/cutout` only: the port, where models are kept, the CUDA build |
   | `CUTOUT_GROUND` | `green` | The colour cut-out pictures are rendered on, in place of white; blank keeps white |
   | `CUTOUT_TOLERANCE` | `56` | How far from the ground's colour (per channel) still counts as background |
   | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1` |

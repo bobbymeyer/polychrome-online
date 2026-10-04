@@ -4,18 +4,18 @@
 #
 # The default speaks rembg's HTTP API, the standalone tool that runs the
 # removal models (ISNet, BiRefNet, BRIA RMBG, U²-Net) behind one API:
-# `bin/cutout` installs it, fetches the model and serves it on port 7000
+# `bin/cutout` installs it, fetches the model and serves it on port 7071
 # (`bin/cutout check` sends a picture through). Any service that takes the
 # image as a multipart `file` field (and the model as `model`) and answers
 # with a PNG works the same way. From inside a container, a service on the
 # host is usually http://host.docker.internal:<port>.
 shared: &shared
-  # The service's base URL. Hardwired to this machine's port 7000: when
+  # The service's base URL. Hardwired to this machine's port 7071: when
   # nothing answers there, the app starts bin/cutout itself the first time a
   # picture needs cutting out (Cutout::Launcher). From inside a container
-  # the remover is on the host (http://host.docker.internal:7000), which the
+  # the remover is on the host (http://host.docker.internal:7071), which the
   # app can't start: run bin/cutout there. Blank turns removal off.
-  url: <%= ENV.fetch("CUTOUT_URL", File.exist?("/.dockerenv") || File.exist?("/run/.containerenv") ? "http://host.docker.internal:7000" : "http://127.0.0.1:7000") %>
+  url: <%= ENV.fetch("CUTOUT_URL", File.exist?("/.dockerenv") || File.exist?("/run/.containerenv") ? "http://host.docker.internal:7071" : "http://127.0.0.1:7071") %>
   # Start bin/cutout from the app when the address is this machine's and
   # nothing answers there. 0 to leave starting it to you.
   autostart: <%= ENV.fetch("CUTOUT_AUTOSTART", "1") %>
