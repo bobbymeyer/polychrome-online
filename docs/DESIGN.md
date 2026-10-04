@@ -373,7 +373,9 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   line plays in the dialogue box as any line does. The GM steps the scene line to line from the Now
   line, or lets it play on; the changes between lines (a backdrop, someone entering or leaving, music,
   an effect) are made on the way, so the table only ever stops on something said or asked.
-- **A scene is built step by step** on its page in prep: a column of steps, each a small form of
+- **A scene is built step by step** on its page in prep. A new scene asks for a name and nothing
+  else, and opens on the steps; the script box is folded away as a shortcut, there for a play's worth
+  of lines at once. The page is a column of steps, each a small form of
   its kind, with a coloured kind tag at its left edge (ink for a line, red for a choice, and a grey
   for each kind of change) so the script's shape reads from the margin: speech, then a change, then
   speech. "Add a step" after any step opens a row of the six kinds. Beside the column the step

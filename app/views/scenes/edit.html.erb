@@ -13,8 +13,6 @@
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--quiet" %>
   </div>
 </div>
-<%= render "form", scene: @scene %>
-
 <div class="scene-builder">
   <%= render "scenes/sequencer", scene: @scene, chosen: @beat %>
   <%= turbo_frame_tag "scene_preview", class: "scene-builder__side" do %>
@@ -26,6 +24,11 @@
     <% end %>
   <% end %>
 </div>
+
+<section class="scene-settings">
+  <h2>Name, script and ending</h2>
+  <%= render "form", scene: @scene %>
+</section>
 
 <%= button_to "Delete this scene", scene_path(@scene), method: :delete, class: "button button--quiet",
               form: { data: { turbo_confirm: "Delete #{@scene.name}?" } } %>

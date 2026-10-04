@@ -338,12 +338,13 @@ changes made on the way to the next line. The stage at any step is folded
 from the steps before it (`Scene#stage_at`: the backdrop set, who is on,
 the effect), so a step only says what changes.
 
-- **Writing.** The scene's page is a sequencer: steps in order, each its own
-  small form saved as it changes, with move up and down, add a step after
-  (a menu of the six kinds), duplicate and delete; beside it a preview of
-  the step chosen, on a Stage, as the table will see it: for a change, the
-  stage as it leaves it. Lines can also be pasted as a script that reads
-  like a play, one line each (`Cid (worried): The airship won't hold.`
+- **Writing.** A new scene is a name, then its page: a sequencer of steps
+  in order, each its own small form saved as it changes, with move up and
+  down, add a step after (a menu of the six kinds), duplicate and delete;
+  beside it a preview of the step chosen, on a Stage, as the table will see
+  it: for a change, the stage as it leaves it. Name, script and ending sit
+  under the steps. Lines can also be pasted as a script that reads like a
+  play, one line each (`Cid (worried): The airship won't hold.`
   speaks as the NPC with that expression; `Bartz: Hold on!` as a party
   member; anything else is narration): each line becomes a step after the
   ones there. End on `? Trust Cid | Refuse -> trusted_cid` for a choice.

@@ -2,18 +2,22 @@
               data: { controller: "forecast", forecast_url_value: campaign_forecast_path(@campaign), action: "change->forecast#changed" } do |f| %>
   <%= render "book_entries/errors", entry: scene %>
   <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, placeholder: "The airship falls" %></div>
-  <div class="field">
-    <%= f.label :script, scene.persisted? ? "Add lines from a script" : "Script" %>
-    <%= f.text_area :script, rows: scene.persisted? ? 4 : 10, class: "script-field",
-                    placeholder: "Cid (worried): The airship won't hold.\nThe wind picks up.\nNarrator: A shadow crosses the moon." %>
-    <p class="hint">
-      One line each, like a play; each becomes a step<%= " after the ones below" if scene.persisted? %> (lines and choices; add backdrops, sprites, music and effects below). Start with a name and a colon to speak as someone from the cast or the party, with an expression in brackets if you like
-      (<%= Portrait::EXPRESSIONS.to_sentence(last_word_connector: " or ") %>). Anything else is narration.
-      End on <code>? Trust Cid | Refuse -&gt; trusted_cid</code> to put a choice to the table: players pick, you settle it, and the flag is set to what they chose.
-      <% if (cast = @campaign.npcs.order(:name).pluck(:name)).any? %>The cast: <%= cast.to_sentence %>.<% else %>There's no cast yet: add NPCs on the campaign page.<% end %>
-      <% if (party = @campaign.characters.order(:created_at).pluck(:name)).any? %>The party: <%= party.to_sentence %>.<% end %>
-    </p>
-  </div>
+  <%# The script is the quick way in, not the editor: the scene is built step by step in the sequencer. %>
+  <details class="script-paste" <%= "open" if scene.script.present? || scene.errors[:script].any? %>>
+    <summary class="link-button"><%= scene.persisted? ? "Add lines from a script" : "Start from a script instead" %></summary>
+    <div class="field">
+      <%= f.label :script, "Script", class: "visually-hidden" %>
+      <%= f.text_area :script, rows: 6, class: "script-field",
+                      placeholder: "Cid (worried): The airship won't hold.\nThe wind picks up.\nNarrator: A shadow crosses the moon." %>
+      <p class="hint">
+        One line each, like a play; each becomes a step<%= " after the ones there" if scene.persisted? %> (lines and choices; backdrops, sprites, music and effects are added as steps). Start with a name and a colon to speak as someone from the cast or the party, with an expression in brackets if you like
+        (<%= Portrait::EXPRESSIONS.to_sentence(last_word_connector: " or ") %>). Anything else is narration.
+        End on <code>? Trust Cid | Refuse -&gt; trusted_cid</code> to put a choice to the table: players pick, you settle it, and the flag is set to what they chose.
+        <% if (cast = @campaign.npcs.order(:name).pluck(:name)).any? %>The cast: <%= cast.to_sentence %>.<% else %>There's no cast yet: add NPCs on the campaign page.<% end %>
+        <% if (party = @campaign.characters.order(:created_at).pluck(:name)).any? %>The party: <%= party.to_sentence %>.<% end %>
+      </p>
+    </div>
+  </details>
 
   <fieldset class="field" data-controller="kind-switch">
     <legend>Then</legend>
@@ -58,7 +62,7 @@
   </fieldset>
 
   <div class="actions">
-    <%= f.submit class: "button" %>
+    <%= f.submit scene.persisted? ? "Save" : "Start building", class: "button" %>
     <%= link_to "Cancel", campaign_prep_path(@campaign, anchor: "scenes"), class: "button button--quiet" %>
   </div>
 <% end %>

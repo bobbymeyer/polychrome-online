@@ -6,7 +6,7 @@
     <%= render "scenes/add_step", scene: scene, after: nil %>
   </div>
   <% if scene.beats.empty? %>
-    <p class="empty">No steps yet. Add one (a line, a choice, a backdrop, a sprite, music, an effect), or paste a script above: each line becomes a step.</p>
+    <p class="empty">No steps yet. Add one (a line, a choice, a backdrop, a sprite, music, an effect), or add lines from a script below: each line becomes a step.</p>
   <% else %>
     <p class="hint">Each step is one thing, saved as you change it: a line said; a choice for the table; what's behind them (a place, a panel made for the step, black); someone entering, changing face or leaving; the music; an effect (a placeholder for now). The table stops on lines and choices; the changes between them happen on the way.</p>
     <ol class="beat-list">
