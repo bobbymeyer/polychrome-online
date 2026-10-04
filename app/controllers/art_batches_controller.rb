@@ -20,6 +20,7 @@ class ArtBatchesController < ApplicationController
     if subject && params.key?(:entry)
       # A player writes their own character's specifics; the model and LoRAs are the GM's.
       allowed = subject.is_a?(ArtSubject) && !can_gm?(subject.campaign) ? [ :art_notes ] : [ :art_notes, :art_model, { art_loras: {} } ]
+      allowed = [ :art_notes ] if subject.is_a?(MapSheet) && !subject.respond_to?(:art_model=)
       changes = params.fetch(:entry, {}).permit(*allowed)
       # A history-written figure whose looks the GM writes is theirs now.
       subject.update!(subject.has_attribute?(:edited) ? changes.merge(edited: true) : changes)
@@ -79,6 +80,7 @@ class ArtBatchesController < ApplicationController
   def target
     return [ art_mode, nil ] if mode_request?
     return [ art_beat, nil ] if beat_request?
+    return [ art_map, art_map ] if map_request? # its own specifics, model and LoRAs, like a book entry
 
     if sprite_request?
       owner = art_speaker

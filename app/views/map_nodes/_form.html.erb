@@ -3,6 +3,12 @@
   <%= f.hidden_field :x %>
   <%= f.hidden_field :y %>
   <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, autofocus: node.new_record? %></div>
+  <% maps = @campaign.maps.in_order.to_a %>
+  <% if maps.size > 1 || node.map.nil? %>
+    <div class="field"><%= f.label :map_id, "On the map" %><%= f.select :map_id, maps.map { |m| [ m.name, m.id ] }, selected: node.map_id || @campaign.root_map.id %></div>
+  <% else %>
+    <%= f.hidden_field :map_id %>
+  <% end %>
   <div class="field-row">
     <div class="field"><%= f.label :kind %><%= f.select :kind, MapNode::KINDS.map { |k| [ k.humanize, k ] } %></div>
     <div class="field field--check">

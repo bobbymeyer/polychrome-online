@@ -2,7 +2,7 @@
     backdrop and who stands there); else the place the party is in, as a picture (Location#picture: its
     mode's, or its template's). Replaced live with the table's panels as the beats and the party move. %>
 <% beat = campaign.staged_beat %>
-<% picture = campaign.current_node&.location&.picture unless beat %>
+<% picture = campaign.current_node&.location&.picture unless beat || campaign.map_on_stage? %>
 <figure id="table_scene" class="table-scene<%= ' is-scene' if beat %>" <%= "hidden" unless beat || picture %>>
   <% if beat %>
     <%= render "campaigns/tables/beat_stage", beat: beat %>

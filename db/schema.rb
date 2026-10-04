@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_100000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -227,9 +227,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
     t.text "lines"
     t.text "veils"
     t.json "visits", default: {}, null: false
+    t.integer "shown_map_id"
+    t.string "stage_view", default: "here", null: false
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true
+    t.index ["shown_map_id"], name: "index_campaigns_on_shown_map_id"
     t.index ["world_id"], name: "index_campaigns_on_world_id"
   end
 
@@ -539,11 +542,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
     t.datetime "updated_at", null: false
     t.integer "world_route_id"
     t.integer "duration", default: 1, null: false
+    t.json "waypoints", default: [], null: false
     t.index ["campaign_id"], name: "index_map_edges_on_campaign_id"
     t.index ["encounter_table_id"], name: "index_map_edges_on_encounter_table_id"
     t.index ["from_node_id"], name: "index_map_edges_on_from_node_id"
     t.index ["to_node_id"], name: "index_map_edges_on_to_node_id"
     t.index ["world_route_id"], name: "index_map_edges_on_world_route_id"
+  end
+
+  create_table "map_links", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.integer "from_map_id", null: false
+    t.integer "to_map_id", null: false
+    t.string "direction", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_map_links_on_campaign_id"
+    t.index ["from_map_id"], name: "index_map_links_on_from_map_id"
+    t.index ["to_map_id"], name: "index_map_links_on_to_map_id"
   end
 
   create_table "map_nodes", force: :cascade do |t|
@@ -561,10 +577,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
     t.text "description"
     t.text "activities"
     t.integer "current_mode_id"
+    t.integer "map_id"
     t.index ["campaign_id"], name: "index_map_nodes_on_campaign_id"
     t.index ["current_mode_id"], name: "index_map_nodes_on_current_mode_id"
     t.index ["location_id"], name: "index_map_nodes_on_location_id"
+    t.index ["map_id"], name: "index_map_nodes_on_map_id"
     t.index ["world_place_id"], name: "index_map_nodes_on_world_place_id"
+  end
+
+  create_table "maps", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.integer "world_map_id"
+    t.string "name", null: false
+    t.integer "parent_id"
+    t.integer "x"
+    t.integer "y"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_maps_on_campaign_id"
+    t.index ["parent_id"], name: "index_maps_on_parent_id"
+    t.index ["world_map_id"], name: "index_maps_on_world_map_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -819,6 +852,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
     t.index ["world_id"], name: "index_world_fronts_on_world_id"
   end
 
+  create_table "world_map_links", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.integer "from_map_id", null: false
+    t.integer "to_map_id", null: false
+    t.string "direction", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["from_map_id"], name: "index_world_map_links_on_from_map_id"
+    t.index ["to_map_id"], name: "index_world_map_links_on_to_map_id"
+    t.index ["world_id"], name: "index_world_map_links_on_world_id"
+  end
+
+  create_table "world_maps", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "name", null: false
+    t.integer "parent_id"
+    t.integer "x"
+    t.integer "y"
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_id"], name: "index_world_maps_on_parent_id"
+    t.index ["world_id"], name: "index_world_maps_on_world_id"
+  end
+
   create_table "world_places", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "name", null: false
@@ -836,8 +894,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
     t.text "lead"
     t.text "activities"
     t.text "night_line"
+    t.integer "world_map_id"
     t.index ["location_template_id"], name: "index_world_places_on_location_template_id"
     t.index ["world_id"], name: "index_world_places_on_world_id"
+    t.index ["world_map_id"], name: "index_world_places_on_world_map_id"
   end
 
   create_table "world_routes", force: :cascade do |t|
@@ -850,6 +910,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_04_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "duration", default: 1, null: false
+    t.json "waypoints", default: [], null: false
     t.index ["encounter_table_id"], name: "index_world_routes_on_encounter_table_id"
     t.index ["from_place_id"], name: "index_world_routes_on_from_place_id"
     t.index ["to_place_id"], name: "index_world_routes_on_to_place_id"

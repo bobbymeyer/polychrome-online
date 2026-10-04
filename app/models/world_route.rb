@@ -9,10 +9,14 @@ class WorldRoute < ApplicationRecord
   belongs_to :encounter_table, optional: true
 
   validates :state, inclusion: { in: MapEdge::STATES }
+  include RoadBends
   validates :duration, numericality: { only_integer: true, in: 0..28 } # 0: a step, not a journey (a platform, a door)
   validate :joins_two_places_of_the_world
 
   def label = "#{from_place.name} – #{to_place.name}"
+  def road_from = from_place
+  def road_to = to_place
+  def blocked? = state == "blocked"
 
   private
 

@@ -18,6 +18,11 @@ class ArtPanelsController < ApplicationController
       return head :forbidden unless can_gm?(art.location.campaign)
 
       render partial: "art_batches/mode_art", locals: { location: art.location, chosen: art.mode_key }
+    elsif map_request?
+      map = art_map
+      return head :forbidden unless can_generate?(map)
+
+      render partial: "art_batches/map_art", locals: { map: map }
     elsif speaker_request? || sprite_request?
       owner = art_speaker
       return head :forbidden unless can_portray?(owner)

@@ -1,0 +1,50 @@
+<% content_for :title, "#{@campaign.name} · Maps" %>
+<% content_for :head, music_meta(@campaign, @campaign.scene) %>
+<% content_for :head do %>
+  <meta name="turbo-cache-control" content="no-cache">
+  <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
+<% end %>
+<%= turbo_stream_from @campaign, :pages %>
+<%= turbo_stream_from @map, :art %>
+<%= render "shared/stage_stream", campaign: @campaign %>
+<div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= link_to "Prep", campaign_prep_path(@campaign) %> / Maps</div>
+<div class="book-header">
+  <div>
+    <p class="eyebrow"><%= @map.whereabouts.presence || "A map of its own" %><%= " · on the stage now" if @campaign.map_on_stage? && @campaign.map_shown == @map %></p>
+    <h1><%= @map.name %></h1>
+  </div>
+  <div class="actions">
+    <%= button_to(@campaign.map_on_stage? && @campaign.map_shown == @map ? "Take it off the stage" : "Put it on the stage", campaign_map_view_path(@campaign),
+                  method: :patch, params: (@campaign.map_on_stage? && @campaign.map_shown == @map ? { off: 1 } : { map: @map.id }),
+                  class: [ "button", ("play" unless @campaign.map_on_stage? && @campaign.map_shown == @map) ], form: { class: "inline" }) %>
+    <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--quiet" %>
+  </div>
+</div>
+
+<%= render "maps/list", maps: @maps, open: @map, scope: @scope %>
+<%= form_with url: campaign_maps_path(@campaign), class: "book-form inline-form map-new" do |f| %>
+  <%= hidden_field_tag :parent_id, @map.id, id: nil %>
+  <div class="field"><%= label_tag "map_name", "New map on #{@map.name}" %><%= text_field_tag "map[name]", nil, id: "map_name", placeholder: "The Western Marches", required: true %></div>
+  <%= f.submit "Add a map", class: "button button--quiet" %>
+  <p class="hint">A new map sits on this one: drag its sheet into place, then put places on it. Make it a map of its own in its form.</p>
+<% end %>
+
+<div class="map-layout" data-controller="map-editor" data-map-editor-new-url-value="<%= new_campaign_map_node_path(@campaign, map_id: @map.id) %>">
+  <div class="window map-window">
+    <%= render "maps/sheet", map: @map, scope: @scope, gm: true %>
+    <p class="hint">Click empty ground to add a place here. Drag places and maps to move them. Click a road to bend it there, drag a bend to move it, double-click a bend to take it out. Click a place or a road to edit it in the panel.</p>
+    <%= render "campaigns/tables/floorplan", campaign: @campaign, gm: true %>
+    <%= render "campaigns/maps/legend", gm: true %>
+  </div>
+  <div class="map-side">
+    <%= turbo_frame_tag "map_panel", src: campaign_map_panel_path(@campaign), class: "map-panel" do %>
+      <div class="window"><p class="muted">Loading…</p></div>
+    <% end %>
+    <section class="window" id="map_form">
+      <h2>This map</h2>
+      <%= render "maps/form", map: @map, maps: @maps.to_a, urls: { param: "map", update: campaign_map_path(@campaign, @map), destroy: campaign_map_path(@campaign, @map),
+                                                                 link: campaign_map_map_links_path(@campaign, @map), unlink: ->(link) { campaign_map_map_link_path(@campaign, @map, link) } } %>
+    </section>
+    <%= render "art_batches/map_art", map: @map %>
+  </div>
+</div>

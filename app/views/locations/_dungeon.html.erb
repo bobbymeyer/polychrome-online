@@ -43,7 +43,7 @@
 
       <% if !location.party_here? %>
         <% at = @campaign.current_node %>
-        <p class="hint">The party is <%= at ? "at #{at.name}" : "not on the map" %>. Take them to <%= location.name %> on the <%= link_to "map", campaign_map_path(@campaign) %> to go in.</p>
+        <p class="hint">The party is <%= at ? "at #{at.name}" : "not on the map" %>. Take them to <%= location.name %> (from the table's Where next?, or <%= link_to "the maps", campaign_maps_path(@campaign) %>) to go in.</p>
       <% elsif here.nil? %>
         <%= button_to "Lead the party in", location_entry_path(location), class: "button play" %>
       <% else %>

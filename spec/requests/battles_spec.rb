@@ -305,7 +305,7 @@ RSpec.describe "Battle screen", type: :request do
       battle.campaign.characters.find_by!(name: "Bartz").update!(user: @admin)
       get battle_path(battle)
       nav = response.body[%r{<nav class="topbar__books" aria-label="Campaign">.*?</nav>}m]
-      expect(nav).to include(">Table<", ">Map<", ">My sheet<")
+      expect(nav).to include(">Table<", ">My sheet<")
     end
 
     it "see who was down at the end of a win, and that they earned nothing" do

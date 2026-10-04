@@ -47,8 +47,8 @@ RSpec.describe "Local co-op", type: :request do
   it "shows the screen as a spectator sees it, even when the GM's laptop drives it" do
     campaign.map_nodes.create!(name: "Secret Grotto", x: 5, y: 5, visible: false)
     campaign.messages.create!(scope: "whisper", recipient: bartz, body: "Psst, the king is a fake")
-    get campaign_map_path(campaign)
-    expect(response.body).to include("Secret Grotto") # the GM's own map has it
+    get campaign_maps_path(campaign)
+    expect(response.body).to include("Secret Grotto") # the GM's own maps have it
     get campaign_table_path(campaign)
     expect(response.body).to include("the king is a fake") # and the GM's own table the whisper
 

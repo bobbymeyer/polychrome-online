@@ -7,8 +7,8 @@ module ArtDirection
   BOOKS = { "monster" => :bestiary, "job" => :compendium, "item" => :armory, "ability" => :grimoire,
             "location_template" => :gazetteer, "encounter_table" => :encounters }.freeze
 
-  # Every kind of image slot: the books, and speaker portraits.
-  KINDS = (BOOKS.keys + %w[portrait sprite beat]).freeze
+  # Every kind of image slot: the books, speaker portraits and sprites, scene panels, maps.
+  KINDS = (BOOKS.keys + %w[portrait sprite beat map]).freeze
 
   module_function
 

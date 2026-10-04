@@ -208,6 +208,14 @@ shared: &shared
       width: 1280
       height: 720
       transparent: false
+    # A map (WorldMap, Map): the land seen from above, painted, 16:9 like the
+    # stage it fills; the places and roads are drawn over it by the app.
+    map:
+      prompt: "a painted fantasy map of a land seen from above, parchment and ink, coastlines, forests, mountains, no labels, no text, no compass rose"
+      negative: "text, letters, labels, grid, photo, people"
+      width: 1280
+      height: 720
+      transparent: false
 
   expressions:
     neutral: "calm neutral expression"

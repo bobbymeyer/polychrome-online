@@ -147,7 +147,7 @@ RSpec.describe "Location modes", type: :request do
   it "says a mode across the map once, under it, and keeps each place's tag for what's different there" do
     places = %w[Ash Birch Cedar].map.with_index { |name, i| campaign.map_nodes.create!(name: name, x: 100 + (i * 200), y: 300, visible: true) }
     places.each { |place| place.switch_mode!(place.modes.create!(name: "By night").key) }
-    get campaign_map_path(campaign)
+    get campaign_maps_path(campaign)
     expect(response.body).to include('<p class="map-canvas__modes">By night: across the map.</p>')
     expect(response.body).not_to include('class="map-node__mode"')
   end
@@ -155,7 +155,7 @@ RSpec.describe "Location modes", type: :request do
   it "shows a in_mode place on the map" do
     prepare_burning
     town.map_node.reload.switch_mode!("burning")
-    get campaign_map_path(campaign)
+    get campaign_maps_path(campaign)
     expect(response.body).to include("has-mode", "map-node__mode")
   end
 
@@ -165,13 +165,13 @@ RSpec.describe "Location modes", type: :request do
     expect(response.body).to include("GM: modes", "Prepare the mode")
     post map_node_modes_path(shrine), params: { mode: { name: "Festival", line: "Lanterns on every step.", closed: %w[pastimes],
                                                          activities: "Catch a goldfish: Two, in a bag." } }
-    expect(response).to redirect_to(campaign_map_path(campaign))
+    expect(response).to redirect_to(campaign_maps_path(campaign, map: shrine.map_id))
     patch map_node_current_mode_path(shrine), params: { key: "festival" }
     expect(shrine.reload.current_mode.name).to eq("Festival")
     expect(campaign.messages.last.body).to eq("Lanterns on every step.")
     expect(shrine.pastimes.reject(&:service).map(&:name)).to eq([ "Catch a goldfish" ])
 
-    get campaign_map_path(campaign)
+    get campaign_maps_path(campaign)
     expect(response.body).to include('class="map-node__mode"', "Festival")
     delete map_node_current_mode_path(shrine)
     expect(shrine.reload.current_mode).to be_nil

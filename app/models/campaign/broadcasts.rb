@@ -18,7 +18,7 @@ module Campaign::Broadcasts
 
   # What the table shows of the campaign itself: a change to any of these
   # renders its panels again.
-  TABLE_FACTS = %w[current_node_id pending_encounter day time_of_day gil lines veils staged_scene_id].freeze
+  TABLE_FACTS = %w[current_node_id pending_encounter day time_of_day gil lines veils staged_scene_id stage_view shown_map_id].freeze
 
   included do
     include TableFacts
@@ -30,15 +30,16 @@ module Campaign::Broadcasts
     table_facts(TABLE_FACTS) { |changed| table_changed if changed && !previously_new_record? } # a new campaign has no table yet
   end
 
-  # The table's live panels (and the map's canvas), each rendered once for
-  # the GM and once for the players: the map (players' without hidden
-  # places), where the party is, the party's HP, where next, the time, and
-  # what the party knows, its lines and veils, and a dungeon's floorplan while the party is in one. Not the dialogue box, the log or the composer.
+  # The table's live panels, each rendered once for the GM and once for the
+  # players: where the party is, the party's HP, where next, the time, what
+  # the party knows, its lines and veils, a dungeon's floorplan while the
+  # party is in one, the stage's scene and map (players' without hidden
+  # places). Not the dialogue box, the log or the composer.
   TABLE_PANELS = {
-    "map_canvas" => "campaigns/maps/canvas", "table_here" => "campaigns/tables/here", "table_party" => "campaigns/tables/party",
+    "table_here" => "campaigns/tables/here", "table_party" => "campaigns/tables/party",
     "table_ways" => "campaigns/tables/ways", "table_time" => "campaigns/tables/time", "party_knows" => "campaigns/tables/party_knows",
     "table_floorplan" => "campaigns/tables/floorplan", "table_now" => "campaigns/tables/now", "table_scene" => "campaigns/tables/scene",
-    "table_limits" => "campaigns/tables/limits"
+    "table_map" => "campaigns/tables/map", "table_limits" => "campaigns/tables/limits"
   }.freeze
 
   # Something the table shows changed: its panels render again, once for a

@@ -1,0 +1,15 @@
+<%# The stage's map view (docs/DESIGN.md, "The Stage"): the map the GM put there, for everyone, and a
+    frame a player can browse alone (the links inside load another map into it; the next table change
+    puts the GM's back). Hidden while the stage shows the place, or a scene. Replaced live for each
+    audience. campaign; gm; browsing: the map this viewer asked for, if not the GM's. %>
+<% shown = local_assigns[:browsing] || campaign.map_shown %>
+<% on = shown.present? && campaign.map_on_stage? && campaign.staged_beat.nil? %>
+<% dungeon = on && local_assigns[:browsing].nil? && campaign.dungeon_in_progress %>
+<%= turbo_frame_tag "table_map", class: "table-map", hidden: !on, data: { map: shown&.id } do %>
+  <% if dungeon %>
+    <%# Inside a dungeon, the map view is its floorplan: every room for the GM, what they've seen for players. %>
+    <div class="table-map__floorplan"><%= render "campaigns/tables/floorplan", campaign: campaign, gm: gm %></div>
+  <% elsif on %>
+    <%= render "maps/sheet", map: shown, scope: MapScope.new(campaign, use: :table, gm: gm), gm: gm %>
+  <% end %>
+<% end %>

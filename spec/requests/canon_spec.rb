@@ -52,13 +52,49 @@ RSpec.describe "A setting's canon: atlas, cast and codex", type: :request do
     expect(flash[:notice]).to eq("Nothing new from #{world.name}.")
   end
 
+  it "starts a campaign with the setting's maps: their pictures, parents, neighbours, and the places and bent roads on them" do
+    root = world.root_map
+    marches = world.world_maps.create!(name: "The Marches", parent: root, x: 1000, y: 500, description: "Wet.")
+    north = world.world_maps.create!(name: "The North")
+    world.world_map_links.create!(from_map: root, to_map: north, direction: "n")
+    marches.image.attach(io: StringIO.new(FakeComfy.png), filename: "marches.png", content_type: "image/png")
+    lighthouse.update!(world_map: marches)
+    road.update!(waypoints: [ [ 300, 200 ] ])
+
+    post world_campaigns_path(world), params: { campaign: { name: "Rust" } }
+    campaign = world.campaigns.find_by!(name: "Rust")
+    copies = campaign.maps.in_order
+    expect(copies.map { |m| [ m.name, m.parent&.name, m.x, m.y, m.description, m.image.attached? ] }).to eq([
+      [ world.name, nil, nil, nil, nil, false ], [ "The Marches", world.name, 1000, 500, "Wet.", true ], [ "The North", nil, nil, nil, nil, false ]
+    ])
+    expect(copies.first.neighbours["n"].map(&:name)).to eq([ "The North" ])
+    expect(copies.map(&:world_map)).to eq([ root, marches, north ])
+    expect(campaign.map_nodes.find_by!(name: "The Old Light").map.name).to eq("The Marches")
+    expect(campaign.map_nodes.find_by!(name: "Varn").map).to eq(copies.first)
+    expect(campaign.map_edges.sole.waypoints).to eq([ [ 300, 200 ] ])
+
+    # Brought in again later: nothing twice.
+    Atlas.new(campaign).bring_in_all!
+    expect(campaign.maps.count).to eq(3)
+    expect(campaign.map_links.count).to eq(1)
+
+    # A world copied from this one keeps the maps too.
+    other = World.create!(name: "Other", slug: "other-maps")
+    other.copy_books_from!(world)
+    expect(other.world_maps.in_order.map { |m| [ m.name, m.parent&.name ] }).to eq([ [ world.name, nil ], [ "The Marches", world.name ], [ "The North", nil ] ])
+    expect(other.world_maps.find_by!(name: "The Marches").image).to be_attached
+    expect(other.world_places.find_by!(name: "The Old Light").world_map.name).to eq("The Marches")
+    expect(other.world_map_links.sole.direction).to eq("n")
+  end
+
   it "shows players a place's description on the map" do
     campaign = world.campaigns.create!(name: "Rust", gm: @admin)
     Atlas.new(campaign).bring_in_all!
     campaign.place_party!(campaign.map_nodes.find_by!(name: "Varn"))
+    campaign.show_map!
     sign_in_as(make_user("Player"))
-    get campaign_map_path(campaign)
-    expect(response.body).to include("Rain, rust and ropes.")
+    get campaign_table_path(campaign)
+    expect(response.body).to include("<desc>Rain, rust and ropes.</desc>")
   end
 
   it "keeps the atlas and cast to the world's editors and GMs, and the codex's GM side from players" do

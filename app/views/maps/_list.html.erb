@@ -1,0 +1,13 @@
+<%# The maps, one open (the sheet below it): the root first, each child under its parent. maps; open; scope (MapScope). %>
+<% by_parent = maps.group_by(&:parent_id) %>
+<% walk = ->(parent_id, depth) { (by_parent[parent_id] || []).flat_map { |m| [ [ m, depth ] ] + walk.(m.id, depth + 1) } } %>
+<nav class="map-list" aria-label="Maps">
+  <% walk.(nil, 0).each do |m, depth| %>
+    <%= link_to m.name, scope.map_url(m), class: class_names("map-list__item", "is-open": m.id == open.id), style: "--depth: #{depth}",
+                aria: { current: (m.id == open.id ? "page" : nil) } %>
+  <% end %>
+  <%# Maps with a parent that's gone (nothing to walk from) still show. %>
+  <% (maps - walk.(nil, 0).map(&:first)).each do |m| %>
+    <%= link_to m.name, scope.map_url(m), class: class_names("map-list__item", "is-open": m.id == open.id) %>
+  <% end %>
+</nav>

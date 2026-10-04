@@ -7,10 +7,13 @@
 # monsters and the jobs it has open (app/models/campaign/).
 class Campaign < ApplicationRecord
   include Timekeeping
+  include Mapping
 
   belongs_to :world
   belongs_to :gm, class_name: "User", optional: true
   belongs_to :current_node, class_name: "MapNode", optional: true
+  # The map the stage shows while the GM has it there (stage_view "map"); nil: the one the party is on.
+  belongs_to :shown_map, class_name: "Map", optional: true
 
   # In the order they go when the campaign does: the foreign keys are plain,
   # so whatever points at something goes before it (spec/models/deleting_spec.rb).
@@ -35,6 +38,8 @@ class Campaign < ApplicationRecord
   has_many :npcs, dependent: :destroy # at places
   has_many :map_edges, dependent: :destroy
   has_many :map_nodes, dependent: :destroy # at locations
+  has_many :maps, dependent: :destroy # at nodes
+  has_many :map_links, dependent: :destroy
   has_many :locations, dependent: :destroy
 
   include Bag, Shopping, Services, Travelling, Ways, Checks, Belonging, Limits, Moment, Remarks, Moves, MonsterNotes, JobRewards, Payoffs, Happenings, Overnight, Deeds, Defeat, Broadcasts

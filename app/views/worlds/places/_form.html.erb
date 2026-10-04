@@ -6,8 +6,12 @@
     <div class="field"><%= f.label :x %><%= f.number_field :x, min: 0, max: MapNode::WIDTH %></div>
     <div class="field"><%= f.label :y %><%= f.number_field :y, min: 0, max: MapNode::HEIGHT %></div>
   </div>
+  <div class="field">
+    <%= f.label :world_map_id, "On the map" %>
+    <%= f.select :world_map_id, @world.world_maps.in_order.map { |m| [ m.name, m.id ] }, selected: place.world_map_id || @world.root_map.id %>
+  </div>
   <p class="hint">
-    Where it sits on a <%= MapNode::WIDTH %> × <%= MapNode::HEIGHT %> map. Towns and dungeons can be rolled from a Gazetteer template; the
+    Where it sits on that map (<%= MapNode::WIDTH %> × <%= MapNode::HEIGHT %>; drag it on the atlas). Towns and dungeons can be rolled from a Gazetteer template; the
     seed is kept, so it comes out the same in every campaign. Landmarks (a lighthouse, a manor) and wilds (a marsh, a sea) are places with no generator.
   </p>
   <div class="field">

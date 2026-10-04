@@ -642,6 +642,16 @@ details[open] > summary { margin-bottom: 16px; }
 .map-layout > :first-child { grid-column: span 8; }
 .map-layout > :last-child { grid-column: span 4; }
 @media (max-width: 900px) { .map-layout > :first-child, .map-layout > :last-child { grid-column: 1 / -1; } }
+.map-side { display: grid; gap: 16px; align-content: start; }
+.map-list { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0 0 12px; }
+.map-list__item { display: inline-block; padding: 4px 10px; margin-left: calc(var(--depth, 0) * 0px); border: 2px solid var(--ink); color: var(--ink); font-weight: 700; font-size: 13px; text-decoration: none; }
+.map-list__item[style*="--depth: 1"]::before { content: "↳ "; color: var(--grey); }
+.map-list__item[style*="--depth: 2"]::before { content: "↳ ↳ "; color: var(--grey); }
+.map-list__item.is-open { background: var(--ink); color: var(--paper); }
+.map-new { margin: 0 0 16px; align-items: flex-end; }
+.map-new .hint { flex-basis: 100%; margin: 0; }
+.map-form__picture { display: block; width: 100%; max-width: 320px; aspect-ratio: 16 / 9; object-fit: cover; margin-bottom: 6px; border: 2px solid var(--ink); }
+.map-window__title { margin: 0 0 12px; font-size: 18px; }
 .map-panel { display: block; }
 .map-panel .window { margin: 0; }
 .panel-note { font-weight: 700; margin: 0 0 8px; }

@@ -1,0 +1,114 @@
+<%# One map, drawn (docs/HANDOFF.md §7, "Maps"): its picture (or plain paper), the roads bent through
+    their waypoints, the places on it (their shapes, named), the maps on it (a folded sheet, named), the
+    party where they stand, the parent in the corner and the siblings along the edges by direction, each
+    edge split between those that share it. The same sheet at the table (looking; the GM steers everyone,
+    a player browses alone) and in the editors (dragging, clicking to add). map; scope (MapScope); gm:
+    sees hidden places. %>
+<% gm = local_assigns.fetch(:gm, false) %>
+<% nodes = map.nodes_for(gm) %>
+<% edges = map.edges_among(nodes) %>
+<% children = map.children.order(:id).to_a %>
+<% party = scope.campaign? ? nodes.find { |n| n.id == scope.owner.current_node_id } : nil %>
+<% sides = map.neighbours %>
+<% labels = map_label_offsets(nodes) %>
+<% shared_modes = scope.campaign? ? nodes.flat_map { |n| n.modes_on.map(&:name).uniq }.tally.select { |_, count| count >= 3 }.keys : [] %>
+<div class="map-sheet <%= 'map-sheet--editor' if scope.editor? %> <%= 'map-sheet--pictured' if map.image.attached? %>" data-map-id="<%= map.id %>">
+  <svg viewBox="0 0 <%= MapNode::WIDTH %> <%= MapNode::HEIGHT %>" class="map" role="img"
+       aria-label="<%= map.name %><%= ": the party is at #{party.name}" if party %>" data-map-editor-target="svg">
+    <% if map.image.attached? %>
+      <image class="map__picture" href="<%= url_for(map.image) %>" x="0" y="0" width="<%= MapNode::WIDTH %>" height="<%= MapNode::HEIGHT %>" preserveAspectRatio="xMidYMid slice" />
+    <% end %>
+    <rect class="map__ground" x="0" y="0" width="<%= MapNode::WIDTH %>" height="<%= MapNode::HEIGHT %>" data-map-ground />
+    <g class="map__edges">
+      <% edges.each do |edge| %>
+        <% a, b = edge.road_from, edge.road_to %>
+        <% visible = !scope.campaign? || edge.visible? %>
+        <% points = edge.points %>
+        <% mid = road_middle(points) %>
+        <g class="map-edge map-edge--<%= edge.state %> <%= 'is-hidden' unless visible %>"
+           <% if scope.editor? %>data-map-edge data-edit-url="<%= scope.edit_road_url(edge) %>" data-update-url="<%= scope.update_road_url(edge) %>"<% end %>>
+          <title><%= a.name %> – <%= b.name %>: <%= edge.state %><%= ", #{edge.encounter_table.name}" if gm && edge.encounter_table %></title>
+          <path class="map-edge__line" d="<%= road_path(points) %>" />
+          <% if scope.editor? %>
+            <path class="map-edge__hit" d="<%= road_path(points) %>" />
+            <% edge.waypoints.each_with_index do |(x, y), i| %>
+              <circle class="map-edge__bend" cx="<%= x %>" cy="<%= y %>" r="9" data-map-bend="<%= i %>" />
+            <% end %>
+          <% end %>
+          <% if edge.blocked? %>
+            <path class="map-edge__mark" transform="translate(<%= mid[0] %> <%= mid[1] %>)" d="M-7,-7 L7,7 M7,-7 L-7,7" />
+          <% end %>
+        </g>
+      <% end %>
+    </g>
+    <g class="map__maps">
+      <% children.each do |child| %>
+        <% next unless child.x && child.y %>
+        <% href = scope.editor? ? scope.map_url(child) : (scope.gm? ? scope.steer_url(child) : scope.map_url(child)) %>
+        <g class="map-child" transform="translate(<%= child.x %> <%= child.y %>)"
+           <% if scope.editor? %>data-map-child data-edit-url="<%= scope.map_url(child) %>" data-update-url="<%= scope.update_map_url(child) %>" tabindex="0" role="button"<% end %>>
+          <title>The map of <%= child.name %></title>
+          <a href="<%= href %>" class="map-child__link" <%= scope.table? ? (scope.gm? ? 'data-turbo-method="patch"' : 'data-turbo-frame="table_map"') : 'data-turbo-frame="_top"' %>>
+            <circle class="map-child__target" r="44" />
+            <path class="map-child__sheet" d="M-18,-14 H10 L18,-6 V14 H-18 Z" />
+            <path class="map-child__fold" d="M10,-14 V-6 H18" />
+            <text class="map-node__label" y="38" text-anchor="middle"><%= child.name %></text>
+          </a>
+        </g>
+      <% end %>
+    </g>
+    <g class="map__nodes">
+      <% nodes.each do |node| %>
+        <% visible = !node.respond_to?(:visible?) || node.visible? %>
+        <% known = node.respond_to?(:known) ? node.known : visible %>
+        <% in_mode = scope.campaign? ? (node.modes_on.map(&:name).uniq - shared_modes).join(" · ").presence : nil %>
+        <g class="map-node map-node--<%= node.kind %> <%= 'is-hidden' unless known %> <%= 'is-party' if party&.id == node.id %> <%= 'has-mode' if in_mode %>"
+           transform="translate(<%= node.x %> <%= node.y %>)"
+           <% if scope.editor? %>data-map-node data-edit-url="<%= scope.edit_place_url(node) %>" data-update-url="<%= scope.update_place_url(node) %>" tabindex="0" role="button"<% end %>>
+          <title><%= node.name %> (<%= node.kind %><%= ", hidden" unless known %>)</title>
+          <% if node.description.present? %><desc><%= node.description %></desc><% end %>
+          <% body = capture do %>
+            <%= render "map_nodes/shape", kind: node.kind %>
+            <% label_y = labels.fetch(node.id, 38) %>
+            <text class="<%= class_names("map-node__label", map_label_side(node), "is-above": label_y.negative?) %>" y="<%= label_y %>" text-anchor="middle"><%= node.name %></text>
+            <% if in_mode %><text class="map-node__mode" y="<%= label_y.negative? ? label_y - 20 : label_y + 16 %>" text-anchor="middle"><%= in_mode %></text><% end %>
+          <% end %>
+          <% if scope.table? && (page = scope.place_page(node)) %>
+            <a href="<%= page %>" class="map-node__link" data-turbo-frame="_top">
+              <circle class="map-node__target" r="44" />
+              <%= body %>
+            </a>
+          <% else %>
+            <%= body %>
+          <% end %>
+        </g>
+      <% end %>
+    </g>
+    <% if party %>
+      <g class="map-party" transform="translate(<%= party.x %> <%= party.y - 22 %>)" data-change="marker" data-change-key="party" aria-hidden="true">
+        <%= render "campaigns/maps/party_marker" %>
+      </g>
+    <% end %>
+    <% if nodes.empty? && children.empty? && scope.editor? %>
+      <text class="map__empty" x="<%= MapNode::WIDTH / 2 %>" y="<%= MapNode::HEIGHT / 2 %>" text-anchor="middle">Click anywhere to add the first place.</text>
+    <% end %>
+  </svg>
+  <%# Off the edges: the maps beside this one, by direction; two that share an edge split it. %>
+  <% sides.each do |direction, maps| %>
+    <% next if maps.empty? %>
+    <div class="map-sheet__edge map-sheet__edge--<%= direction %>" aria-label="<%= MapSheet::COMPASS[direction] %>">
+      <% maps.each do |other| %>
+        <% href = scope.editor? ? scope.map_url(other) : (scope.gm? ? scope.steer_url(other) : scope.map_url(other)) %>
+        <%= link_to other.name, href, class: "map-sheet__beside", title: "#{MapSheet::COMPASS[direction]}: #{other.name}",
+                    data: (scope.table? ? (scope.gm? ? { turbo_method: :patch } : { turbo_frame: "table_map" }) : { turbo_frame: "_top" }) %>
+      <% end %>
+    </div>
+  <% end %>
+  <% if map.parent %>
+    <% href = scope.editor? ? scope.map_url(map.parent) : (scope.gm? ? scope.steer_url(map.parent) : scope.map_url(map.parent)) %>
+    <%= link_to "↑ #{map.parent.name}", href, class: "map-sheet__up", title: "Up to #{map.parent.name}",
+                data: (scope.table? ? (scope.gm? ? { turbo_method: :patch } : { turbo_frame: "table_map" }) : { turbo_frame: "_top" }) %>
+  <% end %>
+  <p class="map-sheet__name"><%= map.name %></p>
+  <% if shared_modes.any? %><p class="map-canvas__modes"><%= shared_modes.join(" · ") %>: across the map.</p><% end %>
+</div>

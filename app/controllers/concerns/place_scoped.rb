@@ -27,7 +27,7 @@ module PlaceScoped
 
 
   def back(notice = nil, alert: nil)
-    place = @node.location ? location_path(@node.location) : campaign_map_path(@campaign)
+    place = @node.location ? location_path(@node.location) : campaign_maps_path(@campaign, map: @node.map_id)
     redirect_to place, notice: notice, alert: alert, status: :see_other
   end
 end

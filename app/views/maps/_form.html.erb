@@ -1,0 +1,57 @@
+<%# One map's own form (name, parent, description, its picture) and what's beside it (links by direction),
+    at either level. map; maps: the others it could sit on or beside; urls: { update:, destroy:, link:, unlink: ->(link) }, param: "map" | "world_map". %>
+<% param = urls[:param] %>
+<%= form_with model: map, scope: param, url: urls[:update], method: :patch, class: "book-form", multipart: true do |f| %>
+  <%= render "book_entries/errors", entry: map %>
+  <div class="field-row">
+    <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
+    <div class="field">
+      <%= f.label :parent_id, "On (its parent map)" %>
+      <%= f.select :parent_id, (maps - [ map ] - map.children.to_a).map { |m| [ m.name, m.id ] }, include_blank: "Nothing: a map of its own" %>
+    </div>
+  </div>
+  <div class="field"><%= f.label :description, "What it shows" %><%= f.text_area :description, rows: 2, placeholder: "The Kingdom of Tycoon from the mountains to the sea." %></div>
+  <div class="field">
+    <%= f.label :image, "Its picture (16:9)" %>
+    <% if map.image.attached? %>
+      <%= image_tag url_for(map.image), alt: "", class: "map-form__picture" %>
+      <label class="checks"><%= check_box_tag "#{param}[remove_image]", "1", false, id: "#{param}_remove_image" %> Remove</label>
+    <% end %>
+    <%= f.file_field :image, accept: "image/*" %>
+    <p class="hint">A painted map, 16:9 like the stage; the places and roads are drawn over it. Upload one, or generate one below.</p>
+  </div>
+  <div class="actions">
+    <%= f.submit "Save", class: "button" %>
+    <%= button_to "Remove this map", urls[:destroy], method: :delete, class: "button button--danger", form: { class: "inline", data: { turbo_confirm: "Remove #{map.name}? What's on it stays, on no map." } } %>
+  </div>
+<% end %>
+
+<h3>Beside it</h3>
+<% sides = map.neighbours %>
+<% if sides.values.flatten.any? %>
+  <ul class="refs">
+    <% links = (map.links_out.includes(:to_map).to_a + map.links_in.includes(:from_map).to_a) %>
+    <% links.each do |link| %>
+      <% other = link.from_map_id == map.id ? link.to_map : link.from_map %>
+      <% direction = link.from_map_id == map.id ? link.direction : MapSheet::OPPOSITE.fetch(link.direction) %>
+      <li><strong><%= MapSheet::COMPASS.fetch(direction) %>:</strong> <%= other.name %>
+        <%= button_to "Unlink", urls[:unlink].call(link), method: :delete, class: "link-button", form: { class: "inline" } %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="empty">Nothing beside it yet: a map beside this one shows as a band along that edge of the stage.</p>
+<% end %>
+<% others = maps - [ map ] %>
+<% if others.any? %>
+  <%= form_with url: urls[:link], class: "book-form inline-form" do |f| %>
+    <div class="field">
+      <%= label_tag "#{param}_link_to_map_id", "Map" %>
+      <%= select_tag "#{param}_link[to_map_id]", options_for_select(others.map { |m| [ m.name, m.id ] }), id: "#{param}_link_to_map_id" %>
+    </div>
+    <div class="field">
+      <%= label_tag "#{param}_link_direction", "Is to the" %>
+      <%= select_tag "#{param}_link[direction]", options_for_select(MapSheet::COMPASS.map { |k, v| [ v, k ] }), id: "#{param}_link_direction" %>
+    </div>
+    <%= f.submit "Put it beside", class: "button button--quiet" %>
+  <% end %>
+<% end %>

@@ -58,10 +58,18 @@ module World::Copying
 
   # The atlas, cast and codex, pointing at this world's copies of the books.
   def copy_canon_from!(source)
+    maps = {}
+    source.world_maps.in_order.each do |sheet|
+      maps[sheet.id] = world_maps.create!(sheet.attributes.except(*COPIED, "parent_id").merge(art_notes: sheet.art_notes, image_seed: sheet.image_seed))
+      maps[sheet.id].image.attach(sheet.image.blob) if sheet.image.attached?
+    end
+    source.world_maps.where.not(parent_id: nil).find_each { |sheet| maps[sheet.id].update!(parent: maps[sheet.parent_id]) if maps[sheet.parent_id] }
+    source.world_map_links.find_each { |link| world_map_links.create!(from_map: maps.fetch(link.from_map_id), to_map: maps.fetch(link.to_map_id), direction: link.direction) }
     places = {}
     source.world_places.find_each do |place|
       template = place.location_template && location_templates.find_by(slug: place.location_template.slug)
-      places[place.id] = world_places.create!(place.attributes.except(*COPIED, "location_template_id").merge(location_template: template, seed: place.seed))
+      places[place.id] = world_places.create!(place.attributes.except(*COPIED, "location_template_id", "world_map_id")
+                                                   .merge(location_template: template, seed: place.seed, world_map: maps[place.world_map_id]))
     end
     source.world_routes.find_each do |route|
       table = route.encounter_table && encounter_tables.find_by(slug: route.encounter_table.slug)

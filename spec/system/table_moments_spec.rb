@@ -48,7 +48,7 @@ RSpec.describe "Moments at the table", type: :system do
       expect(page).to have_no_css("#table_party", visible: true) # pressing the open one closes it
       click_button "Party"
       expect(page).to have_css("#table_party", visible: true, text: "Rook")
-      expect(page).to have_no_css("#stage #map_canvas") # the map is the map page's
+      expect(page).to have_css("#stage #table_map[hidden]", visible: :all) # the map waits until the GM shows it
       find("details.talk summary", text: "Say something").click
       expect(page).to have_css("#composer textarea", visible: true)
 
@@ -146,18 +146,20 @@ RSpec.describe "Moments at the table", type: :system do
     ruins = campaign.map_nodes.create!(name: "The Old Ruins", x: 300, y: 100, visible: false)
     road = campaign.map_edges.create!(from_node: village, to_node: ruins)
     campaign.update!(current_node: village)
+    campaign.show_map!
     seat(player, rook)
     as(player) do
-      visit campaign_map_path(campaign)
+      visit campaign_table_path(campaign)
       wait_for_streams
-      expect(page).to have_no_css("#map_canvas", text: "The Old Ruins")
+      expect(page).to have_css("#table_map", text: "Varn")
+      expect(page).to have_no_css("#table_map", text: "The Old Ruins")
     end
 
     campaign.travel!(road)
 
     as(player) do
-      expect(page).to have_css("#map_canvas", text: "The Old Ruins")
-      expect(find("#map_canvas svg")["aria-label"]).to end_with("the party is at The Old Ruins")
+      expect(page).to have_css("#table_map", text: "The Old Ruins")
+      expect(find("#table_map svg")["aria-label"]).to end_with("the party is at The Old Ruins")
     end
   end
 

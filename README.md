@@ -15,7 +15,7 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   flow back to the party.
 - **Step 5 (done):** the table: chat with portraits and expressions, and GM
   possession of NPCs.
-- **Step 6 (done):** the pointcrawl map with GM edit tools, travel, and the
+- **Step 6 (done):** the maps with GM edit tools, travel, and the
   Encounter Tables book.
 - **Step 7 (done):** the town and dungeon generators, the Gazetteer and
   Generator Tables books, and exploring dungeons room by room.
@@ -425,30 +425,54 @@ loud (or on voice chat), so the app doesn't need to carry the talking.
   panel ("Go on auto"), to talk and let the fight run. Picking a command
   takes them off it. The timer stays.
 
-## The pointcrawl map
+## Maps
 
-Each campaign has a map (`/campaigns/:id/map`), and the table shows it too.
+A setting's atlas is several **maps** (`WorldMap`): the world, the regions
+on it, a town on one of those. A campaign starts with copies of them all
+(`Map`, brought in by `Atlas` with the places) and the GM can add their own.
+Each map is a 16:9 picture (uploaded, or generated through the art pipeline
+as the `map` kind, the world's style over "a painted land seen from above")
+with the campaign's **places** on it (`map_nodes`: town, dungeon, landmark,
+wilds, field or event; revealed or hidden) and the **roads** between them
+(`map_edges`: open, dangerous or blocked, with an encounter table and a
+travel event, and **bends** so a road follows the painted valley: waypoints,
+drawn as one smooth curve). Everything is drawn in a 1600 × 900 space over
+the picture (`maps/_sheet`, the one partial at both levels and both uses).
 
-- **Places and paths** are `map_nodes` (town, dungeon, field or event;
-  revealed or hidden) and `map_edges` (open, dangerous or blocked, with an
-  optional encounter table and travel event), per §4. They're drawn as SVG
-  from Rails partials.
-- **GM editing, all by clicking:**
-  - Click empty ground to add a place, click a place or path to edit it in
-    the side panel, and drag a place to move it.
-  - From a place's panel: reveal it, connect it to another place, or put the
-    party there.
-  - From a path's panel: change its state, pick its encounter table, write
-    its travel event, or cut it.
-  - Every change reaches every viewer by Turbo Stream.
-- **Scoped per audience:** the map is rendered twice, once for the GM (with
-  hidden places, dimmed) and once for players (without them), each on its own
-  signed stream. A hidden place never reaches a player's browser.
-- **Travel:** the GM moves the party along a path from where it stands.
+- **Parents, children, siblings.** A map can sit **on** its parent, as a
+  folded-sheet marker at a point like a place, and have maps on it the same
+  way. Maps **beside** it are linked by direction (N, S, E, W; "B is east of
+  A" is one link, read both ways) and show as bands along that edge of the
+  sheet; two that share an edge split it. "↑ Parent" sits in the corner.
+- **On the stage.** The map is a view of the Stage, not a page: the GM
+  presses "Show the map" in the Now line (`Campaign#show_map!`,
+  `stage_view` and `shown_map_id` are table facts, so everyone's stage
+  changes at once) and steers by pressing a map on it, beside it or above
+  it; "Show the place" takes it off. A **player** presses the same to
+  browse on their own screen only (the frame reloads for them alone, and
+  the GM's map comes back on the next table change), and presses a place
+  to open its page. Players never receive hidden places. Inside a dungeon
+  the map view is the dungeon's floorplan. The party is the red marker.
+- **Editing** is on the GM's Maps page (`/campaigns/:id/maps`, from Prep)
+  and, for the setting, the Atlas (`/worlds/:slug/atlas`), the same editor:
+  click empty ground to add a place there, drag a place or a map to move
+  it, click a road to bend it there, drag a bend, double-click a bend to
+  take it out, and click a place or a road to edit it (in the panel beside
+  the map, or on its own page). Each map's form sets its name, parent,
+  picture and what's beside it. Dragging and bending save by `fetch` (JSON)
+  and the page refreshes.
+- **Travel:** the GM moves the party along a road from where it stands.
   Arriving reveals the destination. The table gets a departure line, then
-  the path's travel event narrated in the dialogue box.
-- **Encounters:** a path with an encounter table rolls on it: 25% of the time
-  on an open path, every time on a dangerous one, never on a blocked one.
+  the road's travel event narrated in the dialogue box.
+- **Where next?** is a vote (`Campaign::Ways#ask_where_next!`): the roads
+  and things to do from here, as always; or, the GM's to put, **anywhere
+  on a map** or **a choice between places named**, each a journey by road
+  ("To Far Hold (3 parts of a day)", shortest by `Pointcrawl::Roads.route`,
+  pure). Settling it takes the party all the way (`#travel_to!`), stopping
+  where something waits on the road for the GM's call. Up to 16 places a
+  ballot.
+- **Encounters:** a road with an encounter table rolls on it: 25% of the time
+  on an open road, every time on a dangerous one, never on a blocked one.
   - The roll (`Pointcrawl::Encounters`, pure) uses an RNG stored on the
     campaign, like a battle's, so the GM can't quietly re-roll.
   - A hit waits for the GM: **Fight** starts a battle for everyone standing,
@@ -1205,7 +1229,7 @@ Every image slot can be uploaded or generated with
 | `app/models/campaign.rb`, `app/models/character.rb` | Campaigns, the party bag, characters, jobs, equipment and ability slots |
 | `lib/stats/growth.rb` | EXP to level to base stats, and ABP to job level |
 | `app/models/message.rb`, `app/javascript/controllers/dialogue_controller.js` | Table messages, their scoped broadcasts, and the dialogue box |
-| `app/models/map_node.rb`, `app/models/map_edge.rb`, `app/javascript/controllers/map_editor_controller.js` | The pointcrawl map and its editor |
+| `app/models/map.rb`, `app/models/world_map.rb`, `app/models/map_node.rb`, `app/models/map_edge.rb`, `app/views/maps/_sheet.html.erb`, `app/javascript/controllers/map_editor_controller.js` | The maps, their sheet and editor |
 | `lib/pointcrawl/encounters.rb` | Encounter rolls on travel (pure, seeded) |
 | `lib/generators/` | Town and dungeon generators, and GM overrides on top (pure, seeded) |
 | `app/models/location.rb`, `app/views/locations/` | Campaign locations: skyline, floorplan, GM controls, exploration |

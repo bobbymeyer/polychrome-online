@@ -330,7 +330,7 @@ A player's table offers what they can do at this moment, and nothing else up fro
   saying so ("Pick Lock: used. It's back after a rest."). Things to do the purse can't pay for,
   and doors still locked, aren't shown to players.
 - **Talk is a button**, "Say something", that opens the box (and its To and Expression).
-- **What you look up is in tabs**: Map · Party · What we know, closed until pressed, one at a
+- **What you look up is in tabs**: Party · What we know, closed until pressed, one at a
   time. The Party tab says "hurt" or "someone's down" without opening; What we know appears
   once there's something to know. Your own HP stays in the "You" line.
 - **Your seat is in the account menu**, with your name: "At the table as Rook", then the other seats
@@ -345,8 +345,7 @@ The GM's table works the same way:
 - **The tools fold while the table is busy.** During a vote, an encounter or a battle the tabs
   wait behind "Tools"; what needs an answer now (everyone down, a field ability asked for) stays
   out in front. Granting archetypes, the music and the shared screen are under one "More".
-- **What the GM looks up is in tabs** under the tools: Map · Party · What they know, the map open
-  on a wide screen.
+- **What the GM looks up is in tabs** under the tools: Party · What they know.
 
 The shared screen keeps its panels: it's watched, not played. The stage-only view keeps nothing but
 the frame (see "The Stage").
@@ -394,7 +393,8 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 - **The stage is display.** Nothing on it is pressed. Interaction and personal management (the
   moves, the talk box, the GM's tools, what you look up, equipment, whispers) happen off the
   stage: in the columns beside it and under it. The way into the place the party is at ("Visit
-  Hommlet →") is in the Now line while the table is free; the map has its own page.
+  Hommlet →") is in the Now line while the table is free; the map is a view of the stage the GM
+  shows ("Show the map"), not a page.
 - **Stage only.** For a TV at the table or a stream on a call, `?view=stage` shows nothing but the
   frame: on black, as big as the screen allows, with no top bar, log, panels or caption, and a
   spectator's view of it (no GM secrets on the TV). The lines still arrive, unseen, so the moments
@@ -464,7 +464,7 @@ under the frame.
   battle, nothing but the way to the battle page (the fight's controls are there and only there);
   with an encounter or a choice open, the GM's tools fold behind "Tools" and a player's field
   ability waits; while a scene is on the stage, a player's ways and ability wait too, and the GM
-  has the director's buttons. The map and its travel are the map page's. The battle page has no
+  has the director's buttons. Travel is the Controls' (Where next?). The battle page has no
   campaign chrome but its name, and talk is a press away.
 - **The GM's tools are the GM's moves**, in the Controls under the stage where a player's moves
   would be: tabs for Scenes, Check, Clocks, Time, Secrets and More (grants, music, one shared
@@ -480,16 +480,24 @@ under the frame.
 - **Narration is only as tall as its words**: with no portrait to make room for, the dialogue box
   doesn't hold a speaker's height open under one line.
 - **A place's page is the place first.** The GM's controls for it (modes, rename) come after it,
-  under the dashed "GM · only you see these" tag. The map's panel lists the ways from where the
-  party is one to a row ("To Platform Zero / Dangerous road · Undertow Platforms") under "Go from
-  here", and says a path takes the party along it now.
+  under the dashed "GM · only you see these" tag. The maps page's panel lists the ways from where
+  the party is one to a row ("To Platform Zero / Dangerous road · Undertow Platforms") under "Go
+  from here", and says a path takes the party along it now.
 - **Going straight there asks first** for a dangerous road or a night, since one click moves the
   whole party.
-- **Inside a dungeon, the map page has its floorplan** under the world map: every room and what
-  waits there for the GM, only what they've seen for players. The GM's buttons for the rooms say what's in each
+- **Inside a dungeon, the stage's map view is its floorplan** (and the maps page has it under the
+  map): every room and what waits there for the GM, only what they've seen for players. The GM's buttons for the rooms say what's in each
   (encounter, treasure, boss, done). Room names wrap onto up to three lines in their boxes.
 - **A mode across the map is said once**, under it ("By night: across the map."), not tagged on
   every place; a place's own tag, in red, is for what's different there.
+- **A map is a picture with the pointcrawl drawn over it.** The sheet is 16:9 like the stage it
+  fills: the painted land (or plain paper until there is one), roads as one smooth ink line bent
+  through their waypoints, places as their shapes with names in white-stroked italics so they read
+  over any picture, a child map as a folded sheet, the party as the red marker. The maps beside it
+  are black bands along the edges by direction, split between the maps that share an edge, and
+  "↑ Parent" is a white chip in the top-left corner; the map's name sits in the bottom-right. The GM
+  steers everyone by pressing those; a player's press browses their own frame only. In the editors
+  the same sheet has handles: bends as white dots, places and maps draggable, empty ground clickable.
 - **The party's story on the Legends page** has its fights (as the table heard each end:
   "Undertow Platforms: Victory! 70 yen…") and what it chose together ("Chose: Refuse."), beside
   its deeds and the rumours it heard. Where it went is the road, not the story.

@@ -43,6 +43,19 @@ module ArtTargets
     params[:entry_type] == "beat"
   end
 
+  def map_request?
+    params[:entry_type] == "map"
+  end
+
+  # A map's picture: a setting's (map_type "world") or a campaign's.
+  def art_map
+    if params[:map_type] == "world"
+      @world.world_maps.find(params[:map_id])
+    else
+      Map.joins(:campaign).where(campaigns: { world_id: @world.id }).find(params[:map_id])
+    end
+  end
+
   # A scene's beat, whose panel is being made.
   def art_beat
     Beat.joins(scene: :campaign).where(campaigns: { world_id: @world.id }).find(params[:beat_id])

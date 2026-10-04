@@ -7,6 +7,7 @@
 # description; the notes are the GM's.
 class WorldPlace < ApplicationRecord
   belongs_to :world
+  belongs_to :world_map, optional: true # nil: the world's root map (World#root_map)
   belongs_to :location_template, optional: true
   has_many :outgoing_routes, class_name: "WorldRoute", foreign_key: :from_place_id, dependent: :destroy, inverse_of: :from_place
   has_many :incoming_routes, class_name: "WorldRoute", foreign_key: :to_place_id, dependent: :destroy, inverse_of: :to_place
@@ -28,7 +29,10 @@ class WorldPlace < ApplicationRecord
   validate :template_fits
   validate { Pastime.parse(activities, world.almanac).last.each { |problem| errors.add(:activities, problem) } }
 
+  validate { errors.add(:world_map, "isn't one of #{world.name}'s maps") if world_map && world_map.world_id != world_id }
+
   before_validation { self.seed ||= Location.new_seed if location_template }
+  before_validation { self.world_map ||= world.root_map if world }
 
   scope :in_order, -> { order(:name) }
 

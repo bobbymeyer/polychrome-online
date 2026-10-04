@@ -53,7 +53,7 @@ RSpec.describe "Queries per page", type: :request do
 
   it "asks the same questions however many places there are" do
     pages = { table: -> { campaign_table_path(campaign) }, prep: -> { campaign_prep_path(campaign) },
-              campaign: -> { campaign_path(campaign) }, map: -> { campaign_map_path(campaign) },
+              campaign: -> { campaign_path(campaign) }, map: -> { campaign_maps_path(campaign) },
               legends: -> { campaign_legends_path(campaign) } }
     @sites = Hash.new(0)
     add_places(2)

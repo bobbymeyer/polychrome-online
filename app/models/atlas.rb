@@ -22,18 +22,50 @@ class Atlas
     world.world_figures.in_order.where.not(id: campaign.npcs.where.not(world_figure_id: nil).select(:world_figure_id))
   end
 
-  def missing? = missing_places.exists? || missing_figures.exists?
+  def missing? = missing_places.exists? || missing_figures.exists? || missing_maps.exists?
 
   # Everything not yet here. Returns [places, figures] brought in.
   def bring_in_all!
     campaign.transaction { [ bring_in_places!, bring_in_figures! ] }
   end
 
+  def missing_maps
+    world.world_maps.in_order.where.not(id: campaign.maps.where.not(world_map_id: nil).select(:world_map_id))
+  end
+
+  # The setting's maps, with their pictures, parents and neighbours
+  # (Map, MapLink): the campaign's own copies, for its GM to change.
+  def bring_in_maps!
+    copies = campaign.maps.where.not(world_map_id: nil).index_by(&:world_map_id)
+    campaign.transaction do
+      missing_maps.each do |sheet|
+        copies[sheet.id] = campaign.maps.create!(world_map: sheet, name: unique_map_name(sheet.name), x: sheet.x, y: sheet.y, description: sheet.description,
+                                                 art_notes: sheet.art_notes, image_seed: sheet.image_seed)
+        copies[sheet.id].image.attach(sheet.image.blob) if sheet.image.attached?
+      end
+      world.world_maps.find_each do |sheet|
+        copy = copies[sheet.id] or next
+        copy.update!(parent: copies[sheet.parent_id]) if sheet.parent_id && copy.parent_id.nil? && copies[sheet.parent_id]
+      end
+      world.world_map_links.find_each do |link|
+        from = copies[link.from_map_id]
+        to = copies[link.to_map_id]
+        next unless from && to
+        next if campaign.map_links.where(from_map: from, to_map: to).or(campaign.map_links.where(from_map: to, to_map: from)).exists?
+
+        campaign.map_links.create!(from_map: from, to_map: to, direction: link.direction)
+      end
+    end
+    copies
+  end
+
   def bring_in_places!(places = missing_places)
     places = places.to_a
     campaign.transaction do
+      maps = bring_in_maps!
       places.each do |place|
         node = campaign.map_nodes.create!(name: place.name, kind: place.kind, x: place.x, y: place.y, visible: place.known,
+                                          map: maps[place.world_map_id] || campaign.root_map,
                                           notes: place.notes, description: place.description, world_place: place)
         # What it's like by night: a mode that comes on at night by itself.
         node.add_mode!("name" => "By night", "line" => place.night_line, "times" => campaign.world.almanac.dark) if place.night_line.present?
@@ -70,8 +102,16 @@ class Atlas
       next if campaign.map_edges.where(from_node: from, to_node: to).or(campaign.map_edges.where(from_node: to, to_node: from)).exists?
 
       campaign.map_edges.create!(from_node: from, to_node: to, state: route.state, encounter_table: route.encounter_table,
-                                 travel_event: route.travel_event, duration: route.duration, world_route: route)
+                                 travel_event: route.travel_event, duration: route.duration, waypoints: route.waypoints, world_route: route)
     end
+  end
+
+  # A GM may have made a map of the same name before the setting had one.
+  def unique_map_name(name)
+    taken = campaign.maps.pluck(:name)
+    return name unless taken.include?(name)
+
+    (2..).each { |n| break "#{name} (#{n})" unless taken.include?("#{name} (#{n})") }
   end
 
   def bring_in_figures!(figures = missing_figures)

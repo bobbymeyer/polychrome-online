@@ -66,6 +66,32 @@ module MapsHelper
     (lines.first(2).map { |line| line.truncate(ROOM_LINE) } + [ lines.drop(2).join(" ").truncate(ROOM_LINE) ]).compact_blank
   end
 
+  # A road drawn through its points ([[x, y], ...]): straight between two,
+  # else a smooth curve through them all (Catmull-Rom as cubic Béziers), so
+  # a road bent to follow a painted valley reads as one line.
+  def road_path(points)
+    return "" if points.size < 2
+    return "M#{points[0][0]} #{points[0][1]} L#{points[1][0]} #{points[1][1]}" if points.size == 2
+
+    path = +"M#{points[0][0]} #{points[0][1]}"
+    points.each_cons(2).with_index do |(a, b), i|
+      before = points[[ i - 1, 0 ].max]
+      after = points[[ i + 2, points.size - 1 ].min]
+      c1 = [ a[0] + ((b[0] - before[0]) / 6.0), a[1] + ((b[1] - before[1]) / 6.0) ]
+      c2 = [ b[0] - ((after[0] - a[0]) / 6.0), b[1] - ((after[1] - a[1]) / 6.0) ]
+      path << " C#{c1[0].round(1)} #{c1[1].round(1)} #{c2[0].round(1)} #{c2[1].round(1)} #{b[0]} #{b[1]}"
+    end
+    path
+  end
+
+  # The middle of a road, for its mark: the middle point, or the midpoint of two.
+  def road_middle(points)
+    return points[points.size / 2] if points.size.odd?
+
+    a, b = points[(points.size / 2) - 1], points[points.size / 2]
+    [ (a[0] + b[0]) / 2, (a[1] + b[1]) / 2 ]
+  end
+
   # One slice of the day clock (campaigns/tables/_day_clock), as an SVG path
   # on a 100 × 100 dial: the index-th of `count`, centred on its place round
   # the dial from the top, clockwise.
