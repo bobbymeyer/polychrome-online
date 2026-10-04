@@ -479,6 +479,11 @@ under the frame.
 - **One list of ways while the party votes.** With a Where next? open, the GM's vote has each
   option as a row, who picked it, and Settle beside it; under it the same places are a small row,
   "Or go straight there, without the vote" (going now ends the vote), not a second Where next?.
+- **A character's sheet is two columns on a wide screen, one section at a time.** The section links run
+  along the top and stay there, as tabs: only the one pressed shows (the pressed link is ink), and a link
+  with the section in its address lands on it. Who they are (portrait, name, their line, level, archetype,
+  HP and MP) is a column on the left that stays put beside whichever section is open. On a phone it is one
+  column, the links first. Without the script every section shows, one under another.
 - **Narration is only as tall as its words**: with no portrait to make room for, the dialogue box
   doesn't hold a speaker's height open under one line.
 - **A place's page is the place first.** The GM's controls for it (modes, rename) come after it,
