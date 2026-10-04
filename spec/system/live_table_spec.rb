@@ -155,4 +155,27 @@ RSpec.describe "The live table", type: :system do
     end
     expect(second.reload.deadline_at).to be_present
   end
+
+  it "plays a long line on the stage in pages, and puts the box away when dismissed" do
+    marga = campaign.npcs.create!(name: "Old Marga")
+    seat(player, rook)
+    long = "Hold on! The bridge is out past the mill, and the river's up. You'll want the ford at Ashby, two days east, " \
+           "unless someone here can swim against a current like that. I wouldn't. Nobody would. Not after what happened " \
+           "to the miller's boy last spring, God rest him. So, the ford. Or the ferryman, if you've coin and patience."
+
+    as(player) do
+      page.driver.browser.manage.window.resize_to(1400, 1000)
+      campaign.messages.create!(body: long, speaker: marga)
+      box = find("#stage .dialogue")
+      expect(box).to have_css(".dialogue__body", text: /\AHold on!/)
+      expect(box).to have_no_css(".dialogue__body", text: /patience\.\z/) # the first page only
+      box.click while box.has_no_css?(".dialogue__body", text: /patience\.\z/, wait: 0.5) # on through the pages
+      expect(box).to have_no_css(".dialogue__body", text: /\AHold on!/)
+
+      find("#stage .dialogue__close").click
+      expect(page).to have_no_css("#stage .dialogue")
+      campaign.messages.create!(body: "Well? Off with you.")
+      expect(page).to have_css("#stage .dialogue", text: "Off with you")
+    end
+  end
 end
