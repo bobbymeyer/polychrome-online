@@ -9,10 +9,13 @@ RSpec.describe "Local co-op", type: :request do
 
   it "gives the GM a shared screen with a way to join, and remembers it until they leave" do
     get campaign_table_path(campaign)
-    expect(response.body).to include("Play around one screen", "Open the shared screen", "/join/#{campaign.reload.join_code}?view=controller")
+    # The way in is the GM's: the QR code and the code sit in their shared-screen setup, to hold up or read out.
+    expect(response.body).to include("Play around one screen", "Open the shared screen", "/join/#{campaign.reload.join_code}?view=controller",
+                                     "<svg", "Code <strong>#{campaign.join_code}</strong>")
 
     get campaign_table_path(campaign, view: "screen")
-    expect(response.body).to include('data-view="screen"', "table--screen", "<svg", "Code <strong>#{campaign.join_code}</strong>", "coop-party")
+    expect(response.body).to include('data-view="screen"', "table--screen", "coop-party")
+    expect(response.body).not_to include("coop-join") # the screen shows the show, not the way in
     expect(response.body).not_to include('id="composer"')
 
     Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
@@ -29,7 +32,7 @@ RSpec.describe "Local co-op", type: :request do
     get campaign_table_path(campaign, view: "stage")
     expect(response.body).to include('data-view="stage"', "table--stage", 'id="stage"', 'id="map_canvas"', 'id="table_time"', "Leave the stage")
     page = Nokogiri::HTML(response.body)
-    expect(page.at(".gm-tools, .log-drawer__tab, #table_now, .stage__caption, #composer, .player-screen")).to be_nil # no chrome, no interface
+    expect(page.at(".gm-tools, .log-drawer__tab, #table_now, .stage__caption, #composer, .player-card")).to be_nil # no chrome, no interface
     expect(page.at("div[hidden] #chat_log")).to be_present # the lines land unseen, for the moments they cue
 
     battle = start_battle(campaign: campaign)
@@ -160,7 +163,7 @@ RSpec.describe "Local co-op", type: :request do
       expect(empty.messages.last.body).to eq("Sam, as Faris, joins the party.")
       expect(response).to redirect_to(campaign_table_path(empty, view: "off"))
       follow_redirect!
-      expect(response.body).to include('<h2 class="player-screen__name">Faris</h2>')
+      expect(response.body).to include('<h2 class="player-card__name">Faris</h2>')
     end
 
     it "joins a new character at the party's lowest level, and says what's missing", :signed_out do

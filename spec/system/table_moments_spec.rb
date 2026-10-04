@@ -18,9 +18,7 @@ RSpec.describe "Moments at the table", type: :system do
     Message.choice(campaign, options: [ "Trust Cid", "Refuse" ], flag: "trusted_cid").save!
 
     as(player) do
-      # The question is in the choice panel, so the "Just said" strip doesn't say it again.
       expect(page).to have_css("#table_choice .choice", visible: true)
-      expect(page).to have_no_css(".recent-lines li", text: "The party decides")
       within("#table_choice") do
         click_on "Trust Cid"
         expect(page).to have_css(".choice__option.is-mine", text: "Trust Cid")
@@ -67,39 +65,26 @@ RSpec.describe "Moments at the table", type: :system do
     end
   end
 
-  it "pins a player's side columns and moves on a wide screen, and folds them away when unpinned" do
+  it "lays a wide screen out in three columns: you and the party, the stage over the controls, the log" do
     seat(player, rook)
     as(player) do
-      expect(page).to have_css(".player-screen.is-pinned .player-screen__side", visible: true) # 1280 wide: you and your moves beside the scene
+      expect(page).to have_css(".table__side .player-card", text: "Rook", visible: true) # 1280 wide: you on the left
+      expect(page).to have_css("#drawer_party", visible: true) # the party starts open under you; the map is on the stage
+      expect(page).to have_css(".table__stage #stage", visible: true)
+      expect(page).to have_css(".table__stage .table-controls #table_now", visible: true) # the controls under the stage
+      expect(page).to have_css(".table-controls .your-moves", visible: true)
       expect(page).to have_css(".log-drawer.is-docked") # and the log on the right
-      expect(page).to have_css("#drawer_party", visible: true) # the party starts open; the map is on the stage
-
-      within(".player-screen__card") { click_on "Unpin" }
-      expect(page).to have_no_css(".player-screen.is-pinned")
-      expect(page).to have_no_css(".player-screen__side", visible: true)
-      find(".player-screen__tab").click
-      expect(page).to have_css(".player-screen__side", visible: true)
-
-      visit current_path
-      expect(page).to have_no_css(".player-screen.is-pinned") # it stays as it was left
-      find(".player-screen__tab").click
-      within(".player-screen__card") { click_on "Pin" }
-      expect(page).to have_css(".player-screen.is-pinned")
-
-      # Your moves: pinned along the bottom of the scene, or folded to their bar until pressed.
-      expect(page).to have_css(".player-screen__moves.is-pinned .player-screen__moves-body", visible: true)
-      within(".player-screen__moves-bar") { click_on "Unpin" }
-      expect(page).to have_no_css(".player-screen__moves-body", visible: true)
-      find(".player-screen__moves-bar button.your-moves__tag").click
-      expect(page).to have_css(".player-screen__moves-body", visible: true)
-      within(".player-screen__moves-bar") { click_on "Pin" }
+      expect(page).to have_css(".topbar", text: "At the table as Rook")
+      side = page.evaluate_script("document.querySelector('.table__side').getBoundingClientRect().right")
+      stage = page.evaluate_script("document.querySelector('.table__stage').getBoundingClientRect().left")
+      expect(side).to be <= stage
     end
   end
 
   it "keeps the player's own HP up top in step with the party panel" do
     seat(player, rook)
     as(player) do
-      expect(page).to have_css(".player-screen__card", text: "Rook")
+      expect(page).to have_css(".player-card", text: "Rook")
       wait_for_streams
       rook.update!(hp: 7)
       expect(page).to have_css(".table-you .vitals strong", text: /\A7\z/)
@@ -179,9 +164,12 @@ RSpec.describe "Moments at the table", type: :system do
   it "plays around one shared screen, with a phone joining as a controller" do
     seat(gm, "gm")
     as(gm) do
+      # The way in is in the GM's tools, to hold up or read out; the screen itself is only the show.
+      within(".table-controls .gm-tools") { find("[role=tab]", text: "More").click }
+      expect(page).to have_css("#gm_panel_more .coop-join__qr svg", visible: true)
       visit campaign_table_path(campaign, view: "screen")
       wait_for_streams
-      expect(page).to have_css(".coop-join__qr svg")
+      expect(page).to have_no_css(".coop-join")
       expect(page).to have_no_field("message[body]") # the screen has no composer
     end
 

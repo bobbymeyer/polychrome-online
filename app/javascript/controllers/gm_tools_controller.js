@@ -57,7 +57,11 @@ export default class extends Controller {
       tab.setAttribute("aria-selected", String(on))
       tab.tabIndex = on ? 0 : -1
     })
-    this.panelTargets.forEach((panel) => { panel.hidden = panel.dataset.key !== key })
+    this.panelTargets.forEach((panel) => {
+      panel.hidden = panel.dataset.key !== key
+      // A panel fetched when opened (the Moves tab): opening it is the moment, wherever it sits on the page.
+      if (!panel.hidden) panel.querySelectorAll("turbo-frame[loading=lazy]").forEach((frame) => { frame.loading = "eager" })
+    })
   }
 
   get storageKey() {

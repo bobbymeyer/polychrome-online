@@ -384,23 +384,26 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 On a desktop (1100px and up) the page has no measure: it takes the whole width, and the screen is
 three columns with the pinned ones on the far edges:
 
-- **Left, on the edge: you** (a player's card with portrait, name, level and archetype, HP and MP,
-  and your sheet; under it what you look up, Party · What we know, the party open), or **the GM's
-  tools** with the same look-ups under them.
-- **Middle: the stage, first and sacred.** Nothing sits above it but the top bar, and nothing
-  pushes it: the head, the Now line, the last lines said and the GM's moves and talk are in a
-  region under it that scrolls on its own, and a player's **moves** are a drawer along the
-  column's bottom. The frame fits the screen without scrolling: as wide as the column allows,
-  or as tall as the room under the top bar less a band for what's under it, whichever comes
-  first, always 16:9 and never narrower than 480px. The dialogue box and the date plate are
-  sized to the frame, so a small frame keeps a small box.
+- **Left, on the edge: who's here.** A player's card (portrait, name, level and archetype, HP and
+  MP, their sheet), then what you look up: Party · What we know, the party open. The GM has the
+  same look-ups and no card.
+- **Middle: the stage, first and sacred, and under it the Controls.** Nothing sits above the
+  frame but the top bar, and nothing pushes it: everything that is done at the table is in one
+  region under it that scrolls on its own. The Controls are the Now line, then what this seat
+  does about it: a player's moves (the vote, the ways on, their field ability, talk), or in
+  their place the GM's tools (what needs an answer first, then Scenes, Check, Clocks, Time,
+  Secrets, More) with the GM's ways and talk under them; a viewer with no seat finds Take a seat
+  there. Nothing else lives in the middle: the seat and "Previously on…" are the top bar's, and
+  the last lines said are the log's. The frame fits the screen without scrolling: as wide as
+  the column allows, or as tall as the room under the top bar less a band for what's under it,
+  whichever comes first, always 16:9 and never narrower than 480px. The dialogue box and the
+  date plate are sized to the frame, so a small frame keeps a small box.
 - **Right, on the edge: the log.**
 
-The side parts pin, the way the GM's log always has: pinned, it's a column on its edge (or the
-drawer along the bottom); unpinned, it folds away (the left column to a "You" tab on the edge,
-your moves to their bar, the log to its tab) and opens when pressed. Each stays as you left it, in
-this browser. On a phone it's one column: you, the stage (4:3 there, so the words along its
-bottom have room), the Now line, your moves, what you look up; the date sits under the frame.
+The log pins: a column on its edge, or folded to its tab and opened when pressed, as you left it
+in this browser. The left column is always there. On a phone it's one column: you, the stage
+(4:3 there, so the words along its bottom have room), the Controls, then the party; the date sits
+under the frame.
 
 ### The table
 
@@ -418,29 +421,27 @@ bottom have room), the Now line, your moves, what you look up; the date sits und
 - **What only the GM sees is marked.** The tools column has its dashed tag; under the map, "Faded
   places are hidden: only you see them"; and "The party knows" says "Everyone at the table sees
   this" to the GM.
-- **A player's moves sit together** under a red "Your moves" tag: the vote, the ways on, their
-  field ability, then talk, in that order. The talk box says who hears it ("Everyone at the
-  table hears it, said as Hoshi. Whisper and only the GM does."), and the GM's says the same of
-  their whispers.
-- **You, up top.** Under the campaign's name a player sees "You · Hoshi" with their own HP and MP,
-  kept in step with their row in the party panel, so they never scroll to the bottom to see it.
+- **A player's moves sit together** in the Controls under a red "Your moves" tag: the vote, the
+  ways on, their field ability, then talk, in that order. The talk box says who hears it
+  ("Everyone at the table hears it, said as Hoshi. Whisper and only the GM does."), and the GM's
+  says the same of their whispers.
+- **You, on the left.** A player's card has their own HP and MP, kept in step with their row in
+  the party panel, so they never scroll to see it.
 - **A service says what it's for before it's opened**: under its name and keeper, in red, "Rest
   the night · 75 yen", "Buy and sell", "Raise the fallen", or "Shut".
-- **The "Just said" strip doesn't repeat the question** the table is deciding: while the choice
-  panel shows it, its line stays in the log only.
 - **A long sheet keeps its section links on screen**: stuck to the top, and on a phone on one line
   that scrolls sideways, fading at the edge where there's more.
 - **Dialogue on the stage.** What's said plays along the bottom of the stage, over the map or the
   place; the party's HP and MP are in the left column, and follow battles and rests live.
-- **The last few lines** said at the table sit under the dialogue box, whoever said them, so
-  nobody opens the log to follow the story. The log drawer is still the record. A whisper to you
-  pops up for a moment.
-- **A phone controller** shows the last two lines, your own character's check and field rolls,
-  and in battle a ticker of what just happened on the screen everyone's watching.
+- **The log is the record.** What's said plays on the stage and lands in the log on the right;
+  nothing repeats it in the middle. A whisper to you pops up for a moment.
+- **A phone controller** shows your own character's check and field rolls, and in battle a
+  ticker of what just happened on the screen everyone's watching.
 - **"Previously on…"** opens by itself only for a session that's over, not the one being played.
-- **The GM's tools sit beside the play**, at the top of the side column: tabs for Scenes, Check,
-  Clocks, Time, Secrets and More (grants, music, one shared screen), one open at a time, under a
-  dashed tag: "GM tools · only you see these".
+- **The GM's tools are the GM's moves**, in the Controls under the stage where a player's moves
+  would be: tabs for Scenes, Check, Clocks, Time, Secrets and More (grants, music, one shared
+  screen with its QR code to hold up), one open at a time, under a dashed tag: "GM tools · only
+  you see these".
   The open tab is ink, the rest grey controls; a count shows unplayed scenes and running clocks.
   The tab the GM had open stays open, per campaign, in this browser. What needs an answer now
   (everyone down, a field ability asked for) sits above the tabs. On a phone as the GM's remote,
