@@ -21,8 +21,8 @@ class ArtBatch < ApplicationRecord
   # portrait's neutral seed), so a face stays closer across expressions.
   # write: let the language model (if there is one) rewrite the subject.
   # transparent: remove the background, or keep it, whatever the type says.
-  # draft: quick previews (fewer steps, smaller, background left for the
-  # full render), to be made properly with #refine!.
+  # draft: quick previews (fewer steps, smaller, cut out like the full
+  # render would be), to be made properly with #refine!.
   # source: an image to redraw from instead of starting blank (the chain,
   # Headshot): { "kind" => "sprite" | "portrait", "id" => n }, re-noised
   # by denoise; it is put in ComfyUI's inputs when the batch runs.
@@ -49,12 +49,13 @@ class ArtBatch < ApplicationRecord
     batch
   end
 
-  # A recipe made quick: the family's draft steps and size, no background
-  # removal yet. What the full render needs is kept.
+  # A recipe made quick: the family's draft steps and size. The background
+  # comes off a draft too, since a draft can be used as it is. What the
+  # full render needs is kept.
   def self.draft_of(recipe)
     family = Comfy::Family.new(recipe["family"], recipe["model"])
     width, height = family.draft_size(recipe["width"], recipe["height"])
-    recipe.merge("draft" => true, "steps" => family.draft_steps, "width" => width, "height" => height, "transparent" => false,
+    recipe.merge("draft" => true, "steps" => family.draft_steps, "width" => width, "height" => height,
                  "full" => recipe.slice("width", "height", "transparent"))
   end
 
@@ -102,7 +103,8 @@ class ArtBatch < ApplicationRecord
       source = ArtCandidate.find_by(id: recipe.dig("refines", "candidate_id"))
       raise Comfy::Error, "The draft to refine is gone" unless source&.image&.attached?
 
-      [ source.image.download, "polychrome-draft-#{source.id}-#{source.seed}.png" ]
+      # As rendered, on its ground: the cut-out's colours are the render's.
+      [ Cutout.opaque(source.image.download), "polychrome-draft-#{source.id}-#{source.seed}.png" ]
     elsif (source = recipe["source"])
       case source["kind"]
       when "sprite"
