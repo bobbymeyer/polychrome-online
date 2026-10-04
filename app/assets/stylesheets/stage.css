@@ -621,6 +621,10 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .table-scenes { margin-top: 12px; }
 .table-scenes summary { cursor: pointer; font-style: italic; font-weight: 900; font-size: 18px; }
 .table-scenes[open] > summary { margin-bottom: 8px; }
+.script-paste { margin-bottom: 16px; }
+.script-paste > summary { display: inline-block; margin-bottom: 8px; }
+.scene-settings { margin-top: 32px; padding-top: 16px; border-top: 3px solid var(--ink); }
+.scene-settings > h2 { margin-top: 0; }
 .script-field { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 15px; line-height: 24px; }
 
 /* A desperation move's cut-in: the stage stops for the character. */
@@ -1605,8 +1609,11 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .beat--fx .beat__kind { background: var(--sun-yellow); color: var(--ink); }
 .beat--choice .beat__kind { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
 .beat--say .beat__kind { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
-.add-step { position: relative; display: inline-block; }
-.add-step > summary { list-style: none; cursor: pointer; }
+.add-step { position: relative; display: inline-block; margin: 0; border: 0; padding: 0; }
+.add-step > summary::before { display: none; }
+.add-step[open] > summary { margin-bottom: 0; }
+.add-step > summary { display: inline-block; list-style: none; cursor: pointer; }
+.add-step > summary::marker { content: none; }
 .add-step > summary::-webkit-details-marker { display: none; }
 .add-step__kinds { position: absolute; z-index: 5; left: 0; top: 100%; display: grid; gap: 2px; min-width: 140px; padding: 6px; background: var(--paper); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
 .add-step__kinds form { margin: 0; }

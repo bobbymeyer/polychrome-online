@@ -1,4 +1,5 @@
 <% content_for :title, "New scene" %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / New scene</div>
 <h1>New scene</h1>
+<p class="hint">Name it and start building: the scene is made step by step, a line, a choice, a backdrop, someone entering, music, an effect, one after the other.</p>
 <%= render "form", scene: @scene %>

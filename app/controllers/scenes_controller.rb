@@ -19,7 +19,7 @@ class ScenesController < ApplicationController
   def create
     @scene = @campaign.scenes.new(scene_params)
     if @scene.save
-      redirect_to edit_scene_path(@scene), notice: "#{@scene.name} is ready: set its stage beat by beat, or play it as it is.", status: :see_other
+      redirect_to edit_scene_path(@scene), notice: "#{@scene.name} is ready: build it step by step.", status: :see_other
     else
       render :new, status: :unprocessable_content
     end
