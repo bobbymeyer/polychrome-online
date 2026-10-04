@@ -333,7 +333,9 @@ A player's table offers what they can do at this moment, and nothing else up fro
 - **What you look up is in tabs**: Map · Party · What we know, closed until pressed, one at a
   time. The Party tab says "hurt" or "someone's down" without opening; What we know appears
   once there's something to know. Your own HP stays in the "You" line.
-- **The header's extras are in the menu**: "Previously on…" and "Change seat".
+- **Your seat is in the account menu**, with your name: "At the table as Rook", then the other seats
+  you may take ("Sit as Game Master", "Sit as Lenna"), one press from any page in the campaign, and
+  "Stand up". The campaign's menu keeps "Previously on…".
 
 The GM's table works the same way:
 

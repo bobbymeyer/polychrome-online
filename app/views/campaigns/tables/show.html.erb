@@ -5,14 +5,10 @@
 <% end %>
 
 <% view = coop_view %>
-<%# Where you sit and the recap are the top bar's (the table itself is the three columns). %>
-<% unless view %>
+<%# The recap is the top bar's; the seat is in the account menu (the table itself is the three columns). %>
+<% if !view && @recap %>
   <% content_for :table_menu do %>
-    <% if @seat.seated? %>
-      <span class="topbar__seat">At the table as <strong><%= @seat.name %></strong></span>
-      <%= button_to "Change seat", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
-    <% end %>
-    <%= link_to "Previously on…", campaign_table_path(@campaign, recap: 1) if @recap %>
+    <%= link_to "Previously on…", campaign_table_path(@campaign, recap: 1) %>
   <% end %>
 <% end %>
 <%# The table (docs/DESIGN.md, "The Stage"): three columns on a wide screen. Left, who's here: you (a player's

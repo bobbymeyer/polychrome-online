@@ -74,7 +74,7 @@ RSpec.describe "Moments at the table", type: :system do
       expect(page).to have_css(".table__stage .table-controls #table_now", visible: true) # the controls under the stage
       expect(page).to have_css(".table-controls .your-moves", visible: true)
       expect(page).to have_css(".log-drawer.is-docked") # and the log on the right
-      expect(page).to have_css(".topbar", text: "At the table as Rook")
+      expect(page).to have_css(".topbar__seat", text: "At the table as Rook", visible: :all) # in the account menu
       side = page.evaluate_script("document.querySelector('.table__side').getBoundingClientRect().right")
       stage = page.evaluate_script("document.querySelector('.table__stage').getBoundingClientRect().left")
       expect(side).to be <= stage
