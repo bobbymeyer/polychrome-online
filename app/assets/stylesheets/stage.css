@@ -41,7 +41,7 @@
 }
 
 /* Parallelograms and cut corners: the two shapes of the stage. */
-.button, input[type=submit], button:not(.link-button):not(.dialogue__more), .menu__item, .pin {
+.button, input[type=submit], button:not(.link-button):not(.dialogue__more):not(.dialogue__close), .menu__item, .pin {
   clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
   padding-left: calc(12px + var(--slant) / 2); padding-right: calc(12px + var(--slant));
 }
@@ -1420,31 +1420,50 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* The place's picture fills the frame when it has one. */
 .stage--table #table_scene { position: absolute; inset: 0; margin: 0; border: 0; }
 .stage--table #table_scene img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
-/* What's said plays along the bottom of the frame. */
-/* Sized to the frame (container units), so a small frame keeps a small box. */
+/* What's said plays along the bottom of the frame, in one compact box as tall as the speaker's face, which
+   sits inside it hugging its left edge. Words that don't fit go in pages (dialogue_controller), never a
+   scroll. Sized to the frame (container units), so a small frame keeps a small box. */
 .stage__frame .dialogue, .battle .stage .dialogue--battle {
-  position: absolute; left: 2cqw; right: 2cqw; bottom: 2cqh; z-index: 6; margin: 0; min-height: 0; max-height: 42cqh; overflow-y: auto; scrollbar-width: thin;
-  gap: clamp(8px, 2cqw, 24px); padding: clamp(6px, 1.6cqh, 12px) clamp(8px, 1.6cqw, 16px) clamp(8px, 2cqh, 16px); box-shadow: 6px 6px 0 var(--ink);
+  --face: clamp(52px, 16cqh, 96px);
+  position: absolute; left: 0; right: 0; bottom: 2.5cqh; z-index: 6; width: min(96cqw, 860px); margin: 0 auto; min-height: 0;
+  grid-template-columns: var(--face) minmax(0, 1fr); gap: 0; align-items: stretch; padding: 0;
+  border: 3px solid var(--ink); background: var(--paper); box-shadow: 6px 6px 0 var(--ink);
 }
-.stage__frame .speaker-portrait--large, .battle .stage .speaker-portrait--large { width: clamp(44px, 17cqh, 96px); height: clamp(44px, 17cqh, 96px); }
-.stage__frame .speaker-portrait--large.speaker-portrait--plate, .battle .stage .speaker-portrait--large.speaker-portrait--plate { font-size: clamp(26px, 10cqh, 56px); }
-.stage__frame .dialogue__name, .battle .stage .dialogue__name { font-size: clamp(11px, 2.4cqh, 13px); margin-bottom: clamp(2px, 1cqh, 8px); }
-.stage__frame .dialogue__body, .battle .stage .dialogue__body { font-size: clamp(14px, 4cqh, 22px); line-height: 1.35; max-width: none; }
-.stage__frame .dialogue__more { width: clamp(10px, 2.5cqh, 16px); height: clamp(10px, 2.5cqh, 16px); }
-/* When, in the frame's top-right corner: one small line (the clock, the part of the day, the day), the days
-   left under it. Where, a tag in the bottom-left corner. Neither takes the eye off the stage. */
+.stage__frame .dialogue.is-narration, .battle .stage .dialogue--battle.is-narration { grid-template-columns: minmax(0, 1fr); }
+.stage__frame .dialogue__text, .battle .stage .dialogue__text {
+  display: flex; flex-direction: column; height: var(--face); min-height: 0; border: 0; box-shadow: none; background: none;
+  padding: clamp(6px, 1.6cqh, 12px) clamp(28px, 4cqw, 40px) clamp(6px, 1.6cqh, 12px) clamp(10px, 1.6cqw, 16px);
+}
+.stage__frame .speaker-portrait--large, .battle .stage .speaker-portrait--large { display: grid; width: var(--face); height: var(--face); clip-path: none; }
+.stage__frame .speaker-portrait--large.speaker-portrait--plate, .battle .stage .speaker-portrait--large.speaker-portrait--plate { font-size: calc(var(--face) * .6); }
+/* The name is a tab on the box's top edge, clear of the words. */
+.stage__frame .dialogue__name, .battle .stage .dialogue__name { top: auto; bottom: calc(100% + 3px); left: -3px; font-size: clamp(10px, 2.2cqh, 13px); }
+/* Narration has no face to match: as tall as its words, up to the same height. */
+.stage__frame .dialogue.is-narration .dialogue__text, .battle .stage .dialogue--battle.is-narration .dialogue__text { height: auto; min-height: 0; max-height: var(--face); }
+.stage__frame .dialogue__body, .battle .stage .dialogue__body { flex: 1; min-height: 0; overflow: hidden; font-size: clamp(13px, 3.4cqh, 19px); line-height: 1.35; max-width: none; }
+.stage__frame .dialogue__more, .battle .stage .dialogue__more { width: clamp(8px, 2cqh, 12px); height: clamp(8px, 2cqh, 12px); right: 10px; bottom: 8px; }
+/* Put away until the next thing is said. */
+.dialogue__close {
+  position: absolute; top: 4px; right: 4px; z-index: 1; width: 22px; height: 22px; padding: 0; border: 0; background: none;
+  color: var(--grey); font: 700 18px/22px var(--font); cursor: pointer;
+}
+.dialogue__close:hover, .dialogue__close:focus-visible { color: var(--ink); }
+/* When, in the frame's top-right corner: one small line (the clock, the part of the day, the day), straight
+   on the picture with no plate round it, the days left under it. Where, a tag in the top-left corner.
+   Neither takes the eye off the stage. */
 .stage__hud .table-time { position: static; margin: 0; }
-.stage__hud .table-time__plate {
-  position: absolute; top: 1.2cqw; right: 1.2cqw; z-index: 7; padding: clamp(3px, .6cqw, 6px) clamp(6px, 1cqw, 10px);
-  max-width: 40cqw; text-align: right; background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
-}
-.stage__hud .table-time__clock { --clock: clamp(24px, 3.4cqw, 34px); display: flex; justify-content: flex-end; }
+.stage__hud .table-time__plate { position: absolute; top: 1.2cqw; right: 1.2cqw; z-index: 7; max-width: 40cqw; text-align: right; }
+.stage__hud .table-time__clock { --clock: clamp(24px, 3.4cqw, 34px); display: flex; justify-content: flex-end; filter: drop-shadow(4px 4px 0 var(--ink)); }
 .stage__hud .table-time__part, .stage__hud .table-time__date { font-size: clamp(10px, 1.3cqw, 13px); white-space: nowrap; }
 .stage__hud .table-time__date { line-height: clamp(14px, 1.8cqw, 18px); }
 .stage__hud .table-time__deadlines { margin-top: 4px; }
 .stage__hud .table-time__deadlines li { font-size: clamp(10px, 1.2cqw, 12px); }
+/* With no plate, each day left is its own white slip so it reads on the picture. */
+.stage__hud .table-time__deadlines li:not(.is-tomorrow) {
+  display: table; margin: 4px 0 0 auto; padding: 1px 8px; background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+}
 .stage__hud .table-time__where {
-  position: absolute; left: 1.2cqw; bottom: 1.2cqw; z-index: 8; margin: 0; padding: clamp(2px, .5cqw, 4px) clamp(6px, 1cqw, 10px);
+  position: absolute; left: 1.2cqw; top: 1.2cqw; z-index: 8; margin: 0; padding: clamp(2px, .5cqw, 4px) clamp(6px, 1cqw, 10px);
   max-width: 40cqw; font-size: clamp(11px, 1.4cqw, 14px); line-height: 1.3; background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
 }
 @media (max-width: 640px) {
@@ -1454,10 +1473,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
   /* On a phone, under the frame: the line, then where. */
   .stage__hud .table-time { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 8px 0; margin-top: 8px; border-bottom: 3px solid var(--ink); }
   .stage__hud .table-time__plate, .stage__hud .table-time__where { position: static; max-width: none; text-align: left; box-shadow: none; border: 0; padding: 0; }
-  .stage__frame .dialogue { left: 6px; right: 6px; bottom: 6px; padding: 8px 10px 12px; }
-  .stage__frame .dialogue__body { font-size: 16px; line-height: 22px; }
-  .stage__frame .speaker-portrait--large { width: 56px; height: 56px; }
-  .stage__frame .speaker-portrait--large.speaker-portrait--plate { font-size: 32px; }
+  .stage__hud .table-time__clock { filter: none; }
+  .stage__hud .table-time__deadlines li:not(.is-tomorrow) { display: list-item; margin: 0; padding: 0; background: none; border: 0; box-shadow: none; }
+  .stage__frame .dialogue { --face: 72px; width: auto; left: 6px; right: 6px; bottom: 6px; box-shadow: 4px 4px 0 var(--ink); }
+  .stage__frame .dialogue__body { font-size: 14px; line-height: 19px; }
 }
 
 /* A battle on the frame: the field fills it, the party's roster is a band along its bottom, the
@@ -1531,7 +1550,7 @@ body[data-view="stage"] .page { max-width: none; min-height: 100vh; min-height: 
 body[data-view="stage"] .stage { width: min(100%, calc(100vh * 16 / 9)); min-width: 0; margin: 0 auto; }
 body[data-view="stage"] .stage__frame, body[data-view="stage"] .battle .stage { border: 0; box-shadow: none; aspect-ratio: 16 / 9; container-type: size; overflow: hidden; }
 body[data-view="stage"] .stage__hud .table-time__plate { top: 16px; right: 16px; }
-body[data-view="stage"] .stage__hud .table-time__where { left: 16px; bottom: 16px; }
+body[data-view="stage"] .stage__hud .table-time__where { left: 16px; top: 16px; }
 body[data-view="stage"] .table, body[data-view="stage"] .battle { width: 100%; display: block; padding: 0; }
 .stage-leave {
   position: fixed; top: 12px; left: 12px; z-index: 90; padding: 6px 12px; background: var(--paper); color: var(--ink);
@@ -1553,7 +1572,7 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 /* Figures stand on the frame's floor: sprites with their feet behind the dialogue box, as on a visual
    novel's stage; portraits (no sprite yet) sit just above it. */
 .beat-stage__figures { position: absolute; left: 2cqw; right: 2cqw; bottom: 0; display: flex; justify-content: space-between; align-items: flex-end; gap: 2cqw; pointer-events: none; }
-.beat-stage__figure--portrait { margin-bottom: 26cqh; }
+.beat-stage__figure--portrait { margin-bottom: 22cqh; }
 .beat-stage__sprite {
   display: block; height: 78cqh; width: auto; max-width: 34cqw; object-fit: contain; object-position: bottom;
   filter: brightness(.6) saturate(.6) drop-shadow(4px 4px 0 var(--ink));

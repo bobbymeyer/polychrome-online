@@ -865,10 +865,11 @@ details[open] > summary { margin-bottom: 16px; }
 .table-time.time--dusk { --part: var(--bright-red); --part-ink: #fff; }
 .table-time.time--night { --part: var(--dark-blue); --part-ink: #fff; }
 /* One line: the clock, then the part of the day as a label in that part's colour, then the day at the same
-   size. The clock and the label are one shape with one outline: the part it is now points right, into the
-   label, which is the same colour, so the slice runs into it; the label's left edge is the chord where the
-   clock's ring stops (x = 28.77 of 36 for a label 28/36 of the clock high), and its top and bottom borders
-   carry the line on. Everything is sized from --clock so the join holds at any size. */
+   size, black on white, carrying on the label's border and cut off with a slant. The clock and the label are
+   one shape with one outline: the part it is now points right, into the label, which is the same colour, so
+   the slice runs into it; the label's left edge is the chord where the clock's ring stops (x = 28.77 of 36
+   for a label 28/36 of the clock high), and its top and bottom borders carry the line on. Everything is
+   sized from --clock so the join holds at any size. */
 .table-time__clock { --clock: 36px; display: inline-flex; align-items: center; gap: 0; }
 .table-time__part {
   box-sizing: border-box; display: inline-flex; align-items: center; position: relative; z-index: 2;
@@ -876,7 +877,17 @@ details[open] > summary { margin-bottom: 16px; }
   border: 3px solid var(--ink); border-left: 0;
   background: var(--part); color: var(--part-ink); font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; line-height: 1;
 }
-.table-time__date { margin: 0 0 0 10px; font-weight: 900; font-size: 13px; line-height: 18px; letter-spacing: .02em; white-space: nowrap; }
+/* The border is the ink behind a white cut inset 3px from it, so it follows the slant too. */
+.table-time__date {
+  --slant: 8px; position: relative; isolation: isolate; box-sizing: border-box; display: inline-flex; align-items: center;
+  height: calc(var(--clock, 36px) * 28 / 36); margin: 0; padding: 0 calc(var(--slant) + 8px) 0 10px;
+  background: var(--ink); color: var(--ink); clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+  font-weight: 900; font-size: 13px; line-height: 18px; letter-spacing: .02em; white-space: nowrap;
+}
+.table-time__date::before {
+  content: ""; position: absolute; inset: 3px 4px 3px 0; z-index: -1; background: var(--paper);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant) + 2px) 100%, 0 100%);
+}
 .table-time__deadlines { list-style: none; margin: 8px 0 0; padding: 0; }
 .table-time__deadlines li { font-size: 14px; }
 .table-time__deadlines strong { color: var(--signal); margin-right: 6px; }

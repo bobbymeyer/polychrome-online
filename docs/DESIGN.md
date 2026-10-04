@@ -357,12 +357,14 @@ same for everyone, and the one source of truth for what is happening. It takes t
 broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 
 - **What it shows** is the scene: a beat's backdrop and figures while a scene is on, else the
-  picture of the place the party is in when it has one, else plain paper. The map is not on it:
-  the map is the map page's, and travel is made from the Controls or there. When sits on a small
-  plate in the top-right corner, one line: the day clock and the part of the day as a label in that
-  part's colour, one shape with one outline (the part it is now points right, into the label, so
-  the slice runs into it), and the day at the same size; the days left on public clocks under it. Where (the place, and the room in a
-  dungeon) is a tag in the bottom-left corner. What's being said plays along the bottom, in the
+  picture of the place the party is in when it has one, else plain paper; or the map, when the GM
+  shows it ("Show the map"), with travel made from the Controls.
+  When sits in the top-right corner as one line straight on the picture, with no plate round it:
+  the day clock and the part of the day as a label in that part's colour, one shape with one outline
+  (the part it is now points right, into the label, so the slice runs into it), and the day at the
+  same size, black on white in a slanted segment carrying on the label's border; the days left on
+  public clocks under it, each its own white slip. Where (the place, and the room in a dungeon) is
+  a tag in the top-left corner, across from when. What's being said plays along the bottom, in the
   dialogue box.
 - **A scene plays on the same frame.** While the GM has a scene on the stage, its step is what the
   frame shows: the backdrop (a place's picture, a panel painted for the step, or black) fills it, the
@@ -734,17 +736,25 @@ Record each place where the game needed more than the Swiss defaults: what chang
   blue) are one shape with one outline: the label's left edge is the chord where the clock's ring
   stops and its border carries the line on, and the slice pointing at it is its colour, so the
   slice runs into the label with no line between. There is no pointer: the label is the pointer.
-  Then the day in the setting's calendar at the same size. When time passes the dial turns forward (never back: into
+  Then the day in the setting's calendar at the same size, black on white, carrying on the label's
+  border and cut off with a slant (the `/` of the type tags). When time passes the dial turns forward (never back: into
   the next day it keeps going round), so the table sees the day move. Under the line, the days
   left on each public clock that only a new day ticks, said as a sentence ("5 days until The
   spring tide comes in"; on the last day, "Tomorrow it happens: …"). Where the party is (the
   place's name, a link to it, with the room inside a dungeon: "The Drowned Line · Entrance") is a
-  tag in the frame's other corner. The party plans around the calendar, but the plate shouldn't
-  take the eye off the stage.
+  tag in the frame's other top corner. The party plans around the calendar, but the line shouldn't
+  take the eye off the stage, so on the stage it has no plate of its own.
 - **Name tags in the speaker's colour.** The dialogue box's name tag wears the speaker's plate
   colour instead of a fixed yellow. The narrator has no portrait: narration is a voice, and its
   words take the whole box. On a phone a speaker's portrait is 64px beside their words, where it
   used to be a plate half the screen high.
+- **On the stage the dialogue box is the speaker's height.** One compact box along the frame's
+  bottom, the speaker's portrait inside it flush to its left edge, and the box exactly as tall as
+  the portrait. The name tag is a tab on its top edge. A line that doesn't fit isn't scrolled: it is
+  split into pages that each fit, typed out one after another (press for the next, or they move on
+  by themselves). Narration, with no face to match, is as tall as its words, up to the same height.
+  A small × puts the box away: what it still had to say is in the log, and the next line brings it
+  back. The same box plays on a battle's stage.
 - **Story time in the log.** Log lines show the part of the day they were said in ("Dusk"), and
   the recap is dated by the setting's calendar. The wall-clock time is only on hover, because
   "00:17" in a fantasy log breaks the fiction.

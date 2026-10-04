@@ -97,6 +97,18 @@ RSpec.describe Cutout do
     expect(described_class.keep_interior(clean)).to eq(clean)
   end
 
+  it "keeps the render's colours under what it clears, so taking the alpha off gives the render back" do
+    plain = on_green
+    # What rembg sends back: the cleared ground blacked out.
+    alpha = Vips::Image.new_from_array(Array.new(SIZE) { |y| Array.new(SIZE) { |x| plain.getpoint(x, y) == [ 40, 200, 40 ] ? 0 : 255 } }).cast(:uchar)
+    removed = (plain * (alpha / 255.0)).cast(:uchar).bandjoin(alpha).pngsave_buffer
+    mended = described_class.keep_interior(removed, plain.pngsave_buffer)
+    expect(alpha_at(mended, 2, 2)).to eq(0)
+    back = Vips::Image.new_from_buffer(described_class.opaque(mended), "")
+    expect(back.bands).to eq(3)
+    expect(back.getpoint(2, 2)).to eq([ 40, 200, 40 ])
+  end
+
   describe Cutout::Client do
     def client(routes) = described_class.new(url: "http://cutout.test", path: "/api/remove", model: "isnet-anime", token: "tok", http: FakeHttp.new(routes))
 
