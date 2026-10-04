@@ -3,16 +3,16 @@
 <% world = beat.campaign.world %>
 <% batch = beat.art_batch %>
 <details class="window art-studio art-studio--beat" id="art" <%= "open" if batch || beat.backdrop == "panel" %>>
-  <summary>Panel for beat <%= beat.position + 1 %><%= tag.span(" · ComfyUI isn't answering", class: "art-studio__status") unless Comfy.capabilities.reachable? %></summary>
+  <summary>Panel for step <%= beat.position + 1 %><%= tag.span(" · ComfyUI isn't answering", class: "art-studio__status") unless Comfy.capabilities.reachable? %></summary>
   <% if beat.image.attached? %>
-    <%= image_tag url_for(beat.image), alt: "Beat #{beat.position + 1}'s panel", class: "art-studio__panel" %>
+    <%= image_tag url_for(beat.image), alt: "Step #{beat.position + 1}'s panel", class: "art-studio__panel" %>
   <% end %>
-  <% if beat.backdrop != "panel" %>
-    <p class="hint">This beat shows <%= { "keep" => "what the beat before left on the stage", "place" => "#{beat.map_node&.name || 'a place'}'s picture", "black" => "black" }[beat.backdrop] %>. Set “Behind them” to a panel to make one for it.</p>
+  <% unless beat.kind == "backdrop" && beat.backdrop == "panel" %>
+    <p class="hint">This step isn't a panel backdrop: <%= beat.describe %>. Add a Backdrop step set to a panel, and make the panel there.</p>
   <% end %>
   <p class="hint">
     <% if (template = beat.panel_template) %>
-      <%= template.name %>'s own picture with this beat's words added<%= ", starting from its seed so it stays recognisable" if template.image_seed %>.
+      <%= template.name %>'s own picture with this step's words added<%= ", starting from its seed so it stays recognisable" if template.image_seed %>.
     <% else %>
       Set a place behind an earlier beat (or this one) and the panel is drawn as that place; without one, the words stand alone.
     <% end %>
@@ -25,8 +25,8 @@
     <%= hidden_field_tag :beat_id, beat.id %>
     <div class="field">
       <%= label_tag :beat_words, "What the panel shows" %>
-      <%= text_field_tag :beat_words, beat.art_notes, placeholder: beat.text.presence || "the airship listing over the bay at dusk" %>
-      <p class="hint">Blank uses the line itself. The words are kept with the beat.</p>
+      <%= text_field_tag :beat_words, beat.art_notes, placeholder: "the airship listing over the bay at dusk" %>
+      <p class="hint">Blank uses the line before this step. The words are kept with the step.</p>
     </div>
     <%= render "art_batches/background_field", art: beat %>
     <div class="inline-form">

@@ -318,39 +318,54 @@ everything outside battle.
 ## Scenes
 
 The GM writes scenes before the session, on the campaign's Prep page, as a
-sequence of **beats** (`Beat`), and plays them from the table. Each beat is
-one line said (by someone from the cast, one of the party, or the narrator,
-with an expression), what the stage shows behind it, who stands on the
-stage, and a jingle or a change of music as it lands. A beat can say nothing
-and only change the stage.
+sequence of **steps** (`Beat`, `Beat::KINDS`), and plays them from the
+table. A step is one of six kinds, each whole of its kind (`Beat#whole_of_its_kind`):
 
-- **Writing.** The scene's page is a sequencer: beats in order, each its own
-  small form saved as it changes, with move up and down, insert after,
-  duplicate and delete; beside it a preview of the beat chosen, on a Stage,
-  as the table will see it. Lines can also be pasted as a script that reads
+- a **line** said (by someone from the cast, one of the party, or the
+  narrator, with an expression), with a jingle as it lands;
+- a **choice** put to the table (two to six options, the outcome kept under a
+  flag);
+- a **backdrop**: a place on the map (its picture as it is now, mode and
+  all), a **panel made for the step**, or black;
+- a **sprite**: someone enters (which side, which face), changes face or
+  side, or leaves;
+- **music**: a change of track, or back to following the place;
+- an **effect**: a named animation (shake, fade, flash…), a placeholder for
+  now: the stage carries it as `data-fx` and nothing plays yet.
+
+Lines and choices **wait** for the table (`Beat::WAITING`); the rest are
+changes made on the way to the next line. The stage at any step is folded
+from the steps before it (`Scene#stage_at`: the backdrop set, who is on,
+the effect), so a step only says what changes.
+
+- **Writing.** The scene's page is a sequencer: steps in order, each its own
+  small form saved as it changes, with move up and down, add a step after
+  (a menu of the six kinds), duplicate and delete; beside it a preview of
+  the step chosen, on a Stage, as the table will see it: for a change, the
+  stage as it leaves it. Lines can also be pasted as a script that reads
   like a play, one line each (`Cid (worried): The airship won't hold.`
   speaks as the NPC with that expression; `Bartz: Hold on!` as a party
-  member; anything else is narration): each line becomes a beat after the
+  member; anything else is narration): each line becomes a step after the
   ones there. End on `? Trust Cid | Refuse -> trusted_cid` for a choice.
-- **The stage behind a beat** is a place on the map (its picture as it is
-  now, mode and all), a **panel made for the beat**, black, or whatever the
-  beat before left there. A panel is generated like a mode's picture
-  (`Artwork`): the place the beat stands in is the subject and the beat's
-  words are the layer after it, so the burning inn is still the inn; the GM
-  picks from candidates on the scene's page, and the panel is the beat's own
-  image. Figures stand full body as their **sprite** (`Sprite`: one per
-  speaker, uploaded in their form beside the portraits or generated like one,
-  cut out, the same face by starting from the Neutral portrait's seed; a
-  character without one stands as their archetype's figure), else as their
-  portrait; the speaker is lit and a step larger, the rest dimmed.
+- **A panel** is generated like a mode's picture (`Artwork`): the place the
+  last place backdrop before it set is the subject and the step's words (or
+  the last line's) are the layer after it, so the burning inn is still the
+  inn; the GM picks from candidates on the scene's page, and the panel is
+  the step's own image. Figures stand full body as their **sprite**
+  (`Sprite`: one per speaker, uploaded in their form beside the portraits or
+  generated like one, cut out, the same face by starting from the Neutral
+  portrait's seed; a character without one stands as their archetype's
+  figure), else as their portrait; whoever speaks is on the stage for the
+  line even if no sprite step put them there, lit and a step larger, the
+  rest dimmed.
 - **Playing.** The GM puts the scene on the stage (`Scene#start!`) and steps
-  it beat by beat from the Now line (`#advance!`), or lets it **play on** at
-  reading pace (`#play_on!`, `SceneStepJob`) and pauses it. Everyone's Stage
-  shows the same beat (`campaigns/tables/_scene`, a table panel), and each
-  line goes through the dialogue box, a party member's included. A choice
-  beat stops the play-on; the table decides. The scene can be taken down
-  without its ending.
-- **Then** it ends, after the last beat: in a battle against the monsters
+  it line to line from the Now line (`#advance!`, `#run_to!` makes the
+  changes between), or lets it **play on** at reading pace (`#play_on!`,
+  `SceneStepJob`) and pauses it. Everyone's Stage shows the same step
+  (`campaigns/tables/_scene`, a table panel), and each line goes through the
+  dialogue box, a party member's included. A choice stops the play-on; the
+  table decides. The scene can be taken down without its ending.
+- **Then** it ends, after the last step: in a battle against the monsters
   chosen for it (everyone is taken to it once their dialogue box has
   finished the scene: `stage.js` waits for it), with a place revealed on the
   map, or with a place changed.

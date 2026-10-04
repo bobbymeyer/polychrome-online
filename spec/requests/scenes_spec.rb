@@ -20,7 +20,7 @@ RSpec.describe "Scenes", type: :request do
     expect(scene.beats.map(&:line)).to eq([ { "speaker" => cid, "expression" => "angry", "text" => "Behind you!" } ])
 
     get campaign_prep_path(campaign)
-    expect(response.body).to include("Ambush", "1 beat, then a battle")
+    expect(response.body).to include("Ambush", "1 line, then a battle")
 
     create_character(campaign, name: "Bartz")
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
@@ -46,35 +46,50 @@ RSpec.describe "Scenes", type: :request do
     first, second = scene.beats.to_a
 
     get edit_scene_path(scene)
-    expect(response.body).to include("Beats", "Add beats from a script", "Ready?", "The fog lifts.", "Panel for beat 1", "Bartz (party)")
+    expect(response.body).to include("Steps", "Add lines from a script", "Ready?", "The fog lifts.", "Panel for step 1", "Bartz (party)", "add-step__kind")
 
-    post scene_beats_path(scene), params: { after_id: first.id }
+    # A line inserted after the first, written for one of the party.
+    post scene_beats_path(scene), params: { kind: "say", after_id: first.id }
     inserted = scene.beats.reload[1]
     expect(response).to redirect_to(edit_scene_path(scene, beat: inserted.id, anchor: "beat_#{inserted.id}"))
     expect(scene.beats.map(&:position)).to eq([ 0, 1, 2 ])
     expect(second.reload.position).to eq(2)
-
     bartz = campaign.characters.find_by!(name: "Bartz")
-    patch beat_path(inserted), params: { beat: { speaker: "Character:#{bartz.id}", expression: "determined", text: "Always.", backdrop: "black", cue: "key", music: "boss",
-                                                 figures: { "Npc:#{cid.id}" => { type: "Npc", id: cid.id, side: "left", expression: "happy" } } } }
-    expect(inserted.reload).to have_attributes(speaker: bartz, expression: "determined", text: "Always.", backdrop: "black", cue: "key", music: "boss")
-    expect(inserted.figures).to eq([ { "type" => "Npc", "id" => cid.id, "side" => "left", "expression" => "happy" } ])
-    expect(inserted.on_stage.map { |f| [ f["who"], f["side"], f["speaking"] ] }).to eq([ [ cid, "left", false ], [ bartz, "right", true ] ])
+    patch beat_path(inserted), params: { beat: { speaker: "Character:#{bartz.id}", expression: "determined", text: "Always.", cue: "key" } }
+    expect(inserted.reload).to have_attributes(kind: "say", speaker: bartz, expression: "determined", text: "Always.", cue: "key")
+
+    # The stage, step by step: a black backdrop first, Cid entering on the left, music, an effect.
+    post scene_beats_path(scene), params: { kind: "backdrop" }
+    backdrop = scene.beats.reload.last
+    expect(backdrop).to have_attributes(kind: "backdrop", backdrop: "black")
+    post beat_move_path(backdrop), params: { direction: "up" }
+    post beat_move_path(backdrop), params: { direction: "up" }
+    post beat_move_path(backdrop), params: { direction: "up" }
+    post scene_beats_path(scene), params: { kind: "sprite", after_id: backdrop.id }
+    sprite = scene.beats.reload[1]
+    expect(sprite).to have_attributes(kind: "sprite", action: "enter")
+    patch beat_path(sprite), params: { beat: { who: "Npc:#{cid.id}", action: "enter", side: "left", expression: "happy" } }
+    expect(sprite.reload.figures).to eq([ { "type" => "Npc", "id" => cid.id, "side" => "left", "expression" => "happy" } ])
+    post scene_beats_path(scene), params: { kind: "music", after_id: sprite.id }
+    patch beat_path(scene.beats.reload[2]), params: { beat: { music: "boss" } }
+    post scene_beats_path(scene), params: { kind: "fx", after_id: scene.beats.reload[2].id }
+    patch beat_path(scene.beats.reload[3]), params: { beat: { fx: "shake" } }
+    expect(scene.beats.reload.map(&:kind)).to eq(%w[backdrop sprite music fx say say say])
+    expect(inserted.reload.on_stage.map { |f| [ f["who"], f["side"], f["speaking"] ] }).to eq([ [ cid, "left", false ], [ bartz, "right", true ] ])
+    expect(inserted.effective_backdrop).to eq("kind" => "black")
 
     get edit_scene_path(scene, beat: inserted.id)
-    expect(response.body).to include("Beat 2 of 3, as the table will see it", "beat-stage--black", "is-speaking")
+    expect(response.body).to include("Step 6 of 7: Bartz: Always.", "beat-stage--black", "is-speaking", 'data-fx="shake"', "Effect on: shake")
 
-    post beat_move_path(inserted), params: { direction: "up" }
-    expect(scene.beats.reload.map(&:text)).to eq([ "Always.", "Ready?", "The fog lifts." ])
     post beat_copy_path(inserted)
-    expect(scene.beats.reload.map(&:text)).to eq([ "Always.", "Always.", "Ready?", "The fog lifts." ])
+    expect(scene.beats.reload.map(&:text).compact_blank).to eq([ "Ready?", "Always.", "Always.", "The fog lifts." ])
     delete beat_path(inserted)
-    expect(scene.beats.reload.map { |b| [ b.position, b.text ] }).to eq([ [ 0, "Always." ], [ 1, "Ready?" ], [ 2, "The fog lifts." ] ])
+    expect(scene.beats.reload.map(&:position)).to eq((0..6).to_a)
 
     # A choice is written as its line.
-    patch beat_path(scene.beats.last), params: { beat: { speaker: "", text: "? Fight | Flee -> quay", backdrop: "keep" } }
+    patch beat_path(scene.beats.last), params: { beat: { speaker: "", text: "? Fight | Flee -> quay" } }
     expect(scene.beats.last.reload).to have_attributes(kind: "choice", options: %w[Fight Flee], flag_key: "quay")
-    expect(scene.reload.summary).to eq("2 beats, then a choice: Fight / Flee")
+    expect(scene.reload.summary).to eq("2 lines, 4 changes, then a choice: Fight / Flee")
   end
 
   it "re-renders with what's wrong in the script" do

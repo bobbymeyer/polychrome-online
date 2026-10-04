@@ -359,16 +359,26 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 
 - **What it shows** is the scene: a beat's backdrop and figures while a scene is on, else the
   picture of the place the party is in when it has one, else plain paper. The map is not on it:
-  the map is the map page's, and travel is made from the Controls or there. The date, the place
-  and the part of the day sit on a plate in the top-right corner. What's being said plays along
-  the bottom, in the dialogue box.
-- **A scene plays on the same frame.** While the GM has a scene on the stage, its beat is what the
-  frame shows: the backdrop (a place's picture, a panel painted for the beat, or black) fills it, the
-  map steps aside, and whoever stands in the beat is along the bottom, left and right, full body as
+  the map is the map page's, and travel is made from the Controls or there. When sits on a small
+  plate in the top-right corner, one line: the day clock, the part of the day as a label in that
+  part's colour butted against it (the clock's slice runs into the label), and the day at the
+  same size; the days left on public clocks under it. Where (the place, and the room in a
+  dungeon) is a tag in the bottom-left corner. What's being said plays along the bottom, in the
+  dialogue box.
+- **A scene plays on the same frame.** While the GM has a scene on the stage, its step is what the
+  frame shows: the backdrop (a place's picture, a panel painted for the step, or black) fills it, the
+  map steps aside, and whoever stands in the scene is along the bottom, left and right, full body as
   their sprite with their feet behind the dialogue box (as on a visual novel's stage), or as their
-  portrait just above it until they have one; the speaker lit and a step larger, the rest dimmed. The line plays in the dialogue box
-  as any line does. The GM steps beats from the Now line, or lets the scene play on; the scene's
-  page in prep previews each beat on the same frame.
+  portrait just above it until they have one; the speaker lit and a step larger, the rest dimmed. The
+  line plays in the dialogue box as any line does. The GM steps the scene line to line from the Now
+  line, or lets it play on; the changes between lines (a backdrop, someone entering or leaving, music,
+  an effect) are made on the way, so the table only ever stops on something said or asked.
+- **A scene is built step by step** on its page in prep: a column of steps, each a small form of
+  its kind, with a coloured kind tag at its left edge (ink for a line, red for a choice, and a grey
+  for each kind of change) so the script's shape reads from the margin: speech, then a change, then
+  speech. "Add a step" after any step opens a row of the six kinds. Beside the column the step
+  chosen is previewed on the same frame as the table's, a change shown as the stage it leaves
+  behind. Effects are a placeholder: a name on the step, nothing played yet.
 - **A battle plays on the same frame**, on its own page: the field fills it, the party's roster is
   a band along its bottom, the round's rail along its top, the round's tally right over the
   roster (seated on its actual top, however many rows it has), and the lines said in the fight
@@ -702,16 +712,17 @@ Record each place where the game needed more than the Swiss defaults: what chang
   navigation and admin drowned out the game. Controls are now grey, and red is kept for game
   moves (`.play`).
 
-- **The date is the table's headline.** The day, in the setting's calendar, sits in the table's
-  header at display size, and under it where the party is: the map's red party marker and the
-  place's name (a link to it), with the room inside a dungeon ("The Drowned Line · Entrance"). The part of the day is a tag in its own colour (dawn yellow, day white,
-  dusk red, night blue), beside **the day clock**: a dial cut into a slice for each part of the
-  setting's day, each in its light's colour, with the part it is now under a pointer at the top.
-  When time passes the dial turns forward (never back: into the next day it keeps going round),
-  so the table sees the day move, and "Next: Dusk" beside it says where it's going. Under them,
-  the days left on each public clock that only a new day ticks, said as a sentence ("5 days until
-  The spring tide comes in"; on the last day, "Tomorrow it happens: …"). The party plans around the calendar, so it
-  shouldn't be a line of small print in the side column.
+- **The date is one line on the stage.** **The day clock** (a dial cut into a slice for each part of
+  the setting's day, each in its light's colour, with the part it is now under a pointer at the
+  top), then the part of the day as a label in that part's colour (dawn yellow, day white, dusk
+  red, night blue) butted against the clock so the slice runs into it, then the day in the
+  setting's calendar at the same size. When time passes the dial turns forward (never back: into
+  the next day it keeps going round), so the table sees the day move. Under the line, the days
+  left on each public clock that only a new day ticks, said as a sentence ("5 days until The
+  spring tide comes in"; on the last day, "Tomorrow it happens: …"). Where the party is (the
+  place's name, a link to it, with the room inside a dungeon: "The Drowned Line · Entrance") is a
+  tag in the frame's other corner. The party plans around the calendar, but the plate shouldn't
+  take the eye off the stage.
 - **Name tags in the speaker's colour.** The dialogue box's name tag wears the speaker's plate
   colour instead of a fixed yellow. The narrator has no portrait: narration is a voice, and its
   words take the whole box. On a phone a speaker's portrait is 64px beside their words, where it

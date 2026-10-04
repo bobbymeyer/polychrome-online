@@ -1,12 +1,25 @@
-<%# The day and the part of it (Timekeeping), and the days left on the public clocks that
-    only a new day ticks: the date is what the party lives by. Replaced live as time passes. %>
+<%# When and where (Timekeeping), as one line: the day clock, the part of the day it points at in that
+    part's colour (the clock's slice runs into the label), and the day; under it the days left on the
+    public clocks that only a new day ticks. Where the party is (inside a dungeon, the room too) is its own
+    tag: on the stage, the frame's bottom-left corner. Replaced live as time passes. %>
 <% deadlines = campaign.clocks.running.shown_to_players.select { |clock| clock.triggers == [ "dawn" ] && clock.times.empty? }
                        .map { |clock| [ clock.segments - clock.filled, clock ] }.sort_by(&:first).first(3) %>
-<% season_and_year = campaign.almanac.season_and_year(campaign.day) %>
 <section id="table_time" class="table-time time--<%= campaign.daylight %>" aria-label="The date">
-  <p class="table-time__date"><%= campaign.world.date(campaign.day) %></p>
-  <% if season_and_year.present? %><p class="table-time__season"><%= season_and_year %></p><% end %>
-  <%# Where the party is, with the when: inside a dungeon, the room too. %>
+  <div class="table-time__plate">
+    <div class="table-time__clock">
+      <%= render "campaigns/tables/day_clock", campaign: campaign %>
+      <p class="table-time__part"><%= campaign.period %></p>
+      <p class="table-time__date"><%= campaign.world.date(campaign.day) %></p>
+    </div>
+    <% if deadlines.any? %>
+      <ul class="table-time__deadlines" aria-label="Coming up">
+        <% deadlines.each do |days, clock| %>
+          <%# The last day is a red band, and on a phone it stays in view (stage.css). %>
+          <li class="<%= "is-tomorrow" if days == 1 %>"><strong><%= days == 1 ? "Tomorrow" : "#{days} days" %></strong> <%= days == 1 ? "it happens:" : "until" %> <%= clock.name %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
   <% if (node = campaign.current_node) %>
     <% dungeon = campaign.dungeon_in_progress %>
     <% room = dungeon && dungeon.room(dungeon.progress["current"]) %>
@@ -14,19 +27,5 @@
       <span class="table-time__pin" aria-hidden="true"></span>
       <%= node.location ? link_to(node.name, location_path(node.location), data: { turbo_frame: "_top" }) : node.name %><%= tag.span(" · #{room['name']}", class: "table-time__room") if room %>
     </p>
-  <% end %>
-  <div class="table-time__clock">
-    <%= render "campaigns/tables/day_clock", campaign: campaign %>
-    <% parts = campaign.almanac.periods %>
-    <p class="table-time__part"><%= campaign.period %></p>
-    <p class="table-time__next">Next: <%= parts[(parts.index(campaign.period).to_i + 1) % parts.size].upcase_first %></p>
-  </div>
-  <% if deadlines.any? %>
-    <ul class="table-time__deadlines" aria-label="Coming up">
-      <% deadlines.each do |days, clock| %>
-        <%# The last day is a red band, and on a phone it stays in view (stage.css). %>
-        <li class="<%= "is-tomorrow" if days == 1 %>"><strong><%= days == 1 ? "Tomorrow" : "#{days} days" %></strong> <%= days == 1 ? "it happens:" : "until" %> <%= clock.name %></li>
-      <% end %>
-    </ul>
   <% end %>
 </section>

@@ -4,7 +4,7 @@
     Sized to the frame (container units), so it reads the same on the table, the TV and the preview. %>
 <% behind = beat.effective_backdrop %>
 <% image = beat.backdrop_image || (behind.nil? ? beat.campaign.current_node&.location&.picture : nil) %>
-<div class="beat-stage beat-stage--<%= behind&.dig("kind") || "table" %>">
+<div class="beat-stage beat-stage--<%= behind&.dig("kind") || "table" %>"<%= tag.attributes(data: { fx: beat.effect }) if beat.effect %>>
   <%= image_tag url_for(image), alt: "", class: "beat-stage__backdrop" if image %>
   <div class="beat-stage__figures">
     <% Beat::SIDES.each do |side| %>

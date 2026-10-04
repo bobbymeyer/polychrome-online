@@ -1,16 +1,15 @@
 # frozen_string_literal: true
 
 # A scene the GM prepares before the session and plays at the table: a
-# sequence of beats (Beat), each a line said (by someone from the cast, one
-# of the party, or the narrator), what the stage shows behind it, who stands
-# on the stage, and a cue; then it ends, in a battle, with a place revealed
-# on the map, or with a place changed (its ending is an Outcome, as a full
-# clock's is).
+# sequence of steps (Beat): lines said (by someone from the cast, one of
+# the party, or the narrator), changes of backdrop, sprite and music, and
+# effects; then it ends, in a battle, with a place revealed on the map, or
+# with a place changed (its ending is an Outcome, as a full clock's is).
 #
-# At the table the GM puts the scene on the stage (#start!) and steps beat
-# to beat (#advance!), or lets it play on at reading pace (#play_on!,
-# SceneStepJob); everyone's stage shows the same beat. The last beat can
-# put a choice to the table.
+# At the table the GM puts the scene on the stage (#start!) and steps it
+# line to line (#advance!: the changes between lines happen on the way), or
+# lets it play on at reading pace (#play_on!, SceneStepJob); everyone's
+# stage shows the same step. The last step can put a choice to the table.
 #
 # Beats are written one by one in prep, or in bulk as a script that reads
 # like a play, one line each (#script, turned into beats on save):
@@ -61,11 +60,18 @@ class Scene < ApplicationRecord
 
   def last_beat? = cursor && cursor >= beats.size - 1
 
-  # The beats, and the script's lines not yet turned into beats, as
-  # [{ "speaker" => Npc, Character or nil, "expression", "text", "problem" }]
-  # or [{ "choice" => { options:, flag: } }].
+  # The lines (the steps that say something), and the script's lines not yet
+  # turned into steps, as [{ "speaker" => Npc, Character or nil,
+  # "expression", "text", "problem" }] or [{ "choice" => { options:, flag: } }].
   def lines
-    beats.map(&:line) + script_lines
+    beats.select(&:waits?).map(&:line) + script_lines
+  end
+
+  # The stage as it is at a step: what the steps up to it set.
+  #   { "backdrop" => (Beat#effective_backdrop), "figures" => [{ "who", "side", "expression" }], "fx" => String or nil }
+  def stage_at(beat)
+    beats.to_a.take_while { |b| b.position <= beat.position }
+         .each_with_object({ "backdrop" => nil, "figures" => [], "fx" => nil }) { |b, state| b.apply_to(state) }
   end
 
   # The script's lines, read as a scene reads them (not beats yet).
@@ -114,32 +120,29 @@ class Scene < ApplicationRecord
 
   # --- on the stage --------------------------------------------------------------
 
-  # The scene goes on the campaign's stage, at its first beat. One scene at
-  # a time: another still up is taken down first.
+  # The scene goes on the campaign's stage, at its first line (the changes
+  # before it made). One scene at a time: another still up is taken down.
   def start!
-    raise Refusal, "#{name} has no beats to play" if beats.empty?
+    raise Refusal, "#{name} has no steps to play" if beats.empty?
 
     outcome&.can_happen!(campaign)
     transaction do
       campaign.staged_scene&.take_down!
-      update!(cursor: 0, auto: false)
+      update!(auto: false)
       campaign.update!(staged_scene: self)
-      show!(beats.first)
+      run_to!(0)
     end
     campaign.table_changed
   end
 
-  # The next beat, or, past the last, the ending. Returns the battle a
-  # battle ending starts.
+  # The next line (the changes on the way to it made), or, past the last
+  # step, the ending. Returns the battle a battle ending starts.
   def advance!
     raise Refusal, "#{name} isn't on the stage" unless staged?
 
     return finish! if last_beat?
 
-    transaction do
-      update!(cursor: cursor + 1)
-      show!(current_beat)
-    end
+    transaction { run_to!(cursor + 1) }
     campaign.table_changed
     nil
   end
@@ -187,7 +190,9 @@ class Scene < ApplicationRecord
   def summary
     all = lines
     said = all.reject { |l| l["choice"] }
-    parts = [ ActionController::Base.helpers.pluralize(said.size, "beat") ]
+    parts = [ ActionController::Base.helpers.pluralize(said.size, "line") ]
+    changes = beats.count { |b| !b.waits? }
+    parts << ActionController::Base.helpers.pluralize(changes, "change") if changes.positive?
     parts << "then a choice: #{all.last['choice'][:options].join(' / ')}" if all.last&.dig("choice")
     parts << "then a battle: #{campaign.describe_encounter(encounter)}" if ending == "battle"
     parts << "then #{map_node&.name || 'a place'} appears on the map" if ending == "reveal"
@@ -195,6 +200,16 @@ class Scene < ApplicationRecord
       parts << (mode ? "then #{map_node&.name}: #{mode.name}" : "then #{map_node&.name} goes back to how it was")
     end
     parts.join(", ")
+  end
+
+  # From a step, through every change, to the next line or the end.
+  def run_to!(index)
+    update!(cursor: index)
+    show!(current_beat)
+    until current_beat.waits? || last_beat?
+      update!(cursor: cursor + 1)
+      show!(current_beat)
+    end
   end
 
   # The next beat is due after this one has been read (SceneStepJob).
@@ -220,7 +235,7 @@ class Scene < ApplicationRecord
     elsif beat.says?
       campaign.messages.create!(speaker: beat.speaker, expression: beat.expression, body: beat.text, cue: beat.cue, data: { "scene" => id })
     end
-    campaign.update!(music: beat.music == "follow" ? nil : beat.music) if beat.music
+    campaign.update!(music: beat.music == "follow" ? nil : beat.music) if beat.kind == "music"
   end
 
   # The last beat has been read: the ending plays, and the stage is the

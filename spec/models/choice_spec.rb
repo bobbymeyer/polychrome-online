@@ -38,7 +38,7 @@ RSpec.describe "Choices for the table" do
   it "can end a scene, and only end it" do
     scene = campaign.scenes.new(name: "Crossroads", script: "Cid: Well?\n? Trust Cid | Refuse -> trusted_cid")
     expect(scene).to be_valid
-    expect(scene.summary).to eq("1 beat, then a choice: Trust Cid / Refuse")
+    expect(scene.summary).to eq("1 line, then a choice: Trust Cid / Refuse")
     scene.save!
     scene.play!
     expect(campaign.messages.chronological.map(&:kind)).to eq(%w[say choice])

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_02_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_04_100000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -196,6 +196,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_02_150000) do
     t.string "flag_key"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "action"
+    t.string "fx"
     t.index ["map_node_id"], name: "index_beats_on_map_node_id"
     t.index ["scene_id", "position"], name: "index_beats_on_scene_id_and_position"
     t.index ["scene_id"], name: "index_beats_on_scene_id"

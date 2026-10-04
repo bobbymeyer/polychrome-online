@@ -1,20 +1,30 @@
 # frozen_string_literal: true
 
-# The beats of a scene (Beat), written one by one in prep: the sequencer on
-# the scene's page. Each beat is its own small form, saved as it changes.
+# The steps of a scene (Beat), written one by one in prep: the sequencer on
+# the scene's page. Each step is its own small form, saved as it changes.
 class BeatsController < ApplicationController
+  # What a new step of each kind starts as.
+  STARTS = {
+    "say" => { "text" => "…" }, "choice" => { "options" => [ "Yes", "No" ] }, "backdrop" => { "backdrop" => "black" },
+    "sprite" => { "action" => "enter" }, "music" => { "music" => "follow" }, "fx" => { "fx" => "fade" }
+  }.freeze
   before_action :set_scene, only: :create
   before_action :set_beat, only: %i[update destroy]
   before_action :require_campaign_gm
 
-  # A new beat after the one given (or last), empty but for a narrator's
-  # line, ready to be written.
+  # A new step of a kind, after the one given (or last), ready to be written.
   def create
+    kind = STARTS.key?(params[:kind].to_s) ? params[:kind].to_s : "say"
     after = @scene.beats.find_by(id: params[:after_id])
     beat = @scene.transaction do
       position = after ? after.position + 1 : @scene.beats.size
       @scene.beats.where("position >= ?", position).update_all("position = position + 1")
-      @scene.beats.create!(position: position, text: params[:text].presence || "…")
+      attrs = STARTS[kind].merge("kind" => kind, "position" => position)
+      if kind == "sprite"
+        someone = @campaign.npcs.order(:name).first || @campaign.characters.order(:created_at).first
+        attrs["figures"] = [ { "type" => someone.class.name, "id" => someone.id, "side" => "left", "expression" => "neutral" } ] if someone
+      end
+      @scene.beats.create!(attrs)
     end
     redirect_to edit_scene_path(@scene, beat: beat.id, anchor: "beat_#{beat.id}"), status: :see_other
   end
@@ -50,19 +60,35 @@ class BeatsController < ApplicationController
     @world = @campaign.world
   end
 
-  # The speaker comes as "Npc:3", "Character:7" or "" (the narrator); a
-  # choice as its "? A | B -> flag" text; who stands on the stage as rows.
+  # Each kind takes its own fields. A line's speaker comes as "Npc:3",
+  # "Character:7" or "" (the narrator), and a line written as "? A | B ->
+  # flag" is a choice (and a choice rewritten without the ? a line); a
+  # sprite step's someone as "Npc:3" too.
   def beat_params
-    raw = params.expect(beat: [ :speaker, :expression, :text, :backdrop, :map_node_id, :cue, :music, :art_notes, { figures: {} } ])
-    attrs = raw.except(:speaker).to_h
-    type, id = raw[:speaker].to_s.split(":", 2)
-    attrs[:speaker] = Beat::SPEAKER_TYPES.include?(type) ? @campaign.public_send(type.underscore.pluralize).find_by(id: id) : nil
-    attrs[:map_node_id] = nil unless attrs[:backdrop] == "place"
-    if (choice = Beat.choice_from(attrs[:text]))
-      attrs = attrs.merge(choice).merge(speaker: nil, expression: nil)
-    else
-      attrs = attrs.merge(kind: "say", options: [], flag_key: nil)
+    raw = params.expect(beat: [ :speaker, :expression, :text, :backdrop, :map_node_id, :cue, :music, :art_notes, :who, :side, :action, :fx ])
+    case @beat.kind
+    when "say", "choice"
+      attrs = raw.slice(:expression, :text, :cue).to_h
+      attrs[:speaker] = person(raw[:speaker])
+      if (choice = Beat.choice_from(attrs[:text]))
+        attrs.merge(choice).merge(speaker: nil, expression: nil, cue: nil)
+      else
+        attrs.merge(kind: "say", options: [], flag_key: nil)
+      end
+    when "backdrop"
+      attrs = raw.slice(:backdrop, :map_node_id, :art_notes).to_h
+      attrs[:map_node_id] = nil unless attrs[:backdrop] == "place"
+      attrs
+    when "sprite"
+      who = person(raw[:who])
+      { action: raw[:action], figures: (who ? [ { type: who.class.name, id: who.id, side: raw[:side], expression: raw[:expression] } ] : []) }
+    when "music" then raw.slice(:music).to_h
+    when "fx" then raw.slice(:fx).to_h
     end
-    attrs
+  end
+
+  def person(key)
+    type, id = key.to_s.split(":", 2)
+    Beat::SPEAKER_TYPES.include?(type) ? @campaign.public_send(type.underscore.pluralize).find_by(id: id) : nil
   end
 end

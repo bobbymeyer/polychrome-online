@@ -1,14 +1,14 @@
-<%# The beats of a scene, in order, one to the next (Beat): the sequencer. scene; chosen: the beat the
+<%# The steps of a scene, in order, one to the next (Beat): the sequencer. scene; chosen: the step the
     preview is on. %>
 <section class="sequencer" id="beats">
   <div class="book-header">
-    <h2>Beats</h2>
-    <%= button_to "Add a beat", scene_beats_path(scene), class: "button button--quiet", form: { class: "inline", data: { turbo_frame: "_top" } } %>
+    <h2>Steps</h2>
+    <%= render "scenes/add_step", scene: scene, after: nil %>
   </div>
   <% if scene.beats.empty? %>
-    <p class="empty">No beats yet. Add one, or paste a script above: each line becomes a beat.</p>
+    <p class="empty">No steps yet. Add one (a line, a choice, a backdrop, a sprite, music, an effect), or paste a script above: each line becomes a step.</p>
   <% else %>
-    <p class="hint">Each beat is saved as you change it. Who speaks, with what face, and what they say; behind them a place, a panel made for the beat, black, or whatever was there; and who stands on the stage (the speaker always does). A beat can say nothing and only change the stage.</p>
+    <p class="hint">Each step is one thing, saved as you change it: a line said; a choice for the table; what's behind them (a place, a panel made for the step, black); someone entering, changing face or leaving; the music; an effect (a placeholder for now). The table stops on lines and choices; the changes between them happen on the way.</p>
     <ol class="beat-list">
       <%= render partial: "scenes/beat", collection: scene.beats, locals: { chosen_id: chosen&.id } %>
     </ol>

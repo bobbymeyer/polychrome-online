@@ -1,0 +1,9 @@
+<%# Add a step of a kind: after a step, or at the end. scene; after: the step it follows, or nil. %>
+<details class="add-step">
+  <summary class="<%= after ? 'link-button' : 'button button--quiet' %>"><%= after ? "Insert after" : "Add a step" %></summary>
+  <div class="add-step__kinds">
+    <% Beat::LABELS.each do |kind, label| %>
+      <%= button_to label, scene_beats_path(scene), params: { kind: kind, after_id: after&.id }.compact, class: "add-step__kind", form: { class: "inline", data: { turbo_frame: "_top" } } %>
+    <% end %>
+  </div>
+</details>
