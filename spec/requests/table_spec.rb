@@ -109,8 +109,9 @@ RSpec.describe "The table", type: :request do
       expect(page.at("details.talk summary").text).to eq("Say something") # talk is a button until it's wanted
       expect(page.at("details.talk #composer")).to be_present
       %w[party knows].each { |key| expect(page.at("#drawer_#{key}")["hidden"]).not_to be_nil } # looked up, not shown
-      expect(page.at("#stage #map_canvas")).to be_present # the map is on the stage, where the broadcasts find it
-      expect(page.at("#stage #table_time")).to be_present # with the date in its corner
+      expect(page.at("#stage #map_canvas")).to be_nil # the map is the map page's, not the stage's
+      expect(page.at("#stage #table_time")).to be_present # the date in its corner
+      expect(page.at("#table_now #table_here")).to be_present # the way into the place, while the table is free (none here: no place yet)
       expect(page.at("#drawer_party #table_party")).to be_present
       expect(page.at(".topbar nav[aria-label=Campaign]").text).to include("At the table as Bartz", "Change seat") # the seat is the top bar's
 
@@ -394,8 +395,8 @@ RSpec.describe "The table", type: :request do
       expect(page.at("#table_now [data-tool-link-key-value=check]")).to be_present
       expect(page.at(".gm-tools[data-action*='gm-tools:open@window']")).to be_present
       expect(page.at(".gm-tools .gm-tools__reveal").text).to eq("Tools") # shown only while the table is busy (stage.css)
-      %w[party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs (the map is on the stage)
-      expect(page.at(".table__stage #stage #map_canvas")).to be_present
+      %w[party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs
+      expect(page.at(".table__stage #stage #map_canvas")).to be_nil # the map is the map page's
       expect(page.at("#drawer_knows #party_knows")).to be_present
 
       Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
@@ -408,8 +409,11 @@ RSpec.describe "The table", type: :request do
       campaign.clocks.create!(name: "The tide", segments: 4, public: true)
       sit("gm")
       get campaign_table_path(campaign)
-      expect(response.body).to include("GM tools · only you see these", "Faded places are hidden: only you see them.",
-                                       "Everyone at the table sees this.", "gm_tab_more", "Grant an archetype", "Music for the table")
+      expect(response.body).to include("GM tools · only you see these", "Everyone at the table sees this.", "gm_tab_more", "Grant an archetype", "Music for the table")
+      get campaign_map_path(campaign)
+      expect(response.body).to include("Secret Grotto") # the map page, where the map is
+      get campaign_map_panel_path(campaign)
+      expect(response.body).to include("Hidden from the players")
       sit(bartz.id)
       get campaign_table_path(campaign)
       expect(response.body).not_to include("only you see", "Everyone at the table sees this.")

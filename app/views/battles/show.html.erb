@@ -47,9 +47,6 @@
   <% else %>
   <header class="battle__header">
     <div>
-      <p class="eyebrow">
-        <%= @battle.campaign ? link_to(@battle.campaign.name, campaign_path(@battle.campaign)) : link_to(@world.name, world_path(@world)) %> · Battle
-      </p>
       <h1><%= @battle.name %></h1>
     </div>
     <div class="battle__controls">
@@ -105,8 +102,8 @@
   <% elsif view == "screen" %>
     <p class="hint coop-leave"><%= link_to "Leave the shared screen", battle_path(@battle, view: "off") %></p>
   <% elsif @battle.campaign && (@seat.gm? || @seat.character?) %>
-    <%# Talk without leaving the fight: a monster's taunt, a cry across the field. Open for the GM. %>
-    <details class="battle-composer" <%= "open" if @seat.gm? %>>
+    <%# Talk without leaving the fight: a monster's taunt, a cry across the field. A press away until it's wanted. %>
+    <details class="battle-composer">
       <summary><%= @seat.gm? ? "Speak (as the narrator or an NPC)" : "Speak" %></summary>
       <%= turbo_frame_tag "composer", src: campaign_composer_path(@battle.campaign), loading: "lazy" do %>
         <div class="window"><p class="muted">Loading…</p></div>

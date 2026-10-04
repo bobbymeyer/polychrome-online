@@ -44,9 +44,10 @@ RSpec.describe "The table's motion", type: :request do
     expect(response.body).to include('data-moment-cue="arrival"')
   end
 
-  it "marks the Now band's state and the party's marker, so a change wipes and hops" do
+  it "marks the Now band's state and, on the map page, the party's marker, so a change wipes and hops" do
     get campaign_table_path(campaign)
     expect(response.body).to include('data-state="free" data-change="state"')
+    get campaign_map_path(campaign)
     expect(response.body).to include('class="map-party" transform=', 'data-change="marker" data-change-key="party"')
   end
 

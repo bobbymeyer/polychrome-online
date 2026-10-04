@@ -48,7 +48,7 @@ RSpec.describe "Moments at the table", type: :system do
       expect(page).to have_no_css("#table_party", visible: true) # pressing the open one closes it
       click_button "Party"
       expect(page).to have_css("#table_party", visible: true, text: "Rook")
-      expect(page).to have_css("#stage #map_canvas", visible: true) # the map is on the stage, whatever's looked up
+      expect(page).to have_no_css("#stage #map_canvas") # the map is the map page's
       find("details.talk summary", text: "Say something").click
       expect(page).to have_css("#composer textarea", visible: true)
 

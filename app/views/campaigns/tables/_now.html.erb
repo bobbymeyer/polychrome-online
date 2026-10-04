@@ -6,7 +6,7 @@
 <% scene = campaign.staged_scene %>
 <% beat = scene&.current_beat %>
 <%# data-state says which: a player's moves follow it (stage.css, "What you can do now"). %>
-<% state = battle ? "battle" : campaign.pending_encounter.present? ? "encounter" : choice ? "choice" : "free" %>
+<% state = battle ? "battle" : campaign.pending_encounter.present? ? "encounter" : choice ? "choice" : (scene && beat) ? "scene" : "free" %>
 <section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>" data-change="state" data-change-key="table-now">
   <p class="table-now__label">Now</p>
   <p class="table-now__what" data-change="text">
@@ -18,9 +18,6 @@
       <% foes = (campaign.npcs.where(id: encounter.fetch("antagonists", [])).map(&:name) + [ (campaign.describe_encounter(encounter["monsters"]) if encounter["monsters"].present?) ]).compact %>
       <strong>Encounter! <%= foes.to_sentence %>.</strong>
       <%= gm ? "It's your call." : "The GM calls it: fight, or wave it off." %>
-    <% elsif scene && beat %>
-      <strong>A scene is on the stage: <%= scene.name %>.</strong>
-      <%= gm ? "Beat #{beat.position + 1} of #{scene.beats.size}#{scene.auto? ? ', playing on' : ''}." : "Watch the stage." %>
     <% elsif choice %>
       <% picked = choice.picks.includes(:character).map { |pick| pick.character.name } %>
       <% unplayed, waiting = campaign.characters.order(:created_at).reject { |c| picked.include?(c.name) }.partition { |c| c.user_id.nil? }.map { |cs| cs.map(&:name) } %>
@@ -32,6 +29,9 @@
         <%= "Still to pick: #{waiting.to_sentence}." if picked.any? && waiting.any? %>
         <%= "Nobody plays #{unplayed.to_sentence}: no pick from them." if unplayed.any? %>
       </span>
+    <% elsif scene && beat %>
+      <strong>A scene is on the stage: <%= scene.name %>.</strong>
+      <%= gm ? "Beat #{beat.position + 1} of #{scene.beats.size}#{scene.auto? ? ', playing on' : ''}." : "Watch the stage." %>
     <% elsif gm %>
       <strong>The table is yours.</strong>
     <% else %>
@@ -42,7 +42,7 @@
   <%# The GM's prompt: the moves that fit this state, right here (the panels below have the detail). %>
   <% if gm && !battle %>
     <div class="table-now__do">
-      <% if scene && beat %>
+      <% if state == "scene" %>
         <%# The director's hand: the next beat (or the ending), play on or pause, and down. %>
         <% ending = { "battle" => "then the battle", "reveal" => "then #{scene.map_node&.name} appears", "mode" => "then #{scene.map_node&.name} changes" }[scene.ending] %>
         <%= button_to(scene.last_beat? ? "Finish#{", #{ending}" if ending}" : "Next beat", scene_play_path(scene), method: :patch, params: { go: "next" }, class: "button play", form: { class: "inline" }) %>
@@ -60,7 +60,11 @@
         <%= button_to "Ask where next", campaign_ways_path(campaign), class: "button play", form: { class: "inline" } if campaign.ways_on.any? %>
         <%= tag.button "Call a check", type: "button", class: "button button--quiet", data: { controller: "tool-link", tool_link_key_value: "check", action: "tool-link#open" } %>
         <%= tag.button "Play a scene", type: "button", class: "button button--quiet", data: { controller: "tool-link", tool_link_key_value: "scenes", action: "tool-link#open" } %>
+        <%= render "campaigns/tables/here", campaign: campaign %>
       <% end %>
     </div>
+  <% elsif !gm && state == "free" %>
+    <%# A player's way into the place, while the table is free: its page (shops, rooms, the floor). %>
+    <div class="table-now__do"><%= render "campaigns/tables/here", campaign: campaign %></div>
   <% end %>
 </section>
