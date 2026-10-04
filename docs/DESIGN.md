@@ -370,8 +370,9 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   as any line does. The GM steps beats from the Now line, or lets the scene play on; the scene's
   page in prep previews each beat on the same frame.
 - **A battle plays on the same frame**, on its own page: the field fills it, the party's roster is
-  a band along its bottom, the round's rail along its top, and the lines said in the fight play
-  over it as at the table.
+  a band along its bottom, the round's rail along its top, the round's tally right over the
+  roster (seated on its actual top, however many rows it has), and the lines said in the fight
+  play over it as at the table.
 - **The stage is display.** Nothing on it is pressed. Interaction and personal management (the
   moves, the talk box, the GM's tools, what you look up, equipment, whispers) happen off the
   stage: in the columns beside it and under it. The way into the place the party is at ("Visit

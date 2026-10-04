@@ -223,6 +223,15 @@ export class Board {
     label.textContent = `Round ${this.round ?? ""}`.trim()
     this.tally.append(label, parts.length ? ` · ${parts.join(" · ")}` : " · nothing landed")
     this.tally.hidden = false
+    this.seatTally()
+  }
+
+  // On the frame, the tally sits right over the roster band, however many
+  // rows the roster has (its CSS can only know the band's most).
+  seatTally() {
+    if (!this.tally || getComputedStyle(this.tally).position !== "absolute") return
+    const roster = this.container.querySelector(".roster")
+    if (roster) this.tally.style.bottom = `${roster.getBoundingClientRect().height}px`
   }
 
   // The roster's deltas for the round, on the board as it is now.
