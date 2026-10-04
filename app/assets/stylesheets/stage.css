@@ -1406,6 +1406,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* As wide as its column, or as tall as the room under what's above it (stage_fit_controller measures
    --stage-top), whichever comes first: it fits the screen without scrolling, at 16:9. */
 .stage { position: relative; width: min(100%, calc((100vh - var(--stage-top, 220px) - var(--stage-below, 48px)) * 16 / 9)); min-width: min(100%, 480px); margin: 0 auto; container-type: inline-size; }
+/* At the table the Controls under the frame keep at least two fifths of the screen, so what there is to do
+   is above the fold more often than not; what still doesn't fit scrolls (.table__under). */
+.stage--table { width: min(100%, calc((100vh - var(--stage-top, 220px) - max(var(--stage-below, 48px), 40vh)) * 16 / 9)); }
 .stage__frame, .battle .stage {
   position: relative; aspect-ratio: 16 / 9; overflow: hidden; container-type: size;
   border: 3px solid var(--ink); background: var(--paper); box-shadow: 8px 8px 0 var(--ink);
@@ -1489,7 +1492,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .table--controller > .coop-banner, .table--controller > .coop-links { margin-left: var(--gutter); margin-right: var(--gutter); }
   /* The Stage is sacred: first in the column, never scrolled away; what's under it scrolls on its own. */
   .table__stage { grid-area: stage; display: grid; grid-template-rows: auto minmax(0, 1fr); height: calc(100vh - var(--stage-top, 112px)); }
-  .table__under { min-height: 0; overflow-y: auto; padding-top: 12px; }
+  .table__under { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding-top: 12px; }
   .table--controller .table__stage { display: block; height: auto; }
   .table--controller .table__under { overflow: visible; }
   .table--screen .table__main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "side"; padding: 0 var(--gutter); }

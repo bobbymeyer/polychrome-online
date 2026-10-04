@@ -397,8 +397,9 @@ three columns with the pinned ones on the far edges:
   Secrets, More) with the GM's ways and talk under them; a viewer with no seat finds Take a seat
   there. Nothing else lives in the middle: the seat and "Previously on…" are the top bar's, and
   the last lines said are the log's. The frame fits the screen without scrolling: as wide as
-  the column allows, or as tall as the room under the top bar less a band for what's under it,
-  whichever comes first, always 16:9 and never narrower than 480px. The dialogue box and the
+  the column allows, or as tall as the room under the top bar less two fifths of the screen for
+  the Controls, whichever comes first, always 16:9 and never narrower than 480px. What doesn't fit
+  under it scrolls, and a wheel anywhere in the column scrolls it. The dialogue box and the
   date plate are sized to the frame, so a small frame keeps a small box.
 - **Right, on the edge: the log.**
 
