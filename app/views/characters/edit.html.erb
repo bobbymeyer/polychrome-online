@@ -1,5 +1,5 @@
 <% content_for :title, "Edit #{@character.name}" %>
-<%= turbo_stream_from @character, :art if can_gm?(@campaign) %>
+<%= turbo_stream_from @character, :art if can_portray?(@character) %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= link_to @character.name_in_database, character_path(@character) %> / Edit</div>
 <h1>Edit <%= @character.name_in_database %></h1>
 <%= form_with model: @character, url: character_path(@character), class: "book-form", multipart: true do |f| %>
@@ -27,4 +27,4 @@
     <%= link_to "Cancel", character_path(@character), class: "button button--quiet" %>
   </div>
 <% end %>
-<%= render "art_batches/portraits", owner: @character if can_gm?(@campaign) %>
+<%= render "art_batches/portraits", owner: @character if can_portray?(@character) %>

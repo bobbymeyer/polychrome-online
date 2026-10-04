@@ -23,7 +23,10 @@ class ArtBatch < ApplicationRecord
   # transparent: remove the background, or keep it, whatever the type says.
   # draft: quick previews (fewer steps, smaller, background left for the
   # full render), to be made properly with #refine!.
-  def self.start!(entry, count: Comfy.config[:candidates], write: true, transparent: nil, draft: false)
+  # source: an image to redraw from instead of starting blank (the chain,
+  # Headshot): { "kind" => "sprite" | "portrait", "id" => n }, re-noised
+  # by denoise; it is put in ComfyUI's inputs when the batch runs.
+  def self.start!(entry, count: Comfy.config[:candidates], write: true, transparent: nil, draft: false, source: nil, denoise: nil)
     count = count.to_i.clamp(1, 8)
     base = Random.rand(2**31)
     seeds = Array.new(count) { |i| (base + i) % 2**31 }
@@ -32,6 +35,7 @@ class ArtBatch < ApplicationRecord
       entry.art_batches.destroy_all
       recipe = entry.art_recipe.merge("write" => write && Llm.enabled?)
       recipe["transparent"] = transparent unless transparent.nil?
+      recipe = recipe.merge("source" => source, "denoise" => denoise.to_f.clamp(0.1, 1.0)) if source
       if recipe["transparent"] && Cutout.enabled?
         recipe["cutout"] = Cutout.label
         recipe = Cutout.on_ground(recipe) # rendered on the ground the cut-out keys against, not white
@@ -80,15 +84,47 @@ class ArtBatch < ApplicationRecord
     ArtBatch.find_by(id: recipe.dig("refines", "batch_id")) if recipe["refines"]
   end
 
-  # A refinement starts from its draft's image, put in ComfyUI's inputs.
+  # What starts from an image (a refinement from its draft, a chain step
+  # from the sprite's head or the Neutral portrait) has it put in ComfyUI's
+  # inputs first.
   def upload_source!(client)
-    return unless recipe["refines"] && !recipe["source_image"]
+    return if recipe["source_image"]
 
-    source = ArtCandidate.find_by(id: recipe.dig("refines", "candidate_id"))
-    raise Comfy::Error, "The draft to refine is gone" unless source&.image&.attached?
+    bytes, name = source_bytes
+    return unless bytes
 
-    name = client.upload(source.image.download, "polychrome-draft-#{source.id}-#{source.seed}.png")
-    update!(recipe: recipe.merge("source_image" => name))
+    update!(recipe: recipe.merge("source_image" => client.upload(bytes, name)))
+  end
+
+  # [bytes, a name for ComfyUI's inputs], or nil when the batch starts blank.
+  def source_bytes
+    if recipe["refines"]
+      source = ArtCandidate.find_by(id: recipe.dig("refines", "candidate_id"))
+      raise Comfy::Error, "The draft to refine is gone" unless source&.image&.attached?
+
+      [ source.image.download, "polychrome-draft-#{source.id}-#{source.seed}.png" ]
+    elsif (source = recipe["source"])
+      case source["kind"]
+      when "sprite"
+        sprite = Sprite.find_by(id: source["id"])
+        raise Comfy::Error, "The sprite to draw the portrait from is gone" unless sprite&.image&.attached?
+
+        [ Headshot.of(sprite.image.download), "polychrome-head-#{sprite.id}-#{sprite.image_seed}.png" ]
+      when "portrait"
+        portrait = Portrait.find_by(id: source["id"])
+        raise Comfy::Error, "The Neutral portrait to draw from is gone" unless portrait&.image&.attached?
+
+        [ portrait.image.download, "polychrome-face-#{portrait.id}-#{portrait.image_seed}.png" ]
+      end
+    end
+  end
+
+  # Where a chain step starts from, for the strip ("from the sprite").
+  def source_label
+    case recipe.dig("source", "kind")
+    when "sprite" then "from the sprite"
+    when "portrait" then "from the Neutral portrait"
+    end
   end
 
   def finished?

@@ -934,6 +934,15 @@ details[open] > summary { margin-bottom: 16px; }
 
 /* Generating pictures (art_batches): a closed panel until there's something to look at. */
 .art-studio > summary { font-style: italic; font-weight: 900; font-size: 20px; color: var(--ink); }
+
+/* A speaker's look in a chain (art_batches/_portraits): three links, each from the one before. */
+.art-chain__links { list-style: none; margin: 16px 0 0; padding: 0; }
+.art-chain__link { padding: 16px 0 16px 16px; border-left: 3px solid var(--light-grey); }
+.art-chain__link.is-done { border-left-color: var(--ink); }
+.art-chain__link h3 { margin-top: 0; }
+.art-chain__current { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+.art-chain__current .portrait-field { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; }
+.art-chain__plain { margin-top: 16px; }
 .art-studio__status { font-style: normal; font-weight: 400; font-size: 14px; color: var(--control); }
 
 /* The day clock (campaigns/tables/_day_clock): a slice for each part of the day in its light's

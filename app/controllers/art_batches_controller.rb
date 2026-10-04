@@ -9,24 +9,35 @@ class ArtBatchesController < ApplicationController
 
   before_action :set_world
 
+  rescue_from Refusal do |refusal|
+    redirect_back_or_to root_path, alert: refusal.message, status: :see_other
+  end
+
   def create
     entry, subject = target
     return forbid unless can_generate?(entry)
 
     if subject && params.key?(:entry)
-      changes = params.fetch(:entry, {}).permit(:art_notes, :art_model, art_loras: {})
+      # A player writes their own character's specifics; the model and LoRAs are the GM's.
+      allowed = subject.is_a?(ArtSubject) && !can_gm?(subject.campaign) ? [ :art_notes ] : [ :art_notes, :art_model, { art_loras: {} } ]
+      changes = params.fetch(:entry, {}).permit(*allowed)
       # A history-written figure whose looks the GM writes is theirs now.
       subject.update!(subject.has_attribute?(:edited) ? changes.merge(edited: true) : changes)
     end
     entry.mode.update!(art: params[:mode_art]) if entry.is_a?(ModeArt) && params.key?(:mode_art)
     entry.update!(art_notes: params[:beat_words]) if entry.is_a?(Beat) && params.key?(:beat_words)
-    # A speaker shows one strip at a time, whichever expression (or the sprite) it is for.
-    ArtBatch.where(entry: subject.portraits).or(ArtBatch.where(entry: subject.sprite)).destroy_all if entry.is_a?(Portrait) || entry.is_a?(Sprite)
     ArtBatch.where(entry: entry.location.mode_arts).destroy_all if entry.is_a?(ModeArt)
     ArtBatch.where(entry: entry.scene.beats).destroy_all if entry.is_a?(Beat) # one strip a scene
-    transparent = { "1" => true, "0" => false }[params[:transparent]]
-    ArtBatch.start!(entry, count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0", transparent: transparent,
-                                draft: params[:draft] == "1")
+    options = { count: params[:count].presence || Comfy.config[:candidates], write: params[:write] != "0",
+                transparent: { "1" => true, "0" => false }[params[:transparent]], draft: params[:draft] == "1" }
+    if entry.is_a?(Portrait) && params[:every] == "1"
+      # The chain's last link: every other expression, each redrawn from the Neutral portrait.
+      (Portrait::EXPRESSIONS - [ "neutral" ]).each do |expression|
+        ArtBatch.start!(subject.portraits.find_or_create_by!(expression: expression), **options.merge(draft: false), **chain_source(subject, expression))
+      end
+    else
+      ArtBatch.start!(entry, **options, **(entry.is_a?(Portrait) ? chain_source(subject, entry.expression) : {}))
+    end
     redirect_to entry_page(entry, anchor: "art")
   end
 
@@ -41,6 +52,27 @@ class ArtBatchesController < ApplicationController
   end
 
   private
+
+  # What a portrait is redrawn from, when asked (from: "sprite" | "neutral"):
+  # the Neutral portrait from the sprite's head, any other expression from
+  # the Neutral portrait. Nothing to start from: it starts blank.
+  def chain_source(owner, expression)
+    chain = Comfy.config.fetch(:chain, {})
+    case params[:from]
+    when "sprite"
+      sprite = owner.sprite
+      raise Refusal, "There's no sprite to draw the portrait from yet" unless sprite&.image&.attached?
+
+      { source: { "kind" => "sprite", "id" => sprite.id }, denoise: chain.fetch(:portrait_denoise, 0.55) }
+    when "neutral"
+      neutral = owner.portraits.find_by(expression: "neutral")
+      raise Refusal, "There's no Neutral portrait to draw from yet" unless neutral&.image&.attached? && expression != "neutral"
+
+      { source: { "kind" => "portrait", "id" => neutral.id }, denoise: chain.fetch(:expression_denoise, 0.45) }
+    else
+      {}
+    end
+  end
 
   # [what gets the image, whose layer the params edit (none for a mode: its
   # subject is the Gazetteer entry, edited in the book)]

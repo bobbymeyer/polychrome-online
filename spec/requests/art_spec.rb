@@ -210,7 +210,7 @@ RSpec.describe "Generated portraits (§8)", type: :request do
     batch = generate(cid, "neutral")
     finish(batch)
     get edit_npc_path(cid)
-    expect(response.body).to include("Generate portraits", "Candidates for Neutral", "Use this")
+    expect(response.body).to include("Make their look", "Candidates for Neutral", "Use this")
 
     post world_art_candidate_pick_path(world, batch.candidates.first)
     expect(response).to redirect_to(edit_npc_path(cid, anchor: "art"))
@@ -231,9 +231,11 @@ RSpec.describe "Generated portraits (§8)", type: :request do
     expect(sad.candidates.second.seed).not_to eq(seed)
   end
 
-  it "keeps one strip per speaker, and only for speakers in this world" do
+  it "keeps one strip per expression, and only for speakers in this world" do
     first = generate(cid, "happy")
     generate(cid, "sad")
+    expect(ArtBatch.exists?(first.id)).to be(true) # each expression its own strip, for the chain's last link
+    expect(generate(cid, "happy")).not_to eq(first)
     expect(ArtBatch.exists?(first.id)).to be(false)
 
     other = World.create!(name: "Elsewhere", slug: "elsewhere")
@@ -259,7 +261,7 @@ RSpec.describe "Generated portraits (§8)", type: :request do
     expect(ArtBatch.exists?(neutral.id)).to be(false) # one strip a speaker
 
     get edit_npc_path(cid)
-    expect(response.body).to include("The sprite: full body, for the stage", "Candidates for the sprite", "Full-body sprite, for the stage")
+    expect(response.body).to include("1. The sprite: full body, for the stage", "Candidates for the sprite", "Full-body sprite, for the stage")
 
     finish(batch)
     post world_art_candidate_pick_path(world, batch.candidates.last)
@@ -285,5 +287,89 @@ RSpec.describe "Generated portraits (§8)", type: :request do
 
     post world_art_batches_path(world), params: { entry_type: "encounter_table", entry_slug: table.slug, count: 1 }
     expect(table.reload.art_batch.recipe["positive"]).to include("a scene of what waits on the road", table.name)
+  end
+end
+
+RSpec.describe "A player's look, in a chain (§8)", type: :request do
+  let!(:world) { base_world }
+  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: make_user("GM")) }
+  let(:player) { make_user("Lenna's player") }
+  let(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "knight"), user: player) }
+  let(:comfy) { FakeComfy.new }
+
+  before { sign_in_as(player) }
+
+  def finish(batch)
+    ArtBatchJob.new.perform(batch.reload, client: comfy)
+    comfy.finish!(*comfy.submitted.each_index.map { |i| "prompt-#{i + 1}" })
+    ArtBatchJob.new.perform(batch.reload, client: comfy)
+  end
+
+  def speaker(owner) = { owner_type: owner.model_name.singular, owner_id: owner.id }
+
+  it "is theirs to make: the sprite, the portrait from its head, then every expression from the portrait" do
+    get edit_character_path(lenna)
+    expect(response.body).to include("Make their look", "1. The sprite", "2. The Neutral portrait, from the sprite", "3. Every other expression")
+    expect(response.body).not_to include("entry_art_model") # the model and LoRAs are the GM's
+
+    # 1. The sprite, from the prompt; the player's specifics go in, a model they name doesn't.
+    post world_art_batches_path(world), params: { entry_type: "sprite", **speaker(lenna), count: 1, entry: { art_notes: "pink hair, white tunic", art_model: "other.safetensors" } }
+    expect(response).to redirect_to(edit_character_path(lenna, anchor: "art"))
+    expect(lenna.reload).to have_attributes(art_notes: "pink hair, white tunic", art_model: nil)
+    sprite_batch = lenna.sprite.art_batch
+    expect(sprite_batch.recipe["positive"]).to include("full body", "Lenna, a Knight, pink hair, white tunic")
+    finish(sprite_batch)
+    post world_art_candidate_pick_path(world, sprite_batch.candidates.first)
+    sprite = lenna.sprite.reload
+    expect(sprite.image).to be_attached
+
+    # 2. The Neutral portrait, redrawn from the sprite's head with the sprite's seed.
+    post world_art_batches_path(world), params: { entry_type: "portrait", **speaker(lenna), expression: "neutral", from: "sprite", count: 2 }
+    neutral = lenna.portraits.find_by!(expression: "neutral")
+    batch = neutral.art_batch
+    expect(batch.recipe).to include("source" => { "kind" => "sprite", "id" => sprite.id }, "denoise" => 0.55)
+    expect(batch.recipe["positive"]).to include("head and shoulders portrait", "calm neutral expression")
+    expect(batch.candidates.first.seed).to eq(sprite.image_seed)
+    finish(batch)
+    expect(comfy.uploads.map(&:first)).to eq([ "polychrome-head-#{sprite.id}-#{sprite.image_seed}.png" ])
+    expect(comfy.uploads.first.last).to start_with("\x89PNG".b) # the head crop, a real image
+    expect(batch.reload.recipe["workflow"]).to include("LoadImage", "VAEEncode")
+    expect(comfy.submitted.last.values.find { |n| n["class_type"] == "KSampler" }["inputs"]["denoise"]).to eq(0.55)
+    get edit_character_path(lenna)
+    expect(response.body).to include("Candidates for Neutral, from the sprite")
+    post world_art_candidate_pick_path(world, batch.candidates.last)
+    expect(neutral.reload.image).to be_attached
+
+    # 3. Every other expression at once, each from the Neutral portrait, each its own strip.
+    post world_art_batches_path(world), params: { entry_type: "portrait", **speaker(lenna), expression: "happy", from: "neutral", every: "1", count: 1 }
+    expect(response).to redirect_to(edit_character_path(lenna, anchor: "art"))
+    strips = ArtBatch.where(entry: lenna.portraits.reload).to_a
+    expect(strips.map { |b| b.entry.expression }).to match_array(Portrait::EXPRESSIONS - [ "neutral" ])
+    expect(strips.map { |b| b.recipe["source"] }.uniq).to eq([ { "kind" => "portrait", "id" => neutral.id } ])
+    expect(strips.map { |b| b.recipe["denoise"] }.uniq).to eq([ 0.45 ])
+    expect(strips.map { |b| b.candidates.first.seed }.uniq).to eq([ neutral.image_seed ])
+    expect(strips.find { |b| b.entry.expression == "angry" }.recipe["positive"]).to end_with("angry expression, furrowed brow")
+    get edit_character_path(lenna)
+    expect(response.body).to include("Candidates for Happy, from the Neutral portrait", "Candidates for Angry, from the Neutral portrait")
+  end
+
+  it "needs the link before: no sprite, no portrait from it" do
+    post world_art_batches_path(world), params: { entry_type: "portrait", **speaker(lenna), expression: "neutral", from: "sprite" }
+    expect(response).to redirect_to(root_path) # back where they came from; the message says why
+    expect(flash[:alert]).to eq("There's no sprite to draw the portrait from yet")
+    expect(ArtBatch.count).to eq(0)
+  end
+
+  it "is only theirs: not another player's character, nor the cast" do
+    other = campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "knight"), user: make_user("Other"))
+    post world_art_batches_path(world), params: { entry_type: "sprite", **speaker(other), count: 1 }
+    expect(ArtBatch.count).to eq(0)
+    cid = campaign.npcs.create!(name: "Cid", title: "Engineer")
+    post world_art_batches_path(world), params: { entry_type: "portrait", **speaker(cid), expression: "neutral" }
+    expect(ArtBatch.count).to eq(0)
+    get world_art_panel_path(world, entry_type: "portrait", **speaker(cid))
+    expect(response).to have_http_status(:forbidden)
+    get edit_character_path(other)
+    expect(response).to redirect_to(root_path)
   end
 end
