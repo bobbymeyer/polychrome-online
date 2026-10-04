@@ -65,7 +65,7 @@ class BeatsController < ApplicationController
   # flag" is a choice (and a choice rewritten without the ? a line); a
   # sprite step's someone as "Npc:3" too.
   def beat_params
-    raw = params.expect(beat: [ :speaker, :expression, :text, :backdrop, :map_node_id, :cue, :music, :art_notes, :who, :side, :action, :fx ])
+    raw = params.expect(beat: [ :speaker, :expression, :text, :backdrop, :map_node_id, :cue, :music, :art_notes, :who, :side, :action, :fx, :transition ])
     case @beat.kind
     when "say", "choice"
       attrs = raw.slice(:expression, :text, :cue).to_h
@@ -76,13 +76,13 @@ class BeatsController < ApplicationController
         attrs.merge(kind: "say", options: [], flag_key: nil)
       end
     when "backdrop"
-      attrs = raw.slice(:backdrop, :map_node_id, :art_notes).to_h
+      attrs = raw.slice(:backdrop, :map_node_id, :art_notes, :transition).to_h
       attrs[:map_node_id] = nil unless attrs[:backdrop] == "place"
       attrs
     when "sprite"
       who = person(raw[:who])
-      { action: raw[:action], figures: (who ? [ { type: who.class.name, id: who.id, side: raw[:side], expression: raw[:expression] } ] : []) }
-    when "music" then raw.slice(:music).to_h
+      { action: raw[:action], transition: raw[:transition], figures: (who ? [ { type: who.class.name, id: who.id, side: raw[:side], expression: raw[:expression] } ] : []) }
+    when "music" then raw.slice(:music, :transition).to_h
     when "fx" then raw.slice(:fx).to_h
     end
   end

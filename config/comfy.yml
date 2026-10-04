@@ -35,6 +35,13 @@ shared: &shared
     denoise: 0.6
   # Give up on a batch that hasn't finished after this many seconds.
   timeout: 900
+  # A speaker's look, made in a chain (Headshot, ArtBatch "source"): the
+  # sprite first; the Neutral portrait redrawn from the sprite's head; each
+  # other expression redrawn from the Neutral portrait. How much each step
+  # re-noises what it starts from (lower keeps more of the face).
+  chain:
+    portrait_denoise: 0.55
+    expression_denoise: 0.45
 
   # How each family of model wants to be run (Comfy::Family). A model's file
   # name picks its family: the first family with a `match` found in the name

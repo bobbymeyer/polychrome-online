@@ -1,7 +1,7 @@
 <%# One batch's candidates (§8). The page refreshes itself as they land. %>
 <% world = batch.world %>
 <div class="art-batch" id="<%= dom_id(batch) %>">
-  <h3><%= batch.draft? ? "Drafts" : (batch.recipe["refines"] ? "Made properly" : "Candidates") %><%= " for #{batch.entry.expression.humanize}" if batch.entry.is_a?(Portrait) %><%= " for the sprite" if batch.entry.is_a?(Sprite) %><%= " for #{batch.entry.mode['name']}" if batch.entry.is_a?(ModeArt) %><%= " for step #{batch.entry.position + 1}" if batch.entry.is_a?(Beat) %></h3>
+  <h3><%= batch.draft? ? "Drafts" : (batch.recipe["refines"] ? "Made properly" : "Candidates") %><%= " for #{batch.entry.expression.humanize}" if batch.entry.is_a?(Portrait) %><%= " for the sprite" if batch.entry.is_a?(Sprite) %><%= ", #{batch.source_label}" if batch.source_label %><%= " for #{batch.entry.mode['name']}" if batch.entry.is_a?(ModeArt) %><%= " for step #{batch.entry.position + 1}" if batch.entry.is_a?(Beat) %></h3>
   <% case batch.status %>
   <% when "queued", "running" %>
     <p class="art-batch__status" role="status">Generating: <%= batch.candidates.count(&:finished?) %> of <%= batch.candidates.size %> in.</p>

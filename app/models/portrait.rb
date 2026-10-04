@@ -31,9 +31,10 @@ class Portrait < ApplicationRecord
   end
 
   # Other expressions start from the neutral portrait's seed, so the face
-  # stays closer to the one already picked.
+  # stays closer to the one already picked; the neutral one from the
+  # sprite's, when there is a sprite (the chain).
   def art_seed_hint
-    return nil if expression == "neutral"
+    return owner.sprite&.image_seed if expression == "neutral"
 
     owner.portraits.find_by(expression: "neutral")&.image_seed
   end

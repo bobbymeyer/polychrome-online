@@ -1,17 +1,25 @@
 <%# A scene's beat on the stage (Beat): what's behind it (a place's picture as it is now, a panel made for
     the beat, black, or what the table had), and who stands on it, left and right, the speaker lit: full
-    body as their sprite (Sprite, or the archetype's figure), else as their portrait.
+    body as their sprite (Sprite, or the archetype's figure), else as their portrait. What changed on the
+    way to this step comes on with its transition (data-arrive / data-leave, stage_change controller),
+    once: the fold clears the marks after the table stops on a line.
     Sized to the frame (container units), so it reads the same on the table, the TV and the preview. %>
 <% behind = beat.effective_backdrop %>
 <% image = beat.backdrop_image || (behind.nil? ? beat.campaign.current_node&.location&.picture : nil) %>
-<div class="beat-stage beat-stage--<%= behind&.dig("kind") || "table" %>"<%= tag.attributes(data: { fx: beat.effect }) if beat.effect %>>
+<% fresh = beat.fresh_backdrop %>
+<div class="beat-stage beat-stage--<%= behind&.dig("kind") || "table" %>" data-controller="stage-change"
+     <%= tag.attributes(data: { fx: beat.effect, arrive: fresh, arrive_key: (fresh && "#{beat.id}:backdrop") }.compact) %>>
   <%= image_tag url_for(image), alt: "", class: "beat-stage__backdrop" if image %>
   <div class="beat-stage__figures">
     <% Beat::SIDES.each do |side| %>
       <div class="beat-stage__side beat-stage__side--<%= side %>">
-        <% beat.on_stage.select { |f| f["side"] == side }.each do |figure| %>
+        <% figures = beat.on_stage.select { |f| f["side"] == side } + beat.leaving.select { |f| f["side"] == side }.map { |f| f.merge("leaving" => true) } %>
+        <% figures.each do |figure| %>
           <% sprite = figure["who"].sprite_image %>
-          <%= tag.span class: [ "beat-stage__figure", (sprite ? "beat-stage__figure--sprite" : "beat-stage__figure--portrait"), ("is-speaking" if figure["speaking"]) ], title: figure["who"].name do %>
+          <% key = "#{beat.id}:#{figure['who'].class.name}:#{figure['who'].id}" %>
+          <%= tag.span class: [ "beat-stage__figure", (sprite ? "beat-stage__figure--sprite" : "beat-stage__figure--portrait"), ("is-speaking" if figure["speaking"]), ("beat-stage__figure--leaving" if figure["leaving"]) ],
+                       title: figure["who"].name,
+                       data: (figure["leaving"] ? { leave: figure["transition"], leave_key: key } : (figure["arrived"] ? { arrive: figure["arrived"], arrive_key: key } : {})) do %>
             <% if sprite %>
               <%= image_tag url_for(sprite), alt: figure["who"].name, class: "beat-stage__sprite" %>
             <% else %>

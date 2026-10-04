@@ -20,7 +20,7 @@ class ArtPanelsController < ApplicationController
       render partial: "art_batches/mode_art", locals: { location: art.location, chosen: art.mode_key }
     elsif speaker_request? || sprite_request?
       owner = art_speaker
-      return head :forbidden unless can_gm?(owner.campaign)
+      return head :forbidden unless can_portray?(owner)
 
       render partial: "art_batches/portraits", locals: { owner: owner }
     else

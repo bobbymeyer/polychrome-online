@@ -28,9 +28,14 @@ RSpec.describe Beat do
     scene.beats.reload.each { |s| s.update_columns(position: [ enter, place, a, b, c ].index(s)) }
     expect(a.reload.effective_backdrop).to eq("kind" => "place", "node" => node)
     expect(a.on_stage.map { |f| [ f["who"], f["side"], f["expression"], f["speaking"] ] }).to eq([ [ cid, "right", "worried", true ] ]) # placed, and speaking with the line's face
+    # The changes on the way to the first line come on with their transitions (a quick fade unless said), once.
+    expect(a.on_stage.first["arrived"]).to eq("fade")
+    expect(a.fresh_backdrop).to eq("fade")
+    expect(b.reload.on_stage.first["arrived"]).to be_nil
+    expect(b.fresh_backdrop).to be_nil
 
     black = scene.beats.create!(kind: "backdrop", backdrop: "black", position: 5)
-    leave = scene.beats.create!(kind: "sprite", action: "leave", figures: [ { type: "Npc", id: cid.id } ], position: 6)
+    leave = scene.beats.create!(kind: "sprite", action: "leave", figures: [ { type: "Npc", id: cid.id } ], position: 6, transition: "slow")
     fx = scene.beats.create!(kind: "fx", fx: "shake", position: 7)
     last = scene.beats.create!(text: "Gone.", position: 8)
     expect(scene.reload.stage_at(black)["figures"].map { |f| f["who"] }).to eq([ cid ])
@@ -38,6 +43,8 @@ RSpec.describe Beat do
     expect(last.effective_backdrop).to eq("kind" => "black")
     expect(last.effect).to eq("shake")
     expect(last.on_stage).to eq([]) # narration: nobody
+    expect(last.leaving.map { |f| [ f["who"], f["transition"] ] }).to eq([ [ cid, "slow" ] ]) # going out as the line comes on
+    expect(leave.describe).to eq("Cid leaves, slow fade")
 
     panel = scene.beats.create!(kind: "backdrop", backdrop: "panel", position: 3)
     scene.beats.reload.each { |s| s.update_columns(position: [ enter, place, a, panel, b, c, black, leave, fx, last ].index(s)) }
@@ -63,6 +70,9 @@ RSpec.describe Beat do
     expect(scene.beats.new(kind: "music", music: "follow")).to be_valid
     expect(scene.beats.new(kind: "fx")).not_to be_valid
     expect(scene.beats.new(kind: "fx", fx: "fade")).to be_valid
+    expect(scene.beats.new(kind: "backdrop", backdrop: "black", transition: "slide")).not_to be_valid # a backdrop can't slide
+    expect(scene.beats.new(kind: "music", music: "boss", transition: "cut")).to be_valid
+    expect(scene.beats.new(kind: "sprite", action: "enter", figures: [ { type: "Npc", id: cid.id } ], transition: "wipe")).not_to be_valid
   end
 
   describe "on the stage" do
@@ -73,7 +83,7 @@ RSpec.describe Beat do
       # A backdrop before the first line, and music before the second: made on the way to each line.
       a, b, c = scene.beats.to_a
       black = scene.beats.create!(kind: "backdrop", backdrop: "black")
-      music = scene.beats.create!(kind: "music", music: "boss")
+      music = scene.beats.create!(kind: "music", music: "boss", transition: "cut")
       scene.beats.reload.each { |s| s.update_columns(position: [ black, a, music, b, c ].index(s)) }
       scene.reload
       expect(scene.beats.reload.map(&:kind)).to eq(%w[backdrop say music say say])
@@ -87,10 +97,12 @@ RSpec.describe Beat do
       expect(campaign.messages.last).to be_dialogue
       expect(campaign.music).to be_nil
 
+      allow(Turbo::StreamsChannel).to receive(:broadcast_action_to).and_call_original
       scene.advance!
       expect(scene.cursor).to eq(3) # past the music
       expect(campaign.messages.last).to have_attributes(body: "The wind picks up.", cue: "door")
       expect(campaign.reload.music).to eq("boss")
+      expect(Turbo::StreamsChannel).to have_received(:broadcast_action_to).with(campaign, :stage, hash_including(action: :music, attributes: hash_including(cut: true))) # no crossfade: the step said cut
 
       scene.advance!
       expect(campaign.messages.last).to have_attributes(body: "Hold on!", speaker: bartz)

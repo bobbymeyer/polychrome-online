@@ -334,7 +334,12 @@ table. A step is one of six kinds, each whole of its kind (`Beat#whole_of_its_ki
   now: the stage carries it as `data-fx` and nothing plays yet.
 
 Lines and choices **wait** for the table (`Beat::WAITING`); the rest are
-changes made on the way to the next line. The stage at any step is folded
+changes made on the way to the next line. Each change has a **transition**
+(`Beat::TRANSITIONS`): a quick fade unless the GM says otherwise, a slow
+fade, a slide for a sprite, or a cut (for music, no crossfade). A change
+comes on with the first line after it, once (`stage_change` controller
+keys each by step and figure so a table refresh doesn't replay it); a
+figure leaving goes out the same way as that line comes on. The stage at any step is folded
 from the steps before it (`Scene#stage_at`: the backdrop set, who is on,
 the effect), so a step only says what changes.
 
@@ -921,7 +926,7 @@ generator (email and password, with `bcrypt`), plus a sign-up page.
 | Who | What they can do |
 | --- | --- |
 | **Admin** (the first account ever made) | Everything: every world's books, art direction and book art. Can GM any campaign. Manages accounts on the Accounts page. |
-| **A campaign's GM** (whoever started it, or whoever an admin hands it to) | Runs that campaign: the GM seat, map, flags, locations, battles, scenes, NPCs, the bag, rests, EXP grants, starting levels, and generating its speakers' portraits. |
+| **A campaign's GM** (whoever started it, or whoever an admin hands it to) | Runs that campaign: the GM seat, map, flags, locations, battles, scenes, NPCs, the bag, rests, EXP grants, starting levels, and making its speakers' looks (a player makes their own character's). |
 | **A world's owner** (whoever made it, usually as a copy) | Changes its books as they play. So do the GMs of campaigns in that world. |
 | **Anyone** | Starts a campaign in any world and GMs it. Makes a world, usually by copying one. Makes characters, which start at the party's lowest level, and sits as, equips and levels their own. Reads every book. |
 
@@ -958,7 +963,16 @@ Every image slot can be uploaded or generated with
 - **Book entries** in all seven books. Upload on the edit form; generate in
   the Art section of the entry's page.
 - **Speaker portraits,** one per expression, for NPCs and characters. Upload
-  in their edit form; generate in "Generate portraits" below it.
+  in their edit form; make them in "Make their look" below it, a chain of
+  three links so it's the same face: the **sprite** first (full body, from
+  the prompt), the **Neutral portrait** redrawn from the sprite's head
+  (`Headshot` cuts it square on plain ground; the batch starts from it,
+  image to image, re-noised by `chain.portrait_denoise`, with the sprite's
+  seed), then **every other expression** redrawn from the Neutral portrait
+  (`chain.expression_denoise`, one strip each, all six at once if asked).
+  A player makes their own character's look (their specifics; the model
+  and LoRAs stay the GM's); the GM makes anyone's. Each link can also be
+  made from the prompt alone.
 
 - **Every image is composed in three layers:** world, content type,
   subject. Any layer can set a prompt, a model and LoRAs.

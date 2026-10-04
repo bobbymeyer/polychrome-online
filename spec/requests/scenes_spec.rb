@@ -68,8 +68,8 @@ RSpec.describe "Scenes", type: :request do
     post scene_beats_path(scene), params: { kind: "sprite", after_id: backdrop.id }
     sprite = scene.beats.reload[1]
     expect(sprite).to have_attributes(kind: "sprite", action: "enter")
-    patch beat_path(sprite), params: { beat: { who: "Npc:#{cid.id}", action: "enter", side: "left", expression: "happy" } }
-    expect(sprite.reload.figures).to eq([ { "type" => "Npc", "id" => cid.id, "side" => "left", "expression" => "happy" } ])
+    patch beat_path(sprite), params: { beat: { who: "Npc:#{cid.id}", action: "enter", side: "left", expression: "happy", transition: "slide" } }
+    expect(sprite.reload).to have_attributes(figures: [ { "type" => "Npc", "id" => cid.id, "side" => "left", "expression" => "happy" } ], transition: "slide")
     post scene_beats_path(scene), params: { kind: "music", after_id: sprite.id }
     patch beat_path(scene.beats.reload[2]), params: { beat: { music: "boss" } }
     post scene_beats_path(scene), params: { kind: "fx", after_id: scene.beats.reload[2].id }
@@ -80,6 +80,11 @@ RSpec.describe "Scenes", type: :request do
 
     get edit_scene_path(scene, beat: inserted.id)
     expect(response.body).to include("Step 6 of 7", "Bartz: Always.", "beat-stage--black", "is-speaking", 'data-fx="shake"', "Effect on: shake")
+    expect(response.body).not_to include("data-arrive=") # the changes played on the line before this one
+    # The changes come on with the first line after them: Cid slides in, the black backdrop fades; the form says how.
+    first_line = scene.beats.in_order[4]
+    get edit_scene_path(scene, beat: first_line.id)
+    expect(response.body).to include('data-arrive="slide"', %(data-arrive-key="#{first_line.id}:Npc:#{cid.id}"), 'data-arrive="fade"', "Comes on with", "Slide in")
     # Run through from here: the next step rides a frame load, playing on at reading pace until the choice.
     expect(response.body).to include("Play from here", 'data-scene-preview-playing-value="false"', 'data-scene-preview-stops-value="false"')
     get edit_scene_path(scene, beat: scene.beats.in_order[5].id, playing: 1)

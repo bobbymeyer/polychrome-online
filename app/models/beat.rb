@@ -19,6 +19,9 @@ class Beat < ApplicationRecord
   SIDES = %w[left right].freeze
   SPEAKER_TYPES = %w[Npc Character].freeze
   LABELS = { "say" => "Line", "choice" => "Choice", "backdrop" => "Backdrop", "sprite" => "Sprite", "music" => "Music", "fx" => "Effect" }.freeze
+  # How a change comes on: a quick fade unless said otherwise.
+  TRANSITIONS = { "fade" => "Quick fade", "slow" => "Slow fade", "slide" => "Slide in", "cut" => "Cut" }.freeze
+  TRANSITIONS_FOR = { "backdrop" => %w[fade slow cut], "sprite" => %w[fade slow slide cut], "music" => %w[fade cut] }.freeze
 
   belongs_to :scene
   belongs_to :speaker, polymorphic: true, optional: true
@@ -51,6 +54,9 @@ class Beat < ApplicationRecord
   # The table stops on it; the rest happen on the way to the next one.
   def waits? = WAITING.include?(kind)
   def label = LABELS.fetch(kind)
+  # A change of the stage (not a line or a choice): it has a transition.
+  def changes_stage? = TRANSITIONS_FOR.key?(kind)
+  def transitions = TRANSITIONS.slice(*TRANSITIONS_FOR.fetch(kind, []))
 
   # "? Trust Cid | Refuse -> trusted_cid" as a step.
   def self.choice_from(text)
@@ -108,7 +114,16 @@ class Beat < ApplicationRecord
   # The effect at this step, if the last effect step is still the latest word (placeholder).
   def effect = scene.stage_at(self)["fx"]
 
-  # What this step sets, for the stage fold (Scene#stage_at).
+  # Who left on the way to this step, [{ "who", "side", "expression", "transition" }]: they go
+  # out as the step comes on, then they're gone.
+  def leaving = scene.stage_at(self)["leaving"]
+
+  # The transition the backdrop came on with, if it changed on the way to this step.
+  def fresh_backdrop = scene.stage_at(self)["fresh"]["backdrop"]
+
+  # What this step sets, for the stage fold (Scene#stage_at). A change marks what it changed
+  # with its transition ("arrived" on a figure, "fresh" on the stage, the leaving kept aside);
+  # the fold clears the marks once the table has stopped on a line, so each change plays once.
   def apply_to(state)
     case kind
     when "backdrop"
@@ -117,11 +132,17 @@ class Beat < ApplicationRecord
       when "panel" then { "kind" => "panel", "beat" => self }
       when "black" then { "kind" => "black" }
       end
+      state["fresh"]["backdrop"] = transition
     when "sprite"
       f = figure or return state
       person = who or return state
       state["figures"] = state["figures"].reject { |g| g["who"] == person }
-      state["figures"] << { "who" => person, "side" => f["side"], "expression" => f["expression"] } unless action == "leave"
+      if action == "leave"
+        state["leaving"] = state["leaving"].reject { |g| g["who"] == person } << { "who" => person, "side" => f["side"], "expression" => f["expression"], "transition" => transition }
+      else
+        state["leaving"] = state["leaving"].reject { |g| g["who"] == person }
+        state["figures"] << { "who" => person, "side" => f["side"], "expression" => f["expression"], "arrived" => transition }
+      end
     when "fx"
       state["fx"] = fx
     end
@@ -146,12 +167,15 @@ class Beat < ApplicationRecord
     case kind
     when "say" then "#{speaker&.name || 'Narrator'}: #{text}"
     when "choice" then "The party decides: #{options.join(' / ')}"
-    when "backdrop" then { "place" => "Backdrop: #{map_node&.name || 'a place'}", "panel" => "Backdrop: a panel", "black" => "Backdrop: black" }[backdrop]
-    when "sprite" then "#{who&.name || 'Someone'} #{action == 'leave' ? 'leaves' : "#{action == 'enter' ? 'enters' : 'turns'} #{figure&.dig('side')}, #{figure&.dig('expression')}"}"
-    when "music" then "Music: #{music == 'follow' ? 'follow the place' : music}"
+    when "backdrop" then { "place" => "Backdrop: #{map_node&.name || 'a place'}", "panel" => "Backdrop: a panel", "black" => "Backdrop: black" }[backdrop] + how
+    when "sprite" then "#{who&.name || 'Someone'} #{action == 'leave' ? 'leaves' : "#{action == 'enter' ? 'enters' : 'turns'} #{figure&.dig('side')}, #{figure&.dig('expression')}"}#{how}"
+    when "music" then "Music: #{music == 'follow' ? 'follow the place' : music}#{how}"
     when "fx" then "Effect: #{fx}"
     end
   end
+
+  # ", slow fade" and the like after a change; a quick fade goes without saying.
+  def how = transition == "fade" ? "" : ", #{TRANSITIONS.fetch(transition, transition).downcase}"
 
   # --- the panel (Artwork) -----------------------------------------------------
   # The place behind the step is the subject, as a mode's picture has the
@@ -199,6 +223,9 @@ class Beat < ApplicationRecord
       errors.add(:figures, "needs someone from the cast or the party") if who.nil?
     when "music" then errors.add(:music, "must be one of the table's tracks, silence, or follow") unless (Campaign::MUSIC_CHOICES + %w[follow]).include?(music)
     when "fx" then errors.add(:fx, "needs a name") if fx.blank?
+    end
+    if changes_stage? && !transitions.key?(transition)
+      errors.add(:transition, "must be #{transitions.values.map(&:downcase).to_sentence(last_word_connector: ' or ')}")
     end
   end
 end
