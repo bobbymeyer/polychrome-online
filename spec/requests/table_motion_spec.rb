@@ -42,6 +42,9 @@ RSpec.describe "The table's motion", type: :request do
     expect(line.data).to include("moved" => true, "place" => campaign.current_node.name, "kind" => campaign.current_node.kind.humanize)
     get campaign_table_path(campaign)
     expect(response.body).to include('data-moment-cue="arrival"')
+    # The line carries what the card shows, so the card isn't blank (moment_controller fills it from the line).
+    card = Nokogiri::HTML(response.body).at("##{ActionView::RecordIdentifier.dom_id(line)}")["data-chat-line-card-value"]
+    expect(JSON.parse(card)).to include("place" => campaign.current_node.name, "kind" => campaign.current_node.kind.humanize)
   end
 
   it "marks the Now band's state and, on the map page, the party's marker, so a change wipes and hops" do
