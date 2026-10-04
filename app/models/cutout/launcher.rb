@@ -1,14 +1,21 @@
 # frozen_string_literal: true
 
+require "net/http"
+
 # The background remover, started by the app itself (hardwired): when the
-# address is this machine's (the default, http://127.0.0.1:7000) and nothing
-# answers there, the first picture that needs cutting out starts
-# `bin/cutout` (which installs rembg and fetches the model the first time),
-# waits a little for it to come up, and otherwise says it isn't reachable
-# yet, so the batch waits and tries again (ApplicationJob.waits_for_services)
-# rather than failing. Nothing to set: no address on the Settings page, no
-# CUTOUT_URL. From a container the remover is on the host, which the app
-# can't start: run bin/cutout there.
+# address is this machine's (the default, http://127.0.0.1:7071) and the
+# remover isn't answering there, the first picture that needs cutting out
+# starts `bin/cutout` (which installs rembg and fetches the model the first
+# time), waits a little for it to come up, and otherwise says it isn't
+# reachable yet, so the batch waits and tries again
+# (ApplicationJob.waits_for_services) rather than failing. Nothing to set:
+# no address on the Settings page, no CUTOUT_URL. From a container the
+# remover is on the host, which the app can't start: run bin/cutout there.
+#
+# "Answering" means the remover answering (rembg's /api page), not just
+# something listening on the port: on a Mac, AirPlay Receiver holds port 7000 and
+# turns every picture down. Something else on the port is said so, rather
+# than sent pictures.
 module Cutout
   class Launcher
     LOCAL_HOSTS = %w[127.0.0.1 localhost ::1 0.0.0.0].freeze
@@ -37,16 +44,22 @@ module Cutout
 
       # Start the remover if it should be here and isn't. Returns true when
       # it is answering (already, or now), raises Cutout::Unreachable when
-      # it isn't yet.
-      def ensure_running!(config: Cutout.config, spawner: Process.method(:spawn), open: method(:open?), wait: BOOT, sleeper: method(:sleep))
+      # it isn't yet, and Cutout::Error when something else holds the port.
+      # probe: what answers at the address (#probe).
+      def ensure_running!(config: Cutout.config, spawner: Process.method(:spawn), probe: method(:probe), wait: BOOT, sleeper: method(:sleep))
         return true unless wanted?(config)
 
         uri = URI(config[:url])
-        return true if open.call(uri.host, uri.port)
+        case probe.call(uri)
+        when :remover then return true
+        when :other then raise Cutout::Error, taken(uri)
+        end
 
         @lock.synchronize { start!(uri.port, spawner) unless starting? }
         deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + wait
-        until open.call(uri.host, uri.port)
+        until (answer = probe.call(uri)) == :remover
+          # Ours is starting, so something else got there first.
+          raise Cutout::Error, taken(uri) if answer == :other && !starting?
           if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
             raise Cutout::Unreachable, "The background remover is starting at #{uri.host}:#{uri.port} (bin/cutout, see #{LOG_FILE}); " \
                                        "the first start installs it and fetches the model, so this will carry on when it's up"
@@ -56,11 +69,21 @@ module Cutout
         true
       end
 
-      def open?(host, port)
-        Socket.tcp(host, port, connect_timeout: 1).close
-        true
-      rescue SystemCallError, IOError
-        false
+      # What answers at the address: :remover (rembg's /api page, or a
+      # stand-in's that answers it too), :other
+      # (something listening that isn't it) or :none.
+      def probe(uri)
+        response = Net::HTTP.start(uri.host, uri.port, open_timeout: 1, read_timeout: 3) { |http| http.get("/api") }
+        response.is_a?(Net::HTTPSuccess) ? :remover : :other
+      rescue SystemCallError, IOError, Timeout::Error, SocketError
+        :none
+      rescue Net::HTTPBadResponse, Net::ProtocolError
+        :other
+      end
+
+      def taken(uri)
+        "Something other than the background remover answers at #{uri.host}:#{uri.port} " \
+          "(on a Mac, port 7000 is AirPlay Receiver's): free the port, or run bin/cutout on another (CUTOUT_PORT) and point CUTOUT_URL at it"
       end
 
       # A bin/cutout this app started (or another process did) that is still alive.

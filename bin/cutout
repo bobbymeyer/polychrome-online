@@ -3,17 +3,17 @@
 # removal"): rembg's HTTP server, the standalone tool that runs the removal
 # models (ISNet, BiRefNet, BRIA RMBG, U²-Net) behind one API.
 #
-#   bin/cutout            install if need be, fetch the model, serve on port 7000, warm it up
+#   bin/cutout            install if need be, fetch the model, serve on port 7071, warm it up
 #   bin/cutout install    the Python environment (tmp/cutout) and the model, nothing more
 #   bin/cutout check      send a picture through whatever answers at CUTOUT_URL and report
 #
 # In Docker when there is one (the danielgatis/rembg image), else in a Python
 # environment of its own under tmp/. Then point the app at it:
-# CUTOUT_URL=http://127.0.0.1:7000 (from the app's container,
-# http://host.docker.internal:7000), or the address on the Settings page;
+# CUTOUT_URL=http://127.0.0.1:7071 (from the app's container,
+# http://host.docker.internal:7071), or the address on the Settings page;
 # bin/dev starts it by itself when CUTOUT_URL names this machine.
 #
-#   CUTOUT_PORT    7000
+#   CUTOUT_PORT    7071
 #   CUTOUT_MODEL   isnet-anime (config/cutout.yml's default): fetched before the
 #                  server starts, so the first picture isn't a download. ISNet
 #                  models are ~170 MB and run in ~2 GB of RAM in a few seconds on a
@@ -24,7 +24,7 @@
 #   PYTHON         the interpreter to make the environment from (python3)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PORT="${CUTOUT_PORT:-7000}"
+PORT="${CUTOUT_PORT:-7071}"
 MODEL="${CUTOUT_MODEL:-isnet-anime}"
 MODELS="${CUTOUT_MODELS:-${U2NET_HOME:-$HOME/.rembg}}"
 URL="${CUTOUT_URL:-http://127.0.0.1:$PORT}"
