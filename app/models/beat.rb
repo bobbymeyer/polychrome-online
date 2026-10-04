@@ -1,20 +1,24 @@
 # frozen_string_literal: true
 
-# One beat of a scene (Scene): who speaks and what they say (or narration,
-# or a choice put to the table), what the stage shows behind them, who
-# stands on it, and a cue or a change of music as it lands. The GM writes
-# them in prep, in order, and steps through them at the table; everyone's
-# stage shows the same beat (campaigns/tables/_scene).
+# One step of a scene (Scene), written in prep and played at the table in
+# order: a line said (by someone from the cast, one of the party, or the
+# narrator, with an expression and maybe a jingle); a choice put to the
+# table; a change of backdrop (a place on the map as it is now, a panel
+# made for this step, or black); a sprite change (someone enters the stage
+# on a side with a face, changes it, or leaves); a change of music; or an
+# effect (a name for now: the stage carries it, nothing plays it yet). The
+# stage at any step is folded from the steps before it (Scene#stage_at).
 #
-# The backdrop is a place on the map (its picture, as it is now), a panel
-# made for this beat (its own image, generated like a mode's picture: the
-# place as the subject and this beat's words as one more layer), black, or
-# whatever the beat before left there ("keep").
+# Lines and choices are what the table stops on; the rest happen on the
+# way to the next line (Scene#advance!).
 class Beat < ApplicationRecord
-  KINDS = %w[say choice].freeze
-  BACKDROPS = %w[keep place panel black].freeze
+  KINDS = %w[say choice backdrop sprite music fx].freeze
+  WAITING = %w[say choice].freeze
+  BACKDROPS = %w[place panel black].freeze
+  ACTIONS = %w[enter change leave].freeze
   SIDES = %w[left right].freeze
   SPEAKER_TYPES = %w[Npc Character].freeze
+  LABELS = { "say" => "Line", "choice" => "Choice", "backdrop" => "Backdrop", "sprite" => "Sprite", "music" => "Music", "fx" => "Effect" }.freeze
 
   belongs_to :scene
   belongs_to :speaker, polymorphic: true, optional: true
@@ -25,18 +29,15 @@ class Beat < ApplicationRecord
   include Artwork
 
   normalizes :text, with: ->(text) { text.to_s.strip }
-  normalizes :expression, :cue, :music, :flag_key, with: ->(value) { value.presence }
+  normalizes :expression, :cue, :music, :flag_key, :action, :fx, with: ->(value) { value.to_s.strip.presence }
 
   validates :kind, inclusion: { in: KINDS }
-  validates :backdrop, inclusion: { in: BACKDROPS }
   validates :speaker_type, inclusion: { in: SPEAKER_TYPES }, allow_nil: true
   validates :expression, inclusion: { in: Portrait::EXPRESSIONS }, allow_nil: true
   validates :cue, inclusion: { in: Message::CUES }, allow_nil: true
-  validates :music, inclusion: { in: Campaign::MUSIC_CHOICES + %w[follow] }, allow_nil: true
   validates :text, length: { maximum: 2000 }
   validate :everyone_is_at_this_table
-  validate :says_or_shows_something
-  validate :choice_has_options
+  validate :whole_of_its_kind
 
   before_validation { self.position ||= (scene.beats.maximum(:position) || -1) + 1 if scene }
 
@@ -45,58 +46,55 @@ class Beat < ApplicationRecord
   delegate :campaign, to: :scene
 
   def choice? = kind == "choice"
-  def narration? = speaker.nil? && !choice?
-  def says? = text.present? && !choice?
+  def say? = kind == "say"
+  def says? = say? && text.present?
+  # The table stops on it; the rest happen on the way to the next one.
+  def waits? = WAITING.include?(kind)
+  def label = LABELS.fetch(kind)
 
-  # "? Trust Cid | Refuse -> trusted_cid" as a beat.
+  # "? Trust Cid | Refuse -> trusted_cid" as a step.
   def self.choice_from(text)
     choice = Message.parse_choice(text) or return
     { "kind" => "choice", "text" => nil, "options" => choice[:options], "flag_key" => choice[:flag] }
   end
 
-  # Who stands on the stage: [{ "type", "id", "side", "expression" }], the
-  # speaker among them (lit) even if they weren't placed.
+  # A sprite step's one figure: { "type", "id", "side", "expression" }.
   def figures=(rows)
     rows = rows.is_a?(Hash) ? rows.values : Array(rows)
     super(rows.filter_map do |row|
       row = row.to_h.stringify_keys
-      next unless SPEAKER_TYPES.include?(row["type"].to_s) && row["id"].present? && SIDES.include?(row["side"].to_s)
+      next unless SPEAKER_TYPES.include?(row["type"].to_s) && row["id"].present?
 
-      { "type" => row["type"], "id" => row["id"].to_i, "side" => row["side"],
+      { "type" => row["type"], "id" => row["id"].to_i, "side" => (SIDES.include?(row["side"].to_s) ? row["side"] : "left"),
         "expression" => (Portrait::EXPRESSIONS.include?(row["expression"].to_s) ? row["expression"] : "neutral") }
-    end)
+    end.first(1))
   end
 
-  # [{ "who" => Npc or Character, "side", "expression", "speaking" => bool }]
+  def figure = figures.first
+
+  # Who a sprite step is about (Npc or Character), or nil.
+  def who
+    f = figure or return nil
+    campaign.public_send(f["type"].underscore.pluralize).find_by(id: f["id"])
+  end
+
+  # The stage as it is at this step (Scene#stage_at): who stands on it,
+  # [{ "who", "side", "expression", "speaking" }], the speaker of a line
+  # among them (lit) even if nobody put them there.
   def on_stage
-    people = campaign.npcs.index_by(&:id).transform_keys { |id| "Npc:#{id}" }
-                     .merge(campaign.characters.index_by(&:id).transform_keys { |id| "Character:#{id}" })
-    placed = figures.filter_map do |f|
-      who = people["#{f['type']}:#{f['id']}"] or next
-      { "who" => who, "side" => f["side"], "expression" => f["expression"], "speaking" => who == speaker }
-    end
-    if speaker && placed.none? { |f| f["speaking"] }
+    placed = scene.stage_at(self)["figures"].map { |f| f.merge("speaking" => f["who"] == speaker) }
+    if say? && speaker && placed.none? { |f| f["speaking"] }
       # The speaker takes the emptier side.
       side = placed.count { |f| f["side"] == "left" } > placed.count { |f| f["side"] == "right" } ? "right" : "left"
       placed << { "who" => speaker, "side" => side, "expression" => expression || "neutral", "speaking" => true }
     end
-    placed.map { |f| f["speaking"] ? f.merge("expression" => expression || f["expression"]) : f }
+    placed.map { |f| f["speaking"] && expression ? f.merge("expression" => expression) : f }
   end
 
-  # The stage behind this beat, this beat's own or the last one set before
-  # it: { "kind" => "place", "node" => MapNode } | { "kind" => "panel",
-  # "beat" => Beat } | { "kind" => "black" } | nil (the table as usual).
-  def effective_backdrop
-    beat = self
-    loop do
-      case beat.backdrop
-      when "place" then return { "kind" => "place", "node" => beat.map_node } if beat.map_node
-      when "panel" then return { "kind" => "panel", "beat" => beat }
-      when "black" then return { "kind" => "black" }
-      end
-      beat = scene.beats.in_order.to_a.take_while { |b| b.position < beat.position }.last or return nil
-    end
-  end
+  # The backdrop at this step: { "kind" => "place", "node" => MapNode } |
+  # { "kind" => "panel", "beat" => Beat } | { "kind" => "black" } | nil
+  # (the table as usual).
+  def effective_backdrop = scene.stage_at(self)["backdrop"]
 
   # The picture behind it, if the backdrop has one.
   def backdrop_image
@@ -105,6 +103,29 @@ class Beat < ApplicationRecord
     when "place" then behind["node"].location&.picture
     when "panel" then behind["beat"].image if behind["beat"].image.attached?
     end
+  end
+
+  # The effect at this step, if the last effect step is still the latest word (placeholder).
+  def effect = scene.stage_at(self)["fx"]
+
+  # What this step sets, for the stage fold (Scene#stage_at).
+  def apply_to(state)
+    case kind
+    when "backdrop"
+      state["backdrop"] = case backdrop
+      when "place" then map_node && { "kind" => "place", "node" => map_node }
+      when "panel" then { "kind" => "panel", "beat" => self }
+      when "black" then { "kind" => "black" }
+      end
+    when "sprite"
+      f = figure or return state
+      person = who or return state
+      state["figures"] = state["figures"].reject { |g| g["who"] == person }
+      state["figures"] << { "who" => person, "side" => f["side"], "expression" => f["expression"] } unless action == "leave"
+    when "fx"
+      state["fx"] = fx
+    end
+    state
   end
 
   # How long it is left up when the scene plays on by itself: the box types
@@ -120,13 +141,25 @@ class Beat < ApplicationRecord
     { "speaker" => speaker, "expression" => expression, "text" => text }
   end
 
+  # One line for the sequencer and the summary.
+  def describe
+    case kind
+    when "say" then "#{speaker&.name || 'Narrator'}: #{text}"
+    when "choice" then "The party decides: #{options.join(' / ')}"
+    when "backdrop" then { "place" => "Backdrop: #{map_node&.name || 'a place'}", "panel" => "Backdrop: a panel", "black" => "Backdrop: black" }[backdrop]
+    when "sprite" then "#{who&.name || 'Someone'} #{action == 'leave' ? 'leaves' : "#{action == 'enter' ? 'enters' : 'turns'} #{figure&.dig('side')}, #{figure&.dig('expression')}"}"
+    when "music" then "Music: #{music == 'follow' ? 'follow the place' : music}"
+    when "fx" then "Effect: #{fx}"
+    end
+  end
+
   # --- the panel (Artwork) -----------------------------------------------------
-  # The place behind the beat is the subject, as a mode's picture has the
-  # place; this beat's words are the layer after it. Without a place, the
+  # The place behind the step is the subject, as a mode's picture has the
+  # place; this step's words are the layer after it. Without a place, the
   # words are the subject.
 
   def art_kind = "beat"
-  def art_title = "#{scene.name}, beat #{position + 1}"
+  def art_title = "#{scene.name}, step #{position + 1}"
   def art_world = campaign.world
   def art_stream = scene
   def art_filename(seed) = "#{scene.name.parameterize}-#{position + 1}-#{seed}.png"
@@ -134,15 +167,15 @@ class Beat < ApplicationRecord
   def art_subject = panel_template ? panel_template.art_subject : ArtDirection.join_prompt(scene.name, panel_words)
   def art_subject_loras = panel_template ? panel_template.art_loras : art_loras
   def art_subject_model = panel_template ? panel_template.art_model : art_model
-  def art_detail = (panel_template ? { label: "This beat", prompt: panel_words } : nil)
+  def art_detail = (panel_template ? { label: "This step", prompt: panel_words } : nil)
   def art_seed_hint = panel_template&.image_seed
 
-  # What the panel shows, in the GM's words (art_notes), else the line itself.
-  def panel_words = art_notes.presence || text.presence || scene.name
+  # What the panel shows, in the GM's words (art_notes), else the line before it, else the scene's name.
+  def panel_words = art_notes.presence || scene.beats.in_order.to_a.reverse.find { |b| b.position <= position && b.says? }&.text.presence || scene.name
 
-  # The place this beat stands in, if a place was set on or before it.
+  # The place this step stands in: the last place set on or before it.
   def panel_template
-    behind = scene.beats.in_order.to_a.select { |b| b.position <= position }.reverse.find { |b| b.backdrop == "place" && b.map_node }
+    behind = scene.beats.in_order.to_a.reverse.find { |b| b.position <= position && b.kind == "backdrop" && b.backdrop == "place" && b.map_node }
     behind&.map_node&.location&.location_template
   end
 
@@ -151,19 +184,21 @@ class Beat < ApplicationRecord
   def everyone_is_at_this_table
     errors.add(:speaker, "isn't in this campaign") if speaker && speaker.campaign_id != campaign.id
     errors.add(:map_node, "isn't on this campaign's map") if map_node && map_node.campaign_id != campaign.id
-    errors.add(:backdrop, "needs a place") if backdrop == "place" && map_node.nil?
   end
 
-  # A beat that says nothing can still change the stage.
-  def says_or_shows_something
-    return if choice? || text.present? || backdrop != "keep" || figures.any? || music.present?
-
-    errors.add(:text, "is empty: say something, or change what the stage shows")
-  end
-
-  def choice_has_options
-    return unless choice?
-
-    errors.add(:options, "needs two options or more: “? Trust Cid | Refuse -> trusted_cid”") if options.size < 2 || options.size > Message::Choice::MAX_OPTIONS
+  def whole_of_its_kind
+    case kind
+    when "say" then errors.add(:text, "is empty: say something") if text.blank?
+    when "choice"
+      errors.add(:options, "needs two options or more: “? Trust Cid | Refuse -> trusted_cid”") if options.size < 2 || options.size > Message::Choice::MAX_OPTIONS
+    when "backdrop"
+      errors.add(:backdrop, "must be a place, a panel or black") unless BACKDROPS.include?(backdrop)
+      errors.add(:backdrop, "needs a place") if backdrop == "place" && map_node.nil?
+    when "sprite"
+      errors.add(:action, "must be enter, change or leave") unless ACTIONS.include?(action)
+      errors.add(:figures, "needs someone from the cast or the party") if who.nil?
+    when "music" then errors.add(:music, "must be one of the table's tracks, silence, or follow") unless (Campaign::MUSIC_CHOICES + %w[follow]).include?(music)
+    when "fx" then errors.add(:fx, "needs a name") if fx.blank?
+    end
   end
 end

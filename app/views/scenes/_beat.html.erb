@@ -1,64 +1,74 @@
-<%# One beat in the sequencer (Beat): its own small form, saved as it changes, with the moves around it.
-    beat; chosen_id: the beat the preview is on. %>
+<%# One step in the sequencer (Beat): its own small form for its kind, saved as it changes, with the moves
+    around it. beat; chosen_id: the step the preview is on. %>
 <% chosen = beat.id == chosen_id %>
 <% campaign = beat.campaign %>
-<% speakers = [ [ "Narrator", "" ] ] +
+<% people = [ [ "Narrator", "" ] ] +
      campaign.npcs.order(:name).map { |n| [ n.name, "Npc:#{n.id}" ] } +
      campaign.characters.order(:created_at).map { |c| [ "#{c.name} (party)", "Character:#{c.id}" ] } %>
 <% places = campaign.map_nodes.includes(:location).order(:name).select(&:location) %>
-<% people = campaign.npcs.order(:name).to_a + campaign.characters.order(:created_at).to_a %>
-<% placed = beat.figures.index_by { |f| "#{f['type']}:#{f['id']}" } %>
-<li id="beat_<%= beat.id %>" class="beat<%= ' is-chosen' if chosen %><%= ' is-choice' if beat.choice? %>">
+<li id="beat_<%= beat.id %>" class="beat beat--<%= beat.kind %><%= ' is-chosen' if chosen %>">
   <div class="beat__rail">
     <span class="beat__number"><%= beat.position + 1 %></span>
     <%= button_to "↑", beat_move_path(beat), params: { direction: "up" }, class: "link-button", title: "Move up", form: { class: "inline", data: { turbo_frame: "_top" } }, disabled: beat.position.zero? %>
     <%= button_to "↓", beat_move_path(beat), params: { direction: "down" }, class: "link-button", title: "Move down", form: { class: "inline", data: { turbo_frame: "_top" } }, disabled: beat.position >= beat.scene.beats.size - 1 %>
   </div>
+  <div class="beat__body">
+  <span class="beat__kind"><%= beat.label %></span>
   <%= form_with model: beat, url: beat_path(beat), class: "beat__form", data: { controller: "autosubmit kind-switch", action: "change->autosubmit#submit", turbo_frame: "_top" } do |f| %>
-    <div class="beat__line">
-      <%= select_tag "beat[speaker]", options_for_select(speakers, beat.speaker ? "#{beat.speaker_type}:#{beat.speaker_id}" : ""), "aria-label": "Who speaks", class: "beat__speaker" %>
-      <%= f.select :expression, options_for_select(Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] }, beat.expression || "neutral"), {}, "aria-label": "Expression", class: "beat__expression" %>
-      <%= f.text_area :text, value: (beat.choice? ? "? #{beat.options.join(' | ')}#{" -> #{beat.flag_key}" if beat.flag_key}" : beat.text), rows: 2,
-                      "aria-label": "What is said", class: "beat__text", placeholder: "What is said, or ? Trust Cid | Refuse -> trusted_cid" %>
-    </div>
-    <div class="beat__stage">
-      <%= f.select :backdrop, options_for_select([ [ "Keep what's there", "keep" ], [ "A place", "place" ], [ "A panel for this beat", "panel" ], [ "Black", "black" ] ], beat.backdrop),
-                   {}, "aria-label": "Behind them", data: { kind_switch_target: "select", action: "kind-switch#update" } %>
-      <span data-show-for="place">
-        <%= f.select :map_node_id, options_for_select(places.map { |n| [ n.name, n.id ] }, beat.map_node_id), { include_blank: "(which place)" }, "aria-label": "Which place" %>
-      </span>
-      <span data-show-for="panel" class="beat__panel-words">
-        <%= f.text_field :art_notes, value: beat.art_notes, placeholder: "what the panel shows (blank: the line itself)", "aria-label": "What the panel shows" %>
-      </span>
-      <%= f.select :cue, options_for_select([ [ "No jingle", "" ] ] + Message::CUES.map { |c| [ c.humanize, c ] }, beat.cue), {}, "aria-label": "Jingle" %>
-      <%= f.select :music, options_for_select([ [ "Music as it is", "" ], [ "Follow the place", "follow" ] ] + Campaign::MUSIC_CHOICES.map { |c| [ c.capitalize, c ] }, beat.music), {}, "aria-label": "Music" %>
-    </div>
-    <details class="beat__figures" <%= "open" if beat.figures.any? %>>
-      <summary>On stage<%= tag.span(" · #{beat.figures.size}", class: "muted") if beat.figures.any? %></summary>
-      <% if people.empty? %>
-        <p class="hint">Nobody yet: add NPCs on the campaign page, or wait for the party.</p>
-      <% else %>
-        <ul class="beat__people">
-          <% people.each do |who| %>
-            <% key = "#{who.class.name}:#{who.id}" %>
-            <% row = placed[key] %>
-            <li>
-              <%= hidden_field_tag "beat[figures][#{key}][type]", who.class.name, id: nil %>
-              <%= hidden_field_tag "beat[figures][#{key}][id]", who.id, id: nil %>
-              <span class="beat__person"><%= speaker_portrait(who, row&.dig("expression") || "neutral") %> <%= who.name %></span>
-              <%= select_tag "beat[figures][#{key}][side]", options_for_select([ [ "Off", "" ], [ "Left", "left" ], [ "Right", "right" ] ], row&.dig("side")), "aria-label": "#{who.name} on stage" %>
-              <%= select_tag "beat[figures][#{key}][expression]", options_for_select(Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] }, row&.dig("expression") || "neutral"), "aria-label": "#{who.name}'s expression" %>
-            </li>
-          <% end %>
-        </ul>
+    <% case beat.kind %>
+    <% when "say", "choice" %>
+      <div class="beat__line">
+        <%= select_tag "beat[speaker]", options_for_select(people, beat.speaker ? "#{beat.speaker_type}:#{beat.speaker_id}" : ""), "aria-label": "Who speaks", class: "beat__speaker", disabled: beat.choice? %>
+        <%= f.select :expression, options_for_select(Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] }, beat.expression || "neutral"), {}, "aria-label": "Expression", class: "beat__expression", disabled: beat.choice? %>
+        <%= f.text_area :text, value: (beat.choice? ? "? #{beat.options.join(' | ')}#{" -> #{beat.flag_key}" if beat.flag_key}" : beat.text), rows: 2,
+                        "aria-label": "What is said", class: "beat__text", placeholder: "What is said, or ? Trust Cid | Refuse -> trusted_cid" %>
+      </div>
+      <% unless beat.choice? %>
+        <div class="beat__stage">
+          <%= f.select :cue, options_for_select([ [ "No jingle", "" ] ] + Message::CUES.map { |c| [ c.humanize, c ] }, beat.cue), {}, "aria-label": "Jingle" %>
+        </div>
       <% end %>
-    </details>
+    <% when "backdrop" %>
+      <div class="beat__stage">
+        <%= f.select :backdrop, options_for_select([ [ "A place", "place" ], [ "A panel for this step", "panel" ], [ "Black", "black" ] ], beat.backdrop),
+                     {}, "aria-label": "Behind them", data: { kind_switch_target: "select", action: "kind-switch#update" } %>
+        <span data-show-for="place">
+          <%= f.select :map_node_id, options_for_select(places.map { |n| [ n.name, n.id ] }, beat.map_node_id), { include_blank: "(which place)" }, "aria-label": "Which place" %>
+        </span>
+        <span data-show-for="panel" class="beat__panel-words">
+          <%= f.text_field :art_notes, value: beat.art_notes, placeholder: "what the panel shows (blank: the line before it)", "aria-label": "What the panel shows" %>
+        </span>
+      </div>
+      <% if beat.backdrop == "panel" %>
+        <p class="hint"><%= beat.image.attached? ? "The panel is made." : "No panel yet: make one in the studio on the right (Preview this step first)." %></p>
+      <% end %>
+    <% when "sprite" %>
+      <div class="beat__stage">
+        <%= select_tag "beat[who]", options_for_select(people.drop(1), beat.figure ? "#{beat.figure['type']}:#{beat.figure['id']}" : ""), "aria-label": "Who" %>
+        <%= f.select :action, options_for_select([ [ "enters", "enter" ], [ "changes", "change" ], [ "leaves", "leave" ] ], beat.action), {}, "aria-label": "Does what",
+                     data: { kind_switch_target: "select", action: "kind-switch#update" } %>
+        <span data-show-for="enter change">
+          <%= select_tag "beat[side]", options_for_select([ [ "on the left", "left" ], [ "on the right", "right" ] ], beat.figure&.dig("side")), "aria-label": "Which side" %>
+          <%= f.select :expression, options_for_select(Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] }, beat.figure&.dig("expression") || "neutral"), {}, "aria-label": "Expression" %>
+        </span>
+      </div>
+    <% when "music" %>
+      <div class="beat__stage">
+        <%= f.select :music, options_for_select([ [ "Follow the place", "follow" ] ] + Campaign::MUSIC_CHOICES.map { |c| [ c.capitalize, c ] }, beat.music), {}, "aria-label": "Music" %>
+      </div>
+    <% when "fx" %>
+      <div class="beat__stage">
+        <%= f.text_field :fx, value: beat.fx, placeholder: "fade, shake, flash…", "aria-label": "Effect" %>
+        <span class="hint">A placeholder: the stage carries the effect's name; nothing plays it yet.</span>
+      </div>
+    <% end %>
     <noscript><%= f.submit "Save", class: "button button--quiet" %></noscript>
   <% end %>
   <div class="beat__actions">
     <%= link_to "Preview", edit_scene_path(beat.scene, beat: beat.id), class: "link-button", data: { turbo_frame: "scene_preview" } %>
-    <%= button_to "Insert after", scene_beats_path(beat.scene), params: { after_id: beat.id }, class: "link-button", form: { class: "inline", data: { turbo_frame: "_top" } } %>
+    <%= render "scenes/add_step", scene: beat.scene, after: beat %>
     <%= button_to "Duplicate", beat_copy_path(beat), class: "link-button", form: { class: "inline", data: { turbo_frame: "_top" } } %>
-    <%= button_to "Delete", beat_path(beat), method: :delete, class: "link-button", form: { class: "inline", data: { turbo_frame: "_top", turbo_confirm: "Delete beat #{beat.position + 1}?" } } %>
+    <%= button_to "Delete", beat_path(beat), method: :delete, class: "link-button", form: { class: "inline", data: { turbo_frame: "_top", turbo_confirm: "Delete step #{beat.position + 1}?" } } %>
+  </div>
   </div>
 </li>

@@ -268,7 +268,8 @@ RSpec.describe "Generated portraits (§8)", type: :request do
 
     # On the stage, the sprite stands where the portrait would; a character without one stands as their archetype.
     scene = campaign.scenes.create!(name: "The quay", script: "Cid: Ready?")
-    scene.beats.first.update!(figures: [ { type: "Character", id: bartz.id, side: "left" } ])
+    scene.beats.create!(kind: "sprite", action: "enter", figures: [ { type: "Character", id: bartz.id, side: "left" } ], position: 0)
+    scene.beats.first.update_columns(position: 1)
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
     scene.start!
     get campaign_table_path(campaign)

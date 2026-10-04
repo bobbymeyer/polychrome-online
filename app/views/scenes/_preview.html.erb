@@ -1,4 +1,4 @@
-<%# One beat as the table will see it: the stage, and its line in the box. beat: the one chosen. %>
+<%# One step as the table will see it: the stage as it is at that step, and a line in the box. beat: the one chosen. %>
 <% if beat %>
 <div class="stage stage--preview" aria-label="Preview">
   <div class="stage__frame">
@@ -18,5 +18,5 @@
     <% end %>
   </div>
 </div>
-<p class="hint">Beat <%= beat.position + 1 %> of <%= beat.scene.beats.size %>, as the table will see it<%= ", with #{beat.campaign.current_node.name}'s picture behind it as the party is there now" if beat.effective_backdrop.nil? && beat.campaign.current_node&.location&.picture %>.</p>
+<p class="hint">Step <%= beat.position + 1 %> of <%= beat.scene.beats.size %>: <%= beat.describe %>.<%= " The stage shows #{beat.campaign.current_node.name}'s picture, as the party is there now." if beat.effective_backdrop.nil? && beat.campaign.current_node&.location&.picture %><%= " Effect on: #{beat.effect} (not played yet)." if beat.effect %></p>
 <% end %>

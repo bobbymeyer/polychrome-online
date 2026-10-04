@@ -7,7 +7,7 @@
     <h1><%= @scene.name %></h1>
   </div>
   <div class="actions">
-    <%= button_to(@scene.staged? ? "Take it off the stage" : "Put it on the stage", @scene.staged? ? scene_play_path(@scene) : scene_play_path(@scene),
+    <%= button_to(@scene.staged? ? "Take it off the stage" : "Put it on the stage", scene_play_path(@scene),
                   method: (@scene.staged? ? :delete : :post), class: [ "button", ("play" unless @scene.staged?) ], form: { class: "inline" },
                   disabled: @scene.beats.empty?) %>
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--quiet" %>

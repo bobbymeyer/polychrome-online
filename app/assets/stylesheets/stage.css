@@ -1582,6 +1582,7 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 }
 .beat-list { list-style: none; margin: 0; padding: 0; border-top: 3px solid var(--ink); }
 .beat { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 6px 12px; padding: 12px 8px 12px 0; border-bottom: 1px solid var(--light-grey); scroll-margin-top: calc(var(--topbar, 44px) + 16px); }
+.beat__body > .beat__actions { margin-top: 6px; }
 .beat.is-chosen { background: var(--wash); box-shadow: -8px 0 0 var(--wash); }
 .beat__rail { display: flex; flex-direction: column; align-items: center; gap: 0; }
 .beat__rail form { margin: 0; }
@@ -1592,24 +1593,32 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .beat__form select, .beat__form input[type=text], .beat__form textarea { margin: 0; }
 .beat__line { display: grid; grid-template-columns: minmax(120px, 160px) minmax(100px, 128px) minmax(0, 1fr); gap: 8px; align-items: start; }
 .beat__text { min-height: 56px; }
-.beat.is-choice .beat__speaker, .beat.is-choice .beat__expression { visibility: hidden; }
+.beat--choice .beat__speaker, .beat--choice .beat__expression { visibility: hidden; }
 .beat__stage { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
 .beat__stage span[hidden] { display: none; }
 .beat__panel-words input { min-width: 260px; }
-.beat__figures { grid-column: 2; margin-top: 6px; }
-.beat__figures summary { cursor: pointer; font-weight: 700; font-size: 14px; }
-.beat__people { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 6px 16px; }
-.beat__people li { display: grid; grid-template-columns: minmax(0, 1fr) 84px 120px; gap: 6px; align-items: center; }
-.beat__people select { margin: 0; }
-.beat__person { display: flex; align-items: center; gap: 8px; font-size: 14px; min-width: 0; }
-.beat__actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; }
+.beat__body { min-width: 0; }
+.beat__kind { display: inline-block; margin: 0 0 6px; padding: 1px 8px; font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; background: var(--ink); color: var(--paper); }
+.beat--backdrop .beat__kind { background: var(--dark-blue); }
+.beat--sprite .beat__kind { background: var(--signal); }
+.beat--music .beat__kind { background: var(--grey); }
+.beat--fx .beat__kind { background: var(--sun-yellow); color: var(--ink); }
+.beat--choice .beat__kind { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+.beat--say .beat__kind { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+.add-step { position: relative; display: inline-block; }
+.add-step > summary { list-style: none; cursor: pointer; }
+.add-step > summary::-webkit-details-marker { display: none; }
+.add-step__kinds { position: absolute; z-index: 5; left: 0; top: 100%; display: grid; gap: 2px; min-width: 140px; padding: 6px; background: var(--paper); border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.add-step__kinds form { margin: 0; }
+.add-step__kind { display: block; width: 100%; text-align: left; padding: 4px 8px; border: 0; background: none; font: inherit; font-weight: 700; cursor: pointer; }
+.add-step__kind:hover { background: var(--ink); color: var(--paper); }
+.beat__actions { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; }
 .beat__actions form { margin: 0; }
 .art-studio--beat .art-studio__panel { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border: 3px solid var(--ink); margin: 8px 0 12px; }
 .scene-list__item.is-staged strong { color: var(--signal); }
 @media (max-width: 640px) {
   .beat__line { grid-template-columns: 1fr 1fr; }
   .beat__text { grid-column: 1 / -1; }
-  .beat__people li { grid-template-columns: minmax(0, 1fr) 72px 100px; }
 }
 /* The stage controls of a beat sit on one row; the global full-width fields don't apply here. */
 .beat__stage select, .beat__stage input[type=text] { width: auto; flex: 1 1 150px; min-width: 0; }
