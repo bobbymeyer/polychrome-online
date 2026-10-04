@@ -28,6 +28,7 @@ class ScenesController < ApplicationController
   # beat: the one the preview and the panel studio are on.
   def edit
     @beat = @scene.beats.find_by(id: params[:beat]) || @scene.beats.first
+    @playing = params[:playing].present?
   end
 
   def update

@@ -342,8 +342,11 @@ the effect), so a step only says what changes.
   in order, each its own small form saved as it changes, with move up and
   down, add a step after (a menu of the six kinds), duplicate and delete;
   beside it a preview of the step chosen, on a Stage, as the table will see
-  it: for a change, the stage as it leaves it. Name, script and ending sit
-  under the steps. Lines can also be pasted as a script that reads like a
+  it: for a change, the stage as it leaves it. The preview runs through
+  (`scene_preview` controller): the line types out in the box, Back and
+  Next step along, and "Play from here" plays on at reading pace, a change
+  passing quickly, stopping at a choice as the table does. Name, script and
+  ending sit under the steps. Lines can also be pasted as a script that reads like a
   play, one line each (`Cid (worried): The airship won't hold.`
   speaks as the NPC with that expression; `Bartz: Hold on!` as a party
   member; anything else is narration): each line becomes a step after the

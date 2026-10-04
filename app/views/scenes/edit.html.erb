@@ -16,7 +16,7 @@
 <div class="scene-builder">
   <%= render "scenes/sequencer", scene: @scene, chosen: @beat %>
   <%= turbo_frame_tag "scene_preview", class: "scene-builder__side" do %>
-    <%= render "scenes/preview", beat: @beat %>
+    <%= render "scenes/preview", beat: @beat, scene: @scene, playing: @playing %>
     <% if @beat %>
       <%= turbo_frame_tag "art_panel", data: { src: world_art_panel_path(@world, entry_type: "beat", beat_id: @beat.id) } do %>
         <%= render "art_batches/beat_panel", beat: @beat %>
