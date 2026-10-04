@@ -7,8 +7,13 @@ import { GESTURES } from "motion/gestures"
 // straight to the log. A dialogue line only appears in the log once the box
 // has finished typing it.
 //
-// Click the box to finish typing, or to move on to the next line. Waiting
-// lines also move on by themselves, so a busy GM doesn't strand anyone.
+// A line too long for the box goes in pages, each typed out in turn: the box
+// stays the speaker's height and never scrolls.
+//
+// Click the box to finish typing, or to move on to the next page or line.
+// Waiting pages and lines also move on by themselves, so a busy GM doesn't
+// strand anyone. The × puts the box away (what's left goes to the log) until
+// the next line comes.
 // Nothing here is shared: each viewer reads at their own pace.
 //
 // In battle (autoHide) the box only appears while someone is speaking, and
@@ -29,7 +34,17 @@ export default class extends Controller {
     this.queue = []
     this.current = null
     this.speakerKey = null
+    this.pages = []
     this.scrollLog()
+    // The last line said, as the page came: in pages too, once the box has its size.
+    if (this.hasBoxTarget && !this.boxTarget.hidden && this.textTarget.textContent.trim()) {
+      requestAnimationFrame(() => {
+        if (this.current || this.boxTarget.hidden) return
+        this.pages = this.paginate(this.textTarget.textContent)
+        this.textTarget.textContent = this.pages.shift()
+        this.moreTarget.hidden = this.pages.length === 0
+      })
+    }
   }
 
   // While lines are being said, the page is "busy": a battle starting waits
@@ -43,6 +58,7 @@ export default class extends Controller {
     this.busy = false
     clearTimeout(this.startTimer)
     clearTimeout(this.hideTimer)
+    clearTimeout(this.pageTimer)
     this.stopTyping()
     clearTimeout(this.holdTimer)
   }
@@ -71,7 +87,8 @@ export default class extends Controller {
     }
 
     this.moreTarget.hidden = false
-    if (!this.typing) this.scheduleNext()
+    // Mid-line (pages still to come), the next line waits for them.
+    if (!this.typing && !this.pages.length) this.scheduleNext()
   }
 
   // A line that isn't a message: a boss's opening words (boss_intro).
@@ -99,6 +116,7 @@ export default class extends Controller {
     this.stopTyping()
     clearTimeout(this.holdTimer)
     this.holdTimer = null
+    this.clearPages()
     this.current = null
     if (this.queue.length) return this.next()
     this.textTarget.textContent = ""
@@ -110,13 +128,32 @@ export default class extends Controller {
 
   advance() {
     if (this.typing) return this.finishTyping()
+    if (this.pages.length) return this.current ? this.nextPage() : this.showNextPage()
     if (this.queue.length) this.next()
+  }
+
+  // Put the box away. Whatever it still had to say is read in the log; the
+  // next line brings it back.
+  dismiss() {
+    clearTimeout(this.startTimer)
+    clearTimeout(this.holdTimer)
+    clearTimeout(this.hideTimer)
+    this.holdTimer = null
+    this.stopTyping()
+    this.onTyped = null
+    this.clearPages()
+    for (const line of [ this.current, ...this.queue ]) line?.element.classList.remove("is-pending")
+    this.queue = []
+    this.current = null
+    this.boxTarget.hidden = true
+    this.busy = false
+    this.scrollLog()
   }
 
   // Escape works anywhere, even mid-sentence in the composer. Enter, Space and
   // Z work when you aren't typing or on a control.
   key(event) {
-    if (!this.current || event.altKey || event.ctrlKey || event.metaKey) return
+    if ((!this.current && !this.pages.length) || event.altKey || event.ctrlKey || event.metaKey) return
     if (event.key === "Escape") return this.advance()
     if (!["Enter", " ", "z", "Z"].includes(event.key)) return
     if (event.target.closest?.("input, textarea, select, button, a, [contenteditable]")) return
@@ -127,6 +164,7 @@ export default class extends Controller {
   next() {
     clearTimeout(this.holdTimer)
     this.holdTimer = null
+    this.clearPages()
     let line = this.queue.shift()
     while (line && !line.element.isConnected) line = this.queue.shift() // taken back before its turn
     if (!line) {
@@ -144,7 +182,7 @@ export default class extends Controller {
     this.nameTarget.style.cssText = this.plateOf(line)
     this.showPortrait(line)
     this.liveTarget.textContent = `${line.speakerValue}: ${line.text}`
-    this.type(line.text, () => this.finished(line))
+    this.play(line.text, () => this.finished(line))
   }
 
   finished(line) {
@@ -201,6 +239,73 @@ export default class extends Controller {
     if (this.reducedMotion) return
     const name = speakerChanged ? "pop" : EXPRESSION_GESTURES[line.expressionValue]
     if (name) animate(portrait, GESTURES[name](1))
+  }
+
+  // --- pages ---
+
+  // Type the words out a page at a time, then call done.
+  play(text, done) {
+    this.pages = this.paginate(text)
+    this.onPagesDone = done
+    this.nextPage()
+  }
+
+  nextPage() {
+    clearTimeout(this.pageTimer)
+    const page = this.pages.shift()
+    this.moreTarget.hidden = true
+    this.type(page, () => {
+      if (this.pages.length) {
+        this.moreTarget.hidden = false
+        this.pageTimer = setTimeout(() => this.nextPage(), HOLD_MS + page.length * HOLD_PER_CHAR_MS)
+      } else {
+        const done = this.onPagesDone
+        this.onPagesDone = null
+        done?.()
+      }
+    })
+  }
+
+  // A page of the last line said, as the page came: shown, not typed.
+  showNextPage() {
+    this.textTarget.textContent = this.pages.shift()
+    this.moreTarget.hidden = this.pages.length === 0
+  }
+
+  clearPages() {
+    clearTimeout(this.pageTimer)
+    this.pages = []
+    this.onPagesDone = null
+  }
+
+  // Split the words into pages that each fit the body as it's sized now. A
+  // body with no height of its own grows to fit, so it's always one page.
+  paginate(text) {
+    const body = this.textTarget
+    body.textContent = text
+    const room = body.clientHeight
+    if (!room || body.scrollHeight <= room + 1) return [ text ]
+
+    const words = text.split(/(?<=\s)/)
+    const fits = (from, to) => {
+      body.textContent = words.slice(from, to).join("").trim()
+      return body.scrollHeight <= room + 1
+    }
+    const pages = []
+    let start = 0
+    while (start < words.length) {
+      // The most words from here that fit (always at least one).
+      let lo = start + 1, hi = words.length
+      while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2)
+        if (fits(start, mid)) lo = mid
+        else hi = mid - 1
+      }
+      pages.push(words.slice(start, lo).join("").trim())
+      start = lo
+    }
+    body.textContent = ""
+    return pages
   }
 
   // --- typewriter ---
