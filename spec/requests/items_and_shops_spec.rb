@@ -94,25 +94,27 @@ RSpec.describe "Items and shops", type: :request do
       expect(campaign.reload.gil).to eq(200)
     end
 
-    it "puts each service under its building, where the party does it like any other thing to do" do
+    it "puts each service under its building, where the GM does it like any other thing to do" do
       lenna_character = campaign.characters.find_by!(name: "Lenna")
       lenna_character.update!(hp: 10, mp: 0)
       inn = town.view["services"].find { |sv| sv["kind"] == "inn" }
       price = town.service_price("inn", lenna_character)
       label = "Rooms at #{inn['name']} (#{price} gil, overnight)"
       get location_path(town)
-      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', "Rooms at #{ERB::Util.h(inn['name'])}", "suggest")
+      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', "Ask the GM")
+      expect(response.body).not_to include("suggest", "Rooms at") # players don't get the button, nor the way it opens
       # What each is for, and what it costs, before it's opened.
       expect(response.body).to match(%r{<span class="service__offer">Rest the night · \d+ gil</span>})
       expect(response.body).to include('<span class="service__offer">Buy and sell</span>')
 
-      get campaign_table_path(campaign)
       post campaign_ways_path(campaign), params: { way: label }
-      expect(campaign.open_choice.tally[label]).to eq([ "Lenna" ])
+      expect(response).to have_http_status(:forbidden) # the GM's to call
+      expect(campaign.open_choice).to be_nil
 
       sign_out
       sign_in_as(@admin)
       post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      get location_path(town)
       post campaign_ways_path(campaign), params: { way: label, go: 1 }
       expect(campaign.reload.gil).to eq(200 - price)
       expect(lenna_character.reload.current_hp).to eq(lenna_character.stats["max_hp"])

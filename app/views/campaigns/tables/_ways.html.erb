@@ -1,21 +1,14 @@
-<%# Where the party can go from here (Campaign::Ways): players suggest a way (it goes to a vote in the choice panel);
-    the GM can put it to the table or just go, and calls a waiting encounter here too. Replaced live, for each audience. %>
+<%# Where the party can go from here (Campaign::Ways): the GM's panel. The GM puts it to the table as a
+    "Where next?" vote, or just goes, and calls a waiting encounter here too. Players see the ways only when
+    the GM asks: until then, this holds nothing of theirs but treasure lying in the room. Replaced live, for each audience. %>
 <% choice = campaign.open_choice %>
-<%# While the party votes on where next, the vote's panel has the ways: players don't get them twice.
-    The GM keeps them here, to go straight there (and see what waits in a dungeon's rooms). %>
 <%# A rolled encounter waits for the GM's call before anyone goes on (Campaign::Ways#take_way!). %>
-<% ways = campaign.battle_on? || campaign.pending_encounter.present? || (!gm && choice&.where_next?) ? [] : campaign.ways_on %>
-<%# Players are offered only what they can do now: not what the purse can't pay for, nor doors still locked. %>
-<% unless gm || ways.empty? %>
-  <% prices = campaign.current_node ? campaign.current_node.pastimes.to_h { |pastime| [ pastime.name, pastime.price ] } : {} %>
-  <% ways = ways.reject { |way| (doing = way.dig("move", "pastime")) && prices[doing].to_i > campaign.gil } %>
-<% end %>
+<% ways = gm && !campaign.battle_on? && campaign.pending_encounter.blank? ? campaign.ways_on : [] %>
 <% locked = campaign.battle_on? || !gm ? [] : campaign.locked_ways %>
 <% dungeon = !campaign.battle_on? && campaign.dungeon_in_progress %>
 <% here = dungeon && dungeon.room(dungeon.progress["current"]) %>
 <% treasure = here && here.dig("decision", "kind") == "treasure" && !dungeon.resolved?(here["key"]) %>
 <% encounter = gm && campaign.pending_encounter %>
-<% deciding = ways.any? && !gm && choice && !choice.where_next? %>
 <%# While the party votes on where next, the GM's ways shrink to a row under the vote: the same
     places, but going now, without waiting for the vote (which goes with them). %>
 <% voting = gm && choice&.where_next? %>
@@ -42,21 +35,14 @@
     <%# Things to do here have long names ("Wait for the train that isn't there (until day, tomorrow)"): wider. %>
     <div class="menu play<%= " menu--wide" if group.equal?(doings) %>">
       <% group.each do |way| %>
-        <% if gm %>
-          <%# Going straight there is one click: a dangerous road or a night asks first. In a dungeon, the GM
-              sees what waits in each room (players don't: they find out by going). %>
-          <% room = dungeon && way.dig("move", "room") && dungeon.room(way.dig("move", "room")) %>
-          <% ahead = room && (dungeon.resolved?(room["key"]) ? "done" : room.dig("decision", "kind")) %>
-          <%= button_to campaign_ways_path(campaign), params: { way: way["label"], go: 1 }, class: "menu__item",
-                        form: { data: { turbo_frame: "_top", turbo_confirm: ("#{way['warn']} Go now?" if way["warn"]) }.compact } do %>
-            <%= way["label"] %><%= tag.span(ahead, class: "menu__cost") if ahead %>
-            <%= tag.span(way["note"], class: "menu__note") if way["note"] %>
-          <% end %>
-        <% else %>
-          <%= button_to campaign_ways_path(campaign), params: { way: way["label"] }, class: "menu__item", disabled: deciding do %>
-            <%= way["label"] %> <span class="menu__cost">suggest</span>
-            <%= tag.span(way["note"], class: "menu__note") if way["note"] %>
-          <% end %>
+        <%# Going straight there is one click: a dangerous road or a night asks first. In a dungeon, the GM
+            sees what waits in each room (players don't: they find out by going). %>
+        <% room = dungeon && way.dig("move", "room") && dungeon.room(way.dig("move", "room")) %>
+        <% ahead = room && (dungeon.resolved?(room["key"]) ? "done" : room.dig("decision", "kind")) %>
+        <%= button_to campaign_ways_path(campaign), params: { way: way["label"], go: 1 }, class: "menu__item",
+                      form: { data: { turbo_frame: "_top", turbo_confirm: ("#{way['warn']} Go now?" if way["warn"]) }.compact } do %>
+          <%= way["label"] %><%= tag.span(ahead, class: "menu__cost") if ahead %>
+          <%= tag.span(way["note"], class: "menu__note") if way["note"] %>
         <% end %>
       <% end %>
     </div>
@@ -73,7 +59,7 @@
     <% end %>
     <% if voting %>
       <p class="hint">Going now ends the vote.</p>
-    <% elsif gm %>
+    <% else %>
       <%= button_to "Put it to the table", campaign_ways_path(campaign), class: "button button--quiet" %>
       <p class="hint">Go straight there, or let the party vote: settling the vote takes them where they chose.</p>
       <%# A wider ballot (Campaign::Ways#ask_where_next!): every place on a map, or places named; the party travels
@@ -105,10 +91,6 @@
           <p class="hint">Each is a journey by road from here: the vote says how long. Where something waits on the way, the party stops for your call.</p>
         </details>
       <% end %>
-    <% elsif deciding %>
-      <p class="hint">The table is deciding something else first: settle that, then say where you'd go.</p>
-    <% else %>
-      <p class="hint">Say where you'd go: it goes to a vote, and the GM settles it.</p>
     <% end %>
   <% end %>
 </section>
