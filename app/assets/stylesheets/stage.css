@@ -1196,6 +1196,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* A long sheet keeps its section links at the top of the screen; on a phone they scroll sideways on one line. */
 .sheet-nav { position: sticky; top: 0; z-index: 20; background: var(--paper); border-bottom: 2px solid var(--ink); padding: 0 0 0; }
+/* The links are tabs: once the script is in, only the section pressed shows; the pressed link is ink. */
+.character-sheet.is-tabbed .sheet-panel:not(.is-shown) { display: none; }
+.sheet-nav a.is-current { background: var(--ink); color: var(--paper); padding: 0 10px; text-decoration: none; }
+.character-sheet.is-tabbed .sheet-panel > .window { scroll-margin-top: 64px; }
 /* On a wide screen the sheet is two columns under the links: who they are (portrait, name, level, HP) on the left,
    staying put while the sheet scrolls; the stats, gear, abilities and the rest on the right. */
 .character-sheet .book-page__header { margin-bottom: 24px; }

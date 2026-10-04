@@ -3,38 +3,32 @@
 <%= render "shared/stage_stream", campaign: @character.campaign %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @character.name %></div>
 
-<article class="book-page character-sheet">
+<article class="book-page character-sheet" data-controller="sheet-tabs" data-sheet-tabs-key-value="sheet-<%= @character.id %>">
   <% masteries = @character.masteries %>
-  <%# A long sheet: jump to what you came for. First on the page, so it's at the top on every screen. %>
+  <% tabs = { "stats" => "Stats", "items" => ("Items" if can_manage?(@character)), "equipment" => "Equipment", "abilities" => "Abilities",
+              "skills" => "Skills", "mastery" => ("Mastery" if masteries.any?), "jobs" => "Archetypes" }.compact %>
+  <%# The sections, one at a time: the links along the top are tabs (sheet_tabs_controller); first on the page,
+      so they're at the top on every screen. %>
   <nav class="sheet-nav" aria-label="On this sheet">
-    <%= link_to "Stats", "#stats" %>
-    <%= link_to "Items", "#items" if can_manage?(@character) %>
-    <%= link_to "Equipment", "#equipment" %>
-    <%= link_to "Abilities", "#abilities" %>
-    <%= link_to "Skills", "#skills" %>
-    <%= link_to "Mastery", "#mastery" if masteries.any? %>
-    <%= link_to "Archetypes", "#jobs" %>
+    <% tabs.each do |key, label| %>
+      <%= link_to label, "##{key}", data: { sheet_tabs_target: "tab", key: key, action: "sheet-tabs#pick" } %>
+    <% end %>
   </nav>
 
-  <%# On a wide screen, who they are stays in a column on the left while the sheet scrolls beside it. %>
+  <%# On a wide screen, who they are stays in a column on the left while the section shown sits beside it. %>
   <div class="character-sheet__columns">
     <aside class="character-sheet__who">
       <%= render "characters/header", cj: @character.character_job %>
     </aside>
     <div class="character-sheet__body">
-      <%= render "characters/stats", stages: @character.stat_stages %>
-
-      <%= render "characters/items" if can_manage?(@character) %>
-
-      <%= render "characters/equipment" %>
-
-      <%= render "characters/abilities" %>
-
-      <%= render "characters/skills" %>
-
-      <%= render "characters/mastery", masteries: masteries if masteries.any? %>
-
-      <%= render "characters/jobs" %>
+      <% panel = ->(key, &block) { tag.div(class: "sheet-panel", data: { sheet_tabs_target: "panel", key: key }, &block) } %>
+      <%= panel.("stats") { render "characters/stats", stages: @character.stat_stages } %>
+      <%= panel.("items") { render "characters/items" } if can_manage?(@character) %>
+      <%= panel.("equipment") { render "characters/equipment" } %>
+      <%= panel.("abilities") { render "characters/abilities" } %>
+      <%= panel.("skills") { render "characters/skills" } %>
+      <%= panel.("mastery") { render "characters/mastery", masteries: masteries } if masteries.any? %>
+      <%= panel.("jobs") { render "characters/jobs" } %>
 
       <%= render "characters/gm" if can_gm?(@campaign) %>
     </div>
