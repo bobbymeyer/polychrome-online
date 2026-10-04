@@ -30,6 +30,8 @@ class ApplicationController < ActionController::Base
     when Portrait, Sprite then polymorphic_path([ :edit, entry.owner ], **options)
     when ModeArt then location_path(entry.location, **options)
     when Beat then edit_scene_path(entry.scene, beat: entry.id, **options)
+    when Map then campaign_maps_path(entry.campaign, map: entry.id, **options)
+    when WorldMap then world_world_places_path(entry.world, map: entry.id, **options)
     else polymorphic_path([ entry.world, ArtDirection::BOOKS.fetch(entry.art_kind), entry ], **options)
     end
   end

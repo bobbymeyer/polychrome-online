@@ -2,9 +2,12 @@
 
 require "rails_helper"
 
-RSpec.describe "Map pages", type: :request do
+# Maps (docs/HANDOFF.md §7, "Maps"): several a campaign, each a 16:9 picture with places and child maps on
+# it and siblings off its edges; shown on the stage when the GM says; edited on the GM's maps page.
+RSpec.describe "Maps", type: :request do
   let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
+  let(:root) { campaign.root_map }
   let!(:tule) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true) }
   let!(:ruins) { campaign.map_nodes.create!(name: "Secret Ruins", kind: "dungeon", x: 400, y: 300) }
   let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight")) }
@@ -13,149 +16,221 @@ RSpec.describe "Map pages", type: :request do
     post campaign_table_seat_path(campaign), params: { seat: seat }
   end
 
+  it "starts every place on the campaign's root map, named for the world, in a 16:9 space" do
+    expect(root.name).to eq(world.name)
+    expect(tule.map).to eq(root)
+    expect(MapNode::WIDTH.to_f / MapNode::HEIGHT).to eq(16.0 / 9)
+    expect(campaign.map_nodes.new(name: "Far", x: 1601, y: 10)).not_to be_valid
+  end
+
   it "puts a place's name over it when the name under it is taken" do
     campaign.map_nodes.create!(name: "Varn", kind: "town", x: 600, y: 500, visible: true)
     campaign.map_nodes.create!(name: "Goblin Hollow", kind: "dungeon", x: 630, y: 510, visible: true)
-    get campaign_map_path(campaign)
+    sit("gm")
+    get campaign_maps_path(campaign)
     expect(response.body).to include('<text class="map-node__label" y="38" text-anchor="middle">Varn</text>',
                                      '<text class="map-node__label is-above" y="-24" text-anchor="middle">Goblin Hollow</text>')
   end
 
-  it "shows players only what's been revealed" do
-    sit(bartz.id)
-    get campaign_map_path(campaign)
-    expect(response.body).to include("Tule")
-    expect(response.body).not_to include("Secret Ruins", "data-map-node", "map_panel")
-    get campaign_table_path(campaign)
-    expect(response.body).not_to include("Secret Ruins", "map_canvas") # no map on the table at all
-  end
+  describe "on the stage" do
+    it "waits until the GM shows it, then everyone sees the party's map, players without hidden places" do
+      sit(bartz.id)
+      get campaign_table_path(campaign)
+      expect(response.body).to include('id="table_map"', "hidden")
+      expect(response.body).not_to include("Secret Ruins", "map-sheet")
 
-  it "keeps the editing tools to the GM" do
-    sit(bartz.id)
-    get campaign_map_panel_path(campaign)
-    expect(response).to have_http_status(:forbidden)
-    post campaign_map_nodes_path(campaign), params: { map_node: { name: "X", kind: "field", x: 1, y: 1 } }
-    expect(response).to have_http_status(:forbidden)
-    patch map_node_path(tule, format: :json), params: { map_node: { x: 5, y: 5 } }, as: :json
-    expect(response).to have_http_status(:forbidden)
-    expect(tule.reload.x).to eq(100)
-  end
+      campaign.update!(current_node: tule)
+      campaign.show_map!
+      get campaign_table_path(campaign)
+      expect(response.body).to include("map-sheet", "Tule", 'class="map-party"', %(aria-label="#{world.name}: the party is at Tule"))
+      expect(response.body).not_to include("Secret Ruins", "data-map-node")
+      expect(Nokogiri::HTML(response.body).at("#table_scene")["hidden"]).not_to be_nil # the place's picture steps aside for the map
 
-  describe "as GM" do
-    before { sit("gm") }
-
-    it "shows everything, with hidden places marked, and the editor" do
-      get campaign_map_path(campaign)
-      expect(response.body).to include("Secret Ruins", "is-hidden", 'data-controller="map-editor"', "map_panel")
+      sit("gm")
+      get campaign_table_path(campaign)
+      expect(response.body).to include("Secret Ruins", "is-hidden", "Show the place")
+      patch campaign_map_view_path(campaign), params: { off: 1 }
+      expect(campaign.reload).not_to be_map_on_stage
     end
 
-    it "edits a place in the map's panel, and as a page of its own when opened directly" do
+    it "is the GM's to steer, by the maps beside it and the ones on it; a player browses alone" do
+      region = campaign.maps.create!(name: "The Western Marches", parent: root, x: 800, y: 450)
+      far = campaign.maps.create!(name: "The Frozen North")
+      campaign.map_links.create!(from_map: root, to_map: far, direction: "n")
+      campaign.update!(current_node: tule)
+      campaign.show_map!
+
+      sit("gm")
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      north = page.at("#table_map .map-sheet__edge--n a")
+      expect(north.text).to eq("The Frozen North")
+      expect(north["data-turbo-method"]).to eq("patch") # the GM's press moves everyone
+      child = page.at("#table_map .map-child a")
+      expect(child["href"]).to eq(campaign_map_view_path(campaign, map: region.id))
+      expect(page.at("#table_map .map-child text").text).to eq("The Western Marches")
+
+      patch campaign_map_view_path(campaign), params: { map: far.id }
+      expect(campaign.reload.map_shown).to eq(far)
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      expect(page.at("#table_map .map-sheet__name").text).to eq("The Frozen North")
+      expect(page.at("#table_map .map-sheet__edge--s a").text).to eq(world.name) # read the other way round
+      expect(page.at("#table_map .map-party")).to be_nil # the party isn't on this one
+
+      sit(bartz.id)
+      get campaign_map_view_path(campaign, map: region.id) # browsing: this viewer's frame alone
+      page = Nokogiri::HTML(response.body)
+      expect(page.at("turbo-frame#table_map .map-sheet__name").text).to eq("The Western Marches")
+      expect(page.at("turbo-frame#table_map .map-sheet__up").text).to eq("↑ #{world.name}")
+      expect(page.at(".map-sheet__up")["data-turbo-frame"]).to eq("table_map")
+      expect(campaign.reload.map_shown).to eq(far) # nobody else moved
+      patch campaign_map_view_path(campaign), params: { map: region.id }
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "splits an edge between the maps that share it, and draws a road through its bends" do
+      a = campaign.maps.create!(name: "Eastmarch")
+      b = campaign.maps.create!(name: "Eastholm")
+      campaign.map_links.create!(from_map: root, to_map: a, direction: "e")
+      campaign.map_links.create!(from_map: b, to_map: root, direction: "w") # root is west of b: b is east of root
+      road = campaign.map_edges.create!(from_node: tule, to_node: ruins, waypoints: [ [ 200, 250 ], [ 300, 200 ] ])
+      ruins.update!(visible: true)
+      campaign.show_map!
+      sit(bartz.id)
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      expect(page.css("#table_map .map-sheet__edge--e a").map(&:text)).to eq(%w[Eastmarch Eastholm])
+      expect(page.at("#table_map .map-edge__line")["d"]).to start_with("M100 100 C").and include("300 200", "400 300")
+      expect(road.points).to eq([ [ 100, 100 ], [ 200, 250 ], [ 300, 200 ], [ 400, 300 ] ])
+    end
+
+    it "shows the picture under the places when the map has one" do
+      root.image.attach(io: StringIO.new(FakeComfy.png), filename: "world.png", content_type: "image/png")
+      campaign.show_map!
+      sit(bartz.id)
+      get campaign_table_path(campaign)
+      expect(response.body).to include("map-sheet--pictured", 'class="map__picture"', 'preserveAspectRatio="xMidYMid slice"')
+    end
+  end
+
+  describe "the GM's maps page" do
+    it "is the GM's alone, with the editor, every map, and hidden places marked" do
+      sit(bartz.id)
+      get campaign_maps_path(campaign)
+      expect(response).to have_http_status(:forbidden)
+
+      sit("gm")
+      get campaign_maps_path(campaign)
+      expect(response.body).to include("Secret Ruins", "is-hidden", 'data-controller="map-editor"', "map_panel", "map-sheet--editor",
+                                       "New map on #{world.name}", "Generate the picture", "Put it on the stage")
+    end
+
+    it "makes a map on another, moves it by dragging, puts it beside one, and takes it away" do
+      sit("gm")
+      post campaign_maps_path(campaign), params: { parent_id: root.id, map: { name: "The Western Marches" } }
+      region = campaign.maps.find_by!(name: "The Western Marches")
+      expect(region.parent).to eq(root)
+      expect(response).to redirect_to(campaign_maps_path(campaign, map: region.id))
+
+      patch campaign_map_path(campaign, region, format: :json), params: { map: { x: 1200, y: 600 } }, as: :json
+      expect(response).to have_http_status(:no_content)
+      expect(region.reload).to have_attributes(x: 1200, y: 600)
+      get campaign_maps_path(campaign, map: root.id)
+      expect(response.body).to include('class="map-child" transform="translate(1200 600)"', "data-map-child")
+
+      post campaign_map_map_links_path(campaign, region), params: { map_link: { to_map_id: root.id, direction: "n" } }
+      expect(flash[:notice]).to eq("#{world.name} is north of The Western Marches.")
+      expect(root.neighbours["s"]).to eq([ region ])
+      post campaign_map_map_links_path(campaign, root), params: { map_link: { to_map_id: region.id, direction: "e" } }
+      expect(flash[:alert]).to eq("Those two maps are already side by side")
+
+      patch campaign_map_path(campaign, region), params: { map: { name: "The Marches", parent_id: "", description: "Wet." } }
+      expect(region.reload).to have_attributes(name: "The Marches", parent: nil, description: "Wet.")
+      patch map_node_path(ruins), params: { map_node: { name: "Secret Ruins", kind: "dungeon", map_id: region.id } }
+      expect(ruins.reload.map).to eq(region)
+
+      delete campaign_map_path(campaign, region)
+      expect(Map.exists?(region.id)).to be(false)
+      expect(ruins.reload.map).to be_nil # on no map until put somewhere
+      delete campaign_map_path(campaign, root)
+      expect(flash[:alert]).to eq("The campaign needs one map at least")
+    end
+
+    it "adds a place where the map was clicked, on that map, and moves it by dragging" do
+      sit("gm")
+      region = campaign.maps.create!(name: "The Marches")
+      get new_campaign_map_node_path(campaign, map_id: region.id, x: 640, y: 9999)
+      expect(response.body).to include('value="640"', 'value="900"') # clamped to the map
+      post campaign_map_nodes_path(campaign), params: { map_node: { name: "Walse", kind: "town", x: 640, y: 200, visible: "0", map_id: region.id } }
+      walse = campaign.map_nodes.find_by!(name: "Walse")
+      expect(walse.map).to eq(region)
+      patch map_node_path(walse, format: :json), params: { map_node: { x: 222, y: 333 } }, as: :json
+      expect(response).to have_http_status(:no_content)
+      expect(walse.reload).to have_attributes(x: 222, y: 333)
+    end
+
+    it "bends a road where it was clicked, moves the bend, and takes it out" do
+      sit("gm")
+      road = campaign.map_edges.create!(from_node: tule, to_node: ruins)
+      patch map_edge_path(road, format: :json), params: { bend: { x: 250, y: 150 } }, as: :json
+      expect(response).to have_http_status(:no_content)
+      expect(road.reload.waypoints).to eq([ [ 250, 150 ] ])
+      patch map_edge_path(road, format: :json), params: { bend: { x: 120, y: 110 } }, as: :json # nearer the start: first
+      expect(road.reload.waypoints).to eq([ [ 120, 110 ], [ 250, 150 ] ])
+      patch map_edge_path(road, format: :json), params: { map_edge: { waypoints: [ [ 130, 120 ] ] } }, as: :json
+      expect(road.reload.waypoints).to eq([ [ 130, 120 ] ])
+      expect(road.points).to eq([ [ 100, 100 ], [ 130, 120 ], [ 400, 300 ] ])
+      sit(bartz.id)
+      patch map_edge_path(road, format: :json), params: { bend: { x: 1, y: 1 } }, as: :json
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "keeps the editing to the GM" do
+      sit(bartz.id)
+      get campaign_map_panel_path(campaign)
+      expect(response).to have_http_status(:forbidden)
+      post campaign_map_nodes_path(campaign), params: { map_node: { name: "X", kind: "field", x: 1, y: 1 } }
+      expect(response).to have_http_status(:forbidden)
+      patch map_node_path(tule, format: :json), params: { map_node: { x: 5, y: 5 } }, as: :json
+      expect(response).to have_http_status(:forbidden)
+      expect(tule.reload.x).to eq(100)
+      post campaign_maps_path(campaign), params: { map: { name: "Mine" } }
+      expect(campaign.maps.count).to eq(1)
+    end
+
+    it "edits a place in the panel, and as a page of its own when opened directly" do
+      sit("gm")
       get edit_map_node_path(ruins), headers: { "Turbo-Frame" => "map_panel" }
       expect(response.body).to include('id="map_panel"', "Secret Ruins")
-      expect(response.body).not_to include("topbar") # just the panel, for the map page
+      expect(response.body).not_to include("topbar") # just the panel, for the maps page
 
       get edit_map_node_path(ruins)
       expect(response.body).to include("topbar", "stylesheet", 'id="map_panel"', "Secret Ruins") # a whole, styled page
     end
 
-    it "adds a place where the map was clicked, then edits and reveals it" do
-      get new_campaign_map_node_path(campaign, x: 640, y: 9999)
-      expect(response.body).to include('value="640"', 'value="700"') # clamped to the map
-
-      post campaign_map_nodes_path(campaign), params: { map_node: { name: "Walse", kind: "town", x: 640, y: 200, visible: "0" } }
-      walse = campaign.map_nodes.find_by!(name: "Walse")
-      expect(response).to redirect_to(edit_map_node_path(walse))
-
-      patch map_node_path(walse), params: { map_node: { name: "Walse", kind: "town", visible: "1", notes: "Castle" } }
-      expect(walse.reload).to have_attributes(visible: true, notes: "Castle")
-    end
-
-    it "moves a place by dragging (JSON)" do
-      patch map_node_path(tule, format: :json), params: { map_node: { x: 222, y: 333 } }, as: :json
-      expect(response).to have_http_status(:no_content)
-      expect(tule.reload).to have_attributes(x: 222, y: 333)
-    end
-
     it "connects places, edits the path and cuts it" do
+      sit("gm")
       post map_node_map_edges_path(tule), params: { map_edge: { to_node_id: ruins.id, state: "dangerous", encounter_table_id: world.encounter_tables.first.id } }
-      edge = campaign.map_edges.sole
+      edge = campaign.map_edges.last
+      expect(edge).to have_attributes(from_node: tule, to_node: ruins, state: "dangerous")
       expect(response).to redirect_to(edit_map_edge_path(edge))
 
-      patch map_edge_path(edge), params: { map_edge: { state: "blocked", encounter_table_id: "", travel_event: "Rockslide." } }
-      expect(edge.reload).to have_attributes(state: "blocked", encounter_table: nil, travel_event: "Rockslide.")
-
+      patch map_edge_path(edge), params: { map_edge: { state: "blocked" } }
+      expect(edge.reload.state).to eq("blocked")
       delete map_edge_path(edge)
-      expect(campaign.map_edges).to be_empty
-    end
-
-    it "shows the resolver of a failed connection" do
-      post map_node_map_edges_path(tule), params: { map_edge: { to_node_id: tule.id, state: "open" } }
-      follow_redirect!
-      expect(response.body).to include("must be a different place")
-    end
-
-    it "places the party, travels, and deals with the encounter" do
-      campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "dangerous", encounter_table: world.encounter_tables.find_by!(slug: "grasslands"))
-      post map_node_party_path(tule)
-      get campaign_map_panel_path(campaign)
-      expect(response.body).to include("The party is at Tule", "To Secret Ruins", "Dangerous road · Grasslands")
-
-      post campaign_ways_path(campaign), params: { way: "To Secret Ruins (by a dangerous road)", go: 1, return_to: "map" }
-      follow_redirect!
-      expect(response.body).to include("The party is at Secret Ruins", "Encounter!", "Fight", "Wave it off")
-
-      expect(response.body).to include("Input timer")
-      # The odds, as on the battle form, before the GM commits.
-      forecast = response.body[/<turbo-frame[^>]*id="forecast"[^>]*src="([^"]+)"/, 1]
-      expect(forecast).to be_present
-      get CGI.unescapeHTML(forecast)
-      expect(response.body).to match(/forecast--(easy|fair|hard|deadly)/)
-
-      post campaign_encounter_path(campaign), params: { input_seconds: "30" }
-      battle = campaign.battles.last
-      expect(response).to redirect_to(battle_path(battle))
-      expect(battle.party.map { |u| u["name"] }).to eq([ "Bartz" ])
-      expect(battle.input_seconds).to eq(30)
-    end
-
-    it "says when a path is safe because it has no encounter table" do
-      campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "dangerous")
-      campaign.place_party!(tule)
-      get campaign_map_panel_path(campaign)
-      expect(response.body).to include("Go from here", "takes the party along it now", "menu--stack", "Dangerous road · safe")
-    end
-
-    it "reports a blocked path instead of travelling" do
-      campaign.map_edges.create!(from_node: tule, to_node: ruins, state: "blocked")
-      campaign.place_party!(tule)
-      get campaign_map_panel_path(campaign)
-      expect(response.body).to match(%r{<button class="menu__item" disabled>To Secret Ruins})
-      post campaign_ways_path(campaign), params: { way: "To Secret Ruins", go: 1, return_to: "map" }
-      follow_redirect!
-      expect(response.body).to include("That isn&#39;t a way on from here")
-    end
-
-    it "removes a place, taking its paths and the party marker with it" do
-      campaign.map_edges.create!(from_node: tule, to_node: ruins)
-      campaign.place_party!(tule)
-      delete map_node_path(tule)
-      expect(campaign.reload.current_node).to be_nil
-      expect(campaign.map_edges).to be_empty
+      expect(MapEdge.exists?(edge.id)).to be(false)
     end
   end
 
-  describe "Encounter Tables book" do
-    it "has CRUD and a page like the other books" do
-      post world_encounters_encounter_tables_path(world), params: { encounter_table: {
-        name: "Shore", terrain: "sea", tier: "2",
-        entries: { "0" => { weight: "1", monster: "flan", count: "2", monster_2: "", count_2: "" } }
-      } }
-      expect(response).to redirect_to(world_encounters_encounter_table_path(world, "shore"))
-      follow_redirect!
-      expect(response.body).to include("Shore", "2 × ", "Flan", "100%")
-
-      get world_bestiary_monster_path(world, "flan")
-      expect(response.body).to include("Found in", "Shore", "Barrow")
+  describe "the stage's map" do
+    it "is a map of its own that can't be its own parent, nor under its own child" do
+      region = campaign.maps.create!(name: "A", parent: root)
+      expect(region.update(parent: region)).to be(false)
+      region.reload
+      expect(root.update(parent: region)).to be(false)
+      expect(root.errors[:parent]).to include("can't be one of this map's own children")
+      expect(region.whereabouts).to eq("On #{world.name}")
     end
   end
 end

@@ -330,7 +330,7 @@ A player's table offers what they can do at this moment, and nothing else up fro
   saying so ("Pick Lock: used. It's back after a rest."). Things to do the purse can't pay for,
   and doors still locked, aren't shown to players.
 - **Talk is a button**, "Say something", that opens the box (and its To and Expression).
-- **What you look up is in tabs**: Map · Party · What we know, closed until pressed, one at a
+- **What you look up is in tabs**: Party · What we know, closed until pressed, one at a
   time. The Party tab says "hurt" or "someone's down" without opening; What we know appears
   once there's something to know. Your own HP stays in the "You" line.
 - **Your seat is in the account menu**, with your name: "At the table as Rook", then the other seats
@@ -345,8 +345,7 @@ The GM's table works the same way:
 - **The tools fold while the table is busy.** During a vote, an encounter or a battle the tabs
   wait behind "Tools"; what needs an answer now (everyone down, a field ability asked for) stays
   out in front. Granting archetypes, the music and the shared screen are under one "More".
-- **What the GM looks up is in tabs** under the tools: Map · Party · What they know, the map open
-  on a wide screen.
+- **What the GM looks up is in tabs** under the tools: Party · What they know.
 
 The shared screen keeps its panels: it's watched, not played. The stage-only view keeps nothing but
 the frame (see "The Stage").
@@ -358,14 +357,15 @@ same for everyone, and the one source of truth for what is happening. It takes t
 broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 
 - **What it shows** is the scene: a beat's backdrop and figures while a scene is on, else the
-  picture of the place the party is in when it has one, else plain paper. The map is not on it:
-  the map is the map page's, and travel is made from the Controls or there. When sits in the
-  top-right corner as one line straight on the picture, with no plate round it: the day clock, the
-  part of the day as a label in that part's colour butted against it (the clock's slice runs into
-  the label), and the day at the same size, black on white in a slanted segment carrying on the
-  label's border; the days left on public clocks under it, each its own white slip. Where (the place, and the room in a
-  dungeon) is a tag in the top-left corner, across from when. What's being said plays along the
-  bottom, in the dialogue box.
+  picture of the place the party is in when it has one, else plain paper; or the map, when the GM
+  shows it ("Show the map"), with travel made from the Controls.
+  When sits in the top-right corner as one line straight on the picture, with no plate round it:
+  the day clock and the part of the day as a label in that part's colour, one shape with one outline
+  (the part it is now points right, into the label, so the slice runs into it), and the day at the
+  same size, black on white in a slanted segment carrying on the label's border; the days left on
+  public clocks under it, each its own white slip. Where (the place, and the room in a dungeon) is
+  a tag in the top-left corner, across from when. What's being said plays along the bottom, in the
+  dialogue box.
 - **A scene plays on the same frame.** While the GM has a scene on the stage, its step is what the
   frame shows: the backdrop (a place's picture, a panel painted for the step, or black) fills it, the
   map steps aside, and whoever stands in the scene is along the bottom, left and right, full body as
@@ -395,7 +395,8 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 - **The stage is display.** Nothing on it is pressed. Interaction and personal management (the
   moves, the talk box, the GM's tools, what you look up, equipment, whispers) happen off the
   stage: in the columns beside it and under it. The way into the place the party is at ("Visit
-  Hommlet →") is in the Now line while the table is free; the map has its own page.
+  Hommlet →") is in the Now line while the table is free; the map is a view of the stage the GM
+  shows ("Show the map"), not a page.
 - **Stage only.** For a TV at the table or a stream on a call, `?view=stage` shows nothing but the
   frame: on black, as big as the screen allows, with no top bar, log, panels or caption, and a
   spectator's view of it (no GM secrets on the TV). The lines still arrive, unseen, so the moments
@@ -465,7 +466,7 @@ under the frame.
   battle, nothing but the way to the battle page (the fight's controls are there and only there);
   with an encounter or a choice open, the GM's tools fold behind "Tools" and a player's field
   ability waits; while a scene is on the stage, a player's ways and ability wait too, and the GM
-  has the director's buttons. The map and its travel are the map page's. The battle page has no
+  has the director's buttons. Travel is the Controls' (Where next?). The battle page has no
   campaign chrome but its name, and talk is a press away.
 - **The GM's tools are the GM's moves**, in the Controls under the stage where a player's moves
   would be: tabs for Scenes, Check, Clocks, Time, Secrets and More (grants, music, one shared
@@ -481,16 +482,24 @@ under the frame.
 - **Narration is only as tall as its words**: with no portrait to make room for, the dialogue box
   doesn't hold a speaker's height open under one line.
 - **A place's page is the place first.** The GM's controls for it (modes, rename) come after it,
-  under the dashed "GM · only you see these" tag. The map's panel lists the ways from where the
-  party is one to a row ("To Platform Zero / Dangerous road · Undertow Platforms") under "Go from
-  here", and says a path takes the party along it now.
+  under the dashed "GM · only you see these" tag. The maps page's panel lists the ways from where
+  the party is one to a row ("To Platform Zero / Dangerous road · Undertow Platforms") under "Go
+  from here", and says a path takes the party along it now.
 - **Going straight there asks first** for a dangerous road or a night, since one click moves the
   whole party.
-- **Inside a dungeon, the map page has its floorplan** under the world map: every room and what
-  waits there for the GM, only what they've seen for players. The GM's buttons for the rooms say what's in each
+- **Inside a dungeon, the stage's map view is its floorplan** (and the maps page has it under the
+  map): every room and what waits there for the GM, only what they've seen for players. The GM's buttons for the rooms say what's in each
   (encounter, treasure, boss, done). Room names wrap onto up to three lines in their boxes.
 - **A mode across the map is said once**, under it ("By night: across the map."), not tagged on
   every place; a place's own tag, in red, is for what's different there.
+- **A map is a picture with the pointcrawl drawn over it.** The sheet is 16:9 like the stage it
+  fills: the painted land (or plain paper until there is one), roads as one smooth ink line bent
+  through their waypoints, places as their shapes with names in white-stroked italics so they read
+  over any picture, a child map as a folded sheet, the party as the red marker. The maps beside it
+  are black bands along the edges by direction, split between the maps that share an edge, and
+  "↑ Parent" is a white chip in the top-left corner; the map's name sits in the bottom-right. The GM
+  steers everyone by pressing those; a player's press browses their own frame only. In the editors
+  the same sheet has handles: bends as white dots, places and maps draggable, empty ground clickable.
 - **The party's story on the Legends page** has its fights (as the table heard each end:
   "Undertow Platforms: Victory! 70 yen…") and what it chose together ("Chose: Refuse."), beside
   its deeds and the rumours it heard. Where it went is the road, not the story.
@@ -722,11 +731,13 @@ Record each place where the game needed more than the Swiss defaults: what chang
   moves (`.play`).
 
 - **The date is one line on the stage.** **The day clock** (a dial cut into a slice for each part of
-  the setting's day, each in its light's colour, with the part it is now under a pointer at the
-  top), then the part of the day as a label in that part's colour (dawn yellow, day white, dusk
-  red, night blue) butted against the clock so the slice runs into it, then the day in the
-  setting's calendar at the same size, black on white, carrying on the label's border and cut off
-  with a slant (the `/` of the type tags). When time passes the dial turns forward (never back: into
+  the setting's day, each in its light's colour, turned so the part it is now points right) and
+  the part of the day as a label in that part's colour (dawn yellow, day white, dusk red, night
+  blue) are one shape with one outline: the label's left edge is the chord where the clock's ring
+  stops and its border carries the line on, and the slice pointing at it is its colour, so the
+  slice runs into the label with no line between. There is no pointer: the label is the pointer.
+  Then the day in the setting's calendar at the same size, black on white, carrying on the label's
+  border and cut off with a slant (the `/` of the type tags). When time passes the dial turns forward (never back: into
   the next day it keeps going round), so the table sees the day move. Under the line, the days
   left on each public clock that only a new day ticks, said as a sentence ("5 days until The
   spring tide comes in"; on the last day, "Tomorrow it happens: …"). Where the party is (the

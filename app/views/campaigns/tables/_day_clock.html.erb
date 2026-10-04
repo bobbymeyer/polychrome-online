@@ -1,16 +1,19 @@
 <%# The day as a clock (docs/DESIGN.md, "The day clock"): one slice for each part of the day, in its
-    light's colour, and the part it is now under the pointer at the top. Time passing turns the
+    light's colour, and the part it is now pointing right, into the label beside it (table-time__part),
+    which is that part's colour too: the slice runs into the label. The outline is one line: the ring
+    round the clock stops where the label's top and bottom edges meet it (the chord at x = 28.77 of
+    36, for a label 28 high), and the label's border carries on from there. Time passing turns the
     dial forward, round into the next day (day_clock_controller). %>
 <% parts = campaign.almanac.periods %>
 <% step = 360.0 / parts.size %>
 <% turn = -(campaign.parts_gone * step) %>
-<svg class="day-clock" viewBox="0 0 100 100" role="img" aria-label="<%= "#{campaign.period}: part #{parts.index(campaign.period).to_i + 1} of #{parts.size}" %>"
+<svg class="day-clock" viewBox="0 0 36 36" role="img" aria-label="<%= "#{campaign.period}: part #{parts.index(campaign.period).to_i + 1} of #{parts.size}" %>"
      data-controller="day-clock" data-day-clock-turn-value="<%= turn %>" data-day-clock-campaign-value="<%= campaign.id %>">
   <g class="day-clock__dial" data-day-clock-target="dial" style="--turn: <%= turn %>deg">
     <% parts.each_with_index do |part, i| %>
-      <g class="day-clock__part day-clock__part--<%= campaign.daylight(part) %>"><path d="<%= clock_slice(i, parts.size) %>" /></g>
+      <g class="day-clock__part day-clock__part--<%= campaign.daylight(part) %>"><path d="<%= clock_slice(i, parts.size, radius: 17.5, centre: 18, start: 0) %>" /></g>
     <% end %>
   </g>
-  <circle class="day-clock__hub" cx="50" cy="50" r="6" />
-  <path class="day-clock__pointer" d="M50 12 L43 0 H57 Z" />
+  <circle class="day-clock__hub" cx="18" cy="18" r="2.2" />
+  <path class="day-clock__ring" d="M28.77 5.5 A16.5 16.5 0 1 0 28.77 30.5" />
 </svg>

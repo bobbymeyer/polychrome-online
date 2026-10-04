@@ -20,6 +20,59 @@ RSpec.describe "Where next", type: :request do
     campaign.update!(current_node: tule)
   end
 
+  it "lets the GM ask about anywhere on a map, each a journey by road, and settling it takes the party all the way" do
+    far = campaign.map_nodes.create!(name: "Far Hold", kind: "town", x: 300, y: 0, visible: true)
+    campaign.map_edges.create!(from_node: mere, to_node: far, state: "open", duration: 2)
+    campaign.map_nodes.create!(name: "Nowhere", kind: "wilds", x: 500, y: 500, visible: true) # no road: not on the ballot
+    campaign.map_nodes.create!(name: "Unknown", kind: "wilds", x: 600, y: 600, visible: false)
+
+    sign_in_as(@admin)
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Ask about somewhere further", "Anywhere on", "Or a choice between these places")
+
+    post campaign_ways_path(campaign), params: { scope: "map", map_id: campaign.root_map.id }
+    vote = campaign.open_choice
+    expect(vote).to be_where_next
+    expect(vote.options).to eq([ "To Far Hold (3 parts of a day)", "To Greymere (a part of a day)", "To Port (a part of a day)", "Stay here" ])
+    expect(vote.data["moves"]["To Far Hold (3 parts of a day)"]).to eq("to" => far.id)
+    expect(vote.data["scope"]).to eq("map")
+
+    vote.settle!("To Far Hold (3 parts of a day)")
+    expect(campaign.reload.current_node).to eq(far)
+    expect(mere.reload).to be_visible # passed through on the way
+    expect(campaign.messages.chronological.map(&:body)).to include(/Far Hold/)
+  end
+
+  it "lets the GM put a choice between named places, and refuses a ballot too long to read" do
+    sign_in_as(@admin)
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    post campaign_ways_path(campaign), params: { scope: "places", places: [ mere.id, port.id, pass.id ] } # the pass is behind a blocked road
+    vote = campaign.open_choice
+    expect(vote.options).to eq([ "To Greymere (a part of a day)", "To Port (a part of a day)", "Stay here" ])
+    vote.destroy!
+
+    many = (1..17).map { |i| campaign.map_nodes.create!(name: "Stop #{i}", kind: "field", x: 10 * i, y: 50, visible: true) }
+    many.each { |stop| campaign.map_edges.create!(from_node: tule, to_node: stop) }
+    expect { campaign.ask_where_next!(scope: "map", map: campaign.root_map) }.to raise_error(Refusal, /too many places/)
+    expect(campaign.ask_where_next!(scope: "places", places: many.first(16)).options.size).to eq(17)
+  end
+
+  it "stops a long journey where something waits on the road, for the GM's call" do
+    far = campaign.map_nodes.create!(name: "Far Hold", kind: "town", x: 300, y: 0, visible: true)
+    beyond = campaign.map_nodes.create!(name: "Beyond", kind: "landmark", x: 400, y: 0, visible: true)
+    campaign.map_edges.create!(from_node: mere, to_node: far, state: "dangerous", encounter_table: world.encounter_tables.first)
+    campaign.map_edges.create!(from_node: far, to_node: beyond, state: "open")
+    campaign.travel_to!(beyond)
+    expect(campaign.reload.current_node).to eq(far) # met something on the dangerous road: the party stops there
+    expect(campaign.pending_encounter).to be_present
+    expect { campaign.travel_to!(beyond) }.to raise_error(Refusal) # until the GM calls it
+    campaign.wave_off_encounter!
+    expect(campaign.reload.travel_to!(beyond)).to eq(beyond)
+    expect { campaign.travel_to!(beyond) }.to raise_error(Refusal, /already at Beyond/)
+    expect { campaign.travel_to!(pass) }.to raise_error(Refusal, /No open road/)
+  end
+
   it "puts a rolled encounter first: the Now line says so, and nobody goes on until the GM calls it" do
     campaign.update!(pending_encounter: { "monsters" => { "goblin" => 2 }, "table" => "The road" })
     sign_in_as(kim)
@@ -242,7 +295,7 @@ RSpec.describe "Where next", type: :request do
     end
   end
 
-  it "shows the dungeon's floorplan on the map page, and tells the GM at the table what waits in each room" do
+  it "shows the dungeon's floorplan on the maps page and the stage, and tells the GM at the table what waits in each room" do
     cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
     cave = campaign.locations.create!(location_template: world.location_templates.find_by!(slug: "goblin_cave"), seed: 11)
     cave_node.update!(location: cave)
@@ -251,19 +304,19 @@ RSpec.describe "Where next", type: :request do
     key = cave.add_room!(name: "Vault of the Old Kings", connect: cave.view["entrance"], decision: { "kind" => "treasure", "gil" => 40 })
 
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    get campaign_map_path(campaign)
+    get campaign_maps_path(campaign)
     floorplan = response.body[/<div id="table_floorplan".*?<\/svg>/m]
     expect(floorplan).to include(cave.name, "Vault of", "the Old", "Kings") # every room, names on as many lines as they need
     get campaign_table_path(campaign)
-    expect(response.body).not_to include('id="table_floorplan"') # the stage shows no map
+    expect(response.body).not_to include('id="table_floorplan"') # the stage shows the place until the GM shows the map
     ways = response.body[/<section class="window table-ways".*?<\/section>/m]
     expect(ways).to include(%(<span class="menu__cost">treasure</span>))
 
+    campaign.show_map! # inside a dungeon, the stage's map view is its floorplan
     sign_in_as(kim)
-    get campaign_map_path(campaign)
+    get campaign_table_path(campaign)
     theirs = response.body[/<div id="table_floorplan".*?<\/svg>/m]
     expect(theirs).to include(cave.name)
-    get campaign_table_path(campaign)
     expect(theirs).not_to include("Vault of") # not been in: an unexplored way at most
     expect(response.body).not_to include(%(<span class="menu__cost">treasure</span>))
     expect(cave.room(key)["name"]).to eq("Vault of the Old Kings")

@@ -116,7 +116,35 @@ module Campaign::Travelling
 
   # The map's roads as plain data (Pointcrawl::Roads).
   def roads
-    map_edges.pluck(:from_node_id, :to_node_id, :state).map { |from, to, state| { "from" => from, "to" => to, "state" => state } }
+    map_edges.pluck(:id, :from_node_id, :to_node_id, :state, :duration).map do |id, from, to, state, duration|
+      { "id" => id, "from" => from, "to" => to, "state" => state, "duration" => duration }
+    end
+  end
+
+  # The roads from where the party is to a place, in order (MapEdge), or
+  # nil when no open road leads there (Pointcrawl::Roads.route).
+  def route_to(node)
+    return unless current_node
+
+    walked = Pointcrawl::Roads.route(roads, current_node.id, node.id) or return
+    by_id = map_edges.where(id: walked.map { |road| road["id"] }).index_by(&:id)
+    walked.map { |road| by_id.fetch(road["id"]) }
+  end
+
+  # Travel to a place anywhere on the roads, one road after another (a
+  # "Where next?" across a map): the journey stops where something waits
+  # on the road, for the GM to call, and the party goes on from there by
+  # another ask. Returns the place reached.
+  def travel_to!(node)
+    refuse_while_encounter_waits!
+    raise Refusal, "The party is already at #{node.name}" if current_node == node
+
+    legs = route_to(node) or raise Refusal, "No open road leads to #{node.name} from here"
+    legs.each do |edge|
+      travel!(edge)
+      break if pending_encounter.present?
+    end
+    reload.current_node
   end
 
   # GM: put the party somewhere directly (and reveal it).

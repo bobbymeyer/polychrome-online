@@ -25,9 +25,9 @@
         <nav class="topbar__books" aria-label="Campaign">
           <%= link_to in_campaign.name, campaign_path(in_campaign), class: "topbar__world" %>
           <%= link_to "Table", campaign_table_path(in_campaign) %>
-          <%= link_to "Map", campaign_map_path(in_campaign) %>
           <%= link_to "My sheet", character_path(mine) if mine %>
           <%= link_to "Prep", campaign_prep_path(in_campaign) if can_gm?(in_campaign) %>
+          <%= link_to "Maps", campaign_maps_path(in_campaign) if can_gm?(in_campaign) %>
           <%= link_to "Legends", campaign_legends_path(in_campaign) %>
           <%= yield :table_menu %>
           <%= link_to "#{in_campaign.world.name}'s books", world_path(in_campaign.world), class: "muted" %>

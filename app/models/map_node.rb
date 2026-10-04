@@ -4,10 +4,12 @@
 # reveals it or the party arrives.
 class MapNode < ApplicationRecord
   KINDS = %w[town dungeon landmark wilds field event].freeze
-  WIDTH = 1000
-  HEIGHT = 700
+  # The drawing space of every map, 16:9 like the stage (MapSheet).
+  WIDTH = 1600
+  HEIGHT = 900
 
   belongs_to :campaign
+  belongs_to :map, optional: true # nil: the campaign's root map (Campaign#root_map)
   belongs_to :location, optional: true
   belongs_to :world_place, optional: true
   include Modes
@@ -26,7 +28,9 @@ class MapNode < ApplicationRecord
   validates :x, numericality: { only_integer: true, in: 0..WIDTH }
   validates :y, numericality: { only_integer: true, in: 0..HEIGHT }
   validate { Pastime.parse(activities, campaign.world.almanac).last.each { |problem| errors.add(:activities, problem) } }
+  validate { errors.add(:map, "isn't one of this campaign's maps") if map && map.campaign_id != campaign_id }
 
+  before_validation { self.map ||= campaign.root_map if campaign }
   before_destroy { campaign.update_columns(current_node_id: nil) if campaign.current_node_id == id }
   after_commit { campaign.table_changed }
   # Its town or dungeon's page shows the modes it's in.

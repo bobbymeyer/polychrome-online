@@ -1453,9 +1453,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
    Neither takes the eye off the stage. */
 .stage__hud .table-time { position: static; margin: 0; }
 .stage__hud .table-time__plate { position: absolute; top: 1.2cqw; right: 1.2cqw; z-index: 7; max-width: 40cqw; text-align: right; }
-.stage__hud .table-time__clock { display: flex; justify-content: flex-end; filter: drop-shadow(4px 4px 0 var(--ink)); }
-.stage__hud .day-clock { width: clamp(22px, 3.2cqw, 32px); height: clamp(22px, 3.2cqw, 32px); }
-.stage__hud .table-time__part, .stage__hud .table-time__date { font-size: clamp(10px, 1.3cqw, 13px); line-height: clamp(14px, 1.8cqw, 18px); white-space: nowrap; }
+.stage__hud .table-time__clock { --clock: clamp(24px, 3.4cqw, 34px); display: flex; justify-content: flex-end; filter: drop-shadow(4px 4px 0 var(--ink)); }
+.stage__hud .table-time__part, .stage__hud .table-time__date { font-size: clamp(10px, 1.3cqw, 13px); white-space: nowrap; }
+.stage__hud .table-time__date { line-height: clamp(14px, 1.8cqw, 18px); }
 .stage__hud .table-time__deadlines { margin-top: 4px; }
 .stage__hud .table-time__deadlines li { font-size: clamp(10px, 1.2cqw, 12px); }
 /* With no plate, each day left is its own white slip so it reads on the picture. */
@@ -1699,3 +1699,73 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   .table__side > .drawers, .table__side > #table_party { order: 1; }
   .table__stage { order: 0; }
 }
+
+/* ---------------------------------------------------------------------------
+ * Maps on the stage (maps/_sheet, campaigns/tables/_map; docs/HANDOFF.md §7 "Maps"): a map fills the frame
+ * like a scene's backdrop; the places and roads are drawn over its picture (or plain paper); the maps beside
+ * it are bands along its edges by direction, split between those that share one; its parent is a chip in
+ * the top-left corner. The same sheet in the editors, taller and with handles.
+ * ------------------------------------------------------------------------- */
+.table-map { position: absolute; inset: 0; z-index: 1; display: block; }
+.table-map[hidden] { display: none; }
+.map-sheet { position: relative; width: 100%; height: 100%; line-height: 0; background: var(--paper); overflow: hidden; }
+.map-sheet > svg.map { display: block; width: 100%; height: 100%; }
+.map-sheet .map__ground { fill: transparent; }
+.map-sheet:not(.map-sheet--pictured) .map__ground { fill: var(--paper); }
+/* The sheet is 1600 wide where the old map was 1000: everything on it draws bigger to read the same at the stage's size. */
+.map-sheet .map-node__label { font-size: 30px; stroke-width: 8px; }
+.map-sheet .map-node__label.is-above { translate: 0 -6px; }
+.map-sheet .map-node__mode { font-size: 16px; }
+.map-sheet .map-node__shape, .map-sheet .map-child__sheet, .map-sheet .map-child__fold { transform: scale(1.35); }
+.map-sheet .map-party { scale: 1.35; }
+.map-sheet .map-edge__line { stroke-width: 4; }
+.map-sheet .map-edge--blocked .map-edge__line { stroke-width: 3; }
+.map-sheet--pictured .map-node__label, .map-sheet--pictured .map-child .map-node__label { stroke-width: 9px; }
+.map-sheet--pictured .map-edge__line { stroke: var(--ink); stroke-width: 4; }
+.map-edge__line { fill: none; }
+.map-edge__hit { fill: none; stroke: transparent; stroke-width: 24; cursor: copy; }
+.map-edge__bend { fill: var(--paper); stroke: var(--ink); stroke-width: 3; cursor: grab; }
+.map-edge__bend.is-dragging { cursor: grabbing; fill: var(--control); }
+.map-child__sheet { fill: var(--paper); stroke: var(--ink); stroke-width: 3; }
+.map-child__fold { fill: none; stroke: var(--ink); stroke-width: 3; }
+.map-child__target { fill: transparent; }
+.map-child__link:hover .map-child__sheet, .map-child__link:focus-visible .map-child__sheet { fill: var(--control); }
+.map-child__link:hover .map-node__label { text-decoration: underline; }
+[data-map-child] { cursor: grab; outline: none; }
+/* The maps beside this one: bands along the edges, each band shared between the maps on that side. */
+.map-sheet__edge { position: absolute; display: flex; gap: 2px; line-height: 1; z-index: 2; pointer-events: none; }
+.map-sheet__edge--n { top: 0; left: 12%; right: 12%; flex-direction: row; }
+.map-sheet__edge--s { bottom: 0; left: 12%; right: 12%; flex-direction: row; }
+.map-sheet__edge--w { left: 0; top: 14%; bottom: 14%; flex-direction: column; }
+.map-sheet__edge--e { right: 0; top: 14%; bottom: 14%; flex-direction: column; }
+.map-sheet__beside {
+  pointer-events: auto; flex: 1 1 0; display: flex; align-items: center; justify-content: center; min-height: 22px; min-width: 22px;
+  padding: 4px 10px; background: var(--ink); color: var(--paper); font-weight: 900; font-size: clamp(10px, 1.3cqw, 13px);
+  text-transform: uppercase; letter-spacing: .1em; text-decoration: none; white-space: nowrap;
+}
+.map-sheet__beside:hover, .map-sheet__beside:focus-visible { background: var(--signal); color: #fff; }
+.map-sheet__edge--n .map-sheet__beside { border-radius: 0 0 2px 2px; }
+.map-sheet__edge--s .map-sheet__beside { border-radius: 2px 2px 0 0; }
+.map-sheet__edge--w .map-sheet__beside, .map-sheet__edge--e .map-sheet__beside { writing-mode: vertical-rl; }
+.map-sheet__edge--w .map-sheet__beside { rotate: 180deg; }
+.map-sheet__up {
+  position: absolute; top: 8px; left: 8px; z-index: 3; padding: 4px 10px; background: var(--paper); color: var(--ink); border: 3px solid var(--ink);
+  font-weight: 900; font-size: clamp(10px, 1.3cqw, 13px); line-height: 1.2; text-decoration: none; box-shadow: 3px 3px 0 var(--ink);
+}
+.map-sheet__up:hover { background: var(--ink); color: var(--paper); }
+.map-sheet__name {
+  position: absolute; right: 8px; bottom: 8px; z-index: 3; margin: 0; padding: 2px 8px; background: var(--paper); border: 2px solid var(--ink);
+  font-style: italic; font-weight: 900; font-size: clamp(10px, 1.3cqw, 13px); line-height: 1.4;
+}
+.map-sheet .map-canvas__modes { position: absolute; left: 8px; bottom: 8px; z-index: 3; margin: 0; font-size: 12px; line-height: 1.3; background: var(--paper); padding: 2px 6px; }
+/* The editor's sheet keeps the frame's shape, as wide as its column. */
+.map-sheet--editor { aspect-ratio: 16 / 9; height: auto; border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.map-sheet--editor .map-sheet__name { display: none; }
+
+/* The GM's wider "Where next?" (campaigns/tables/_ways): folded under the roads from here. */
+.ways-ask { margin-top: 8px; }
+.ways-ask > summary { display: inline-block; }
+.ways-ask .inline-form { align-items: flex-end; }
+.ways-ask__places { margin-top: 8px; }
+.ways-ask .field-label { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+.checks-row { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 8px; }

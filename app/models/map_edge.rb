@@ -15,12 +15,16 @@ class MapEdge < ApplicationRecord
   normalizes :travel_event, with: ->(text) { text.presence }
 
   validates :state, inclusion: { in: STATES }
+  include RoadBends
   validates :duration, numericality: { only_integer: true, in: 0..28 } # 0: a step, not a journey (a platform, a door)
   validate :joins_two_nodes_of_this_campaign
   validate :one_path_per_pair
   validate :encounter_table_from_this_world
 
   after_commit { campaign.table_changed }
+
+  def road_from = from_node
+  def road_to = to_node
 
   def touches?(node)
     [ from_node_id, to_node_id ].include?(node.id)

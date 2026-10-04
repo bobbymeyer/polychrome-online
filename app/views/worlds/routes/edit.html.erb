@@ -1,0 +1,18 @@
+<% content_for :title, "Road · #{@route.label}" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Atlas", world_world_places_path(@world) %> / Road</div>
+<h1><%= @route.label %></h1>
+<%= form_with model: @route, scope: :world_route, url: world_world_route_path(@world, @route), method: :patch, class: "book-form" do |f| %>
+  <%= render "book_entries/errors", entry: @route %>
+  <div class="field-row">
+    <div class="field"><%= f.label :state %><%= f.select :state, MapEdge::STATES.map { |s| [ s.humanize, s ] } %></div>
+    <div class="field"><%= f.label :encounter_table_id, "Encounters" %><%= f.select :encounter_table_id, encounter_table_options(@world), include_blank: "None (a safe road)" %></div>
+    <div class="field"><%= f.label :duration, "Takes (parts of a day; 0 for no time at all)" %><%= f.number_field :duration, min: 0, max: 28 %></div>
+  </div>
+  <div class="field"><%= f.label :travel_event, "Travel event" %><%= f.text_area :travel_event, rows: 3 %></div>
+  <p class="hint"><%= @route.waypoints.any? ? "Bent through #{pluralize(@route.waypoints.size, 'point')} on the atlas." : "A straight road; click it on the atlas to bend it." %></p>
+  <div class="actions">
+    <%= f.submit "Save", class: "button" %>
+    <%= link_to "Back to the atlas", world_world_places_path(@world, map: @route.from_place.world_map_id), class: "button button--quiet" %>
+  </div>
+<% end %>
+<%= button_to "Remove the road", world_world_route_path(@world, @route), method: :delete, class: "button button--danger", form: { data: { turbo_confirm: "Remove the road #{@route.label}?" } } %>

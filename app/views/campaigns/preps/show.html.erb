@@ -24,6 +24,7 @@
   <% { "scenes" => "Scenes", "clocks" => "Clocks", "secrets" => "Secrets", "deeds" => "Deeds", "rumours" => "Rumours", "flags" => "Flags", "moment" => "The moment" }.each do |anchor, label| %>
     <a href="#<%= anchor %>"><%= label %></a>
   <% end %>
+  <%= link_to "Maps →", campaign_maps_path(@campaign) %>
 </nav>
 
 <%= render "campaigns/preps/scenes", campaign: @campaign %>

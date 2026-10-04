@@ -21,8 +21,15 @@ class MapEdgesController < ApplicationController
 
   def edit; end
 
+  # The form, or from the map: a new bend where it was clicked ({ bend: { x, y } }),
+  # or the bends as dragged ({ map_edge: { waypoints: [...] } }).
   def update
-    if @edge.update(edge_params)
+    bend = params[:bend].presence || params.dig(:map_edge, :bend).presence # JSON bodies are wrapped under map_edge
+    @edge.bend_at(bend[:x].to_i, bend[:y].to_i) if bend
+    saved = @edge.update(edge_params)
+    return head(saved ? :no_content : :unprocessable_content) if request.format.json?
+
+    if saved
       redirect_to edit_map_edge_path(@edge), status: :see_other
     else
       render :edit, status: :unprocessable_content
@@ -48,7 +55,11 @@ class MapEdgesController < ApplicationController
     @world = @campaign.world
   end
 
+  # The bends come as points ([[x, y], ...]), which strong parameters don't permit as such: read by hand (RoadBends#waypoints= checks them).
   def edge_params
-    params.expect(map_edge: %i[to_node_id state encounter_table_id travel_event duration])
+    raw = params.fetch(:map_edge, {})
+    fields = raw.permit(:to_node_id, :state, :encounter_table_id, :travel_event, :duration)
+    fields[:waypoints] = Array(raw[:waypoints]).map { |pt| pt.respond_to?(:to_unsafe_h) ? pt.to_unsafe_h.values_at("x", "y") : Array(pt) } if raw.key?(:waypoints)
+    fields
   end
 end

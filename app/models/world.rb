@@ -18,6 +18,8 @@ class World < ApplicationRecord
   has_many :world_figures, dependent: :destroy # at places and monsters
   has_many :world_routes, dependent: :destroy # at places and encounter tables
   has_many :world_places, dependent: :destroy # at location templates
+  has_many :world_maps, dependent: :destroy # at places
+  has_many :world_map_links, dependent: :destroy
   has_many :codex_entries, dependent: :destroy
   has_many :jobs, dependent: :destroy # at abilities
   has_many :abilities, dependent: :destroy
@@ -77,6 +79,11 @@ class World < ApplicationRecord
   end
 
   # A content type's framing (§8), made from config/comfy.yml the first time.
+  # The map everything starts on: the first one, made the first time it's asked for.
+  def root_map
+    world_maps.in_order.first || world_maps.create!(name: name)
+  end
+
   def art_type(kind)
     art_types.find_by(kind: kind) || art_types.create!(kind: kind, **ArtType.defaults_for(kind).symbolize_keys)
   rescue ActiveRecord::RecordNotUnique

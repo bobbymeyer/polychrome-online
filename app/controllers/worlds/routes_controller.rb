@@ -19,6 +19,30 @@ class Worlds::RoutesController < ApplicationController
     end
   end
 
+  def edit
+    @route = @world.world_routes.find(params[:id])
+  end
+
+  # The form, or from the atlas: a new bend where it was clicked ({ bend: { x, y } }),
+  # or the bends as dragged ({ world_route: { waypoints: [...] } }).
+  def update
+    @route = @world.world_routes.find(params[:id])
+    bend = params[:bend].presence || params.dig(:world_route, :bend).presence # JSON bodies are wrapped under world_route
+    @route.bend_at(bend[:x].to_i, bend[:y].to_i) if bend
+    raw = params.fetch(:world_route, {})
+    fields = raw.permit(:state, :encounter_table_id, :travel_event, :duration).to_h
+    fields["waypoints"] = Array(raw[:waypoints]).map { |pt| pt.respond_to?(:to_unsafe_h) ? pt.to_unsafe_h.values_at("x", "y") : Array(pt) } if raw.key?(:waypoints)
+    fields["encounter_table"] = @world.encounter_tables.find_by(id: fields.delete("encounter_table_id")) if fields.key?("encounter_table_id")
+    saved = @route.update(fields)
+    return head(saved ? :no_content : :unprocessable_content) if request.format.json?
+
+    if saved
+      redirect_to world_world_places_path(@world, map: @route.from_place.world_map_id, anchor: "routes"), notice: "The road #{@route.label} saved.", status: :see_other
+    else
+      render :edit, status: :unprocessable_content
+    end
+  end
+
   def destroy
     route = @world.world_routes.find(params[:id])
     route.destroy!

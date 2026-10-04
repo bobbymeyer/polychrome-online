@@ -47,10 +47,11 @@ RSpec.describe "The table's motion", type: :request do
     expect(JSON.parse(card)).to include("place" => campaign.current_node.name, "kind" => campaign.current_node.kind.humanize)
   end
 
-  it "marks the Now band's state and, on the map page, the party's marker, so a change wipes and hops" do
+  it "marks the Now band's state and, on the stage's map, the party's marker, so a change wipes and hops" do
     get campaign_table_path(campaign)
     expect(response.body).to include('data-state="free" data-change="state"')
-    get campaign_map_path(campaign)
+    campaign.show_map!
+    get campaign_table_path(campaign)
     expect(response.body).to include('class="map-party" transform=', 'data-change="marker" data-change-key="party"')
   end
 

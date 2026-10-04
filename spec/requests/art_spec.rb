@@ -280,6 +280,27 @@ RSpec.describe "Generated portraits (§8)", type: :request do
     expect(bartz.sprite_image).to be_nil
   end
 
+  it "paints a map: the GM a campaign's, a world editor the setting's, from the map framing and the map's own words" do
+    campaign = world.campaigns.create!(name: "Crystal Road", gm: @admin)
+    map = campaign.maps.create!(name: "The Marches", description: "Wet moors under a white sky")
+    post world_art_batches_path(world), params: { entry_type: "map", map_type: "campaign", map_id: map.id, count: 1, entry: { art_notes: "a river splitting it" } }
+    expect(response).to redirect_to(campaign_maps_path(campaign, map: map.id, anchor: "art"))
+    batch = map.reload.art_batch
+    expect(batch.recipe["positive"]).to include("painted fantasy map", "The Marches, a river splitting it")
+    expect(batch.recipe["width"]).to be > batch.recipe["height"]
+
+    sheet = world.root_map
+    post world_art_batches_path(world), params: { entry_type: "map", map_type: "world", map_id: sheet.id, count: 1 }
+    expect(response).to redirect_to(world_world_places_path(world, map: sheet.id, anchor: "art"))
+    expect(sheet.reload.art_batch.recipe["positive"]).to include(sheet.name)
+
+    sign_in_as(make_user("Player"))
+    post world_art_batches_path(world), params: { entry_type: "map", map_type: "campaign", map_id: map.id, count: 1 }
+    expect(response).to redirect_to(root_path)
+    get world_art_panel_path(world, entry_type: "map", map_type: "world", map_id: sheet.id)
+    expect(response).to have_http_status(:forbidden)
+  end
+
   it "covers the Encounter and Generator tables too" do
     table = world.encounter_tables.first
     get world_encounters_encounter_table_path(world, table)

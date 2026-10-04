@@ -42,22 +42,54 @@ module Campaign::Ways
   end
 
   # The open "Where next?", or a new one. Refused while the table is
-  # deciding something else, or when there's nowhere to go.
-  def ask_where_next!
+  # deciding something else, or when there's nowhere to go. What's on
+  # the ballot (scope): the ways on from here (roads and things to do),
+  # every place on a map the party can reach by road, or places the GM
+  # names (places: nodes); settling it takes the party there, however
+  # many roads away (Travelling#travel_to!).
+  def ask_where_next!(scope: "here", map: nil, places: nil)
     choice = open_choice
-    return choice if choice&.where_next?
-    raise Refusal, "The table is deciding something else first" if choice
+    return choice if choice&.where_next? && scope == "here"
+    raise Refusal, "The table is deciding something else first" if choice && !choice.where_next?
     refuse_while_encounter_waits!
 
-    ways = ways_on
+    ways = case scope
+    when "map" then ways_across(map || party_map || root_map)
+    when "places" then ways_to(Array(places))
+    else ways_on
+    end
     raise Refusal, "There's nowhere to go from here" if ways.empty?
+    raise Refusal, "That's too many places for one vote (#{Message::Choice::MAX_MOVES} at most)" if ways.size > Message::Choice::MAX_MOVES
 
+    choice&.destroy!
     options = ways.map { |way| way["label"] } + [ STAY ]
     Message.choice(self, options: options).tap do |ask|
       # The ways are in the vote's panel; the log says only that it's asked.
       ask.body = "Where next? #{options.size} ways to choose from."
-      ask.data = { "moves" => ways.to_h { |way| [ way["label"], way["move"] ] } }
+      ask.data = { "moves" => ways.to_h { |way| [ way["label"], way["move"] ] }, "scope" => scope }
       ask.save!
+    end
+  end
+
+  # Every place the players know on a map that a road leads to from here, as ways.
+  def ways_across(map)
+    return [] unless current_node
+
+    ways_to(map.map_nodes.where(visible: true).where.not(id: current_node.id).order(:name))
+  end
+
+  # The places named, as ways, when a road leads there: "To Walse (2 days)".
+  def ways_to(nodes)
+    return [] unless current_node && !dungeon_in_progress
+
+    nodes.filter_map do |node|
+      next if node.id == current_node.id
+
+      legs = route_to(node) or next
+      time = legs.sum { |leg| leg.duration.to_i }
+      risky = legs.any? { |leg| leg.state == "dangerous" }
+      { "label" => "To #{node.name}#{" (#{journey_length(time)})" if time.positive?}#{' (by a dangerous road)' if risky}",
+        "move" => { "to" => node.id }, "warn" => ("The road to #{node.name} is dangerous: the party may meet something on it." if risky) }.compact
     end
   end
 
@@ -92,6 +124,16 @@ module Campaign::Ways
   # The names of the clocks an event would tick now, for the ways' notes.
   def ticking_on(event)
     clocks.where(stopped_at: nil).reject(&:full?).select { |clock| clock.ticks_on?(event) }.map(&:name)
+  end
+
+  # Parts of a day as the table hears them: "a part of a day", "2 days", "a day and 2 parts".
+  def journey_length(parts)
+    a_day = almanac.periods.size
+    days, rest = parts.divmod(a_day)
+    words = []
+    words << (days == 1 ? "a day" : "#{days} days") if days.positive?
+    words << (rest == 1 ? (days.positive? ? "a part" : "a part of a day") : "#{rest} parts#{' of a day' unless days.positive?}") if rest.positive?
+    words.join(" and ")
   end
 
   # How the table sees a road from here: "To Greymere (by a dangerous road)".
@@ -136,10 +178,13 @@ module Campaign::Ways
     heard.body
   end
 
-  # Make a way's move: travel a path, step into a room, or spend time here.
+  # Make a way's move: travel a path (or all the way to a place), step into
+  # a room, or spend time here.
   def make_move!(move)
     if move["pastime"]
       spend_time!(map_nodes.find(move["node"]), move["pastime"])
+    elsif move["to"]
+      travel_to!(map_nodes.find(move["to"]))
     elsif move["edge"]
       travel!(map_edges.find(move["edge"]))
     elsif move["leave"]

@@ -10,6 +10,8 @@ module Message::Choice
   # flag its outcome sets (scenes and the GM's composer both take it).
   CHOICE = /\A\?\s*(?<options>[^>]+?)(?:\s*->\s*(?<flag>[\w ]+))?\s*\z/
   MAX_OPTIONS = 6
+  # A "Where next?" across a map can list more: each is a place.
+  MAX_MOVES = 16
 
   included do
     has_many :picks, class_name: "ChoicePick", dependent: :delete_all
@@ -103,8 +105,9 @@ module Message::Choice
   def choices_have_options
     return unless choice?
 
+    most = data.key?("moves") ? MAX_MOVES + 1 : MAX_OPTIONS # the moves, and Stay here
     errors.add(:options, "need at least two") if options.size < 2
-    errors.add(:options, "can be at most #{MAX_OPTIONS}") if options.size > MAX_OPTIONS
+    errors.add(:options, "can be at most #{most}") if options.size > most
     errors.add(:options, "must be different") if options.uniq.size != options.size
     errors.add(:scope, "must be the whole table") if whisper?
   end

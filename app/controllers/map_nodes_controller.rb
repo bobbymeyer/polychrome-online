@@ -9,7 +9,8 @@ class MapNodesController < ApplicationController
   before_action :require_table_gm
 
   def new
-    @node = @campaign.map_nodes.new(x: params[:x].to_i.clamp(0, MapNode::WIDTH), y: params[:y].to_i.clamp(0, MapNode::HEIGHT))
+    @node = @campaign.map_nodes.new(x: params[:x].to_i.clamp(0, MapNode::WIDTH), y: params[:y].to_i.clamp(0, MapNode::HEIGHT),
+                                    map: @campaign.maps.find_by(id: params[:map_id]) || @campaign.map_shown)
   end
 
   def create
@@ -49,6 +50,8 @@ class MapNodesController < ApplicationController
   end
 
   def node_params
-    params.expect(map_node: %i[name kind x y visible notes description activities])
+    fields = params.expect(map_node: %i[name kind x y visible notes description activities map_id])
+    fields = fields.merge(map: @campaign.maps.find_by(id: fields[:map_id]) || @campaign.root_map).except(:map_id) if fields.key?(:map_id)
+    fields
   end
 end

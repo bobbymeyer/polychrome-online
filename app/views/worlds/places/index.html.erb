@@ -5,29 +5,41 @@
   <% if can_edit_world? %><%= link_to "New place", new_world_world_place_path(@world), class: "button" %><% end %>
 </div>
 <p class="prose">
-  <%= @world.name %>'s places and the roads between them. A new campaign starts with them on its map, rolled the same way every time;
-  after that, each campaign's map is its own. Places marked "known" start visible to the players.
+  <%= @world.name %>'s maps, places and the roads between them: a world map, the regions on it, the towns on those, each a picture with
+  places on it and other maps off its edges. A new campaign starts with them all, rolled the same way every time; after that, each
+  campaign's maps are its own. Places marked "known" start visible to the players.
 </p>
 
-<% if @places.any? %>
-  <div class="window map-window"><div class="map-canvas">
-    <svg class="map" viewBox="0 0 <%= MapNode::WIDTH %> <%= MapNode::HEIGHT %>" role="img" aria-label="The atlas of <%= @world.name %>">
-      <rect class="map__ground" x="0" y="0" width="<%= MapNode::WIDTH %>" height="<%= MapNode::HEIGHT %>" />
-      <% @routes.each do |route| %>
-        <g class="map-edge map-edge--<%= route.state %>">
-          <line class="map-edge__line" x1="<%= route.from_place.x %>" y1="<%= route.from_place.y %>" x2="<%= route.to_place.x %>" y2="<%= route.to_place.y %>" />
-        </g>
-      <% end %>
-      <% @places.each do |place| %>
-        <g class="map-node map-node--<%= place.kind %> <%= 'is-hidden' unless place.known %>" transform="translate(<%= place.x %> <%= place.y %>)">
-          <title><%= place.name %> (<%= place.kind %><%= ", hidden at first" unless place.known %>)</title>
-          <%= render "map_nodes/shape", kind: place.kind %>
-          <text class="map-node__label" y="38" text-anchor="middle"><%= place.name %></text>
-        </g>
-      <% end %>
-    </svg>
-  </div></div>
+<% editing = can_edit_world? %>
+<%= turbo_stream_from @map, :art %>
+<%= render "maps/list", maps: @maps, open: @map, scope: @scope %>
+<% if editing %>
+  <%= form_with url: world_world_maps_path(@world), class: "book-form inline-form map-new" do |f| %>
+    <%= hidden_field_tag :parent_id, @map.id, id: nil %>
+    <div class="field"><%= label_tag "world_map_name", "New map on #{@map.name}" %><%= text_field_tag "world_map[name]", nil, id: "world_map_name", placeholder: "The Western Marches", required: true %></div>
+    <%= f.submit "Add a map", class: "button button--quiet" %>
+  <% end %>
+<% end %>
+<div class="map-layout" <% if editing %>data-controller="map-editor" data-map-editor-new-url-value="<%= new_world_world_place_path(@world, world_map_id: @map.id) %>"<% end %>>
+  <div class="window map-window">
+    <h2 class="map-window__title"><%= @map.name %> <span class="muted">· <%= @map.whereabouts.presence || "a map of its own" %></span></h2>
+    <%= render "maps/sheet", map: @map, scope: @scope, gm: true %>
+    <% if editing %><p class="hint">Click empty ground to add a place here. Drag places and maps to move them. Click a road to bend it there, drag a bend to move it, double-click a bend to take it out. Click a place or a road to edit it.</p><% end %>
+    <%= render "campaigns/maps/legend" %>
+  </div>
+  <% if editing %>
+    <div class="map-side">
+      <section class="window" id="map_form">
+        <h2>This map</h2>
+        <%= render "maps/form", map: @map, maps: @maps.to_a, urls: { param: "world_map", update: world_world_map_path(@world, @map), destroy: world_world_map_path(@world, @map),
+                                                                     link: world_world_map_world_map_links_path(@world, @map), unlink: ->(link) { world_world_map_world_map_link_path(@world, @map, link) } } %>
+      </section>
+      <%= render "art_batches/map_art", map: @map %>
+    </div>
+  <% end %>
+</div>
 
+<% if @places.any? %>
   <table class="book-table">
     <thead><tr><th>Place</th><th>Kind</th><th>Rolled from</th><th>Players see</th><th></th></tr></thead>
     <tbody>
@@ -51,6 +63,7 @@
         <% @routes.each do |route| %>
           <li>
             <%= route.label %> <span class="muted">· <%= route.state %><%= " · #{route.encounter_table.name}" if route.encounter_table %><%= route.duration.zero? ? " · no time" : " · #{pluralize(route.duration, 'part')} of a day" %><%= " · “#{route.travel_event.truncate(60)}”" if route.travel_event %></span>
+            <%= link_to "Edit", edit_world_world_route_path(@world, route), class: "link-button" if can_edit_world? %>
             <%= button_to "Remove", world_world_route_path(@world, route), method: :delete, class: "link-button", form: { class: "inline" } if can_edit_world? %>
           </li>
         <% end %>

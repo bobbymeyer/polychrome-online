@@ -63,6 +63,8 @@ module Authorization
     when Portrait, Sprite then can_portray?(entry.owner)
     when ModeArt then can_gm?(entry.location.campaign)
     when Beat then can_gm?(entry.campaign)
+    when Map then can_gm?(entry.campaign)
+    when WorldMap then can_edit_world?(entry.world)
     else admin?
     end
   end

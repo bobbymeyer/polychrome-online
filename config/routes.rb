@@ -58,7 +58,10 @@ Rails.application.routes.draw do
 
       # The setting's canon: its atlas, its cast, its lore.
       resources :world_places, path: "atlas", except: :show, controller: "places"
-      resources :world_routes, path: "atlas/roads", only: %i[create destroy], controller: "routes"
+      resources :world_routes, path: "atlas/roads", only: %i[create destroy edit update], controller: "routes"
+      resources :world_maps, path: "atlas/maps", only: %i[new create edit update destroy], controller: "maps" do
+        resources :world_map_links, only: %i[create destroy], module: :maps, path: "beside", controller: "links"
+      end
       resources :world_figures, path: "cast", except: :show, controller: "figures"
       resources :codex_entries, path: "codex"
       resources :world_fronts, path: "fronts", except: :show, controller: "fronts"
@@ -147,8 +150,14 @@ Rails.application.routes.draw do
 
       # The pointcrawl map (§7). The side panel is a Turbo Frame; the SVG
       # updates by broadcast for every viewer.
-      resource :map, only: :show
+      # The campaign's maps (Map; §7): the GM's editor page (index, ?map= the one open), the setting's copies
+      # and the GM's own; the panel beside it is a Turbo Frame.
+      resources :maps, only: %i[index create edit update destroy] do
+        resources :map_links, only: %i[create destroy], module: :maps, path: "beside"
+      end
       resource :map_panel, only: :show
+      # The stage's map view: a map to browse (GET), the GM putting one on the stage (PATCH).
+      resource :map_view, only: %i[show update]
       # Where next: a player's suggestion (a vote), or the GM going (Campaign::Ways).
       resources :ways, only: :create
       resource :encounter, only: %i[create destroy]

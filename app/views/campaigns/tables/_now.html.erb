@@ -58,6 +58,11 @@
         <%= link_to "Settle it ↓", "#table_choice", class: "button play" %>
       <% else %>
         <%= button_to "Ask where next", campaign_ways_path(campaign), class: "button play", form: { class: "inline" } if campaign.ways_on.any? %>
+        <% if campaign.map_on_stage? %>
+          <%= button_to "Show the place", campaign_map_view_path(campaign), method: :patch, params: { off: 1 }, class: "button button--quiet", form: { class: "inline" } %>
+        <% else %>
+          <%= button_to "Show the map", campaign_map_view_path(campaign), method: :patch, class: "button button--quiet", form: { class: "inline" } %>
+        <% end %>
         <%= tag.button "Call a check", type: "button", class: "button button--quiet", data: { controller: "tool-link", tool_link_key_value: "check", action: "tool-link#open" } %>
         <%= tag.button "Play a scene", type: "button", class: "button button--quiet", data: { controller: "tool-link", tool_link_key_value: "scenes", action: "tool-link#open" } %>
         <%= render "campaigns/tables/here", campaign: campaign %>

@@ -134,9 +134,9 @@ Test both modules exhaustively with RSpec. Property-style tests on the resolver 
 
 ## 7. Other surfaces
 
-**The Stage.** The game is shown on one 16:9 frame in the middle of every screen at the table, the same for everyone and the source of truth for what is happening: the scene on it, else the place's picture, the date, what's being said, and a battle when one is on (the map is the map page's). It takes the campaign's broadcasts, so it changes under everyone at once. The stage is display: interaction and personal management (moves, talk, the GM's tools, equipment, whispers) happen off it, in the columns beside it and under it.
+**The Stage.** The game is shown on one 16:9 frame in the middle of every screen at the table, the same for everyone and the source of truth for what is happening: the scene on it, else the map when the GM shows it, else the place's picture, the date, what's being said, and a battle when one is on. It takes the campaign's broadcasts, so it changes under everyone at once. The stage is display: interaction and personal management (moves, talk, the GM's tools, equipment, whispers) happen off it, in the columns beside it and under it.
 
-**World map.** SVG pointcrawl. Nodes and edges are Rails partials; GM edits (reveal, add/cut edge, change edge state, drop encounter table) land via Turbo Streams. FF world maps are pointcrawls with walking theater; drop the theater.
+**Maps.** Several a setting (`WorldMap`: the world, its regions, a town), copied into each campaign (`Map`): each a 16:9 picture with places and child maps on it and siblings off its edges by direction (N, S, E, W; one link read both ways; maps sharing an edge split it). Places and roads are the pointcrawl under the picture, drawn as SVG partials over it (`maps/_sheet`), roads bent through waypoints. The map is a view of the Stage the GM puts there and steers; players browse their own frame. GM edits (places, roads and bends, maps and links) land by JSON and refresh. FF world maps are pointcrawls with walking theater; drop the theater.
 
 **Locations.** Generated from `location_templates` + `generator_tables` with a stored seed; GM diffs are overrides on top. Two generators:
 
