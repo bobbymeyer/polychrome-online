@@ -1622,7 +1622,7 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .table-controls { position: relative; }
 .table-controls > .your-moves:empty { display: none; }
 .table-controls .take-a-seat { margin-top: 16px; }
-.topbar__seat { color: var(--grey); white-space: nowrap; }
+.topbar__user-menu > .topbar__seat { display: block; line-height: 32px; color: var(--grey); white-space: nowrap; }
 .topbar__seat strong { color: inherit; }
 @media (max-width: 1099px) {
   .table__main { display: flex; flex-direction: column; gap: 16px; }

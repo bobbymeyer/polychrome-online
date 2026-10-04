@@ -113,7 +113,9 @@ RSpec.describe "The table", type: :request do
       expect(page.at("#stage #table_time")).to be_present # the date in its corner
       expect(page.at("#table_now #table_here")).to be_present # the way into the place, while the table is free (none here: no place yet)
       expect(page.at("#drawer_party #table_party")).to be_present
-      expect(page.at(".topbar nav[aria-label=Campaign]").text).to include("At the table as Bartz", "Change seat") # the seat is the top bar's
+      menu = page.at(".topbar__user-menu")
+      expect(menu.text).to include("At the table as Bartz", "Stand up") # the seat is in the account menu, with the others to take
+      expect(menu.css("form button").map(&:text)).not_to include("Sit as Bartz") # not the one you're in
 
       Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
       get campaign_table_path(campaign)

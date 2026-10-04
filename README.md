@@ -914,7 +914,7 @@ generator (email and password, with `bcrypt`), plus a sign-up page.
   demoted or removed.
 - **Seats pick themselves.** At a table or battle you haven't sat at, you're
   seated as your only character, or as the GM of your own campaign when you
-  play nobody in it. Standing up ("Change seat") sticks. Seats belong to
+  play nobody in it. Standing up ("Stand up", in the account menu) sticks. Seats belong to
   the account, so two people on one browser never share one.
 - **The home page** lists your campaigns (ones you play in or GM), then the
   worlds. Players come into someone else's campaign by its invite link; an

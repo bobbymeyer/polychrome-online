@@ -38,14 +38,19 @@ module SystemHelpers
   # Sit at a campaign's table: "gm", a character, or nil to stand up.
   def sit_at(campaign, seat)
     visit campaign_table_path(campaign)
-    # Whoever has an obvious seat (the GM, a player's only character) is
-    # already in it: stand up first.
-    click_on "Change seat" if page.has_button?("Change seat", wait: 2)
+    # The seat is in the account menu: whoever has an obvious seat (the GM, a
+    # player's only character) is already in it, so stand up or switch there.
+    find(".topbar__user > summary").click
+    if seat
+      label = seat == "gm" ? "Sit as Game Master" : "Sit as #{seat.name}"
+      within(".topbar__user-menu") { click_on(label, match: :prefer_exact) } if page.has_button?(label, wait: 1)
+    elsif page.has_button?("Stand up", wait: 1)
+      within(".topbar__user-menu") { click_on "Stand up" }
+    end
     return wait_for_streams unless seat
 
-    within("section.take-a-seat") { click_on(seat == "gm" ? "Game Master" : seat.name, match: :prefer_exact) }
-    # The seat is said in the top bar; a player's card says who they are too.
-    expect(page).to(seat == "gm" ? have_text("At the table as GM") : have_css(".player-card", text: seat.name))
+    # The seat is said in the account menu (closed again now); a player's card says who they are too.
+    expect(page).to(seat == "gm" ? have_css(".topbar__seat", text: "At the table as GM", visible: :all) : have_css(".player-card", text: seat.name))
     wait_for_streams
   end
 
