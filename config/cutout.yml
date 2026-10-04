@@ -2,24 +2,29 @@
 # asked for it): a service of its own, called on each image after ComfyUI
 # renders it (Cutout). Without a URL, backgrounds are kept.
 #
-# The default speaks rembg's HTTP API: `rembg s --host 0.0.0.0 --port 7000`
-# (pip install "rembg[gpu,cli]"), which runs BiRefNet, ISNet, BRIA RMBG and
-# others. Any service that takes the image as a multipart `file` field
-# (and the model as `model`) and answers with a PNG works the same way.
-# From inside a container, a service on the host is usually
-# http://host.docker.internal:<port>.
+# The default speaks rembg's HTTP API, the standalone tool that runs the
+# removal models (ISNet, BiRefNet, BRIA RMBG, U²-Net) behind one API:
+# `bin/cutout` installs it, fetches the model and serves it on port 7000
+# (`bin/cutout check` sends a picture through). Any service that takes the
+# image as a multipart `file` field (and the model as `model`) and answers
+# with a PNG works the same way. From inside a container, a service on the
+# host is usually http://host.docker.internal:<port>.
 shared: &shared
   # The service's base URL.
   url: <%= ENV.fetch("CUTOUT_URL", "") %>
   # Where on it the image goes.
   path: <%= ENV.fetch("CUTOUT_PATH", "/api/remove").to_json %>
-  # The model to ask for, as the service names it (rembg: birefnet-general,
-  # isnet-anime for flat illustrated art, bria-rmbg, u2net, ...).
-  model: <%= ENV.fetch("CUTOUT_MODEL", "birefnet-general").to_json %>
+  # The model to ask for, as the service names it. rembg's: isnet-anime
+  # (made for flat illustrated art, ~170 MB, a few seconds and ~2 GB of RAM
+  # on a CPU; the default), isnet-general-use (the same, for any picture),
+  # birefnet-general (the finest edges; ~1 GB, and without a GPU a minute a
+  # picture in 16 GB+ of RAM), bria-rmbg, u2net.
+  model: <%= ENV.fetch("CUTOUT_MODEL", "isnet-anime").to_json %>
   # Sent as "Authorization: Bearer ..." when set.
   token: <%= ENV.fetch("CUTOUT_TOKEN", "").to_json %>
-  # Seconds to wait: the first image loads the model.
-  timeout: <%= ENV.fetch("CUTOUT_TIMEOUT", "120") %>
+  # Seconds to wait for one picture: the first loads the model, and a big
+  # model on a CPU takes a minute.
+  timeout: <%= ENV.fetch("CUTOUT_TIMEOUT", "300") %>
   # The colour the picture is rendered on when it will be cut out, in place
   # of the type's white background: a flat ground no character design is
   # drawn in, so the white in a design (a shirt, a face, a sail) is never

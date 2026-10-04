@@ -134,7 +134,7 @@ RSpec.describe Cutout do
       cutout = FakeCutout.new
       batch = render(cutout)
       expect(cutout.sent).to eq([ FakeComfy.png ])
-      expect(batch.recipe["cutout"]).to eq("birefnet-general")
+      expect(batch.recipe["cutout"]).to eq("isnet-anime")
       expect(batch.recipe["positive"]).to include("plain flat green background, no shadow")
       expect(batch.recipe["positive"]).not_to include("white background")
       expect(batch.recipe["negative"]).to end_with("white background")

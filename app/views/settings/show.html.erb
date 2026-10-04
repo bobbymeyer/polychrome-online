@@ -47,11 +47,11 @@
       <div class="field">
         <%= f.label :cutout_model, "Model" %>
         <%= f.text_field :cutout_model, placeholder: cutout[:model] %>
-        <p class="hint">rembg: <code>birefnet-general</code>, <code>isnet-anime</code> for flat illustrated art, <code>bria-rmbg</code>…</p>
+        <p class="hint">rembg: <code>isnet-anime</code> for flat illustrated art (quick, light), <code>isnet-general-use</code>, <code>birefnet-general</code> (the finest edges; wants a GPU), <code>bria-rmbg</code>…</p>
       </div>
     </div>
     <p class="hint">
-      <code>bin/cutout</code> runs rembg's server. Pictures to be cut out are rendered on a
+      <code>bin/cutout</code> installs and runs rembg's server, and fetches the model first; <code>bin/cutout check</code> sends a picture through. Pictures to be cut out are rendered on a
       <%= Cutout.ground ? "#{Cutout.ground} ground (CUTOUT_GROUND)" : "white ground (CUTOUT_GROUND is blank)" %> and mended afterwards, so the white in a design is kept.
     </p>
   </fieldset>

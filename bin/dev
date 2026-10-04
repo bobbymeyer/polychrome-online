@@ -1,2 +1,31 @@
 #!/usr/bin/env ruby
-exec "./bin/rails", "server", *ARGV
+# The development server, and the background remover beside it when the app is
+# pointed at one on this machine (CUTOUT_URL=http://127.0.0.1:7000) that isn't
+# running yet: bin/cutout starts it, and it stops with the server.
+require "socket"
+require "uri"
+
+cutout = nil
+url = ENV["CUTOUT_URL"].to_s
+if url.match?(%r{\Ahttps?://(127\.0\.0\.1|localhost|0\.0\.0\.0)(:\d+)?/?\z})
+  uri = URI(url)
+  answering = begin
+    TCPSocket.new(uri.host, uri.port).close
+    true
+  rescue SystemCallError
+    false
+  end
+  unless answering
+    ENV["CUTOUT_PORT"] = uri.port.to_s
+    cutout = spawn("bin/cutout")
+  end
+end
+
+begin
+  system("./bin/rails", "server", *ARGV)
+ensure
+  if cutout
+    Process.kill("TERM", cutout) rescue nil
+    Process.wait(cutout) rescue nil
+  end
+end

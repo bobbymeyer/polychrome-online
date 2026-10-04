@@ -1061,20 +1061,28 @@ Every image slot can be uploaded or generated with
   for content types marked to remove it. It happens outside ComfyUI, with a
   background-removal service of its own (`Cutout`, `config/cutout.yml`),
   called on each image once ComfyUI has rendered it.
-  - **Which service:** rembg's HTTP server works as it is
-    (`pip install "rembg[gpu,cli]"`, then `rembg s --host 0.0.0.0 --port 7000`),
-    with its choice of models: `birefnet-general` (the default),
-    `isnet-anime` for flat illustrated art, `bria-rmbg` and others. Anything
-    that takes the image as a multipart `file` (and `model`) and answers
-    with a PNG works too. Set the address and model on the Settings page,
-    or with `CUTOUT_URL` and `CUTOUT_MODEL`.
-  - **Running one:** `bin/cutout` starts rembg's server on port 7000, in
-    Docker (the `danielgatis/rembg` image) when there is one, else in a
-    Python environment of its own under `tmp/`. Then set `CUTOUT_URL`
-    (`http://127.0.0.1:7000`, or `http://host.docker.internal:7000` from the
-    app's container) or the address on the Settings page. The first
-    picture downloads the model; "Check the connection" on Settings sends
-    one through.
+  - **Which service:** rembg, the standalone tool that runs the removal
+    models (ISNet, BiRefNet, BRIA RMBG, U²-Net) behind one HTTP API. Its
+    models, as the app has measured them on a 4-core CPU: `isnet-anime`
+    (the default: made for flat illustrated art, ~170 MB, 2–3 s a picture
+    in under 2 GB of RAM), `isnet-general-use` (the same for any picture),
+    `birefnet-general` (the finest edges, ~1 GB; on a CPU a minute a
+    picture and 14 GB of RAM, so it wants a GPU), `bria-rmbg` and others.
+    Anything that takes the image as a multipart `file` (and `model`) and
+    answers with a PNG works too. Set the address and model on the Settings
+    page, or with `CUTOUT_URL` and `CUTOUT_MODEL`.
+  - **Running one:** `bin/cutout` does it all: installs rembg (pinned) into
+    a Python environment of its own under `tmp/` (or uses Docker's
+    `danielgatis/rembg` image when there is one; the CUDA build of
+    onnxruntime when `nvidia-smi` is found or `CUTOUT_GPU=1`), fetches the
+    model first so the first picture isn't a download, serves it on port
+    7000 (`CUTOUT_PORT`) and warms the model up. `bin/cutout check` sends a
+    picture through whatever answers at `CUTOUT_URL` and says whether a
+    transparent PNG came back; "Check the connection" on Settings does the
+    same from the app. With `CUTOUT_URL=http://127.0.0.1:7000`, `bin/dev`
+    starts the remover beside the server when nothing answers there, and
+    stops it with the server. From the app's container the address is
+    `http://host.docker.internal:7000`.
   - **White in a design is kept.** A removal model takes whatever looks
     like the background, and on art drawn on white that includes the white
     in a design: a shirt, a face, a sail. So a picture that will be cut out
@@ -1140,9 +1148,11 @@ Every image slot can be uploaded or generated with
   | `COMFY_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
   | `COMFY_MODEL` | `anima-preview.safetensors` | The model when no layer names one |
   | `CUTOUT_URL` | blank (off) | A background-removal service (rembg's `rembg s`, or alike) |
-  | `CUTOUT_MODEL` | `birefnet-general` | The model it should use |
+  | `CUTOUT_MODEL` | `isnet-anime` | The model it should use (`bin/cutout` fetches it) |
   | `CUTOUT_PATH` | `/api/remove` | Where on it the image goes |
   | `CUTOUT_TOKEN` | blank | Sent as a bearer token |
+  | `CUTOUT_TIMEOUT` | `300` | Seconds to wait for one picture |
+  | `CUTOUT_PORT`, `CUTOUT_MODELS`, `CUTOUT_GPU` | `7000`, `~/.rembg`, auto | `bin/cutout` only: the port, where models are kept, the CUDA build |
   | `CUTOUT_GROUND` | `green` | The colour cut-out pictures are rendered on, in place of white; blank keeps white |
   | `CUTOUT_TOLERANCE` | `56` | How far from the ground's colour (per channel) still counts as background |
   | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1` |
