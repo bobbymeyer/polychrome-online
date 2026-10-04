@@ -70,12 +70,13 @@
       <% end %>
     </aside>
 
-    <div class="table__stage">
-    <%# The Stage first, sacred: nothing above it, and what's under it scrolls on its own (stage.css). %>
+    <div class="table__stage" data-controller="column-scroll" data-action="wheel->column-scroll#wheel:passive">
+    <%# The Stage first, sacred: nothing above it, and what's under it scrolls on its own (stage.css); a wheel
+        anywhere in the column scrolls it (column_scroll_controller). %>
     <% unless view == "controller" %>
     <%= render "campaigns/tables/stage", campaign: @campaign, gm: @seat.gm?, last_dialogue: @last_dialogue %>
     <% end %>
-    <div class="table__under">
+    <div class="table__under" data-column-scroll-target="under">
       <% if view == "controller" %>
         <%# A phone controller has no stage: your name, your vitals and the date sit in its head. %>
         <header class="battle__header">
