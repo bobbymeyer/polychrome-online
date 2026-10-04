@@ -35,6 +35,7 @@ RSpec.describe "The table", type: :request do
     parts = campaign.almanac.periods
     expect(response.body).to include('class="day-clock"', %(data-day-clock-turn-value="#{-(campaign.parts_gone * 360.0 / parts.size)}"))
     expect(response.body.scan("day-clock__part--").size).to eq(parts.size)
+    expect(response.body).to include("day-clock__ring") # one outline with the label beside it
   end
 
   describe "the GM" do

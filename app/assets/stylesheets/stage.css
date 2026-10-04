@@ -1438,9 +1438,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
   position: absolute; top: 1.2cqw; right: 1.2cqw; z-index: 7; padding: clamp(3px, .6cqw, 6px) clamp(6px, 1cqw, 10px);
   max-width: 40cqw; text-align: right; background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
 }
-.stage__hud .table-time__clock { display: flex; justify-content: flex-end; }
-.stage__hud .day-clock { width: clamp(22px, 3.2cqw, 32px); height: clamp(22px, 3.2cqw, 32px); }
-.stage__hud .table-time__part, .stage__hud .table-time__date { font-size: clamp(10px, 1.3cqw, 13px); line-height: clamp(14px, 1.8cqw, 18px); white-space: nowrap; }
+.stage__hud .table-time__clock { --clock: clamp(24px, 3.4cqw, 34px); display: flex; justify-content: flex-end; }
+.stage__hud .table-time__part, .stage__hud .table-time__date { font-size: clamp(10px, 1.3cqw, 13px); white-space: nowrap; }
+.stage__hud .table-time__date { line-height: clamp(14px, 1.8cqw, 18px); }
 .stage__hud .table-time__deadlines { margin-top: 4px; }
 .stage__hud .table-time__deadlines li { font-size: clamp(10px, 1.2cqw, 12px); }
 .stage__hud .table-time__where {

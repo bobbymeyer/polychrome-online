@@ -69,12 +69,14 @@ module MapsHelper
   # One slice of the day clock (campaigns/tables/_day_clock), as an SVG path
   # on a 100 × 100 dial: the index-th of `count`, centred on its place round
   # the dial from the top, clockwise.
-  def clock_slice(index, count, radius: 44)
+  # One slice of a dial cut into `count`: slice 0 centred at `start` degrees
+  # (clockwise from the right: -90 is the top, 0 the right), about `centre`.
+  def clock_slice(index, count, radius: 44, centre: 50, start: -90)
     step = 360.0 / count
     from, to = [ index * step - step / 2, index * step + step / 2 ].map do |angle|
-      rad = (angle - 90) * Math::PI / 180
-      "#{(50 + radius * Math.cos(rad)).round(2)} #{(50 + radius * Math.sin(rad)).round(2)}"
+      rad = (angle + start) * Math::PI / 180
+      "#{(centre + radius * Math.cos(rad)).round(2)} #{(centre + radius * Math.sin(rad)).round(2)}"
     end
-    "M50 50 L#{from} A#{radius} #{radius} 0 #{step > 180 ? 1 : 0} 1 #{to} Z"
+    "M#{centre} #{centre} L#{from} A#{radius} #{radius} 0 #{step > 180 ? 1 : 0} 1 #{to} Z"
   end
 end
