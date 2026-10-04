@@ -43,8 +43,9 @@ RSpec.describe Scene do
     expect(bad.errors[:script].join).to include("Gilgamesh isn't in the cast", "“smug” isn't an expression")
   end
 
-  it "needs something to play, and an ending that's complete" do
-    expect(scene).not_to be_valid
+  it "starts empty, to be built step by step, and needs an ending that's complete" do
+    expect(scene).to be_valid
+    expect { scene.tap(&:save!).start! }.to raise_error(Refusal, /no steps/)
     expect(scene(ending: "battle", encounter: { "dragon" => 1 })).not_to be_valid
     expect(scene(ending: "battle", encounter: { "goblin" => 2 })).to be_valid
     expect(scene(ending: "reveal")).not_to be_valid
