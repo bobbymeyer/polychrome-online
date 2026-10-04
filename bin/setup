@@ -33,6 +33,10 @@ FileUtils.chdir APP_ROOT do
     puts "Chrome: MISSING. The browser tests (spec/system) need Chrome or Chromium; set CHROME_BIN if it's somewhere unusual."
   end
 
+  cutout = File.exist?("tmp/cutout/bin/rembg") || system("command -v docker", out: File::NULL)
+  puts "Background remover: #{cutout ? 'bin/cutout runs rembg' : 'not set up. bin/cutout installs rembg (Python 3, or Docker) and serves it; ' \
+                                                                  'then CUTOUT_URL=http://127.0.0.1:7000 bin/dev'}"
+
   # puts "\n== Copying sample files =="
   # unless File.exist?("config/database.yml")
   #   FileUtils.cp "config/database.yml.sample", "config/database.yml"
