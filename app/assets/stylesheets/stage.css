@@ -1466,6 +1466,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
   }
   .battle .stage .roster__row { padding: 3px 0 2px; }
   .battle .stage .turn-rail { position: absolute; top: 0; left: 0; right: 0; z-index: 5; border-top: 0; }
+  /* Right over the roster: board.js sets its bottom to the roster's height as it shows (32cqh is the band's most). */
   .battle .stage .round-tally { position: absolute; left: 0; right: 0; bottom: 32cqh; z-index: 5; border-bottom: 0; border-top: 3px solid var(--ink); }
 }
 @media (max-width: 640px) {

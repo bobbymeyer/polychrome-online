@@ -115,6 +115,9 @@ RSpec.describe "The live table", type: :system do
     as(gm) do
       expect(page).to have_css(".turn-rail .turn-rail__plate", minimum: 2, wait: 15)
       expect(page).to have_css(".round-tally", text: /Round 1 · \w+ dealt \d+/, wait: 15)
+      # The tally sits right over the roster band, however many rows it has (board.js seats it).
+      gap = page.evaluate_script("document.querySelector('.roster').getBoundingClientRect().top - document.querySelector('.round-tally').getBoundingClientRect().bottom")
+      expect(gap.abs).to be < 2
     end
 
     # Fast animations sits in the Menu, outside the battle, and still reaches it.
