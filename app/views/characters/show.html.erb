@@ -4,10 +4,8 @@
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @character.name %></div>
 
 <article class="book-page character-sheet">
-  <%= render "characters/header", cj: @character.character_job %>
-
   <% masteries = @character.masteries %>
-  <%# A long sheet: jump to what you came for. %>
+  <%# A long sheet: jump to what you came for. First on the page, so it's at the top on every screen. %>
   <nav class="sheet-nav" aria-label="On this sheet">
     <%= link_to "Stats", "#stats" %>
     <%= link_to "Items", "#items" if can_manage?(@character) %>
@@ -18,21 +16,29 @@
     <%= link_to "Archetypes", "#jobs" %>
   </nav>
 
-  <%= render "characters/stats", stages: @character.stat_stages %>
+  <%# On a wide screen, who they are stays in a column on the left while the sheet scrolls beside it. %>
+  <div class="character-sheet__columns">
+    <aside class="character-sheet__who">
+      <%= render "characters/header", cj: @character.character_job %>
+    </aside>
+    <div class="character-sheet__body">
+      <%= render "characters/stats", stages: @character.stat_stages %>
 
-  <%= render "characters/items" if can_manage?(@character) %>
+      <%= render "characters/items" if can_manage?(@character) %>
 
-  <%= render "characters/equipment" %>
+      <%= render "characters/equipment" %>
 
-  <%= render "characters/abilities" %>
+      <%= render "characters/abilities" %>
 
-  <%= render "characters/skills" %>
+      <%= render "characters/skills" %>
 
-  <%= render "characters/mastery", masteries: masteries if masteries.any? %>
+      <%= render "characters/mastery", masteries: masteries if masteries.any? %>
 
-  <%= render "characters/jobs" %>
+      <%= render "characters/jobs" %>
 
-  <%= render "characters/gm" if can_gm?(@campaign) %>
+      <%= render "characters/gm" if can_gm?(@campaign) %>
+    </div>
+  </div>
 </article>
 
 <% if can_manage?(@character) %>

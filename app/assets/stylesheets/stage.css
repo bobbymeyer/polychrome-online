@@ -1196,6 +1196,18 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* A long sheet keeps its section links at the top of the screen; on a phone they scroll sideways on one line. */
 .sheet-nav { position: sticky; top: 0; z-index: 20; background: var(--paper); border-bottom: 2px solid var(--ink); padding: 0 0 0; }
+/* On a wide screen the sheet is two columns under the links: who they are (portrait, name, level, HP) on the left,
+   staying put while the sheet scrolls; the stats, gear, abilities and the rest on the right. */
+.character-sheet .book-page__header { margin-bottom: 24px; }
+@media (min-width: 1100px) {
+  .character-sheet { max-width: none; }
+  .character-sheet__columns { display: grid; grid-template-columns: minmax(280px, 34%) minmax(0, 1fr); gap: 0 var(--gutter); align-items: start; margin-top: 24px; }
+  .character-sheet__who { position: sticky; top: 64px; }
+  .character-sheet__who .book-page__header { grid-template-columns: 1fr; margin-bottom: 0; }
+  .character-sheet__who .book-page__header > :first-child { max-width: 320px; }
+  .character-sheet__body > :first-child { margin-top: 0; }
+  .character-sheet__body .window:first-child { margin-top: 0; }
+}
 :where(#stats, #items, #equipment, #abilities, #skills, #mastery, #jobs) { scroll-margin-top: 64px; }
 @media (max-width: 640px) {
   .sheet-nav { flex-wrap: nowrap; overflow-x: auto; margin-left: -16px; margin-right: -16px; padding: 0 16px; scrollbar-width: none; mask-image: linear-gradient(to right, #000 85%, transparent); }
