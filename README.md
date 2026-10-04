@@ -1057,10 +1057,20 @@ Every image slot can be uploaded or generated with
     "properly" changes a draft, and candidates per batch. Blank uses
     `draft` in `config/comfy.yml`; a family can also set its own
     `draft_steps`.
-- **Background removal** is an optional step for any batch, on by default
-  for content types marked to remove it. It happens outside ComfyUI, with a
+- **Background removal** is a step for any batch, on by default for
+  content types marked to remove it. It happens outside ComfyUI, with a
   background-removal service of its own (`Cutout`, `config/cutout.yml`),
-  called on each image once ComfyUI has rendered it.
+  called on each image once ComfyUI has rendered it. It is **hardwired**:
+  the address is this machine's port 7000 unless told otherwise, and when
+  nothing answers there the app starts `bin/cutout` itself the first time
+  a picture needs cutting out (`Cutout::Launcher`: the pid in
+  `tmp/pids/cutout.pid`, its output in `log/cutout.log`), waits a little
+  for it, and otherwise lets the batch wait and try again while it installs
+  and fetches the model. Nothing to set on the Settings page or in the
+  environment. From a container the remover is on the host
+  (`http://host.docker.internal:7000` is the default there), which the app
+  can't start: run `bin/cutout` on the host. `CUTOUT_AUTOSTART=0` leaves
+  starting it to you; a blank `CUTOUT_URL` turns removal off.
   - **Which service:** rembg, the standalone tool that runs the removal
     models (ISNet, BiRefNet, BRIA RMBG, U²-Net) behind one HTTP API. Its
     models, as the app has measured them on a 4-core CPU: `isnet-anime`
@@ -1079,10 +1089,8 @@ Every image slot can be uploaded or generated with
     7000 (`CUTOUT_PORT`) and warms the model up. `bin/cutout check` sends a
     picture through whatever answers at `CUTOUT_URL` and says whether a
     transparent PNG came back; "Check the connection" on Settings does the
-    same from the app. With `CUTOUT_URL=http://127.0.0.1:7000`, `bin/dev`
-    starts the remover beside the server when nothing answers there, and
-    stops it with the server. From the app's container the address is
-    `http://host.docker.internal:7000`.
+    same from the app, and starts the remover if it should be here and
+    isn't.
   - **White in a design is kept.** A removal model takes whatever looks
     like the background, and on art drawn on white that includes the white
     in a design: a shirt, a face, a sail. So a picture that will be cut out
@@ -1147,7 +1155,8 @@ Every image slot can be uploaded or generated with
   | `COMFY_TOKEN` | blank | Sent as `Authorization: Bearer …` |
   | `COMFY_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
   | `COMFY_MODEL` | `anima-preview.safetensors` | The model when no layer names one |
-  | `CUTOUT_URL` | blank (off) | A background-removal service (rembg's `rembg s`, or alike) |
+  | `CUTOUT_URL` | `http://127.0.0.1:7000` (in a container, `http://host.docker.internal:7000`) | The background remover; blank turns removal off |
+  | `CUTOUT_AUTOSTART` | `1` | Start `bin/cutout` from the app when the address is this machine's and nothing answers |
   | `CUTOUT_MODEL` | `isnet-anime` | The model it should use (`bin/cutout` fetches it) |
   | `CUTOUT_PATH` | `/api/remove` | Where on it the image goes |
   | `CUTOUT_TOKEN` | blank | Sent as a bearer token |

@@ -36,13 +36,14 @@
     <legend>Background removal</legend>
     <p class="hint">
       A service of its own, called on each image after ComfyUI renders it, for the content types marked to lose their background.
-      rembg's server works (<code>rembg s --port 7000</code>), or anything that takes the image as a multipart <code>file</code> and answers with a PNG.
-      Blank leaves backgrounds on.
+      It's hardwired: the app runs rembg on this machine's port 7000 by itself (<code>bin/cutout</code>, started the first time a picture needs it),
+      so nothing here needs filling in. Set an address only for a remover somewhere else (from a container, the host's:
+      <code>http://host.docker.internal:7000</code>), or anything that takes the image as a multipart <code>file</code> and answers with a PNG.
     </p>
     <div class="field-row">
       <div class="field">
         <%= f.label :cutout_url, "Address" %>
-        <%= f.url_field :cutout_url, placeholder: cutout[:url].presence || "http://host.docker.internal:7000" %>
+        <%= f.url_field :cutout_url, placeholder: cutout[:url].presence || "http://127.0.0.1:7000" %>
       </div>
       <div class="field">
         <%= f.label :cutout_model, "Model" %>

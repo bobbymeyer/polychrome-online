@@ -44,9 +44,11 @@ class ConnectionCheck
     new(url: Cutout.config[:url], name: "The background remover", token: Cutout.config[:token].present?, probe: lambda {
       require "vips"
       started = Time.current
+      Cutout::Launcher.ensure_running!(wait: 20) # started by the app if it should be here and isn't
       png = Cutout.client.remove(Vips::Image.black(8, 8, bands: 3).pngsave_buffer)
       "cuts out with #{Cutout.label} (#{(Time.current - started).round(1)}s#{', no transparency back' unless Cutout.png_alpha?(png)})" \
-        "#{Cutout.ground ? "; pictures are rendered on a #{Cutout.ground} ground" : '; pictures stay on white (no CUTOUT_GROUND)'}."
+        "#{Cutout.ground ? "; pictures are rendered on a #{Cutout.ground} ground" : '; pictures stay on white (no CUTOUT_GROUND)'}" \
+        "#{'; started by the app (bin/cutout)' if Cutout::Launcher.wanted?}."
     })
   end
 
