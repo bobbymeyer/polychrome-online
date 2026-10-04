@@ -855,13 +855,23 @@ details[open] > summary { margin-bottom: 16px; }
 .table-time.time--dusk { --part: var(--bright-red); --part-ink: #fff; }
 .table-time.time--night { --part: var(--dark-blue); --part-ink: #fff; }
 /* One line: the clock, then the part of the day as a label in that part's colour, butted against the clock
-   so its slice runs into the label, then the day at the same size. */
+   so its slice runs into the label, then the day at the same size, black on white, carrying on the label's
+   border and cut off with a slant. */
 .table-time__clock { display: inline-flex; align-items: center; gap: 0; }
 .table-time__part {
   display: inline-block; margin: 0; padding: 2px 12px 2px 14px; border: 3px solid var(--ink); border-left: 0; margin-left: -4px;
   background: var(--part); color: var(--part-ink); font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; line-height: 18px;
 }
-.table-time__date { margin: 0 0 0 10px; font-weight: 900; font-size: 13px; line-height: 18px; letter-spacing: .02em; white-space: nowrap; }
+/* The border is the ink behind a white cut inset 3px from it, so it follows the slant too. */
+.table-time__date {
+  --slant: 8px; position: relative; isolation: isolate; margin: 0; padding: 5px calc(var(--slant) + 8px) 5px 10px;
+  background: var(--ink); color: var(--ink); clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+  font-weight: 900; font-size: 13px; line-height: 18px; letter-spacing: .02em; white-space: nowrap;
+}
+.table-time__date::before {
+  content: ""; position: absolute; inset: 3px 4px 3px 0; z-index: -1; background: var(--paper);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant) + 2px) 100%, 0 100%);
+}
 .table-time__deadlines { list-style: none; margin: 8px 0 0; padding: 0; }
 .table-time__deadlines li { font-size: 14px; }
 .table-time__deadlines strong { color: var(--signal); margin-right: 6px; }
