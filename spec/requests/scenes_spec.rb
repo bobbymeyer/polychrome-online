@@ -92,6 +92,14 @@ RSpec.describe "Scenes", type: :request do
     expect(scene.reload.summary).to eq("2 lines, 4 changes, then a choice: Fight / Flee")
   end
 
+  it "starts from a name alone, built step by step after" do
+    post campaign_scenes_path(campaign), params: { scene: { name: "Blank", script: "", ending: "none" } }
+    scene = campaign.scenes.last
+    expect(response).to redirect_to(edit_scene_path(scene))
+    expect(scene.beats).to be_empty
+    expect(scene.summary).to eq("0 lines")
+  end
+
   it "re-renders with what's wrong in the script" do
     post campaign_scenes_path(campaign), params: { scene: { name: "Oops", script: "Kefka: Hohoho!", ending: "none" } }
     expect(response).to have_http_status(:unprocessable_content)

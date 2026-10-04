@@ -282,7 +282,6 @@ class Scene < ApplicationRecord
         errors.add(:script, "“#{line['expression']}” isn't an expression. Use one of #{Portrait::EXPRESSIONS.to_sentence(last_word_connector: ' or ')}.")
       end
     end
-    errors.add(:script, "is empty, and the scene has no ending") if all.empty? && ending == "none"
   end
 
   def ending_is_complete
