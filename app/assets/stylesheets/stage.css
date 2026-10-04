@@ -1560,6 +1560,27 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   transition: height var(--t-change) var(--snap), filter var(--t-change) var(--snap);
 }
 .beat-stage__figure--sprite.is-speaking .beat-stage__sprite { height: 92cqh; filter: drop-shadow(6px 6px 0 var(--ink)); }
+/* How a change comes on (Beat#transition, stage_change controller): the backdrop or figure that changed on
+   the way to this step fades, slides or cuts in once; a figure that left goes out the same way, then is gone. */
+.beat-stage__figure--leaving { opacity: 0; }
+.is-arriving[data-arrive="fade"] { animation: stage-arrive .3s ease-out both; }
+.is-arriving[data-arrive="slow"] { animation: stage-arrive 1.4s ease-in-out both; }
+.beat-stage__side--left .is-arriving[data-arrive="slide"] { animation: stage-slide-left .35s var(--snap) both; }
+.beat-stage__side--right .is-arriving[data-arrive="slide"] { animation: stage-slide-right .35s var(--snap) both; }
+.is-leaving[data-leave="fade"] { animation: stage-leave .3s ease-in both; }
+.is-leaving[data-leave="slow"] { animation: stage-leave 1.4s ease-in-out both; }
+.beat-stage__side--left .is-leaving[data-leave="slide"] { animation: stage-slide-left .35s var(--snap) reverse both; }
+.beat-stage__side--right .is-leaving[data-leave="slide"] { animation: stage-slide-right .35s var(--snap) reverse both; }
+.beat-stage.is-arriving[data-arrive] .beat-stage__backdrop { animation: inherit; }
+.beat-stage.is-arriving[data-arrive="fade"], .beat-stage.is-arriving[data-arrive="slow"] { animation-name: stage-backdrop; }
+@keyframes stage-arrive { from { opacity: 0; } to { opacity: 1; } }
+@keyframes stage-leave { from { opacity: 1; } to { opacity: 0; } }
+@keyframes stage-slide-left { from { opacity: 0; translate: -30% 0; } to { opacity: 1; translate: 0 0; } }
+@keyframes stage-slide-right { from { opacity: 0; translate: 30% 0; } to { opacity: 1; translate: 0 0; } }
+@keyframes stage-backdrop { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .is-arriving, .is-leaving, .beat-stage.is-arriving .beat-stage__backdrop { animation-duration: 1ms !important; } }
+.beat__transition { align-items: center; }
+.beat__transition-label { font-size: 13px; font-weight: 600; }
 /* A speaker's figure in the form: the one uploaded, or the one standing in. */
 .sprite-field { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: start; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rule); }
 .sprite-field__image { width: 64px; height: 96px; object-fit: contain; object-position: bottom; background: var(--wash); }

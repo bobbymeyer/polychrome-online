@@ -18,7 +18,7 @@ StreamActions.battle_start = function () {
 }
 
 StreamActions.music = function () {
-  followGM({ follow: this.getAttribute("follow") === "true", url: this.getAttribute("url") || "" })
+  followGM({ follow: this.getAttribute("follow") === "true", url: this.getAttribute("url") || "", cut: this.getAttribute("cut") === "true" })
 }
 
 StreamActions.reload_frame = function () {

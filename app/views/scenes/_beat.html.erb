@@ -62,6 +62,12 @@
         <span class="hint">A placeholder: the stage carries the effect's name; nothing plays it yet.</span>
       </div>
     <% end %>
+    <% if beat.changes_stage? %>
+      <div class="beat__stage beat__transition">
+        <%= f.label :transition, "Comes on with", class: "beat__transition-label" %>
+        <%= f.select :transition, options_for_select(beat.transitions.map { |k, v| [ v, k ] }, beat.transition), {}, "aria-label": "Transition" %>
+      </div>
+    <% end %>
     <noscript><%= f.submit "Save", class: "button button--quiet" %></noscript>
   <% end %>
   <div class="beat__actions">

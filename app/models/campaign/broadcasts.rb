@@ -58,9 +58,12 @@ module Campaign::Broadcasts
 
   # Every game page of the campaign changes track with the GM (stage.js);
   # a battle keeps its own.
+  # A music step can cut instead of crossfading (Beat#transition); set just before the change.
+  attr_accessor :music_cut
+
   def broadcast_music
     Turbo::StreamsChannel.broadcast_action_to(self, :stage, action: :music, target: "stage",
-                                              attributes: { follow: music.nil?, url: world.music_path(music).to_s })
+                                              attributes: { follow: music.nil?, url: world.music_path(music).to_s, cut: music_cut == true })
   end
 
   # The campaign's documents fetch themselves again (debounced: a burst of

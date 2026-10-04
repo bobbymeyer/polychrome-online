@@ -9,7 +9,7 @@ class Beats::CopiesController < ApplicationController
     copy = @scene.transaction do
       @scene.beats.where("position > ?", @beat.position).update_all("position = position + 1")
       @scene.beats.create!(@beat.attributes.slice("kind", "speaker_type", "speaker_id", "expression", "text", "backdrop", "map_node_id",
-                                                  "figures", "cue", "music", "options", "flag_key", "action", "fx").merge("position" => @beat.position + 1))
+                                                  "figures", "cue", "music", "options", "flag_key", "action", "fx", "transition").merge("position" => @beat.position + 1))
     end
     redirect_to edit_scene_path(@scene, beat: copy.id, anchor: "beat_#{copy.id}"), status: :see_other
   end

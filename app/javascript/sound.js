@@ -233,8 +233,15 @@ let held = false    // a boss's moment of silence
 let fade = null
 let unlocked = false
 
+let cutNext = false // a scene's music step said "cut": no crossfade this once
+
 function fadeTo(volume, done) {
   clearInterval(fade)
+  if (cutNext) {
+    music.volume = volume
+    if (volume > 0) cutNext = false
+    return done?.()
+  }
   const step = (volume - music.volume) / (FADE_MS / 50)
   if (step === 0) return done?.()
   fade = setInterval(() => {
@@ -269,9 +276,13 @@ function apply() {
   else start()
 }
 
-export function setMusic(url) {
+export function setMusic(url, { cut = false } = {}) {
   wanted = controller() ? "" : url || ""
+  cutNext = cut
   apply()
+  if (!cutNext) return
+  // Nothing played or nothing changed: the cut is spent.
+  if (!wanted || wanted === playing) cutNext = false
 }
 
 // Silence until release, e.g. while a boss's name is on the screen.
@@ -292,11 +303,11 @@ function pageMusic() {
   return meta ? meta.content : ""
 }
 
-export function followGM({ follow, url }) {
+export function followGM({ follow, url, cut = false }) {
   const meta = document.querySelector('meta[name="polychrome-music"]')
   if (!meta || meta.dataset.fixed === "true") return
   meta.content = follow ? meta.dataset.default : url
-  setMusic(meta.content)
+  setMusic(meta.content, { cut })
 }
 
 // A new page starts unheld; its controllers connect (a boss's entrance

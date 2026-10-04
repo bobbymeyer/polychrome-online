@@ -372,7 +372,10 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   portrait just above it until they have one; the speaker lit and a step larger, the rest dimmed. The
   line plays in the dialogue box as any line does. The GM steps the scene line to line from the Now
   line, or lets it play on; the changes between lines (a backdrop, someone entering or leaving, music,
-  an effect) are made on the way, so the table only ever stops on something said or asked.
+  an effect) are made on the way, so the table only ever stops on something said or asked. Each change
+  comes on with the line after it, with its own transition: a quick fade (300 ms) unless the step says a
+  slow one (1.4 s), a slide in from the figure's side, or a cut; someone leaving goes out the same way.
+  A change plays once: a refresh of the stage doesn't replay it.
 - **A scene is built step by step** on its page in prep. A new scene asks for a name and nothing
   else, and opens on the steps; the script box is folded away as a shortcut, there for a play's worth
   of lines at once. The page is a column of steps, each a small form of

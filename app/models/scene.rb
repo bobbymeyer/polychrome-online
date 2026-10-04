@@ -70,8 +70,18 @@ class Scene < ApplicationRecord
   # The stage as it is at a step: what the steps up to it set.
   #   { "backdrop" => (Beat#effective_backdrop), "figures" => [{ "who", "side", "expression" }], "fx" => String or nil }
   def stage_at(beat)
-    beats.to_a.take_while { |b| b.position <= beat.position }
-         .each_with_object({ "backdrop" => nil, "figures" => [], "fx" => nil }) { |b, state| b.apply_to(state) }
+    state = { "backdrop" => nil, "figures" => [], "fx" => nil, "leaving" => [], "fresh" => {} }
+    settled = false
+    beats.to_a.take_while { |b| b.position <= beat.position }.each do |b|
+      if settled # the table stopped on a line: the changes before it have played
+        state["figures"].each { |f| f.delete("arrived") }
+        state["leaving"] = []
+        state["fresh"] = {}
+      end
+      b.apply_to(state)
+      settled = b.waits?
+    end
+    state
   end
 
   # The script's lines, read as a scene reads them (not beats yet).
@@ -235,7 +245,10 @@ class Scene < ApplicationRecord
     elsif beat.says?
       campaign.messages.create!(speaker: beat.speaker, expression: beat.expression, body: beat.text, cue: beat.cue, data: { "scene" => id })
     end
-    campaign.update!(music: beat.music == "follow" ? nil : beat.music) if beat.kind == "music"
+    if beat.kind == "music"
+      campaign.music_cut = beat.transition == "cut"
+      campaign.update!(music: beat.music == "follow" ? nil : beat.music)
+    end
   end
 
   # The last beat has been read: the ending plays, and the stage is the

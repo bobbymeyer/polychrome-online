@@ -334,7 +334,12 @@ table. A step is one of six kinds, each whole of its kind (`Beat#whole_of_its_ki
   now: the stage carries it as `data-fx` and nothing plays yet.
 
 Lines and choices **wait** for the table (`Beat::WAITING`); the rest are
-changes made on the way to the next line. The stage at any step is folded
+changes made on the way to the next line. Each change has a **transition**
+(`Beat::TRANSITIONS`): a quick fade unless the GM says otherwise, a slow
+fade, a slide for a sprite, or a cut (for music, no crossfade). A change
+comes on with the first line after it, once (`stage_change` controller
+keys each by step and figure so a table refresh doesn't replay it); a
+figure leaving goes out the same way as that line comes on. The stage at any step is folded
 from the steps before it (`Scene#stage_at`: the backdrop set, who is on,
 the effect), so a step only says what changes.
 
