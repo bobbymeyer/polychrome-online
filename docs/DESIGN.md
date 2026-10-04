@@ -359,10 +359,11 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 
 - **What it shows** is the scene: a beat's backdrop and figures while a scene is on, else the
   picture of the place the party is in when it has one, else plain paper. The map is not on it:
-  the map is the map page's, and travel is made from the Controls or there. When sits on a small
-  plate in the top-right corner, one line: the day clock, the part of the day as a label in that
-  part's colour butted against it (the clock's slice runs into the label), and the day at the
-  same size; the days left on public clocks under it. Where (the place, and the room in a
+  the map is the map page's, and travel is made from the Controls or there. When sits in the
+  top-right corner as one line straight on the picture, with no plate round it: the day clock, the
+  part of the day as a label in that part's colour butted against it (the clock's slice runs into
+  the label), and the day at the same size, black on white in a slanted segment carrying on the
+  label's border; the days left on public clocks under it, each its own white slip. Where (the place, and the room in a
   dungeon) is a tag in the bottom-left corner. What's being said plays along the bottom, in the
   dialogue box.
 - **A scene plays on the same frame.** While the GM has a scene on the stage, its step is what the
@@ -724,13 +725,14 @@ Record each place where the game needed more than the Swiss defaults: what chang
   the setting's day, each in its light's colour, with the part it is now under a pointer at the
   top), then the part of the day as a label in that part's colour (dawn yellow, day white, dusk
   red, night blue) butted against the clock so the slice runs into it, then the day in the
-  setting's calendar at the same size. When time passes the dial turns forward (never back: into
+  setting's calendar at the same size, black on white, carrying on the label's border and cut off
+  with a slant (the `/` of the type tags). When time passes the dial turns forward (never back: into
   the next day it keeps going round), so the table sees the day move. Under the line, the days
   left on each public clock that only a new day ticks, said as a sentence ("5 days until The
   spring tide comes in"; on the last day, "Tomorrow it happens: …"). Where the party is (the
   place's name, a link to it, with the room inside a dungeon: "The Drowned Line · Entrance") is a
-  tag in the frame's other corner. The party plans around the calendar, but the plate shouldn't
-  take the eye off the stage.
+  tag in the frame's other corner. The party plans around the calendar, but the line shouldn't
+  take the eye off the stage, so on the stage it has no plate of its own.
 - **Name tags in the speaker's colour.** The dialogue box's name tag wears the speaker's plate
   colour instead of a fixed yellow. The narrator has no portrait: narration is a voice, and its
   words take the whole box. On a phone a speaker's portrait is 64px beside their words, where it
