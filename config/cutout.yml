@@ -20,6 +20,16 @@ shared: &shared
   token: <%= ENV.fetch("CUTOUT_TOKEN", "").to_json %>
   # Seconds to wait: the first image loads the model.
   timeout: <%= ENV.fetch("CUTOUT_TIMEOUT", "120") %>
+  # The colour the picture is rendered on when it will be cut out, in place
+  # of the type's white background: a flat ground no character design is
+  # drawn in, so the white in a design (a shirt, a face, a sail) is never
+  # mistaken for the background. Blank keeps each type's own framing (white),
+  # and only white closed in by the subject can be told from the ground.
+  ground: <%= ENV.fetch("CUTOUT_GROUND", "green").to_json %>
+  # How far (0–255, per channel) a cleared pixel's colour may be from the
+  # ground's and still count as background. Cleared pixels further from it
+  # than this were taken out of the subject, and are put back.
+  tolerance: <%= ENV.fetch("CUTOUT_TOLERANCE", "56") %>
 
 development:
   <<: *shared

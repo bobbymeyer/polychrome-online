@@ -43,9 +43,9 @@ module SystemHelpers
     click_on "Change seat" if page.has_button?("Change seat", wait: 2)
     return wait_for_streams unless seat
 
-    within("section", text: "Take a seat") { click_on(seat == "gm" ? "Game Master" : seat.name, match: :prefer_exact) }
-    # The GM's seat is said under the name; a player's is the "You" line (their Change seat is in the menu).
-    expect(page).to(seat == "gm" ? have_text("At the table as GM") : have_css(".player-screen__card", text: seat.name))
+    within("section.take-a-seat") { click_on(seat == "gm" ? "Game Master" : seat.name, match: :prefer_exact) }
+    # The seat is said in the top bar; a player's card says who they are too.
+    expect(page).to(seat == "gm" ? have_text("At the table as GM") : have_css(".player-card", text: seat.name))
     wait_for_streams
   end
 

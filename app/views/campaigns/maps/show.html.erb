@@ -12,6 +12,8 @@
 <div class="map-layout" <% if @gm %>data-controller="map-editor" data-map-editor-new-url-value="<%= new_campaign_map_node_path(@campaign) %>"<% end %>>
   <div class="window map-window">
     <%= render "campaigns/maps/canvas", campaign: @campaign, gm: @gm %>
+    <%# Inside a dungeon, its floorplan too: every room for the GM, what they've seen for players (replaced live). %>
+    <%= render "campaigns/tables/floorplan", campaign: @campaign, gm: @gm %>
   </div>
   <% if @gm %>
     <%= turbo_frame_tag "map_panel", src: campaign_map_panel_path(@campaign), class: "map-panel" do %>

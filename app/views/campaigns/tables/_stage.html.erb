@@ -1,27 +1,13 @@
 <%# The Stage (docs/DESIGN.md, "The Stage"): one 16:9 frame in the middle of every screen at the table, the
-    same for everyone, where the game is shown: where the party is (the map, or the dungeon's floorplan,
-    with the place's picture behind them when it has one), the date and the part of the day in its corner,
-    and what's being said along its bottom. Display only: nothing on it is pressed; the moves are off the
-    stage. Each part is replaced live (Campaign::Broadcasts), so every screen shows the same stage; a
-    battle plays on the same frame, on its own page. %>
-<section class="stage stage--table" id="stage" aria-label="Stage" data-controller="stage-fit" data-stage-fit-below-value="<%= local_assigns.fetch(:caption, true) ? 200 : 0 %>">
+    same for everyone, where the game is shown: the scene on it (a beat's backdrop and figures), else the
+    place the party is in when it has a picture; the date and the part of the day in its corner; and what's
+    being said along its bottom. Display only: nothing on it is pressed, and nothing else is on it (the map
+    is the map page's). Each part is replaced live (Campaign::Broadcasts), so every screen shows the same
+    stage; a battle plays on the same frame, on its own page. %>
+<section class="stage stage--table" id="stage" aria-label="Stage" data-controller="stage-fit" data-stage-fit-below-value="<%= local_assigns.fetch(:caption, true) ? 160 : 0 %>">
   <div class="stage__frame">
     <%= render "campaigns/tables/scene", campaign: campaign %>
-    <div class="stage__map">
-      <%= render "campaigns/tables/floorplan", campaign: campaign, gm: gm %>
-      <%= render "campaigns/maps/canvas", campaign: campaign, gm: gm %>
-    </div>
     <%= render "campaigns/tables/dialogue_box", last_dialogue: last_dialogue, extra: "dialogue--stage" %>
   </div>
   <div class="stage__hud"><%= render "campaigns/tables/time", campaign: campaign %></div>
-  <%# Under the frame, the links: the stage itself is never pressed. (Not on a stage-only screen.) %>
-  <% if local_assigns.fetch(:caption, true) %>
-  <p class="stage__caption hint">
-    <%= link_to(gm ? "Edit the map / travel →" : "Open the map →", campaign_map_path(campaign)) %>
-    <%= render "campaigns/tables/here", campaign: campaign %>
-    <% if gm && campaign.map_nodes.where(visible: false).exists? %>
-      <span class="gm-only-hint">Faded places are hidden: only you see them.</span>
-    <% end %>
-  </p>
-  <% end %>
 </section>

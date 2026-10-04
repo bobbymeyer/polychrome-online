@@ -1,6 +1,7 @@
 <%# The GM's way into local co-op: one shared screen, phones as controllers. %>
 <div class="coop-setup">
   <p>Play around one shared screen: a TV at the table, or your screen shared on a call. Everyone talks out loud (or on voice chat); phones are just controllers.</p>
+  <%= render "campaigns/tables/coop_join", campaign: campaign %>
   <ol class="coop-setup__steps">
     <li><%= link_to "Open the shared screen", campaign_table_path(campaign, view: "screen"), class: "button play", target: "_blank", rel: "noopener" %>
       on the device that drives the TV or the stream.</li>

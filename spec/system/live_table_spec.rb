@@ -30,7 +30,7 @@ RSpec.describe "The live table", type: :system do
     as(player) { expect(page).to have_css("#table_time", text: /night/i) }
 
     as(gm) do
-      within(".table__side .gm-tools") { find("[role=tab]", text: "Time").click }
+      within(".table-controls .gm-tools") { find("[role=tab]", text: "Time").click }
       click_on "A part of the day passes"
     end
 
@@ -49,8 +49,7 @@ RSpec.describe "The live table", type: :system do
     as(gm) { expect(page).to logged?("under the mat").and logged?("Night falls") }
     as(player) do
       expect(page).to logged?("under the mat").and logged?("Night falls")
-      # Out of the drawer: on screen under the dialogue box, and the whisper pops up.
-      expect(page).to have_css(".recent-lines", text: /under the mat.*Night falls/m)
+      # The whisper pops up for a moment, since it's meant for you alone.
       expect(page).to have_css(".toast", text: "under the mat")
     end
     as(watcher) do

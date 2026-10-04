@@ -785,7 +785,7 @@ body[data-view="screen"] .page { max-width: none; padding-left: 32px; padding-ri
 .battle--screen .battle__lower > :only-child, .battle--screen .dialogue--battle { grid-column: 1 / -1; }
 .battle--screen .dialogue--battle .dialogue__body { font-size: 28px; line-height: 38px; }
 .table--screen .dialogue__body { font-size: 28px; line-height: 38px; }
-.table--screen .recent-lines, .table--screen .table__side { font-size: 20px; line-height: 28px; }
+.table--screen .table__side { font-size: 20px; line-height: 28px; }
 .battle--screen .unit__label { font-size: 20px; line-height: 24px; }
 .battle--screen .roster { font-size: 20px; line-height: 28px; }
 /* The shared screen's clock, who it waits on, and the spoils: read from the sofa. */
@@ -1111,11 +1111,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 }
 
 /* Inside a dungeon, the table's map is its floorplan (campaigns/tables/_floorplan). */
-.table__map:has(#table_floorplan .floorplan) #map_canvas { display: none; }
 .table-floorplan:empty { display: none; }
 .table-floorplan__title { margin: 0 0 8px; font-size: 14px; }
-.table__seat { margin: 0 0 4px; }
-.table__seat .link-button { font-size: inherit; }
 /* A button that fits a table row (the battle's GM panel: auto every round). */
 .button--small { padding: 2px 10px; min-height: 0; font-size: 13px; }
 
@@ -1209,9 +1206,11 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* What you can do now (docs/DESIGN.md): a player's moves follow the table's state (#table_now data-state).
    A battle takes them all (the Now line has the way in); an encounter or a vote leaves only the vote and talk. */
-.table[data-seat="player"]:has(#table_now[data-state="battle"]) .your-moves { display: none; }
+.table:has(#table_now[data-state="battle"]) :is(.your-moves, .gm-tools) { display: none; } /* the fight is on its own page */
 .table[data-seat="player"]:has(#table_now[data-state="encounter"]) #field_ability,
-.table[data-seat="player"]:has(#table_now[data-state="choice"]) #field_ability { display: none; }
+.table[data-seat="player"]:has(#table_now[data-state="choice"]) #field_ability,
+.table:has(#table_now[data-state="scene"]) #table_ways, .table[data-seat="player"]:has(#table_now[data-state="scene"]) #field_ability { display: none; } /* the scene plays; the director's hand is on the Now line */
+#table_here:empty { display: none; }
 .field-ability-status { margin: 8px 0; font-size: 14px; }
 /* Talk is a button until it's wanted. */
 .talk { margin: 12px 0; }
@@ -1226,76 +1225,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table:has(#party_knows[hidden]) .drawers__tab--knows { display: none; }
 .table:has(#table_party .is-low) .drawers__tab--party::after { content: " · hurt"; color: var(--caution-ink); }
 .table:has(#table_party li.is-ko) .drawers__tab--party::after { content: " · someone's down"; color: var(--signal); }
-
-/* A player's screen (docs/DESIGN.md): you, the scene, your moves, and the log. On a phone, one column in
-   that order (you, the scene, your moves, what you look up). On a wide screen: you pinned on the left,
-   the scene in the middle with your moves pinned along its bottom, the log pinned on the right. Each
-   can be unpinned: the left column to a tab on its edge, your moves to a bar, the log to its tab. */
-.player-screen { display: flex; flex-direction: column; gap: 16px; }
-.player-screen__side { display: contents; }
-.player-screen__card { order: 1; display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; align-items: start; position: relative; }
-.player-screen__context { order: 2; }
-.player-screen__moves { order: 3; }
-.player-screen__lookup { order: 4; }
-.player-screen__label { margin: 0; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: var(--grey); }
-.player-screen__name { margin: 0; font: var(--display); font-size: 28px; }
-.player-screen__card .muted { margin: 0 0 6px; }
-.player-screen__card .table-you { margin: 0 0 6px; }
-.player-screen__sheet { font-size: 14px; font-weight: 700; }
-.player-screen__pin, .player-screen__tab { display: none; }
-.player-screen__moves-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-button.your-moves__tag { border: 0; cursor: default; }
-.table-scene { margin: 0 0 16px; border: 3px solid var(--ink); }
-.table-scene[hidden] { display: none; }
-.table-scene img { display: block; width: 100%; max-height: 320px; object-fit: cover; }
-@media (min-width: 1100px) {
-  .player-screen { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "context" "moves"; gap: 16px var(--gutter); align-items: start; }
-  .player-screen__context { grid-area: context; }
-  .player-screen__side { display: flex; flex-direction: column; gap: 16px; }
-  .player-screen__card, .player-screen__lookup { order: 0; }
-  .player-screen__pin { display: inline-flex; font-size: 13px; padding: 4px 10px; }
-  .player-screen__card .player-screen__pin { position: absolute; top: 8px; right: 8px; }
-  .player-screen__pin[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
-  /* You, pinned: a column beside the scene, kept in view as the page scrolls. */
-  .player-screen.is-pinned { grid-template-columns: minmax(280px, 320px) minmax(0, 1fr); grid-template-areas: "side context" "side moves"; }
-  .player-screen.is-pinned .player-screen__side { grid-area: side; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
-  /* Unpinned: a drawer on the left edge, with its tab. */
-  .player-screen:not(.is-pinned) .player-screen__side {
-    position: fixed; top: 0; bottom: 0; left: 0; z-index: 45; width: 340px; overflow-y: auto; padding: 16px;
-    background: var(--paper); border-right: 4px solid var(--ink); translate: -100% 0; visibility: hidden;
-    transition: translate .28s var(--snap), visibility 0s linear .28s;
-  }
-  .player-screen.is-open:not(.is-pinned) .player-screen__side { translate: 0 0; visibility: visible; transition: translate .28s var(--snap), visibility 0s; }
-  .player-screen:not(.is-pinned) .player-screen__tab {
-    display: block; position: fixed; left: 0; bottom: 14vh; z-index: 40; writing-mode: vertical-rl; rotate: 180deg;
-    padding: 18px 8px 22px; border: 0; background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 900;
-    letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
-  }
-  .player-screen.is-open .player-screen__tab { visibility: hidden; }
-  /* Your moves: a drawer along the bottom of the scene. Pinned, it stays in view as the page scrolls;
-     unpinned, it's its bar until pressed. */
-  .player-screen__moves { grid-area: moves; position: sticky; bottom: 0; z-index: 20; background: var(--paper); border-top: 4px solid var(--ink); padding: 8px 0 12px; }
-  .player-screen__moves:not(.is-pinned) button.your-moves__tag { cursor: pointer; }
-  .player-screen__moves:not(.is-pinned) button.your-moves__tag::after { content: " ▴"; }
-  .player-screen__moves.is-open:not(.is-pinned) button.your-moves__tag::after { content: " ▾"; }
-  .player-screen__moves.is-pinned .player-screen__moves-body, .player-screen__moves.is-open .player-screen__moves-body { max-height: 30vh; overflow-y: auto; }
-  /* A drawer's worth of moves: smaller headings, so the moves themselves fit. */
-  .player-screen__moves .choice h2, .player-screen__moves .table-ways h2 { font-size: 20px; margin: 4px 0 6px; }
-  .player-screen__moves .table-ways, .player-screen__moves .choice { padding-top: 8px; }
-  .player-screen__moves:not(.is-pinned):not(.is-open) .player-screen__moves-body { display: none; }
-}
-@media (min-width: 1100px) {
-  /* The scene's head is one row on a wide screen: the campaign's name is in the top bar already, and the
-     date, the place and the day sit side by side, so the story and your moves both fit on screen. */
-  .player-screen__context .battle__header { margin-bottom: 12px; }
-  .player-screen__context .battle__header > div:first-child { display: none; }
-  .player-screen__context .table-time { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; text-align: left; }
-  .player-screen__context .table-time__date { font-size: 32px; }
-  .player-screen__context .table-time__clock { margin: 0; }
-  .player-screen__context .day-clock { width: 44px; height: 44px; }
-  .player-screen__context .table-time__deadlines { margin: 0; flex-basis: 100%; }
-  .player-screen__context .table-now { margin-bottom: 12px; }
-}
 
 /* The GM's table, what to do now (docs/DESIGN.md): the Now line has the moves for this state; while the
    table is busy (a vote, an encounter, a battle) the tools fold behind "Tools", and what needs an answer
@@ -1481,25 +1410,10 @@ button.your-moves__tag { border: 0; cursor: default; }
   position: relative; aspect-ratio: 16 / 9; overflow: hidden; container-type: size;
   border: 3px solid var(--ink); background: var(--paper); box-shadow: 8px 8px 0 var(--ink);
 }
-/* The place's picture fills the frame when it has one; the map and the floorplan sit on it. */
+/* The place's picture fills the frame when it has one. */
 .stage--table #table_scene { position: absolute; inset: 0; margin: 0; border: 0; }
 .stage--table #table_scene img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
-.stage__map { position: absolute; inset: 0; z-index: 1; padding: 12px; transition: inset var(--t-change) var(--snap); }
-/* The drawing fills its area absolutely (an SVG with a viewBox letterboxes itself inside its box). */
-.stage__map .map-canvas, .stage__map .table-floorplan { position: relative; width: 100%; height: 100%; }
-.stage__map .map, .stage__map .floorplan { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; }
-.stage__map .table-floorplan .floorplan { top: 28px; height: calc(100% - 28px); }
-.stage__map .table-floorplan__title { position: absolute; top: 0; left: 0; z-index: 2; margin: 0; padding: 2px 8px; background: var(--paper); border: 2px solid var(--ink); font-size: 13px; }
-.stage__map .map-canvas__modes { position: absolute; left: 0; bottom: 0; z-index: 2; margin: 0; padding: 2px 8px; background: var(--paper); }
-/* Inside a dungeon, the floorplan stands in for the world map. */
-.stage__map:has(#table_floorplan .floorplan) #map_canvas { display: none; }
-.stage__map #table_floorplan:not(:has(.floorplan)) { display: none; }
-/* With a picture, the map folds to a minimap in the frame's corner, so travel still reads. */
-.stage__frame:has(#table_scene:not([hidden])) .stage__map {
-  inset: 12px auto auto 12px; width: 28%; aspect-ratio: 10 / 7; padding: 4px; place-items: stretch;
-  background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
-}
-/* What's said plays along the bottom of the frame; the map keeps clear of it. */
+/* What's said plays along the bottom of the frame. */
 /* Sized to the frame (container units), so a small frame keeps a small box. */
 .stage__frame .dialogue, .battle .stage .dialogue--battle {
   position: absolute; left: 2cqw; right: 2cqw; bottom: 2cqh; z-index: 6; margin: 0; min-height: 0; max-height: 42cqh; overflow-y: auto; scrollbar-width: thin;
@@ -1510,7 +1424,6 @@ button.your-moves__tag { border: 0; cursor: default; }
 .stage__frame .dialogue__name, .battle .stage .dialogue__name { font-size: clamp(11px, 2.4cqh, 13px); margin-bottom: clamp(2px, 1cqh, 8px); }
 .stage__frame .dialogue__body, .battle .stage .dialogue__body { font-size: clamp(14px, 4cqh, 22px); line-height: 1.35; max-width: none; }
 .stage__frame .dialogue__more { width: clamp(10px, 2.5cqh, 16px); height: clamp(10px, 2.5cqh, 16px); }
-.stage__frame:has(.dialogue:not([hidden])):not(:has(#table_scene:not([hidden]))) .stage__map { bottom: 32cqh; }
 /* The date, in the frame's corner. */
 .stage__hud .table-time {
   position: absolute; top: 1.2cqw; right: 1.2cqw; z-index: 7; margin: 0; padding: clamp(4px, .8cqw, 8px) clamp(8px, 1.2cqw, 12px) clamp(5px, 1cqw, 10px);
@@ -1527,8 +1440,6 @@ button.your-moves__tag { border: 0; cursor: default; }
 /* A small frame keeps the date and the part of the day; what's next can wait. */
 @container (max-width: 700px) { .stage__hud .table-time__next, .stage__hud .table-time__season { display: none; } }
 .stage__hud .table-time__deadlines li { font-size: clamp(11px, 1.3cqw, 13px); }
-.stage__caption { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 10px 0 0; font-size: 14px; line-height: 20px; }
-.stage__caption #table_here:empty { display: none; }
 @media (max-width: 640px) {
   .stage { width: 100%; min-width: 0; }
   /* A phone's frame is 4:3, so the words along its bottom have room. */
@@ -1581,21 +1492,8 @@ button.your-moves__tag { border: 0; cursor: default; }
   .table__under { min-height: 0; overflow-y: auto; padding-top: 12px; }
   .table--controller .table__stage { display: block; height: auto; }
   .table--controller .table__under { overflow: visible; }
-  /* The GM's head is one small row: the campaign's name is in the top bar already. */
-  .table:not(.table--controller) .table__under > .battle__header { margin-bottom: 8px; }
-  .table:not(.table--controller) .table__under > .battle__header > div { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; }
-  .table:not(.table--controller) .table__under > .battle__header h1 { display: none; }
-  .table:not(.table--controller) .table__under > .battle__header .eyebrow, .table:not(.table--controller) .table__under > .battle__header .table__seat { margin: 0; }
   .table--screen .table__main { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "side"; padding: 0 var(--gutter); }
   .table--screen .table__side { position: static; max-height: none; border: 0; padding: 0; }
-
-  /* A player's screen: you on the left edge (or its tab), your moves under the stage, the log on the right. */
-  .player-screen { grid-template-rows: minmax(0, 1fr) auto; height: calc(100vh - var(--stage-top, 112px)); gap: 0 var(--gutter); }
-  .player-screen__context { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
-  .player-screen.is-pinned { grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); }
-  .player-screen.is-pinned .player-screen__side { top: 0; height: calc(100vh - var(--stage-top, 112px)); max-height: none; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
-  .player-screen__context, .player-screen__moves { padding-right: var(--gutter); }
-  .player-screen:not(.is-pinned) .player-screen__context, .player-screen:not(.is-pinned) .player-screen__moves { padding-left: 56px; }
 
   /* A battle: its head and the talk box in the left column, the frame and the commands in the middle. */
   .battle:not(.battle--controller):not(.battle--screen):not(.battle--stage) {
@@ -1638,7 +1536,6 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
  * The same partial is the preview on the scene's page (.stage--preview).
  * ------------------------------------------------------------------------- */
 .stage__frame .table-scene.is-scene { position: absolute; inset: 0; margin: 0; border: 0; z-index: 1; }
-.stage__frame:has(.table-scene.is-scene) .stage__map { display: none; }
 .beat-stage { position: absolute; inset: 0; background: var(--paper); }
 .beat-stage--black { background: var(--ink); }
 .beat-stage__backdrop { display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -1710,3 +1607,27 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 /* The stage controls of a beat sit on one row; the global full-width fields don't apply here. */
 .beat__stage select, .beat__stage input[type=text] { width: auto; flex: 1 1 150px; min-width: 0; }
 .beat__stage span[data-show-for] { display: contents; }
+
+/* ---------------------------------------------------------------------------
+ * The table's three columns (campaigns/tables/show): left, you and the
+ * party; middle, the Stage and under it the Controls; right, the log. On a
+ * phone, one column: you, the stage, the controls, the party.
+ * ------------------------------------------------------------------------- */
+.player-card { display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; align-items: start; }
+.player-card__label { margin: 0; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: var(--grey); }
+.player-card__name { margin: 0; font: var(--display); font-size: 28px; }
+.player-card .muted { margin: 0 0 6px; }
+.player-card .table-you { margin: 0 0 6px; }
+.player-card__sheet { font-size: 14px; font-weight: 700; }
+.table-controls { position: relative; }
+.table-controls > .your-moves:empty { display: none; }
+.table-controls .take-a-seat { margin-top: 16px; }
+.topbar__seat { color: var(--grey); white-space: nowrap; }
+.topbar__seat strong { color: inherit; }
+@media (max-width: 1099px) {
+  .table__main { display: flex; flex-direction: column; gap: 16px; }
+  .table__side { display: contents; }
+  .table__side > .player-card { order: -1; }
+  .table__side > .drawers, .table__side > #table_party { order: 1; }
+  .table__stage { order: 0; }
+}

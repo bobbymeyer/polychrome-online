@@ -134,7 +134,7 @@ Test both modules exhaustively with RSpec. Property-style tests on the resolver 
 
 ## 7. Other surfaces
 
-**The Stage.** The game is shown on one 16:9 frame in the middle of every screen at the table, the same for everyone and the source of truth for what is happening: where the party is (the map or the floorplan, the place's picture behind them), the date, what's being said, and a battle when one is on. It takes the campaign's broadcasts, so it changes under everyone at once. The stage is display: interaction and personal management (moves, talk, the GM's tools, equipment, whispers) happen off it, in the columns beside it and under it.
+**The Stage.** The game is shown on one 16:9 frame in the middle of every screen at the table, the same for everyone and the source of truth for what is happening: the scene on it, else the place's picture, the date, what's being said, and a battle when one is on (the map is the map page's). It takes the campaign's broadcasts, so it changes under everyone at once. The stage is display: interaction and personal management (moves, talk, the GM's tools, equipment, whispers) happen off it, in the columns beside it and under it.
 
 **World map.** SVG pointcrawl. Nodes and edges are Rails partials; GM edits (reveal, add/cut edge, change edge state, drop encounter table) land via Turbo Streams. FF world maps are pointcrawls with walking theater; drop the theater.
 

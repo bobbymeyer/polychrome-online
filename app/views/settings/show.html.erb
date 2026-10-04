@@ -50,6 +50,10 @@
         <p class="hint">rembg: <code>birefnet-general</code>, <code>isnet-anime</code> for flat illustrated art, <code>bria-rmbg</code>…</p>
       </div>
     </div>
+    <p class="hint">
+      <code>bin/cutout</code> runs rembg's server. Pictures to be cut out are rendered on a
+      <%= Cutout.ground ? "#{Cutout.ground} ground (CUTOUT_GROUND)" : "white ground (CUTOUT_GROUND is blank)" %> and mended afterwards, so the white in a design is kept.
+    </p>
   </fieldset>
 
   <% draft = env.fetch(:draft, {}).to_h.symbolize_keys %>

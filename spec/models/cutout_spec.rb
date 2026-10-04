@@ -40,6 +40,57 @@ RSpec.describe Cutout do
     expect(Vips::Image.new_from_buffer(mended, "").getpoint(20, 20).first(3)).to eq([ 255, 255, 255 ])
   end
 
+  # On a ground of its own colour: a figure with a white belly whose white
+  # runs out to the edge of the picture (a white cape against the ground),
+  # and a green gap closed in by the figure (an arm on a hip).
+  def on_green
+    rows = Array.new(SIZE) do |y|
+      Array.new(SIZE) do |x|
+        if (10..30).cover?(x) && (10..30).cover?(y) then (x.between?(14, 18) && y.between?(14, 18)) ? [ 40, 200, 40 ] : [ 255, 255, 255 ] # white figure, green gap inside
+        elsif x > 30 && y.between?(18, 22) then [ 255, 255, 255 ] # a white strip from the figure to the right edge
+        else [ 40, 200, 40 ]
+        end
+      end
+    end
+    bands = (0..2).map { |band| Vips::Image.new_from_array(rows.map { |row| row.map { |pixel| pixel[band] } }).cast(:uchar) }
+    bands[0].bandjoin(bands[1..]).copy(interpretation: :srgb)
+  end
+
+  it "on a coloured ground, puts back whatever the model cleared that isn't the ground, even white reaching the edge, and leaves a ground-coloured gap clear" do
+    plain = on_green
+    # A model that took the ground and, keyed on light, every white pixel with it, and kept the green gap inside as "subject".
+    alpha = Vips::Image.new_from_array(Array.new(SIZE) { |y| Array.new(SIZE) { |x| x.between?(14, 18) && y.between?(14, 18) ? 255 : 0 } }).cast(:uchar)
+    mended = described_class.keep_interior(plain.bandjoin(alpha).pngsave_buffer, plain.pngsave_buffer)
+    expect(alpha_at(mended, 20, 25)).to eq(255) # the white figure
+    expect(alpha_at(mended, 36, 20)).to eq(255) # the white strip out to the edge
+    expect(alpha_at(mended, 16, 16)).to eq(255) # the green gap: the model kept it, so it stays (a gap is the model's call)
+    expect(alpha_at(mended, 2, 2)).to eq(0)     # the ground
+    expect(alpha_at(mended, 36, 30)).to eq(0)
+
+    # A model that cleared the gap too: ground-coloured, so it stays clear, closed in or not.
+    alpha = Vips::Image.new_from_array(Array.new(SIZE) { |y| Array.new(SIZE) { |x| plain.getpoint(x, y) == [ 255, 255, 255 ] || (x.between?(14, 18) && y.between?(14, 18)) ? 0 : 255 } }).cast(:uchar)
+    mended = described_class.keep_interior(plain.bandjoin(alpha).pngsave_buffer, plain.pngsave_buffer)
+    expect(alpha_at(mended, 16, 16)).to eq(0)
+    expect(alpha_at(mended, 20, 25)).to eq(255)
+  end
+
+  it "renders a cut-out picture on the ground instead of white, and asks against white" do
+    recipe = { "parts" => { "prefix" => "masterpiece", "style" => "ink", "framing" => "a single monster, full body, plain white background", "subject" => "Goblin", "detail" => "" },
+               "positive" => "x", "negative" => "worst quality" }
+    on = described_class.on_ground(recipe)
+    expect(on["parts"]["framing"]).to eq("a single monster, full body, plain flat green background, no shadow")
+    expect(on["positive"]).to eq("masterpiece, ink, a single monster, full body, plain flat green background, no shadow, Goblin")
+    expect(on["negative"]).to eq("worst quality, white background")
+    expect(on["ground"]).to eq("green")
+
+    added = described_class.on_ground(recipe.merge("parts" => recipe["parts"].merge("framing" => "a head and shoulders portrait"), "negative" => ""))
+    expect(added["parts"]["framing"]).to eq("a head and shoulders portrait, plain flat green background, no shadow")
+    expect(added["negative"]).to eq("")
+
+    allow(described_class).to receive(:config).and_return(Rails.configuration.x.cutout.merge(ground: ""))
+    expect(described_class.on_ground(recipe)).to equal(recipe)
+  end
+
   it "leaves an image alone when nothing inside was taken" do
     alpha = Vips::Image.new_from_array(Array.new(SIZE) { |y| Array.new(SIZE) { |x| region(x, y) == 0 ? 0 : 255 } }).cast(:uchar)
     clean = picture.bandjoin(alpha).pngsave_buffer
@@ -79,12 +130,19 @@ RSpec.describe Cutout do
       batch.reload
     end
 
-    it "cuts out each picture ComfyUI renders, and names the model on the recipe" do
+    it "cuts out each picture ComfyUI renders, rendered on the ground, and names the model on the recipe" do
       cutout = FakeCutout.new
       batch = render(cutout)
       expect(cutout.sent).to eq([ FakeComfy.png ])
       expect(batch.recipe["cutout"]).to eq("birefnet-general")
+      expect(batch.recipe["positive"]).to include("plain flat green background, no shadow")
+      expect(batch.recipe["positive"]).not_to include("white background")
+      expect(batch.recipe["negative"]).to end_with("white background")
       expect(batch.candidates.sole).to have_attributes(status: "done", transparent: true, error: nil)
+
+      kept = ArtBatch.start!(goblin, count: 1, transparent: false)
+      expect(kept.recipe["positive"]).to include("plain white background")
+      expect(kept.recipe).not_to have_key("ground")
     end
 
     it "keeps the picture, background and all, when the remover turns it down" do

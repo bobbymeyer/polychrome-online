@@ -32,7 +32,10 @@ class ArtBatch < ApplicationRecord
       entry.art_batches.destroy_all
       recipe = entry.art_recipe.merge("write" => write && Llm.enabled?)
       recipe["transparent"] = transparent unless transparent.nil?
-      recipe["cutout"] = Cutout.label if recipe["transparent"] && Cutout.enabled?
+      if recipe["transparent"] && Cutout.enabled?
+        recipe["cutout"] = Cutout.label
+        recipe = Cutout.on_ground(recipe) # rendered on the ground the cut-out keys against, not white
+      end
       recipe = draft_of(recipe) if draft
       create!(world: entry.art_world, entry: entry, recipe: recipe).tap do |b|
         seeds.each_with_index { |seed, i| b.candidates.create!(position: i, seed: seed) }

@@ -1035,12 +1035,27 @@ Every image slot can be uploaded or generated with
     that takes the image as a multipart `file` (and `model`) and answers
     with a PNG works too. Set the address and model on the Settings page,
     or with `CUTOUT_URL` and `CUTOUT_MODEL`.
-  - **White inside the subject is kept:** a removal model takes whatever
-    looks like the background, which on flat art drawn on white includes
-    the white inside a creature. Only what's clear and connected to the edge
-    of the picture is background; a clear patch closed in by the subject is
-    put back from the picture as rendered (with libvips). A gap that really
-    is background but is closed in, like an arm on a hip, is filled too.
+  - **Running one:** `bin/cutout` starts rembg's server on port 7000, in
+    Docker (the `danielgatis/rembg` image) when there is one, else in a
+    Python environment of its own under `tmp/`. Then set `CUTOUT_URL`
+    (`http://127.0.0.1:7000`, or `http://host.docker.internal:7000` from the
+    app's container) or the address on the Settings page. The first
+    picture downloads the model; "Check the connection" on Settings sends
+    one through.
+  - **White in a design is kept.** A removal model takes whatever looks
+    like the background, and on art drawn on white that includes the white
+    in a design: a shirt, a face, a sail. So a picture that will be cut out
+    is rendered on a **ground** of its own colour instead (`CUTOUT_GROUND`,
+    `green` by default: the type's "plain white background" becomes "plain
+    flat green background, no shadow", and white is asked against), and
+    the cut-out is mended with libvips: a cleared pixel is background only
+    if it is the ground's colour (within `CUTOUT_TOLERANCE`, 56) and reaches
+    the edge of the picture through ground-coloured pixels; anything else
+    the model cleared was part of the subject and is put back from the
+    picture as rendered. With the ground blank, pictures stay on white and
+    only white closed in by the subject can be told from the ground: it is
+    put back, at the cost of a closed-in gap that really is background (an
+    arm on a hip), filled too.
   - **Checking:** every image that should have lost its background is
     checked for real transparency, and the strip says "background kept"
     when it didn't, or when the remover turned it down (the picture is kept
@@ -1095,6 +1110,8 @@ Every image slot can be uploaded or generated with
   | `CUTOUT_MODEL` | `birefnet-general` | The model it should use |
   | `CUTOUT_PATH` | `/api/remove` | Where on it the image goes |
   | `CUTOUT_TOKEN` | blank | Sent as a bearer token |
+  | `CUTOUT_GROUND` | `green` | The colour cut-out pictures are rendered on, in place of white; blank keeps white |
+  | `CUTOUT_TOLERANCE` | `56` | How far from the ground's colour (per channel) still counts as background |
   | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1` |
   | `LLM_MODEL` | blank | The model to ask for, as the server names it |
   | `LLM_TOKEN`, `LLM_HEADERS` | blank | As for ComfyUI |

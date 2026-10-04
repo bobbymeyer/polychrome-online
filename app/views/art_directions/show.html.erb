@@ -58,7 +58,7 @@
   <% end %>
 
   <p class="hint">
-    <%= Cutout.enabled? ? "Backgrounds are removed with #{Cutout.label} for the types marked to remove them." :
+    <%= Cutout.enabled? ? "Backgrounds are removed with #{Cutout.label} for the types marked to remove them#{Cutout.ground ? ", which are rendered on a #{Cutout.ground} ground in place of their white background, so the white in a design is kept" : ''}." :
                           "No background remover is set up (Settings), so backgrounds are kept." %>
   </p>
   <div class="actions"><%= f.submit "Save art direction", class: "button" %></div>

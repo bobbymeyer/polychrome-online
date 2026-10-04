@@ -15,7 +15,7 @@ RSpec.describe "The GM's tools at the table", type: :system do
     seat(gm, "gm")
 
     as(gm) do
-      within(".table__side .gm-tools") do
+      within(".table-controls .gm-tools") do
         expect(page).to have_css("[role=tab][aria-selected=true]", text: "Scenes")
         expect(page).to have_css("[role=tab]", text: /Clocks\s*1/) # one running
         expect(page).to have_no_text("The tide comes in")
@@ -38,7 +38,7 @@ RSpec.describe "The GM's tools at the table", type: :system do
     seat(gm, "gm")
 
     as(gm) do
-      within(".table__side .gm-tools") do
+      within(".table-controls .gm-tools") do
         find("[role=tab]", text: "Moves").click
         within("#gm_moves") do
           expect(page).to have_text("“Somebody's watching.”")

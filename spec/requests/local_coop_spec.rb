@@ -9,10 +9,13 @@ RSpec.describe "Local co-op", type: :request do
 
   it "gives the GM a shared screen with a way to join, and remembers it until they leave" do
     get campaign_table_path(campaign)
-    expect(response.body).to include("Play around one screen", "Open the shared screen", "/join/#{campaign.reload.join_code}?view=controller")
+    # The way in is the GM's: the QR code and the code sit in their shared-screen setup, to hold up or read out.
+    expect(response.body).to include("Play around one screen", "Open the shared screen", "/join/#{campaign.reload.join_code}?view=controller",
+                                     "<svg", "Code <strong>#{campaign.join_code}</strong>")
 
     get campaign_table_path(campaign, view: "screen")
-    expect(response.body).to include('data-view="screen"', "table--screen", "<svg", "Code <strong>#{campaign.join_code}</strong>", "coop-party")
+    expect(response.body).to include('data-view="screen"', "table--screen", "coop-party")
+    expect(response.body).not_to include("coop-join") # the screen shows the show, not the way in
     expect(response.body).not_to include('id="composer"')
 
     Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
@@ -27,9 +30,9 @@ RSpec.describe "Local co-op", type: :request do
 
   it "shows nothing but the stage, for a TV or a stream, at the table and in a battle" do
     get campaign_table_path(campaign, view: "stage")
-    expect(response.body).to include('data-view="stage"', "table--stage", 'id="stage"', 'id="map_canvas"', 'id="table_time"', "Leave the stage")
+    expect(response.body).to include('data-view="stage"', "table--stage", 'id="stage"', 'id="table_time"', "Leave the stage")
     page = Nokogiri::HTML(response.body)
-    expect(page.at(".gm-tools, .log-drawer__tab, #table_now, .stage__caption, #composer, .player-screen")).to be_nil # no chrome, no interface
+    expect(page.at(".gm-tools, .log-drawer__tab, #table_now, .stage__caption, #composer, .player-card")).to be_nil # no chrome, no interface
     expect(page.at("div[hidden] #chat_log")).to be_present # the lines land unseen, for the moments they cue
 
     battle = start_battle(campaign: campaign)
@@ -44,8 +47,10 @@ RSpec.describe "Local co-op", type: :request do
   it "shows the screen as a spectator sees it, even when the GM's laptop drives it" do
     campaign.map_nodes.create!(name: "Secret Grotto", x: 5, y: 5, visible: false)
     campaign.messages.create!(scope: "whisper", recipient: bartz, body: "Psst, the king is a fake")
+    get campaign_map_path(campaign)
+    expect(response.body).to include("Secret Grotto") # the GM's own map has it
     get campaign_table_path(campaign)
-    expect(response.body).to include("Secret Grotto")
+    expect(response.body).to include("the king is a fake") # and the GM's own table the whisper
 
     get campaign_table_path(campaign, view: "screen")
     expect(response.body).not_to include("Secret Grotto", "the king is a fake", "Settle on this")
@@ -160,7 +165,7 @@ RSpec.describe "Local co-op", type: :request do
       expect(empty.messages.last.body).to eq("Sam, as Faris, joins the party.")
       expect(response).to redirect_to(campaign_table_path(empty, view: "off"))
       follow_redirect!
-      expect(response.body).to include('<h2 class="player-screen__name">Faris</h2>')
+      expect(response.body).to include('<h2 class="player-card__name">Faris</h2>')
     end
 
     it "joins a new character at the party's lowest level, and says what's missing", :signed_out do

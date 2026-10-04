@@ -16,7 +16,7 @@ RSpec.describe "Map pages", type: :request do
   it "puts a place's name over it when the name under it is taken" do
     campaign.map_nodes.create!(name: "Varn", kind: "town", x: 600, y: 500, visible: true)
     campaign.map_nodes.create!(name: "Goblin Hollow", kind: "dungeon", x: 630, y: 510, visible: true)
-    get campaign_table_path(campaign)
+    get campaign_map_path(campaign)
     expect(response.body).to include('<text class="map-node__label" y="38" text-anchor="middle">Varn</text>',
                                      '<text class="map-node__label is-above" y="-24" text-anchor="middle">Goblin Hollow</text>')
   end
@@ -27,8 +27,7 @@ RSpec.describe "Map pages", type: :request do
     expect(response.body).to include("Tule")
     expect(response.body).not_to include("Secret Ruins", "data-map-node", "map_panel")
     get campaign_table_path(campaign)
-    expect(response.body).to include("Tule")
-    expect(response.body).not_to include("Secret Ruins")
+    expect(response.body).not_to include("Secret Ruins", "map_canvas") # no map on the table at all
   end
 
   it "keeps the editing tools to the GM" do

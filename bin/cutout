@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# The background remover (Cutout, config/cutout.yml): rembg's HTTP server on
+# port 7000 (or $CUTOUT_PORT), with Docker when there is one, else in a
+# Python environment of its own under tmp/. Then point the app at it:
+# CUTOUT_URL=http://127.0.0.1:7000 (from a container, host.docker.internal),
+# or the address on the Settings page. The first picture downloads the model.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+PORT="${CUTOUT_PORT:-7000}"
+
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  echo "== rembg in Docker, on port $PORT (danielgatis/rembg) =="
+  exec docker run --rm -it -p "$PORT:7000" -v "${CUTOUT_MODELS:-$HOME/.u2net}:/root/.u2net" \
+    danielgatis/rembg s --host 0.0.0.0 --port 7000
+fi
+
+PY="${PYTHON:-python3}"
+VENV="tmp/cutout"
+if [ ! -x "$VENV/bin/rembg" ]; then
+  echo "== Installing rembg into $VENV (once) =="
+  "$PY" -m venv "$VENV"
+  "$VENV/bin/pip" install --quiet --upgrade pip
+  # rembg[gpu] where there's a CUDA onnxruntime; the CPU build otherwise.
+  "$VENV/bin/pip" install --quiet "rembg[cli]" onnxruntime
+fi
+echo "== rembg on port $PORT =="
+exec "$VENV/bin/rembg" s --host 0.0.0.0 --port "$PORT"

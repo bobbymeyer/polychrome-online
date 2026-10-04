@@ -578,7 +578,6 @@ details[open] > summary { margin-bottom: 16px; }
 .table__stage { grid-column: span 7; display: grid; gap: 0; }
 .table__side { grid-column: span 5; display: grid; align-content: start; }
 @media (max-width: 800px) { .table__stage, .table__side { grid-column: 1 / -1; } }
-.table__map .hint { margin: 8px 0 0; font-size: 14px; line-height: 24px; }
 
 .dialogue {
   display: grid; grid-template-columns: auto 1fr; gap: var(--gutter); align-items: start;
@@ -907,11 +906,6 @@ details[open] > summary { margin-bottom: 16px; }
 .countdown.is-paused { font-size: 14px; font-weight: 600; color: var(--grey); }
 
 /* The last few lines under the dialogue box (recent_lines_controller), and a whisper popping up. */
-.recent-lines { margin: 0 0 24px; }
-.recent-lines ol { list-style: none; margin: 0; padding: 0; }
-.recent-lines .chat-line { padding: 4px 0 3px; font-size: 14px; }
-.recent-lines .speaker-portrait { width: 32px; height: 32px; }
-.recent-lines .chat-line:last-child { border-bottom: 0; }
 .toast { position: fixed; z-index: 60; right: 16px; bottom: 16px; max-width: min(360px, calc(100vw - 32px)); padding: 12px 16px;
          background: var(--ink); color: var(--paper); cursor: pointer; }
 .toast p { margin: 4px 0 0; font-style: italic; }
@@ -980,3 +974,6 @@ details[open] > summary { margin-bottom: 16px; }
 .coverage-try li { padding: 4px 0; color: var(--grey); }
 .coverage-try li.is-winner { color: inherit; font-weight: 600; }
 .inline-form .field--wide { flex: 1 1 280px; }
+/* The map page inside a dungeon: the floorplan under the world map. */
+.map-window .table-floorplan:not(:empty) { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rule); }
+.map-window .table-floorplan:empty { display: none; }
