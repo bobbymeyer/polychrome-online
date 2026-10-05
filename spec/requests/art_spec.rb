@@ -68,6 +68,8 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
     finish(batch)
     get world_bestiary_monster_path(world, goblin)
     expect(response.body).to include("Candidates", "Use this", "Seed #{batch.candidates.first.seed}")
+    body = response.body
+    expect(body.index("candidate-strip")).to be_between(body.index("Generate"), body.index("The composed prompt")) # right under the form
 
     winner = batch.candidates.last
     post world_art_candidate_pick_path(world, winner)
@@ -328,6 +330,12 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
 
   def speaker(owner) = { owner_type: owner.model_name.singular, owner_id: owner.id }
 
+  # A round's strip sits right under the link that made it, before the next.
+  def expect_strip(text, after:, before:)
+    body = response.body
+    expect(body.index(text)).to be_between(body.index(after), body.index(before))
+  end
+
   it "is theirs to make: the sprite, the portrait from its head, then every expression from the portrait" do
     get character_path(lenna) # on the sheet, under Look; not on the edit form
     expect(response.body).to include(">Look</a>", "Make their look", "1. The sprite", "2. The Neutral portrait, from the sprite", "3. Every other expression")
@@ -342,6 +350,8 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
     sprite_batch = lenna.sprite.art_batch
     expect(sprite_batch.recipe["positive"]).to include("full body", "Lenna, a Knight, pink hair, white tunic")
     finish(sprite_batch)
+    get character_path(lenna)
+    expect_strip("Candidates for the sprite", after: "1. The sprite", before: "2. The Neutral portrait")
     post world_art_candidate_pick_path(world, sprite_batch.candidates.first)
     sprite = lenna.sprite.reload
     expect(sprite.image).to be_attached
@@ -359,7 +369,7 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
     expect(batch.reload.recipe["workflow"]).to include("LoadImage", "VAEEncode")
     expect(comfy.submitted.last.values.find { |n| n["class_type"] == "KSampler" }["inputs"]["denoise"]).to eq(0.55)
     get character_path(lenna)
-    expect(response.body).to include("Candidates for Neutral, from the sprite")
+    expect_strip("Candidates for Neutral, from the sprite", after: "2. The Neutral portrait", before: "3. Every other expression")
     post world_art_candidate_pick_path(world, batch.candidates.last)
     expect(neutral.reload.image).to be_attached
 
@@ -374,6 +384,13 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
     expect(strips.find { |b| b.entry.expression == "angry" }.recipe["positive"]).to end_with("angry expression, furrowed brow")
     get character_path(lenna)
     expect(response.body).to include("Candidates for Happy, from the Neutral portrait", "Candidates for Angry, from the Neutral portrait")
+    expect_strip("Candidates for Happy, from the Neutral portrait", after: "3. Every other expression", before: "From the prompt alone")
+
+    # From the prompt alone: under that section, after the chain.
+    post world_art_batches_path(world), params: { entry_type: "portrait", **speaker(lenna), expression: "sad", count: 1 }
+    get character_path(lenna)
+    body = response.body
+    expect(body.index("Candidates for Sad<")).to be > body.index("From the prompt alone")
   end
 
   it "needs the link before: no sprite, no portrait from it" do

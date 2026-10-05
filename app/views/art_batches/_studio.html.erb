@@ -29,10 +29,8 @@
       <%= submit_tag "Generate", class: "button", disabled: !Comfy.capabilities.reachable?, title: ("ComfyUI isn't answering" unless Comfy.capabilities.reachable?) %>
     </div>
   <% end %>
+  <%= render "art_batches/strips", batches: batch %>
 
   <details><summary>The composed prompt</summary><%= render "art_batches/recipe", recipe: entry.art_recipe, preview: true %></details>
-
-  <%= render "art_batches/strip", batch: batch if batch %>
-  <%= render "art_batches/strip", batch: batch.drafts if batch&.drafts %>
 </details>
 <% end %>
