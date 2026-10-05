@@ -86,8 +86,9 @@ module Cutout
   # no node, or a node without the model.
   def self.wire(add, image, capabilities)
     capabilities.node?(node) or
-      raise Comfy::Error, "ComfyUI has no #{node} node to take the background off: install ComfyUI-RMBG (by 1038lab, in the Manager), " \
-                          "which fetches #{model} itself the first time, or untick \"Remove the background\""
+      raise Comfy::Error, "ComfyUI has no #{node} node to take the background off: install ComfyUI-RMBG (by 1038lab, in the Manager; " \
+                          "version 3.1.0, since 3.2.0 doesn't load without triton, as on a Mac) and restart ComfyUI, " \
+                          "or untick \"Remove the background\". It fetches #{model} itself the first time"
     models = capabilities.options(node, "model")
     unless models.empty? || models.include?(model)
       raise Comfy::Error, "ComfyUI's #{node} has no #{model} model (it has #{models.join(', ')}): update ComfyUI-RMBG, or pick one of those on the Settings page"

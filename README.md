@@ -1088,7 +1088,11 @@ Every image slot can be uploaded or generated with
   node and saved again, cut out (`Cutout`, `background_removal` in
   `config/comfy.yml`).
   - **Installing it:** add "ComfyUI-RMBG" (by 1038lab) from ComfyUI's
-    Manager, and restart ComfyUI. The node fetches its model into
+    Manager, and restart ComfyUI. Take **version 3.1.0** ("Switch Ver" in
+    the Manager, or `git checkout b4c2745` in `custom_nodes/ComfyUI-RMBG`):
+    3.2.0 doesn't load at all on a machine without triton, a Mac among
+    them (its loader trips over its own error message when the SAM3 node
+    can't import triton), so `BiRefNetRMBG` never appears. The node fetches its model into
     `models/RMBG` the first time it runs. Without the node, a batch that
     removes the background stops before anything is queued and says what
     to install, and the art pages say so too; untick "Remove the
