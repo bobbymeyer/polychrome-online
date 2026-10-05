@@ -1,0 +1,12 @@
+<%# Their look, on the sheet under "Look": the uploads (one portrait per expression, and the sprite for the
+    stage), then the chain that makes them (art_batches/portraits). The GM's, and a player's for their own. %>
+<section class="window character-look" id="look-section" aria-labelledby="look-heading">
+  <h2 id="look-heading">Look</h2>
+  <%= form_with model: @character, url: character_path(@character), class: "book-form", multipart: true do |f| %>
+    <%= render "portraits/fields", owner: @character %>
+    <div class="actions">
+      <%= f.submit "Save the uploads", class: "button" %>
+    </div>
+  <% end %>
+</section>
+<%= render "art_batches/portraits", owner: @character %>

@@ -483,7 +483,10 @@ under the frame.
   along the top and stay there, as tabs: only the one pressed shows (the pressed link is ink), and a link
   with the section in its address lands on it. Who they are (portrait, name, their line, level, archetype,
   HP and MP) is a column on the left that stays put beside whichever section is open. On a phone it is one
-  column, the links first. Without the script every section shows, one under another.
+  column, the links first. Without the script every section shows, one under another. Their look
+  (the portrait uploads, the sprite, and the chain that makes them) is a section of its own, "Look",
+  for the GM and the character's own player, not a stretch of the edit form; making art sends you
+  back to it.
 - **Narration is only as tall as its words**: with no portrait to make room for, the dialogue box
   doesn't hold a speaker's height open under one line.
 - **A place's page is the place first.** The GM's controls for it (modes, rename) come after it,

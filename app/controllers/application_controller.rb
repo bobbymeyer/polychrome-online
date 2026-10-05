@@ -27,7 +27,9 @@ class ApplicationController < ActionController::Base
   # location a mode's picture belongs to.
   def entry_page(entry, **options)
     case entry
-    when Portrait, Sprite then polymorphic_path([ :edit, entry.owner ], **options)
+    # A character's look is on their sheet, under Look; the cast's is on their edit page.
+    when Portrait, Sprite
+      entry.owner.is_a?(Character) ? character_path(entry.owner, **options, anchor: "look") : polymorphic_path([ :edit, entry.owner ], **options)
     when ModeArt then location_path(entry.location, **options)
     when Beat then edit_scene_path(entry.scene, beat: entry.id, **options)
     when Map then campaign_maps_path(entry.campaign, map: entry.id, **options)

@@ -329,13 +329,15 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
   def speaker(owner) = { owner_type: owner.model_name.singular, owner_id: owner.id }
 
   it "is theirs to make: the sprite, the portrait from its head, then every expression from the portrait" do
-    get edit_character_path(lenna)
-    expect(response.body).to include("Make their look", "1. The sprite", "2. The Neutral portrait, from the sprite", "3. Every other expression")
+    get character_path(lenna) # on the sheet, under Look; not on the edit form
+    expect(response.body).to include(">Look</a>", "Make their look", "1. The sprite", "2. The Neutral portrait, from the sprite", "3. Every other expression")
     expect(response.body).not_to include("entry_art_model") # the model and LoRAs are the GM's
+    get edit_character_path(lenna)
+    expect(response.body).not_to include("Make their look", "portraits_sprite")
 
     # 1. The sprite, from the prompt; the player's specifics go in, a model they name doesn't.
     post world_art_batches_path(world), params: { entry_type: "sprite", **speaker(lenna), count: 1, entry: { art_notes: "pink hair, white tunic", art_model: "other.safetensors" } }
-    expect(response).to redirect_to(edit_character_path(lenna, anchor: "art"))
+    expect(response).to redirect_to(character_path(lenna, anchor: "look"))
     expect(lenna.reload).to have_attributes(art_notes: "pink hair, white tunic", art_model: nil)
     sprite_batch = lenna.sprite.art_batch
     expect(sprite_batch.recipe["positive"]).to include("full body", "Lenna, a Knight, pink hair, white tunic")
@@ -356,21 +358,21 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
     expect(comfy.uploads.first.last).to start_with("\x89PNG".b) # the head crop, a real image
     expect(batch.reload.recipe["workflow"]).to include("LoadImage", "VAEEncode")
     expect(comfy.submitted.last.values.find { |n| n["class_type"] == "KSampler" }["inputs"]["denoise"]).to eq(0.55)
-    get edit_character_path(lenna)
+    get character_path(lenna)
     expect(response.body).to include("Candidates for Neutral, from the sprite")
     post world_art_candidate_pick_path(world, batch.candidates.last)
     expect(neutral.reload.image).to be_attached
 
     # 3. Every other expression at once, each from the Neutral portrait, each its own strip.
     post world_art_batches_path(world), params: { entry_type: "portrait", **speaker(lenna), expression: "happy", from: "neutral", every: "1", count: 1 }
-    expect(response).to redirect_to(edit_character_path(lenna, anchor: "art"))
+    expect(response).to redirect_to(character_path(lenna, anchor: "look"))
     strips = ArtBatch.where(entry: lenna.portraits.reload).to_a
     expect(strips.map { |b| b.entry.expression }).to match_array(Portrait::EXPRESSIONS - [ "neutral" ])
     expect(strips.map { |b| b.recipe["source"] }.uniq).to eq([ { "kind" => "portrait", "id" => neutral.id } ])
     expect(strips.map { |b| b.recipe["denoise"] }.uniq).to eq([ 0.45 ])
     expect(strips.map { |b| b.candidates.first.seed }.uniq).to eq([ neutral.image_seed ])
     expect(strips.find { |b| b.entry.expression == "angry" }.recipe["positive"]).to end_with("angry expression, furrowed brow")
-    get edit_character_path(lenna)
+    get character_path(lenna)
     expect(response.body).to include("Candidates for Happy, from the Neutral portrait", "Candidates for Angry, from the Neutral portrait")
   end
 
@@ -392,5 +394,7 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
     expect(response).to have_http_status(:forbidden)
     get edit_character_path(other)
     expect(response).to redirect_to(root_path)
+    get character_path(other)
+    expect(response.body).not_to include(">Look</a>", "Make their look") # another's sheet, without the Look section
   end
 end

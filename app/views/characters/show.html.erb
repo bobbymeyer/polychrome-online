@@ -1,12 +1,14 @@
 <% content_for :title, @character.name %>
 <% content_for :head, music_meta(@character.campaign, @character.campaign&.scene) %>
 <%= render "shared/stage_stream", campaign: @character.campaign %>
+<%= turbo_stream_from @character, :art if can_portray?(@character) %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @character.name %></div>
 
 <article class="book-page character-sheet" data-controller="sheet-tabs" data-sheet-tabs-key-value="sheet-<%= @character.id %>">
   <% masteries = @character.masteries %>
   <% tabs = { "stats" => "Stats", "items" => ("Items" if can_manage?(@character)), "equipment" => "Equipment", "abilities" => "Abilities",
-              "skills" => "Skills", "mastery" => ("Mastery" if masteries.any?), "jobs" => "Archetypes" }.compact %>
+              "skills" => "Skills", "mastery" => ("Mastery" if masteries.any?), "jobs" => "Archetypes",
+              "look" => ("Look" if can_portray?(@character)) }.compact %>
   <%# The sections, one at a time: the links along the top are tabs (sheet_tabs_controller); first on the page,
       so they're at the top on every screen. %>
   <nav class="sheet-nav" aria-label="On this sheet">
@@ -29,6 +31,7 @@
       <%= panel.("skills") { render "characters/skills" } %>
       <%= panel.("mastery") { render "characters/mastery", masteries: masteries } if masteries.any? %>
       <%= panel.("jobs") { render "characters/jobs" } %>
+      <%= panel.("look") { render "characters/look" } if can_portray?(@character) %>
 
       <%= render "characters/gm" if can_gm?(@campaign) %>
     </div>

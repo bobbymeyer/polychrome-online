@@ -37,9 +37,10 @@ class CharactersController < ApplicationController
 
   def update
     fields = can_gm?(@campaign) ? %i[name motive player_name user_id colour] : %i[name motive player_name colour]
-    if @character.update(params.expect(character: [ *fields, *ORIGIN_FIELDS ]))
+    # The sheet's Look panel posts the uploads alone, with no fields of the character's.
+    if @character.update(params.fetch(:character, {}).permit(*fields, *ORIGIN_FIELDS))
       @character.update_portraits!(**portrait_params)
-      redirect_to character_path(@character), notice: "#{@character.name} was updated."
+      redirect_to character_path(@character, anchor: ("look" if params[:portraits].present?)), notice: "#{@character.name} was updated."
     else
       render :edit, status: :unprocessable_content
     end
