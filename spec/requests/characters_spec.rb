@@ -165,8 +165,11 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(response.body).to include("Fire not learned yet")
     end
 
-    it "lets the GM grant EXP and ABP" do
-      post character_grant_path(bartz), params: { grant: { exp: "1000", abp: "20" } }
+    it "lets the GM grant EXP and ABP, from GM tools at the table" do
+      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      get campaign_table_path(campaign)
+      expect(response.body).to include("Grant EXP and ABP", 'id="grant_character_id"')
+      post campaign_grants_path(campaign), params: { character_id: bartz.id, grant: { exp: "1000", abp: "20" } }
       follow_redirect!
       expect(response.body).to include("Bartz gains 1000 EXP and 20 ABP.", "Level 11!", "Learned Armor Break.")
     end

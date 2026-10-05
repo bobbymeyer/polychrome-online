@@ -154,7 +154,7 @@ RSpec.describe "Items and shops", type: :request do
 
     it "uses a healing item from the bag on a party member, through the engine's formula" do
       get character_path(lenna)
-      expect(response.body).to include('id="items"', "Potion", "Bartz (HP 20/")
+      expect(response.body).to include('id="items"', 'data-key="gear"', "Potion", "Bartz (HP 20/")
       expect(response.body).not_to include("Antidote <span") # cures only work in battle
       expect(response.body).not_to include("Lenna (HP") # unhurt: nothing to heal
 

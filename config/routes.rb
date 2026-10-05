@@ -137,6 +137,7 @@ Rails.application.routes.draw do
       resources :checks, only: :create
       resources :field_uses, only: %i[create update]
       resources :job_grants, only: :create
+      resources :grants, only: :create
       resource :join_code, only: :create
       resource :forecast, only: :show
       resource :table_seat, only: %i[create destroy]
@@ -224,7 +225,6 @@ Rails.application.routes.draw do
       resource :job, only: :update
       resource :equipment, only: :update, controller: "equipment"
       resource :ability_slots, only: :update
-      resource :grant, only: :create
       resource :item_use, only: :create
     end
   end

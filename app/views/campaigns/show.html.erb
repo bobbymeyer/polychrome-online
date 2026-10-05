@@ -59,6 +59,7 @@
 </section>
 
 <%= render "campaigns/invite", campaign: @campaign if can_gm?(@campaign) %>
+<%= render "campaigns/coop_setup", campaign: @campaign if can_gm?(@campaign) %>
 
 <section>
   <div class="book-header">

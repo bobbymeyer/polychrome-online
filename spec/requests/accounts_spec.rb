@@ -114,7 +114,7 @@ RSpec.describe "Accounts", type: :request do
       expect(response.body).not_to include("Update equipment")
       get character_path(mine)
       expect(response.body).to include("Update equipment")
-      expect(response.body).not_to include("GM: grant EXP")
+      expect(response.body).not_to include("Grant EXP")
     end
 
     it "sits only as their own or an unclaimed character, never as the GM, and claims by sitting" do

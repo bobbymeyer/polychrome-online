@@ -1,8 +1,0 @@
-<details class="window">
-  <summary>GM: grant EXP / ABP</summary>
-  <%= form_with url: character_grant_path(@character), scope: :grant, class: "book-form inline-form" do |f| %>
-    <div class="field"><%= f.label :exp, "EXP" %><%= f.number_field :exp, min: 0, value: 0 %></div>
-    <div class="field"><%= f.label :abp, "ABP (#{@character.job.name})" %><%= f.number_field :abp, min: 0, value: 0 %></div>
-    <%= f.submit "Grant", class: "button" %>
-  <% end %>
-</details>

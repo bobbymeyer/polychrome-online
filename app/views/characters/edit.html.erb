@@ -26,3 +26,10 @@
     <%= link_to "Cancel", character_path(@character), class: "button button--quiet" %>
   </div>
 <% end %>
+<%# Out of the way of play, where nobody taps it by mistake: the sheet is for playing, this page for changing. %>
+<section class="danger-zone" aria-label="Leaving the party">
+  <h2>Leaving the party</h2>
+  <p class="hint"><%= @character.name_in_database %> leaves for good; their gear goes back to the bag.</p>
+  <%= button_to "Remove from party", character_path(@character), method: :delete, class: "button button--danger",
+                form: { data: { turbo_confirm: "Remove #{@character.name_in_database}? Their gear goes back to the bag." } } %>
+</section>

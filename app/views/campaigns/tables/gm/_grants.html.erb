@@ -1,0 +1,13 @@
+<%# EXP and ABP to someone, outside battle: a quest's reward, a montage (Campaigns::GrantsController). %>
+<h3 class="gm-tools__heading">Grant EXP and ABP</h3>
+<%= form_with url: campaign_grants_path(campaign), class: "book-form" do |f| %>
+  <div class="field-row">
+    <div class="field">
+      <%= label_tag :grant_character_id, "To" %>
+      <%= select_tag :character_id, options_from_collection_for_select(campaign.characters.order(:created_at), :id, :name), id: "grant_character_id" %>
+    </div>
+    <div class="field"><%= label_tag "grant_exp", "EXP" %><%= number_field_tag "grant[exp]", 0, min: 0, id: "grant_exp" %></div>
+    <div class="field"><%= label_tag "grant_abp", "ABP (their archetype)" %><%= number_field_tag "grant[abp]", 0, min: 0, id: "grant_abp" %></div>
+  </div>
+  <%= f.submit "Grant", class: "button" %>
+<% end %>

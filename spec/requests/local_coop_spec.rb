@@ -8,10 +8,12 @@ RSpec.describe "Local co-op", type: :request do
   let!(:lenna) { create_character(campaign, name: "Lenna") }
 
   it "gives the GM a shared screen with a way to join, and remembers it until they leave" do
-    get campaign_table_path(campaign)
-    # The way in is the GM's: the QR code and the code sit in their shared-screen setup, to hold up or read out.
+    # The way in is the GM's: the QR code and the code sit in their shared-screen setup, on the campaign page beside the invite.
+    get campaign_path(campaign)
     expect(response.body).to include("Play around one screen", "Open the shared screen", "/join/#{campaign.reload.join_code}?view=controller",
                                      "<svg", "Code <strong>#{campaign.join_code}</strong>")
+    get campaign_table_path(campaign)
+    expect(response.body).not_to include("Play around one screen") # not a move at the table
 
     get campaign_table_path(campaign, view: "screen")
     expect(response.body).to include('data-view="screen"', "table--screen", "coop-party")

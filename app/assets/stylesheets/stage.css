@@ -600,9 +600,10 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .boss-line::before { content: "\201C"; } .boss-line::after { content: "\201D"; }
 
 /* Sound: the GM's music switch at the table, and the world's tracks. */
-.music-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
-.music-switch label { font-style: italic; font-weight: 900; }
-.music-switch select { width: auto; }
+/* The music, on the stage's corner tag beside Map/Place: one small select. */
+.music-switch { display: inline-block; margin: 0 0 0 8px; vertical-align: middle; }
+.music-switch select { width: auto; min-height: 0; padding: 0 20px 0 6px; font-size: 11px; line-height: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-width: 2px; }
+.stage__hud .music-switch select { font-size: clamp(9px, 1.1cqw, 11px); }
 .music-fields { border: 0; border-top: 3px solid var(--ink); padding: 8px 0 0; margin: 16px 0; }
 .music-fields legend { padding: 2px calc(12px + var(--slant)) 2px 10px; background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 900; clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
 .music-fields__current { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0; }
@@ -1232,8 +1233,13 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* The controls the GM calls (Campaign::Controls): one short strip of colour, each control a rectangle in its own
    colour from the top bar's spectrum, running into the next with no gap (a divergence from the slabs, recorded in
    docs/DESIGN.md); the one called is black with white bold text; one the table can't use is hatched. */
-.controls-call { display: inline-flex; flex-wrap: wrap; gap: 0; margin-right: 0; }
+.controls-call { display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 0; margin-right: 0; }
+.controls-call form { flex: 1 1 auto; display: flex; }
+.controls-call .button { flex: 1 1 auto; text-align: center; }
 .table-now__do:has(.controls-call) { gap: 0; }
+/* The strip hugs the top of the column under the stage, edge to edge: no rules, no margins, no padding. */
+.table-now:has(.controls-call) { margin: 0; padding: 0; border: 0; }
+.table__under:has(.controls-call) { padding-top: 0; }
 .controls-call .button, .table-now__tools {
   clip-path: none; margin: 0; padding: 3px 12px; border: 0; font: 700 13px/20px var(--font); font-style: normal;
   background: var(--tone, var(--wash)); color: var(--tone-ink, var(--ink));

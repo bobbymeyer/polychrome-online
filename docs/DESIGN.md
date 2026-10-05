@@ -528,7 +528,7 @@ under the frame.
   stage is only what the moment is for. Travel and Things to do here put the ways there for
   everyone; Scene puts the scene list there and Check the check form, for the GM, in the same place a player's moves go,
   so there is one spot to look at whoever you are. There is no tab strip for these. What's left
-  (Moves, and More: grants, music, one shared screen with its QR code to hold up) waits behind
+  (Moves, and More: an archetype to grant, EXP and ABP to grant) waits behind
   one "GM tools" button on the Now line after Battle (the name says who sees them; there is no
   tag), one tab at a time; the
   open tab is ink, and the tab the GM had open stays open, per campaign, in this browser. What needs an answer now (everyone down, a
@@ -604,6 +604,18 @@ under the frame.
 - **A ruling is three fields**: what they roll, how hard, and what happens if it works. How
   much, a type, a status, on whom, and the two lines the table hears wait behind "More" with
   their usual answers, so most rulings are one press.
+- **The sheet is six tabs at most**: Stats, Gear (equipment, then the bag's items to use), Abilities,
+  Skills (with mastery under them), Archetypes, and Look for whoever may portray them. Leaving the
+  party is on the Edit page, under the form, where nobody taps it mid-play; the GM's EXP and ABP
+  grant is at the table, in GM tools' More, with a picker for who.
+- **Maps are Prep's.** The maps page is reached from Prep (a button in its header and its nav), not
+  from the top bar, which keeps to the places everyone goes: the campaign, the Table, My sheet,
+  Prep, Legends. The map editor only builds: its side panel says where the party is and calls a
+  waiting encounter, and travel is the table's (the Travel control, the map on the stage).
+- **Setting up is the lobby's, playing is the table's.** Playing around one screen (the shared
+  screen, the QR code and the controller link) is set up on the campaign page beside the invite,
+  before play. The music is on the stage: one small select on its corner tag beside Map/Place,
+  the GM's, since what the table hears belongs with what it sees. GM tools' More is grants only.
 - **"Fast animations"**, not "Fast": the toggle says what it speeds up. It's a setting for this
   device, so it sits in the account menu beside Sound on every page, and a battle already
   playing hears the change. **The timing meter** is the same kind of thing, so its switch sits

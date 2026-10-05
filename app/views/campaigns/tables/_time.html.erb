@@ -20,17 +20,24 @@
       </ul>
     <% end %>
   </div>
-  <% if (node = campaign.current_node) %>
+  <%# Where the party is; and for the GM, the stage's switches (Map/Place, the music) on the same tag, even before
+      the party is anywhere. %>
+  <% node = campaign.current_node %>
+  <% if node || local_assigns[:gm] %>
     <% dungeon = campaign.dungeon_in_progress %>
     <% room = dungeon && dungeon.room(dungeon.progress["current"]) %>
     <div class="table-time__where">
-      <span class="table-time__pin" aria-hidden="true"></span>
-      <%= node.location ? link_to(node.name, location_path(node.location), data: { turbo_frame: "_top" }) : node.name %><%= tag.span(" · #{room['name']}", class: "table-time__room") if room %>
+      <% if node %>
+        <span class="table-time__pin" aria-hidden="true"></span>
+        <%= node.location ? link_to(node.name, location_path(node.location), data: { turbo_frame: "_top" }) : node.name %><%= tag.span(" · #{room['name']}", class: "table-time__room") if room %>
+      <% end %>
       <% if local_assigns[:gm] && campaign.map_shown %>
         <% on_map = campaign.map_on_stage? %>
         <%= button_to (on_map ? "Place" : "Map"), campaign_map_view_path(campaign), method: :patch, params: (on_map ? { off: 1 } : {}),
                       class: "table-time__view", form: { class: "inline", data: { turbo_frame: "_top" } }, title: (on_map ? "Show the place on the stage" : "Show the map on the stage") %>
       <% end %>
+      <%# What the table hears is the stage's too: the GM picks it here. %>
+      <%= render "campaigns/tables/gm/music", campaign: campaign if local_assigns[:gm] %>
     </div>
   <% end %>
 </section>

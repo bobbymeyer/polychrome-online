@@ -1,7 +1,8 @@
-<%= form_with url: campaign_music_path(campaign), method: :patch, class: "music-switch", data: { controller: "autosubmit" } do %>
-  <%= label_tag :music, "Music for the table" %>
+<%# The table's music, on the stage's corner tag (campaigns/tables/_time), the GM's: one select. %>
+<%= form_with url: campaign_music_path(campaign), method: :patch, class: "music-switch", data: { controller: "autosubmit", turbo_frame: "_top" } do %>
+  <%= label_tag :music, "Music for the table", class: "visually-hidden" %>
   <%= select_tag :music, options_for_select([ [ "Follow the scene (#{campaign.scene})", "" ] ] +
                            Campaign::MUSIC_CHOICES.map { |c| [ c.capitalize + (c == "silence" || campaign.world.music_track(c) ? "" : " (no track)"), c ] }, campaign.music),
-                 data: { action: "autosubmit#submit" } %>
+                 data: { action: "autosubmit#submit" }, title: "Music for the table" %>
   <noscript><%= submit_tag "Play", class: "button button--quiet" %></noscript>
 <% end %>
