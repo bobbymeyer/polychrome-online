@@ -16,6 +16,10 @@ RSpec.describe "The table", type: :request do
     Nokogiri::HTML(response.body).at("##{id} option[selected]")&.[]("value")
   end
 
+  def field(id) = Nokogiri::HTML(response.body).at("##{id}")&.[]("value")
+
+  def pressed = Nokogiri::HTML(response.body).css(".composer__chip[aria-pressed=true]").map(&:text)
+
   def now = Nokogiri::HTML(response.body).at("#table_now").text.squish
 
   def say(fields)
@@ -45,8 +49,35 @@ RSpec.describe "The table", type: :request do
       say(body: "Hold on!", speaker: "npc:#{cid.id}", expression: "surprised", whisper_to: "")
       line = campaign.messages.last
       expect(line).to have_attributes(speaker: cid, expression: "surprised", scope: "table", body: "Hold on!")
-      expect(selected("message_speaker")).to eq("npc:#{cid.id}")
+      expect(field("message_speaker")).to eq("npc:#{cid.id}")
+      expect(pressed).to eq([ "Cid" ]) # the chip, kept for the next line
       expect(selected("message_expression")).to eq("surprised")
+    end
+
+    it "speaks as whoever a line names, with their face, the way a script does" do
+      say(body: "Cid (angry): Behind you!", speaker: "narrator", expression: "neutral")
+      expect(campaign.messages.last).to have_attributes(speaker: cid, expression: "angry", body: "Behind you!")
+      expect(pressed).to eq([ "Cid" ])
+      say(body: "Narrator: Wind howls.", speaker: "npc:#{cid.id}")
+      expect(campaign.messages.last).to have_attributes(speaker: nil, body: "Wind howls.")
+      expect(pressed).to eq([ "Narrator" ])
+      say(body: "Yes: go.", speaker: "narrator") # not a name in the cast: the line is what was typed
+      expect(campaign.messages.last).to have_attributes(speaker: nil, body: "Yes: go.")
+    end
+
+    it "speaks as the scene's speaker while a scene is on the stage, until the GM says Narrator" do
+      scene = campaign.scenes.create!(name: "Ambush", script: "Cid (angry): Behind you!\nNarrator: Silence.")
+      get campaign_composer_path(campaign)
+      expect(pressed).to eq([ "Narrator" ]) # no scene: the narrator
+      expect(response.body).not_to include("message_speaker\" value=\"npc") # no select of every NPC
+      scene.reload.start!
+      get campaign_composer_path(campaign)
+      expect(pressed).to eq([ "Cid" ]) # the line on the stage is Cid's
+      expect(field("message_speaker")).to eq("npc:#{cid.id}")
+      say(body: "Narrator: The lamp gutters.", speaker: "npc:#{cid.id}")
+      expect(campaign.messages.last.speaker).to be_nil
+      expect(pressed).to eq([ "Narrator" ]) # chosen over the scene, it stays
+      expect(Nokogiri::HTML(response.body).css(".composer__chip").map(&:text)).to eq(%w[Narrator Cid]) # Cid is a press away
     end
 
     it "narrates" do
@@ -54,10 +85,14 @@ RSpec.describe "The table", type: :request do
       expect(campaign.messages.last.speaker).to be_nil
     end
 
-    it "whispers to one player, then goes back to speaking to everyone" do
+    it "whispers to one player from the party panel, then goes back to speaking to everyone" do
+      get campaign_table_path(campaign)
+      whispers = Nokogiri::HTML(response.body).css("#table_party .coop-party__whisper")
+      expect(whispers.map { |b| b["data-character-name"] }).to eq(%w[Bartz Lenna]) # the GM's, beside each played character
+      expect(response.body).not_to include("message_whisper_to\" value=\"", "Whisper to Bartz</option>") # no select
       say(body: "Psst.", speaker: "narrator", whisper_to: bartz.id)
       expect(campaign.messages.last).to have_attributes(scope: "whisper", recipient: bartz)
-      expect(selected("message_whisper_to").to_s).to eq("") # nothing selected: the first option, Everyone
+      expect(field("message_whisper_to").to_s).to eq("") # back to everyone
     end
 
     it "sees every whisper in the log" do
@@ -100,7 +135,7 @@ RSpec.describe "The table", type: :request do
       expect(page.css("##{ActionView::RecordIdentifier.dom_id(bartz, :vitals)}").size).to eq(1)
 
       get campaign_composer_path(campaign)
-      expect(response.body).to include("Everyone at the table hears it, said as Bartz. Whisper and only the GM does.")
+      expect(response.body).to include("Everyone at the table hears it, said as Bartz. Whispered, only the GM does.")
     end
 
     it "shows what they can do now, and keeps the rest a tap away" do
@@ -128,7 +163,9 @@ RSpec.describe "The table", type: :request do
       expect(campaign.messages.last).to have_attributes(speaker: bartz, expression: "happy", scope: "table")
     end
 
-    it "whispers only to the GM" do
+    it "whispers only to the GM, from two chips, and has no Whisper beside the party" do
+      get campaign_table_path(campaign)
+      expect(Nokogiri::HTML(response.body).css("#table_party .coop-party__whisper")).to be_empty
       say(body: "I pocket it.", whisper_to: "gm")
       expect(campaign.messages.last).to have_attributes(scope: "whisper", speaker: bartz, recipient: nil)
       say(body: "Hey Lenna", whisper_to: lenna.id)
@@ -389,7 +426,7 @@ RSpec.describe "The table", type: :request do
       get campaign_table_path(campaign)
       expect(response.body).not_to include("your-moves__tag", "table-you")
       get campaign_composer_path(campaign)
-      expect(response.body).to include("Everyone hears it, unless you whisper")
+      expect(response.body).to include("Everyone hears it. Start a line with a name and a colon to speak as them", "Whisper from the party panel.")
     end
 
     it "gives the GM the moves for what's happening, in the Now line, with the rest of the tools behind Tools" do

@@ -454,8 +454,17 @@ under the frame.
   GM.
 - **A player's moves sit together** in the Controls under a red "Your moves" tag: the vote, the
   ways on, their field ability, then talk, in that order. The talk box says who hears it
-  ("Everyone at the table hears it, said as Hoshi. Whisper and only the GM does."), and the GM's
-  says the same of their whispers.
+  ("Everyone at the table hears it, said as Hoshi. Whispered, only the GM does."); To is two
+  chips, Everyone and The GM.
+- **The GM's speaker follows the scene.** The talk box has no "Speak as" select: a row of chips
+  says who, the Narrator and whoever stands on the stage, with the scene's current speaker
+  pressed (the box fetches itself again as the beats move, unless something is typed). A line
+  that starts with a name and a colon speaks as them wherever they are, "Cid (happy): …" with
+  the face, "Narrator:" for the narrator, the same grammar as a script. The speaker the GM last
+  used stays pressed for the next line.
+- **A whisper is done to a person.** The GM's "To" select is gone: beside each played character
+  in the party panel is "Whisper", and the talk box then says "Whispering to Rook, and nobody
+  else hears" with Everyone a press away. The whisper is one line; the next goes to everyone.
 - **You, on the left.** A player's card has their own HP and MP, kept in step with their row in
   the party panel, so they never scroll to see it.
 - **A service says what it's for before it's opened**: under its name and keeper, in red, "Rest
