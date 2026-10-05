@@ -368,7 +368,8 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 
 - **What it shows** is the scene: a beat's backdrop and figures while a scene is on, else the
   picture of the place the party is in when it has one, else plain paper; or the map, when the GM
-  shows it ("Show the map"), with travel made from the Controls.
+  shows it (the Map switch on the place's tag, or by calling Travel, which puts it there). Travel
+  from here is made from the Controls; travel anywhere is asked from the map.
   When sits in the top-right corner as one line straight on the picture, with no plate round it:
   the day clock and the part of the day as a label in that part's colour, one shape with one outline
   (the part it is now points right, into the label, so the slice runs into it), and the day at the
@@ -402,11 +403,13 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   a band along its bottom, the round's rail along its top, the round's tally right over the
   roster (seated on its actual top, however many rows it has), and the lines said in the fight
   play over it as at the table.
-- **The stage is display.** Nothing on it is pressed. Interaction and personal management (the
+- **The stage is display, and the view switch.** Interaction and personal management (the
   moves, the talk box, the GM's tools, what you look up, equipment, whispers) happen off the
-  stage: in the columns beside it and under it. The way into the place the party is at ("Visit
-  Hommlet →") is in the Now line while the table is free; the map is a view of the stage the GM
-  shows ("Show the map"), not a page.
+  stage: in the columns beside it and under it. Two things on it are pressed, both about where to
+  look: the place's name on its tag is the way into the place (its page), and beside it the GM's
+  Map or Place switch puts the map on the stage for everyone or takes it off. There is no "Visit"
+  or "Show the map" button anywhere else. On the map the GM presses a place for Go and Ask the
+  table, with the journey by road; a corner button asks about anywhere on the map.
 - **Stage only.** For a TV at the table or a stream on a call, `?view=stage` shows nothing but the
   frame: on black, as big as the screen allows, with no top bar, log, panels or caption, and a
   spectator's view of it (no GM secrets on the TV). The lines still arrive, unseen, so the moments
@@ -601,7 +604,9 @@ from the room they're in (a room the players haven't seen is only "An unexplored
 Things to do here puts the day's pastimes below instead, under "Day in Tule". The ways, like
 the vote's options, are rows of a table, the whole row the control (`pick_table_controller`). A
 player's row suggests it: the question goes to a vote with their pick in it; the GM settling the
-vote takes the party there. The GM can also just go, from the same panel, or ask wider. A battle, an encounter,
+vote takes the party there. The GM can also just go, from the same panel; to go or ask further
+than a road from here, the GM presses a place on the map (Go, or Ask the table), or the map's
+"Ask the table: anywhere on" button. A battle, an encounter,
 a scene or an open choice still comes first, whatever is called; the call stays until the GM
 changes it, so a dungeon is walked room by room without re-pressing Travel. Settling the vote takes the party there. The
 GM can also just go, from the same panel, and calls a waiting encounter there too, so a session

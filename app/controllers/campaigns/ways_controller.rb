@@ -5,8 +5,9 @@
 # goes to the table as a "Where next?" vote with their pick in it. The GM
 # puts the question without a pick, or a wider one (scope "map": every
 # place on a map; "places": the ones named), each a journey by road. The
-# GM can also just go: from the table, the maps page's panel (return_to:
-# "map") or the campaign's page, whatever the controls say.
+# GM can also just go: from the table, the stage's map (a place pressed:
+# to, anywhere on the roads), the maps page's panel (return_to: "map") or
+# the campaign's page, whatever the controls say.
 class Campaigns::WaysController < ApplicationController
   include CampaignScoped
   include TableSeat
@@ -18,7 +19,8 @@ class Campaigns::WaysController < ApplicationController
     return head(:forbidden) unless seat.gm? || (seat.seated? && @campaign.controls != "talk")
 
     if seat.gm? && params[:go].present?
-      @campaign.take_way!(params[:way])
+      # A way from here (its label), or a place anywhere on the roads (from the map: to).
+      params[:to].present? ? @campaign.travel_to!(@campaign.map_nodes.find(params[:to])) : @campaign.take_way!(params[:way])
       return back_to_the_map(notice: "The party is at #{@campaign.reload.current_node&.name}.") if params[:return_to] == "map"
     else
       vote = if seat.gm? && params[:scope] == "map"

@@ -147,7 +147,6 @@ RSpec.describe "The table", type: :request do
       %w[party knows].each { |key| expect(page.at("#drawer_#{key}")["hidden"]).not_to be_nil } # looked up, not shown
       expect(page.at("#stage #table_map")["hidden"]).not_to be_nil # the map waits on the stage until the GM shows it
       expect(page.at("#stage #table_time")).to be_present # the date in its corner
-      expect(page.at("#table_now #table_here")).to be_present # the way into the place, while the table is free (none here: no place yet)
       expect(page.at("#drawer_party #table_party")).to be_present
       menu = page.at(".topbar__user-menu")
       expect(menu.text).to include("At the table as Bartz", "Stand up") # the seat is in the account menu, with the others to take

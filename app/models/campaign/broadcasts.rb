@@ -31,13 +31,13 @@ module Campaign::Broadcasts
   end
 
   # The table's live panels, each rendered once for the GM and once for the
-  # players: where the party is, the party's HP, where next, what the GM
-  # called (scenes, a check), the time, what
+  # players: the party's HP, where next, what the GM called (scenes, a
+  # check), the time and where the party is, what
   # the party knows, its lines and veils, a dungeon's floorplan while the
   # party is in one, the stage's scene and map (players' without hidden
   # places). Not the dialogue box, the log or the composer.
   TABLE_PANELS = {
-    "table_here" => "campaigns/tables/here", "table_party" => "campaigns/tables/party",
+    "table_party" => "campaigns/tables/party",
     "table_ways" => "campaigns/tables/ways", "table_called" => "campaigns/tables/called", "table_time" => "campaigns/tables/time", "party_knows" => "campaigns/tables/party_knows",
     "table_floorplan" => "campaigns/tables/floorplan", "table_now" => "campaigns/tables/now", "table_scene" => "campaigns/tables/scene",
     "table_map" => "campaigns/tables/map", "table_limits" => "campaigns/tables/limits"

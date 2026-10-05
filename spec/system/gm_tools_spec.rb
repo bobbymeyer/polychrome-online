@@ -105,4 +105,32 @@ RSpec.describe "The GM's tools at the table", type: :system do
       expect(campaign.reload.current_node).to eq(there)
     end
   end
+  it "asks from the map: calling Travel puts it on the stage, a place pressed offers Go and Ask the table" do
+    here = campaign.map_nodes.create!(name: "Varn", x: 300, y: 300, visible: true)
+    there = campaign.map_nodes.create!(name: "Far Hold", x: 900, y: 300, visible: true)
+    campaign.map_edges.create!(from_node: here, to_node: there, state: "open", duration: 2)
+    campaign.update!(current_node: here)
+    seat(gm, "gm")
+
+    as(gm) do
+      expect(page).to have_css("#stage .table-time__view", text: /map/i) # the stage is the switch
+      expect(page).to have_no_css("#table_map .map-sheet")
+      within("#table_now") { click_on "Travel" }
+      expect(page).to have_css("#table_map .map-sheet[data-controller=map-ask]", visible: true)
+      expect(page).to have_css("#stage .table-time__view", text: /place/i)
+
+      find("a.map-node__ask[data-node-name='Far Hold']").click
+      within(".map-ask") do
+        expect(page).to have_text("Far Hold 2 parts of a day")
+        expect(page).to have_button("Go").and have_button("Ask the table")
+        click_on "Ask the table"
+      end
+      expect(page).to have_css("#table_choice .choice", text: "To Far Hold (2 parts of a day)")
+      expect(campaign.open_choice.options).to eq([ "To Far Hold (2 parts of a day)", Campaign::STAY ])
+
+      find("#stage .table-time__view", text: /place/i).click # the switch again: the place comes back
+      expect(page).to have_css("#stage .table-time__view", text: /map/i)
+      expect(page).to have_no_css("#table_map .map-sheet", visible: true)
+    end
+  end
 end

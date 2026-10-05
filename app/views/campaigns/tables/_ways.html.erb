@@ -84,35 +84,7 @@
     <% elsif gm %>
       <%= button_to "Put it to the table", campaign_ways_path(campaign), class: "button button--quiet" %>
       <p class="hint">Go straight there, or let the party vote: settling the vote takes them where they chose.</p>
-      <%# A wider ballot (Campaign::Ways#ask_where_next!): every place on a map, or places named; the party travels
-          there however many roads away, stopping where something waits. %>
-      <% if campaign.travelling? && campaign.current_node && !dungeon %>
-        <details class="ways-ask">
-          <summary class="link-button">Ask about somewhere further</summary>
-          <%= form_with url: campaign_ways_path(campaign), class: "book-form inline-form" do |f| %>
-            <%= hidden_field_tag :scope, "map", id: nil %>
-            <div class="field">
-              <%= label_tag :ways_map_id, "Anywhere on" %>
-              <%= select_tag :map_id, options_for_select(campaign.maps.in_order.map { |m| [ m.name, m.id ] }, campaign.party_map&.id), id: "ways_map_id" %>
-            </div>
-            <%= f.submit "Ask the table", class: "button button--quiet" %>
-          <% end %>
-          <% places = campaign.map_nodes.where(visible: true).where.not(id: campaign.current_node.id).order(:name) %>
-          <% if places.any? %>
-            <%= form_with url: campaign_ways_path(campaign), class: "book-form ways-ask__places" do |f| %>
-              <%= hidden_field_tag :scope, "places", id: nil %>
-              <p class="field-label">Or a choice between these places</p>
-              <div class="checks-row">
-                <% places.each do |place| %>
-                  <label class="checks"><%= check_box_tag "places[]", place.id, false, id: "ways_place_#{place.id}" %> <%= place.name %></label>
-                <% end %>
-              </div>
-              <%= f.submit "Ask the table", class: "button button--quiet" %>
-            <% end %>
-          <% end %>
-          <p class="hint">Each is a journey by road from here: the vote says how long. Where something waits on the way, the party stops for your call.</p>
-        </details>
-      <% end %>
+      <%# A wider ballot (anywhere on a map, or a place pressed) is asked from the map on the stage (maps/_sheet). %>
     <% elsif deciding %>
       <p class="hint">The table is deciding something else first: settle that, then say where you'd go.</p>
     <% else %>

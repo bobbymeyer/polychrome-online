@@ -82,16 +82,7 @@
                           "aria-pressed": current.to_s, form: { class: "inline" } %>
           <% end %>
         </div>
-        <% if campaign.map_on_stage? %>
-          <%= button_to "Show the place", campaign_map_view_path(campaign), method: :patch, params: { off: 1 }, class: "button button--quiet", form: { class: "inline" } %>
-        <% else %>
-          <%= button_to "Show the map", campaign_map_view_path(campaign), method: :patch, class: "button button--quiet", form: { class: "inline" } %>
-        <% end %>
-        <%= render "campaigns/tables/here", campaign: campaign %>
       <% end %>
     </div>
-  <% elsif !gm && state == "free" %>
-    <%# A player's way into the place, while the table is free: its page (shops, rooms, the floor). %>
-    <div class="table-now__do"><%= render "campaigns/tables/here", campaign: campaign %></div>
   <% end %>
 </section>

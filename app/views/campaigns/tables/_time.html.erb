@@ -23,9 +23,14 @@
   <% if (node = campaign.current_node) %>
     <% dungeon = campaign.dungeon_in_progress %>
     <% room = dungeon && dungeon.room(dungeon.progress["current"]) %>
-    <p class="table-time__where">
+    <div class="table-time__where">
       <span class="table-time__pin" aria-hidden="true"></span>
       <%= node.location ? link_to(node.name, location_path(node.location), data: { turbo_frame: "_top" }) : node.name %><%= tag.span(" · #{room['name']}", class: "table-time__room") if room %>
-    </p>
+      <% if local_assigns[:gm] && campaign.map_shown %>
+        <% on_map = campaign.map_on_stage? %>
+        <%= button_to (on_map ? "Place" : "Map"), campaign_map_view_path(campaign), method: :patch, params: (on_map ? { off: 1 } : {}),
+                      class: "table-time__view", form: { class: "inline", data: { turbo_frame: "_top" } }, title: (on_map ? "Show the place on the stage" : "Show the map on the stage") %>
+      <% end %>
+    </div>
   <% end %>
 </section>
