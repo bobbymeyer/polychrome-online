@@ -732,6 +732,12 @@ details[open] > summary { margin-bottom: 16px; }
 .history-list li.is-unknown { color: var(--grey); }
 .standing { margin: 0 0 12px; }
 .prep-nav { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 24px; }
+/* Prep's reference tier: tabs over closed panels, under this session's own. */
+.prep-reference { margin-top: 32px; padding-top: 16px; border-top: 3px solid var(--ink); }
+.prep-reference .drawers__tabs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+.prep-reference .drawers__tab { background: var(--control-fill); border: 0; padding: 8px 14px; font-weight: 800; cursor: pointer; }
+.prep-reference .drawers__tab[aria-expanded="true"] { background: var(--ink); color: var(--paper); }
+.prep-reference .drawers__link { margin-left: auto; font-weight: 600; }
 .standing--bad strong { color: var(--signal); }
 .past p { margin: 0 0 4px; }
 .shop-table__story { display: block; font-size: 0.85em; }

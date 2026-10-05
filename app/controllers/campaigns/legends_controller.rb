@@ -12,5 +12,6 @@ class Campaigns::LegendsController < ApplicationController
   def show
     @gm = table_gm?
     @legends = Legends.new(@campaign, gm: @gm)
+    @battles = @campaign.battles.order(created_at: :desc).limit(20)
   end
 end

@@ -9,7 +9,25 @@ export default class extends Controller {
   static values = { wide: String }
 
   connect() {
-    if (this.wideValue && window.matchMedia("(min-width: 1100px)").matches) this.show(this.wideValue)
+    // A link into a panel (#secrets, from the table) opens it; else, on a wide screen, the one that starts open.
+    if (!this.follow() && this.wideValue && window.matchMedia("(min-width: 1100px)").matches) this.show(this.wideValue)
+    this.onHash = () => this.follow()
+    window.addEventListener("hashchange", this.onHash)
+  }
+
+  disconnect() {
+    window.removeEventListener("hashchange", this.onHash)
+  }
+
+  // The panel the address names (its key, or an id inside it), opened and brought into view.
+  follow() {
+    const wanted = decodeURIComponent(window.location.hash.slice(1))
+    if (!wanted) return false
+    const panel = this.panelTargets.find((p) => p.dataset.key === wanted || p.querySelector(`#${CSS.escape(wanted)}`))
+    if (!panel) return false
+    this.show(panel.dataset.key)
+    panel.scrollIntoView({ block: "start" })
+    return true
   }
 
   toggle(event) {

@@ -12,24 +12,11 @@
     <p class="muted"><%= money(@campaign.gil) %> · <%= @campaign.when_it_is %></p>
   </div>
   <div class="actions">
-    <%# Open the table is the way on from here; the rest are quiet, and what needs a party waits for one.
-        A battle is called at the table (Campaign::Controls), not from here. %>
+    <%# The lobby: the way to the table, the party, the cast, the invite. Everything the party does (a rest, a battle,
+        the bag spent) happens at the table; the bag is stocked in Prep; the fights are kept on Legends. %>
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--primary" %>
     <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" if @world.codex_entries.exists? %>
-    <% if can_gm?(@campaign) %>
-    <% party = @campaign.characters.any? %>
-    <%# Camp is for the road: in a town, the party takes rooms at the inn. %>
-    <% if !party %>
-    <% elsif (inn = @campaign.inn_here) %>
-      <%= link_to "Inn: #{inn['name']}", location_path(@campaign.current_node.location, anchor: "service-inn"), class: "button button--quiet" %>
-    <% else %>
-      <% if (camp = @campaign.camp_here) %>
-        <%= button_to "Make camp", campaign_ways_path(@campaign), params: { way: camp["label"], go: 1 }, class: "button button--quiet",
-                      form: { data: { turbo_confirm: "Rest in the open? Everyone standing gets back full #{word('hp')} and half their #{word('mp')}; the night passes. It raises nobody." } } %>
-      <% end %>
-    <% end %>
-    <%= link_to "Edit", edit_campaign_path(@campaign), class: "button button--quiet" %>
-    <% end %>
+    <%= link_to "Edit", edit_campaign_path(@campaign), class: "button button--quiet" if can_gm?(@campaign) %>
   </div>
 </div>
 
@@ -108,53 +95,3 @@
     <%= button_to "Bring them in", campaign_canon_path(@campaign), class: "button button--quiet" %>
   </section>
 <% end %>
-
-<div class="two-up">
-  <section class="window">
-    <h2>Bag</h2>
-    <% bag = @campaign.bag %>
-    <% if bag.empty? %>
-      <p class="empty">Empty.</p>
-    <% else %>
-      <table class="book-table book-table--plain">
-        <thead><tr><th>Item</th><th>Category</th><th class="num">Qty</th></tr></thead>
-        <tbody>
-          <% bag.each do |row| %>
-            <tr>
-              <td><%= link_to row.item.name, world_armory_item_path(@world, row.item) %></td>
-              <td><%= term(row.item.category) %></td>
-              <td class="num"><%= row.quantity %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    <% end %>
-    <% if can_gm?(@campaign) %>
-    <details id="add_items" data-turbo-permanent data-controller="fresh-form" data-action="turbo:submit-end->fresh-form#done">
-      <summary>GM: add items</summary>
-      <%= form_with url: campaign_inventories_path(@campaign), scope: :inventory, class: "book-form" do |f| %>
-        <div class="field-row">
-          <div class="field"><%= f.label :item_id, "Item" %><%= f.select :item_id, @world.items.order(:name).map { |i| [ i.name, i.id ] } %></div>
-          <div class="field"><%= f.label :quantity %><%= f.number_field :quantity, value: 1, min: 1, max: 99 %></div>
-        </div>
-        <%= f.submit "Add to bag", class: "button" %>
-      <% end %>
-    </details>
-    <% end %>
-  </section>
-
-  <section class="window">
-    <h2>Battles</h2>
-    <% if @battles.empty? %>
-      <p class="empty">None yet.</p>
-    <% else %>
-      <ul class="refs">
-        <% @battles.each do |battle| %>
-          <li>
-            <%= link_to battle.name, battle_path(battle) %> <span class="muted">· <%= battle.status_label %> · <%= time_ago_in_words(battle.updated_at) %> ago</span>
-          </li>
-        <% end %>
-      </ul>
-    <% end %>
-  </section>
-</div>

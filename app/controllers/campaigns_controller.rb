@@ -25,7 +25,6 @@ class CampaignsController < ApplicationController
 
   def show
     @characters = @campaign.characters.includes(:job, :user, :character_jobs, equipment_slots: :item, portraits: { image_attachment: :blob }).order(:created_at)
-    @battles = @campaign.battles.order(created_at: :desc).limit(10)
   end
 
   def edit; end

@@ -14,14 +14,13 @@
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--primary" %>
     <%= link_to "Legends", campaign_legends_path(@campaign), class: "button button--quiet" %>
     <% if table_gm? %>
-      <%# What the GM has changed in the places the campaign rolled: a record of its own, not a flag. %>
-      <% changes = @campaign.locations.includes(:npcs, *Location::ROLLING).sum { |location| location.changes.size } %>
-      <%= link_to "Changes to places (#{changes})", campaign_changes_path(@campaign), class: "button button--quiet" %>
     <% end %>
   </div>
 </div>
+<%# Two tiers (docs/DESIGN.md): this session on the page (scenes, clocks, the moment), the reference behind
+    tabs (drawers_controller; a link to #secrets opens its tab). %>
 <nav class="prep-nav" aria-label="Prep">
-  <% { "scenes" => "Scenes", "clocks" => "Clocks", "secrets" => "Secrets", "deeds" => "Deeds", "rumours" => "Rumours", "flags" => "Flags", "moment" => "The moment" }.each do |anchor, label| %>
+  <% { "scenes" => "Scenes", "clocks" => "Clocks", "moment" => "The moment" }.each do |anchor, label| %>
     <a href="#<%= anchor %>"><%= label %></a>
   <% end %>
   <%= link_to "Maps →", campaign_maps_path(@campaign) %>
@@ -32,12 +31,23 @@
 <% if table_gm? %>
   <div class="two-up">
     <%= render "campaigns/preps/clocks", campaign: @campaign %>
-    <%= render "campaigns/preps/secrets", campaign: @campaign %>
+    <%= render "campaigns/preps/moment", campaign: @campaign %>
   </div>
-  <%= render "campaigns/preps/deeds", campaign: @campaign %>
-  <%= render "campaigns/preps/rumours", campaign: @campaign %>
-  <%= render "campaigns/preps/flags", campaign: @campaign %>
-  <%= render "campaigns/preps/moment", campaign: @campaign %>
+  <% reference = { "secrets" => "Secrets", "deeds" => "Deeds", "rumours" => "Rumours", "flags" => "Flags", "bag" => "Bag" } %>
+  <div class="drawers prep-reference" data-controller="drawers" aria-label="The reference">
+    <div class="drawers__tabs" role="group" aria-label="Look up">
+      <% reference.each do |key, label| %>
+        <%= tag.button label, type: "button", class: "drawers__tab", aria: { expanded: false, controls: "prep_#{key}" },
+                              data: { drawers_target: "tab", key: key, action: "drawers#toggle" } %>
+      <% end %>
+      <%= link_to "Changes to places →", campaign_changes_path(@campaign), class: "drawers__link" %>
+    </div>
+    <% reference.each_key do |key| %>
+      <div id="prep_<%= key %>" class="drawers__panel" hidden data-drawers-target="panel" data-key="<%= key %>">
+        <%= render "campaigns/preps/#{key}", campaign: @campaign %>
+      </div>
+    <% end %>
+  </div>
 <% else %>
   <section class="window">
     <p>You're sitting as a character at this table. Clocks, secrets, deeds, rumours and flags are changed from the GM's seat.</p>

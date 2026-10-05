@@ -314,6 +314,13 @@ keyboard, a mouse or a finger.
 
 ### The first hour
 
+- **The campaign page is the lobby**: the way to the table, the party, the cast, the invite, and
+  nothing the party does. A rest, a battle and the bag spent happen at the table; the bag is
+  stocked in Prep; the fights are kept on Legends with the rest of the party's record.
+- **Prep is two tiers.** This session on the page: Scenes, then Clocks beside The moment. The
+  reference behind one row of tabs under them: Secrets, Deeds, Rumours, Flags, Bag, with Changes
+  to places a link beside them; a link into one (#secrets, from the table) opens its tab. Maps
+  stays its own page, since it's another kind of editing.
 - **Invites.** The campaign page has an Invite players panel: a link, its code and QR, and who
   has sat down. The link lets a friend pick a character the GM made or make their own (name,
   job from cards, motive) without an account. The shared screen's QR code is the same link with
