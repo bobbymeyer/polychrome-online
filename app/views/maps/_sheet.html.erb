@@ -13,7 +13,7 @@
 <% labels = map_label_offsets(nodes) %>
 <% shared_modes = scope.campaign? ? nodes.flat_map { |n| n.modes_on.map(&:name).uniq }.tally.select { |_, count| count >= 3 }.keys : [] %>
 <%# The GM asks from the map (map_ask_controller): each place they press offers Go and Ask the table, with the
-    journey by road from here; a corner button asks about anywhere on this map (Campaign::Ways#ask_where_next!). %>
+    journey by road from here (Campaign::Ways#ask_where_next!). %>
 <% asking = scope.table? && scope.gm? && scope.campaign? && scope.owner.current_node && !scope.owner.dungeon_in_progress %>
 <% asks = asking ? scope.owner.ways_to(nodes.select { |n| n.visible? }).index_by { |way| way.dig("move", "to") } : {} %>
 <div class="map-sheet <%= 'map-sheet--editor' if scope.editor? %> <%= 'map-sheet--pictured' if map.image.attached? %>" data-map-id="<%= map.id %>" <%= tag.attributes(data: { controller: ("map-ask" if asking) }) %>>
@@ -123,9 +123,6 @@
   <% end %>
   <p class="map-sheet__name"><%= map.name %></p>
   <% if asking %>
-    <%= button_to "Ask the table: anywhere on #{map.name}", campaign_ways_path(scope.owner), params: { scope: "map", map_id: map.id },
-                  class: "button button--quiet map-sheet__ask-all", form: { class: "map-sheet__ask-all-form", data: { turbo_frame: "_top" } },
-                  disabled: asks.empty?, title: (asks.empty? ? "No road leads anywhere from here" : "A vote between every place on this map a road leads to") %>
     <div class="map-ask" data-map-ask-target="card" hidden>
       <p class="map-ask__name"><strong data-map-ask-target="name"></strong> <span class="map-ask__journey" data-map-ask-target="journey"></span></p>
       <p class="map-ask__none hint" data-map-ask-target="noRoad" hidden>No road leads there from here.</p>

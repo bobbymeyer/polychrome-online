@@ -38,7 +38,7 @@ RSpec.describe "Where next", type: :request do
     expect(sheet.at("a.map-node__ask[data-node-name='Far Hold']")["data-journey"]).to eq("3 parts of a day")
     expect(sheet.at("a.map-node__ask[data-node-name='Nowhere']")["data-way-label"]).to be_nil # no road
     expect(sheet.at("a.map-node__ask[data-node-name='Tule']")).to be_nil # where the party is
-    expect(sheet.at(".map-sheet__ask-all").text).to eq("Ask the table: anywhere on #{campaign.root_map.name}")
+    expect(sheet.at(".map-sheet__ask-all")).to be_nil # no standing button on the stage: the music switch has that corner
     expect(sheet.at(".map-ask button[data-map-ask-target=go]").text).to eq("Go")
 
     # Pressing a place: Go takes the party there, road by road.

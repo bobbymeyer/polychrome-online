@@ -123,11 +123,15 @@ remembers. The melodies are our own:
   quick notes.
 - **Confirm:** a soft blip on game menus and play buttons, and nowhere else.
 
-Music is the world's own: a track for each kind of scene (field, town, dungeon, battle,
-boss), uploaded on the world's edit page. Each page plays its scene's track, crossfading as
-you move, and a scene without a track is quiet. At the table the GM can switch everyone to
-another scene's track, or to silence; battles keep their own. A boss's entrance stops the
-music for its moment, then the boss track starts.
+Music is the world's own, a book like the others (Music): a track for each kind of scene
+(field, town, dungeon, battle, boss), and any more for the GM to call by name. A track is a
+file uploaded, a YouTube or Spotify link, or made in ComfyUI with ACE-Step from a description
+and lyrics. Each page plays its scene's track, crossfading as you move, and a scene without a
+track is quiet. A linked track can't be fetched, so it plays in its own small player in the
+page's bottom-right corner, kept across pages; the viewer may need to press it once. At the
+table the GM switches everyone from the stage's bottom-left corner: another scene's track, one
+by name, or silence; battles keep their own. A boss's entrance stops the music for its moment,
+then the boss track starts.
 
 Nothing sounds until the viewer has clicked or pressed a key (browsers insist), and "Sound
 on/off" in the top bar mutes this device.
@@ -508,6 +512,8 @@ under the frame.
   before sitting down; on the world's page, as the setting's own. Not on the campaign page.
 - **The talk box is the box first**, then one line under it: As (or To) as chips, the face as a
   plain select, Send at the end, and a help line that says what each does. No fold for the face.
+- **Grants go to one or to all**: "The party (everyone)" is the first choice of who gets EXP and
+  ABP, and each gets the same.
 - **Time passes a part of the day at a time**: "Let time pass" is the GM's last row of the Do
   table, costed "a part of the day" like the pastimes above it, and the only row when there is
   nothing else to do here. A journey takes its road's time by itself; a rest sleeps the night.
@@ -642,8 +648,10 @@ under the frame.
   waiting encounter, and travel is the table's (the Travel control, the map on the stage).
 - **Setting up is the lobby's, playing is the table's.** Playing around one screen (the shared
   screen, the QR code and the controller link) is set up on the campaign page beside the invite,
-  before play. The music is on the stage: one small select on its corner tag beside Map/Place,
-  the GM's, since what the table hears belongs with what it sees. GM tools' More is grants only.
+  before play. The music is on the stage: one small select in the frame's bottom-left corner
+  (where the map's "Ask the table: anywhere" button was; asking is done from a place pressed on
+  the map, and from Move), the GM's, since what the table hears belongs with what it sees. GM
+  tools' More is grants only.
 - **"Fast animations"**, not "Fast": the toggle says what it speeds up. It's a setting for this
   device, so it sits in the account menu beside Sound on every page, and a battle already
   playing hears the change. **The timing meter** is the same kind of thing, so its switch sits

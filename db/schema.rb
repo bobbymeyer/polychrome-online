@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -812,6 +812,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_140000) do
     t.index ["owner_type", "owner_id"], name: "index_sprites_on_owner", unique: true
   end
 
+  create_table "tracks", force: :cascade do |t|
+    t.integer "world_id", null: false
+    t.string "name", null: false
+    t.string "scene"
+    t.string "source", default: "upload", null: false
+    t.string "url"
+    t.text "prompt"
+    t.text "lyrics"
+    t.integer "seconds", default: 60, null: false
+    t.string "status"
+    t.text "error"
+    t.string "prompt_id"
+    t.datetime "started_at"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["world_id"], name: "index_tracks_on_world_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email_address", null: false
     t.string "password_digest", null: false
@@ -1030,6 +1049,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_140000) do
   add_foreign_key "secrets", "npcs"
   add_foreign_key "secrets", "world_fronts"
   add_foreign_key "sessions", "users"
+  add_foreign_key "tracks", "worlds"
   add_foreign_key "world_figures", "monsters"
   add_foreign_key "world_figures", "world_places"
   add_foreign_key "world_figures", "worlds"

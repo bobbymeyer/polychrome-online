@@ -20,8 +20,8 @@
       </ul>
     <% end %>
   </div>
-  <%# Where the party is; and for the GM, the stage's switches (Map/Place, the music) on the same tag, even before
-      the party is anywhere. %>
+  <%# Where the party is; and for the GM, the stage's Map/Place switch on the same tag, even before the party is
+      anywhere (the music is in the frame's other corner, campaigns/tables/_music). %>
   <% node = campaign.current_node %>
   <% if node || local_assigns[:gm] %>
     <% dungeon = campaign.dungeon_in_progress %>
@@ -36,8 +36,6 @@
         <%= button_to (on_map ? "Place" : "Map"), campaign_map_view_path(campaign), method: :patch, params: (on_map ? { off: 1 } : {}),
                       class: "table-time__view", form: { class: "inline", data: { turbo_frame: "_top" } }, title: (on_map ? "Show the place on the stage" : "Show the map on the stage") %>
       <% end %>
-      <%# What the table hears is the stage's too: the GM picks it here. %>
-      <%= render "campaigns/tables/gm/music", campaign: campaign if local_assigns[:gm] %>
     </div>
   <% end %>
 </section>

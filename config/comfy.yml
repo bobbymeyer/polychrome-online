@@ -35,6 +35,17 @@ shared: &shared
     denoise: 0.6
   # Give up on a batch that hasn't finished after this many seconds.
   timeout: 900
+  # Music (Comfy::Music, a world's Music book): ACE-Step, through ComfyUI's
+  # own nodes (ComfyUI 0.3.34 or later), from its checkpoint in
+  # models/checkpoints. A track is described in tags ("medieval folk,
+  # lute, slow, melancholic") with lyrics or none, for so many seconds.
+  music:
+    model: <%= ENV.fetch("COMFY_MUSIC_MODEL", "ace_step_v1_3.5b.safetensors").to_json %>
+    steps: 50
+    cfg: 5.0
+    shift: 5.0
+    lyrics_strength: 0.99
+    mp3_quality: V0
   # A speaker's look, made in a chain (Headshot, ArtBatch "source"): the
   # sprite first; the Neutral portrait redrawn from the sprite's head; each
   # other expression redrawn from the Neutral portrait. How much each step

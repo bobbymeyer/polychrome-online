@@ -3,9 +3,11 @@
 //
 // The jingles are synthesised here with WebAudio, from square, triangle and
 // noise voices, like the consoles the game remembers. The melodies are our
-// own. Music is the world's own uploaded tracks (World::MUSIC): each page
-// names the track for its scene in <meta name="polychrome-music">, and one
-// audio element, kept across Turbo visits, crossfades between them.
+// own. Music is the world's own Music book (Track): each page names the
+// track for its scene in <meta name="polychrome-music">, and one audio
+// element, kept across Turbo visits, crossfades between them. A linked track
+// (YouTube, Spotify) can't be fetched: its player is shown instead, small, in
+// the page's corner (#music_embed, kept across visits too).
 //
 // Browsers only allow sound after the viewer has done something, so nothing
 // plays until the first click or key. Muting is per device.
@@ -24,6 +26,7 @@ export function setMuted(value) {
   try { window.localStorage.setItem(MUTE_KEY, String(value)) } catch { /* no storage: this page only */ }
   if (master) master.gain.value = value ? 0 : JINGLE_VOLUME
   music.muted = value
+  apply() // a linked track's player comes and goes with the mute
   document.dispatchEvent(new CustomEvent("sound:muted", { detail: { muted: value } }))
 }
 
@@ -256,8 +259,50 @@ function fadeTo(volume, done) {
   }, 50)
 }
 
+// --- a linked track's player -------------------------------------------------
+
+const EXTERNAL = /^https?:\/\//
+
+function embedBox() { return document.getElementById("music_embed") }
+
+function showEmbed(url) {
+  const box = embedBox()
+  if (!box) return
+  let frame = box.querySelector("iframe")
+  if (!frame || frame.dataset.url !== url) {
+    box.replaceChildren()
+    frame = document.createElement("iframe")
+    frame.dataset.url = url
+    frame.src = url
+    frame.allow = "autoplay; encrypted-media"
+    frame.title = "Music"
+    frame.referrerPolicy = "strict-origin-when-cross-origin"
+    box.append(frame)
+  }
+  box.classList.toggle("music-embed--spotify", url.includes("spotify.com"))
+  box.hidden = false
+}
+
+function hideEmbed() {
+  const box = embedBox()
+  if (!box || box.hidden) return
+  box.replaceChildren()
+  box.hidden = true
+}
+
 function apply() {
   const target = held ? "" : wanted
+  if (EXTERNAL.test(target)) {
+    // Their player, not ours: the file stops, the embed shows (unless this device is muted).
+    if (playing) {
+      playing = ""
+      fadeTo(0, () => music.pause())
+    }
+    if (muted()) hideEmbed()
+    else showEmbed(target)
+    return
+  }
+  hideEmbed()
   if (target === playing && (!target || !music.paused)) return
 
   if (!target) {

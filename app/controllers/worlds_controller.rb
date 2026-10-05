@@ -45,14 +45,11 @@ class WorldsController < ApplicationController
   end
 
   def update
-    attrs = params.expect(world: [ :name, :description, :voice, :avoid, :lines, :veils, *World::MUSIC.map { |scene| :"music_#{scene}" },
-                                   { remove_music: [] }, { calendar: %i[periods dark weekdays months month_length start_year start_month start_day start_weekday eras] }, { battle_rules: Battle::RULES },
+    attrs = params.expect(world: [ :name, :description, :voice, :avoid, :lines, :veils,
+                                   { calendar: %i[periods dark weekdays months month_length start_year start_month start_day start_weekday eras] }, { battle_rules: Battle::RULES },
                                    { terms: [ :currency, :hp, :mp, { stats: World::Vocabulary::STATS, services: World::Vocabulary::SERVICES,
                                                                      statuses: Battle::STATUSES, services_off: [] } ] } ])
-    # Removing a track and uploading its replacement in one go keeps the new one.
-    removals = (Array(attrs.delete(:remove_music)) & World::MUSIC).reject { |scene| attrs[:"music_#{scene}"].present? }
     if @world.update(attrs)
-      removals.each { |scene| @world.public_send(:"music_#{scene}").purge_later }
       redirect_to @world, notice: "#{@world.name} was updated."
     else
       render :edit, status: :unprocessable_content

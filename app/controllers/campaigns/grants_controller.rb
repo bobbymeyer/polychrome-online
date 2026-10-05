@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # GM tool at the table: EXP and ABP to someone outside battle (a quest
-# reward, a montage), from GM tools' More.
+# reward, a montage), or to the whole party at once, from GM tools' More.
 class Campaigns::GrantsController < ApplicationController
   include CampaignScoped
   include TableSeat
@@ -10,10 +10,13 @@ class Campaigns::GrantsController < ApplicationController
   before_action :require_table_gm
 
   def create
-    character = @campaign.characters.find(params.expect(:character_id))
+    who = params.expect(:character_id)
+    characters = who == "party" ? @campaign.characters.order(:created_at).to_a : [ @campaign.characters.find(who) ]
     grant = params.expect(grant: %i[exp abp])
-    changes = character.gain!(exp: grant[:exp].to_i.clamp(0, 10**7), abp: grant[:abp].to_i.clamp(0, 10**5))
-    redirect_back_or_to campaign_table_path(@campaign), notice: grant_notice(character, changes), status: :see_other
+    exp = grant[:exp].to_i.clamp(0, 10**7)
+    abp = grant[:abp].to_i.clamp(0, 10**5)
+    notices = characters.map { |character| grant_notice(character, character.gain!(exp: exp, abp: abp)) }
+    redirect_back_or_to campaign_table_path(@campaign), notice: notices.join(" "), status: :see_other
   end
 
   private

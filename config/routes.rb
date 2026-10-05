@@ -65,6 +65,10 @@ Rails.application.routes.draw do
       resources :world_figures, path: "cast", except: :show, controller: "figures"
       resources :codex_entries, path: "codex"
       resources :world_fronts, path: "fronts", except: :show, controller: "fronts"
+      # Its music (Track): uploaded, linked, or made in ComfyUI.
+      resources :tracks, path: "music", except: :show do
+        resource :generation, only: :create, module: :tracks
+      end
       # Its pocket history, rolled over the atlas and written into the canon.
       resource :history, only: %i[show update create destroy], controller: "histories"
     end

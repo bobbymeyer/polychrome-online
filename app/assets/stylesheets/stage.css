@@ -599,12 +599,23 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 }
 .boss-line::before { content: "\201C"; } .boss-line::after { content: "\201D"; }
 
-/* Sound: the GM's music switch at the table, and the world's tracks. */
-/* The music, on the stage's corner tag beside Map/Place: one small select. */
-.music-switch { display: inline-block; margin: 0 0 0 8px; vertical-align: middle; }
-.music-switch select { width: auto; min-height: 0; padding: 0 20px 0 6px; font-size: 11px; line-height: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-width: 2px; }
-.stage__hud .music-switch select { font-size: clamp(9px, 1.1cqw, 11px); }
-.music-fields { border: 0; border-top: 3px solid var(--ink); padding: 8px 0 0; margin: 16px 0; }
+/* Sound: the GM's music switch on the stage, the world's Music book, and a linked track's player. */
+/* The music, in the frame's bottom-left corner (where the map's modes line sits too): one small select, the GM's. */
+.stage-music { position: absolute; left: 1.2cqw; bottom: 1.2cqw; z-index: 7; max-width: 46cqw; }
+.stage-music[hidden] { display: none; }
+.music-switch { display: inline-block; margin: 0; vertical-align: middle; }
+.music-switch select { width: auto; max-width: 100%; min-height: 0; padding: 0 20px 0 6px; font-size: clamp(9px, 1.1cqw, 11px); line-height: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-width: 2px; background-color: var(--paper); }
+.stage:has(.stage-music:not([hidden])) .map-sheet .map-canvas__modes { bottom: 36px; }
+/* A YouTube or Spotify track plays in its own small player (sound.js), kept across pages, in the page's corner. */
+.music-embed { position: fixed; right: 16px; bottom: 16px; z-index: 40; width: 300px; border: 3px solid var(--ink); background: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+.music-embed[hidden] { display: none; }
+.music-embed iframe { display: block; width: 100%; height: 169px; border: 0; }
+.music-embed--spotify iframe { height: 80px; }
+@media (max-width: 699px) { .music-embed { right: 8px; bottom: 8px; width: 200px; } .music-embed iframe { height: 113px; } .music-embed--spotify iframe { height: 80px; } }
+.music-book td { vertical-align: middle; }
+.music-book audio { max-width: 260px; height: 32px; }
+.music-book__acts { text-align: right; }
+.music-fields__current { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .music-fields legend { padding: 2px calc(12px + var(--slant)) 2px 10px; background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 900; clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
 .music-fields__current { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0; }
 .music-fields__current audio { height: 32px; max-width: 100%; }
@@ -1867,10 +1878,7 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .map-sheet--editor { aspect-ratio: 16 / 9; height: auto; border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
 .map-sheet--editor .map-sheet__name { display: none; }
 
-/* The GM asks from the map (map_ask_controller): a card by the place pressed, and a corner button for the whole map. */
-.map-sheet__ask-all-form { position: absolute; left: 8px; bottom: 8px; z-index: 3; margin: 0; }
-.map-sheet__ask-all { font-size: clamp(10px, 1.3cqw, 13px); min-height: 0; padding: 4px 10px; line-height: 1.4; }
-.map-sheet:has(.map-sheet__ask-all-form) .map-canvas__modes { bottom: 44px; }
+/* The GM asks from the map (map_ask_controller): a card by the place pressed. */
 .map-ask {
   position: absolute; z-index: 9; min-width: 220px; max-width: 280px; padding: 10px 12px; background: var(--paper); border: 3px solid var(--ink);
   box-shadow: 4px 4px 0 var(--ink); line-height: 1.3; font-size: 14px;

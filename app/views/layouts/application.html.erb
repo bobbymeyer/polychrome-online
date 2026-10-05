@@ -93,5 +93,7 @@
       <% end %>
       <%= yield %>
     </main>
+    <%# A YouTube or Spotify track's player (sound.js), kept across pages; empty and hidden until one plays. %>
+    <div id="music_embed" class="music-embed" data-turbo-permanent hidden></div>
   </body>
 </html>

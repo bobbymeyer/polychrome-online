@@ -6,11 +6,12 @@
 # machine ComfyUI is on and however its models are laid out.
 module Comfy
   class Capabilities
-    # The nodes the builder may use, and the background-removal node
-    # (ComfyUI-RMBG's, Cutout).
+    # The nodes the builder may use, the background-removal node
+    # (ComfyUI-RMBG's, Cutout), and ACE-Step's for music (Comfy::Music).
     NODES = %W[CheckpointLoaderSimple UNETLoader CLIPLoader VAELoader LoraLoader LoraLoaderModelOnly
                CLIPSetLastLayer CLIPTextEncode ConditioningZeroOut KSampler EmptyLatentImage EmptySD3LatentImage
-               VAEDecode SaveImage LoadImage ImageScale VAEEncode #{Cutout::NODE}].freeze
+               VAEDecode SaveImage LoadImage ImageScale VAEEncode #{Cutout::NODE}
+               EmptyAceStepLatentAudio TextEncodeAceStepAudio ModelSamplingSD3 VAEDecodeAudio SaveAudio SaveAudioMP3].freeze
 
     # offline: nothing answered at all (Comfy::Unreachable), rather than
     # ComfyUI answering with an error.
