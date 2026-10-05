@@ -31,6 +31,12 @@ deliberate divergence from much of what follows, and where the two disagree the 
 - **Menus.** Game menus (`.play`) are white slabs underlined in red. They slide in one after
   another when a panel opens. The cursor is a red slab thrown 8px forward with a black edge.
   Grey menus behave the same in grey and black.
+- **Choices are tables.** Where the table picks one thing from a list (a vote, the ways on, the
+  things to do here) the options are rows of a table, not slabs: one a row, 44px tall, a hairline
+  between them, columns lined up (what, who picked it, what it costs or does). The whole row is
+  the control: hover or focus fills it red (grey for a grey table), a click anywhere on it or
+  Enter picks it, Up and Down walk the rows. Rows are rectangles, a divergence from the slabs,
+  so the columns read.
 - **Unavailable** things are hatched, not just greyed.
 - **Battle.** The acting unit stands on a red slash. A target gets a red reticle that turns.
   Damage numbers are heavy italic, white with a black outline and shadow, landing big and
@@ -339,12 +345,13 @@ A player's table offers what they can do at this moment, and nothing else up fro
 
 The GM's table works the same way:
 
-- **The Now line is the GM's prompt**, with the moves for what's happening: in free play "Ask
-  where next", "Call a check" and "Play a scene" (which open their tool); with a vote, "Settle it ↓";
-  with an encounter, "Fight or wave it off ↓" (to its panel, where the prelude can still be edited).
-- **The tools fold while the table is busy.** During a vote, an encounter or a battle the tabs
-  wait behind "Tools"; what needs an answer now (everyone down, a field ability asked for) stays
-  out in front. Granting archetypes, the music and the shared screen are under one "More".
+- **The Now line is the GM's prompt**, with the moves for what's happening: in free play the
+  controls row (Talk · Travel · Things to do here · Scene · Check: what kind of moment this is,
+  and what comes to the table for it); with a vote, "Settle it ↓"; with an encounter, "Fight or
+  wave it off ↓" (to its panel, where the prelude can still be edited).
+- **The rest of the tools wait behind "Tools"**, always: Clocks, Time, Secrets, Moves and More
+  (grants, music, the shared screen). What needs an answer now (everyone down, a field ability
+  asked for) stays out in front.
 - **What the GM looks up is in tabs** under the tools: Party · What they know.
 
 The shared screen keeps its panels: it's watched, not played. The stage-only view keeps nothing but
@@ -468,14 +475,16 @@ under the frame.
   ability waits; while a scene is on the stage, a player's ways and ability wait too, and the GM
   has the director's buttons. Travel is the Controls' (Where next?). The battle page has no
   campaign chrome but its name, and talk is a press away.
-- **The GM's tools are the GM's moves**, in the Controls under the stage where a player's moves
-  would be: tabs for Scenes, Check, Clocks, Time, Secrets and More (grants, music, one shared
-  screen with its QR code to hold up), one open at a time, under a dashed tag: "GM tools · only
-  you see these".
-  The open tab is ink, the rest grey controls; a count shows unplayed scenes and running clocks.
-  The tab the GM had open stays open, per campaign, in this browser. What needs an answer now
-  (everyone down, a field ability asked for) sits above the tabs. On a phone as the GM's remote,
-  the same tools come after the play.
+- **What the GM calls is the GM's moves.** The controls row on the Now line is the one switch:
+  Talk, Travel and Things to do here put the ways under the stage for everyone; Scene puts the
+  scene list there and Check the check form, for the GM, in the same place a player's moves go,
+  so there is one spot to look at whoever you are. There is no tab strip for these. What's left
+  (Clocks, Time, Secrets, Moves and More: grants, music, one shared screen with its QR code to
+  hold up) waits behind one "Tools" button under a dashed tag, "GM tools · only you see these",
+  one tab at a time; the open tab is ink, a count shows running clocks, and the tab the GM had
+  open stays open, per campaign, in this browser. What needs an answer now (everyone down, a
+  field ability asked for) sits in front of it. On a phone as the GM's remote, the same comes
+  after the play.
 - **One list of ways while the party votes.** With a Where next? open, the GM's vote has each
   option as a row, who picked it, and Settle beside it; under it the same places are a small row,
   "Or go straight there, without the vote" (going now ends the vote), not a second Where next?.
@@ -570,14 +579,18 @@ other way, the GM puts it to the table.
 ### Players steer
 
 The table's actions fit the moment the GM has called, and no others. The Now line has the
-controls: **Talk** (the floor: the dialogue, nothing to pick), **Travel**, and **Things to do
-here**; the one called is red and pressed, and one with nothing behind it is greyed. Talking,
+controls: **Talk** (the floor: the dialogue, nothing to pick), **Travel**, **Things to do
+here**, **Scene** and **Check**; the one called is red and pressed, and one with nothing behind
+it is greyed. Scene and Check are the GM's alone: the scene list or the check form comes to the
+table under the stage, where the ways would be, and players see nothing until a scene plays or
+a roll lands. Talking,
 neither the GM nor the players get a menu of ways. Calling Travel puts "Where next?" below for
 everyone: the open paths from where the party stands, a dungeon's door, or, inside, the ways on
 from the room they're in (a room the players haven't seen is only "An unexplored way"). Calling
-Things to do here puts the day's pastimes below instead, under "Day in Tule". A player's
-"suggest" puts the question to a vote with their pick in it; the GM settling the vote takes the
-party there. The GM can also just go, from the same panel, or ask wider. A battle, an encounter,
+Things to do here puts the day's pastimes below instead, under "Day in Tule". The ways, like
+the vote's options, are rows of a table, the whole row the control (`pick_table_controller`). A
+player's row suggests it: the question goes to a vote with their pick in it; the GM settling the
+vote takes the party there. The GM can also just go, from the same panel, or ask wider. A battle, an encounter,
 a scene or an open choice still comes first, whatever is called; the call stays until the GM
 changes it, so a dungeon is walked room by room without re-pressing Travel. Settling the vote takes the party there. The
 GM can also just go, from the same panel, and calls a waiting encounter there too, so a session
@@ -698,6 +711,11 @@ Phones are where most players are, so every page is checked at 390×844, 360×64
 - **The top bar is one line**: the name, a Menu button, and the log's tab. The links open from
   Menu at 44px, with Sign out set apart at the end, where a guest won't tap it by mistake. The
   log's tab scrolls away with the bar instead of floating over what you're reading.
+- **The table is three views.** Its three columns (you and the party; the stage and what you can
+  do; the log) are too much for one phone screen stacked, so a thin strip under the top bar picks
+  one: "You & party", "Stage", "Log", the one shown in ink, the Stage first. The log's tab goes
+  away on this page: the log is the third view, in the page, and the count of lines you haven't
+  seen sits on its name in the strip. The view you were on is kept for the session.
 - **In battle, the commands are pinned to the bottom** while the fight plays above them. The
   pinned panel carries a strip of everyone's HP and, above it, the last lines of what just
   happened, so nobody has to open the log mid-fight. The page title steps aside and enemies size

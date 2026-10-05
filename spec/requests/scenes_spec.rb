@@ -25,6 +25,9 @@ RSpec.describe "Scenes", type: :request do
     create_character(campaign, name: "Bartz")
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
     get campaign_table_path(campaign)
+    expect(response.body).not_to include(scene_play_path(scene)) # until the GM calls Scene (Campaign::Controls)
+    campaign.call_controls!("scene")
+    get campaign_table_path(campaign)
     expect(response.body).to include("Ambush", scene_play_path(scene))
 
     # On the stage: its first beat is said, and the GM steps it to its ending.

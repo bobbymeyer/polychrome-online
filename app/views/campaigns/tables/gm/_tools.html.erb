@@ -1,12 +1,9 @@
-<%# The GM's tools at the table, one at a time, beside the play (gm_tools_controller keeps the one
-    you had open). What needs an answer now comes first: everyone down, a field ability asked for. %>
-<% tabs = { "scenes" => [ "Scenes", campaign.scenes.where(played_at: nil).count ], "check" => [ "Check", nil ],
-            "clocks" => [ "Clocks", campaign.clocks.running.count ], "time" => [ "Time", nil ],
+<%# The rest of the GM's tools at the table, behind "Tools" until wanted (what the GM calls, scenes and checks
+    among them, is the Now line's controls row: Campaign::Controls). One tab at a time; gm_tools_controller
+    keeps the one you had open. What needs an answer now comes first: everyone down, a field ability asked for. %>
+<% tabs = { "clocks" => [ "Clocks", campaign.clocks.running.count ], "time" => [ "Time", nil ],
             "secrets" => [ "Secrets", nil ], "moves" => [ "Moves", nil ], "more" => [ "More", nil ] } %>
-<%# While the table is busy (a vote, an encounter, a battle: the Now line's data-state), the tabs fold behind
-    "Tools" (stage.css); the Now line's own buttons open the one they need (gm-tools:open). %>
-<section class="gm-tools" aria-label="GM tools" data-controller="gm-tools" data-gm-tools-campaign-value="<%= campaign.id %>"
-         data-action="gm-tools:open@window->gm-tools#open">
+<section class="gm-tools" aria-label="GM tools" data-controller="gm-tools" data-gm-tools-campaign-value="<%= campaign.id %>">
   <%= render "campaigns/tables/gm/recovery", campaign: campaign %>
   <%= render "campaigns/field_uses/requests", campaign: campaign %>
   <p class="gm-only">GM tools · only you see these</p>

@@ -6,13 +6,16 @@
 #   talk    the floor: the dialogue, and nothing to pick (the default)
 #   travel  the ways on: roads, a dungeon's door and rooms; the vote, for players
 #   doing   things to do here this part of the day (Pastime), and the vote
-# A battle, an encounter, a scene or an open choice still comes first: the
-# controls say what the free table offers.
+#   scene   the GM's scenes, to put one on the stage (nothing for players yet)
+#   check   the GM's check form: who rolls what (the roll lands for everyone)
+# A battle, an encounter, a scene on the stage or an open choice still comes
+# first: the controls say what the free table offers. There is no other
+# strip of GM tools for these: the one called is the one on the table.
 module Campaign::Controls
   extend ActiveSupport::Concern
 
-  CONTROLS = %w[talk travel doing].freeze
-  CONTROL_LABELS = { "talk" => "Talk", "travel" => "Travel", "doing" => "Things to do here" }.freeze
+  CONTROLS = %w[talk travel doing scene check].freeze
+  CONTROL_LABELS = { "talk" => "Talk", "travel" => "Travel", "doing" => "Things to do here", "scene" => "Scene", "check" => "Check" }.freeze
 
   included do
     validates :controls, inclusion: { in: CONTROLS }

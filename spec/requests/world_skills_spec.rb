@@ -20,6 +20,7 @@ RSpec.describe "A world's skills", type: :request do
 
   it "rolls a GM's skill check on its stat, with the job's bonus" do
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    campaign.call_controls!("check") # the form comes to the table once Check is called
     get campaign_table_path(campaign)
     expect(response.body).to include("Athletics (Str)", 'value="skill:athletics"')
 

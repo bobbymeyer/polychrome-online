@@ -681,18 +681,45 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .choice[hidden] { display: none; }
 .choice:not([hidden]) { animation: slash-in .3s var(--snap) both; }
 .choice h2 { margin: 0 0 10px; font: var(--display); font-size: 28px; }
-.choice__options { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.choice__option { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
-.choice__pick-form { margin: 0; flex: 0 1 auto; }
-.choice__pick { min-width: 12em; background: var(--paper); border-bottom: 3px solid var(--signal); font-style: italic; font-weight: 900; font-size: 18px; }
-.choice__pick:hover, .choice__pick:focus-visible { background: var(--signal); color: var(--paper); }
+.choice__pick-form, .choice__settle-form { margin: 0; }
 .choice__settle-label { font-weight: 900; font-style: italic; font-size: 18px; }
 .choice__who { color: var(--grey); font-size: 14px; }
-.choice__option.is-mine .choice__pick { background: var(--signal); color: var(--paper); }
-.choice__mine { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
+.choice__option.is-mine { background: var(--signal); color: var(--paper); }
+.choice__option.is-mine .pick-row__act { color: inherit; }
+.choice__option.is-mine .choice__tally { background: color-mix(in srgb, var(--paper) 40%, transparent); }
+.choice__option.is-mine .bar__fill--vote { background: var(--paper); }
+.choice__mine { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-left: 10px; }
 .choice__mine::before { content: "✓ "; }
 .choice__mine[hidden] { display: none; }
-.choice__settle-form { margin: 0 0 0 auto; }
+.choice__tally { display: block; width: 100%; max-width: 160px; margin-top: 4px; }
+.pick-row__who { width: 1%; min-width: 120px; }
+
+/* A choice as a table (docs/DESIGN.md, "Players steer"): one option a row, tight and even, the whole row the
+   control (pick_table_controller). Rows are rectangles: a divergence from the slabs, so the columns line up. */
+.pick-table { width: 100%; border-collapse: collapse; margin: 4px 0 12px; font-size: 16px; }
+.pick-table td { padding: 0 10px; border-bottom: 1px solid var(--rule); vertical-align: middle; height: 44px; }
+.pick-table tr:first-child td { border-top: 2px solid var(--ink); }
+.pick-row { cursor: pointer; }
+.pick-row__what { width: 100%; }
+.pick-row__act {
+  display: inline; width: auto; min-height: 0; margin: 0; padding: 10px 0; border: 0; background: transparent; box-shadow: none;
+  color: var(--ink); font: 800 16px/24px var(--font); font-style: italic; text-align: left; cursor: pointer;
+}
+.pick-row__act:hover, .pick-row__act:active { translate: none; scale: none; background: transparent; }
+.pick-row__act:disabled { color: var(--grey); font-style: italic; cursor: not-allowed; }
+.pick-row__act:focus-visible { outline: none; }
+.pick-row__note { display: block; margin-top: -4px; padding-bottom: 6px; font-size: 13px; color: var(--grey); }
+.pick-row__cost { white-space: nowrap; text-align: right; color: var(--grey); font-size: 13px; font-variant-numeric: tabular-nums; }
+.pick-row .link-button.pick-row__act { font-size: 13px; font-style: normal; font-weight: 700; color: var(--ink); }
+/* Hover and focus light the row, red for game moves (the row is the slab now). */
+.pick-table.play .pick-row:hover, .pick-table.play .pick-row:has(.pick-row__act:focus-visible) { background: var(--signal); color: var(--paper); }
+.pick-table:not(.play) .pick-row:hover, .pick-table:not(.play) .pick-row:has(.pick-row__act:focus-visible) { background: var(--control-fill); }
+.pick-row:hover :is(.pick-row__act, .pick-row__note, .pick-row__cost, .choice__who, .link-button), .pick-row:has(.pick-row__act:focus-visible) :is(.pick-row__act, .pick-row__note, .pick-row__cost, .choice__who, .link-button) { color: inherit; }
+.pick-table.play .pick-row:has(.pick-row__act:focus-visible) td { box-shadow: inset 0 0 0 2px var(--ink); }
+.pick-table.play .pick-row:hover .choice__tally, .pick-table.play .pick-row:has(.pick-row__act:focus-visible) .choice__tally { background: color-mix(in srgb, var(--paper) 40%, transparent); }
+.pick-table.play .pick-row:hover .bar__fill--vote, .pick-table.play .pick-row:has(.pick-row__act:focus-visible) .bar__fill--vote { background: var(--paper); }
+.pick-row:has(.pick-row__act:disabled:only-of-type) { cursor: not-allowed; }
+.pick-table.play .pick-row:has(.pick-row__act:disabled):hover { background: transparent; color: inherit; }
 .table:not([data-seat="player"]) .choice__pick-form, .table:not([data-seat="player"]) .choice__hint--player,
 .table[data-seat="player"] .choice__settle-label, .table:not([data-seat="gm"]) .choice__settle-form,
 .table:not([data-seat="gm"]) .choice__hint--gm { display: none; }
@@ -815,8 +842,8 @@ body[data-view="controller"] .topbar__books { display: none; }
 body[data-view="controller"] .page { padding-top: 16px; }
 .table--controller .table__stage, .table--controller .table__side { grid-column: 1 / -1; }
 .table--controller .battle__header h1 { font-size: 36px; line-height: 40px; }
-.table--controller .choice__pick { width: 100%; min-height: 56px; font-size: 22px; }
-.table--controller .choice__pick-form { flex: 1 1 100%; }
+.table--controller .pick-table td { height: 56px; }
+.table--controller .pick-row__act { font-size: 22px; }
 /* The board still plays, off screen, so commands wait for each beat as on the screen. */
 .battle--controller .stage { position: absolute; left: -10000px; top: 0; width: 960px; }
 .battle--controller .battle__controls { display: none; }
@@ -1179,8 +1206,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table-ways--straight .menu__item { font-size: 13px; line-height: 18px; padding: 4px 10px; font-style: normal; }
 
 /* The GM's vote: each option a row, with who picked it and Settle beside it. */
-.table[data-seat="gm"] .choice__option { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 12px; align-items: baseline; }
-.table[data-seat="gm"] .choice__settle-form { margin: 0; }
 
 /* Narration has no portrait to make room for: the box is only as tall as its words. */
 .dialogue.is-narration { min-height: 0; }
@@ -1248,15 +1273,16 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table:has(#table_party .is-low) .drawers__tab--party::after { content: " · hurt"; color: var(--caution-ink); }
 .table:has(#table_party li.is-ko) .drawers__tab--party::after { content: " · someone's down"; color: var(--signal); }
 
-/* The GM's table, what to do now (docs/DESIGN.md): the Now line has the moves for this state; while the
-   table is busy (a vote, an encounter, a battle) the tools fold behind "Tools", and what needs an answer
+/* The GM's table, what to do now (docs/DESIGN.md): the Now line has the controls row for what the GM calls,
+   and the moves for a busy state; the rest of the tools wait behind "Tools", and what needs an answer
    (everyone down, a field ability asked for) stays out in front. */
 .table-now__do { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
 .table-now__do form { margin: 0; }
-.gm-tools__reveal { display: none; margin: 0 0 8px; }
-.table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools__reveal { display: inline-flex; }
-.table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
+.gm-tools__reveal { margin: 0 0 8px; }
+.gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
 .gm-tools__reveal[aria-expanded="true"] { background: var(--ink); color: var(--paper); }
+#table_called[hidden] { display: none; }
+.table:has(#table_now[data-state="scene"]) #table_called { display: none; } /* the scene plays; the director's hand is on the Now line */
 
 /* ---------------------------------------------------------------------------
  * Motion with meaning (docs/DESIGN.md): motion only ever says one of four
@@ -1716,6 +1742,35 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   .table__side > .player-card { order: -1; }
   .table__side > .drawers, .table__side > #table_party { order: 1; }
   .table__stage { order: 0; }
+}
+
+/* On a phone the table is three views (table_views_controller): you and the party, the stage and what you can
+   do, the log; a thin strip under the top bar picks one, the one shown in ink. The log, a drawer elsewhere,
+   sits in the page as the third view, its tab and its own head put away. */
+.table-views { display: none; }
+@media (max-width: 640px) {
+  .table-views {
+    display: flex; position: sticky; top: var(--topbar, 44px); z-index: 35; margin: -24px -16px 12px; padding: 0 16px;
+    background: var(--paper); border-bottom: 2px solid var(--ink);
+  }
+  .table-views__tab {
+    flex: 1 1 0; min-height: 36px; padding: 0 4px; border: 0; background: transparent; box-shadow: none; clip-path: none;
+    font: 800 13px/36px var(--font); letter-spacing: .02em; color: var(--grey); text-align: center;
+  }
+  .table-views__tab:hover { translate: none; color: var(--ink); background: transparent; }
+  .table-views__tab[aria-current="page"] { color: var(--paper); background: var(--ink); }
+  .table-views__badge { display: inline-block; min-width: 18px; padding: 0 4px; margin-left: 2px; background: var(--sun-yellow); color: var(--ink); font-size: 11px; line-height: 16px; text-align: center; }
+  .table-views__badge[hidden] { display: none; }
+  .table[data-table-view="stage"] .table__side > *, .table[data-table-view="log"] .table__side > * { display: none; }
+  .table[data-table-view="party"] .table__stage, .table[data-table-view="log"] .table__stage { display: none; }
+  .table[data-table-view] .log-drawer__tab { display: none; }
+  .table[data-table-view]:not([data-table-view="log"]) .log-drawer__panel { display: none; }
+  .table[data-table-view="log"] .log-drawer__panel {
+    display: flex; position: static; width: auto; height: auto; padding: 0; border: 0; box-shadow: none; translate: none; visibility: visible; transition: none;
+  }
+  .table[data-table-view="log"] .log-drawer__head { display: none; }
+  .table[data-table-view="log"] .log-drawer__section { overflow: visible; flex: none; }
+  body:has(.table[data-table-view]) .topbar { padding-right: 0; }
 }
 
 /* ---------------------------------------------------------------------------

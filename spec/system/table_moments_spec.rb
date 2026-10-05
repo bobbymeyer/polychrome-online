@@ -20,7 +20,11 @@ RSpec.describe "Moments at the table", type: :system do
     as(player) do
       expect(page).to have_css("#table_choice .choice", visible: true)
       within("#table_choice") do
-        click_on "Trust Cid"
+        # The options are rows of a table: a click anywhere on the row picks it (pick_table_controller).
+        find(".choice__option", text: "Refuse").find("td.pick-row__cost").click
+        expect(page).to have_css(".choice__option.is-mine", text: "Refuse")
+        # Up and Down walk the rows; Enter picks the one in focus.
+        find(".choice__option.is-mine .pick-row__act").send_keys(:arrow_up, :enter)
         expect(page).to have_css(".choice__option.is-mine", text: "Trust Cid")
         expect(page).to have_css(".is-mine .choice__mine", text: /your pick/i)
         expect(page).to have_no_css(".choice__option.is-mine", text: "Refuse")
@@ -129,7 +133,7 @@ RSpec.describe "Moments at the table", type: :system do
     seat(gm, "gm")
 
     as(gm) do
-      find("[role=tab]", text: "Check").click
+      within("#table_now") { click_on "Check" } # the GM calls it (Campaign::Controls); the form comes to the table
       check "Rook"
       select "Athletics", from: "check_stat"
       fill_in "check_reason", with: "scale the wall"
@@ -167,7 +171,7 @@ RSpec.describe "Moments at the table", type: :system do
     seat(gm, "gm")
     as(gm) do
       # The way in is in the GM's tools, to hold up or read out; the screen itself is only the show.
-      within(".table-controls .gm-tools") { find("[role=tab]", text: "More").click }
+      within(".table-controls .gm-tools") { click_on "Tools"; find("[role=tab]", text: "More").click }
       expect(page).to have_css("#gm_panel_more .coop-join__qr svg", visible: true)
       visit campaign_table_path(campaign, view: "screen")
       wait_for_streams

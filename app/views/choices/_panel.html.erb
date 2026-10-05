@@ -6,26 +6,35 @@
     <section class="window choice" aria-label="A choice for the party" data-choice-panel-target="panel" hidden>
       <h2>What will the party do?</h2>
       <p class="choice__hold">On hold until the battle is over.</p>
-      <ol class="choice__options">
+      <%# One option a row (pick_table_controller): a player's row presses their pick, the GM's row settles. %>
+      <table class="pick-table play choice__options" data-controller="pick-table">
+        <tbody>
         <% pickers = choice.picks.group_by(&:option).transform_values { |ps| ps.map(&:character_id) } %>
         <% voters = [ choice.picks.size, 1 ].max %>
         <% choice.tally.each do |option, names| %>
-          <li class="choice__option" data-choice-panel-target="option" data-picked-by="<%= Array(pickers[option]).join(" ") %>">
-            <%= button_to option, choice_picks_path(choice), params: { option: option }, class: "menu__item choice__pick",
-                          form: { class: "choice__pick-form" } %>
-            <span class="choice__settle-label"><%= option %></span>
-            <span class="choice__mine" hidden>Your pick</span>
-            <%# Who picked it, as chips that pop on as they do; the bar under it is its share of the picks so far. %>
-            <span class="choice__who" title="<%= names.to_sentence %>">
-              <span class="choice__chips" data-change="list"><% names.each do |name| %><i class="choice__chip" data-change-key="<%= name %>" aria-hidden="true"><%= name.first %></i><% end %></span>
-              <span class="visually-hidden"><%= names.to_sentence %></span>
-            </span>
-            <span class="bar choice__tally" aria-hidden="true"><span class="bar__fill bar__fill--vote" data-change="bar" style="width: <%= (100.0 * names.size / voters).round %>%"></span></span>
-            <%= button_to "Settle on this", choice_settlement_path(choice), params: { option: option }, class: "link-button choice__settle",
-                          form: { class: "choice__settle-form", data: { turbo_confirm: "The party chooses “#{option}”?" } } %>
-          </li>
+          <tr class="pick-row choice__option" data-choice-panel-target="option" data-picked-by="<%= Array(pickers[option]).join(" ") %>">
+            <td class="pick-row__what">
+              <%= button_to option, choice_picks_path(choice), params: { option: option }, class: "pick-row__act choice__pick",
+                            form: { class: "choice__pick-form" } %>
+              <span class="choice__settle-label"><%= option %></span>
+              <span class="choice__mine" hidden>Your pick</span>
+            </td>
+            <%# Who picked it, as chips that pop on as they do; the bar under them is its share of the picks so far. %>
+            <td class="pick-row__who">
+              <span class="choice__who" title="<%= names.to_sentence %>">
+                <span class="choice__chips" data-change="list"><% names.each do |name| %><i class="choice__chip" data-change-key="<%= name %>" aria-hidden="true"><%= name.first %></i><% end %></span>
+                <span class="visually-hidden"><%= names.to_sentence %></span>
+              </span>
+              <span class="bar choice__tally" aria-hidden="true"><span class="bar__fill bar__fill--vote" data-change="bar" style="width: <%= (100.0 * names.size / voters).round %>%"></span></span>
+            </td>
+            <td class="pick-row__cost">
+              <%= button_to "Settle on this", choice_settlement_path(choice), params: { option: option }, class: "link-button pick-row__act choice__settle",
+                            form: { class: "choice__settle-form", data: { turbo_confirm: "The party chooses “#{option}”?" } } %>
+            </td>
+          </tr>
         <% end %>
-      </ol>
+        </tbody>
+      </table>
       <p class="hint choice__hint choice__hint--player">Pick for your character. You can change your mind until the GM settles it.</p>
       <p class="hint choice__hint choice__hint--gm">
         <% played = choice.campaign.characters.where.not(user_id: nil).count %>
