@@ -94,15 +94,15 @@ RSpec.describe "Items and shops", type: :request do
       expect(campaign.reload.gil).to eq(200)
     end
 
-    it "puts each service under its building, where the party does it like any other thing to do, once the GM calls it" do
+    it "puts each service under its building, saying what it's for; the party does it at the table like any other thing to do" do
       lenna_character = campaign.characters.find_by!(name: "Lenna")
       lenna_character.update!(hp: 10, mp: 0)
       inn = town.view["services"].find { |sv| sv["kind"] == "inn" }
       price = town.service_price("inn", lenna_character)
       label = "Rooms at #{inn['name']} (#{price} gil, overnight)"
       get location_path(town)
-      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', "Ask the GM")
-      expect(response.body).not_to include("suggest", "Rooms at") # players don't get the button, nor the way it opens
+      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', "Done at the", "under Things to do here")
+      expect(response.body).not_to include("suggest", "Rooms at", campaign_ways_path(campaign)) # one home for doing it: the table
       # What each is for, and what it costs, before it's opened.
       expect(response.body).to match(%r{<span class="service__offer">Rest the night · \d+ gil</span>})
       expect(response.body).to include('<span class="service__offer">Buy and sell</span>')
@@ -113,7 +113,9 @@ RSpec.describe "Items and shops", type: :request do
 
       campaign.call_controls!("doing")
       get location_path(town)
-      expect(response.body).to include("Rooms at #{ERB::Util.h(inn['name'])}", "suggest")
+      expect(response.body).not_to include("suggest", campaign_ways_path(campaign)) # still not here, called or not
+      get campaign_table_path(campaign)
+      expect(Nokogiri::HTML(response.body).at("#table_ways").text).to include("Rooms at #{inn['name']}", "suggest") # here
       post campaign_ways_path(campaign), params: { way: label }
       expect(campaign.open_choice.tally[label]).to eq([ "Lenna" ])
 

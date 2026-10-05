@@ -1,22 +1,16 @@
-<%# The inn, the temple and the guild are things to do here (Location::Town#services_for): the party picks one
-    at the table like anything else, once the GM has called things to do here (Campaign::Controls), or from
-    here: the GM does it, a player suggests it. The purse pays; the outcome happens (Outcome). %>
+<%# The inn, the temple and the guild are things to do here (Location::Town#services_for). They're done at the
+    table, under Things to do here, once the GM calls it (Campaign::Controls), where the party picks them like
+    anything else; this page says what each is for and what it costs, and nothing here presses it. %>
 <% here = @campaign.current_node&.location_id == location.id %>
 <% pastime = here && @campaign.current_node.pastimes.find { |p| p.service == service["kind"] } %>
 <% outcome = { "inn" => Outcome.of("rest", 100), "temple" => Outcome.of("raise"), "guild" => Outcome.of("rumour") }.fetch(service["kind"]) %>
 <p><%= outcome.describe(@world) %>.</p>
 <% if pastime %>
-  <% label = @campaign.pastime_label(pastime) %>
   <p class="shop-purse"><%= pastime.price.zero? ? "On the house" : "#{money(pastime.price)} from the party's purse" %><%= ", for everyone" if service["kind"] == "inn" %>.</p>
   <% if pastime.price > @campaign.gil %>
     <p class="muted">More than the party has.</p>
-  <% elsif gm %>
-    <%= button_to pastime.name, campaign_ways_path(@campaign), params: { way: label, go: 1 }, class: "button play" %>
-  <% elsif shopping && @campaign.doing? %>
-    <%= button_to campaign_ways_path(@campaign), params: { way: label }, class: "button play" do %><%= pastime.name %> <span class="menu__cost">suggest</span><% end %>
-  <% elsif shopping %>
-    <p class="hint">Ask the GM: when they call things to do here, it's the table's to pick.</p>
   <% end %>
+  <p class="hint">Done at the <%= link_to "table", campaign_table_path(@campaign), data: { turbo_frame: "_top" } %>, under Things to do here, when the GM calls it.</p>
 <% elsif service["kind"] == "temple" && here %>
   <p class="muted">Nobody is KO'd.</p>
 <% elsif !here %>

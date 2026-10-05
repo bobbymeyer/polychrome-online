@@ -619,10 +619,11 @@ say what it costs.
 
 A town's inn, temple and guild are things to do too, after the roads: "Rooms at the Gull (50
 gil, overnight)", "A raising at the Chapel (100 gil)" when someone is KO'd, "Rumours at the
-Guild (30 gil)". Where there's no inn, "Make camp (overnight)" takes its place. On the town page
-each service's building says what it does and what it costs, with the same button: the GM does
-it, a player suggests it once Things to do here is called (until then, they're told to ask). The
-party's purse pays for everyone at once, not one character at a time.
+Guild (30 gil)". Where there's no inn, "Make camp (overnight)" takes its place. They have one
+home: the table, under Things to do here, where the vote is. On the town page each service's
+building says what it does and what it costs, and that it's done at the table; only the shop is
+used on the page, because buying is the bag's business, not a way the day is spent. The party's
+purse pays for everyone at once, not one character at a time.
 
 ### Someone awakens
 
