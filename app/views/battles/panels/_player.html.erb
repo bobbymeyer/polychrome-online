@@ -1,12 +1,9 @@
 <% state = @battle.state %>
 <% command = state["inputs"][unit["id"]] %>
 <div data-controller="menu timing-meter" data-action="submit->timing-meter#intercept" data-menu-primary-value="true" data-menu-autofocus-value="true" data-menu-you-value="<%= unit['id'] %>">
+<%# Your HP and MP are on the roster above (and in the party strip below on a phone): the head is your name and the clock. %>
 <div class="command-panel__head">
   <h2><%= unit["name"] %></h2>
-  <span class="command-panel__vitals">
-    <span class="label"><%= gloss(:max_hp) %></span> <strong class="<%= 'is-low' if hp_band(unit) == 'danger' %>"><%= unit["hp"] %></strong><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
-    <span class="label"><%= gloss(:max_mp) %></span> <strong><%= unit["mp"] %></strong><span class="muted">/<%= unit["stats"]["max_mp"] %></span>
-  </span>
   <%= render "battles/panels/countdown", battle: @battle %>
 </div>
 <%# Which round, and what the clock is for: without a choice when it runs out, the default goes in. %>
@@ -158,24 +155,26 @@
         <td class="pick-row__cost"></td>
       </tr>
     <% end %>
+    <%# Talk, and let the fight run: the last row is Auto, its state in the cost column. Picking a command yourself takes you off it. %>
+    <% on = @battle.auto?(unit["id"]) %>
+    <% everyone = on && (@battle.party.select { |u| u["hp"].positive? }.map { |u| u["id"] } - @battle.auto_units).empty? %>
+    <tr class="pick-row auto-row<%= ' is-on' if on %>">
+      <td class="pick-row__what"><%= button_to "Auto", battle_auto_path(@battle), method: :patch, params: { unit: unit["id"], on: on ? "0" : "1" }, class: "pick-row__act",
+                                              aria: { pressed: on }, data: { menu_forget: true, menu_key: "Auto",
+                                                                             help: (on ? "Auto is on: every round, your last command (or Attack). Picking a command yourself takes you off it.#{' Everyone is on auto, so each round waits for the timer or the GM: a fight never plays itself out.' if everyone}" : "Go on auto: chat, and let the fight run. Every round, your last command (or Attack), until you pick one yourself.") } %></td>
+      <td class="pick-row__cost"><%= on ? "on" : "off" %></td>
+    </tr>
     </tbody>
   </table>
   <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
 <% end %>
-<% if unit["hp"].positive? %>
-  <%# Talk, and let the fight run: your default command every round until you pick one yourself. %>
+<% if command && !params[:change] && unit["hp"].positive? %>
+  <%# Chosen, and waiting: the one thing left to do is go on auto (or come off it) to chat while the fight runs. %>
   <% on = @battle.auto?(unit["id"]) %>
-  <%= button_to on ? "Auto is on: every round, your last command (or Attack)" : "Go on auto (chat, and let the fight run)",
-                battle_auto_path(@battle), method: :patch, params: { unit: unit["id"], on: on ? "0" : "1" },
-                class: [ "link-button", "auto-toggle", ("is-on" if on) ], form: { class: "auto-toggle-form" },
-                aria: { pressed: on }, title: "Picking a command yourself takes you off auto" %>
-  <% if on && (@battle.party.select { |u| u["hp"].positive? }.map { |u| u["id"] } - @battle.auto_units).empty? %>
-    <p class="hint">Everyone is on auto, so each round waits for the timer or the GM: a fight never plays itself out.</p>
-  <% end %>
+  <%= button_to on ? "Auto is on" : "Go on auto", battle_auto_path(@battle), method: :patch, params: { unit: unit["id"], on: on ? "0" : "1" },
+                class: [ "link-button", "auto-toggle", ("is-on" if on) ], form: { class: "auto-toggle-form" }, aria: { pressed: on },
+                title: on ? "Every round, your last command (or Attack), until you pick one yourself" : "Chat, and let the fight run: every round, your last command (or Attack)" %>
 <% end %>
-<p class="command-panel__extras">
-  <button type="button" class="link-button" data-timing-meter-target="toggle" data-action="timing-meter#toggle"
-          title="Stop the needle on the mark for a Perfect: the move lands a quarter harder">Timing meter</button>
-</p>
+<%# The keys, once a key has been used (menu_controller marks the panel); never on a phone. %>
 <p class="keys">Arrows move · Enter choose · Esc back · 1–9 pick</p>
 </div>

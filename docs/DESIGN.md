@@ -595,7 +595,13 @@ under the frame.
   their usual answers, so most rulings are one press.
 - **"Fast animations"**, not "Fast": the toggle says what it speeds up. It's a setting for this
   device, so it sits in the account menu beside Sound on every page, and a battle already
-  playing hears the change.
+  playing hears the change. **The timing meter** is the same kind of thing, so its switch sits
+  beside it, not under the commands.
+- **The command panel's footer is gone.** Auto is the last row of the command menu, its state
+  ("on", yellow) in the cost column and what it does in the help line; while a chosen command
+  waits on the round, one short link turns it on or off. The keyboard legend shows only once a
+  key has been used, and never on a phone. The panel's head is your name and the clock: your HP
+  and MP are on the roster above it, and in the party strip on a phone once someone is hurt.
 - **The log's battle section takes only the room it needs**, and section headings carry their own
   top gap, so nothing scrolled under them shows through.
 

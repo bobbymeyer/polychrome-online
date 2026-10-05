@@ -22,6 +22,9 @@ const remember = (label) => { remembered = label; rememberedOn = window.location
 
 const TYPING = "input, textarea, select, [contenteditable]"
 
+// Whether the keys have been used on this page: the legend under the menu shows once they have.
+let keyed = false
+
 export default class extends Controller {
   static targets = ["help"]
   static values = { primary: Boolean, autofocus: Boolean, you: String }
@@ -43,6 +46,7 @@ export default class extends Controller {
 
     this.markYou(true)
     this.bindTargets()
+    if (keyed) this.element.classList.add("is-keyed")
 
     const items = this.items
     items.forEach((item, i) => this.row(item).style.setProperty("--i", i)) // the stage staggers their entrance
@@ -101,6 +105,7 @@ export default class extends Controller {
 
     const items = this.items
     const cursor = this.cursor
+    if (/^(Arrow|Enter| |z|Z|Escape|Backspace|x|X|[1-9])/.test(event.key)) this.keyed()
     switch (event.key) {
       case "ArrowDown": case "ArrowUp": case "ArrowLeft": case "ArrowRight": {
         if (!items.length) return
@@ -131,6 +136,11 @@ export default class extends Controller {
           this.choose(item)
         }
     }
+  }
+
+  keyed() {
+    keyed = true
+    this.element.classList.add("is-keyed")
   }
 
   choose(item) {

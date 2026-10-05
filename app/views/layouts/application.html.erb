@@ -69,6 +69,9 @@
               <%# A setting for this device, beside Sound: battles play twice as fast (fast_toggle_controller). %>
               <button type="button" class="link-button" data-controller="fast-toggle" data-action="fast-toggle#toggle" data-battle-fast aria-pressed="false"
                       title="Play battles twice as fast on this device">Fast animations</button>
+              <%# The timing meter, too: a device setting (meter_toggle_controller), not a move. %>
+              <button type="button" class="link-button" data-controller="meter-toggle" data-action="meter-toggle#toggle" data-timing-meter aria-pressed="false"
+                      title="On each move in a battle, stop the needle on the mark for a Perfect: it lands a quarter harder">Timing meter</button>
               <% if admin? %><%= link_to "Accounts", users_path %> <%= link_to "Settings", settings_path %><% end %>
               <%= button_to "Sign out", session_path, method: :delete, class: "link-button topbar__sign-out", form: { class: "inline" } %>
             </div>

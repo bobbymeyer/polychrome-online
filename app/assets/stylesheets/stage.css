@@ -329,10 +329,9 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 .bar .bar__fill--ok { background: var(--green); }
 .bar .bar__fill--warn { background: var(--sun-yellow); }
 .bar .bar__fill--danger { background: var(--signal); }
-.roster__row:has(.bar__fill--danger) [data-hp], .command-panel__vitals .is-low { animation: danger 1s steps(2, jump-none) infinite; }
+.roster__row:has(.bar__fill--danger) [data-hp] { animation: danger 1s steps(2, jump-none) infinite; }
 @keyframes danger { 50% { color: var(--ink); } }
 .roster__ready.is-ready { background: var(--green); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
-.command-panel__vitals strong { font-style: italic; font-weight: 900; }
 .countdown { font-style: italic; font-weight: 900; }
 .countdown.is-urgent { background: var(--signal); animation: danger-bg .5s steps(2, jump-none) infinite;
   clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%); padding-right: 14px; }
@@ -869,10 +868,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .vitals .label + strong ~ .label { margin-left: 10px; }
 .coop-setup__steps { padding-left: 20px; display: grid; gap: 10px; }
 
-/* A player on auto: the toggle under their commands lights up. */
+/* A player on auto: the Auto row's state is yellow, and so is the toggle while they wait on the round. */
+.auto-row.is-on .pick-row__cost { color: var(--ink); font-weight: 800; background: var(--sun-yellow); }
 .auto-toggle-form { margin: 12px 0 0; }
 .auto-toggle { font-size: 14px; }
-.command-panel__extras { margin: 8px 0 0; font-size: 14px; }
 .auto-toggle.is-on { padding: 4px calc(12px + var(--slant)) 4px 10px; background: var(--sun-yellow); color: var(--ink); text-decoration: none; font-weight: 800;
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
 
@@ -954,7 +953,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 @media (prefers-reduced-motion: reduce) {
   .page, .pick-table.play .pick-row, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
-  .unit.is-targeted .sprite::after, .roster__row [data-hp], .command-panel__vitals .is-low, .countdown.is-urgent,
+  .unit.is-targeted .sprite::after, .roster__row [data-hp], .countdown.is-urgent,
   .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open], .choice:not([hidden]), .reward-card { animation: none !important; }
   * { transition-duration: 0s !important; }
 }

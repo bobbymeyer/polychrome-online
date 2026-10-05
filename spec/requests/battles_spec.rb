@@ -111,7 +111,7 @@ RSpec.describe "Battle screen", type: :request do
 
     get battle_path(battle)
     menu = response.body[/<div class="topbar__user-menu">.*?<\/details>/m]
-    expect(menu).to include("data-battle-fast", "Fast animations", "Sound on") # a device setting, beside Sound
+    expect(menu).to include("data-battle-fast", "Fast animations", "Sound on", "data-timing-meter", "Timing meter") # device settings, beside Sound
     expect(response.body[/<header class="battle__header">.*?<\/header>/m]).not_to include("Fast animations")
     expect(response.body[/<nav class="topbar__books".*?<\/nav>/m]).not_to include("Fast animations")
   end
@@ -161,7 +161,8 @@ RSpec.describe "Battle screen", type: :request do
   it "takes a Perfect from the timing meter with a player's move" do
     sit(bartz)
     get battle_panel_path(battle)
-    expect(response.body).to include("timing-meter", "Timing meter")
+    expect(response.body).to include("timing-meter")
+    expect(response.body).not_to include("Timing meter") # the setting is in the account menu
     command!(kind: "ability", ability: "attack", target: "goblin_a", timing: "perfect")
     expect(battle.reload.state["inputs"][bartz]).to include("timing" => "perfect")
   end

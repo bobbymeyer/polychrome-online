@@ -6,33 +6,20 @@ import { play } from "sound"
 // Perfect: the move lands a quarter harder (Battle::Resolver#perfect).
 // Missing it costs nothing. It gives up after a few seconds, as a normal hit.
 //
-// Can be turned off on this device; off by default for reduced motion.
+// A setting for this device, turned on and off in the account menu beside
+// Sound and Fast animations (meter_toggle_controller, the same key); off by
+// default for reduced motion.
 const SETTING_KEY = "polychrome.meter"
 const SWEEP_MS = 900
 const GIVE_UP_MS = 3000
 const ZONE = [ 0.84, 0.97 ] // the mark, as a share of the bar
 
 export default class extends Controller {
-  static targets = ["toggle"]
-
-  connect() {
-    this.showSetting()
-  }
-
   get enabled() {
     let saved = null
     try { saved = window.localStorage.getItem(SETTING_KEY) } catch { /* no storage */ }
     if (saved) return saved === "on"
     return !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  }
-
-  toggle() {
-    try { window.localStorage.setItem(SETTING_KEY, this.enabled ? "off" : "on") } catch { /* no storage */ }
-    this.showSetting()
-  }
-
-  showSetting() {
-    if (this.hasToggleTarget) this.toggleTarget.textContent = `Timing meter: ${this.enabled ? "on" : "off"}`
   }
 
   // A move's form is about to go: run the meter first.
