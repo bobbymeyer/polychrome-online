@@ -171,7 +171,8 @@ RSpec.describe "Moments at the table", type: :system do
     seat(gm, "gm")
     as(gm) do
       # The way in is in the GM's tools, to hold up or read out; the screen itself is only the show.
-      within(".table-controls .gm-tools") { click_on "Tools"; find("[role=tab]", text: "More").click }
+      within("#table_now") { click_on "GM tools" }
+      within(".table-controls .gm-tools") { find("[role=tab]", text: "More").click }
       expect(page).to have_css("#gm_panel_more .coop-join__qr svg", visible: true)
       visit campaign_table_path(campaign, view: "screen")
       wait_for_streams

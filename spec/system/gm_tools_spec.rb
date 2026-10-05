@@ -15,9 +15,9 @@ RSpec.describe "The GM's tools at the table", type: :system do
     seat(gm, "gm")
 
     as(gm) do
+      within(".table-controls .gm-tools") { expect(page).to have_no_css("[role=tab]", visible: true) } # folded
+      within("#table_now") { click_on "GM tools" } # on the Now line, after Battle
       within(".table-controls .gm-tools") do
-        expect(page).to have_no_css("[role=tab]", visible: true) # folded
-        click_on "Tools"
         expect(page).to have_css("[role=tab]", count: 2) # Moves and More: clocks, secrets and time left the table
         expect(page).to have_css("[role=tab][aria-selected=true]", text: "Moves")
         expect(page).to have_no_text("The tide comes in")
@@ -26,8 +26,8 @@ RSpec.describe "The GM's tools at the table", type: :system do
       end
 
       visit current_path
+      within("#table_now") { click_on "GM tools" }
       within(".gm-tools") do
-        click_on "Tools"
         expect(page).to have_css("[role=tab][aria-selected=true]", text: "More")
         expect(page).to have_no_css("#gm_panel_moves", visible: true)
       end
@@ -40,8 +40,8 @@ RSpec.describe "The GM's tools at the table", type: :system do
     seat(gm, "gm")
 
     as(gm) do
+      within("#table_now") { click_on "GM tools" }
       within(".table-controls .gm-tools") do
-        click_on "Tools"
         find("[role=tab]", text: "Moves").click
         within("#gm_moves") do
           expect(page).to have_text("“Somebody's watching.”")

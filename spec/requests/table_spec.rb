@@ -437,7 +437,7 @@ RSpec.describe "The table", type: :request do
       expect(page.css("#table_now .controls-call button").map(&:text)).to eq([ "Talk", "Travel", "Things to do here", "Scene", "Check", "Battle" ])
       expect(page.at("#table_now .table-now__do").text).not_to include("Call a check", "Play a scene") # no second way in
       expect(page.css(".gm-tools [role=tab]").map { |t| t.text.strip }).to eq(%w[Moves More]) # the rest is called, or Prep's
-      expect(page.at(".gm-tools .gm-tools__reveal").text).to eq("Tools") # folded until pressed (stage.css)
+      expect(page.at("#table_now .table-now__do button[data-gm-tools-toggle]").text).to eq("GM tools") # after the row; the tools fold until pressed
       expect(page.at("#table_called").key?("hidden")).to be(true) # nothing called
       %w[party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs
       expect(page.at(".table__stage #stage #table_map")["hidden"]).not_to be_nil # the map, until the GM shows it
@@ -453,7 +453,8 @@ RSpec.describe "The table", type: :request do
       campaign.clocks.create!(name: "The tide", segments: 4, public: true)
       sit("gm")
       get campaign_table_path(campaign)
-      expect(response.body).to include("GM tools · only you see these", "Everyone at the table sees this.", "gm_tab_more", "Grant an archetype", "Music for the table")
+      expect(response.body).to include("GM tools</button>", "Everyone at the table sees this.", "gm_tab_more", "Grant an archetype", "Music for the table")
+      expect(response.body).not_to include("only you see these") # the button's name says who sees them
       get campaign_maps_path(campaign)
       expect(response.body).to include("Secret Grotto", "Hidden from the players") # the maps page, the GM's
       sit(bartz.id)
