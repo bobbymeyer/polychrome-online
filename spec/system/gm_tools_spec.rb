@@ -118,13 +118,24 @@ RSpec.describe "The GM's tools at the table", type: :system do
       within("#table_now") { click_on "Travel" }
       expect(page).to have_css("#table_map .map-sheet[data-controller=map-ask]", visible: true)
       expect(page).to have_css("#stage .table-time__view", text: /place/i)
-      # The party's flag stands on the party's place, not scaled away from it (stage.css).
-      flag, place = page.evaluate_script(<<~JS)
-        [document.querySelector("#table_map .map-party").getBoundingClientRect(), document.querySelector("#table_map .map-node.is-party").getBoundingClientRect()]
-          .map((r) => [r.x + r.width / 2, r.y + r.height, r.y])
-      JS
-      expect((flag[0] - place[0]).abs).to be < 3 # centred over it
-      expect(flag[1]).to be_between(place[2] - 12, place[2] + 12) # its tip at the place's top edge
+      # The party's flag stands on the party's place, not scaled away from it (stage.css): the flag's tip (the
+      # path's origin) and the place's own point, both as the sheet renders them (through the same matrices, so
+      # the stage settling, the place's pulse and the flag's bob don't move the mark).
+      # Measured once the table's refresh after Travel has landed and the marker's hop has played (change_controller):
+      # the mark is where the flag settles, not where it is mid-hop.
+      mark = -> do
+        page.evaluate_script(<<~JS)
+          (() => {
+            const path = document.querySelector("#table_map .map-party__flag path"), node = document.querySelector("#table_map .map-node.is-party")
+            const tip = new DOMPoint(0, 0).matrixTransform(path.getScreenCTM()), at = new DOMPoint(0, 0).matrixTransform(node.getScreenCTM())
+            return [tip.x - at.x, tip.y - at.y]
+          })()
+        JS
+      end
+      settled = ->(dx, dy) { dx.abs < 2 && dy.between?(-40, 0) } # its tip on the place's line, a little above it, bobbing
+      dx, dy = mark.call
+      10.times { break if settled.call(dx, dy); sleep 0.3; dx, dy = mark.call }
+      expect(settled.call(dx, dy)).to be(true), "the flag sits #{dx.round(1)}px across and #{dy.round(1)}px above the place"
 
       find("a.map-node__ask[data-node-name='Far Hold']").click
       within(".map-ask") do

@@ -515,6 +515,13 @@ under the frame.
   ability waits; while a scene is on the stage, a player's ways and ability wait too, and the GM
   has the director's buttons. Travel is the Controls' (Where next?). The battle page has no
   campaign chrome but its name, and talk is a press away.
+- **The controls row is a strip of the spectrum.** The GM's controls (Talk, Travel, Things to do
+  here, Scene, Check, Battle, then GM tools) are short rectangles, not slabs, each in its own
+  colour from the top bar's stripe (yellow, orange, green, wine red, blue, turquoise, and steel
+  grey for the tools), running into the next with no gap, so the row reads as one band like the
+  stripe above it. The one called is black with white bold text; one the table can't use yet
+  (Travel with no road, Battle with no party) is hatched. A divergence from the slabs, kept to
+  this one row.
 - **What the GM calls is the GM's moves.** The controls row on the Now line is the one switch:
   Talk puts the talk box under the stage (the GM's composer, a player's "Say something", and the
   GM's Whisper beside each character); under any other control it's away, so what's under the
@@ -645,7 +652,8 @@ the vote's options, are rows of a table, the whole row the control (`pick_table_
 player's row suggests it: the question goes to a vote with their pick in it; the GM settling the
 vote takes the party there. The GM can also just go, from the same panel; to go or ask further
 than a road from here, the GM presses a place on the map (Go, or Ask the table), or the map's
-"Ask the table: anywhere on" button. A battle, an encounter,
+"Ask the table: anywhere on" button; the card stays open through the table's live refreshes
+(the sheet is replaced with the panels, and the card comes back where it was). A battle, an encounter,
 a scene or an open choice still comes first, whatever is called; the call stays until the GM
 changes it, so a dungeon is walked room by room without re-pressing Travel. Settling the vote takes the party there. The
 GM can also just go, from the same panel, and calls a waiting encounter there too, so a session
