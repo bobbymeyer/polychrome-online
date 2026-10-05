@@ -75,7 +75,7 @@
                                     data: { drawers_target: "tab", key: key, action: "drawers#toggle" } %>
             <% end %>
           </div>
-          <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party"><%= render "campaigns/tables/party", campaign: @campaign %></div>
+          <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party"><%= render "campaigns/tables/party", campaign: @campaign, gm: @seat.gm? %></div>
           <div id="drawer_knows" class="drawers__panel" hidden data-drawers-target="panel" data-key="knows"><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? %><%= render "campaigns/tables/limits", campaign: @campaign %></div>
         </div>
       <% end %>

@@ -208,4 +208,39 @@ RSpec.describe "The live table", type: :system do
       page.driver.browser.manage.window.resize_to(1400, 1000)
     end
   end
+  it "lets the GM speak as the scene's speaker, by chip or by name, and whisper from the party panel" do
+    cid = campaign.npcs.create!(name: "Cid", title: "Engineer")
+    scene = campaign.scenes.create!(name: "Ambush", script: "Cid (angry): Behind you!\nNarrator: Silence.")
+    seat(gm, "gm")
+    seat(player, rook)
+
+    as(gm) do
+      within("#composer") { expect(page).to have_css(".composer__chip[aria-pressed=true]", text: "Narrator") }
+      wait_for_streams
+      scene.reload.start!
+      # The scene moved: the empty box fetches itself again, and Cid, speaking on the stage, is pressed.
+      within("#composer") { expect(page).to have_css(".composer__chip[aria-pressed=true]", text: "Cid") }
+      fill_in "message_body", with: "Hand me that wrench."
+      click_on "Send"
+      expect(page).to logged?("Hand me that wrench.")
+      expect(campaign.messages.last.speaker).to eq(cid)
+
+      # A name and a colon speaks as them, whoever is pressed.
+      fill_in "message_body", with: "Narrator: The lamp gutters."
+      click_on "Send"
+      expect(page).to logged?("The lamp gutters.")
+      expect(campaign.messages.last.speaker).to be_nil
+
+      # A whisper starts at the person: the box says who hears.
+      within("#table_party") { click_on "Whisper" }
+      within("#composer") do
+        expect(page).to have_css(".composer__whispering", visible: true, text: "Whispering to Rook")
+        fill_in "message_body", with: "You feel watched."
+        click_on "Send"
+        expect(page).to have_no_css(".composer__whispering", visible: true) # one line: the next goes to everyone
+      end
+      expect(campaign.messages.last).to have_attributes(scope: "whisper", recipient: rook, body: "You feel watched.")
+    end
+    as(player) { expect(page).to have_css(".toast", text: "You feel watched.") }
+  end
 end

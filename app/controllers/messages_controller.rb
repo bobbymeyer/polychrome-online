@@ -23,8 +23,10 @@ class MessagesController < ApplicationController
 
     if @message.save
       @refocus = true
-      # Keep who's speaking and how; a whisper is one line, so "To" goes
-      # back to everyone rather than silently staying private.
+      # Keep who's speaking and how; a whisper is one line, so it goes back
+      # to everyone rather than silently staying private. The Narrator, once
+      # chosen over the scene's speaker, stays until the scene moves on.
+      @narrated = seat.gm? && @message.speaker.nil?
       @message = @campaign.messages.new(speaker: @message.speaker, expression: @message.expression)
       render "campaigns/composers/show", layout: false
     else
@@ -48,10 +50,19 @@ class MessagesController < ApplicationController
 
   private
 
-  # speaker: "narrator" or "npc:<id>"; whisper_to: "" or a character id.
+  # speaker: "narrator" or "npc:<id>" (the chip), unless the line starts with
+  # a name and a colon ("Cid (happy): Hold on!", "Narrator: Wind."), read as
+  # a script's line is (Scene.read_line); whisper_to: "" or a character id.
   def as_gm(fields)
-    npc_id = fields[:speaker].to_s[/\Anpc:(\d+)\z/, 1]
-    @message.speaker = @campaign.npcs.find(npc_id) if npc_id
+    raw = fields[:body].to_s.strip
+    line = Scene.read_line(raw, @campaign.npcs.to_a)
+    if line["problem"].nil? && line["text"] != raw
+      @message.body = line["text"]
+      @message.speaker = line["speaker"]
+      @message.expression = line["expression"] if line["expression"].present?
+    elsif (npc_id = fields[:speaker].to_s[/\Anpc:(\d+)\z/, 1])
+      @message.speaker = @campaign.npcs.find(npc_id)
+    end
     if fields[:whisper_to].present?
       @message.scope = "whisper"
       @message.recipient = @campaign.characters.find(fields[:whisper_to])

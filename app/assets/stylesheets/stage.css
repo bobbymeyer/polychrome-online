@@ -1179,7 +1179,16 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table-you { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 8px 0 0; }
 .table-you__label { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; color: var(--grey); }
 .table-you .vitals { margin: 0; }
-.composer__to-hint { margin: 4px 0 0; max-width: 22em; }
+.composer__to-hint { margin: 6px 0 0; }
+/* Who speaks, and who hears: chips, the pressed one ink (the GM's speaker follows the scene). */
+.composer__as { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
+.composer__as-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--grey); margin-right: 2px; }
+.composer__chip { min-height: 32px; padding: 0 12px; font-size: 14px; font-weight: 700; background: var(--control-fill); border: 0; color: var(--ink); }
+.composer__chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.composer__chip:hover { translate: none; }
+.composer__whispering { flex-basis: 100%; margin: 0 0 8px; padding: 6px 10px; background: var(--tint); font-size: 14px; }
+.composer__whispering[hidden] { display: none; }
+.coop-party__whisper { align-self: flex-start; font-size: 13px; white-space: nowrap; }
 
 /* The battle's round, what its clock is for, and (for the GM) who it's waiting on. */
 .command-panel__round, .command-panel__waiting { margin: 4px 0 8px; font-size: 14px; }

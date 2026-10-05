@@ -1,6 +1,6 @@
 <%# The party at a glance, on every view of the table but a phone controller (which shows its own). Replaced live (Campaign#table_changed). %>
 <% @world ||= campaign.world # broadcast (Campaign#broadcast_table): the world's words %>
-<section class="window coop-party" id="table_party" aria-label="The party" data-controller="here">
+<section class="window coop-party" id="table_party" aria-label="The party" data-controller="here party-whisper">
   <h2>Party</h2>
   <% party = campaign.characters.includes(:job, :user, :character_jobs, equipment_slots: :item, portraits: { image_attachment: :blob }).order(:created_at).to_a %>
   <% if party.empty? %>
@@ -25,6 +25,13 @@
           </span>
           <%= render "campaigns/tables/vitals", character: character %>
         </div>
+        <% if local_assigns[:gm] %>
+          <%# A whisper is something you do to a person: the GM's starts here (it reaches whoever sits as them), and
+              the talk box says who hears. %>
+          <%= tag.button "Whisper", type: "button", class: "link-button coop-party__whisper", title: "Whisper to #{character.name}",
+                         data: { character_id: character.id, character_name: character.name,
+                                 action: "click->party-whisper#start" } %>
+        <% end %>
       </li>
     <% end %>
   </ol>
