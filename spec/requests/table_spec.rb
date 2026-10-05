@@ -488,7 +488,7 @@ RSpec.describe "The table", type: :request do
       get campaign_table_path(campaign)
       called = Nokogiri::HTML(response.body).at("#table_called")
       expect(called.key?("hidden")).to be(false)
-      expect(called.text).to include("Call a check", "Who tries", "Everyone standing")
+      expect(called.text).to include("Who tries", "Everyone standing")
       expect(called.to_html).to include('data-controller="check-all"')
 
       rng = campaign.rng

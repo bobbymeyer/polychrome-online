@@ -1221,8 +1221,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .controls-call form { flex: 1 1 auto; display: flex; }
 .controls-call .button { flex: 1 1 auto; text-align: center; }
 .table-now__do:has(.controls-call) { gap: 0; }
-/* The strip hugs the top of the column under the stage, edge to edge: no rules, no margins, no padding. */
-.table-now:has(.controls-call) { margin: 0; padding: 0; border: 0; }
+/* The strip hugs the top of the column under the stage, edge to edge: one rule above it, between the stage and the
+   actions; nothing below it (what follows draws its own top). */
+.table-now:has(.controls-call) { margin: 0; padding: 0; border: 0; border-top: 3px solid var(--ink); }
 .table__under:has(.controls-call) { padding-top: 0; }
 .controls-call .button, .table-now__tools {
   clip-path: none; margin: 0; padding: 3px 12px; border: 0; font: 700 13px/20px var(--font); font-style: normal;
@@ -1241,7 +1242,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .controls-call [data-kind="battle"] { --tone: var(--turquoise); --tone-ink: var(--ink); }
 .table-now__tools { --tone: var(--steel-grey); --tone-ink: var(--paper); }
 .table-ways--straight { padding-top: 8px; }
-.table-ways__straight { margin: 0 0 4px; font-size: 15px; font-weight: 800; }
+.table-ways__straight { margin: 0 0 4px; font-size: 13px; }
 .table-ways--straight .table-ways__group { font-size: 13px; margin: 6px 0 0; }
 
 /* The GM's vote: each option a row, with who picked it and Settle beside it. */
@@ -1310,6 +1311,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table-now__do { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
 .table-now__do form { margin: 0; }
 .gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
+/* Folded, the tools take no room and draw no rule: what's under the strip draws its own. */
+.gm-tools:not(.is-shown):not(:has(.recovery, .field-requests)) { margin: 0; padding: 0; border: 0; }
 #table_called[hidden] { display: none; }
 /* A battle set up under the stage (battles/_setup): the fieldsets tight, the rest behind More. */
 .battle-setup .panel { margin: 0 0 12px; }

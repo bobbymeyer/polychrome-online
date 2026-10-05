@@ -36,12 +36,9 @@
       <%= button_to "Take it", location_treasures_path(dungeon), params: { room: here["key"], return_to: "table" }, class: "button play", form: { class: "inline", data: { turbo_frame: "_top" } } %></p>
   <% end %>
   <% if ways.any? %>
+    <%# No heading: the control pressed on the strip (Travel, Things to do here) is the title; the stage says where and when. %>
     <% if voting %>
-      <h3 class="table-ways__straight">Or go straight there, without the vote</h3>
-    <% elsif campaign.doing? %>
-      <h2><%= campaign.period.upcase_first %> in <%= campaign.current_node&.name %></h2>
-    <% else %>
-      <h2>Where next?</h2>
+      <p class="muted table-ways__straight">Or go straight there, without the vote</p>
     <% end %>
     <%# One way a row (pick_table_controller): the whole row presses its button. The GM's goes; a player's suggests. %>
     <table class="pick-table play" data-controller="pick-table">
@@ -93,7 +90,6 @@
       <%= help_line("Say which: it goes to a vote, and the GM settles it.") %>
     <% end %>
   <% elsif timing %>
-    <h2><%= campaign.period.upcase_first %> in <%= campaign.current_node&.name || "the field" %></h2>
     <%= render "campaigns/tables/gm/time", campaign: campaign %>
     <%= help_line("Nothing to do here this part of the day.") %>
   <% end %>
