@@ -1,6 +1,8 @@
-<%# Where the party can go from here (Campaign::Ways): the GM's panel. The GM puts it to the table as a
-    "Where next?" vote, or just goes, and calls a waiting encounter here too. Players see the ways only when
-    the GM asks: until then, this holds nothing of theirs but treasure lying in the room. Replaced live, for each audience. %>
+<%# Where the party can go from here (Campaign::Ways): the GM's panel, folded until the GM asks "Where next?"
+    (the Now line's button, or the summary here), so the ways aren't a menu on the page while the GM has the floor.
+    Open, the GM puts it to the table as a "Where next?" vote, or just goes; a waiting encounter is called here too.
+    Players see the ways only in the vote: until then, this holds nothing of theirs but treasure lying in the room.
+    Replaced live, for each audience; the fold stays as the GM left it (panels_controller). %>
 <% choice = campaign.open_choice %>
 <%# A rolled encounter waits for the GM's call before anyone goes on (Campaign::Ways#take_way!). %>
 <% ways = gm && !campaign.battle_on? && campaign.pending_encounter.blank? ? campaign.ways_on : [] %>
@@ -12,7 +14,7 @@
 <%# While the party votes on where next, the GM's ways shrink to a row under the vote: the same
     places, but going now, without waiting for the vote (which goes with them). %>
 <% voting = gm && choice&.where_next? %>
-<section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter && !treasure %>>
+<section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" data-controller="panels" <%= "hidden" if ways.empty? && !encounter && !treasure %>>
   <% if encounter %>
     <%= render "campaigns/encounters/call", campaign: campaign, encounter: encounter, return_to: campaign_table_path(campaign) %>
   <% end %>
@@ -25,7 +27,8 @@
     <% if voting %>
       <h3 class="table-ways__straight">Or go straight there, without the vote</h3>
     <% else %>
-      <h2>Where next?</h2>
+      <details class="ways-fold" id="where_next">
+      <summary>Where next?</summary>
     <% end %>
     <%# What there is to do here this part of the day (Pastime) comes first, under the time; then the roads out. %>
     <% doings, roads = ways.partition { |way| way.dig("move", "pastime") } %>
@@ -91,6 +94,9 @@
           <p class="hint">Each is a journey by road from here: the vote says how long. Where something waits on the way, the party stops for your call.</p>
         </details>
       <% end %>
+    <% end %>
+    <% unless voting %>
+      </details>
     <% end %>
   <% end %>
 </section>

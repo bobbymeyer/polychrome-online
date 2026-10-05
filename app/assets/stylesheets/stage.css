@@ -1170,6 +1170,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table--screen { padding-right: 44px; }
 
 /* While the party votes on where next, the GM's way straight there is a small row under the vote. */
+/* The GM's ways, folded until asked: the summary stands where the heading did. */
+.table-ways .ways-fold { margin: 0; border-top: 0; padding-top: 0; }
+.table-ways .ways-fold > summary { font-style: italic; font-weight: 900; font-size: 20px; color: var(--ink); min-height: 44px; display: flex; align-items: center; }
 .table-ways--straight { padding-top: 8px; }
 .table-ways__straight { margin: 0 0 4px; font-size: 15px; font-weight: 800; }
 .table-ways--straight .table-ways__group { font-size: 13px; margin: 6px 0 0; }

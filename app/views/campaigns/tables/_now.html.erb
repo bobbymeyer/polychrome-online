@@ -57,7 +57,8 @@
       <% elsif state == "choice" %>
         <%= link_to "Settle it ↓", "#table_choice", class: "button play" %>
       <% else %>
-        <%= button_to "Ask where next", campaign_ways_path(campaign), class: "button play", form: { class: "inline" } if campaign.ways_on.any? %>
+        <%# Opens the ways, folded below (panels_controller follows the link): go, or put it to the table from there. %>
+        <%= link_to "Where next? ↓", "#where_next", class: "button play" if campaign.ways_on.any? %>
         <% if campaign.map_on_stage? %>
           <%= button_to "Show the place", campaign_map_view_path(campaign), method: :patch, params: { off: 1 }, class: "button button--quiet", form: { class: "inline" } %>
         <% else %>
