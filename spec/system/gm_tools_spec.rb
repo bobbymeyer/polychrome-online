@@ -118,6 +118,13 @@ RSpec.describe "The GM's tools at the table", type: :system do
       within("#table_now") { click_on "Travel" }
       expect(page).to have_css("#table_map .map-sheet[data-controller=map-ask]", visible: true)
       expect(page).to have_css("#stage .table-time__view", text: /place/i)
+      # The party's flag stands on the party's place, not scaled away from it (stage.css).
+      flag, place = page.evaluate_script(<<~JS)
+        [document.querySelector("#table_map .map-party").getBoundingClientRect(), document.querySelector("#table_map .map-node.is-party").getBoundingClientRect()]
+          .map((r) => [r.x + r.width / 2, r.y + r.height, r.y])
+      JS
+      expect((flag[0] - place[0]).abs).to be < 3 # centred over it
+      expect(flag[1]).to be_between(place[2] - 12, place[2] + 12) # its tip at the place's top edge
 
       find("a.map-node__ask[data-node-name='Far Hold']").click
       within(".map-ask") do

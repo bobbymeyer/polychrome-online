@@ -1824,7 +1824,8 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .map-sheet .map-node__label.is-above { translate: 0 -6px; }
 .map-sheet .map-node__mode { font-size: 16px; }
 .map-sheet .map-node__shape, .map-sheet .map-child__sheet, .map-sheet .map-child__fold { transform: scale(1.35); }
-.map-sheet .map-party { scale: 1.35; }
+/* The flag grows the same way, from its tip (0,0): scaling the translated group would move it off the place. */
+.map-sheet .map-party__flag path { transform: scale(1.35); transform-origin: 0 0; transform-box: view-box; }
 .map-sheet .map-edge__line { stroke-width: 4; }
 .map-sheet .map-edge--blocked .map-edge__line { stroke-width: 3; }
 .map-sheet--pictured .map-node__label, .map-sheet--pictured .map-child .map-node__label { stroke-width: 9px; }
