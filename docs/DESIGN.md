@@ -469,8 +469,10 @@ under the frame.
 
 - **Now, in one line.** Under the header, a strip says what the table is doing and whose move it
   is: a battle ("A battle is on: …", with the way in), else an open choice and who has picked and
-  who still has to, else whose floor it is ("The table is yours" for the GM, "The GM has the
-  floor" for players). Each side reads what it can do. A battle goes red and holds everything
+  who still has to, else whose floor it is ("The GM has the floor" for players). For the GM in
+  free play the strip is the controls row and nothing else: no "Now" label and no sentence,
+  since the pressed control already says what the moment is and the panels below show what came
+  of it; only a clock one tick from full gets a line. A battle goes red and holds everything
   else: an open choice greys out with "On hold until the battle is over", and can't be settled.
 - **Who picked, and who can't.** The Now line names who has picked and who still has to, and says
   "Nobody plays Aoi" for characters with no player, so the GM doesn't wait on them; the GM's
@@ -514,8 +516,10 @@ under the frame.
   has the director's buttons. Travel is the Controls' (Where next?). The battle page has no
   campaign chrome but its name, and talk is a press away.
 - **What the GM calls is the GM's moves.** The controls row on the Now line is the one switch:
-  Talk, Travel and Things to do here put the ways under the stage for everyone; Scene puts the
-  scene list there and Check the check form, for the GM, in the same place a player's moves go,
+  Talk puts the talk box under the stage (the GM's composer, a player's "Say something", and the
+  GM's Whisper beside each character); under any other control it's away, so what's under the
+  stage is only what the moment is for. Travel and Things to do here put the ways there for
+  everyone; Scene puts the scene list there and Check the check form, for the GM, in the same place a player's moves go,
   so there is one spot to look at whoever you are. There is no tab strip for these. What's left
   (Moves, and More: grants, music, one shared screen with its QR code to hold up) waits behind
   one "GM tools" button on the Now line after Battle (the name says who sees them; there is no

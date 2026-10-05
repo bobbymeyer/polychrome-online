@@ -142,7 +142,7 @@ RSpec.describe "Where next", type: :request do
     patch campaign_controls_path(campaign), params: { kind: "travel" }
     expect(campaign.reload).to be_travelling
     get campaign_table_path(campaign)
-    expect(response.body).to include("Travel: the ways on are below, for everyone.", "Where next?", "To Greymere", "To Port", "Put it to the table")
+    expect(response.body).to include("Where next?", "To Greymere", "To Port", "Put it to the table")
     expect(response.body).not_to include("To The Pass") # blocked
     patch campaign_controls_path(campaign), params: { kind: "dance" }
     expect(flash[:alert]).to eq("There's no such thing to call at the table")
