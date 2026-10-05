@@ -44,7 +44,7 @@ class JoinsController < ApplicationController
 
   # Characters you could sit as: nobody's yet, or already yours.
   def open_characters
-    @campaign.characters.includes(:job).order(:created_at).select { |c| c.user_id.nil? || c.user_id == current_user&.id }
+    @campaign.characters.includes(:job, portraits: { image_attachment: :blob }).order(:created_at).select { |c| c.user_id.nil? || c.user_id == current_user&.id }
   end
 
   def controller_view

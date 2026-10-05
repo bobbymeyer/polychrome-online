@@ -14,6 +14,13 @@ module Character::InBattle
     "character_#{id}"
   end
 
+  # What the battle board draws: their determined face (or neutral), or
+  # their job's art.
+  def battle_art
+    own = own_portrait_image("determined")
+    BattleArt.new(image: own || job.image, variant: own ? {} : job.variant.to_h, colour: colour, level: level)
+  end
+
   # Unit spec for Battle::State.build.
   def battle_spec
     {

@@ -49,7 +49,7 @@
     <div class="roster-cards">
       <% @characters.each do |character| %>
         <%= link_to character_path(character), class: "window character-card #{'is-ko' unless character.conscious?}" do %>
-          <%= entry_portrait(character.job, size: :small) %>
+          <%= character_portrait(character, size: :small) %>
           <div>
             <h3><%= character.name %></h3>
             <p class="muted">
