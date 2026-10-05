@@ -81,7 +81,7 @@ RSpec.describe "The player's way through", type: :request do
 
     sign_in_as(krile)
     get campaign_table_path(campaign)
-    expect(response.body).to include('<h2 class="player-card__name">Krile</h2>')
+    expect(Nokogiri::HTML(response.body).at("#table_party li.is-you").text).to include("Krile")
     delete campaign_table_seat_path(campaign)
     get campaign_table_path(campaign)
     expect(response.body).to include("Take a seat")

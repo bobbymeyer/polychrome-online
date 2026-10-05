@@ -1,5 +1,5 @@
 <%# One archetype, to the party (it opens) or to someone (they awaken to it: Campaign#grant_job!). %>
-<%= form_with url: campaign_job_grants_path(campaign), class: "book-form" do |f| %>
+<%= form_with url: campaign_job_grants_path(campaign), class: "book-form", data: { controller: "help" } do |f| %>
   <div class="field-row">
     <div class="field">
       <%= label_tag :job, "Archetype" %>
@@ -7,10 +7,11 @@
     </div>
     <div class="field">
       <%= label_tag :character_id, "To" %>
-      <%= select_tag :character_id, options_from_collection_for_select(campaign.characters.order(:created_at), :id, :name), include_blank: "The party: it opens" %>
+      <%= select_tag :character_id, options_from_collection_for_select(campaign.characters.order(:created_at), :id, :name), include_blank: "The party: it opens",
+                     data: { help: "To the party, it opens for anyone to take up. To someone, they awaken to it: they take it up at once, and the table stops for it." } %>
     </div>
   </div>
   <div class="field"><%= label_tag :line, "The moment" %><%= text_field_tag :line, nil, placeholder: "The old master finally nods, and shows you how." %></div>
-  <p class="hint">To the party, it opens for anyone to take up. To someone, they awaken to it: they take it up at once, and the table stops for it.</p>
+  <%= help_line("To the party it opens; to someone, they awaken to it.") %>
   <%= f.submit "Grant", class: "button play" %>
 <% end %>

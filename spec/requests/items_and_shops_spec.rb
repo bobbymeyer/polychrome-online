@@ -101,11 +101,11 @@ RSpec.describe "Items and shops", type: :request do
       price = town.service_price("inn", lenna_character)
       label = "Rooms at #{inn['name']} (#{price} gil, overnight)"
       get location_path(town)
-      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="service service--inn"', "Done at the", "under Things to do here")
+      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="pick-row service service--inn"', "Done at the table, under Things to do here")
       expect(response.body).not_to include("suggest", "Rooms at", campaign_ways_path(campaign)) # one home for doing it: the table
       # What each is for, and what it costs, before it's opened.
-      expect(response.body).to match(%r{<span class="service__offer">Rest the night · \d+ gil</span>})
-      expect(response.body).to include('<span class="service__offer">Buy and sell</span>')
+      expect(response.body).to match(%r{<td class="pick-row__cost service__offer">Rest the night · \d+ gil</td>})
+      expect(response.body).to include('<td class="pick-row__cost service__offer">Buy and sell</td>')
 
       post campaign_ways_path(campaign), params: { way: label }
       expect(response).to have_http_status(:forbidden) # not while the table is talking
@@ -154,7 +154,7 @@ RSpec.describe "Items and shops", type: :request do
 
     it "uses a healing item from the bag on a party member, through the engine's formula" do
       get character_path(lenna)
-      expect(response.body).to include('id="items"', "Potion", "Bartz (HP 20/")
+      expect(response.body).to include('id="items"', 'data-key="gear"', "Potion", "Bartz (HP 20/")
       expect(response.body).not_to include("Antidote <span") # cures only work in battle
       expect(response.body).not_to include("Lenna (HP") # unhurt: nothing to heal
 

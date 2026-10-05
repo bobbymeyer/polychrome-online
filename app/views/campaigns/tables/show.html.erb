@@ -47,24 +47,9 @@
       <%= link_to "Leave controller view", campaign_table_path(@campaign, view: "off") %></p>
   <% end %>
   <div class="table__main">
-    <%# Left: who's here. A player first (their card, kept in step with the party panel), then the party and
-        what it knows, one at a time (the map is on the stage). %>
     <aside class="table__side" aria-label="You and the party">
-      <% if (character = @seat.character) && view != "screen" %>
-        <section class="player-card window" aria-label="You">
-          <%= speaker_portrait(character, "neutral", size: :medium) %>
-          <div>
-            <p class="player-card__label">You</p>
-            <h2 class="player-card__name"><%= character.name %></h2>
-            <p class="muted">Lv <%= character.level %> <%= character.job.name %></p>
-            <% if character.motive.present? %><p class="motive motive--card"><%= character.motive %></p><% end %>
-            <div class="table-you" data-controller="mirror" data-mirror-from-value="#table_party [data-character='<%= character.id %>'] .vitals">
-              <div data-mirror-target="slot"><%= render "campaigns/tables/vitals", character: character, copy: true %></div>
-            </div>
-            <%= link_to "My sheet →", character_path(character), class: "player-card__sheet" %>
-          </div>
-        </section>
-      <% end %>
+      <%# Left: who's here. The party, your own row first (campaigns/tables/_party), and what it knows, one at a
+          time (the map is on the stage). %>
       <% if view == "screen" %>
         <%= render "campaigns/tables/party", campaign: @campaign %>
       <% else %>
@@ -75,7 +60,7 @@
                                     data: { drawers_target: "tab", key: key, action: "drawers#toggle" } %>
             <% end %>
           </div>
-          <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party"><%= render "campaigns/tables/party", campaign: @campaign, gm: @seat.gm? %></div>
+          <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party"><%= render "campaigns/tables/party", campaign: @campaign, gm: @seat.gm?, you: @seat.character %></div>
           <div id="drawer_knows" class="drawers__panel" hidden data-drawers-target="panel" data-key="knows"><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? %><%= render "campaigns/tables/limits", campaign: @campaign %></div>
         </div>
       <% end %>

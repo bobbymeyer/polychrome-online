@@ -20,7 +20,7 @@
         </div>
       <% end %>
     </div>
-    <p class="hint">Choices come from the party bag. A <%= @character.job.name %> uses <%= @character.job.equip_categories.map { |c| term(c).downcase }.to_sentence %>.</p>
+    <%= help_line %>
     <%= f.submit "Update equipment", class: "button" %>
   <% end %>
   <% end %>

@@ -7,6 +7,12 @@ module ApplicationHelper
     "encounters" => "dark_green", "gazetteer" => "steel_grey", "generation" => "sun_yellow"
   }.freeze
 
+  # A panel's help line (help_controller): one line under it that says what the control under the pointer or
+  # focus does (its data-help), else this standing word, else nothing. In place of a standing hint.
+  def help_line(standing = nil)
+    tag.p(standing.to_s, class: "help-line", data: { help_target: "line" }, aria: { live: "polite" })
+  end
+
   def current_book
     BOOK_COLOURS.keys.find { |key| controller_path.start_with?("#{key}/") }
   end

@@ -1,13 +1,12 @@
-<section class="window" id="stats">
+<section class="window" id="stats" data-controller="help">
   <h2>Stats</h2>
-  <p class="hint">What their level gives, shaped by their archetype, then their gear, then the archetype's innate abilities.</p>
   <table class="book-table book-table--plain stat-table">
     <thead>
       <tr><th>Stat</th><th class="num">Base</th><th class="num">Archetype</th><th class="num">Gear</th><th class="num">Total</th></tr>
     </thead>
     <tbody>
       <% Stats::NAMES.each do |stat| %>
-        <tr>
+        <tr data-help="What their level gives, shaped by their archetype, then their gear, then the archetype's innate abilities.">
           <td><%= stat_term(stat) %></td>
           <td class="num"><%= stages[:base][stat] %></td>
           <td class="num"><%= stages[:job][stat] %></td>
@@ -17,4 +16,5 @@
       <% end %>
     </tbody>
   </table>
+  <%= help_line %>
 </section>

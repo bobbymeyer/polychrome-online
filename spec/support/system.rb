@@ -53,7 +53,7 @@ module SystemHelpers
     return wait_for_streams unless seat
 
     # The seat is said in the account menu (closed again now); a player's card says who they are too.
-    expect(page).to(seat == "gm" ? have_css(".topbar__seat", text: "At the table as GM", visible: :all) : have_css(".player-card", text: seat.name))
+    expect(page).to(seat == "gm" ? have_css(".topbar__seat", text: "At the table as GM", visible: :all) : have_css("#table_party li.is-you", text: seat.name))
     wait_for_streams
   end
 

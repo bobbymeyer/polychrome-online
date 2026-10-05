@@ -195,11 +195,11 @@ RSpec.describe "The live table", type: :system do
       expect(page).to have_css(".table-views", visible: true)
       expect(page).to have_css(".table-views__tab[aria-current=page]", text: "Stage") # the stage first
       expect(page).to have_css("#stage", visible: true)
-      expect(page).to have_no_css(".player-card", visible: true)
+      expect(page).to have_no_css("#table_party li.is-you", visible: true)
       expect(page).to have_no_css(".log-drawer__tab", visible: true) # the log is a view here, not a drawer
 
       click_on "You & party"
-      expect(page).to have_css(".player-card", visible: true, text: "Rook")
+      expect(page).to have_css("#table_party li.is-you", visible: true, text: "Rook")
       expect(page).to have_no_css("#stage", visible: true)
 
       wait_for_streams
@@ -208,7 +208,7 @@ RSpec.describe "The live table", type: :system do
       click_on "Log"
       expect(page).to have_css("#log_drawer", visible: true, text: "The bridge is out.")
       expect(page).to have_no_css(".table-views__badge", visible: true)
-      expect(page).to have_no_css(".player-card", visible: true)
+      expect(page).to have_no_css("#table_party li.is-you", visible: true)
 
       visit current_path # the view you were on is kept
       expect(page).to have_css(".table-views__tab[aria-current=page]", text: "Log")

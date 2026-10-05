@@ -12,6 +12,7 @@
   </div>
   <div class="actions">
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--primary" %>
+    <%= link_to "Maps", campaign_maps_path(@campaign), class: "button button--quiet" %>
     <%= link_to "Legends", campaign_legends_path(@campaign), class: "button button--quiet" %>
     <% if table_gm? %>
     <% end %>
@@ -23,6 +24,7 @@
   <% { "scenes" => "Scenes", "clocks" => "Clocks", "moment" => "The moment" }.each do |anchor, label| %>
     <a href="#<%= anchor %>"><%= label %></a>
   <% end %>
+  <%# The maps are Prep's too, on their own page (they need the room). %>
   <%= link_to "Maps →", campaign_maps_path(@campaign) %>
 </nav>
 

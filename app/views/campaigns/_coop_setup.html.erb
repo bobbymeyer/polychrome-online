@@ -1,5 +1,7 @@
-<%# The GM's way into local co-op: one shared screen, phones as controllers. %>
-<div class="coop-setup">
+<%# The GM's way into local co-op: one shared screen, phones as controllers. Set up here, on the campaign page beside the
+    invite, before play (it isn't a move at the table). %>
+<section class="window coop-setup" id="coop" aria-label="Play around one screen">
+  <h2>Play around one screen</h2>
   <p>Play around one shared screen: a TV at the table, or your screen shared on a call. Everyone talks out loud (or on voice chat); phones are just controllers.</p>
   <%= render "campaigns/tables/coop_join", campaign: campaign %>
   <ol class="coop-setup__steps">
@@ -10,5 +12,5 @@
   </ol>
   <p>Playing at a table, or on a call, with nothing to press on the screen? <%= link_to "Open the stage only", campaign_table_path(campaign, view: "stage"), class: "button button--quiet", target: "_blank", rel: "noopener" %>:
     nothing but the Stage, filling the screen, for a TV or a stream.</p>
-  <p class="hint">Players somewhere else join with the invite link on <%= link_to "the campaign page", campaign_path(campaign, anchor: "invite") %>.</p>
-</div>
+  <p class="hint">Players somewhere else join with the <%= link_to "invite link", "#invite" %> above.</p>
+</section>

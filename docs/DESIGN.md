@@ -443,9 +443,9 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
 On a desktop (1100px and up) the page has no measure: it takes the whole width, and the screen is
 three columns with the pinned ones on the far edges:
 
-- **Left, on the edge: who's here.** A player's card (portrait, name, level and archetype, HP and
-  MP, their sheet), then what you look up: Party · What we know, the party open. The GM has the
-  same look-ups and no card.
+- **Left, on the edge: who's here.** What you look up: Party · What we know, the party open, and
+  in the party your own row first, marked "You" (name, level and archetype, motive, HP and MP,
+  the name a link to your sheet). There is no separate card: one list, you at its head.
 - **Middle: the stage, first and sacred, and under it the Controls.** Nothing sits above the
   frame but the top bar, and nothing pushes it: everything that is done at the table is in one
   region under it that scrolls on its own. The Controls are the Now line, then what this seat
@@ -496,10 +496,21 @@ under the frame.
 - **A whisper is done to a person.** The GM's "To" select is gone: beside each played character
   in the party panel is "Whisper", and the talk box then says "Whispering to Rook, and nobody
   else hears" with Everyone a press away. The whisper is one line; the next goes to everyone.
-- **You, on the left.** A player's card has their own HP and MP, kept in step with their row in
-  the party panel, so they never scroll to see it.
-- **A service says what it's for before it's opened**: under its name and keeper, in red, "Rest
-  the night · 75 yen", "Buy and sell", "Raise the fallen", or "Shut".
+- **You, on the left.** Your own row heads the party list, with "You" on it; the panel is
+  replaced live for everyone alike, so the row is marked again on each render (you_controller).
+- **A service is a row**: its name, under it its kind, keeper and what it does, and in the cost
+  column what it offers and costs ("Rest the night · 75 yen", "Buy and sell", "Shut"). The inn,
+  the temple and the guild link to the table, where they're done; the shop opens under the list;
+  the GM's pin is the last column. The place page's header keeps one button (Open the table):
+  Reroll and the world's tables gather at the bottom under the GM tag, with the modes.
+- **Lines and veils once per context**: at the table, where they're drawn; on the join page,
+  before sitting down; on the world's page, as the setting's own. Not on the campaign page.
+- **Help lines** (`help_controller`), not standing hints. A panel gets one grey line under its
+  controls; the row, button or field under the pointer or focus fills it from its `data-help`,
+  and otherwise it says the panel's one standing word, or nothing. The battle's command menu had
+  this first; now the ways, the party's clocks, the door, the GM's check, grants and time, the map
+  editor's panel, the services and people of a place, the shop, the battle setup and the sheet's
+  sections (stats, gear, skills, mastery, archetypes) all do, and their paragraphs are gone.
 - **A long sheet keeps its section links on screen**: stuck to the top, and on a phone on one line
   that scrolls sideways, fading at the edge where there's more.
 - **Dialogue on the stage.** What's said plays along the bottom of the stage, over the scene or the
@@ -528,7 +539,7 @@ under the frame.
   stage is only what the moment is for. Travel and Things to do here put the ways there for
   everyone; Scene puts the scene list there and Check the check form, for the GM, in the same place a player's moves go,
   so there is one spot to look at whoever you are. There is no tab strip for these. What's left
-  (Moves, and More: grants, music, one shared screen with its QR code to hold up) waits behind
+  (Moves, and More: an archetype to grant, EXP and ABP to grant) waits behind
   one "GM tools" button on the Now line after Battle (the name says who sees them; there is no
   tag), one tab at a time; the
   open tab is ink, and the tab the GM had open stays open, per campaign, in this browser. What needs an answer now (everyone down, a
@@ -604,6 +615,18 @@ under the frame.
 - **A ruling is three fields**: what they roll, how hard, and what happens if it works. How
   much, a type, a status, on whom, and the two lines the table hears wait behind "More" with
   their usual answers, so most rulings are one press.
+- **The sheet is six tabs at most**: Stats, Gear (equipment, then the bag's items to use), Abilities,
+  Skills (with mastery under them), Archetypes, and Look for whoever may portray them. Leaving the
+  party is on the Edit page, under the form, where nobody taps it mid-play; the GM's EXP and ABP
+  grant is at the table, in GM tools' More, with a picker for who.
+- **Maps are Prep's.** The maps page is reached from Prep (a button in its header and its nav), not
+  from the top bar, which keeps to the places everyone goes: the campaign, the Table, My sheet,
+  Prep, Legends. The map editor only builds: its side panel says where the party is and calls a
+  waiting encounter, and travel is the table's (the Travel control, the map on the stage).
+- **Setting up is the lobby's, playing is the table's.** Playing around one screen (the shared
+  screen, the QR code and the controller link) is set up on the campaign page beside the invite,
+  before play. The music is on the stage: one small select on its corner tag beside Map/Place,
+  the GM's, since what the table hears belongs with what it sees. GM tools' More is grants only.
 - **"Fast animations"**, not "Fast": the toggle says what it speeds up. It's a setting for this
   device, so it sits in the account menu beside Sound on every page, and a battle already
   playing hears the change. **The timing meter** is the same kind of thing, so its switch sits

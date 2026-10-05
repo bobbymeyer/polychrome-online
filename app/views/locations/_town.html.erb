@@ -4,13 +4,15 @@
 </section>
 
 <div class="two-up">
-  <section class="window">
+  <section class="window" data-controller="help">
     <h2>Services</h2>
     <% if view["services"].empty? %>
       <p class="empty">Nothing here for travellers.</p>
     <% else %>
       <% shopping = may_shop?(location) %>
       <% keepers = location.roster.filter_map { |slot| (g = slot["generated"]) && g["service"] && [ g["service"], g["name"] ] }.to_h %>
+      <% here = @campaign.current_node&.location_id == location.id %>
+      <% pastimes = here ? @campaign.current_node.pastimes.index_by(&:service) : {} %>
       <% if location.reputation.nonzero? %>
         <p class="standing standing--<%= location.reputation.positive? ? 'good' : 'bad' %>">
           <%= location.name %> sees the party as <strong><%= location.standing.downcase %></strong><%= location.shuns_party? ? ": nobody here will trade with them." : "." %>
@@ -18,42 +20,48 @@
       <% end %>
       <% if shopping %>
         <p class="shop-purse">The party has <strong><%= money(@campaign.gil) %></strong>.</p>
-      <% elsif @campaign.current_node&.location_id != location.id %>
-        <p class="hint">The party has to be here to use them.</p>
       <% end %>
-      <div class="services">
-        <% here = @campaign.current_node&.location_id == location.id %>
-        <% pastimes = here ? @campaign.current_node.pastimes.index_by(&:service) : {} %>
+      <%# One service a row (docs/DESIGN.md, "Choices are tables"): what it's for under its name, what it offers and costs in
+          the cost column. The inn, the temple and the guild are done at the table (Things to do here); only the shop opens,
+          below. The GM pins one through rerolls in the last column. %>
+      <% shop = nil %>
+      <table class="pick-table services">
+        <tbody>
         <% view["services"].each do |service| %>
-          <%# What it's for and what it costs, on the card's face; opening it says more (the shop is used here, the rest at the table). %>
           <% kind = service["kind"] %>
-          <% offer = location.shut_by(kind) ? "Shut" : { "inn" => "Rest the night", "temple" => "Raise the fallen", "guild" => "Hear what's being said", "shop" => "Buy and sell" }.fetch(kind, "The GM plays what happens") %>
-          <% price = !location.shut_by(kind) && pastimes[kind]&.price %>
-          <details class="service service--<%= kind %>" id="service-<%= kind %>">
-            <summary>
-              <span class="service__name"><%= service["name"] %></span>
-              <span class="service__kind"><%= term(kind) %><%= " · #{keepers[kind]}" if keepers[kind] %></span>
-              <span class="service__offer"><%= offer %><%= " · #{price.zero? ? 'free' : money(price)}" if price %></span>
-            </summary>
-            <div class="service__body">
-              <% if location.shut_by(service["kind"]) %>
-                <p class="hint">Shut: <%= location.shut_by(service["kind"]).name.downcase %>.</p>
-              <% elsif %w[inn temple guild].include?(service["kind"]) %>
-                <%= render "locations/services/doing", location: location, service: service, gm: gm, shopping: shopping %>
-              <% elsif lookup_context.exists?(service["kind"], [ "locations/services" ], true) %>
-                <%= render "locations/services/#{service['kind']}", location: location, service: service, view: view, gm: gm, shopping: shopping %>
+          <% shut = location.shut_by(kind) %>
+          <% pastime = pastimes[kind] %>
+          <% outcome = { "inn" => Outcome.of("rest", 100), "temple" => Outcome.of("raise"), "guild" => Outcome.of("rumour") }[kind] %>
+          <% offer = shut ? "Shut" : { "inn" => "Rest the night", "temple" => "Raise the fallen", "guild" => "Hear what's being said", "shop" => "Buy and sell" }.fetch(kind, "The GM plays what happens") %>
+          <% price = !shut && pastime&.price %>
+          <% shop = service if kind == "shop" && !shut %>
+          <tr class="pick-row service service--<%= kind %>" id="service-<%= kind %>"
+              <%= tag.attributes(data: { help: (shut ? "Shut while #{shut.name.downcase} lasts." : kind == "shop" ? "Buy from its shelves and sell from the bag, below." : outcome ? "Done at the table, under Things to do here, when the GM calls it." : "The GM plays what happens here.") }) %>>
+            <td class="pick-row__what">
+              <% if kind == "shop" && !shut %>
+                <a href="#shop" class="pick-row__act"><%= service["name"] %></a>
+              <% elsif outcome && !shut %>
+                <%= link_to service["name"], campaign_table_path(@campaign), class: "pick-row__act", data: { turbo_frame: "_top" } %>
               <% else %>
-                <p class="hint">Nothing for sale: the GM plays what happens here.</p>
+                <span class="pick-row__act"><%= service["name"] %></span>
               <% end %>
-              <% if gm %><p class="service__pin"><%= render "locations/pin", location: location, key: service["key"] %></p><% end %>
-            </div>
-          </details>
+              <span class="pick-row__note"><%= [ term(kind), keepers[kind], (shut ? "shut: #{shut.name.downcase}" : nil), (outcome.describe(@world) if outcome && !shut),
+                                                   ("the GM plays what happens here" if !outcome && kind != "shop" && !shut) ].compact.join(" · ") %></span>
+            </td>
+            <td class="pick-row__cost service__offer"><%= offer %><%= " · #{price.zero? ? 'free' : money(price)}" if price %><%= " · more than the party has" if price && price > @campaign.gil %></td>
+            <% if gm %><td class="pick-row__who service__pin"><%= render "locations/pin", location: location, key: service["key"] %></td><% end %>
+          </tr>
         <% end %>
-      </div>
+        </tbody>
+      </table>
+      <%= help_line(here ? nil : "The party has to be here to use them.") %>
+      <% if shop %>
+        <%= render "locations/services/shop", location: location, service: shop, view: view, gm: gm, shopping: shopping %>
+      <% end %>
     <% end %>
   </section>
 
-  <section class="window">
+  <section class="window" data-controller="help">
     <h2>People</h2>
     <ul class="location-list location-list--people">
       <% location.roster.each do |slot| %>
@@ -86,7 +94,7 @@
       <% end %>
     </ul>
     <% if gm %>
-      <p class="hint">Pinning someone makes them a real NPC: they join the cast and you can speak as them at the table.</p>
+      <%= help_line %>
       <details>
         <summary>GM: write someone in</summary>
         <%= form_with url: location_npcs_path(location), scope: :npc, class: "book-form" do |f| %>

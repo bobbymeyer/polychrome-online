@@ -1,5 +1,6 @@
-<%# A shop's panel (locations/_town): its stock, and selling from the bag and off the party. %>
-<div id="shop">
+<%# The shop (locations/_town, under the services): its stock, and selling from the bag and off the party. %>
+<div id="shop" data-controller="help">
+  <h3>Buy and sell</h3>
   <% items = location.stock_items %>
   <% stories = view.fetch("stock_stories", {}) %>
   <% party = @campaign.characters.includes(:job).order(:created_at).to_a %>
@@ -80,10 +81,8 @@
       </tbody>
     </table>
   <% end %>
-  <% if location.prices.nonzero? %>
-    <p class="hint"><%= location.prices.positive? ? "Everything is dear here: #{location.prices}% over the usual." : "Everything is cheap here: #{-location.prices}% under the usual." %></p>
-  <% end %>
-  <% if shopping %><p class="hint">Shops pay half the price.</p><% end %>
+  <%= help_line([ (location.prices.nonzero? && (location.prices.positive? ? "Everything is dear here: #{location.prices}% over the usual." : "Everything is cheap here: #{-location.prices}% under the usual.")),
+                  ("Shops pay half the price." if shopping) ].select(&:present?).join(" ").presence) %>
 </div>
 <% if gm %>
   <details>

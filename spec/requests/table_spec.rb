@@ -34,7 +34,7 @@ RSpec.describe "The table", type: :request do
     sit(bartz.id)
     get campaign_table_path(campaign)
     expect(response.body.scan("<turbo-cable-stream-source").size).to eq(4) # + Bartz's whispers
-    expect(response.body).to include('<h2 class="player-card__name">Bartz</h2>')
+    expect(Nokogiri::HTML(response.body).at("#table_party li.is-you").text).to include("Bartz")
     # The day clock: a slice per part of the day, turned so the part it is now is at the top.
     parts = campaign.almanac.periods
     expect(response.body).to include('class="day-clock"', %(data-day-clock-turn-value="#{-(campaign.parts_gone * 360.0 / parts.size)}"))
@@ -119,11 +119,12 @@ RSpec.describe "The table", type: :request do
       expect(moves.text).to include("Your moves")
       expect(moves.at("#table_choice")).to be_present
       expect(moves.at("#composer")).to be_present
-      you = page.at(".player-card")
-      expect(you.text.squish).to include("You Bartz", "Lv 5 Knight", "My sister's debt is mine now.", "My sheet")
-      expect(you.at(".vitals")["id"]).to be_nil # the party panel's row keeps the id broadcasts look for
+      you = page.at("#table_party li.is-you") # your own row, first in the party
+      expect(you.text.squish).to include("Bartz", "Lv 5 Knight", "My sister's debt is mine now.")
+      expect(page.css("#table_party .coop-party__list li").first).to eq(you)
+      expect(you.at(".vitals")["id"]).to be_present # the row broadcasts look for
       # Three columns: you and the party on the left, the stage over the controls in the middle, the log on the right.
-      expect(page.at(".table__side .player-card")).to be_present
+      expect(page.at(".table__side #table_party li.is-you")).to be_present
       expect(page.at(".table__side #drawer_party")).to be_present
       expect(page.at(".table__stage #stage #table_scene")).to be_present # the stage, in the middle
       expect(page.at(".table__stage .table-controls #table_now")).to be_present # the controls under it
@@ -468,7 +469,7 @@ RSpec.describe "The table", type: :request do
       campaign.clocks.create!(name: "The tide", segments: 4, public: true)
       sit("gm")
       get campaign_table_path(campaign)
-      expect(response.body).to include("GM tools</button>", "Everyone at the table sees this.", "gm_tab_more", "Grant an archetype", "Music for the table")
+      expect(response.body).to include("GM tools</button>", "gm_tab_more", "Grant an archetype", "Music for the table")
       expect(response.body).not_to include("only you see these") # the button's name says who sees them
       get campaign_maps_path(campaign)
       expect(response.body).to include("Secret Grotto", "Hidden from the players") # the maps page, the GM's

@@ -72,7 +72,7 @@ RSpec.describe "Moments at the table", type: :system do
   it "lays a wide screen out in three columns: you and the party, the stage over the controls, the log" do
     seat(player, rook)
     as(player) do
-      expect(page).to have_css(".table__side .player-card", text: "Rook", visible: true) # 1280 wide: you on the left
+      expect(page).to have_css(".table__side #table_party li.is-you", text: "Rook", visible: true) # 1280 wide: you on the left, first
       expect(page).to have_css("#drawer_party", visible: true) # the party starts open under you; the map is on the stage
       expect(page).to have_css(".table__stage #stage", visible: true)
       expect(page).to have_css(".table__stage .table-controls #table_now", visible: true) # the controls under the stage
@@ -85,13 +85,14 @@ RSpec.describe "Moments at the table", type: :system do
     end
   end
 
-  it "keeps the player's own HP up top in step with the party panel" do
+  it "keeps the player's own row first, and its HP live, through the party panel's replaces" do
     seat(player, rook)
     as(player) do
-      expect(page).to have_css(".player-card", text: "Rook")
+      expect(page).to have_css("#table_party li.is-you", text: "Rook")
       wait_for_streams
       rook.update!(hp: 7)
-      expect(page).to have_css(".table-you .vitals strong", text: /\A7\z/)
+      expect(page).to have_css("#table_party li.is-you .vitals strong", text: /\A7\z/)
+      expect(page).to have_css("#table_party .coop-party__list li:first-child.is-you") # marked again on the new panel
     end
   end
 
@@ -170,10 +171,9 @@ RSpec.describe "Moments at the table", type: :system do
   it "plays around one shared screen, with a phone joining as a controller" do
     seat(gm, "gm")
     as(gm) do
-      # The way in is in the GM's tools, to hold up or read out; the screen itself is only the show.
-      within("#table_now") { click_on "GM tools" }
-      within(".table-controls .gm-tools") { find("[role=tab]", text: "More").click }
-      expect(page).to have_css("#gm_panel_more .coop-join__qr svg", visible: true)
+      # The way in is on the campaign page beside the invite, to hold up or read out; the screen itself is only the show.
+      visit campaign_path(campaign)
+      expect(page).to have_css("#coop .coop-join__qr svg", visible: true)
       visit campaign_table_path(campaign, view: "screen")
       wait_for_streams
       expect(page).to have_no_css(".coop-join")

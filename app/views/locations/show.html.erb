@@ -18,16 +18,8 @@
     <h1><%= view["name"] %></h1>
   </div>
   <div class="actions">
+    <%# One button up here: the GM's moves on the place gather at the bottom, under one tag. %>
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--quiet" %>
-    <% if @gm %>
-      <%= button_to "Reroll", location_reroll_path(@location), class: "button button--quiet",
-                    form: { data: { turbo_confirm: "Reroll #{view['name']}? Pinned things stay; everything else changes#{', and exploration starts over' if @location.dungeon?}." } } %>
-      <% if @location.overrides.key?("tables") %>
-        <%= button_to "Take the world's tables again", location_memory_path(@location), method: :delete, class: "button button--quiet",
-                      title: "Rolled from the tables as they were when the party came. The seed stays; names and rooms follow the world's tables now.",
-                      form: { data: { turbo_confirm: "Roll #{view['name']} from the world's tables as they are now? Its people may change their names." } } %>
-      <% end %>
-    <% end %>
   </div>
 </div>
 
@@ -68,8 +60,19 @@
 
 <%# The GM's controls for the place come after it, under one tag: the place is what the page is for. %>
 <% if @gm %>
-  <section class="location-gm" aria-label="GM controls">
+  <section class="location-gm" aria-label="GM controls" data-controller="help">
     <p class="gm-only">GM · only you see these</p>
+    <div class="actions actions--tight">
+      <%= button_to "Reroll", location_reroll_path(@location), class: "button button--quiet",
+                    data: { help: "Pinned things stay; everything else changes#{', and exploration starts over' if @location.dungeon?}." },
+                    form: { data: { turbo_confirm: "Reroll #{view['name']}? Pinned things stay; everything else changes#{', and exploration starts over' if @location.dungeon?}." } } %>
+      <% if @location.overrides.key?("tables") %>
+        <%= button_to "Take the world's tables again", location_memory_path(@location), method: :delete, class: "button button--quiet",
+                      data: { help: "Rolled from the tables as they were when the party came. The seed stays; names and rooms follow the world's tables now." },
+                      form: { data: { turbo_confirm: "Roll #{view['name']} from the world's tables as they are now? Its people may change their names." } } %>
+      <% end %>
+    </div>
+    <%= help_line %>
     <%= render "map_nodes/modes", node: @location.map_node if @location.map_node %>
     <details class="window gm-tools">
       <summary>Rename</summary>

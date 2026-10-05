@@ -1,4 +1,4 @@
-<%= form_with url: campaign_checks_path(campaign), scope: :check, class: "book-form check-form" do |f| %>
+<%= form_with url: campaign_checks_path(campaign), scope: :check, class: "book-form check-form", data: { controller: "help" } do |f| %>
   <fieldset class="field" data-controller="check-all">
     <legend>Who tries</legend>
     <label class="inline"><%= check_box_tag "check_everyone", "1", false, id: "check_everyone", data: { check_all_target: "all", action: "check-all#all" } %> <strong>Everyone standing</strong></label>
@@ -7,17 +7,17 @@
     <% end %>
   </fieldset>
   <div class="field-row">
-    <div class="field"><%= f.label :stat, "Roll" %><%= f.select :stat, check_options(campaign.world) %></div>
-    <div class="field"><%= f.label :difficulty %><%= f.select :difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, selected: "normal" %></div>
+    <div class="field"><%= f.label :stat, "Roll" %><%= f.select :stat, check_options(campaign.world), {}, data: { help: "Each rolls against their own stat; a skill uses its stat, and an archetype good at it adds +#{Job::SKILL_BONUS}." } %></div>
+    <div class="field"><%= f.label :difficulty %><%= f.select :difficulty, Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, { selected: "normal" }, data: { help: "At Normal, someone typical for their level has an even chance; nothing is ever certain." } %></div>
     <div class="field"><%= f.label :reason, "To…" %><%= f.text_field :reason, placeholder: "scale the wall" %></div>
   </div>
   <div class="field-row">
     <div class="field field--wide">
       <%= f.label :outcome, "On a success" %>
-      <%= f.select :outcome, Outcome::ON_A_CHECK.map { |kind| [ Outcome.of(kind).describe(campaign.world), kind ] }, include_blank: "Nothing: you tell what happens" %>
+      <%= f.select :outcome, Outcome::ON_A_CHECK.map { |kind| [ Outcome.of(kind).describe(campaign.world), kind ] }, { include_blank: "Nothing: you tell what happens" }, data: { help: "What a success makes happen, happens once, whoever made it." } %>
     </div>
     <div class="field"><%= f.label :amount, "How much" %><%= f.number_field :amount, min: 0, max: 9999, placeholder: "its usual" %></div>
   </div>
-  <p class="hint">Each rolls against their own stat (a skill uses its stat, and an archetype good at it adds +<%= Job::SKILL_BONUS %>). At Normal, someone typical for their level has an even chance; nothing is ever certain. What a success makes happen, happens once, whoever made it; a failure ticks the clocks that tick on one.</p>
-  <%= f.submit "Roll", class: "button play" %>
+  <%= help_line("Who rolls what, and what a success does.") %>
+  <%= f.submit "Roll", class: "button play", data: { help: "Everyone picked rolls; a failure ticks the clocks that tick on one." } %>
 <% end %>

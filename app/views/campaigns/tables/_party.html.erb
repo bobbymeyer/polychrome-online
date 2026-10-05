@@ -1,8 +1,12 @@
-<%# The party at a glance, on every view of the table but a phone controller (which shows its own). Replaced live (Campaign#table_changed). %>
+<%# The party at a glance, on every view of the table but a phone controller (which shows its own). Replaced live
+    (Campaign#table_changed). A player's own row comes first, marked "You" (you: on the first render; you_controller
+    after each replace, since the panel is rendered for everyone alike). %>
 <% @world ||= campaign.world # broadcast (Campaign#broadcast_table): the world's words %>
-<section class="window coop-party" id="table_party" aria-label="The party" data-controller="here party-whisper">
+<% you = local_assigns[:you] %>
+<section class="window coop-party" id="table_party" aria-label="The party" data-controller="here party-whisper you">
   <h2>Party</h2>
   <% party = campaign.characters.includes(:job, :user, :character_jobs, equipment_slots: :item, portraits: { image_attachment: :blob }).order(:created_at).to_a %>
+  <% party = party.sort_by { |character| character == you ? 0 : 1 } if you %>
   <% if party.empty? %>
     <p class="empty">Nobody yet.</p>
   <% elsif party.none?(&:conscious?) %>
@@ -10,10 +14,10 @@
   <% end %>
   <ol class="coop-party__list">
     <% party.each do |character| %>
-      <li class="<%= 'is-ko' unless character.conscious? %>" data-character="<%= character.id %>">
+      <li class="<%= class_names("is-you": character == you, "is-ko": !character.conscious?) %>" data-character="<%= character.id %>">
         <%= character_portrait(character, size: :small) %>
         <div>
-          <strong><%= link_to character.name, character_path(character), data: { turbo_frame: "_top" } %></strong>
+          <strong class="coop-party__name"><%= link_to character.name, character_path(character), data: { turbo_frame: "_top" }, title: "#{character.name}'s sheet" %></strong>
           <span class="muted">Lv <%= character.level %> <%= character.job.name %> ·
             <% if character.user %>
               <%= character.user.name %>
@@ -23,6 +27,7 @@
               <span title="Nobody plays them yet: anyone can sit down as them">unplayed</span>
             <% end %>
           </span>
+          <% if character.motive.present? %><p class="motive motive--card coop-party__motive"><%= character.motive %></p><% end %>
           <%= render "campaigns/tables/vitals", character: character %>
         </div>
         <% if local_assigns[:gm] %>

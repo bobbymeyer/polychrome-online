@@ -28,8 +28,10 @@ RSpec.describe "A table's own lines and veils", type: :request do
     expect(flash[:notice]).to eq("That one is already there.")
     expect(campaign.reload.lines).to eq("spiders")
 
-    get campaign_path(campaign)
+    get campaign_table_path(campaign) # read where they're drawn: the table (and the join page); not the campaign page
     expect(response.body).to include("harm to children<br>spiders", "torture<br>drowning")
+    get campaign_path(campaign)
+    expect(response.body).not_to include("Lines and veils")
     get join_path(campaign.join_code || campaign.new_join_code!)
     expect(response.body).to include("spiders", "drowning")
   end

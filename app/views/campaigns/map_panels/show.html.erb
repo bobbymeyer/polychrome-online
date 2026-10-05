@@ -1,5 +1,5 @@
 <%= turbo_frame_tag "map_panel", class: "map-panel" do %>
-  <div class="window">
+  <div class="window" data-controller="help">
     <%= render "campaigns/maps/panel_flash" %>
     <% here = @campaign.current_node %>
     <h2><%= here ? "The party is at #{here.name}" : "The party isn't on the map" %></h2>
@@ -8,38 +8,8 @@
       <%= render "campaigns/encounters/call", encounter: encounter %>
     <% end %>
 
-    <% if here %>
-      <h3>Go from here</h3>
-      <p class="hint">A path takes the party along it now: time passes on the way, and something may be waiting.</p>
-      <% paths = here.edges.includes(:from_node, :to_node, :encounter_table) %>
-      <% if paths.empty? %>
-        <p class="empty">None yet. Select <%= here.name %> and connect it.</p>
-      <% else %>
-        <%# One road a row (pick_table_controller): the row goes; what waits on it in the cost column. %>
-        <table class="pick-table play" data-controller="pick-table">
-          <tbody>
-          <% paths.each do |edge| %>
-            <% there = edge.other_end(here) %>
-            <tr class="pick-row">
-              <td class="pick-row__what">
-                <% if edge.blocked? %>
-                  <button type="button" class="pick-row__act" disabled>To <%= there.name %></button>
-                <% else %>
-                  <%= button_to "To #{there.name}", campaign_ways_path(@campaign), params: { way: @campaign.way_along(edge), go: 1, return_to: "map" }, class: "pick-row__act" %>
-                <% end %>
-                <%# What waits on the road, under its name; the road's state in the cost column. %>
-                <span class="pick-row__note"><%= edge.encounter_table ? edge.encounter_table.name : "Safe" %></span>
-              </td>
-              <td class="pick-row__cost"><%= edge.state %> road</td>
-            </tr>
-          <% end %>
-          </tbody>
-        </table>
-        <p class="hint">A path with an encounter table meets something <%= Pointcrawl::Encounters::CHANCE["open"] %>% of the time if it's open, every time if it's dangerous. A path with no table is safe: give it one to make it bite.</p>
-      <% end %>
-    <% else %>
-      <p class="hint">Select a place, then "Put the party here".</p>
-    <% end %>
+    <%# Travel is the table's (the Travel control, and the map on the stage): here is only where they are. %>
+    <%= help_line("Select a place, then “Put the party here”." unless here) %>
 
   </div>
 <% end %>
