@@ -339,6 +339,9 @@ A player's table offers what they can do at this moment, and nothing else up fro
 - **Moves follow the table's state** (the Now line's `data-state`). In a battle the moves go: the
   Now line has the way in. With an encounter waiting or a vote open, only the vote and talk
   are left. In free play: the ways on, the things to do here, the field ability, and talk.
+- **The field ability is a row**, in the same table as the ways and the vote's options: the
+  ability's name as the row, its skill, "once per rest" and what it does as the note, "ask" at the
+  end. Used, or asked for and waiting on the GM, it's a greyed row that says so.
 - **A move you can't make isn't offered.** A used field ability, or one asked for, is a line
   saying so ("Pick Lock: used. It's back after a rest."). Things to do the purse can't pay for,
   and doors still locked, aren't shown to players.
@@ -346,9 +349,12 @@ A player's table offers what they can do at this moment, and nothing else up fro
 - **What you look up is in tabs**: Party · What we know, closed until pressed, one at a
   time. The Party tab says "hurt" or "someone's down" without opening; What we know appears
   once there's something to know. Your own HP stays in the "You" line.
-- **Your seat is in the account menu**, with your name: "At the table as Rook", then the other seats
-  you may take ("Sit as Game Master", "Sit as Lenna"), one press from any page in the campaign, and
-  "Stand up". The campaign's menu keeps "Previously on…".
+- **Seating happens at the door.** Arriving at the table with no seat, the first thing under the
+  Now line is your own way in: "Sit as Lenna" in red if you have a character here, "Sit as Game
+  Master" if the campaign is yours; the characters nobody plays wait behind "Someone nobody
+  plays" (sitting as one claims it), and nobody else's character is offered. The account menu
+  says "At the table as Rook" and keeps "Stand up"; with no seat it points at the table. The
+  campaign's menu keeps "Previously on…".
 
 The GM's table works the same way:
 

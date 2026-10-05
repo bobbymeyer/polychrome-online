@@ -376,13 +376,15 @@ RSpec.describe "The table", type: :request do
 
       Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
       get campaign_table_path(campaign)
-      expect(now).to include("The party has a choice to make.", "Settle it when you're ready.", "Nobody has picked yet.")
+      expect(now).to include("The party is choosing.", "Settle it when you're ready.")
+      expect(now).not_to include("Nobody has picked yet.") # who has picked is the vote's own footer
+      expect(Nokogiri::HTML(response.body).at("#table_choice .choice__footer").text.squish).to eq("Nobody has picked yet. Nobody plays Bartz and Lenna: no pick from them.")
 
       sit(bartz.id)
       post choice_picks_path(campaign.open_choice), params: { option: "Refuse" }
       get campaign_table_path(campaign)
-      expect(now).to include("Pick below; the GM settles it.", "Picked: Bartz.", "Nobody plays Lenna: no pick from them.")
-      expect(response.body).to include(%(<span data-change="number">1</span> of 1 player has picked.))
+      expect(now).to include("Pick below; the GM settles it.")
+      expect(Nokogiri::HTML(response.body).at("#table_choice .choice__footer").text.squish).to eq("Picked: Bartz. Nobody plays Lenna: no pick from them.")
     end
 
     it "puts a battle first: the choice waits, and can't be settled until it's over" do

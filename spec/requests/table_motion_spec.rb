@@ -64,6 +64,7 @@ RSpec.describe "The table's motion", type: :request do
     get campaign_table_path(campaign)
     expect(response.body).to include(%(<i class="choice__chip" data-change-key="Rook" aria-hidden="true">R</i>))
     expect(response.body).to include(%(data-change="bar" style="width: 100%"))
-    expect(response.body).to include(%(<span data-change="number">1</span> of 1 player has picked))
+    expect(response.body).to include(%(<p class="choice__footer" data-change="text">)) # who has picked, as the vote's footer, changing as they do
+    expect(Nokogiri::HTML(response.body).at(".choice__footer").text.squish).to eq("Picked: Rook.")
   end
 end

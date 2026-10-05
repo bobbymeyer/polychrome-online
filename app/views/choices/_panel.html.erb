@@ -35,10 +35,16 @@
         <% end %>
         </tbody>
       </table>
+      <%# Who has picked, under the options where the picks are: the vote's own footer, for everyone. %>
+      <% picked = choice.picks.includes(:character).map { |pick| pick.character.name } %>
+      <% unplayed, waiting = choice.campaign.characters.order(:created_at).reject { |c| picked.include?(c.name) }.partition { |c| c.user_id.nil? }.map { |cs| cs.map(&:name) } %>
+      <p class="choice__footer" data-change="text">
+        <span class="choice__who-picked"><%= picked.any? ? "Picked: #{picked.to_sentence}." : "Nobody has picked yet." %></span>
+        <%= "Still to pick: #{waiting.to_sentence}." if picked.any? && waiting.any? %>
+        <%= "Nobody plays #{unplayed.to_sentence}: no pick from them." if unplayed.any? %>
+      </p>
       <p class="hint choice__hint choice__hint--player">Pick for your character. You can change your mind until the GM settles it.</p>
       <p class="hint choice__hint choice__hint--gm">
-        <% played = choice.campaign.characters.where.not(user_id: nil).count %>
-        <span data-change="number"><%= choice.picks.size %></span> of <%= played %> <%= played == 1 ? "player has" : "players have" %> picked.
         Everyone at the table picks; you settle it<%= ", and #{choice.flag_key.humanize} is set to the outcome" if choice.flag_key %>.
       </p>
     </section>
