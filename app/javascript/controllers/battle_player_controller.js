@@ -40,17 +40,12 @@ export default class extends Controller {
     this.scrollLog()
   }
 
-  // Each viewer's own choice, on top of the GM's pacing for everyone.
-  toggleFast() {
-    this.fast = !this.fast
-    try { localStorage.setItem(FAST_KEY, this.fast ? "1" : "0") } catch {}
+  // Each viewer's own choice, on top of the GM's pacing for everyone: the toggle is in the account menu
+  // (fast_toggle_controller), outside this element, and says when it changes.
+  syncFast() {
+    this.fast = this.readFast()
     this.showFast()
     if (this.current) this.current.timeline.speed = this.speed
-  }
-
-  // The toggle lives in the Menu, outside this element, so its click is caught on the window.
-  fastClick(event) {
-    if (event.target.closest?.("[data-battle-fast]")) this.toggleFast()
   }
 
   readFast() {

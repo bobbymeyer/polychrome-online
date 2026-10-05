@@ -348,7 +348,10 @@ A player's table offers what they can do at this moment, and nothing else up fro
 - **Talk is a button**, "Say something", that opens the box (and its To and Expression).
 - **What you look up is in tabs**: Party · What we know, closed until pressed, one at a
   time. The Party tab says "hurt" or "someone's down" without opening; What we know appears
-  once there's something to know. Your own HP stays in the "You" line.
+  once there's something to know, and holds only what moves: the public clocks still running
+  and the questions the party is asking (a secret's clues so far). What it has found out for
+  good is Legends' ("What they found out"), said once in the log as it came out; the recap draws
+  from the same secrets. Your own HP stays in the "You" line.
 - **Seating happens at the door.** Arriving at the table with no seat, the first thing under the
   Now line is your own way in: "Sit as Lenna" in red if you have a character here, "Sit as Game
   Master" if the campaign is yours; the characters nobody plays wait behind "Someone nobody
@@ -587,9 +590,9 @@ under the frame.
 - **A ruling is three fields**: what they roll, how hard, and what happens if it works. How
   much, a type, a status, on whom, and the two lines the table hears wait behind "More" with
   their usual answers, so most rulings are one press.
-- **"Fast animations"**, not "Fast": the toggle says what it speeds up. In a campaign it sits in
-  the Menu with the way around the game (it's a setting for this device, not a move); a battle
-  with no campaign keeps it above the field.
+- **"Fast animations"**, not "Fast": the toggle says what it speeds up. It's a setting for this
+  device, so it sits in the account menu beside Sound on every page, and a battle already
+  playing hears the change.
 - **The log's battle section takes only the room it needs**, and section headings carry their own
   top gap, so nothing scrolled under them shows through.
 

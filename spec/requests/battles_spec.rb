@@ -110,9 +110,10 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body.sub(folded, "")).not_to include("Apply override", "Bring them in")
 
     get battle_path(battle)
-    menu = response.body[/<nav class="topbar__books".*?<\/nav>/m]
-    expect(menu).to include("data-battle-fast", "Fast animations")
+    menu = response.body[/<div class="topbar__user-menu">.*?<\/details>/m]
+    expect(menu).to include("data-battle-fast", "Fast animations", "Sound on") # a device setting, beside Sound
     expect(response.body[/<header class="battle__header">.*?<\/header>/m]).not_to include("Fast animations")
+    expect(response.body[/<nav class="topbar__books".*?<\/nav>/m]).not_to include("Fast animations")
   end
 
   it "marks the hurt in the party strip, which only shows once someone is" do

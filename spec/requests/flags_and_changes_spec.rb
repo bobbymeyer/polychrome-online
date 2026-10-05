@@ -58,7 +58,11 @@ RSpec.describe "Flags and GM changes", type: :request do
       get campaign_path(campaign)
       expect(response.body).not_to include("the_king_is_a_fake")
       get campaign_table_path(campaign)
-      expect(response.body).to include("The party knows", "Met the king")
+      expect(Nokogiri::HTML(response.body).at("#party_knows").text).not_to include("Met the king") # found out for good: Legends', not the table's
+      expect(response.body).to include("The party learns: Met the king.") # the log said it
+      expect(response.body).not_to include("fake")
+      get campaign_legends_path(campaign)
+      expect(response.body).to include("What they found out", "Met the king")
       expect(response.body).not_to include("fake")
     end
   end

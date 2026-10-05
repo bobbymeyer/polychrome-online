@@ -189,7 +189,11 @@ RSpec.describe "Clocks and secrets", type: :request do
 
       sit(hero)
       get campaign_table_path(campaign)
-      expect(response.body).to include("The party knows", "The mayor pays the goblins.")
+      expect(response.body).to include("The party learns: The mayor pays the goblins.") # the log said it
+      expect(Nokogiri::HTML(response.body).at("#party_knows").key?("hidden")).to be(true) # nothing moving: the panel waits
+      expect(Nokogiri::HTML(response.body).at("#party_knows").text).not_to include("The mayor pays the goblins.")
+      get campaign_legends_path(campaign)
+      expect(response.body).to include("What they found out", "The mayor pays the goblins.")
       expect(Recap.for(campaign).learned).to include("The mayor pays the goblins.")
 
       sit("gm")
