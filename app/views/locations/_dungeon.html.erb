@@ -51,25 +51,29 @@
           <%= button_to "Hand over the treasure", location_treasures_path(location), params: { room: here["key"] }, class: "button play" %>
         <% end %>
         <h3>Ways on</h3>
-        <div class="menu play">
+        <%# One room a row (pick_table_controller): what the way there costs, or needs, in the cost column. %>
+        <table class="pick-table play" data-controller="pick-table">
+          <tbody>
           <% location.neighbours(here["key"]).each do |key| %>
             <% room = location.room(key) %>
             <% path = location.path_between(here["key"], key) %>
             <% cost = path&.dig("cost") %>
-            <% if location.locked?(path) && !location.has_key?(path["lock"]) %>
-              <button type="button" class="menu__item" aria-disabled="true" title="It needs <%= path['lock']['key_name'] %>">
-                <%= room["name"] %> <span class="menu__cost">locked: <%= path["lock"]["name"] %></span>
-              </button>
-            <% else %>
-              <%= button_to location_position_path(location), method: :patch, params: { room: key }, class: "menu__item", title: (Toll.of(cost).words if cost) do %>
-                <%= room["name"] %>
-                <% if location.locked?(path) %><span class="menu__cost">open with <%= path["lock"]["key_name"] %></span>
-                <% elsif cost && !location.paid?(path) %><span class="menu__cost"><%= (toll = location.toll_of(path)) ? "costs #{toll.describe(@campaign)}" : "costly" %></span>
-                <% elsif location.visited.include?(key) %><span class="menu__cost">visited</span><% end %>
+            <tr class="pick-row">
+              <% if location.locked?(path) && !location.has_key?(path["lock"]) %>
+                <td class="pick-row__what"><button type="button" class="pick-row__act" disabled title="It needs <%= path['lock']['key_name'] %>"><%= room["name"] %></button></td>
+                <td class="pick-row__cost">locked: <%= path["lock"]["name"] %></td>
+              <% else %>
+                <td class="pick-row__what"><%= button_to room["name"], location_position_path(location), method: :patch, params: { room: key }, class: "pick-row__act", title: (Toll.of(cost).words if cost) %></td>
+                <td class="pick-row__cost">
+                  <% if location.locked?(path) %>open with <%= path["lock"]["key_name"] %>
+                  <% elsif cost && !location.paid?(path) %><%= (toll = location.toll_of(path)) ? "costs #{toll.describe(@campaign)}" : "costly" %>
+                  <% elsif location.visited.include?(key) %>visited<% end %>
+                </td>
               <% end %>
-            <% end %>
+            </tr>
           <% end %>
-        </div>
+          </tbody>
+        </table>
         <p class="hint">Moving reveals the room to the players and plays its decision at the table.</p>
       <% end %>
 

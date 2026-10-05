@@ -6,6 +6,10 @@ import { Controller } from "@hotwired/stimulus"
 // cursor is on. Target options light up their unit on the battlefield, and
 // the units themselves can be clicked.
 //
+// The menu is a pick table (docs/DESIGN.md, "Choices are tables"): one item
+// a row (`.pick-row`), its control the row's `.pick-row__act`. The cursor is
+// the row; a click anywhere on the row chooses it.
+//
 // Only a `primary` menu listens to the whole window; others answer keys only
 // while focus is inside them.
 
@@ -18,6 +22,9 @@ const remember = (label) => { remembered = label; rememberedOn = window.location
 
 const TYPING = "input, textarea, select, [contenteditable]"
 
+// Whether the keys have been used on this page: the legend under the menu shows once they have.
+let keyed = false
+
 export default class extends Controller {
   static targets = ["help"]
   static values = { primary: Boolean, autofocus: Boolean, you: String }
@@ -25,16 +32,24 @@ export default class extends Controller {
   connect() {
     this.onKey = this.key.bind(this)
     ;(this.primaryValue ? window : this.element).addEventListener("keydown", this.onKey)
-    this.onOver = (e) => { const item = e.target.closest(".menu__item"); if (item) this.moveTo(item, { focus: false }) }
+    this.onOver = (e) => { const item = this.itemAt(e.target); if (item) this.moveTo(item, { focus: false }) }
     this.element.addEventListener("mouseover", this.onOver)
-    this.onFocus = (e) => { const item = e.target.closest(".menu__item"); if (item) this.moveTo(item, { focus: false }) }
+    this.onFocus = (e) => { const item = e.target.closest(".pick-row__act"); if (item) this.moveTo(item, { focus: false }) }
     this.element.addEventListener("focusin", this.onFocus)
+    // The whole row is the control: a click on the rest of it chooses as the button does.
+    this.onClick = (e) => {
+      if (e.target.closest("button, a, input, select, label")) return
+      const item = this.itemAt(e.target)
+      if (item) { e.preventDefault(); this.moveTo(item); this.choose(item) }
+    }
+    this.element.addEventListener("click", this.onClick)
 
     this.markYou(true)
     this.bindTargets()
+    if (keyed) this.element.classList.add("is-keyed")
 
     const items = this.items
-    items.forEach((item, i) => item.style.setProperty("--i", i)) // the stage staggers their entrance
+    items.forEach((item, i) => this.row(item).style.setProperty("--i", i)) // the stage staggers their entrance
     if (!items.length) return
     const start = items.find((i) => this.label(i) === recall()) || items.find((i) => !this.disabled(i)) || items[0]
     const take = this.autofocusValue && this.mayTakeFocus()
@@ -44,7 +59,7 @@ export default class extends Controller {
 
   // On a short screen your turn can start below the fold: scroll just enough to show the menu.
   bringIntoView() {
-    const box = this.element.querySelector(".menu")?.getBoundingClientRect()
+    const box = this.element.querySelector(".pick-table")?.getBoundingClientRect()
     if (!box || (box.top >= 0 && box.bottom <= window.innerHeight)) return
     const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches
     this.element.scrollIntoView({ block: "nearest", behavior: smooth ? "smooth" : "auto" })
@@ -54,6 +69,7 @@ export default class extends Controller {
     ;(this.primaryValue ? window : this.element).removeEventListener("keydown", this.onKey)
     this.element.removeEventListener("mouseover", this.onOver)
     this.element.removeEventListener("focusin", this.onFocus)
+    this.element.removeEventListener("click", this.onClick)
     this.highlight(null)
     this.reach(null)
     this.unbindTargets()
@@ -61,11 +77,21 @@ export default class extends Controller {
   }
 
   get items() {
-    return [...this.element.querySelectorAll(".menu__item")]
+    return [...this.element.querySelectorAll(".pick-row__act")]
   }
 
   get cursor() {
-    return this.element.querySelector(".menu__item.is-cursor")
+    return this.element.querySelector(".pick-row__act.is-cursor")
+  }
+
+  row(item) {
+    return item.closest(".pick-row") || item
+  }
+
+  // The item whose row the pointer is on.
+  itemAt(target) {
+    const row = target.closest?.(".pick-row")
+    return row && this.element.contains(row) ? row.querySelector(".pick-row__act") : null
   }
 
   key(event) {
@@ -79,6 +105,7 @@ export default class extends Controller {
 
     const items = this.items
     const cursor = this.cursor
+    if (/^(Arrow|Enter| |z|Z|Escape|Backspace|x|X|[1-9])/.test(event.key)) this.keyed()
     switch (event.key) {
       case "ArrowDown": case "ArrowUp": case "ArrowLeft": case "ArrowRight": {
         if (!items.length) return
@@ -109,6 +136,11 @@ export default class extends Controller {
           this.choose(item)
         }
     }
+  }
+
+  keyed() {
+    keyed = true
+    this.element.classList.add("is-keyed")
   }
 
   choose(item) {

@@ -41,7 +41,7 @@
 }
 
 /* Parallelograms and cut corners: the two shapes of the stage. */
-.button, input[type=submit], button:not(.link-button):not(.dialogue__more):not(.dialogue__close), .menu__item, .pin {
+.button, input[type=submit], button:not(.link-button):not(.dialogue__more):not(.dialogue__close):not(.pick-row__act), .pin {
   clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
   padding-left: calc(12px + var(--slant) / 2); padding-right: calc(12px + var(--slant));
 }
@@ -132,21 +132,20 @@ a:hover { text-decoration-thickness: 2px; text-decoration-color: var(--accent); 
  * Controls: grey parallelograms that move when pressed.
  * ------------------------------------------------------------------------- */
 
-.button, input[type=submit], button, .menu__item, .pin {
+.button, input[type=submit], button, .pin {
   transition: background-color var(--quick), color var(--quick), translate var(--quick) var(--snap), scale var(--quick);
 }
-.button:hover, input[type=submit]:hover, button:not(:disabled):hover, a.menu__item:hover { translate: 2px 0; }
-.button:active, input[type=submit]:active, button:not(:disabled):active, .menu__item:active { scale: .96; }
+.button:hover, input[type=submit]:hover, button:not(:disabled):hover { translate: 2px 0; }
+.button:active, input[type=submit]:active, button:not(:disabled):active { scale: .96; }
 .button--quiet, .button--danger { background: var(--wash); border-color: var(--wash); }
 .button--quiet:hover, .button--danger:hover { background: var(--control-fill-hover); border-color: var(--control-fill-hover); }
 .button.play, input[type=submit].play { font-style: italic; font-weight: 800; }
 .link-button, .link-button:hover { translate: none; scale: none; }
 
 /* Unavailable things are hatched, not just greyed. */
-button:disabled, input[type=submit]:disabled, .menu__item:disabled, .menu__item[aria-disabled="true"] {
+button:disabled:not(.pick-row__act), input[type=submit]:disabled {
   background: repeating-linear-gradient(-45deg, var(--control-fill) 0 4px, var(--paper) 4px 9px); border-color: transparent;
 }
-.menu__item[aria-disabled="true"].is-cursor { background: repeating-linear-gradient(-45deg, var(--control-fill) 0 5px, var(--paper) 5px 10px); border-style: solid; border-color: transparent; }
 
 /* Forms: a hard shadow says where you're typing. */
 input, select, textarea { border-width: 2px; transition: box-shadow var(--quick), translate var(--quick); }
@@ -177,25 +176,23 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 .portrait__initial { color: var(--plate-ink, var(--paper)); }
 
 /* ---------------------------------------------------------------------------
- * Menus: the game's voice. Items slide in one after another; the cursor
- * is a red slab thrown forward over a black shadow.
+ * Menus: the game's voice. A command menu is a pick table (below, "A choice as a table"): its rows slide in
+ * one after another, and the cursor (menu_controller) is the red row with a black edge.
  * ------------------------------------------------------------------------- */
 
-.menu__item { border: 0; background: var(--control-fill); padding-top: 8px; padding-bottom: 8px; }
-.menu__item.is-cursor { background: var(--ink); color: var(--paper); translate: 6px 0; }
-.play .menu__item, .menu__item--accent {
-  background: var(--paper); color: var(--ink); font-style: italic; font-weight: 800; font-size: 16px;
-  box-shadow: inset 0 -3px 0 var(--signal), inset 3px 0 0 var(--signal);
-}
-.play .menu__item { animation: menu-in .3s var(--snap) both; animation-delay: calc(var(--i, 0) * 40ms); }
+.pick-table.play .pick-row { animation: menu-in .3s var(--snap) both; animation-delay: calc(var(--i, 0) * 40ms); }
 @keyframes menu-in { from { opacity: 0; translate: -28px 0; } }
-/* The cursor: thrown forward, with a black edge where it left from. */
-.play .menu__item.is-cursor, .play a.menu__item:hover, .play button.menu__item:hover:not(:disabled) {
-  background: var(--signal); color: var(--paper); box-shadow: inset calc(var(--slant) + 6px) 0 0 var(--ink); translate: 8px 0;
+.pick-row:has(.is-cursor) { background: var(--control-fill); }
+.pick-table.play .pick-row:has(.is-cursor) { background: var(--signal); color: var(--paper); }
+.pick-table.play .pick-row:has(.is-cursor) td { box-shadow: inset 0 0 0 2px var(--ink); }
+.pick-row:has(.is-cursor) :is(.pick-row__act, .pick-row__note, .pick-row__cost) { color: inherit; }
+/* A command you can't use stays under the cursor, hatched, and the help line says why. */
+.pick-row__act[aria-disabled="true"] { color: var(--grey); cursor: not-allowed; }
+.pick-table.play .pick-row:has(.pick-row__act[aria-disabled="true"]):is(:hover, :has(.is-cursor)) {
+  background: repeating-linear-gradient(-45deg, var(--control-fill) 0 5px, var(--paper) 5px 10px); color: var(--grey);
 }
-.menu__item--accent { background: var(--signal); color: var(--paper); box-shadow: inset calc(var(--slant) + 6px) 0 0 var(--ink); }
-.play .menu__item[aria-disabled="true"], .play .menu__item:disabled { box-shadow: none; font-style: italic; }
-.menu__cost { font-style: normal; }
+.pick-table.play .pick-row:has(.pick-row__act[aria-disabled="true"]):is(:hover, :has(.is-cursor)) :is(.pick-row__act, .pick-row__cost) { color: var(--grey); }
+.pick-table.play .pick-row:has(.pick-row__act[aria-disabled="true"]):has(.is-cursor) td { box-shadow: inset 0 0 0 2px var(--grey); }
 
 .menu-help { border-top: 3px solid var(--ink); font-weight: 500; }
 
@@ -332,10 +329,9 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 .bar .bar__fill--ok { background: var(--green); }
 .bar .bar__fill--warn { background: var(--sun-yellow); }
 .bar .bar__fill--danger { background: var(--signal); }
-.roster__row:has(.bar__fill--danger) [data-hp], .command-panel__vitals .is-low { animation: danger 1s steps(2, jump-none) infinite; }
+.roster__row:has(.bar__fill--danger) [data-hp] { animation: danger 1s steps(2, jump-none) infinite; }
 @keyframes danger { 50% { color: var(--ink); } }
 .roster__ready.is-ready { background: var(--green); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
-.command-panel__vitals strong { font-style: italic; font-weight: 900; }
 .countdown { font-style: italic; font-weight: 900; }
 .countdown.is-urgent { background: var(--signal); animation: danger-bg .5s steps(2, jump-none) infinite;
   clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%); padding-right: 14px; }
@@ -397,7 +393,7 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
   clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); animation: slash-in .3s var(--snap) both; }
 .encounter-call h3 { font: var(--display); font-size: 28px; color: var(--paper); }
 .encounter-call .muted, .encounter-call label { color: #bdbdbd; }
-.encounter-call .menu__item:not(.menu__item--accent) { background: var(--paper); color: var(--ink); }
+.encounter-call .button--quiet { background: var(--paper); border-color: var(--paper); color: var(--ink); }
 .floorplan__name { font-style: italic; }
 .skyline__sign { font-style: italic; font-weight: 900; }
 
@@ -716,7 +712,9 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
   display: inline; width: auto; min-height: 0; margin: 0; padding: 10px 0; border: 0; background: transparent; box-shadow: none;
   color: var(--ink); font: 800 16px/24px var(--font); font-style: italic; text-align: left; cursor: pointer;
 }
-.pick-row__act:hover, .pick-row__act:active { translate: none; scale: none; background: transparent; }
+.pick-row__act:hover, .pick-row__act:active { translate: none; scale: none; background: transparent; text-decoration: none; }
+a.pick-row__act { text-decoration: none; }
+.join__characters .pick-row__who { min-width: 0; padding-right: 0; }
 .pick-row__act:disabled { color: var(--grey); font-style: italic; cursor: not-allowed; }
 .pick-row__act:focus-visible { outline: none; }
 .pick-row__note { display: block; margin-top: -4px; padding-bottom: 6px; font-size: 13px; color: var(--grey); }
@@ -860,7 +858,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .battle--controller .battle__controls { display: none; }
 .battle--controller .battle__lower { margin-top: 12px; }
 .battle--controller .battle__lower > :first-child { grid-column: 1 / -1; }
-.battle--controller .menu__item { min-height: 52px; font-size: 20px; }
+.battle--controller .pick-table td { height: 56px; }
+.battle--controller .pick-row__act { font-size: 22px; }
 .coop-links { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 16px; }
 .vitals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; margin: 4px 0 0; }
 .vitals .bar { flex: 1 1 100%; order: 3; }
@@ -869,10 +868,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .vitals .label + strong ~ .label { margin-left: 10px; }
 .coop-setup__steps { padding-left: 20px; display: grid; gap: 10px; }
 
-/* A player on auto: the toggle under their commands lights up. */
+/* A player on auto: the Auto row's state is yellow, and so is the toggle while they wait on the round. */
+.auto-row.is-on .pick-row__cost { color: var(--ink); font-weight: 800; background: var(--sun-yellow); }
 .auto-toggle-form { margin: 12px 0 0; }
 .auto-toggle { font-size: 14px; }
-.command-panel__extras { margin: 8px 0 0; font-size: 14px; }
 .auto-toggle.is-on { padding: 4px calc(12px + var(--slant)) 4px 10px; background: var(--sun-yellow); color: var(--ink); text-decoration: none; font-weight: 800;
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
 
@@ -953,8 +952,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
  * ------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .page, .play .menu__item, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
-  .unit.is-targeted .sprite::after, .roster__row [data-hp], .command-panel__vitals .is-low, .countdown.is-urgent,
+  .page, .pick-table.play .pick-row, .command-panel__head h2, .flash, .form-errors, .unit.is-active::after,
+  .unit.is-targeted .sprite::after, .roster__row [data-hp], .countdown.is-urgent,
   .command-panel > .refs li, .chat-log li, .map-party__flag, .encounter-call, .log-drawer__tab, .dialogue--battle, .recap[open], .choice:not([hidden]), .reward-card { animation: none !important; }
   * { transition-duration: 0s !important; }
 }
@@ -1011,7 +1010,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .party-strip__hp { font-weight: 800; font-variant-numeric: tabular-nums; }
 .party-strip__member .bar { grid-column: 1 / -1; }
 .party-strip__member.is-ko { color: var(--grey); }
-.menu__item.is-futile { color: var(--grey); border-color: var(--rule); }
+.pick-row.is-futile .pick-row__act { color: var(--grey); }
 
 /* ---------------------------------------------------------------------------
  * On a phone (docs/DESIGN.md, "Phones"): the log's tab moves to the top
@@ -1039,11 +1038,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
     padding: 8px 16px 12px; background: var(--paper); border-top: 3px solid var(--ink); box-shadow: 0 -6px 0 var(--accent);
   }
   .battle:not(.battle--controller):not(.battle--screen) .battle__dock .battle-ticker:not(:empty) { display: block; flex: none; margin-bottom: 4px; font-size: 13px; line-height: 18px; }
-  .table-ways .menu { grid-template-columns: 1fr; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .window { margin: 0; border-top: 0; padding-top: 0; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu { gap: 6px; margin: 6px 0 8px; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu__item { min-height: 48px; padding: 4px 12px; font-size: 16px; }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame .pick-table { margin: 6px 0 8px; }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame .pick-table td { height: 48px; }
   .battle:not(.battle--controller):not(.battle--screen) .command-frame .link-button { min-height: 44px; display: inline-flex; align-items: center; }
   /* Results, and saying what you try, need the room: the panel lets go of the bottom edge. */
   .battle:has(.command-panel--over, .try-form) { padding-bottom: 0 !important; }
@@ -1090,7 +1088,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
     position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow-y: auto;
   }
   .battle:not(.battle--controller):not(.battle--screen) .battle-ticker:not(:empty) { display: block; font-size: 13px; line-height: 18px; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame .menu__item { min-height: 44px; }
+  .battle:not(.battle--controller):not(.battle--screen) .command-frame .pick-table td { height: 44px; }
   .battlefield { --sprite: 64px; --sprite-min: 56px; --sprite-party: 44px; min-height: 0; padding: 10px; gap: 6px; }
   .unit--enemy { --sprite: clamp(56px, min(calc(100cqi / min(var(--count, 1), 4) - 24px), 26vh), 120px); }
   .unit__label { font-size: 14px; }
@@ -1236,8 +1234,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table-ways--straight { padding-top: 8px; }
 .table-ways__straight { margin: 0 0 4px; font-size: 15px; font-weight: 800; }
 .table-ways--straight .table-ways__group { font-size: 13px; margin: 6px 0 0; }
-.table-ways--straight .menu { grid-template-columns: repeat(auto-fill, minmax(140px, max-content)); margin: 4px 0 8px; }
-.table-ways--straight .menu__item { font-size: 13px; line-height: 18px; padding: 4px 10px; font-style: normal; }
 
 /* The GM's vote: each option a row, with who picked it and Settle beside it. */
 
@@ -1245,9 +1241,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .dialogue.is-narration { min-height: 0; }
 .dialogue.is-narration .dialogue__text { min-height: 88px; }
 
-/* A list read top to bottom, one to a row, with the detail under each (the map's ways from a place). */
-.menu--stack { grid-template-columns: 1fr; }
-.menu--stack .menu__item { flex-direction: column; align-items: flex-start; gap: 0; }
 
 .location-gm { margin-top: 24px; }
 
@@ -1282,8 +1275,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* A mode across the map (night on every place) is said once, under it. */
 .map-canvas__modes { margin: 6px 0 0; line-height: 18px; font-size: 13px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: .06em; color: var(--signal); }
 
-/* Long labels get wide buttons: a thing to do here reads on one or two lines, not four. */
-.menu--wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 
 /* What you can do now (docs/DESIGN.md): a player's moves follow the table's state (#table_now data-state).
    A battle takes them all (the Now line has the way in); an encounter or a vote leaves only the vote and talk. */
@@ -1430,11 +1421,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .unit.is-reached .sprite { outline: 3px dashed var(--signal); outline-offset: 6px; }
 .unit--party.is-reached .sprite { outline-color: var(--ink); }
 .unit.is-targeted.is-reached .sprite { outline: none; } /* the reticle wins */
-.menu__item.is-weak { box-shadow: inset 0 -3px 0 var(--sun-yellow); }
-.menu__cost--edge { background: var(--sun-yellow); color: var(--ink); font-weight: 900; }
-
-.menu__note { display: block; flex-basis: 100%; font-size: 12px; line-height: 16px; font-style: normal; font-weight: 500; color: var(--grey); }
-.menu__item:has(.menu__note) { flex-wrap: wrap; }
+/* An edge on the target (Weak!): a yellow mark in the cost column, kept under the cursor. */
+.pick-table.play .pick-row .pick-row__cost--edge { background: var(--sun-yellow); color: var(--ink); font-weight: 900; }
 
 .clock-dial i.is-next { border-style: dashed; }
 
@@ -1461,8 +1449,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .map-party { transition: transform var(--t-change) var(--snap); }
 
 /* Pressable things press: a lift on hover (already), a push on press, a red slab of focus. */
-.button:not(:disabled):active, .menu__item:not([aria-disabled="true"]):active, .pin:active, .choice__pick:active { translate: 0 2px; box-shadow: none; }
-.button:focus-visible, .menu__item:focus-visible:not(.is-cursor), .pin:focus-visible, .choice__pick:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+.button:not(:disabled):active, .pin:active, .choice__pick:active { translate: 0 2px; box-shadow: none; }
+.button:focus-visible, .pin:focus-visible, .choice__pick:focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
 
 /* The vote: who picked, as chips that pop on; its share so far, as a bar. */
 .choice__chips { display: inline-flex; gap: 4px; vertical-align: middle; }

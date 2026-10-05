@@ -22,12 +22,12 @@
       <%= f.label :input_seconds, "Input timer" %>
       <%= f.select :input_seconds, BattleRecord::INPUT_TIMERS.map { |s| [ s ? "#{s} seconds" : "None", s ] }, selected: BattleRecord::DEFAULT_TIMER %>
     </div>
-    <div class="menu menu--row">
-      <%= f.button "Fight", class: "menu__item menu__item--accent" %>
+    <div class="actions actions--tight">
+      <%= f.button "Fight", class: "button play" %>
     </div>
   <% end %>
-  <div class="menu menu--row">
+  <div class="actions actions--tight">
     <%= button_to "Wave it off", campaign_encounter_path(campaign), method: :delete, params: ({ return_to: return_to } if local_assigns[:return_to]),
-                  class: "menu__item", form: { data: { turbo_confirm: "Wave off the encounter? The table will see that you did." } } %>
+                  class: "button button--quiet", form: { data: { turbo_confirm: "Wave off the encounter? The table will see that you did." } } %>
   </div>
 </section>

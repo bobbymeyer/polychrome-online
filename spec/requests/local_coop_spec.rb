@@ -123,7 +123,7 @@ RSpec.describe "Local co-op", type: :request do
     expect(response.body).to include("battle--screen", "dialogue--battle")
     get battle_panel_path(battle)
     expect(response.body).to include("screen-status", "Round 1", "data-countdown-deadline-value", "Waiting for Bartz and Lenna")
-    expect(response.body).not_to include("menu__item", "Take a seat")
+    expect(response.body).not_to include("pick-row__act", "Take a seat")
 
     battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
     get battle_panel_path(battle)

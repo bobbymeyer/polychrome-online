@@ -15,18 +15,26 @@
       <% if paths.empty? %>
         <p class="empty">None yet. Select <%= here.name %> and connect it.</p>
       <% else %>
-        <div class="menu menu--stack play">
+        <%# One road a row (pick_table_controller): the row goes; what waits on it in the cost column. %>
+        <table class="pick-table play" data-controller="pick-table">
+          <tbody>
           <% paths.each do |edge| %>
             <% there = edge.other_end(here) %>
-            <% risk = edge.encounter_table ? "#{edge.state.capitalize} road · #{edge.encounter_table.name}" : "#{edge.state.capitalize} road · safe" %>
-            <% label = safe_join([ "To #{there.name}", tag.span(edge.blocked? ? edge.state : risk, class: "menu__cost") ], " ") %>
-            <% if edge.blocked? %>
-              <button class="menu__item" disabled><%= label %></button>
-            <% else %>
-              <%= button_to label, campaign_ways_path(@campaign), params: { way: @campaign.way_along(edge), go: 1, return_to: "map" }, class: "menu__item" %>
-            <% end %>
+            <tr class="pick-row">
+              <td class="pick-row__what">
+                <% if edge.blocked? %>
+                  <button type="button" class="pick-row__act" disabled>To <%= there.name %></button>
+                <% else %>
+                  <%= button_to "To #{there.name}", campaign_ways_path(@campaign), params: { way: @campaign.way_along(edge), go: 1, return_to: "map" }, class: "pick-row__act" %>
+                <% end %>
+                <%# What waits on the road, under its name; the road's state in the cost column. %>
+                <span class="pick-row__note"><%= edge.encounter_table ? edge.encounter_table.name : "Safe" %></span>
+              </td>
+              <td class="pick-row__cost"><%= edge.state %> road</td>
+            </tr>
           <% end %>
-        </div>
+          </tbody>
+        </table>
         <p class="hint">A path with an encounter table meets something <%= Pointcrawl::Encounters::CHANCE["open"] %>% of the time if it's open, every time if it's dangerous. A path with no table is safe: give it one to make it bite.</p>
       <% end %>
     <% else %>

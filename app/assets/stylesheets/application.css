@@ -220,26 +220,8 @@ form.inline { display: inline; }
 .actions form { margin: 0; }
 .book-header .actions { margin: 0; }
 
-.menu { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--unit); margin: var(--unit) 0 16px; }
-.menu form { margin: 0; }
-.menu--row { grid-template-columns: repeat(auto-fill, minmax(128px, max-content)); }
-.menu__item {
-  display: flex; justify-content: space-between; align-items: baseline; gap: var(--unit); width: 100%;
-  font: 600 15px/24px var(--font); color: var(--ink); text-align: left; text-decoration: none;
-  padding: 6px 12px; background: var(--paper); border: 2px solid var(--control-fill); cursor: pointer;
-}
-a.menu__item:hover, button.menu__item:hover:not(:disabled) { background: var(--control-fill); border-color: var(--control-fill); color: var(--ink); text-decoration: none; }
-/* Game moves: battle commands, targets, travel, exploring, Fight. */
-.play .menu__item, .menu__item--accent { color: var(--signal); border-color: var(--signal); }
-.play a.menu__item:hover, .play button.menu__item:hover:not(:disabled) { background: var(--signal); border-color: var(--signal); color: var(--paper); }
-button.menu__item:hover:not(:disabled) .menu__cost { color: inherit; }
-.menu__item:disabled { color: var(--grey); border-color: var(--rule); background: var(--paper); cursor: not-allowed; }
-.menu__item.is-current { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.actions--tight { gap: 8px; margin: 8px 0 12px; }
 .button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
-.menu__item--accent, button.menu__item--accent:hover:not(:disabled) { background: var(--signal); border-color: var(--signal); color: var(--paper); }
-button.menu__item--accent:hover:not(:disabled) { background: var(--signal-dark); border-color: var(--signal-dark); }
-.menu__cost { color: var(--grey); font-weight: 400; font-size: 13px; font-variant-numeric: tabular-nums; }
-.menu__item--accent .menu__cost, .menu__item.is-current .menu__cost { color: inherit; }
 
 .pin { font-size: 12px; line-height: 16px; padding: 4px 10px; background: var(--paper); border-color: var(--control-fill); }
 .pin.is-pinned { background: var(--ink); border-color: var(--ink); color: var(--paper); }
@@ -468,7 +450,7 @@ details[open] > summary { margin-bottom: 16px; }
 .roster__hp { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 4px; }
 .roster__hp [data-hp] { font-size: 20px; font-weight: 700; }
 /* Low HP (a quarter or less) turns amber, as in the games. */
-.roster__row:has(.bar__fill--danger) [data-hp], .command-panel__vitals .is-low { color: var(--caution-ink); font-weight: 800; }
+.roster__row:has(.bar__fill--danger) [data-hp] { color: var(--caution-ink); font-weight: 800; }
 .bar .bar__fill--danger { background: var(--caution); }
 .roster .badges { justify-content: flex-start; }
 .bar { flex-basis: 100%; height: 4px; background: var(--rule); margin-top: 4px; position: relative; }
@@ -508,22 +490,14 @@ details[open] > summary { margin-bottom: 16px; }
   padding: 4px 12px; background: var(--ink); color: var(--paper); font-weight: 700; white-space: nowrap;
 }
 
-/* Play (docs/DESIGN.md): the cursor, the help line, targeting, "you". */
-.menu__item.is-cursor { background: var(--control-fill); border-color: var(--control-fill); }
-.play .menu__item.is-cursor { background: var(--signal); border-color: var(--signal); color: var(--paper); }
-.menu__item.is-cursor .menu__cost { color: inherit; }
-.menu__item.is-cursor:focus-visible { outline: none; }
-.menu__item[aria-disabled="true"] { color: var(--grey); border-color: var(--rule); background: var(--paper); cursor: not-allowed; }
-.menu__item[aria-disabled="true"].is-cursor { border-color: var(--grey); border-style: dashed; background: var(--wash); color: var(--grey); }
+/* Play (docs/DESIGN.md): the cursor, the help line, targeting, "you". The cursor is a pick table's row (stage.css). */
 .menu-help { min-height: 48px; margin: 0 0 16px; padding-top: 8px; border-top: 1px solid var(--ink); font-size: 14px; line-height: 20px; }
 .menu-help.is-flashing { animation: menu-help-flash .4s steps(2, jump-none) 2; }
 @keyframes menu-help-flash { 50% { background: var(--ink); color: var(--paper); } }
-.keys { margin: 16px 0 0; font-size: 11px; line-height: 16px; color: var(--grey); }
-@media (hover: none) { .keys { display: none; } }
-.command-panel__vitals { display: inline-flex; align-items: baseline; gap: 4px; font-variant-numeric: tabular-nums; }
-.command-panel__vitals strong { font-size: 20px; }
-.command-panel__vitals .label + strong { margin-left: 2px; }
-.command-panel__vitals .muted + .label { margin-left: 12px; }
+/* The keys, once they've been used (menu_controller); never on a phone. */
+.keys { display: none; margin: 16px 0 0; font-size: 11px; line-height: 16px; color: var(--grey); }
+.is-keyed .keys { display: block; }
+@media (hover: none) { .keys { display: none !important; } }
 .command-panel__prompt { font-size: 18px; }
 
 .unit.is-targetable, .roster__row.is-targetable { cursor: pointer; }
@@ -538,7 +512,7 @@ details[open] > summary { margin-bottom: 16px; }
 
 /* Fingers need room. */
 @media (pointer: coarse) {
-  .menu__item { min-height: 48px; align-items: center; }
+  .pick-table td { height: 48px; }
   .button, button, input[type=submit] { min-height: 44px; }
 }
 

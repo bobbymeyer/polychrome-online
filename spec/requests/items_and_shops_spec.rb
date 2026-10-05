@@ -23,7 +23,7 @@ RSpec.describe "Items and shops", type: :request do
 
       post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
       get battle_panel_path(battle)
-      expect(response.body).to include(">\n        Item <span class=\"menu__cost\">×2</span>")
+      expect(response.body).to include(">Item</a>", "<td class=\"pick-row__cost\">×2</td>")
       get battle_panel_path(battle, items: 1)
       expect(response.body).to include("Potion", "Single ally · Restore HP, power 30 · 2 left")
       get battle_panel_path(battle, item: "potion")

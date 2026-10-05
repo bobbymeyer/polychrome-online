@@ -1,8 +1,15 @@
 <h2>Take a seat</h2>
 <p class="hint">You can sit as your own characters, or as the GM if this is your campaign.</p>
-<div class="menu" data-controller="menu" data-menu-primary-value="true" data-menu-autofocus-value="true">
-  <%= button_to "Game Master", battle_seat_path(@battle), params: { seat: "gm" }, class: "menu__item" if battle_gm? %>
-  <% @battle.party.each do |unit| %>
-    <%= button_to unit["name"], battle_seat_path(@battle), params: { seat: unit["id"] }, class: "menu__item" if may_sit?(unit["id"]) %>
-  <% end %>
+<div data-controller="menu" data-menu-primary-value="true" data-menu-autofocus-value="true">
+  <table class="pick-table">
+    <tbody>
+    <% if battle_gm? %>
+      <tr class="pick-row"><td class="pick-row__what"><%= button_to "Game Master", battle_seat_path(@battle), params: { seat: "gm" }, class: "pick-row__act" %></td></tr>
+    <% end %>
+    <% @battle.party.each do |unit| %>
+      <% next unless may_sit?(unit["id"]) %>
+      <tr class="pick-row"><td class="pick-row__what"><%= button_to unit["name"], battle_seat_path(@battle), params: { seat: unit["id"] }, class: "pick-row__act" %></td></tr>
+    <% end %>
+    </tbody>
+  </table>
 </div>
