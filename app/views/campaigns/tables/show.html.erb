@@ -92,13 +92,14 @@
       <section class="table-controls" aria-label="Controls">
         <%= render "campaigns/tables/now", campaign: @campaign, gm: @seat.gm? %>
         <% if @seat.gm? && view != "screen" %>
-          <%# The GM's tools, in the place of a player's moves: what needs an answer first, then the tabs. %>
+          <%# What needs the GM's answer first, then the rest of their tools behind "Tools" (what they call is in the row). %>
           <%= render "campaigns/tables/gm/tools", campaign: @campaign, view: view %>
         <% end %>
         <%= tag.section(class: "your-moves", aria: { label: "Your moves" }) do %>
           <% if @seat.character? %><p class="your-moves__tag">Your moves</p><% end %>
           <%= render "choices/panel", choice: @campaign.open_choice %>
           <%= render "campaigns/tables/ways", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
+          <%= render "campaigns/tables/called", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
           <%= render "campaigns/field_uses/ability", character: @seat.character if @seat.character? %>
           <% if @seat.seated? && !view %>
             <% if @seat.gm? %>

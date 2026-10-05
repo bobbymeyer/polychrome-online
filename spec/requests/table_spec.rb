@@ -392,14 +392,15 @@ RSpec.describe "The table", type: :request do
       expect(response.body).to include("Everyone hears it, unless you whisper")
     end
 
-    it "gives the GM the moves for what's happening, in the Now line, and folds the tools while the table is busy" do
+    it "gives the GM the moves for what's happening, in the Now line, with the rest of the tools behind Tools" do
       sit("gm")
       get campaign_table_path(campaign)
       page = Nokogiri::HTML(response.body)
-      expect(page.at("#table_now .table-now__do").text.squish).to include("Call a check", "Play a scene")
-      expect(page.at("#table_now [data-tool-link-key-value=check]")).to be_present
-      expect(page.at(".gm-tools[data-action*='gm-tools:open@window']")).to be_present
-      expect(page.at(".gm-tools .gm-tools__reveal").text).to eq("Tools") # shown only while the table is busy (stage.css)
+      expect(page.css("#table_now .controls-call button").map(&:text)).to eq([ "Talk", "Travel", "Things to do here", "Scene", "Check" ])
+      expect(page.at("#table_now .table-now__do").text).not_to include("Call a check", "Play a scene") # no second way in
+      expect(page.css(".gm-tools [role=tab]").map { |t| t.text.strip }).to eq(%w[Clocks Time Secrets Moves More]) # scenes and checks are called, not tabbed
+      expect(page.at(".gm-tools .gm-tools__reveal").text).to eq("Tools") # folded until pressed (stage.css)
+      expect(page.at("#table_called").key?("hidden")).to be(true) # nothing called
       %w[party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs
       expect(page.at(".table__stage #stage #table_map")["hidden"]).not_to be_nil # the map, until the GM shows it
       expect(page.at("#drawer_knows #party_knows")).to be_present
@@ -427,7 +428,13 @@ RSpec.describe "The table", type: :request do
     it "are called by the GM: each character rolls from the campaign's RNG, and the table sees it land" do
       sit("gm")
       get campaign_table_path(campaign)
-      expect(response.body).to include("gm_tab_check", "Who tries", "Everyone standing", 'data-controller="check-all"')
+      expect(response.body).not_to include("Who tries") # until Check is called
+      campaign.call_controls!("check")
+      get campaign_table_path(campaign)
+      called = Nokogiri::HTML(response.body).at("#table_called")
+      expect(called.key?("hidden")).to be(false)
+      expect(called.text).to include("Call a check", "Who tries", "Everyone standing")
+      expect(called.to_html).to include('data-controller="check-all"')
 
       rng = campaign.rng
       post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id, lenna.id ], stat: "agi", difficulty: "hard", reason: "scale the wall" } }

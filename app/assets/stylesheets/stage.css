@@ -1248,15 +1248,16 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table:has(#table_party .is-low) .drawers__tab--party::after { content: " · hurt"; color: var(--caution-ink); }
 .table:has(#table_party li.is-ko) .drawers__tab--party::after { content: " · someone's down"; color: var(--signal); }
 
-/* The GM's table, what to do now (docs/DESIGN.md): the Now line has the moves for this state; while the
-   table is busy (a vote, an encounter, a battle) the tools fold behind "Tools", and what needs an answer
+/* The GM's table, what to do now (docs/DESIGN.md): the Now line has the controls row for what the GM calls,
+   and the moves for a busy state; the rest of the tools wait behind "Tools", and what needs an answer
    (everyone down, a field ability asked for) stays out in front. */
 .table-now__do { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
 .table-now__do form { margin: 0; }
-.gm-tools__reveal { display: none; margin: 0 0 8px; }
-.table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools__reveal { display: inline-flex; }
-.table[data-seat="gm"]:has(#table_now:not([data-state="free"])) .gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
+.gm-tools__reveal { margin: 0 0 8px; }
+.gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
 .gm-tools__reveal[aria-expanded="true"] { background: var(--ink); color: var(--paper); }
+#table_called[hidden] { display: none; }
+.table:has(#table_now[data-state="scene"]) #table_called { display: none; } /* the scene plays; the director's hand is on the Now line */
 
 /* ---------------------------------------------------------------------------
  * Motion with meaning (docs/DESIGN.md): motion only ever says one of four

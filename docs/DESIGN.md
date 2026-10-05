@@ -339,12 +339,13 @@ A player's table offers what they can do at this moment, and nothing else up fro
 
 The GM's table works the same way:
 
-- **The Now line is the GM's prompt**, with the moves for what's happening: in free play "Ask
-  where next", "Call a check" and "Play a scene" (which open their tool); with a vote, "Settle it ↓";
-  with an encounter, "Fight or wave it off ↓" (to its panel, where the prelude can still be edited).
-- **The tools fold while the table is busy.** During a vote, an encounter or a battle the tabs
-  wait behind "Tools"; what needs an answer now (everyone down, a field ability asked for) stays
-  out in front. Granting archetypes, the music and the shared screen are under one "More".
+- **The Now line is the GM's prompt**, with the moves for what's happening: in free play the
+  controls row (Talk · Travel · Things to do here · Scene · Check: what kind of moment this is,
+  and what comes to the table for it); with a vote, "Settle it ↓"; with an encounter, "Fight or
+  wave it off ↓" (to its panel, where the prelude can still be edited).
+- **The rest of the tools wait behind "Tools"**, always: Clocks, Time, Secrets, Moves and More
+  (grants, music, the shared screen). What needs an answer now (everyone down, a field ability
+  asked for) stays out in front.
 - **What the GM looks up is in tabs** under the tools: Party · What they know.
 
 The shared screen keeps its panels: it's watched, not played. The stage-only view keeps nothing but
@@ -468,14 +469,16 @@ under the frame.
   ability waits; while a scene is on the stage, a player's ways and ability wait too, and the GM
   has the director's buttons. Travel is the Controls' (Where next?). The battle page has no
   campaign chrome but its name, and talk is a press away.
-- **The GM's tools are the GM's moves**, in the Controls under the stage where a player's moves
-  would be: tabs for Scenes, Check, Clocks, Time, Secrets and More (grants, music, one shared
-  screen with its QR code to hold up), one open at a time, under a dashed tag: "GM tools · only
-  you see these".
-  The open tab is ink, the rest grey controls; a count shows unplayed scenes and running clocks.
-  The tab the GM had open stays open, per campaign, in this browser. What needs an answer now
-  (everyone down, a field ability asked for) sits above the tabs. On a phone as the GM's remote,
-  the same tools come after the play.
+- **What the GM calls is the GM's moves.** The controls row on the Now line is the one switch:
+  Talk, Travel and Things to do here put the ways under the stage for everyone; Scene puts the
+  scene list there and Check the check form, for the GM, in the same place a player's moves go,
+  so there is one spot to look at whoever you are. There is no tab strip for these. What's left
+  (Clocks, Time, Secrets, Moves and More: grants, music, one shared screen with its QR code to
+  hold up) waits behind one "Tools" button under a dashed tag, "GM tools · only you see these",
+  one tab at a time; the open tab is ink, a count shows running clocks, and the tab the GM had
+  open stays open, per campaign, in this browser. What needs an answer now (everyone down, a
+  field ability asked for) sits in front of it. On a phone as the GM's remote, the same comes
+  after the play.
 - **One list of ways while the party votes.** With a Where next? open, the GM's vote has each
   option as a row, who picked it, and Settle beside it; under it the same places are a small row,
   "Or go straight there, without the vote" (going now ends the vote), not a second Where next?.
@@ -570,8 +573,11 @@ other way, the GM puts it to the table.
 ### Players steer
 
 The table's actions fit the moment the GM has called, and no others. The Now line has the
-controls: **Talk** (the floor: the dialogue, nothing to pick), **Travel**, and **Things to do
-here**; the one called is red and pressed, and one with nothing behind it is greyed. Talking,
+controls: **Talk** (the floor: the dialogue, nothing to pick), **Travel**, **Things to do
+here**, **Scene** and **Check**; the one called is red and pressed, and one with nothing behind
+it is greyed. Scene and Check are the GM's alone: the scene list or the check form comes to the
+table under the stage, where the ways would be, and players see nothing until a scene plays or
+a roll lands. Talking,
 neither the GM nor the players get a menu of ways. Calling Travel puts "Where next?" below for
 everyone: the open paths from where the party stands, a dungeon's door, or, inside, the ways on
 from the room they're in (a room the players haven't seen is only "An unexplored way"). Calling

@@ -34,7 +34,8 @@
       <%= gm ? "Beat #{beat.position + 1} of #{scene.beats.size}#{scene.auto? ? ', playing on' : ''}." : "Watch the stage." %>
     <% elsif gm %>
       <strong>The table is yours.</strong>
-      <%= { "travel" => "Travel: the ways on are below, for everyone.", "doing" => "Things to do here are below, for everyone." }[campaign.controls] %>
+      <%= { "travel" => "Travel: the ways on are below, for everyone.", "doing" => "Things to do here are below, for everyone.",
+            "scene" => "Scene: pick one below to put on the stage.", "check" => "Check: say who rolls what, below." }[campaign.controls] %>
     <% elsif campaign.travelling? %>
       <strong>Where next?</strong> Say where you'd go: it goes to a vote, and the GM settles it.
     <% elsif campaign.doing? %>
@@ -63,7 +64,8 @@
         <%= link_to "Settle it ↓", "#table_choice", class: "button play" %>
       <% else %>
         <%# The controls (Campaign::Controls): what kind of moment this is, so everyone gets the actions that fit.
-            Talk is the floor; Travel and Things to do here put the ways below, for the GM and the players alike. %>
+            Talk is the floor; Travel and Things to do here put the ways below, for the GM and the players alike;
+            Scene and Check put that tool below, for the GM. %>
         <% ways = campaign.ways_on %>
         <% offered = { "travel" => ways.any? { |way| !way.dig("move", "pastime") }, "doing" => ways.any? { |way| way.dig("move", "pastime") } } %>
         <div class="controls-call" role="group" aria-label="What's happening">
@@ -79,8 +81,6 @@
         <% else %>
           <%= button_to "Show the map", campaign_map_view_path(campaign), method: :patch, class: "button button--quiet", form: { class: "inline" } %>
         <% end %>
-        <%= tag.button "Call a check", type: "button", class: "button button--quiet", data: { controller: "tool-link", tool_link_key_value: "check", action: "tool-link#open" } %>
-        <%= tag.button "Play a scene", type: "button", class: "button button--quiet", data: { controller: "tool-link", tool_link_key_value: "scenes", action: "tool-link#open" } %>
         <%= render "campaigns/tables/here", campaign: campaign %>
       <% end %>
     </div>

@@ -1,8 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
 
-// The GM's tools at the table (campaigns/tables/gm/_tools): one tab at a
-// time, and the one you had open stays open, across reloads and the table's
-// own refreshes, for this campaign in this browser.
+// The rest of the GM's tools at the table (campaigns/tables/gm/_tools),
+// behind "Tools": one tab at a time, and the one you had open stays open,
+// across reloads and the table's own refreshes, for this campaign in this
+// browser.
 export default class extends Controller {
   static targets = ["tab", "panel"]
   static values = { campaign: Number }
@@ -35,18 +36,10 @@ export default class extends Controller {
     next.focus()
   }
 
-  // While the table is busy the tabs fold away (stage.css): "Tools" brings them back.
+  // The tabs wait behind "Tools" (stage.css): pressing it brings them out, and again puts them away.
   reveal(event) {
     const shown = this.element.classList.toggle("is-shown")
     event.currentTarget.setAttribute("aria-expanded", String(shown))
-  }
-
-  // From the Now line ("Call a check", "Play a scene"): that tool, open and in view.
-  open(event) {
-    this.show(event.detail.key)
-    this.store(this.current)
-    this.element.classList.add("is-shown")
-    this.element.scrollIntoView({ block: "start", behavior: "smooth" })
   }
 
   show(key) {

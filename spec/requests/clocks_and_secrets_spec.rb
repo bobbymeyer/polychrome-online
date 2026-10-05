@@ -71,6 +71,7 @@ RSpec.describe "Clocks and secrets", type: :request do
 
     it "lets a check the GM calls make something happen on a success, once, whoever made it" do
       post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      campaign.call_controls!("check") # the form comes to the table once Check is called
       get campaign_table_path(campaign)
       expect(response.body).to include("On a success")
       gil = campaign.gil

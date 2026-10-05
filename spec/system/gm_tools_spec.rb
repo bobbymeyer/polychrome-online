@@ -10,24 +10,27 @@ RSpec.describe "The GM's tools at the table", type: :system do
   let(:campaign) { create_campaign.tap { |c| c.update!(gm_id: gm.id) } }
   let!(:rook) { create_character(campaign, name: "Rook") }
 
-  it "shows one tool at a time, beside the play, and keeps the one the GM had open" do
+  it "keeps the rest of the tools behind Tools, one at a time, and keeps the one the GM had open" do
     campaign.clocks.create!(name: "The tide comes in", segments: 4)
     seat(gm, "gm")
 
     as(gm) do
       within(".table-controls .gm-tools") do
-        expect(page).to have_css("[role=tab][aria-selected=true]", text: "Scenes")
+        expect(page).to have_no_css("[role=tab]", visible: true) # folded
+        click_on "Tools"
+        expect(page).to have_css("[role=tab][aria-selected=true]", text: "Clocks")
         expect(page).to have_css("[role=tab]", text: /Clocks\s*1/) # one running
-        expect(page).to have_no_text("The tide comes in")
-        find("[role=tab]", text: "Clocks").click
         expect(page).to have_text("The tide comes in")
+        find("[role=tab]", text: "Time").click
+        expect(page).to have_no_text("The tide comes in")
+        expect(page).to have_button("A part of the day passes")
       end
 
       visit current_path
       within(".gm-tools") do
-        expect(page).to have_css("[role=tab][aria-selected=true]", text: "Clocks")
-        expect(page).to have_text("The tide comes in")
-        expect(page).to have_no_css("#gm_panel_scenes", visible: true)
+        click_on "Tools"
+        expect(page).to have_css("[role=tab][aria-selected=true]", text: "Time")
+        expect(page).to have_no_css("#gm_panel_clocks", visible: true)
       end
     end
   end
@@ -39,6 +42,7 @@ RSpec.describe "The GM's tools at the table", type: :system do
 
     as(gm) do
       within(".table-controls .gm-tools") do
+        click_on "Tools"
         find("[role=tab]", text: "Moves").click
         within("#gm_moves") do
           expect(page).to have_text("“Somebody's watching.”")
@@ -50,20 +54,21 @@ RSpec.describe "The GM's tools at the table", type: :system do
     end
   end
 
-  it "opens a tool from the Now line, and folds the tools away while the table is busy" do
+  it "calls a check or a scene from the Now line, and that tool comes to the table" do
     seat(gm, "gm")
     as(gm) do
-      within("#table_now") { click_on "Call a check" }
-      expect(page).to have_css("#gm_panel_check", visible: true, text: "Who tries")
+      expect(page).to have_no_css("#table_called", visible: true)
+      within("#table_now") { click_on "Check" }
+      expect(page).to have_css("#table_called", visible: true, text: "Who tries")
+      within("#table_now") { click_on "Scene" }
+      expect(page).to have_css("#table_called", visible: true, text: "No scenes yet")
+      expect(page).to have_no_text("Who tries")
 
       wait_for_streams
       Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
       expect(page).to have_css("#table_now[data-state=choice]")
       expect(page).to have_link("Settle it ↓")
-      visit current_path # a fresh look, as the GM would have it mid-vote
-      expect(page).to have_no_css(".gm-tools__tabs", visible: true)
-      click_on "Tools"
-      expect(page).to have_css(".gm-tools__tabs", visible: true)
+      expect(page).to have_no_css("#table_now .controls-call") # the vote comes first
     end
   end
 
