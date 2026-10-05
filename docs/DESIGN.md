@@ -31,6 +31,12 @@ deliberate divergence from much of what follows, and where the two disagree the 
 - **Menus.** Game menus (`.play`) are white slabs underlined in red. They slide in one after
   another when a panel opens. The cursor is a red slab thrown 8px forward with a black edge.
   Grey menus behave the same in grey and black.
+- **Choices are tables.** Where the table picks one thing from a list (a vote, the ways on, the
+  things to do here) the options are rows of a table, not slabs: one a row, 44px tall, a hairline
+  between them, columns lined up (what, who picked it, what it costs or does). The whole row is
+  the control: hover or focus fills it red (grey for a grey table), a click anywhere on it or
+  Enter picks it, Up and Down walk the rows. Rows are rectangles, a divergence from the slabs,
+  so the columns read.
 - **Unavailable** things are hatched, not just greyed.
 - **Battle.** The acting unit stands on a red slash. A target gets a red reticle that turns.
   Damage numbers are heavy italic, white with a black outline and shadow, landing big and
@@ -581,9 +587,10 @@ a roll lands. Talking,
 neither the GM nor the players get a menu of ways. Calling Travel puts "Where next?" below for
 everyone: the open paths from where the party stands, a dungeon's door, or, inside, the ways on
 from the room they're in (a room the players haven't seen is only "An unexplored way"). Calling
-Things to do here puts the day's pastimes below instead, under "Day in Tule". A player's
-"suggest" puts the question to a vote with their pick in it; the GM settling the vote takes the
-party there. The GM can also just go, from the same panel, or ask wider. A battle, an encounter,
+Things to do here puts the day's pastimes below instead, under "Day in Tule". The ways, like
+the vote's options, are rows of a table, the whole row the control (`pick_table_controller`). A
+player's row suggests it: the question goes to a vote with their pick in it; the GM settling the
+vote takes the party there. The GM can also just go, from the same panel, or ask wider. A battle, an encounter,
 a scene or an open choice still comes first, whatever is called; the call stays until the GM
 changes it, so a dungeon is walked room by room without re-pressing Travel. Settling the vote takes the party there. The
 GM can also just go, from the same panel, and calls a waiting encounter there too, so a session

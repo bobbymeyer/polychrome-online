@@ -41,27 +41,29 @@
     <% else %>
       <h2>Where next?</h2>
     <% end %>
-    <%# Things to do here have long names ("Wait for the train that isn't there (until day, tomorrow)"): wider. %>
-    <div class="menu play<%= " menu--wide" if campaign.doing? %>">
+    <%# One way a row (pick_table_controller): the whole row presses its button. The GM's goes; a player's suggests. %>
+    <table class="pick-table play" data-controller="pick-table">
+      <tbody>
       <% ways.each do |way| %>
-        <% if gm %>
-          <%# Going straight there is one click: a dangerous road or a night asks first. In a dungeon, the GM
-              sees what waits in each room (players don't: they find out by going). %>
-          <% room = dungeon && way.dig("move", "room") && dungeon.room(way.dig("move", "room")) %>
-          <% ahead = room && (dungeon.resolved?(room["key"]) ? "done" : room.dig("decision", "kind")) %>
-          <%= button_to campaign_ways_path(campaign), params: { way: way["label"], go: 1 }, class: "menu__item",
-                        form: { data: { turbo_frame: "_top", turbo_confirm: ("#{way['warn']} Go now?" if way["warn"]) }.compact } do %>
-            <%= way["label"] %><%= tag.span(ahead, class: "menu__cost") if ahead %>
-            <%= tag.span(way["note"], class: "menu__note") if way["note"] %>
-          <% end %>
-        <% else %>
-          <%= button_to campaign_ways_path(campaign), params: { way: way["label"] }, class: "menu__item", disabled: deciding do %>
-            <%= way["label"] %> <span class="menu__cost">suggest</span>
-            <%= tag.span(way["note"], class: "menu__note") if way["note"] %>
-          <% end %>
-        <% end %>
+        <% room = gm && dungeon && way.dig("move", "room") && dungeon.room(way.dig("move", "room")) %>
+        <% ahead = room && (dungeon.resolved?(room["key"]) ? "done" : room.dig("decision", "kind")) %>
+        <tr class="pick-row">
+          <td class="pick-row__what">
+            <% if gm %>
+              <%# Going straight there is one press: a dangerous road or a night asks first. In a dungeon, the GM
+                  sees what waits in each room (players don't: they find out by going). %>
+              <%= button_to way["label"], campaign_ways_path(campaign), params: { way: way["label"], go: 1 }, class: "pick-row__act",
+                            form: { data: { turbo_frame: "_top", turbo_confirm: ("#{way['warn']} Go now?" if way["warn"]) }.compact } %>
+            <% else %>
+              <%= button_to way["label"], campaign_ways_path(campaign), params: { way: way["label"] }, class: "pick-row__act", disabled: deciding %>
+            <% end %>
+            <%= tag.span(way["note"], class: "pick-row__note") if way["note"] %>
+          </td>
+          <td class="pick-row__cost"><%= gm ? ahead : "suggest" %></td>
+        </tr>
       <% end %>
-    </div>
+      </tbody>
+    </table>
     <% if campaign.doing? && (paid = campaign.payoff_preview).any? %>
       <%# Daily life pays off through the archetypes, at the next rest (Campaign::Payoffs). %>
       <p class="hint table-ways__payoff">

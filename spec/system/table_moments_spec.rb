@@ -20,7 +20,11 @@ RSpec.describe "Moments at the table", type: :system do
     as(player) do
       expect(page).to have_css("#table_choice .choice", visible: true)
       within("#table_choice") do
-        click_on "Trust Cid"
+        # The options are rows of a table: a click anywhere on the row picks it (pick_table_controller).
+        find(".choice__option", text: "Refuse").find("td.pick-row__cost").click
+        expect(page).to have_css(".choice__option.is-mine", text: "Refuse")
+        # Up and Down walk the rows; Enter picks the one in focus.
+        find(".choice__option.is-mine .pick-row__act").send_keys(:arrow_up, :enter)
         expect(page).to have_css(".choice__option.is-mine", text: "Trust Cid")
         expect(page).to have_css(".is-mine .choice__mine", text: /your pick/i)
         expect(page).to have_no_css(".choice__option.is-mine", text: "Refuse")
