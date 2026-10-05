@@ -56,5 +56,9 @@ export default class extends Controller {
   save() {
     const open = this.panels().filter((panel) => panel.open).map((panel) => panel.id)
     try { window.sessionStorage.setItem(this.key, JSON.stringify(open)) } catch { /* no storage */ }
+    // Closing the panel the address points at forgets the address, or the next refresh would open it again.
+    const hash = decodeURIComponent(window.location.hash.slice(1))
+    const pointed = hash && document.getElementById(hash)?.closest("details")
+    if (pointed && this.element.contains(pointed) && !pointed.open) history.replaceState(history.state, "", window.location.pathname + window.location.search)
   }
 }

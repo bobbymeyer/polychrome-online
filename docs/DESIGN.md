@@ -570,11 +570,12 @@ other way, the GM puts it to the table.
 ### Players steer
 
 Where the party goes next is the table's to decide, when the GM asks. Under the choice panel,
-the GM's "Where next?" lists the ways on: the open paths from where the party stands, a
-dungeon's door, or, inside, the ways on from the room they're in (a room the players haven't
-seen is only "An unexplored way"). Players don't see that list: "Put it to the table" opens the
-vote, and the vote is where they first meet the ways, so the GM paces the leaving and the party
-isn't pulled by a menu while the GM has the floor. Settling the vote takes the party there. The
+the GM's "Where next?" is folded until asked (the Now line's "Where next? ↓", or the fold itself),
+and stays as the GM left it through the table's refreshes; open, it lists the ways on: the open
+paths from where the party stands, a dungeon's door, or, inside, the ways on from the room they're
+in (a room the players haven't seen is only "An unexplored way"). Players don't see that list:
+"Put it to the table" opens the vote, and the vote is where they first meet the ways, so the GM
+paces the leaving and nobody, GM included, is pulled by a menu while the GM has the floor. Settling the vote takes the party there. The
 GM can also just go, from the same panel, and calls a waiting encounter there too, so a session
 can run from the table without the map page.
 In any vote, the option your own character picked stays filled red with "✓ Your pick" beside it,

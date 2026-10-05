@@ -119,6 +119,13 @@ RSpec.describe "Where next", type: :request do
     get campaign_table_path(campaign)
     expect(response.body).to include("Where next?", "To Greymere", "To Port", "Put it to the table")
     expect(response.body).not_to include("To The Pass") # blocked
+    # Folded until the GM asks: the Now line's button opens the fold, which holds the ways and the asking.
+    page = Nokogiri::HTML(response.body)
+    fold = page.at("#table_ways details#where_next")
+    expect(fold.key?("open")).to be(false)
+    expect(fold.at("summary").text).to eq("Where next?")
+    expect(fold.text).to include("To Greymere", "Put it to the table", "Ask about somewhere further")
+    expect(page.at("#table_now a[href='#where_next']").text).to eq("Where next? ↓")
     post campaign_ways_path(campaign)
     vote = campaign.open_choice
     expect(vote).to be_where_next
