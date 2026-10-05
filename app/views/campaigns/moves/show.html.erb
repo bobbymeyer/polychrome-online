@@ -5,7 +5,8 @@
     <% if flash[:alert] %><p class="alert"><%= flash[:alert] %></p><% end %>
 
     <% say = lambda do |line, label, does: nil| %>
-      <%= button_to label, campaign_moves_path(@campaign), params: { move: { text: line["text"], sets: line["row"]["sets"], does: does } }, class: "link-button", form: { class: "inline" } %>
+      <%# Aimed at the frame by name: the tools sit in a panel the table replaces live, so the frame it was in may be gone by the time the answer comes. %>
+      <%= button_to label, campaign_moves_path(@campaign), params: { move: { text: line["text"], sets: line["row"]["sets"], does: does } }, class: "link-button", form: { class: "inline", data: { turbo_frame: "gm_moves" } } %>
     <% end %>
 
     <section aria-label="Moves">

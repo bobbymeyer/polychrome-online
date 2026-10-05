@@ -9,14 +9,17 @@
 #   scene   the GM's scenes, to put one on the stage (nothing for players yet)
 #   check   the GM's check form: who rolls what (the roll lands for everyone)
 #   battle  the GM's battle setup: what they face, who fights, Start (BattleSetup)
+#   tools   the rest of the GM's tools: the moves that are live, grants (nothing for players)
 # A battle, an encounter, a scene on the stage or an open choice still comes
 # first: the controls say what the free table offers. There is no other
 # strip of GM tools for these: the one called is the one on the table.
 module Campaign::Controls
   extend ActiveSupport::Concern
 
-  CONTROLS = %w[talk travel doing scene check battle].freeze
-  CONTROL_LABELS = { "talk" => "Talk", "travel" => "Travel", "doing" => "Things to do here", "scene" => "Scene", "check" => "Check", "battle" => "Battle" }.freeze
+  CONTROLS = %w[talk travel doing scene check battle tools].freeze
+  # Short names on the strip: Talk · Move · Do · Scene · Check · Fight · GM.
+  CONTROL_LABELS = { "talk" => "Talk", "travel" => "Move", "doing" => "Do", "scene" => "Scene", "check" => "Check", "battle" => "Fight",
+                     "tools" => "GM" }.freeze
 
   included do
     validates :controls, inclusion: { in: CONTROLS }

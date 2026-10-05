@@ -38,6 +38,7 @@ RSpec.describe "Jobs as story rewards", type: :request do
   it "lets the GM grant an archetype to the party at the table, with a line and a card" do
     campaign = start(%w[freelancer])
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    campaign.call_controls!("tools") # GM tools is a control on the strip
     get campaign_table_path(campaign)
     expect(response.body).to include("Grant an archetype", "Knight", "Freelancer (open)")
 
@@ -56,6 +57,7 @@ RSpec.describe "Jobs as story rewards", type: :request do
     campaign = start(%w[freelancer])
     yui = create_character(campaign, name: "Yui", job: world.jobs.find_by!(slug: "freelancer"))
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    campaign.call_controls!("tools") # GM tools is a control on the strip
     get campaign_table_path(campaign)
     expect(response.body).to include("Grant an archetype", 'class="awakening-stage" data-moment-cue="awakening"', "moment#arrive")
 

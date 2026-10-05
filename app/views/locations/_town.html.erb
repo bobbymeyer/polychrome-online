@@ -22,7 +22,7 @@
         <p class="shop-purse">The party has <strong><%= money(@campaign.gil) %></strong>.</p>
       <% end %>
       <%# One service a row (docs/DESIGN.md, "Choices are tables"): what it's for under its name, what it offers and costs in
-          the cost column. The inn, the temple and the guild are done at the table (Things to do here); only the shop opens,
+          the cost column. The inn, the temple and the guild are done at the table (Do); only the shop opens,
           below. The GM pins one through rerolls in the last column. %>
       <% shop = nil %>
       <table class="pick-table services">
@@ -36,7 +36,7 @@
           <% price = !shut && pastime&.price %>
           <% shop = service if kind == "shop" && !shut %>
           <tr class="pick-row service service--<%= kind %>" id="service-<%= kind %>"
-              <%= tag.attributes(data: { help: (shut ? "Shut while #{shut.name.downcase} lasts." : kind == "shop" ? "Buy from its shelves and sell from the bag, below." : outcome ? "Done at the table, under Things to do here, when the GM calls it." : "The GM plays what happens here.") }) %>>
+              <%= tag.attributes(data: { help: (shut ? "Shut while #{shut.name.downcase} lasts." : kind == "shop" ? "Buy from its shelves and sell from the bag, below." : outcome ? "Done at the table, under Do, when the GM calls it." : "The GM plays what happens here.") }) %>>
             <td class="pick-row__what">
               <% if kind == "shop" && !shut %>
                 <a href="#shop" class="pick-row__act"><%= service["name"] %></a>

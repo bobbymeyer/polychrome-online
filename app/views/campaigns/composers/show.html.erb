@@ -10,48 +10,41 @@
     <% chips = ([ speaker ] + on_stage).compact.uniq %>
   <% end %>
   <%= form_with model: @message, url: campaign_messages_path(@campaign), class: "window composer",
-                data: { controller: "composer", action: "keydown->composer#key composer:whisper@window->composer#whisper turbo:before-stream-render@document->composer#staged" } do |f| %>
+                data: { controller: "composer help", action: "keydown->composer#key composer:whisper@window->composer#whisper turbo:before-stream-render@document->composer#staged" } do |f| %>
     <%= render "book_entries/errors", entry: @message %>
-    <div class="composer__controls">
+    <%# The box first; under it, on one line: who it's said as (or to), the face, Send. The help line says the rest. %>
+    <div class="composer__row">
+      <%= f.text_area :body, rows: 2, placeholder: seat.gm? ? "Say something… (Enter to send; “Cid:” speaks as Cid; “? A | B” asks the table)" : "Say something… (Enter to send)", autofocus: @refocus,
+                      data: { composer_target: "body" }, "aria-label": "Message" %>
+    </div>
+    <div class="composer__bar">
       <% if seat.gm? %>
         <%= hidden_field_tag "message[speaker]", (speaker ? "npc:#{speaker.id}" : "narrator"), id: "message_speaker", data: { composer_target: "speaker" } %>
         <%= hidden_field_tag "message[whisper_to]", @message.recipient&.id, id: "message_whisper_to", data: { composer_target: "whisperTo" } %>
         <div class="composer__as" role="group" aria-label="Speaking as">
           <span class="composer__as-label">As</span>
-          <%= tag.button "Narrator", type: "button", class: "chip composer__chip", aria: { pressed: speaker.nil? }, data: { composer_target: "chip", speaker: "narrator", action: "composer#pick" } %>
+          <%= tag.button "Narrator", type: "button", class: "chip composer__chip", aria: { pressed: speaker.nil? }, data: { composer_target: "chip", speaker: "narrator", action: "composer#pick", help: "Said as the narrator." } %>
           <% chips.each do |npc| %>
-            <%= tag.button npc.name, type: "button", class: "chip composer__chip", aria: { pressed: npc == speaker }, data: { composer_target: "chip", speaker: "npc:#{npc.id}", action: "composer#pick" } %>
+            <%= tag.button npc.name, type: "button", class: "chip composer__chip", aria: { pressed: npc == speaker }, data: { composer_target: "chip", speaker: "npc:#{npc.id}", action: "composer#pick", help: "Said as #{npc.name}, with their face on the stage." } %>
           <% end %>
         </div>
-        <p class="composer__whispering" data-composer-target="whispering" hidden>
-          Whispering to <strong data-composer-target="whisperName"></strong>, and nobody else hears.
-          <%= tag.button "Everyone", type: "button", class: "link-button", data: { action: "composer#aloud" } %>
-        </p>
       <% else %>
         <%= hidden_field_tag "message[whisper_to]", (@message.whisper? ? "gm" : ""), id: "message_whisper_to", data: { composer_target: "whisperTo" } %>
         <div class="composer__as" role="group" aria-label="To">
           <span class="composer__as-label">To</span>
-          <%= tag.button "Everyone", type: "button", class: "chip composer__chip", aria: { pressed: !@message.whisper? }, data: { composer_target: "chip", whisper: "", action: "composer#pickTo" } %>
-          <%= tag.button "The GM, whispered", type: "button", class: "chip composer__chip", aria: { pressed: @message.whisper? }, data: { composer_target: "chip", whisper: "gm", action: "composer#pickTo" } %>
+          <%= tag.button "Everyone", type: "button", class: "chip composer__chip", aria: { pressed: !@message.whisper? }, data: { composer_target: "chip", whisper: "", action: "composer#pickTo", help: "Everyone at the table hears it, said as #{seat.name}." } %>
+          <%= tag.button "The GM, whispered", type: "button", class: "chip composer__chip", aria: { pressed: @message.whisper? }, data: { composer_target: "chip", whisper: "gm", action: "composer#pickTo", help: "Only the GM hears it." } %>
         </div>
       <% end %>
-      <%# How it's said: optional, so it waits behind a word until wanted. %>
-      <details class="field composer__expression" <%= "open" if @message.expression.present? && @message.expression != Portrait::EXPRESSIONS.first %>>
-        <summary>Expression</summary>
-        <%= f.select :expression, Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] }, {}, "aria-label": "Expression" %>
-      </details>
-    </div>
-    <div class="composer__row">
-      <%= f.text_area :body, rows: 2, placeholder: seat.gm? ? "Say something… (Enter to send; “Cid:” speaks as Cid; “? A | B” asks the table)" : "Say something… (Enter to send)", autofocus: @refocus,
-                      data: { composer_target: "body" }, "aria-label": "Message" %>
-      <%= f.submit "Send", class: "button play" %>
-    </div>
-    <p class="hint composer__to-hint">
+      <%= f.select :expression, Portrait::EXPRESSIONS.map { |e| [ e.humanize, e ] }, {}, class: "composer__expression", "aria-label": "Expression", data: { help: "How it's said: the face on the portrait." } %>
+      <%= f.submit "Send", class: "button play", data: { help: (seat.gm? ? "Everyone hears it. Start a line with a name and a colon to speak as them (“Cid (happy): …”), or “Narrator:”. Whisper from the party panel." : "Enter sends it too.") } %>
       <% if seat.gm? %>
-        Everyone hears it. Start a line with a name and a colon to speak as them (“Cid (happy): …”), or “Narrator:”. Whisper from the party panel.
-      <% else %>
-        Everyone at the table hears it, said as <%= seat.name %>. Whispered, only the GM does.
+        <p class="composer__whispering" data-composer-target="whispering" hidden>
+          Whispering to <strong data-composer-target="whisperName"></strong>, and nobody else hears.
+          <%= tag.button "Everyone", type: "button", class: "link-button", data: { action: "composer#aloud" } %>
+        </p>
       <% end %>
-    </p>
+    </div>
+    <%= help_line %>
   <% end %>
 <% end %>

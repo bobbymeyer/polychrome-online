@@ -144,7 +144,8 @@ RSpec.describe "Clocks and secrets", type: :request do
     get campaign_table_path(campaign)
     ways = Nokogiri::HTML(response.body).at("#table_ways")
     expect(ways.key?("hidden")).to be(false)
-    expect(ways.text).to include("Or let time pass:", "A part of the day passes", "Until #{campaign.almanac.periods.first}")
+    expect(ways.text).to include("Or let time pass:", "A part of the day passes")
+    expect(ways.text).not_to include("Until #{campaign.almanac.periods.first}") # one press, one part of the day
     patch campaign_time_path(campaign), params: { parts: 2 }
     expect(campaign.reload.time_of_day).to eq("dusk")
     patch campaign_time_path(campaign), params: { until: "the_day" }

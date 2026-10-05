@@ -595,12 +595,11 @@ details[open] > summary { margin-bottom: 16px; }
 .chat-line--system .chat-line__body { margin: 0; padding-left: 12px; border-left: 2px solid var(--ink); font-size: 14px; font-weight: 500; }
 
 .composer { margin-top: 0; }
-.composer__controls { display: flex; flex-wrap: wrap; gap: 0 var(--gutter); }
-.composer__controls .field { flex: 0 1 224px; }
-.composer__expression summary { cursor: pointer; font-size: 13px; font-weight: 700; padding: 10px 0; }
-.composer__expression[open] summary { padding-bottom: 4px; }
-.composer__row { display: flex; gap: 16px; align-items: flex-end; }
-.composer__row textarea { flex: 1; resize: vertical; }
+.composer__row textarea { width: 100%; resize: vertical; }
+/* Under the box, one line: As (or To), the face, Send at the end. */
+.composer__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; }
+.composer__bar select.composer__expression { width: auto; min-height: 32px; padding: 0 28px 0 8px; font-size: 14px; }
+.composer__bar .button { margin-left: auto; }
 
 .portrait-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(208px, 1fr)); gap: 16px var(--gutter); }
 .portrait-field { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; }
@@ -723,7 +722,6 @@ details[open] > summary { margin-bottom: 16px; }
 .couplet { margin: 4px 0 8px; }
 .couplet span { display: block; }
 .couplet--met { color: var(--grey); text-decoration: line-through; }
-.gm-tools { padding-bottom: 8px; }
 
 .floorplan__path line { stroke: var(--ink); stroke-width: 2; }
 .floorplan__path--costly line { stroke-dasharray: 10 6; }

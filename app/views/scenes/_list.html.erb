@@ -6,9 +6,9 @@
 <% else %>
   <ol class="scene-list">
     <% scenes.each do |scene| %>
-      <li class="scene-list__item<%= ' is-played' if scene.played? %><%= ' is-staged' if scene.staged? %>">
+      <li class="scene-list__item<%= ' is-played' if scene.played? %><%= ' is-staged' if scene.staged? %>" data-filter-target="item">
         <div>
-          <strong><%= scene.name %></strong>
+          <strong><%= "✅ " if scene.played? %><%= scene.name %></strong>
           <span class="muted"><%= scene.summary %><%= " · played #{time_ago_in_words(scene.played_at)} ago" if scene.played? %><%= " · on the stage, beat #{scene.cursor + 1}" if scene.staged? %></span>
         </div>
         <div class="scene-list__actions">

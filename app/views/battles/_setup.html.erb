@@ -24,16 +24,34 @@
   <% end %>
   <fieldset class="panel">
     <legend>What they face</legend>
-    <table class="grid-form">
-      <thead><tr><th>Monster</th><th>Count</th></tr></thead>
-      <tbody>
-        <% setup[:encounter].each_with_index do |row, i| %>
-          <tr>
-            <td><%= select_tag "battle[encounter][#{i}][monster]", options_for_select(monsters, row[:monster]), include_blank: "(none)", "aria-label": "Monster #{i + 1}" %></td>
-            <td><%= number_field_tag "battle[encounter][#{i}][count]", row[:count], min: 1, max: 8, "aria-label": "Monster #{i + 1} count" %></td>
+    <%# One monster to start; "+" on the first row adds another, and each added row has "−" to take it out (rows_controller). %>
+    <% shown = setup[:encounter].select { |row| row[:monster].present? }.presence || [ setup[:encounter].first || { monster: "", count: 1 } ] %>
+    <% slot = ->(i, row, n) { safe_join([
+         tag.td(select_tag("battle[encounter][#{i}][monster]", options_for_select(monsters, row[:monster]), include_blank: "(none)", "aria-label": "Monster #{n}")),
+         tag.td(number_field_tag("battle[encounter][#{i}][count]", row[:count], min: 1, max: 8, "aria-label": "Monster #{n} count"))
+       ]) } %>
+    <table class="grid-form" data-controller="rows">
+      <thead><tr><th>Monster</th><th>Count</th><th><span class="visually-hidden">More</span></th></tr></thead>
+      <tbody data-rows-target="body">
+        <% shown.each_with_index do |row, i| %>
+          <tr data-rows-target="row">
+            <%= slot.(i, row, i + 1) %>
+            <td class="grid-form__act">
+              <% if i.zero? %>
+                <%= tag.button "+", type: "button", class: "rows__add", title: "Another monster", aria: { label: "Another monster" }, data: { action: "rows#add" } %>
+              <% else %>
+                <%= tag.button "−", type: "button", class: "rows__remove", title: "Take this one out", aria: { label: "Take this one out" }, data: { action: "rows#remove" } %>
+              <% end %>
+            </td>
           </tr>
         <% end %>
       </tbody>
+      <template data-rows-target="template">
+        <tr data-rows-target="row">
+          <%= slot.("__i__", { monster: "", count: 1 }, "__n__") %>
+          <td class="grid-form__act"><%= tag.button "−", type: "button", class: "rows__remove", title: "Take this one out", aria: { label: "Take this one out" }, data: { action: "rows#remove" } %></td>
+        </tr>
+      </template>
     </table>
   </fieldset>
   <fieldset class="panel">

@@ -1,12 +1,9 @@
-<%# The rest of the GM's tools at the table, behind the Now line's "GM tools" button (after Battle) until wanted: the moves that are live, and More
-    (grants). What the GM calls (scenes, checks, travel, the day) is the Now line's
-    controls row (Campaign::Controls); clocks and secrets are Prep's, and the Now line says when a clock is
-    about to fill. One tab at a time; gm_tools_controller keeps the one you had open. What needs an answer
-    now comes first: everyone down, a field ability asked for. %>
+<%# The rest of the GM's tools at the table, called from the strip like the others (Campaign::Controls "tools"),
+    in place of what else was under the stage: the moves that are live, and More (grants). Clocks and secrets are
+    Prep's, and the Now line says when a clock is about to fill. One tab at a time; gm_tools_controller keeps the
+    one you had open. %>
 <% tabs = { "moves" => [ "Moves", nil ], "more" => [ "More", nil ] } %>
 <section class="gm-tools" aria-label="GM tools" data-controller="gm-tools" data-gm-tools-campaign-value="<%= campaign.id %>">
-  <%= render "campaigns/tables/gm/recovery", campaign: campaign %>
-  <%= render "campaigns/field_uses/requests", campaign: campaign %>
   <div class="gm-tools__tabs" role="tablist" aria-label="GM tools">
     <% tabs.each_with_index do |(key, (label, count)), i| %>
       <%= tag.button type: "button", role: "tab", id: "gm_tab_#{key}", class: "gm-tools__tab",
@@ -19,7 +16,7 @@
   <% tabs.each_key.with_index do |key, i| %>
     <%= tag.div id: "gm_panel_#{key}", role: "tabpanel", class: "gm-tools__panel", hidden: !i.zero?,
                 aria: { labelledby: "gm_tab_#{key}" }, data: { gm_tools_target: "panel", key: key } do %>
-      <%= render "campaigns/tables/gm/#{key}", campaign: campaign, view: local_assigns[:view] %>
+      <%= render "campaigns/tables/gm/#{key}", campaign: campaign %>
     <% end %>
   <% end %>
 </section>

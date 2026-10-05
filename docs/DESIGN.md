@@ -27,7 +27,8 @@ deliberate divergence from much of what follows, and where the two disagree the 
   Sign out), or Sign in.
 - **Ground.** A halftone falls from the top right of every page and fills the enemies' side of the
   battlefield; the party's side is a slanted grey wash.
-- **Shadows.** Only hard ones, offset, never blurred: a focused field, the dialogue box.
+- **Shadows.** Only hard ones, offset, never blurred: a focused field, the dialogue box. The stage's
+  frame has none: a 3px rule round it and nothing thrown behind it.
 - **Menus.** Every menu is a table of rows (below): the slabs are for single buttons. A game
   menu (`.play`) slides its rows in one after another when a panel opens, and its cursor is the
   red row with a black edge; a grey menu's cursor is a grey row.
@@ -364,7 +365,7 @@ A player's table offers what they can do at this moment, and nothing else up fro
 The GM's table works the same way:
 
 - **The Now line is the GM's prompt**, with the moves for what's happening: in free play the
-  controls row (Talk · Travel · Things to do here · Scene · Check · Battle: what kind of moment
+  controls row (Talk · Move · Do · Scene · Check · Fight · GM: what kind of moment
   this is, and what comes to the table for it); with a vote, "Settle it ↓"; with an encounter,
   "Fight or wave it off ↓" (to its panel, where the prelude can still be edited).
 - **A battle is called at the table.** Battle puts a short setup under the stage: what they face
@@ -505,6 +506,18 @@ under the frame.
   Reroll and the world's tables gather at the bottom under the GM tag, with the modes.
 - **Lines and veils once per context**: at the table, where they're drawn; on the join page,
   before sitting down; on the world's page, as the setting's own. Not on the campaign page.
+- **The talk box is the box first**, then one line under it: As (or To) as chips, the face as a
+  plain select, Send at the end, and a help line that says what each does. No fold for the face.
+- **Time passes a part of the day at a time**: one button under the things to do here. A journey
+  takes its road's time by itself; a rest sleeps the night.
+- **The scenes called to the table** have a live search above them, and a played one is ticked
+  (✅) before its name.
+- **The battle setup starts with one monster**: "+" on the first row adds another, and each added
+  row carries "−" to take it out (`rows_controller`); the rows are numbered again as they go.
+- **The stage never changes size for what's under it.** In one column (under 1100px) the stage's
+  column is as wide as the page whatever panel is called, and the frame measures its top again
+  after anything that could move it (fonts, a notice, a panel replaced), so Travel, Scene and the
+  rest leave the frame exactly where it was.
 - **Help lines** (`help_controller`), not standing hints. A panel gets one grey line under its
   controls; the row, button or field under the pointer or focus fills it from its `data-help`,
   and otherwise it says the panel's one standing word, or nothing. The battle's command menu had
@@ -526,8 +539,8 @@ under the frame.
   ability waits; while a scene is on the stage, a player's ways and ability wait too, and the GM
   has the director's buttons. Travel is the Controls' (Where next?). The battle page has no
   campaign chrome but its name, and talk is a press away.
-- **The controls row is a strip of the spectrum.** The GM's controls (Talk, Travel, Things to do
-  here, Scene, Check, Battle, then GM tools) are short rectangles, not slabs, each in its own
+- **The controls row is a strip of the spectrum.** The GM's controls, one short word each (Talk,
+  Move, Do, Scene, Check, Fight, then GM) are short rectangles, not slabs, each in its own
   colour from the top bar's stripe (yellow, orange, green, wine red, blue, turquoise, and steel
   grey for the tools), running into the next with no gap, so the row reads as one band like the
   stripe above it. The one called is black with white bold text; one the table can't use yet
@@ -542,9 +555,9 @@ under the frame.
   stage is only what the moment is for. Travel and Things to do here put the ways there for
   everyone; Scene puts the scene list there and Check the check form, for the GM, in the same place a player's moves go,
   so there is one spot to look at whoever you are. There is no tab strip for these. What's left
-  (Moves, and More: an archetype to grant, EXP and ABP to grant) waits behind
-  one "GM tools" button on the Now line after Battle (the name says who sees them; there is no
-  tag), one tab at a time; the
+  (Moves, and More: an archetype to grant, EXP and ABP to grant) is one more control on the
+  strip, "GM tools" after Battle: called, it replaces what's under the stage like the others
+  (players get nothing under it), one tab at a time; the
   open tab is ink, and the tab the GM had open stays open, per campaign, in this browser. What needs an answer now (everyone down, a
   field ability asked for) sits in front of it. On a phone as the GM's remote, the same comes
   after the play.

@@ -1,13 +1,20 @@
 <%# No headings: the control pressed on the strip (Scene, Check, Battle) is the title. What the GM called (Campaign::Controls), when it's a tool rather than a list of ways: the scenes to put on
     the stage, the check form, or a battle to set up. Only the GM has these; a player's panel is empty. Replaced
     live with the table's panels, so calling it puts it here for the GM on every screen. %>
-<section id="table_called" class="window table-called" aria-label="What the GM called" <%= "hidden" unless gm && %w[scene check battle].include?(campaign.controls) %>>
+<section id="table_called" class="window table-called" aria-label="What the GM called" <%= "hidden" unless gm && %w[scene check battle tools].include?(campaign.controls) %>>
   <% if gm && campaign.controls == "scene" %>
-    <%= render "scenes/list", campaign: campaign, play: true %>
+    <%# A live search over the scenes (filter_controller), then the list, played ones ticked. %>
+    <div data-controller="filter">
+      <input type="search" class="filter__input" placeholder="Find a scene…" aria-label="Find a scene" autocomplete="off"
+             data-filter-target="input" data-action="input->filter#apply">
+      <%= render "scenes/list", campaign: campaign, play: true %>
+    </div>
     <%= link_to "New scene", new_campaign_scene_path(campaign), class: "button button--quiet" %>
   <% elsif gm && campaign.controls == "check" %>
     <%= render "campaigns/tables/gm/check", campaign: campaign %>
   <% elsif gm && campaign.controls == "battle" && !campaign.battle_on? %>
     <%= render "battles/setup", campaign: campaign, setup: BattleSetup.defaults(campaign) %>
+  <% elsif gm && campaign.controls == "tools" %>
+    <%= render "campaigns/tables/gm/tools", campaign: campaign %>
   <% end %>
 </section>

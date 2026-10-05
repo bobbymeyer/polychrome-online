@@ -36,7 +36,7 @@
       <%= button_to "Take it", location_treasures_path(dungeon), params: { room: here["key"], return_to: "table" }, class: "button play", form: { class: "inline", data: { turbo_frame: "_top" } } %></p>
   <% end %>
   <% if ways.any? %>
-    <%# No heading: the control pressed on the strip (Travel, Things to do here) is the title; the stage says where and when. %>
+    <%# No heading: the control pressed on the strip (Move, Do) is the title; the stage says where and when. %>
     <% if voting %>
       <p class="muted table-ways__straight">Or go straight there, without the vote</p>
     <% end %>
