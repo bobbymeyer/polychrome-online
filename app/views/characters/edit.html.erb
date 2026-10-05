@@ -1,8 +1,7 @@
 <% content_for :title, "Edit #{@character.name}" %>
-<%= turbo_stream_from @character, :art if can_portray?(@character) %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= link_to @character.name_in_database, character_path(@character) %> / Edit</div>
 <h1>Edit <%= @character.name_in_database %></h1>
-<%= form_with model: @character, url: character_path(@character), class: "book-form", multipart: true do |f| %>
+<%= form_with model: @character, url: character_path(@character), class: "book-form" do |f| %>
   <%= render "book_entries/errors", entry: @character %>
   <div class="field-row">
     <div class="field"><%= f.label :name %><%= f.text_field :name, required: true %></div>
@@ -21,10 +20,9 @@
     <p class="hint">One line, in their own words. It's on their card, and it's what they shout when their back is to the wall.</p>
   </div>
   <%= render "characters/origin_fields", f: f, character: @character %>
-  <%= render "portraits/fields", owner: @character %>
+  <p class="hint">Their look (portraits and the sprite) is on the sheet, under <%= link_to "Look", character_path(@character, anchor: "look") %>.</p>
   <div class="actions">
     <%= f.submit class: "button" %>
     <%= link_to "Cancel", character_path(@character), class: "button button--quiet" %>
   </div>
 <% end %>
-<%= render "art_batches/portraits", owner: @character if can_portray?(@character) %>

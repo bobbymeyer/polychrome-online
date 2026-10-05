@@ -256,9 +256,11 @@ RSpec.describe "The table", type: :request do
       expect(campaign.messages.last.speaker).to be_nil
     end
 
-    it "gives characters portraits too" do
-      patch character_path(bartz), params: { character: { name: "Bartz" }, portraits: { images: { "determined" => image } } }
+    it "gives characters portraits too, from the sheet's Look panel, with nothing else of theirs in the post" do
+      patch character_path(bartz), params: { portraits: { images: { "determined" => image } } }
+      expect(response).to redirect_to(character_path(bartz, anchor: "look"))
       expect(bartz.portraits.pluck(:expression)).to eq([ "determined" ])
+      expect(bartz.reload.name).to eq("Bartz")
     end
   end
 
