@@ -20,9 +20,7 @@
   </div>
 </div>
 
-<%= render "worlds/lines_and_veils", world: @world, campaign: @campaign,
-                                     draw: can_gm?(@campaign) || @characters.any? { |c| current_user && c.user_id == current_user.id } %>
-
+<%# Lines and veils are read where they're drawn, at the table (and on the join page, before sitting down). %>
 <%= render "campaigns/first_steps", campaign: @campaign if can_gm?(@campaign) && !@campaign.messages.where(kind: "say").exists? %>
 
 <section>

@@ -1,5 +1,5 @@
 <%= turbo_frame_tag "map_panel", class: "map-panel" do %>
-  <div class="window">
+  <div class="window" data-controller="help">
     <%= render "campaigns/maps/panel_flash" %>
     <% here = @campaign.current_node %>
     <h2><%= here ? "The party is at #{here.name}" : "The party isn't on the map" %></h2>
@@ -9,9 +9,7 @@
     <% end %>
 
     <%# Travel is the table's (the Travel control, and the map on the stage): here is only where they are. %>
-    <% unless here %>
-      <p class="hint">Select a place, then "Put the party here".</p>
-    <% end %>
+    <%= help_line("Select a place, then “Put the party here”." unless here) %>
 
   </div>
 <% end %>

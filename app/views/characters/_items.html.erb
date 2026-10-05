@@ -1,4 +1,4 @@
-<section class="window" id="items">
+<section class="window" id="items" data-controller="help">
   <h2>Items</h2>
   <% usable = @campaign.field_items %>
   <% if @campaign.battle_on? %>
@@ -15,7 +15,7 @@
           <%# Only whoever it would help: the fallen for a revive, the hurt for a heal (Battle::Field). %>
           <% helps = ->(c) { revive ? !c.conscious? : c.conscious? && c.current_hp < c.stats["max_hp"] } %>
           <% targets = row.item.target == "self" ? [ @character ].select(&helps) : party.select(&helps) %>
-          <tr>
+          <tr data-help="<%= @character.name %> uses it. Items that cure statuses only work in battle, where statuses are.">
             <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span><br><span class="hint"><%= row.item.effects.map { |e| describe_effect(e) }.join(" · ") %></span></td>
             <td class="shop-table__buy">
               <% if targets.empty? %>
@@ -38,6 +38,6 @@
         <% end %>
       </tbody>
     </table>
-    <p class="hint"><%= @character.name %> uses it. Items that cure statuses only work in battle, where statuses are.</p>
+    <%= help_line %>
   <% end %>
 </section>

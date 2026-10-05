@@ -43,8 +43,8 @@
         <%= "Still to pick: #{waiting.to_sentence}." if picked.any? && waiting.any? %>
         <%= "Nobody plays #{unplayed.to_sentence}: no pick from them." if unplayed.any? %>
       </p>
-      <p class="hint choice__hint choice__hint--player">Pick for your character. You can change your mind until the GM settles it.</p>
-      <p class="hint choice__hint choice__hint--gm">
+      <p class="help-line choice__hint choice__hint--player">Pick for your character. You can change your mind until the GM settles it.</p>
+      <p class="help-line choice__hint choice__hint--gm">
         Everyone at the table picks; you settle it<%= ", and #{choice.flag_key.humanize} is set to the outcome" if choice.flag_key %>.
       </p>
     </section>

@@ -26,7 +26,7 @@
 <% voting = gm && choice&.where_next? %>
 <%# Time passes where the day is spent: the GM's time tools sit under the things to do here (gm/_time). %>
 <% timing = gm && campaign.doing? && !voting && !campaign.battle_on? %>
-<section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter && !treasure && !timing %>>
+<section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" data-controller="help" <%= "hidden" if ways.empty? && !encounter && !treasure && !timing %>>
   <% if encounter %>
     <%= render "campaigns/encounters/call", campaign: campaign, encounter: encounter, return_to: campaign_table_path(campaign) %>
   <% end %>
@@ -49,7 +49,7 @@
       <% ways.each do |way| %>
         <% room = gm && dungeon && way.dig("move", "room") && dungeon.room(way.dig("move", "room")) %>
         <% ahead = room && (dungeon.resolved?(room["key"]) ? "done" : room.dig("decision", "kind")) %>
-        <tr class="pick-row">
+        <tr class="pick-row" data-help="<%= gm ? (way["warn"] ? "#{way['warn']} Going asks first." : "Go straight there, now.") : "Say you'd go here: it goes to a vote, and the GM settles it." %>">
           <td class="pick-row__what">
             <% if gm %>
               <%# Going straight there is one press: a dangerous road or a night asks first. In a dungeon, the GM
@@ -71,28 +71,30 @@
     <% end %>
     <% if campaign.doing? && (paid = campaign.payoff_preview).any? %>
       <%# Daily life pays off through the archetypes, at the next rest (Campaign::Payoffs). %>
-      <p class="hint table-ways__payoff">
+      <p class="muted table-ways__payoff">
         At the next rest: <%= paid.join("; ") %>.
         <% if campaign.spent_parts.positive? %><strong><%= pluralize(campaign.spent_parts, "part") %> of the day spent so far.</strong><% end %>
       </p>
     <% end %>
     <% if locked.any? %>
-      <p class="hint">Locked: <%= locked.to_sentence %>.</p>
+      <p class="muted">Locked: <%= locked.to_sentence %>.</p>
     <% end %>
+    <%# One help line for the panel (help_controller): the row or button under the pointer says what it does. %>
     <% if voting %>
-      <p class="hint">Going now ends the vote.</p>
+      <%= help_line("Going now ends the vote.") %>
     <% elsif gm %>
-      <%= button_to "Put it to the table", campaign_ways_path(campaign), class: "button button--quiet" %>
-      <p class="hint">Go straight there, or let the party vote: settling the vote takes them where they chose.</p>
+      <%= button_to "Put it to the table", campaign_ways_path(campaign), class: "button button--quiet",
+                    data: { help: "The party votes between these; settling the vote takes them where they chose." } %>
+      <%= help_line("Go straight there, or put it to the table.") %>
       <%# A wider ballot (anywhere on a map, or a place pressed) is asked from the map on the stage (maps/_sheet). %>
     <% elsif deciding %>
-      <p class="hint">The table is deciding something else first: settle that, then say where you'd go.</p>
+      <%= help_line("The table is deciding something else first: settle that, then say where you'd go.") %>
     <% else %>
-      <p class="hint">Say which: it goes to a vote, and the GM settles it.</p>
+      <%= help_line("Say which: it goes to a vote, and the GM settles it.") %>
     <% end %>
   <% elsif timing %>
     <h2><%= campaign.period.upcase_first %> in <%= campaign.current_node&.name || "the field" %></h2>
-    <p class="hint">Nothing to do here this part of the day.</p>
     <%= render "campaigns/tables/gm/time", campaign: campaign %>
+    <%= help_line("Nothing to do here this part of the day.") %>
   <% end %>
 </section>

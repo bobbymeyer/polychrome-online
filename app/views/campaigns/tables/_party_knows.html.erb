@@ -3,16 +3,14 @@
     log said it as it came out; neither needs a panel at the table. Replaced live (Campaign#table_changed). %>
 <% clocks = campaign.clocks.shown_to_players.where(stopped_at: nil).order(:full_at, :id) %>
 <% asking = campaign.secrets.kept.where("found > 0").order(:id) %>
-<section class="window party-knows" id="party_knows" aria-label="What the party knows" <%= "hidden" if clocks.none? && asking.none? %>>
+<section class="window party-knows" id="party_knows" aria-label="What the party knows" data-controller="help" <%= "hidden" if clocks.none? && asking.none? %>>
   <h2>The party knows</h2>
-  <% if local_assigns[:gm] %><p class="hint">Everyone at the table sees this.</p><% end %>
   <% if clocks.any? %>
     <ul class="clock-list" data-change="list">
       <% clocks.each do |clock| %>
-        <li data-change-key="clock-<%= clock.id %>"><%= render "campaigns/clocks/dial", clock: clock, next: clock.next_tick.present? %> <span><%= clock.name %> <span class="muted">(<span data-change="number" data-change-key="clock-<%= clock.id %>-count"><%= clock.filled %></span> of <%= clock.segments %>)</span></span></li>
+        <li data-change-key="clock-<%= clock.id %>" data-help="Trouble on its way: each box fills as time passes or things go wrong, and when the last one fills, it happens."><%= render "campaigns/clocks/dial", clock: clock, next: clock.next_tick.present? %> <span><%= clock.name %> <span class="muted">(<span data-change="number" data-change-key="clock-<%= clock.id %>-count"><%= clock.filled %></span> of <%= clock.segments %>)</span></span></li>
       <% end %>
     </ul>
-    <p class="hint">Trouble on its way: each box fills as time passes or things go wrong, and when the last one fills, it happens.</p>
   <% end %>
   <% if asking.any? %>
     <ul class="refs secret-list secret-list--asking">
@@ -22,5 +20,6 @@
       <% end %>
     </ul>
   <% end %>
-  <p class="hint">What the party has found out for good is on <%= link_to "Legends", campaign_legends_path(campaign), data: { turbo_frame: "_top" } %>.</p>
+  <%= help_line %>
+  <p class="muted">What the party has found out for good is on <%= link_to "Legends", campaign_legends_path(campaign), data: { turbo_frame: "_top" } %>.</p>
 </section>

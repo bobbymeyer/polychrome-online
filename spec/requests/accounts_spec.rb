@@ -134,7 +134,7 @@ RSpec.describe "Accounts", type: :request do
       post campaign_table_seat_path(campaign), params: { seat: free.id }
       expect(free.reload.user).to eq(lenna)
       get campaign_table_path(campaign)
-      expect(response.body).to include('<h2 class="player-card__name">Galuf</h2>')
+      expect(Nokogiri::HTML(response.body).at("#table_party li.is-you").text).to include("Galuf")
 
       # A GM power, tried by hand, is refused.
       post campaign_flags_path(campaign), params: { flag: { key: "cheat", value: "1" } }

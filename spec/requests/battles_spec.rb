@@ -47,7 +47,7 @@ RSpec.describe "Battle screen", type: :request do
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
     get campaign_table_path(campaign)
     setup = Nokogiri::HTML(response.body).at("#table_called .battle-setup")
-    expect(setup.to_html).to include('data-controller="forecast"', 'id="forecast"')
+    expect(setup.to_html).to include('data-controller="forecast help"', 'id="forecast"')
     expect(setup.to_html).to match(/>Goblin \(\d+ HP\)</) # how tough, not the book's level
     expect(setup.to_html).not_to include("(Lv ")
     expect(setup.css("fieldset legend").map(&:text)).to eq([ "What they face", "Who fights" ])

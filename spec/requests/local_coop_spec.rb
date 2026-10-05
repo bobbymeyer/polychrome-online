@@ -34,7 +34,7 @@ RSpec.describe "Local co-op", type: :request do
     get campaign_table_path(campaign, view: "stage")
     expect(response.body).to include('data-view="stage"', "table--stage", 'id="stage"', 'id="table_time"', "Leave the stage")
     page = Nokogiri::HTML(response.body)
-    expect(page.at(".gm-tools, .log-drawer__tab, #table_now, .stage__caption, #composer, .player-card")).to be_nil # no chrome, no interface
+    expect(page.at(".gm-tools, .log-drawer__tab, #table_now, .stage__caption, #composer, #table_party")).to be_nil # no chrome, no interface
     expect(page.at("div[hidden] #chat_log")).to be_present # the lines land unseen, for the moments they cue
 
     battle = start_battle(campaign: campaign)
@@ -167,7 +167,7 @@ RSpec.describe "Local co-op", type: :request do
       expect(empty.messages.last.body).to eq("Sam, as Faris, joins the party.")
       expect(response).to redirect_to(campaign_table_path(empty, view: "off"))
       follow_redirect!
-      expect(response.body).to include('<h2 class="player-card__name">Faris</h2>')
+      expect(Nokogiri::HTML(response.body).at("#table_party li.is-you").text).to include("Faris")
     end
 
     it "joins a new character at the party's lowest level, and says what's missing", :signed_out do

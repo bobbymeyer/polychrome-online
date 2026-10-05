@@ -1,16 +1,12 @@
-<section class="window" id="mastery">
+<section class="window" id="mastery" data-controller="help">
   <h2><%= gloss(:mastery) %></h2>
-  <p class="hint">
-    Each ability grows stronger for <%= Stats::Mastery::SPAN %> archetype levels after it's learned, up to +<%= Stats::Mastery::MASTERY_BONUS %>%.
-    Used in the archetype that teaches it, it gets another +<%= Stats::Mastery::ACTIVE_BONUS %>%. A mastered ability used in another archetype keeps its own archetype's STR and MAG.
-  </p>
   <%# Three columns, the archetype under the ability, so it fits a phone without scrolling sideways. %>
   <table class="book-table book-table--plain mastery-table sheet-table">
     <thead><tr><th>Ability</th><th>Mastery</th><th class="num">Power</th></tr></thead>
     <tbody>
       <% masteries.sort_by { |ability, m| [ @character.active?(ability) ? 0 : 1, -m[:percent], ability.name ] }.each do |ability, m| %>
         <% active = @character.active?(ability) %>
-        <tr class="<%= 'is-current' if active %>">
+        <tr class="<%= 'is-current' if active %>" data-help="Grows stronger for <%= Stats::Mastery::SPAN %> archetype levels after it's learned, up to +<%= Stats::Mastery::MASTERY_BONUS %>%; used in <%= m[:job].name %>, another +<%= Stats::Mastery::ACTIVE_BONUS %>%. Mastered and used elsewhere, it keeps <%= m[:job].name %>'s STR and MAG.">
           <td><%= link_to ability.name, world_grimoire_ability_path(@world, ability) %><br><span class="muted"><%= m[:job].name %></span></td>
           <td>
             <span class="bar mastery-bar"><span class="bar__fill bar__fill--<%= m[:percent] == Stats::Mastery::FULL ? 'mastered' : 'ok' %>" style="width: <%= m[:percent] %>%"></span></span>
@@ -26,4 +22,5 @@
       <% end %>
     </tbody>
   </table>
+  <%= help_line %>
 </section>

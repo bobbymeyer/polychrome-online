@@ -5,17 +5,16 @@
 <% world = campaign.world %>
 <% monsters = monster_options(world.monsters) %>
 <%= form_with url: campaign_battles_path(campaign), scope: :battle, class: "book-form battle-setup",
-              data: { controller: "forecast", forecast_url_value: campaign_forecast_path(campaign), action: "change->forecast#changed input->forecast#changed", turbo_frame: "_top" } do |f| %>
+              data: { controller: "forecast help", forecast_url_value: campaign_forecast_path(campaign), action: "change->forecast#changed input->forecast#changed", turbo_frame: "_top" } do |f| %>
   <%= hidden_field_tag :from, "table", id: nil %>
   <% antagonists = campaign.npcs.at_large.includes(:monster).order(:name) %>
   <% if antagonists.any? %>
     <fieldset class="panel">
       <legend>Antagonists</legend>
-      <p class="hint">They fight as their Bestiary entry, under their own name, as a boss. Send them off the field and they get away, stronger next time.</p>
       <%= hidden_field_tag "battle[antagonists][]", "", id: nil %>
       <div class="checks">
         <% antagonists.each do |npc| %>
-          <label>
+          <label data-help="Fights as <%= npc.monster.name %>, under their own name, as a boss. Sent off the field, they get away, stronger next time.">
             <%= check_box_tag "battle[antagonists][]", npc.id, setup[:antagonists].include?(npc.id), id: "battle_antagonist_#{npc.id}" %>
             <%= npc.name %> <span class="muted">(as <%= npc.monster.name %><%= ", #{npc.strength_percent}%" if npc.escapes.positive? %>)</span>
           </label>
@@ -46,13 +45,13 @@
       <%= hidden_field_tag "battle[characters][]", "", id: nil %>
       <div class="checks">
         <% characters.each do |character| %>
-          <label class="<%= 'muted' unless character.conscious? %>">
+          <label class="<%= 'muted' unless character.conscious? %>" data-help="<%= character.conscious? ? "Brings their current HP and MP." : "Fallen: starts the battle down." %>">
             <%= check_box_tag "battle[characters][]", character.id, setup[:characters].include?(character.id), id: "battle_character_#{character.id}" %>
             <%= character.name %> <span class="muted">Lv <%= character.level %> <%= character.job.name %>, <%= word("hp") %> <%= character.current_hp %>/<%= character.stats["max_hp"] %></span>
           </label>
         <% end %>
       </div>
-      <p class="hint">Characters bring their current HP and MP. Fallen characters start the battle down.</p>
+      <%= help_line %>
     <% end %>
   </fieldset>
   <%= turbo_frame_tag "forecast", data: { forecast_target: "frame" } %>

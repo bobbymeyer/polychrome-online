@@ -4,29 +4,33 @@
 <% mine = campaign.characters.order(:created_at).select { |c| c.user_id == current_user&.id } %>
 <% unclaimed = campaign.characters.order(:created_at).select { |c| c.user_id.nil? } %>
 <% others = can_gm?(campaign) ? campaign.characters.order(:created_at).select { |c| c.user_id && c.user_id != current_user&.id } : [] %>
-<section class="window take-a-seat door" aria-label="Take a seat">
+<section class="window take-a-seat door" aria-label="Take a seat" data-controller="help">
   <h2>Take a seat</h2>
   <div class="door__own">
     <% mine.each do |character| %>
-      <%= button_to "Sit as #{character.name}", campaign_table_seat_path(campaign), params: { seat: character.id }, class: "button play", form: { class: "inline" } %>
+      <%= button_to "Sit as #{character.name}", campaign_table_seat_path(campaign), params: { seat: character.id }, class: "button play", form: { class: "inline" },
+                    data: { help: "Play #{character.name}: their moves, their whispers." } %>
     <% end %>
     <% if can_gm?(campaign) %>
-      <%= button_to "Sit as Game Master", campaign_table_seat_path(campaign), params: { seat: "gm" }, class: "button #{mine.any? ? 'button--quiet' : 'play'}", form: { class: "inline" } %>
+      <%= button_to "Sit as Game Master", campaign_table_seat_path(campaign), params: { seat: "gm" }, class: "button #{mine.any? ? 'button--quiet' : 'play'}", form: { class: "inline" },
+                    data: { help: "Run the table: what's called, the tools, every whisper." } %>
     <% end %>
     <% if mine.empty? && !can_gm?(campaign) && unclaimed.empty? %>
-      <p class="hint">Nobody here is yours to play yet: ask the GM for a character, or <%= link_to "make one", new_campaign_character_path(campaign) %>.</p>
+      <p class="empty">Nobody here is yours to play yet: ask the GM for a character, or <%= link_to "make one", new_campaign_character_path(campaign) %>.</p>
     <% end %>
   </div>
+  <%= help_line %>
   <% if unclaimed.any? || others.any? %>
     <details class="door__others">
       <summary><%= unclaimed.any? ? "Someone nobody plays" : "Someone else's character" %></summary>
-      <p class="hint"><%= "Sitting as one of these makes them yours. " if unclaimed.any? %><%= "As the GM you can sit as anyone, to play them for an absent player." if others.any? %></p>
       <div class="door__list">
         <% unclaimed.each do |character| %>
-          <%= button_to "Sit as #{character.name} (unclaimed)", campaign_table_seat_path(campaign), params: { seat: character.id }, class: "button button--quiet", form: { class: "inline" } %>
+          <%= button_to "Sit as #{character.name} (unclaimed)", campaign_table_seat_path(campaign), params: { seat: character.id }, class: "button button--quiet", form: { class: "inline" },
+                        data: { help: "Sitting as #{character.name} makes them yours." } %>
         <% end %>
         <% others.each do |character| %>
-          <%= button_to "Sit as #{character.name}", campaign_table_seat_path(campaign), params: { seat: character.id }, class: "button button--quiet", form: { class: "inline" } %>
+          <%= button_to "Sit as #{character.name}", campaign_table_seat_path(campaign), params: { seat: character.id }, class: "button button--quiet", form: { class: "inline" },
+                        data: { help: "Play #{character.name} for an absent player." } %>
         <% end %>
       </div>
     </details>

@@ -1,4 +1,4 @@
-<section class="window" id="jobs">
+<section class="window" id="jobs" data-controller="help">
   <h2>Archetypes</h2>
   <table class="book-table book-table--plain jobs-table">
     <thead><tr><th>Archetype</th><th class="num">Lv</th><th class="num">ABP</th><th>Learned</th><th>Next</th></tr></thead>
@@ -25,8 +25,8 @@
             [ j.name, j.id, { data: { drops: worn.reject { |item| j.equips?(item) }.map(&:name).to_sentence.presence } } ]
           }, { selected: @character.job_id }, data: { job_change_target: "select" } %>
     </div>
-    <%= f.submit "Change archetype", class: "button" %>
+    <%= f.submit "Change archetype", class: "button", data: { help: "Keeps each archetype's ABP and every ability's mastery. Gear the new archetype can't use goes back to the bag. Only the current archetype earns ABP." } %>
   <% end %>
-  <p class="hint">Changing archetype keeps each archetype's ABP and every ability's mastery. Gear the new archetype can't use goes back to the bag. Only the current archetype earns ABP.</p>
+  <%= help_line %>
   <% end %>
 </section>
