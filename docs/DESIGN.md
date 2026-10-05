@@ -28,9 +28,9 @@ deliberate divergence from much of what follows, and where the two disagree the 
 - **Ground.** A halftone falls from the top right of every page and fills the enemies' side of the
   battlefield; the party's side is a slanted grey wash.
 - **Shadows.** Only hard ones, offset, never blurred: a focused field, the dialogue box.
-- **Menus.** Game menus (`.play`) are white slabs underlined in red. They slide in one after
-  another when a panel opens. The cursor is a red slab thrown 8px forward with a black edge.
-  Grey menus behave the same in grey and black.
+- **Menus.** Every menu is a table of rows (below): the slabs are for single buttons. A game
+  menu (`.play`) slides its rows in one after another when a panel opens, and its cursor is the
+  red row with a black edge; a grey menu's cursor is a grey row.
 - **Choices are tables.** Where the table picks one thing from a list (a vote, the ways on, the
   things to do here) the options are rows of a table, not slabs: one a row, 44px tall, a hairline
   between them, columns lined up (what, who picked it, what it costs or does). The whole row is
@@ -286,8 +286,10 @@ keeps the facts and skips the movement. The tokens are `--t-enter`, `--t-change`
 The Swiss surface still has to play like a JRPG. Anything a player does in a turn works from the
 keyboard, a mouse or a finger.
 
-- **Command menus** (`menu` Stimulus controller) have a cursor. In a game menu the cursor is
-  the red fill; in any other menu it is grey.
+- **Command menus** (`menu` Stimulus controller) are pick tables with a cursor: the battle's
+  commands, items and targets, and the seats, use the same rows as the table's votes and ways,
+  with the MP, the count left, "Won't work" or "Weak!" in the cost column. In a game menu the
+  cursor is the red row; in any other menu it is grey. The whole row is the control.
   It follows the arrow keys and the mouse. Enter, Space or Z chooses, and Esc, X or Backspace
   goes back. 1–9 picks an item directly. Movement wraps around the menu, and the cursor
   remembers where it was when the panel reloads.
@@ -301,7 +303,7 @@ keyboard, a mouse or a finger.
   advances with Enter, Space or Z when you aren't typing, and with Esc at any time.
 - **One screen:** on a laptop the field, the party's HP and MP, and the commands fit together.
   When your turn starts below the fold, the menu scrolls into view.
-- **Touch:** menu items are at least 48px tall and buttons at least 44px on coarse pointers. The
+- **Touch:** menu rows are at least 48px tall and buttons at least 44px on coarse pointers. The
   keyboard legend is hidden on devices without hover.
 - **Won't work:** when what the party knows of a target says a move can't touch it (the chart's
   no effect, or an absorb), the target says "Won't work" and the help line says why. It never

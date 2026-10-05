@@ -35,39 +35,51 @@
   <% item = @choosing["kind"] == "item" %>
   <div data-choosing>
     <p class="command-panel__prompt"><strong><%= @choosing["name"] %></strong>: choose a target.</p>
-    <div class="menu play">
+    <%# One target a row (docs/DESIGN.md, "Choices are tables"): the cost column says when it won't work, or hits a weakness. %>
+    <table class="pick-table play">
+      <tbody>
       <% (Battle::State.target_options(state, unit, @choosing) || []).each do |target_id| %>
         <% command = item ? { kind: "item", item: @choosing["id"], target: target_id } : { kind: "ability", ability: @choosing["id"], target: target_id } %>
         <% target_unit = state["units"].find { |u| u["id"] == target_id } %>
         <% futile = !item && futile_note(@battle, state, unit, @choosing, target_unit) %>
         <% edge = !item && !futile && edge_note(@battle, state, unit, @choosing, target_unit) %>
-        <%= button_to battle_actions_path(@battle), class: "menu__item#{' is-futile' if futile}#{' is-weak' if edge == 'Weak!'}",
-                      data: { unit_id: target_id, help: [ futile, edge, target_help(@battle, state, target_id) ].compact_blank.join(" · ") }, params: { command: command } do %>
-          <%= unit_name(state, target_id) %><% if futile %> <span class="menu__cost">Won't work</span><% elsif edge %> <span class="menu__cost menu__cost--edge"><%= edge %></span><% end %>
-        <% end %>
+        <tr class="pick-row<%= ' is-futile' if futile %><%= ' is-weak' if edge == 'Weak!' %>">
+          <td class="pick-row__what">
+            <%= button_to unit_name(state, target_id), battle_actions_path(@battle), class: "pick-row__act",
+                          data: { unit_id: target_id, help: [ futile, edge, target_help(@battle, state, target_id) ].compact_blank.join(" · ") }, params: { command: command } %>
+          </td>
+          <td class="pick-row__cost<%= ' pick-row__cost--edge' if edge %>"><%= futile ? "Won't work" : edge %></td>
+        </tr>
       <% end %>
-    </div>
+      </tbody>
+    </table>
     <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
     <%= link_to "Back", battle_panel_path(@battle, (item ? { items: 1 } : {})), class: "link-button", data: { menu_back: true } %>
   </div>
 <% elsif @item_menu %>
   <div data-choosing>
     <p class="command-panel__prompt"><strong>Items</strong>: shared by the whole party.</p>
-    <div class="menu play">
+    <table class="pick-table play">
+      <tbody>
       <% state.fetch("items", {}).each_value do |it| %>
         <% left = Battle::State.items_left(state, it["id"], except: unit["id"]) %>
-        <% label = safe_join([ it["name"], tag.span("×#{left}", class: "menu__cost") ], " ") %>
         <% help = item_help(it, left) %>
-        <% if left <= 0 %>
-          <button type="button" class="menu__item" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= it['name'] %>" data-reach="<%= it['target'] %>"><%= label %></button>
-        <% elsif Battle::State.target_options(state, unit, it) %>
-          <%= link_to label, battle_panel_path(@battle, item: it["id"]), class: "menu__item", data: { help: help, menu_key: it["name"], reach: it["target"] } %>
-        <% else %>
-          <%= button_to label, battle_actions_path(@battle), class: "menu__item", data: { help: help, menu_key: it["name"], reach: it["target"] },
-                        params: { command: { kind: "item", item: it["id"] } } %>
-        <% end %>
+        <tr class="pick-row">
+          <td class="pick-row__what">
+            <% if left <= 0 %>
+              <button type="button" class="pick-row__act" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= it['name'] %>" data-reach="<%= it['target'] %>"><%= it["name"] %></button>
+            <% elsif Battle::State.target_options(state, unit, it) %>
+              <%= link_to it["name"], battle_panel_path(@battle, item: it["id"]), class: "pick-row__act", data: { help: help, menu_key: it["name"], reach: it["target"] } %>
+            <% else %>
+              <%= button_to it["name"], battle_actions_path(@battle), class: "pick-row__act", data: { help: help, menu_key: it["name"], reach: it["target"] },
+                            params: { command: { kind: "item", item: it["id"] } } %>
+            <% end %>
+          </td>
+          <td class="pick-row__cost">×<%= left %></td>
+        </tr>
       <% end %>
-    </div>
+      </tbody>
+    </table>
     <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
     <%= link_to "Back", battle_panel_path(@battle), class: "link-button", data: { menu_back: true } %>
   </div>
@@ -101,36 +113,53 @@
   </p>
   <%= link_to "Change command", battle_panel_path(@battle, change: 1), class: "link-button", data: { menu_back: true } %>
 <% else %>
-  <div class="menu play">
+  <%# Your commands, one a row: what it costs in the right column (docs/DESIGN.md, "Choices are tables"). %>
+  <table class="pick-table play">
+    <tbody>
     <% unit["abilities"].map { |id| state["abilities"][id] }.each do |ability| %>
       <% usable = Battle::State.usable?(unit, ability) %>
       <% cost = Battle::State.ability_cost(ability) %>
-      <% label = safe_join([ ability["name"], (tag.span("#{cost} #{word('mp')}", class: "menu__cost") if cost.positive?) ].compact, " ") %>
       <% help = ability_help(unit, ability) %>
-      <%# data-reach: what the move would reach, lit on the field while the cursor is on it (menu_controller). %>
-      <% if !usable %>
-        <button type="button" class="menu__item" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= ability['name'] %>" data-reach="<%= ability['target'] %>"><%= label %></button>
-      <% elsif Battle::State.target_options(state, unit, ability) %>
-        <%= link_to label, battle_panel_path(@battle, ability: ability["id"]), class: "menu__item", data: { help: help, menu_key: ability["name"], reach: ability["target"] } %>
-      <% else %>
-        <%= button_to label, battle_actions_path(@battle), class: "menu__item", data: { help: help, menu_key: ability["name"], reach: ability["target"] },
-                      params: { command: { kind: "ability", ability: ability["id"] } } %>
-      <% end %>
+      <tr class="pick-row">
+        <td class="pick-row__what">
+          <%# data-reach: what the move would reach, lit on the field while the cursor is on it (menu_controller). %>
+          <% if !usable %>
+            <button type="button" class="pick-row__act" aria-disabled="true" data-help="<%= help %>" data-menu-key="<%= ability['name'] %>" data-reach="<%= ability['target'] %>"><%= ability["name"] %></button>
+          <% elsif Battle::State.target_options(state, unit, ability) %>
+            <%= link_to ability["name"], battle_panel_path(@battle, ability: ability["id"]), class: "pick-row__act", data: { help: help, menu_key: ability["name"], reach: ability["target"] } %>
+          <% else %>
+            <%= button_to ability["name"], battle_actions_path(@battle), class: "pick-row__act", data: { help: help, menu_key: ability["name"], reach: ability["target"] },
+                          params: { command: { kind: "ability", ability: ability["id"] } } %>
+          <% end %>
+        </td>
+        <td class="pick-row__cost"><%= "#{cost} #{word('mp')}" if cost.positive? %></td>
+      </tr>
     <% end %>
     <% if state.fetch("items", {}).any? %>
-      <%= link_to battle_panel_path(@battle, items: 1), class: "menu__item", data: { help: "Use something from the party's bag.", menu_key: "Item" } do %>
-        Item <span class="menu__cost">×<%= state["items"].values.sum { |i| Battle::State.items_left(state, i["id"], except: unit["id"]) } %></span>
-      <% end %>
+      <tr class="pick-row">
+        <td class="pick-row__what"><%= link_to "Item", battle_panel_path(@battle, items: 1), class: "pick-row__act", data: { help: "Use something from the party's bag.", menu_key: "Item" } %></td>
+        <td class="pick-row__cost">×<%= state["items"].values.sum { |i| Battle::State.items_left(state, i["id"], except: unit["id"]) } %></td>
+      </tr>
     <% end %>
-    <%= link_to "Try something", battle_panel_path(@battle, custom: 1), class: "menu__item",
-                data: { help: "Anything that isn't on the menu. Say what you do; the GM rules on it, and you roll.", menu_key: "Try" } %>
-    <%= button_to "Defend", battle_actions_path(@battle), class: "menu__item", data: { help: "Halve the damage you take this round.", reach: "self" },
-                  params: { command: { kind: "defend" } } %>
+    <tr class="pick-row">
+      <td class="pick-row__what"><%= link_to "Try something", battle_panel_path(@battle, custom: 1), class: "pick-row__act",
+                                            data: { help: "Anything that isn't on the menu. Say what you do; the GM rules on it, and you roll.", menu_key: "Try" } %></td>
+      <td class="pick-row__cost"></td>
+    </tr>
+    <tr class="pick-row">
+      <td class="pick-row__what"><%= button_to "Defend", battle_actions_path(@battle), class: "pick-row__act", data: { help: "Halve the damage you take this round.", reach: "self" },
+                                              params: { command: { kind: "defend" } } %></td>
+      <td class="pick-row__cost"></td>
+    </tr>
     <% if state["escapable"] %>
-      <%= button_to "Flee", battle_actions_path(@battle), class: "menu__item", data: { help: "Try to get the whole party away. It can fail.", menu_forget: true },
-                    params: { command: { kind: "flee" } } %>
+      <tr class="pick-row">
+        <td class="pick-row__what"><%= button_to "Flee", battle_actions_path(@battle), class: "pick-row__act", data: { help: "Try to get the whole party away. It can fail.", menu_forget: true },
+                                                params: { command: { kind: "flee" } } %></td>
+        <td class="pick-row__cost"></td>
+      </tr>
     <% end %>
-  </div>
+    </tbody>
+  </table>
   <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
 <% end %>
 <% if unit["hp"].positive? %>

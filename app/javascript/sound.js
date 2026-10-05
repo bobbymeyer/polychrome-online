@@ -326,5 +326,5 @@ function unlock() {
 
 // The soft confirm on game menus (a keyboard choice clicks the item too).
 document.addEventListener("click", (event) => {
-  if (event.target.closest?.(".play .menu__item, .menu__item.play, .button.play")) play("blip")
+  if (event.target.closest?.(".pick-table.play .pick-row__act, .button.play")) play("blip")
 })

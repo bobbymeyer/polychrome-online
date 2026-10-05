@@ -179,10 +179,10 @@
 
   <section>
     <h3>Pacing</h3>
-    <div class="menu menu--row">
+    <div class="actions actions--tight">
       <% BattleRecord::SPEEDS.each do |speed| %>
         <%= button_to "×#{speed}", battle_playback_path(@battle), method: :patch, params: { speed: speed },
-                      class: [ "menu__item", ("is-current" if @battle.playback_speed == speed) ] %>
+                      class: "button button--quiet", aria: { pressed: @battle.playback_speed == speed } %>
       <% end %>
     </div>
   </section>
@@ -190,12 +190,12 @@
 
 <section>
   <h3>End the battle</h3>
-  <div class="menu menu--row">
+  <div class="actions actions--tight">
     <% { "victory" => "Victory", "defeat" => "Defeat", "fled" => "Party escapes" }.each do |result, label| %>
-      <%= button_to label, battle_actions_path(@battle), class: "menu__item", params: { gm: { op: "end_battle", result: result } },
+      <%= button_to label, battle_actions_path(@battle), class: "button button--quiet", params: { gm: { op: "end_battle", result: result } },
                     form: { data: { turbo_confirm: "End the battle: #{label}? Everyone will see this." } } %>
     <% end %>
-    <%= button_to "Call it off", battle_call_off_path(@battle), class: "menu__item",
+    <%= button_to "Call it off", battle_call_off_path(@battle), class: "button button--quiet",
                   form: { data: { turbo_frame: "_top", turbo_confirm: "Call off #{@battle.name}? Nothing that happened in it counts: no rewards, and HP and items go back to how they were." } } %>
   </div>
   <p class="hint">Calling it off is for a battle nobody will finish. It stops the table pointing at it.</p>

@@ -29,18 +29,20 @@
 
     <% if @characters.any? %>
       <h2>Play someone the GM made</h2>
-      <div class="menu join__characters">
+      <%# One character a row (pick_table_controller): the row sits you down as them. %>
+      <table class="pick-table join__characters" data-controller="pick-table">
+        <tbody>
         <% @characters.each do |character| %>
-          <%= button_tag type: "submit", name: "character_id", value: character.id, class: "menu__item join__character", formnovalidate: true do %>
-            <%= character_portrait(character, size: :small) %>
-            <span>
-              <strong><%= character.name %></strong>
-              <span class="muted">Lv <%= character.level %> <%= character.job.name %><%= " · yours" if current_user && character.user_id == current_user.id %></span>
-              <% if character.motive %><span class="motive motive--card"><%= character.motive %></span><% end %>
-            </span>
-          <% end %>
+          <tr class="pick-row">
+            <td class="pick-row__who"><%= speaker_portrait(character, "neutral", size: :small) %></td>
+            <td class="pick-row__what">
+              <%= button_tag character.name, type: "submit", name: "character_id", value: character.id, class: "pick-row__act join__character", formnovalidate: true %>
+              <span class="pick-row__note">Lv <%= character.level %> <%= character.job.name %><%= " · yours" if current_user && character.user_id == current_user.id %><%= " · #{character.motive}" if character.motive %></span>
+            </td>
+          </tr>
         <% end %>
-      </div>
+        </tbody>
+      </table>
     <% end %>
 
     <details class="join__new" <%= "open" if @characters.empty? || @character.errors.any? %>>

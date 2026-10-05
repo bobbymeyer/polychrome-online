@@ -28,11 +28,9 @@
     <%# A town or dungeon's modes are on its page; anywhere else's are here. %>
     <%= render "map_nodes/modes", node: @node unless @node.location %>
 
-    <div class="menu menu--row">
-      <% unless @node.party_here? %>
-        <%= button_to "Put the party here", map_node_party_path(@node), class: "menu__item menu__item--accent" %>
-      <% end %>
-    </div>
+    <% unless @node.party_here? %>
+      <div class="actions actions--tight"><%= button_to "Put the party here", map_node_party_path(@node), class: "button play" %></div>
+    <% end %>
 
     <h3>Connect to…</h3>
     <% others = @campaign.map_nodes.where.not(id: @node.id).order(:name) %>
