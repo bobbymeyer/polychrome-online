@@ -178,4 +178,34 @@ RSpec.describe "The live table", type: :system do
       expect(page).to have_css("#stage .dialogue", text: "Off with you")
     end
   end
+  it "is three views on a phone: you and the party, the stage, the log, picked from a strip under the top bar" do
+    marga = campaign.npcs.create!(name: "Old Marga")
+    seat(player, rook)
+
+    as(player) do
+      page.driver.browser.manage.window.resize_to(390, 844)
+      visit campaign_table_path(campaign)
+      expect(page).to have_css(".table-views", visible: true)
+      expect(page).to have_css(".table-views__tab[aria-current=page]", text: "Stage") # the stage first
+      expect(page).to have_css("#stage", visible: true)
+      expect(page).to have_no_css(".player-card", visible: true)
+      expect(page).to have_no_css(".log-drawer__tab", visible: true) # the log is a view here, not a drawer
+
+      click_on "You & party"
+      expect(page).to have_css(".player-card", visible: true, text: "Rook")
+      expect(page).to have_no_css("#stage", visible: true)
+
+      wait_for_streams
+      campaign.messages.create!(body: "The bridge is out.", speaker: marga)
+      expect(page).to have_css(".table-views__badge", visible: true, text: "1") # a line you haven't seen
+      click_on "Log"
+      expect(page).to have_css("#log_drawer", visible: true, text: "The bridge is out.")
+      expect(page).to have_no_css(".table-views__badge", visible: true)
+      expect(page).to have_no_css(".player-card", visible: true)
+
+      visit current_path # the view you were on is kept
+      expect(page).to have_css(".table-views__tab[aria-current=page]", text: "Log")
+      page.driver.browser.manage.window.resize_to(1400, 1000)
+    end
+  end
 end

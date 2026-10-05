@@ -1744,6 +1744,35 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   .table__stage { order: 0; }
 }
 
+/* On a phone the table is three views (table_views_controller): you and the party, the stage and what you can
+   do, the log; a thin strip under the top bar picks one, the one shown in ink. The log, a drawer elsewhere,
+   sits in the page as the third view, its tab and its own head put away. */
+.table-views { display: none; }
+@media (max-width: 640px) {
+  .table-views {
+    display: flex; position: sticky; top: var(--topbar, 44px); z-index: 35; margin: -24px -16px 12px; padding: 0 16px;
+    background: var(--paper); border-bottom: 2px solid var(--ink);
+  }
+  .table-views__tab {
+    flex: 1 1 0; min-height: 36px; padding: 0 4px; border: 0; background: transparent; box-shadow: none; clip-path: none;
+    font: 800 13px/36px var(--font); letter-spacing: .02em; color: var(--grey); text-align: center;
+  }
+  .table-views__tab:hover { translate: none; color: var(--ink); background: transparent; }
+  .table-views__tab[aria-current="page"] { color: var(--paper); background: var(--ink); }
+  .table-views__badge { display: inline-block; min-width: 18px; padding: 0 4px; margin-left: 2px; background: var(--sun-yellow); color: var(--ink); font-size: 11px; line-height: 16px; text-align: center; }
+  .table-views__badge[hidden] { display: none; }
+  .table[data-table-view="stage"] .table__side > *, .table[data-table-view="log"] .table__side > * { display: none; }
+  .table[data-table-view="party"] .table__stage, .table[data-table-view="log"] .table__stage { display: none; }
+  .table[data-table-view] .log-drawer__tab { display: none; }
+  .table[data-table-view]:not([data-table-view="log"]) .log-drawer__panel { display: none; }
+  .table[data-table-view="log"] .log-drawer__panel {
+    display: flex; position: static; width: auto; height: auto; padding: 0; border: 0; box-shadow: none; translate: none; visibility: visible; transition: none;
+  }
+  .table[data-table-view="log"] .log-drawer__head { display: none; }
+  .table[data-table-view="log"] .log-drawer__section { overflow: visible; flex: none; }
+  body:has(.table[data-table-view]) .topbar { padding-right: 0; }
+}
+
 /* ---------------------------------------------------------------------------
  * Maps on the stage (maps/_sheet, campaigns/tables/_map; docs/HANDOFF.md §7 "Maps"): a map fills the frame
  * like a scene's backdrop; the places and roads are drawn over its picture (or plain paper); the maps beside

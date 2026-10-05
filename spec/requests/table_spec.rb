@@ -270,7 +270,7 @@ RSpec.describe "The table", type: :request do
 
     campaign.messages.create!(speaker: cid, body: "The crystal is cracking.", created_at: 2.days.ago)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap moment whisper-toast"', "The crystal is cracking.",
+    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap moment whisper-toast table-views"', "The crystal is cracking.",
                                      'data-recap-auto-value="true"')
   end
 
