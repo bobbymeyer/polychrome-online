@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
-# Where the party goes next (Campaign::Ways): the GM's call. The GM puts
-# the question to the table as a "Where next?" vote, or a wider one (scope
-# "map": every place on a map; "places": the ones named), each a journey by
-# road; players answer in the vote, and don't see the ways before it. The
+# Where the party goes next (Campaign::Ways), once the GM has called travel
+# or things to do here (Campaign::Controls). A player suggests a way: it
+# goes to the table as a "Where next?" vote with their pick in it. The GM
+# puts the question without a pick, or a wider one (scope "map": every
+# place on a map; "places": the ones named), each a journey by road. The
 # GM can also just go: from the table, the maps page's panel (return_to:
-# "map") or the campaign's page.
+# "map") or the campaign's page, whatever the controls say.
 class Campaigns::WaysController < ApplicationController
   include CampaignScoped
   include TableSeat
@@ -13,17 +14,21 @@ class Campaigns::WaysController < ApplicationController
   before_action :set_campaign
 
   def create
-    return head(:forbidden) unless table_seat.gm?
+    seat = table_seat
+    return head(:forbidden) unless seat.gm? || (seat.seated? && @campaign.controls != "talk")
 
-    if params[:go].present?
+    if seat.gm? && params[:go].present?
       @campaign.take_way!(params[:way])
       return back_to_the_map(notice: "The party is at #{@campaign.reload.current_node&.name}.") if params[:return_to] == "map"
     else
-      case params[:scope]
-      when "map" then @campaign.ask_where_next!(scope: "map", map: @campaign.maps.find_by(id: params[:map_id]))
-      when "places" then @campaign.ask_where_next!(scope: "places", places: @campaign.map_nodes.where(id: Array(params[:places])))
-      else @campaign.ask_where_next!
+      vote = if seat.gm? && params[:scope] == "map"
+        @campaign.ask_where_next!(scope: "map", map: @campaign.maps.find_by(id: params[:map_id]))
+      elsif seat.gm? && params[:scope] == "places"
+        @campaign.ask_where_next!(scope: "places", places: @campaign.map_nodes.where(id: Array(params[:places])))
+      else
+        @campaign.ask_where_next!
       end
+      vote.picks.find_or_initialize_by(character: seat.character).update!(option: params[:way]) if seat.character? && params[:way].present?
     end
     redirect_back_or_to campaign_table_path(@campaign), status: :see_other
   rescue Refusal, ActiveRecord::RecordInvalid => e

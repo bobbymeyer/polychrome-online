@@ -1,5 +1,6 @@
-<%# The inn, the temple and the guild are things to do here (Location::Town#services_for): the GM does one from
-    Where next? like anything else, or from here; players ask at the table. The purse pays; the outcome happens (Outcome). %>
+<%# The inn, the temple and the guild are things to do here (Location::Town#services_for): the party picks one
+    at the table like anything else, once the GM has called things to do here (Campaign::Controls), or from
+    here: the GM does it, a player suggests it. The purse pays; the outcome happens (Outcome). %>
 <% here = @campaign.current_node&.location_id == location.id %>
 <% pastime = here && @campaign.current_node.pastimes.find { |p| p.service == service["kind"] } %>
 <% outcome = { "inn" => Outcome.of("rest", 100), "temple" => Outcome.of("raise"), "guild" => Outcome.of("rumour") }.fetch(service["kind"]) %>
@@ -11,8 +12,10 @@
     <p class="muted">More than the party has.</p>
   <% elsif gm %>
     <%= button_to pastime.name, campaign_ways_path(@campaign), params: { way: label, go: 1 }, class: "button play" %>
+  <% elsif shopping && @campaign.doing? %>
+    <%= button_to campaign_ways_path(@campaign), params: { way: label }, class: "button play" do %><%= pastime.name %> <span class="menu__cost">suggest</span><% end %>
   <% elsif shopping %>
-    <p class="hint">Ask the GM: it's theirs to call, or to put to the table.</p>
+    <p class="hint">Ask the GM: when they call things to do here, it's the table's to pick.</p>
   <% end %>
 <% elsif service["kind"] == "temple" && here %>
   <p class="muted">Nobody is KO'd.</p>

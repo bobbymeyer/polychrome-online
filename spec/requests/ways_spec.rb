@@ -28,6 +28,7 @@ RSpec.describe "Where next", type: :request do
 
     sign_in_as(@admin)
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    campaign.call_controls!("travel")
     get campaign_table_path(campaign)
     expect(response.body).to include("Ask about somewhere further", "Anywhere on", "Or a choice between these places")
 
@@ -103,43 +104,50 @@ RSpec.describe "Where next", type: :request do
     expect(campaign.ask_where_next!.options).to include(Campaign::STAY) # asked again, with what there is now
   end
 
-  it "keeps the ways from players until the GM puts it to the table; then the vote is where they see them" do
+  it "offers nothing until the GM calls travel; then everyone has the ways, and a player's suggestion opens the vote" do
     sign_in_as(kim)
     get campaign_table_path(campaign)
-    ways = Nokogiri::HTML(response.body).at("#table_ways")
-    expect(ways.key?("hidden")).to be(true) # nothing of theirs here
-    expect(ways.text).not_to include("Where next?", "To Greymere", "To Port")
-    expect(response.body).to include("the GM asks where next")
+    expect(Nokogiri::HTML(response.body).at("#table_ways").key?("hidden")).to be(true) # talk: nothing to pick
+    expect(response.body).to include("The GM has the floor.")
+    expect(response.body).not_to include("To Greymere", %(menu__cost">suggest))
     post campaign_ways_path(campaign), params: { way: "To Greymere" }
-    expect(response).to have_http_status(:forbidden) # not theirs to open
+    expect(response).to have_http_status(:forbidden) # not while the table is talking
     expect(campaign.open_choice).to be_nil
+    patch campaign_controls_path(campaign), params: { kind: "travel" }
+    expect(response).to have_http_status(:forbidden) # the GM calls it
+    expect(campaign.reload.controls).to eq("talk")
     sign_out
 
     sign_in_as(@admin)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Where next?", "To Greymere", "To Port", "Put it to the table")
+    expect(Nokogiri::HTML(response.body).at("#table_ways").key?("hidden")).to be(true) # the GM has no menu either
+    controls = Nokogiri::HTML(response.body).css("#table_now .controls-call button")
+    expect(controls.map(&:text)).to eq([ "Talk", "Travel", "Things to do here" ])
+    expect(controls.map { |b| b["aria-pressed"] }).to eq(%w[true false false])
+    expect(controls.map { |b| b["disabled"] }).to all(be_nil) # there's always the night to make camp
+    patch campaign_controls_path(campaign), params: { kind: "travel" }
+    expect(campaign.reload).to be_travelling
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Travel: the ways on are below, for everyone.", "Where next?", "To Greymere", "To Port", "Put it to the table", "Ask about somewhere further")
     expect(response.body).not_to include("To The Pass") # blocked
-    # Folded until the GM asks: the Now line's button opens the fold, which holds the ways and the asking.
-    page = Nokogiri::HTML(response.body)
-    fold = page.at("#table_ways details#where_next")
-    expect(fold.key?("open")).to be(false)
-    expect(fold.at("summary").text).to eq("Where next?")
-    expect(fold.text).to include("To Greymere", "Put it to the table", "Ask about somewhere further")
-    expect(page.at("#table_now a[href='#where_next']").text).to eq("Where next? ↓")
-    post campaign_ways_path(campaign)
-    vote = campaign.open_choice
-    expect(vote).to be_where_next
-    expect(vote.options).to eq([ "To Greymere", "To Port", "Make camp (overnight)", Campaign::STAY ])
-    expect(vote.body).to eq("Where next? 4 ways to choose from.") # the ways are in the panel, not the log
+    patch campaign_controls_path(campaign), params: { kind: "dance" }
+    expect(flash[:alert]).to eq("There's no such thing to call at the table")
     sign_out
 
-    # Asked, the player sees the ways once: in the vote, with no second list under it.
     sign_in_as(kim)
     get campaign_table_path(campaign)
+    expect(response.body).to include("Where next?", "Say where you'd go", "To Greymere", "To Port", %(menu__cost">suggest))
+    post campaign_ways_path(campaign), params: { way: "To Greymere" }
+    vote = campaign.open_choice
+    expect(vote).to be_where_next
+    expect(vote.options).to eq([ "To Greymere", "To Port", Campaign::STAY ]) # the roads: camp is a thing to do here
+    expect(vote.tally["To Greymere"]).to eq([ "Rook" ])
+    expect(vote.body).to eq("Where next? 3 ways to choose from.") # the ways are in the panel, not the log
+
+    # Voting, the player sees the ways once: in the vote, not in Where next as well.
+    get campaign_table_path(campaign)
     expect(response.body).to include("What will the party do?", "To Greymere")
-    expect(Nokogiri::HTML(response.body).at("#table_ways").key?("hidden")).to be(true)
-    post choice_picks_path(vote), params: { option: "To Greymere" }
-    expect(vote.reload.tally["To Greymere"]).to eq([ "Rook" ])
+    expect(response.body).not_to include(%(menu__cost">suggest))
     sign_out
 
     sign_in_as(@admin)
@@ -151,6 +159,24 @@ RSpec.describe "Where next", type: :request do
     post choice_settlement_path(vote), params: { option: "To Greymere" }
     expect(campaign.reload.current_node).to eq(mere)
     expect(campaign.messages.pluck(:body)).to include("The party chose: To Greymere.", "The party travels from Tule to Greymere.")
+    expect(campaign).to be_travelling # until the GM says otherwise
+  end
+
+  it "offers what fits the controls: roads in travel, things to do here in doing, all of them to a plain ask" do
+    tule.update!(activities: "Work a shift (day): Aprons.")
+    campaign.update!(time_of_day: "day")
+    expect(campaign.ways_offered).to eq([])
+    campaign.call_controls!("travel")
+    expect(campaign.ways_offered.map { |w| w["label"] }).to eq([ "To Greymere", "To Port" ])
+    expect(campaign.ask_where_next!.options).to eq([ "To Greymere", "To Port", Campaign::STAY ])
+    campaign.open_choice.destroy!
+    campaign.call_controls!("doing")
+    expect(campaign.ways_offered.map { |w| w["label"] }).to eq([ "Work a shift (until dusk)", "Make camp (overnight)" ])
+    expect(campaign.ask_where_next!.options).to eq([ "Work a shift (until dusk)", "Make camp (overnight)", Campaign::STAY ])
+    campaign.open_choice.destroy!
+    campaign.call_controls!("talk")
+    expect(campaign.ask_where_next!.options).to eq([ "Work a shift (until dusk)", "To Greymere", "To Port", "Make camp (overnight)", Campaign::STAY ])
+    expect { campaign.call_controls!("fight") }.to raise_error(Refusal, /no such thing/)
   end
 
   describe "spending the day (Pastime)" do
@@ -161,14 +187,15 @@ RSpec.describe "Where next", type: :request do
       campaign.update!(time_of_day: "day")
     end
 
-    it "offers what there is to do here this part of the day, and the table picks it like a way on" do
-      sign_in_as(@admin)
+    it "offers what there is to do here this part of the day, once called, and the table picks it like a way on" do
+      campaign.call_controls!("doing")
+      sign_in_as(kim)
       get campaign_table_path(campaign)
-      expect(response.body).to include("Day in Tule", "Attend class (until night)", "Work a shift (until dusk)", "Or go", "To Greymere")
-      expect(response.body).not_to include("The Undertow")
-      expect(response.body.scan("menu--wide").size).to eq(1) # things to do here get wide buttons; the roads don't
+      expect(response.body).to include("Day in Tule", "Attend class (until night)", "Work a shift (until dusk)", "What will you do here?")
+      expect(response.body).not_to include("The Undertow", "To Greymere") # not now; not the roads
+      expect(response.body.scan("menu--wide").size).to eq(1) # things to do here get wide buttons
 
-      post campaign_ways_path(campaign)
+      post campaign_ways_path(campaign), params: { way: "Attend class (until night)" }
       vote = campaign.open_choice
       expect(vote.options).to start_with("Attend class (until night)", "Work a shift (until dusk)")
 
@@ -186,6 +213,7 @@ RSpec.describe "Where next", type: :request do
       ada = create_character(campaign, name: "Ada", job: world.jobs.find_by!(slug: "white_mage"))
       create_character(campaign, name: "Down", job: world.jobs.find_by!(slug: "thief"), hp: 0) # the KO'd earn nothing
       campaign.start_rumour!("The ferryman owes the Vells money.", at: mere) # not heard in Tule yet
+      campaign.call_controls!("doing")
       sign_in_as(@admin)
       get campaign_table_path(campaign)
       expect(response.body).to include("At the next rest: Rook, 20 EXP a part; Nim, 40 gil a part; Ada, a rumour")
@@ -215,10 +243,12 @@ RSpec.describe "Where next", type: :request do
       rook.update!(hp: 10)
       expect(campaign.reload.ways_on.map { |w| w["label"] }).to include("Work a shift (until night)", "The good tea (25 gil)", "Study (until dusk)")
       expect { campaign.take_way!("The good tea (25 gil)") }.to raise_error(Refusal, "The party has 20 gil; The good tea costs 25 gil")
-      sign_in_as(@admin)
+      campaign.call_controls!("doing")
+      sign_in_as(kim)
       get campaign_table_path(campaign)
       ways = Nokogiri::HTML(response.body).at("#table_ways").text
-      expect(ways).to include("Work a shift (until night)", "The good tea (25 gil)") # the GM sees it all, and is refused at the till
+      expect(ways).to include("Work a shift (until night)")
+      expect(ways).not_to include("The good tea") # not offered to players while the purse can't pay
 
       campaign.take_way!("Work a shift (until night)")
       expect(campaign.reload).to have_attributes(gil: 60, time_of_day: "night")
@@ -315,6 +345,7 @@ RSpec.describe "Where next", type: :request do
     key = cave.add_room!(name: "Vault of the Old Kings", connect: cave.view["entrance"], decision: { "kind" => "treasure", "gil" => 40 })
 
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    campaign.call_controls!("travel")
     get campaign_maps_path(campaign)
     floorplan = response.body[/<div id="table_floorplan".*?<\/svg>/m]
     expect(floorplan).to include(cave.name, "Vault of", "the Old", "Kings") # every room, names on as many lines as they need

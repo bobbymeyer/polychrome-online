@@ -43,10 +43,12 @@ module Campaign::Ways
 
   # The open "Where next?", or a new one. Refused while the table is
   # deciding something else, or when there's nowhere to go. What's on
-  # the ballot (scope): the ways on from here (roads and things to do),
-  # every place on a map the party can reach by road, or places the GM
-  # names (places: nodes); settling it takes the party there, however
-  # many roads away (Travelling#travel_to!).
+  # the ballot (scope): the ways on from here that fit the controls
+  # (Campaign::Controls#ways_offered: the roads in travel, the things to
+  # do here in doing, all of them when nothing is called), every place on
+  # a map the party can reach by road, or places the GM names (places:
+  # nodes); settling it takes the party there, however many roads away
+  # (Travelling#travel_to!).
   def ask_where_next!(scope: "here", map: nil, places: nil)
     choice = open_choice
     return choice if choice&.where_next? && scope == "here"
@@ -56,7 +58,7 @@ module Campaign::Ways
     ways = case scope
     when "map" then ways_across(map || party_map || root_map)
     when "places" then ways_to(Array(places))
-    else ways_on
+    else controls == "talk" ? ways_on : ways_offered
     end
     raise Refusal, "There's nowhere to go from here" if ways.empty?
     raise Refusal, "That's too many places for one vote (#{Message::Choice::MAX_MOVES} at most)" if ways.size > Message::Choice::MAX_MOVES

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_140000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -229,6 +229,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_120000) do
     t.json "visits", default: {}, null: false
     t.integer "shown_map_id"
     t.string "stage_view", default: "here", null: false
+    t.string "controls", default: "talk", null: false
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true

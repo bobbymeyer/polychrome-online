@@ -8,6 +8,7 @@
 class Campaign < ApplicationRecord
   include Timekeeping
   include Mapping
+  include Controls
 
   belongs_to :world
   belongs_to :gm, class_name: "User", optional: true

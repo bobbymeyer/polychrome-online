@@ -19,9 +19,12 @@ RSpec.describe "The table's motion", type: :request do
     campaign.clocks.create!(name: "The count schemes", segments: 4, triggers: %w[rest], public: true)
     campaign.clocks.create!(name: "The roads close", segments: 4, triggers: %w[travel], public: true)
     campaign.current_node.world_place.update!(activities: "Sweep the yard (any, money 5): Dust.")
+    campaign.call_controls!("doing") # the things to do here, with what each sets off
     get campaign_table_path(campaign)
     expect(response.body).to include(%(<span class="menu__note">5 gil for the party</span>))
     expect(response.body).to include("the night passes · ticks The count schemes")
+    campaign.call_controls!("travel") # the roads, with their clocks
+    get campaign_table_path(campaign)
     expect(response.body).to include("ticks The roads close")
   end
 
