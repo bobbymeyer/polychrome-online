@@ -349,9 +349,12 @@ The GM's table works the same way:
   controls row (Talk · Travel · Things to do here · Scene · Check: what kind of moment this is,
   and what comes to the table for it); with a vote, "Settle it ↓"; with an encounter, "Fight or
   wave it off ↓" (to its panel, where the prelude can still be edited).
-- **The rest of the tools wait behind "Tools"**, always: Clocks, Time, Secrets, Moves and More
-  (grants, music, the shared screen). What needs an answer now (everyone down, a field ability
-  asked for) stays out in front.
+- **The rest of the tools wait behind "Tools"**, always: Moves, and More (grants, music, the
+  shared screen). Clocks and secrets are Prep's, not the table's: the Now line says when a clock
+  is one tick from full, in red, with the way to Prep. Time passes where the day is spent: "A
+  part of the day passes", "Until dawn" and "Pass N parts" sit under Things to do here, beside
+  the pastimes and Make camp, and nowhere else (a journey takes its road's time by itself). What
+  needs an answer now (everyone down, a field ability asked for) stays out in front.
 - **What the GM looks up is in tabs** under the tools: Party · What they know.
 
 The shared screen keeps its panels: it's watched, not played. The stage-only view keeps nothing but
@@ -488,10 +491,9 @@ under the frame.
   Talk, Travel and Things to do here put the ways under the stage for everyone; Scene puts the
   scene list there and Check the check form, for the GM, in the same place a player's moves go,
   so there is one spot to look at whoever you are. There is no tab strip for these. What's left
-  (Clocks, Time, Secrets, Moves and More: grants, music, one shared screen with its QR code to
-  hold up) waits behind one "Tools" button under a dashed tag, "GM tools · only you see these",
-  one tab at a time; the open tab is ink, a count shows running clocks, and the tab the GM had
-  open stays open, per campaign, in this browser. What needs an answer now (everyone down, a
+  (Moves, and More: grants, music, one shared screen with its QR code to hold up) waits behind
+  one "Tools" button under a dashed tag, "GM tools · only you see these", one tab at a time; the
+  open tab is ink, and the tab the GM had open stays open, per campaign, in this browser. What needs an answer now (everyone down, a
   field ability asked for) sits in front of it. On a phone as the GM's remote, the same comes
   after the play.
 - **One list of ways while the party votes.** With a Where next? open, the GM's vote has each

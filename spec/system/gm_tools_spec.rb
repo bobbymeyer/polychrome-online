@@ -18,19 +18,18 @@ RSpec.describe "The GM's tools at the table", type: :system do
       within(".table-controls .gm-tools") do
         expect(page).to have_no_css("[role=tab]", visible: true) # folded
         click_on "Tools"
-        expect(page).to have_css("[role=tab][aria-selected=true]", text: "Clocks")
-        expect(page).to have_css("[role=tab]", text: /Clocks\s*1/) # one running
-        expect(page).to have_text("The tide comes in")
-        find("[role=tab]", text: "Time").click
+        expect(page).to have_css("[role=tab]", count: 2) # Moves and More: clocks, secrets and time left the table
+        expect(page).to have_css("[role=tab][aria-selected=true]", text: "Moves")
         expect(page).to have_no_text("The tide comes in")
-        expect(page).to have_button("A part of the day passes")
+        find("[role=tab]", text: "More").click
+        expect(page).to have_text("Grant an archetype")
       end
 
       visit current_path
       within(".gm-tools") do
         click_on "Tools"
-        expect(page).to have_css("[role=tab][aria-selected=true]", text: "Time")
-        expect(page).to have_no_css("#gm_panel_clocks", visible: true)
+        expect(page).to have_css("[role=tab][aria-selected=true]", text: "More")
+        expect(page).to have_no_css("#gm_panel_moves", visible: true)
       end
     end
   end

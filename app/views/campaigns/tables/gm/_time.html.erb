@@ -1,4 +1,7 @@
+<%# Time passing by the GM's hand (Timekeeping), where the day is spent: under the things to do here, once the
+    GM has called them (Campaign::Controls "doing"). A journey takes its road's time by itself. %>
 <div class="time-tools">
+  <span class="time-tools__label">Or let time pass:</span>
   <%= button_to "A part of the day passes", campaign_time_path(campaign), method: :patch, params: { parts: 1 }, class: "button button--quiet" %>
   <%= button_to "Until #{campaign.almanac.periods.first}", campaign_time_path(campaign), method: :patch, params: { until: "the_day" }, class: "button button--quiet" %>
   <%= form_with url: campaign_time_path(campaign), method: :patch, class: "time-tools__pass" do |f| %>
@@ -8,4 +11,4 @@
     <%= f.submit "Go", class: "button button--quiet" %>
   <% end %>
 </div>
-<p class="hint">A day here has <%= pluralize(campaign.almanac.periods.size, "part") %>: <%= campaign.almanac.periods.to_sentence %>. Journeys take their road's time; a rest sleeps until <%= campaign.almanac.periods.first %>. Each new day ticks the clocks that tick on a new day.</p>
+<p class="hint">A day here has <%= pluralize(campaign.almanac.periods.size, "part") %>: <%= campaign.almanac.periods.to_sentence %>. A journey takes its road's time; a rest sleeps until <%= campaign.almanac.periods.first %>. Each new day ticks the clocks that tick on a new day.</p>

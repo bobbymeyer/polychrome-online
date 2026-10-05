@@ -1104,7 +1104,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .battle-ready .hint { margin: 0; }
 
 /* The GM's time tool: a part of the day, until morning, or so many parts, on one line. */
-.time-tools { display: flex; flex-wrap: wrap; gap: 8px var(--gutter); align-items: center; }
+.time-tools { display: flex; flex-wrap: wrap; gap: 8px var(--gutter); align-items: center; margin-top: 8px; }
+.time-tools__label { font-size: 13px; font-weight: 800; font-style: italic; }
+.table-now__clock { display: block; flex-basis: 100%; margin-top: 4px; font-size: 14px; font-weight: 700; color: var(--signal); }
 .time-tools form { margin: 0; }
 .time-tools__pass { display: flex; gap: 8px; align-items: center; }
 .time-tools__pass label { font-weight: 600; font-size: 14px; }

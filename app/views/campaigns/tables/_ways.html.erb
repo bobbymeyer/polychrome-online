@@ -24,7 +24,9 @@
 <%# While the party votes on where next, the GM's ways shrink to a row under the vote: the same
     places, but going now, without waiting for the vote (which goes with them). %>
 <% voting = gm && choice&.where_next? %>
-<section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter && !treasure %>>
+<%# Time passes where the day is spent: the GM's time tools sit under the things to do here (gm/_time). %>
+<% timing = gm && campaign.doing? && !voting && !campaign.battle_on? %>
+<section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter && !treasure && !timing %>>
   <% if encounter %>
     <%= render "campaigns/encounters/call", campaign: campaign, encounter: encounter, return_to: campaign_table_path(campaign) %>
   <% end %>
@@ -64,6 +66,9 @@
       <% end %>
       </tbody>
     </table>
+    <% if timing %>
+      <%= render "campaigns/tables/gm/time", campaign: campaign %>
+    <% end %>
     <% if campaign.doing? && (paid = campaign.payoff_preview).any? %>
       <%# Daily life pays off through the archetypes, at the next rest (Campaign::Payoffs). %>
       <p class="hint table-ways__payoff">
@@ -113,5 +118,9 @@
     <% else %>
       <p class="hint">Say which: it goes to a vote, and the GM settles it.</p>
     <% end %>
+  <% elsif timing %>
+    <h2><%= campaign.period.upcase_first %> in <%= campaign.current_node&.name || "the field" %></h2>
+    <p class="hint">Nothing to do here this part of the day.</p>
+    <%= render "campaigns/tables/gm/time", campaign: campaign %>
   <% end %>
 </section>

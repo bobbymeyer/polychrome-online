@@ -435,7 +435,7 @@ RSpec.describe "The table", type: :request do
       page = Nokogiri::HTML(response.body)
       expect(page.css("#table_now .controls-call button").map(&:text)).to eq([ "Talk", "Travel", "Things to do here", "Scene", "Check" ])
       expect(page.at("#table_now .table-now__do").text).not_to include("Call a check", "Play a scene") # no second way in
-      expect(page.css(".gm-tools [role=tab]").map { |t| t.text.strip }).to eq(%w[Clocks Time Secrets Moves More]) # scenes and checks are called, not tabbed
+      expect(page.css(".gm-tools [role=tab]").map { |t| t.text.strip }).to eq(%w[Moves More]) # the rest is called, or Prep's
       expect(page.at(".gm-tools .gm-tools__reveal").text).to eq("Tools") # folded until pressed (stage.css)
       expect(page.at("#table_called").key?("hidden")).to be(true) # nothing called
       %w[party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs
