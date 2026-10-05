@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-# Players steer: "Where next?" as a vote the GM settles, or the GM just going.
+# Players steer when asked: "Where next?" is a vote the GM opens and settles, or the GM just goes.
 RSpec.describe "Where next", type: :request do
   let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
@@ -103,25 +103,38 @@ RSpec.describe "Where next", type: :request do
     expect(campaign.ask_where_next!.options).to include(Campaign::STAY) # asked again, with what there is now
   end
 
-  it "lets a player suggest a way: it goes to a vote, and settling it takes the party there" do
+  it "keeps the ways from players until the GM puts it to the table; then the vote is where they see them" do
     sign_in_as(kim)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Where next?", "To Greymere", "To Port", "suggest")
-    expect(response.body).not_to include("To The Pass") # blocked
-
+    ways = Nokogiri::HTML(response.body).at("#table_ways")
+    expect(ways.key?("hidden")).to be(true) # nothing of theirs here
+    expect(ways.text).not_to include("Where next?", "To Greymere", "To Port")
+    expect(response.body).to include("the GM asks where next")
     post campaign_ways_path(campaign), params: { way: "To Greymere" }
+    expect(response).to have_http_status(:forbidden) # not theirs to open
+    expect(campaign.open_choice).to be_nil
+    sign_out
+
+    sign_in_as(@admin)
+    get campaign_table_path(campaign)
+    expect(response.body).to include("Where next?", "To Greymere", "To Port", "Put it to the table")
+    expect(response.body).not_to include("To The Pass") # blocked
+    post campaign_ways_path(campaign)
     vote = campaign.open_choice
     expect(vote).to be_where_next
     expect(vote.options).to eq([ "To Greymere", "To Port", "Make camp (overnight)", Campaign::STAY ])
-    expect(vote.tally["To Greymere"]).to eq([ "Rook" ])
     expect(vote.body).to eq("Where next? 4 ways to choose from.") # the ways are in the panel, not the log
+    sign_out
 
-    # Voting, the player sees the ways once: in the vote, not in Where next as well.
+    # Asked, the player sees the ways once: in the vote, with no second list under it.
+    sign_in_as(kim)
     get campaign_table_path(campaign)
     expect(response.body).to include("What will the party do?", "To Greymere")
-    expect(response.body).not_to include(%(menu__cost">suggest)) # no suggest buttons
-
+    expect(Nokogiri::HTML(response.body).at("#table_ways").key?("hidden")).to be(true)
+    post choice_picks_path(vote), params: { option: "To Greymere" }
+    expect(vote.reload.tally["To Greymere"]).to eq([ "Rook" ])
     sign_out
+
     sign_in_as(@admin)
     # The GM has the vote, and under it a small way straight there instead of a second Where next.
     get campaign_table_path(campaign)
@@ -142,13 +155,13 @@ RSpec.describe "Where next", type: :request do
     end
 
     it "offers what there is to do here this part of the day, and the table picks it like a way on" do
-      sign_in_as(kim)
+      sign_in_as(@admin)
       get campaign_table_path(campaign)
       expect(response.body).to include("Day in Tule", "Attend class (until night)", "Work a shift (until dusk)", "Or go", "To Greymere")
       expect(response.body).not_to include("The Undertow")
       expect(response.body.scan("menu--wide").size).to eq(1) # things to do here get wide buttons; the roads don't
 
-      post campaign_ways_path(campaign), params: { way: "Attend class (until night)" }
+      post campaign_ways_path(campaign)
       vote = campaign.open_choice
       expect(vote.options).to start_with("Attend class (until night)", "Work a shift (until dusk)")
 
@@ -166,7 +179,7 @@ RSpec.describe "Where next", type: :request do
       ada = create_character(campaign, name: "Ada", job: world.jobs.find_by!(slug: "white_mage"))
       create_character(campaign, name: "Down", job: world.jobs.find_by!(slug: "thief"), hp: 0) # the KO'd earn nothing
       campaign.start_rumour!("The ferryman owes the Vells money.", at: mere) # not heard in Tule yet
-      sign_in_as(kim)
+      sign_in_as(@admin)
       get campaign_table_path(campaign)
       expect(response.body).to include("At the next rest: Rook, 20 EXP a part; Nim, 40 gil a part; Ada, a rumour")
 
@@ -195,11 +208,10 @@ RSpec.describe "Where next", type: :request do
       rook.update!(hp: 10)
       expect(campaign.reload.ways_on.map { |w| w["label"] }).to include("Work a shift (until night)", "The good tea (25 gil)", "Study (until dusk)")
       expect { campaign.take_way!("The good tea (25 gil)") }.to raise_error(Refusal, "The party has 20 gil; The good tea costs 25 gil")
-      sign_in_as(kim)
+      sign_in_as(@admin)
       get campaign_table_path(campaign)
       ways = Nokogiri::HTML(response.body).at("#table_ways").text
-      expect(ways).to include("Work a shift (until night)")
-      expect(ways).not_to include("The good tea") # not offered to players while the purse can't pay
+      expect(ways).to include("Work a shift (until night)", "The good tea (25 gil)") # the GM sees it all, and is refused at the till
 
       campaign.take_way!("Work a shift (until night)")
       expect(campaign.reload).to have_attributes(gil: 60, time_of_day: "night")
@@ -266,14 +278,6 @@ RSpec.describe "Where next", type: :request do
     campaign.open_choice.settle!(Campaign::STAY)
     campaign.update!(current_node: nil)
     expect { campaign.ask_where_next! }.to raise_error(Refusal, /nowhere to go/)
-  end
-
-  it "holds players' suggestions while the table decides something else, and says so" do
-    sign_in_as(kim)
-    Message.choice(campaign, options: %w[Yes No]).save!
-    get campaign_table_path(campaign)
-    expect(response.body).to match(/<button class="menu__item" disabled="disabled" type="submit">\s*To Greymere/)
-    expect(response.body).to include("The table is deciding something else first")
   end
 
   it "offers a dungeon's door, then its ways on, naming only rooms the players have seen" do
