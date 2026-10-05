@@ -1104,7 +1104,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .battle-ready .hint { margin: 0; }
 
 /* The GM's time tool: a part of the day, until morning, or so many parts, on one line. */
-.time-tools { display: flex; flex-wrap: wrap; gap: 8px var(--gutter); align-items: center; }
+.time-tools { display: flex; flex-wrap: wrap; gap: 8px var(--gutter); align-items: center; margin-top: 8px; }
+.time-tools__label { font-size: 13px; font-weight: 800; font-style: italic; }
+.table-now__clock { display: block; flex-basis: 100%; margin-top: 4px; font-size: 14px; font-weight: 700; color: var(--signal); }
 .time-tools form { margin: 0; }
 .time-tools__pass { display: flex; gap: 8px; align-items: center; }
 .time-tools__pass label { font-weight: 600; font-size: 14px; }
@@ -1266,7 +1268,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table[data-seat="player"]:has(#table_now[data-state="encounter"]) #field_ability,
 .table[data-seat="player"]:has(#table_now[data-state="choice"]) #field_ability,
 .table:has(#table_now[data-state="scene"]) #table_ways, .table[data-seat="player"]:has(#table_now[data-state="scene"]) #field_ability { display: none; } /* the scene plays; the director's hand is on the Now line */
-#table_here:empty { display: none; }
 .field-ability-status { margin: 8px 0; font-size: 14px; }
 /* Talk is a button until it's wanted. */
 .talk { margin: 12px 0; }
@@ -1844,10 +1845,22 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .map-sheet--editor { aspect-ratio: 16 / 9; height: auto; border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
 .map-sheet--editor .map-sheet__name { display: none; }
 
-/* The GM's wider "Where next?" (campaigns/tables/_ways): folded under the roads from here. */
-.ways-ask { margin-top: 8px; }
-.ways-ask > summary { display: inline-block; }
-.ways-ask .inline-form { align-items: flex-end; }
-.ways-ask__places { margin-top: 8px; }
-.ways-ask .field-label { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+/* The GM asks from the map (map_ask_controller): a card by the place pressed, and a corner button for the whole map. */
+.map-sheet__ask-all-form { position: absolute; left: 8px; bottom: 8px; z-index: 3; margin: 0; }
+.map-sheet__ask-all { font-size: clamp(10px, 1.3cqw, 13px); min-height: 0; padding: 4px 10px; line-height: 1.4; }
+.map-sheet:has(.map-sheet__ask-all-form) .map-canvas__modes { bottom: 44px; }
+.map-ask {
+  position: absolute; z-index: 9; min-width: 220px; max-width: 280px; padding: 10px 12px; background: var(--paper); border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink); line-height: 1.3; font-size: 14px;
+}
+.map-ask[hidden] { display: none; }
+.map-ask__name { margin: 0 0 6px; font-size: 16px; }
+.map-ask__journey { color: var(--grey); font-size: 13px; }
+.map-ask__acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.map-ask__acts form { margin: 0; }
+.map-ask__none { margin: 0 0 6px; }
+.map-node__ask { cursor: pointer; }
+/* The place's tag on the stage carries the GM's switch between the place and the map. */
+.table-time__view { margin-left: 8px; min-height: 0; padding: 0 8px; font-size: 11px; line-height: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; background: var(--ink); color: var(--paper); border: 0; vertical-align: 1px; }
+.table-time__view:hover { background: var(--signal); color: var(--paper); translate: none; }
 .checks-row { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 8px; }

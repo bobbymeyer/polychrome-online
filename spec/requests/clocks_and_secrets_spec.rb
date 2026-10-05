@@ -102,8 +102,11 @@ RSpec.describe "Clocks and secrets", type: :request do
     it "shows public clocks to the players, and only the GM the hidden ones" do
       campaign.clocks.create!(name: "Storm rolls in", segments: 4, public: true, filled: 2)
       campaign.clocks.create!(name: "The traitor acts", segments: 4)
-      get campaign_table_path(campaign)
+      get campaign_prep_path(campaign) # the GM's list is Prep's
       expect(response.body).to include("Storm rolls in", "The traitor acts", "Set the clock")
+      get campaign_table_path(campaign)
+      expect(response.body).to include("Storm rolls in") # the public one, in what the party knows
+      expect(response.body).not_to include("Set the clock")
 
       sit(hero)
       get campaign_table_path(campaign)
@@ -134,7 +137,14 @@ RSpec.describe "Clocks and secrets", type: :request do
     end
   end
 
-  it "lets the GM pass time at the table, and shows everyone the time" do
+  it "lets the GM pass time at the table, under the things to do here, and shows everyone the time" do
+    get campaign_table_path(campaign)
+    expect(response.body).not_to include("A part of the day passes") # not until the day's doings are called
+    campaign.call_controls!("doing")
+    get campaign_table_path(campaign)
+    ways = Nokogiri::HTML(response.body).at("#table_ways")
+    expect(ways.key?("hidden")).to be(false)
+    expect(ways.text).to include("Or let time pass:", "A part of the day passes", "Until #{campaign.almanac.periods.first}")
     patch campaign_time_path(campaign), params: { parts: 2 }
     expect(campaign.reload.time_of_day).to eq("dusk")
     patch campaign_time_path(campaign), params: { until: "the_day" }
@@ -144,6 +154,20 @@ RSpec.describe "Clocks and secrets", type: :request do
     expect(response.body).to include(%(<p class="table-time__date">Day 2</p>), %(<p class="table-time__part">dawn</p>))
     patch campaign_time_path(campaign), params: { parts: 1 }
     expect(response).to have_http_status(:forbidden)
+  end
+
+  it "keeps clocks and secrets in Prep, and tells the GM at the table when a clock is one tick from full" do
+    campaign.clocks.create!(name: "The tide", segments: 4, filled: 3)
+    campaign.clocks.create!(name: "The count schemes", segments: 6, filled: 1)
+    get campaign_table_path(campaign)
+    expect(response.body).not_to include("gm_clocks", "gm_secrets", "gm_tab_clocks", "gm_tab_secrets")
+    expect(Nokogiri::HTML(response.body).at("#table_now .table-now__clock").text.squish).to eq("The tide is one tick from full · Clocks")
+    expect(response.body).to include(campaign_prep_path(campaign, anchor: "clocks"))
+    get campaign_prep_path(campaign)
+    expect(response.body).to include("gm_clocks", "gm_secrets", "The tide", "The count schemes")
+    sit(hero)
+    get campaign_table_path(campaign)
+    expect(response.body).not_to include("table-now__clock", "one tick from full")
   end
 
   describe "secrets" do

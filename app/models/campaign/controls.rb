@@ -21,10 +21,15 @@ module Campaign::Controls
     validates :controls, inclusion: { in: CONTROLS }
   end
 
+  # Calling travel puts the map on the stage (Mapping#show_map!): the roads
+  # are asked from it. The other calls leave the stage as it is.
   def call_controls!(kind)
     raise Refusal, "There's no such thing to call at the table" unless CONTROLS.include?(kind)
 
-    update!(controls: kind)
+    transaction do
+      update!(controls: kind)
+      show_map! if kind == "travel" && party_map && !map_on_stage?
+    end
   end
 
   def travelling? = controls == "travel"

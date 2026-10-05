@@ -24,7 +24,9 @@
 <%# While the party votes on where next, the GM's ways shrink to a row under the vote: the same
     places, but going now, without waiting for the vote (which goes with them). %>
 <% voting = gm && choice&.where_next? %>
-<section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter && !treasure %>>
+<%# Time passes where the day is spent: the GM's time tools sit under the things to do here (gm/_time). %>
+<% timing = gm && campaign.doing? && !voting && !campaign.battle_on? %>
+<section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" <%= "hidden" if ways.empty? && !encounter && !treasure && !timing %>>
   <% if encounter %>
     <%= render "campaigns/encounters/call", campaign: campaign, encounter: encounter, return_to: campaign_table_path(campaign) %>
   <% end %>
@@ -64,6 +66,9 @@
       <% end %>
       </tbody>
     </table>
+    <% if timing %>
+      <%= render "campaigns/tables/gm/time", campaign: campaign %>
+    <% end %>
     <% if campaign.doing? && (paid = campaign.payoff_preview).any? %>
       <%# Daily life pays off through the archetypes, at the next rest (Campaign::Payoffs). %>
       <p class="hint table-ways__payoff">
@@ -79,39 +84,15 @@
     <% elsif gm %>
       <%= button_to "Put it to the table", campaign_ways_path(campaign), class: "button button--quiet" %>
       <p class="hint">Go straight there, or let the party vote: settling the vote takes them where they chose.</p>
-      <%# A wider ballot (Campaign::Ways#ask_where_next!): every place on a map, or places named; the party travels
-          there however many roads away, stopping where something waits. %>
-      <% if campaign.travelling? && campaign.current_node && !dungeon %>
-        <details class="ways-ask">
-          <summary class="link-button">Ask about somewhere further</summary>
-          <%= form_with url: campaign_ways_path(campaign), class: "book-form inline-form" do |f| %>
-            <%= hidden_field_tag :scope, "map", id: nil %>
-            <div class="field">
-              <%= label_tag :ways_map_id, "Anywhere on" %>
-              <%= select_tag :map_id, options_for_select(campaign.maps.in_order.map { |m| [ m.name, m.id ] }, campaign.party_map&.id), id: "ways_map_id" %>
-            </div>
-            <%= f.submit "Ask the table", class: "button button--quiet" %>
-          <% end %>
-          <% places = campaign.map_nodes.where(visible: true).where.not(id: campaign.current_node.id).order(:name) %>
-          <% if places.any? %>
-            <%= form_with url: campaign_ways_path(campaign), class: "book-form ways-ask__places" do |f| %>
-              <%= hidden_field_tag :scope, "places", id: nil %>
-              <p class="field-label">Or a choice between these places</p>
-              <div class="checks-row">
-                <% places.each do |place| %>
-                  <label class="checks"><%= check_box_tag "places[]", place.id, false, id: "ways_place_#{place.id}" %> <%= place.name %></label>
-                <% end %>
-              </div>
-              <%= f.submit "Ask the table", class: "button button--quiet" %>
-            <% end %>
-          <% end %>
-          <p class="hint">Each is a journey by road from here: the vote says how long. Where something waits on the way, the party stops for your call.</p>
-        </details>
-      <% end %>
+      <%# A wider ballot (anywhere on a map, or a place pressed) is asked from the map on the stage (maps/_sheet). %>
     <% elsif deciding %>
       <p class="hint">The table is deciding something else first: settle that, then say where you'd go.</p>
     <% else %>
       <p class="hint">Say which: it goes to a vote, and the GM settles it.</p>
     <% end %>
+  <% elsif timing %>
+    <h2><%= campaign.period.upcase_first %> in <%= campaign.current_node&.name || "the field" %></h2>
+    <p class="hint">Nothing to do here this part of the day.</p>
+    <%= render "campaigns/tables/gm/time", campaign: campaign %>
   <% end %>
 </section>

@@ -12,7 +12,11 @@
 <% sides = map.neighbours %>
 <% labels = map_label_offsets(nodes) %>
 <% shared_modes = scope.campaign? ? nodes.flat_map { |n| n.modes_on.map(&:name).uniq }.tally.select { |_, count| count >= 3 }.keys : [] %>
-<div class="map-sheet <%= 'map-sheet--editor' if scope.editor? %> <%= 'map-sheet--pictured' if map.image.attached? %>" data-map-id="<%= map.id %>">
+<%# The GM asks from the map (map_ask_controller): each place they press offers Go and Ask the table, with the
+    journey by road from here; a corner button asks about anywhere on this map (Campaign::Ways#ask_where_next!). %>
+<% asking = scope.table? && scope.gm? && scope.campaign? && scope.owner.current_node && !scope.owner.dungeon_in_progress %>
+<% asks = asking ? scope.owner.ways_to(nodes.select { |n| n.visible? }).index_by { |way| way.dig("move", "to") } : {} %>
+<div class="map-sheet <%= 'map-sheet--editor' if scope.editor? %> <%= 'map-sheet--pictured' if map.image.attached? %>" data-map-id="<%= map.id %>" <%= tag.attributes(data: { controller: ("map-ask" if asking) }) %>>
   <svg viewBox="0 0 <%= MapNode::WIDTH %> <%= MapNode::HEIGHT %>" class="map" role="img"
        aria-label="<%= map.name %><%= ": the party is at #{party.name}" if party %>" data-map-editor-target="svg">
     <% if map.image.attached? %>
@@ -73,7 +77,15 @@
             <text class="<%= class_names("map-node__label", map_label_side(node), "is-above": label_y.negative?) %>" y="<%= label_y %>" text-anchor="middle"><%= node.name %></text>
             <% if in_mode %><text class="map-node__mode" y="<%= label_y.negative? ? label_y - 20 : label_y + 16 %>" text-anchor="middle"><%= in_mode %></text><% end %>
           <% end %>
-          <% if scope.table? && (page = scope.place_page(node)) %>
+          <% if asking && party&.id != node.id && known %>
+            <% way = asks[node.id] %>
+            <a href="<%= scope.place_page(node) || '#' %>" class="map-node__link map-node__ask" data-action="click->map-ask#open"
+               <%= tag.attributes(data: { node_id: node.id, node_name: node.name, way_label: way&.dig("label"), warn: way&.dig("warn"), page: scope.place_page(node),
+                                          journey: (way && [ way["journey"], ("by a dangerous road" if way["warn"]) ].compact.join(", ").presence) }) %>>
+              <circle class="map-node__target" r="44" />
+              <%= body %>
+            </a>
+          <% elsif scope.table? && (page = scope.place_page(node)) %>
             <a href="<%= page %>" class="map-node__link" data-turbo-frame="_top">
               <circle class="map-node__target" r="44" />
               <%= body %>
@@ -110,5 +122,28 @@
                 data: (scope.table? ? (scope.gm? ? { turbo_method: :patch } : { turbo_frame: "table_map" }) : { turbo_frame: "_top" }) %>
   <% end %>
   <p class="map-sheet__name"><%= map.name %></p>
+  <% if asking %>
+    <%= button_to "Ask the table: anywhere on #{map.name}", campaign_ways_path(scope.owner), params: { scope: "map", map_id: map.id },
+                  class: "button button--quiet map-sheet__ask-all", form: { class: "map-sheet__ask-all-form", data: { turbo_frame: "_top" } },
+                  disabled: asks.empty?, title: (asks.empty? ? "No road leads anywhere from here" : "A vote between every place on this map a road leads to") %>
+    <div class="map-ask" data-map-ask-target="card" hidden>
+      <p class="map-ask__name"><strong data-map-ask-target="name"></strong> <span class="map-ask__journey" data-map-ask-target="journey"></span></p>
+      <p class="map-ask__none hint" data-map-ask-target="noRoad" hidden>No road leads there from here.</p>
+      <div class="map-ask__acts">
+        <%= form_with url: campaign_ways_path(scope.owner), class: "inline", data: { turbo_frame: "_top", map_ask_target: "goForm" } do %>
+          <%= hidden_field_tag :to, "", id: nil %>
+          <%= hidden_field_tag :go, "1", id: nil %>
+          <%= tag.button "Go", type: "submit", class: "button play", data: { map_ask_target: "go" } %>
+        <% end %>
+        <%= form_with url: campaign_ways_path(scope.owner), class: "inline", data: { turbo_frame: "_top", map_ask_target: "askForm" } do %>
+          <%= hidden_field_tag :scope, "places", id: nil %>
+          <%= hidden_field_tag "places[]", "", id: nil %>
+          <%= tag.button "Ask the table", type: "submit", class: "button button--quiet", data: { map_ask_target: "ask" } %>
+        <% end %>
+        <%= link_to "Its page", "#", class: "link-button", data: { map_ask_target: "page", turbo_frame: "_top" } %>
+        <%= tag.button "Close", type: "button", class: "link-button", data: { action: "map-ask#close" } %>
+      </div>
+    </div>
+  <% end %>
   <% if shared_modes.any? %><p class="map-canvas__modes"><%= shared_modes.join(" · ") %>: across the map.</p><% end %>
 </div>

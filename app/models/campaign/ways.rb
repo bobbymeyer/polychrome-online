@@ -91,7 +91,8 @@ module Campaign::Ways
       time = legs.sum { |leg| leg.duration.to_i }
       risky = legs.any? { |leg| leg.state == "dangerous" }
       { "label" => "To #{node.name}#{" (#{journey_length(time)})" if time.positive?}#{' (by a dangerous road)' if risky}",
-        "move" => { "to" => node.id }, "warn" => ("The road to #{node.name} is dangerous: the party may meet something on it." if risky) }.compact
+        "move" => { "to" => node.id }, "journey" => (journey_length(time) if time.positive?),
+        "warn" => ("The road to #{node.name} is dangerous: the party may meet something on it." if risky) }.compact
     end
   end
 

@@ -147,7 +147,6 @@ RSpec.describe "The table", type: :request do
       %w[party knows].each { |key| expect(page.at("#drawer_#{key}")["hidden"]).not_to be_nil } # looked up, not shown
       expect(page.at("#stage #table_map")["hidden"]).not_to be_nil # the map waits on the stage until the GM shows it
       expect(page.at("#stage #table_time")).to be_present # the date in its corner
-      expect(page.at("#table_now #table_here")).to be_present # the way into the place, while the table is free (none here: no place yet)
       expect(page.at("#drawer_party #table_party")).to be_present
       menu = page.at(".topbar__user-menu")
       expect(menu.text).to include("At the table as Bartz", "Stand up") # the seat is in the account menu, with the others to take
@@ -435,7 +434,7 @@ RSpec.describe "The table", type: :request do
       page = Nokogiri::HTML(response.body)
       expect(page.css("#table_now .controls-call button").map(&:text)).to eq([ "Talk", "Travel", "Things to do here", "Scene", "Check" ])
       expect(page.at("#table_now .table-now__do").text).not_to include("Call a check", "Play a scene") # no second way in
-      expect(page.css(".gm-tools [role=tab]").map { |t| t.text.strip }).to eq(%w[Clocks Time Secrets Moves More]) # scenes and checks are called, not tabbed
+      expect(page.css(".gm-tools [role=tab]").map { |t| t.text.strip }).to eq(%w[Moves More]) # the rest is called, or Prep's
       expect(page.at(".gm-tools .gm-tools__reveal").text).to eq("Tools") # folded until pressed (stage.css)
       expect(page.at("#table_called").key?("hidden")).to be(true) # nothing called
       %w[party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs

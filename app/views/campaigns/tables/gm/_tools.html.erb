@@ -1,8 +1,9 @@
-<%# The rest of the GM's tools at the table, behind "Tools" until wanted (what the GM calls, scenes and checks
-    among them, is the Now line's controls row: Campaign::Controls). One tab at a time; gm_tools_controller
-    keeps the one you had open. What needs an answer now comes first: everyone down, a field ability asked for. %>
-<% tabs = { "clocks" => [ "Clocks", campaign.clocks.running.count ], "time" => [ "Time", nil ],
-            "secrets" => [ "Secrets", nil ], "moves" => [ "Moves", nil ], "more" => [ "More", nil ] } %>
+<%# The rest of the GM's tools at the table, behind "Tools" until wanted: the moves that are live, and More
+    (grants, music, the shared screen). What the GM calls (scenes, checks, travel, the day) is the Now line's
+    controls row (Campaign::Controls); clocks and secrets are Prep's, and the Now line says when a clock is
+    about to fill. One tab at a time; gm_tools_controller keeps the one you had open. What needs an answer
+    now comes first: everyone down, a field ability asked for. %>
+<% tabs = { "moves" => [ "Moves", nil ], "more" => [ "More", nil ] } %>
 <section class="gm-tools" aria-label="GM tools" data-controller="gm-tools" data-gm-tools-campaign-value="<%= campaign.id %>">
   <%= render "campaigns/tables/gm/recovery", campaign: campaign %>
   <%= render "campaigns/field_uses/requests", campaign: campaign %>
@@ -20,8 +21,7 @@
   <% tabs.each_key.with_index do |key, i| %>
     <%= tag.div id: "gm_panel_#{key}", role: "tabpanel", class: "gm-tools__panel", hidden: !i.zero?,
                 aria: { labelledby: "gm_tab_#{key}" }, data: { gm_tools_target: "panel", key: key } do %>
-      <%= render({ "clocks" => "campaigns/clocks/gm", "secrets" => "campaigns/secrets/gm" }.fetch(key, "campaigns/tables/gm/#{key}"),
-                 campaign: campaign, view: local_assigns[:view]) %>
+      <%= render "campaigns/tables/gm/#{key}", campaign: campaign, view: local_assigns[:view] %>
     <% end %>
   <% end %>
 </section>

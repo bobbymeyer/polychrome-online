@@ -46,11 +46,15 @@ RSpec.describe "Maps", type: :request do
       expect(response.body).not_to include("Secret Ruins", "data-map-node")
       expect(Nokogiri::HTML(response.body).at("#table_scene")["hidden"]).not_to be_nil # the place's picture steps aside for the map
 
+      expect(response.body).not_to include("table-time__view") # the switch is the GM's
       sit("gm")
       get campaign_table_path(campaign)
-      expect(response.body).to include("Secret Ruins", "is-hidden", "Show the place")
+      expect(response.body).to include("Secret Ruins", "is-hidden")
+      expect(Nokogiri::HTML(response.body).at("#stage .table-time__where .table-time__view").text).to eq("Place") # on the place's tag: the stage is the switch
       patch campaign_map_view_path(campaign), params: { off: 1 }
       expect(campaign.reload).not_to be_map_on_stage
+      get campaign_table_path(campaign)
+      expect(Nokogiri::HTML(response.body).at("#stage .table-time__where .table-time__view").text).to eq("Map")
     end
 
     it "is the GM's to steer, by the maps beside it and the ones on it; a player browses alone" do

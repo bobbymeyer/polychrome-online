@@ -30,8 +30,8 @@ RSpec.describe "The live table", type: :system do
     as(player) { expect(page).to have_css("#table_time", text: /night/i) }
 
     as(gm) do
-      within(".table-controls .gm-tools") { click_on "Tools"; find("[role=tab]", text: "Time").click }
-      click_on "A part of the day passes"
+      within("#table_now") { click_on "Things to do here" } # time passes where the day is spent
+      within("#table_ways") { click_on "A part of the day passes" }
     end
 
     as(player) { expect(page).to have_css("#table_time", text: /day 2/i).and have_css("#table_time", text: /dawn/i) }

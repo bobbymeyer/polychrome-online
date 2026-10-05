@@ -36,6 +36,11 @@
       <strong>The table is yours.</strong>
       <%= { "travel" => "Travel: the ways on are below, for everyone.", "doing" => "Things to do here are below, for everyone.",
             "scene" => "Scene: pick one below to put on the stage.", "check" => "Check: say who rolls what, below." }[campaign.controls] %>
+      <%# Clocks live in Prep; the one thing the table needs to know is when one is about to fill. %>
+      <% nearly = campaign.clocks.running.select { |clock| clock.segments - clock.filled == 1 } %>
+      <% if nearly.any? %>
+        <span class="table-now__clock"><%= nearly.map(&:name).to_sentence %> <%= nearly.one? ? "is" : "are" %> one tick from full · <%= link_to "Clocks", campaign_prep_path(campaign, anchor: "clocks") %></span>
+      <% end %>
     <% elsif campaign.travelling? %>
       <strong>Where next?</strong> Say where you'd go: it goes to a vote, and the GM settles it.
     <% elsif campaign.doing? %>
@@ -67,7 +72,8 @@
             Talk is the floor; Travel and Things to do here put the ways below, for the GM and the players alike;
             Scene and Check put that tool below, for the GM. %>
         <% ways = campaign.ways_on %>
-        <% offered = { "travel" => ways.any? { |way| !way.dig("move", "pastime") }, "doing" => ways.any? { |way| way.dig("move", "pastime") } } %>
+        <%# Things to do here is always open to the GM: time passes there even where there's nothing else to do. %>
+        <% offered = { "travel" => ways.any? { |way| !way.dig("move", "pastime") } } %>
         <div class="controls-call" role="group" aria-label="What's happening">
           <% Campaign::Controls::CONTROL_LABELS.each do |kind, label| %>
             <% current = campaign.controls == kind %>
@@ -76,16 +82,7 @@
                           "aria-pressed": current.to_s, form: { class: "inline" } %>
           <% end %>
         </div>
-        <% if campaign.map_on_stage? %>
-          <%= button_to "Show the place", campaign_map_view_path(campaign), method: :patch, params: { off: 1 }, class: "button button--quiet", form: { class: "inline" } %>
-        <% else %>
-          <%= button_to "Show the map", campaign_map_view_path(campaign), method: :patch, class: "button button--quiet", form: { class: "inline" } %>
-        <% end %>
-        <%= render "campaigns/tables/here", campaign: campaign %>
       <% end %>
     </div>
-  <% elsif !gm && state == "free" %>
-    <%# A player's way into the place, while the table is free: its page (shops, rooms, the floor). %>
-    <div class="table-now__do"><%= render "campaigns/tables/here", campaign: campaign %></div>
   <% end %>
 </section>
