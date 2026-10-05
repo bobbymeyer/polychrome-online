@@ -18,33 +18,26 @@ class ArtCandidate < ApplicationRecord
     status.in?(%w[done failed])
   end
 
-  def collect!(client, cutout: Cutout.client)
+  def collect!(client)
     return unless comfy_prompt_id
 
     images = client.result(comfy_prompt_id)
     return if images.nil?
     return update!(status: "failed", error: "The workflow saved no image") if images.empty?
 
-    bytes = client.fetch(images.first)
-    # Asked to lose its background: the background remover takes it off
-    # (Cutout). Did it? (A model can leave it.) If the remover turns it
-    # down, the picture is kept, background and all, with the reason.
+    # Asked to lose its background: ComfyUI saved the cut-out and the
+    # picture as rendered (Comfy::Workflow), and the cut-out is mended from
+    # it (Cutout.keep_interior). Did the background come off? (A model can
+    # leave it.)
+    cut, plain = Cutout.split(images)
+    bytes = client.fetch(cut)
     wanted = art_batch.recipe["transparent"]
-    kept = nil
-    if wanted && Cutout.enabled?
-      begin
-        bytes = Cutout.remove(bytes, client: cutout)
-      rescue Cutout::Unreachable
-        raise
-      rescue Cutout::Error => e
-        kept = e.message
-      end
-    end
+    bytes = Cutout.keep_interior(bytes, client.fetch(plain)) if wanted && plain
     image.attach(io: StringIO.new(bytes), filename: entry.art_filename(seed), content_type: "image/png")
-    update!(status: "done", transparent: (Cutout.png_alpha?(bytes) if wanted), error: kept,
+    update!(status: "done", transparent: (Cutout.png_alpha?(bytes) if wanted),
             run_seconds: client.respond_to?(:run_seconds) ? client.run_seconds(comfy_prompt_id) : nil)
-  rescue Comfy::Unreachable, Cutout::Unreachable
-    raise # not this image's fault: the batch waits for the service (ArtBatchJob)
+  rescue Comfy::Unreachable
+    raise # not this image's fault: the batch waits for ComfyUI (ArtBatchJob)
   rescue Comfy::Error => e
     update!(status: "failed", error: e.message)
   end

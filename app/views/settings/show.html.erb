@@ -1,8 +1,8 @@
 <% content_for :title, "Settings" %>
 <h1>Settings</h1>
 <p class="prose">
-  Where this app finds ComfyUI (for images), a background remover and a language model (for drafts and prompts). Leave a field blank to use the server's
-  environment (<code>COMFY_URL</code>, <code>CUTOUT_URL</code>, <code>LLM_URL</code> and so on). Only addresses and names go here: if ComfyUI or the model needs a
+  Where this app finds ComfyUI (for images and taking their backgrounds off) and a language model (for drafts and prompts). Leave a field blank to use the server's
+  environment (<code>COMFY_URL</code>, <code>LLM_URL</code> and so on). Only addresses and names go here: if ComfyUI or the model needs a
   token, a header or a password, set it in the environment, where it never reaches the database.
 </p>
 
@@ -31,29 +31,27 @@
     </div>
   </fieldset>
 
-  <% cutout = Rails.configuration.x.cutout %>
   <fieldset class="panel">
     <legend>Background removal</legend>
     <p class="hint">
-      A service of its own, called on each image after ComfyUI renders it, for the content types marked to lose their background.
-      It's hardwired: the app runs rembg on this machine's port 7071 by itself (<code>bin/cutout</code>, started the first time a picture needs it),
-      so nothing here needs filling in. Set an address only for a remover somewhere else (from a container, the host's:
-      <code>http://host.docker.internal:7071</code>), or anything that takes the image as a multipart <code>file</code> and answers with a PNG.
+      In ComfyUI, for the content types marked to lose their background: the picture is put through ComfyUI-RMBG's <code><%= Cutout.node %></code> node
+      (install "ComfyUI-RMBG" by 1038lab from ComfyUI's Manager), which fetches its model into <code>models/RMBG</code> the first time.
+      <% caps = Comfy.capabilities %>
+      <% if caps.reachable? %>
+        <%= caps.node?(Cutout.node) ? "This ComfyUI has it." : "This ComfyUI doesn't have it yet, so batches that remove the background stop and say so." %>
+      <% end %>
     </p>
-    <div class="field-row">
-      <div class="field">
-        <%= f.label :cutout_url, "Address" %>
-        <%= f.url_field :cutout_url, placeholder: cutout[:url].presence || "http://127.0.0.1:7071" %>
-      </div>
-      <div class="field">
-        <%= f.label :cutout_model, "Model" %>
-        <%= f.text_field :cutout_model, placeholder: cutout[:model] %>
-        <p class="hint">rembg: <code>isnet-anime</code> for flat illustrated art (quick, light), <code>isnet-general-use</code>, <code>birefnet-general</code> (the finest edges; wants a GPU), <code>bria-rmbg</code>…</p>
-      </div>
+    <div class="field">
+      <%= f.label :rmbg_model, "Model" %>
+      <%= f.text_field :rmbg_model, placeholder: Comfy.config.dig(:background_removal, :model).presence || Cutout.model, list: "rmbg_models" %>
+      <datalist id="rmbg_models">
+        <% (caps.reachable? ? caps.options(Cutout.node, "model") : []).each do |name| %><option value="<%= name %>"></option><% end %>
+      </datalist>
+      <p class="hint"><code>BiRefNet_toonout</code> (the default: BiRefNet fine-tuned on anime characters), <code>BiRefNet-general</code>, <code>BiRefNet-HR</code> (big pictures), <code>Lucida</code> (illustrations, glow and see-through things)…</p>
     </div>
     <p class="hint">
-      <code>bin/cutout</code> installs and runs rembg's server, and fetches the model first; <code>bin/cutout check</code> sends a picture through. Pictures to be cut out are rendered on a
-      <%= Cutout.ground ? "#{Cutout.ground} ground (CUTOUT_GROUND)" : "white ground (CUTOUT_GROUND is blank)" %> and mended afterwards, so the white in a design is kept.
+      Pictures to be cut out are rendered on a
+      <%= Cutout.ground ? "#{Cutout.ground} ground (COMFY_RMBG_GROUND)" : "white ground (COMFY_RMBG_GROUND is blank)" %> and mended afterwards, so the white in a design is kept.
     </p>
   </fieldset>
 

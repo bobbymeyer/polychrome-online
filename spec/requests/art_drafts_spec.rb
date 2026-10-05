@@ -8,9 +8,8 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
   let!(:world) { base_world }
   let(:goblin) { world.monsters.find_by!(slug: "goblin") }
   let(:comfy) { FakeComfy.new }
-  let(:cutout) { FakeCutout.new }
 
-  def run(batch) = ArtBatchJob.new.perform(batch.reload, client: comfy, cutout: cutout)
+  def run(batch) = ArtBatchJob.new.perform(batch.reload, client: comfy)
   def node(graph, type) = graph.values.find { |n| n["class_type"] == type }
 
   it "drafts small and quick, then makes the chosen one properly from the draft" do
@@ -26,7 +25,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
     expect(node(graph, "EmptyLatentImage")["inputs"]).to include("width" => 512, "height" => 512)
     comfy.finish!("prompt-1", "prompt-2")
     run(drafts)
-    expect(cutout.sent.size).to eq(2) # a draft is cut out too: it can be used as it is
+    expect(node(graph, "BiRefNetRMBG")).to be_present # a draft is cut out too: it can be used as it is
     expect(drafts.candidates.map(&:transparent)).to all(be(true))
     chosen = drafts.candidates.reload.second
     expect(chosen.run_seconds).to eq(42.5)
@@ -54,7 +53,7 @@ RSpec.describe "Drafts first, then made properly (§8)", type: :request do
 
     comfy.finish!("prompt-3")
     run(refinement)
-    expect(cutout.sent.size).to eq(3)
+    expect(node(comfy.submitted.last, "BiRefNetRMBG")).to be_present
     expect(refinement.candidates.sole.transparent).to be(true)
     post world_art_candidate_pick_path(world, refinement.candidates.sole)
     expect(goblin.reload.image).to be_attached

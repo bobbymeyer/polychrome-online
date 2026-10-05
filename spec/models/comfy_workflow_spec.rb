@@ -79,9 +79,26 @@ RSpec.describe Comfy::Workflow do
     expect { build(capabilities: FakeComfy.capabilities(text_encoders: [])) }.to raise_error(Comfy::Error, /Anima needs its text encoder/)
   end
 
-  it "leaves the background to the background remover (Cutout): the picture is saved as rendered" do
+  it "takes the background off in ComfyUI: the picture saved as rendered, then cut out with ComfyUI-RMBG's BiRefNet and saved" do
     graph = build({ "transparent" => true })
-    expect(sole(graph, "SaveImage")["images"]).to eq([ nodes(graph, "VAEDecode").keys.sole, 0 ])
+    decoded = [ nodes(graph, "VAEDecode").keys.sole, 0 ]
+    plain, cut = nodes(graph, "SaveImage").values.map { |node| node["inputs"] }
+    expect(plain).to eq("filename_prefix" => "polychrome/goblin-42-plain", "images" => decoded)
+    expect(sole(graph, "BiRefNetRMBG")).to eq("image" => decoded, "model" => "BiRefNet_toonout", "sensitivity" => 1.0, "mask_blur" => 0, "mask_offset" => 0,
+                                              "invert_output" => false, "refine_foreground" => true, "background" => "Alpha")
+    expect(cut).to eq("filename_prefix" => "polychrome/goblin-42", "images" => [ nodes(graph, "BiRefNetRMBG").keys.sole, 0 ])
+    expect(described_class.outline(graph)).to end_with("VAEDecode → SaveImage → BiRefNetRMBG → SaveImage")
+    expect(nodes(build, "BiRefNetRMBG")).to be_empty # a background kept: no removal, one picture
+
+    allow(SiteSetting).to receive(:current).and_return(SiteSetting.new(rmbg_model: "Lucida"))
+    expect(sole(build({ "transparent" => true }), "BiRefNetRMBG")["model"]).to eq("Lucida")
+  end
+
+  it "says what to install when ComfyUI can't take the background off, rather than keep it" do
+    without = FakeComfy.capabilities(nodes: Comfy::Capabilities::NODES - [ "BiRefNetRMBG" ])
+    expect { build({ "transparent" => true }, capabilities: without) }.to raise_error(Comfy::Error, /no BiRefNetRMBG node .*install ComfyUI-RMBG/)
+    old = FakeComfy.capabilities(extra: { "BiRefNetRMBG" => { "input" => { "required" => { "image" => [ "IMAGE" ], "model" => [ [ "BiRefNet-general" ] ] } } } })
+    expect { build({ "transparent" => true }, capabilities: old) }.to raise_error(Comfy::Error, /no BiRefNet_toonout model \(it has BiRefNet-general\)/)
   end
 
   it "reads whether an image really lost its background" do

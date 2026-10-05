@@ -1,8 +1,12 @@
 # frozen_string_literal: true
 
-# Taking the background off a generated image (docs/HANDOFF.md §8), with a
-# background-removal service of its own (config/cutout.yml): ComfyUI
-# renders the picture, then each one is sent here and comes back cut out.
+# Taking the background off a generated image (docs/HANDOFF.md §8), in
+# ComfyUI itself: the workflow saves the picture as rendered, then puts it
+# through a removal node and saves the cut-out (Comfy::Workflow). The node
+# is ComfyUI-RMBG's BiRefNetRMBG, with BiRefNet_toonout by default: BiRefNet
+# fine-tuned on anime characters (ToonOut), which the node fetches itself
+# the first time (config/comfy.yml `background_removal`). ComfyUI without
+# the node stops the batch, saying what to install.
 #
 # A removal model takes whatever looks like the background, and on art
 # drawn on white that includes the white inside the subject: a shirt, a
@@ -11,9 +15,6 @@
 # - The picture is rendered on a ground of its own colour (#on_ground: a
 #   flat green by default, in place of the type's "white background"), so
 #   white in the design is never the ground's colour.
-# The remover is hardwired: its address is this machine's port 7071 unless
-# told otherwise, and the app starts bin/cutout there itself when nothing
-# answers (Cutout::Launcher), so there is nothing to set.
 #
 # - The cut-out is mended (#keep_interior): a cleared pixel counts as
 #   background only if its colour is the ground's and it reaches the edge
@@ -24,10 +25,10 @@
 #   cost is a gap that really is background but closed in (an arm on a
 #   hip), filled.
 module Cutout
-  class Error < StandardError; end
-  # The service couldn't be reached at all: worth trying again later (Remote).
-  class Unreachable < Error; include Remote::Unreachable; end
-
+  # The rendered picture's name, beside the cut-out's.
+  PLAIN = "-plain"
+  # The ComfyUI node that takes the background off (ComfyUI-RMBG's BiRefNet).
+  NODE = "BiRefNetRMBG"
   # Alpha under this counts as removed.
   CLEAR = 128
   # A ground this light is white, as far as telling it from a design goes.
@@ -35,19 +36,21 @@ module Cutout
   # The type framings' own words for the ground, swapped for ours.
   WHITE_GROUND = /\b(?:(?:plain|flat|simple|solid)\s+)*(?:white|plain|blank)\s+background\b/i
 
-  # config/cutout.yml, with the Settings page's address and model taking
-  # precedence (SiteSetting).
+  # config/comfy.yml's `background_removal`, with the Settings page's model
+  # taking precedence (SiteSetting).
   def self.config
-    overrides = SiteSetting.current.cutout_overrides
-    overrides.empty? ? Rails.configuration.x.cutout : Rails.configuration.x.cutout.merge(overrides)
+    config = Comfy.config.fetch(:background_removal, {}).to_h.symbolize_keys
+    model = SiteSetting.current.rmbg_model
+    model ? config.merge(model: model) : config
   end
 
-  def self.enabled? = config[:url].present?
+  def self.node = NODE
 
-  def self.client = Client.new
+  # The model the node runs.
+  def self.model = config[:model].presence || "BiRefNet_toonout"
 
-  # What the pages call it: the model, or the service.
-  def self.label = config[:model].presence || "the background remover"
+  # What the pages call it.
+  def self.label = model
 
   # The colour pictures are rendered on when they'll be cut out, or nil.
   def self.ground = config[:ground].to_s.strip.presence
@@ -71,13 +74,29 @@ module Cutout
     recipe
   end
 
-  # The picture with its background taken off and its inside mended.
-  # Raises Cutout::Error (or Unreachable) when the service can't do it.
-  # A remover on this machine that isn't running yet is started first
-  # (Launcher).
-  def self.remove(bytes, client: self.client)
-    Launcher.ensure_running!
-    keep_interior(client.remove(bytes), bytes)
+  # Of a finished prompt's images: [the cut-out (or the only one), the
+  # picture as rendered or nil].
+  def self.split(images)
+    plain = images.find { |image| image["filename"].to_s.include?("#{PLAIN}_") }
+    [ (images - [ plain ]).first, plain ]
+  end
+
+  # The removal node, wired after `image` (a link) by `add` (Comfy::Workflow);
+  # returns the cut-out's link. Raises Comfy::Error when this ComfyUI can't:
+  # no node, or a node without the model.
+  def self.wire(add, image, capabilities)
+    capabilities.node?(node) or
+      raise Comfy::Error, "ComfyUI has no #{node} node to take the background off: install ComfyUI-RMBG (by 1038lab, in the Manager; " \
+                          "version 3.1.0, since 3.2.0 doesn't load without triton, as on a Mac) and restart ComfyUI, " \
+                          "or untick \"Remove the background\". It fetches #{model} itself the first time"
+    models = capabilities.options(node, "model")
+    unless models.empty? || models.include?(model)
+      raise Comfy::Error, "ComfyUI's #{node} has no #{model} model (it has #{models.join(', ')}): update ComfyUI-RMBG, or pick one of those on the Settings page"
+    end
+
+    # Transparent, with the colours at the edge cleaned of the ground's (refine_foreground).
+    [ add.(node, { "image" => image, "model" => model, "sensitivity" => 1.0, "mask_blur" => 0, "mask_offset" => 0,
+                   "invert_output" => false, "refine_foreground" => true, "background" => "Alpha" }), 0 ]
   end
 
   # Does a PNG have an alpha channel? (colour types 4 and 6, or a tRNS chunk)
@@ -90,8 +109,8 @@ module Cutout
 
   # The cut-out with what was taken out of the subject made opaque again,
   # in the colours of the picture as rendered when it's given (under the
-  # cleared pixels too, so dropping the alpha gives the render back: see
-  # #opaque). PNG bytes in and out. tolerance: how far from the ground's
+  # cleared pixels too, so dropping the alpha gives the render back, near
+  # enough: see #opaque). PNG bytes in and out. tolerance: how far from the ground's
   # colour still counts as ground.
   def self.keep_interior(removed, plain = nil, tolerance: self.tolerance)
     require "vips" # libvips: in the image (Dockerfile), loaded only when mending
@@ -122,7 +141,12 @@ module Cutout
     restore = restore.ifthenelse(255, 0).cast(:uchar).morph(kernel, :erode).morph(kernel, :dilate).morph(kernel, :dilate).morph(kernel, :erode)
     return removed if restore.max.zero? && rendered.nil?
 
-    colours.bandjoin(restore.ifthenelse(255, alpha).cast(:uchar)).pngsave_buffer
+    # The node's own colours where it kept the subject (cleaned of the
+    # ground at the edges); the render's where it put nothing, or where
+    # the subject is put back.
+    own = cut.extract_band(0, n: cut.bands - 1)
+    out = rendered ? ((alpha == 0) | restore).ifthenelse(rendered, own) : own
+    out.bandjoin(restore.ifthenelse(255, alpha).cast(:uchar)).pngsave_buffer
   end
 
   # The picture without its alpha: a cut-out back as it was rendered, on its

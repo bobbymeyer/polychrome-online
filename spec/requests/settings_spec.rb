@@ -10,13 +10,14 @@ RSpec.describe "The app's settings (SiteSetting)", type: :request do
     expect(Llm).not_to be_enabled
 
     patch settings_path, params: { site_setting: { comfy_url: "http://host.docker.internal:8188", comfy_model: "anima-preview.safetensors",
-                                                   cutout_url: "http://host.docker.internal:7000", cutout_model: "isnet-anime", llm_url: "http://host.docker.internal:8090/v1", llm_model: "qwen3" } }
+                                                   rmbg_model: "BiRefNet-general", llm_url: "http://host.docker.internal:8090/v1", llm_model: "qwen3" } }
     expect(response).to redirect_to(settings_path(check: 1, anchor: "connection"))
     expect(Comfy.config[:url]).to eq("http://host.docker.internal:8188")
     expect(Comfy.config[:families]).to be_present # the rest still from config
     expect(Llm).to be_enabled
     expect(Llm.config[:model]).to eq("qwen3")
-    expect(Cutout.config).to include(url: "http://host.docker.internal:7000", model: "isnet-anime", path: "/api/remove")
+    expect(Cutout.model).to eq("BiRefNet-general")
+    expect(Cutout.ground).to eq("green") # the rest still from config
 
     patch settings_path, params: { site_setting: { comfy_url: "", llm_url: "" } }
     expect(Comfy.config[:url]).to eq("http://comfy.test") # blank: back to the environment

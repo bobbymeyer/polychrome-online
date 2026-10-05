@@ -12,7 +12,7 @@
   <dt>Negative</dt><dd><%= recipe["negative"].presence || (family && !family.negative? ? "none: this model doesn't use one" : "—") %></dd>
   <dt>LoRAs</dt><dd><%= lora_stack(Array(recipe["loras"])) %></dd>
   <dt>Model</dt><dd><code><%= model %></code><%= " · #{family.summary}" if family %></dd>
-  <dt>Size</dt><dd><%= recipe["width"] %> × <%= recipe["height"] %><% if recipe["transparent"] %><%= recipe["cutout"] ? ", background removed with #{recipe['cutout']}" : ", background kept (no background remover set up)" %><% end %></dd>
+  <dt>Size</dt><dd><%= recipe["width"] %> × <%= recipe["height"] %><% if recipe["transparent"] %><%= ", background removed with #{recipe['cutout'] || 'ComfyUI'}" %><% end %></dd>
   <% if recipe["workflow"] %>
     <dt>Workflow</dt><dd><%= recipe["workflow"] %></dd>
   <% elsif local_assigns[:preview] && Comfy.capabilities.reachable? %>

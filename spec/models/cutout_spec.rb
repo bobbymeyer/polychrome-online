@@ -97,84 +97,58 @@ RSpec.describe Cutout do
     expect(described_class.keep_interior(clean)).to eq(clean)
   end
 
-  it "keeps the render's colours under what it clears, so taking the alpha off gives the render back" do
+  it "keeps the node's colours where it kept the subject, and the render's under what it cleared, so taking the alpha off gives the render back" do
     plain = on_green
-    # What rembg sends back: the cleared ground blacked out.
+    # What the removal node sends back: the ground cleared and blacked out,
+    # the subject's colours cleaned a little (refine_foreground).
     alpha = Vips::Image.new_from_array(Array.new(SIZE) { |y| Array.new(SIZE) { |x| plain.getpoint(x, y) == [ 40, 200, 40 ] ? 0 : 255 } }).cast(:uchar)
-    removed = (plain * (alpha / 255.0)).cast(:uchar).bandjoin(alpha).pngsave_buffer
+    removed = ((plain - 5) * (alpha / 255.0)).cast(:uchar).bandjoin(alpha).pngsave_buffer
     mended = described_class.keep_interior(removed, plain.pngsave_buffer)
     expect(alpha_at(mended, 2, 2)).to eq(0)
+    expect(Vips::Image.new_from_buffer(mended, "").getpoint(20, 25)).to eq([ 250, 250, 250, 255 ])
     back = Vips::Image.new_from_buffer(described_class.opaque(mended), "")
     expect(back.bands).to eq(3)
     expect(back.getpoint(2, 2)).to eq([ 40, 200, 40 ])
   end
 
-  describe Cutout::Client do
-    def client(routes) = described_class.new(url: "http://cutout.test", path: "/api/remove", model: "isnet-anime", token: "tok", http: FakeHttp.new(routes))
-
-    it "sends the picture and the model as a form, and gives back the PNG" do
-      http = FakeHttp.new("/api/remove" => [ 200, FakeComfy.png ])
-      cut = described_class.new(url: "http://cutout.test", path: "/api/remove", model: "isnet-anime", token: "tok", http: http).remove("pixels")
-      expect(cut).to eq(FakeComfy.png)
-      request = http.requests.sole
-      expect(request["Content-Type"]).to start_with("multipart/form-data")
-      expect(request["Authorization"]).to eq("Bearer tok")
-    end
-
-    it "says whether it couldn't be reached (try later) or turned the picture down" do
-      expect { client({}).remove("pixels") }.to raise_error(Cutout::Unreachable, /isn't reachable at http:\/\/cutout.test/)
-      expect { client("/api/remove" => [ 500, "model not found" ]).remove("pixels") }.to raise_error(Cutout::Error, /answered 500: model not found/)
-      expect { client("/api/remove" => [ 200, "{}" ]).remove("pixels") }.to raise_error(Cutout::Error, /isn't a PNG/)
-    end
-  end
-
   describe "in a batch (ArtBatchJob)" do
-    include ActiveJob::TestHelper
-
     let(:goblin) { base_world.monsters.find_by!(slug: "goblin") }
     let(:comfy) { FakeComfy.new }
 
-    def render(cutout)
+    def render
       batch = ArtBatch.start!(goblin, count: 1, transparent: true)
-      ArtBatchJob.new.perform(batch, client: comfy, cutout: cutout)
+      ArtBatchJob.new.perform(batch, client: comfy)
       comfy.finish!("prompt-1")
-      ArtBatchJob.new.perform(batch.reload, client: comfy, cutout: cutout)
+      ArtBatchJob.new.perform(batch.reload, client: comfy)
       batch.reload
     end
 
-    it "cuts out each picture ComfyUI renders, rendered on the ground, and names the model on the recipe" do
-      cutout = FakeCutout.new
-      batch = render(cutout)
-      expect(cutout.sent).to eq([ FakeComfy.png ])
-      expect(batch.recipe["cutout"]).to eq("isnet-anime")
+    it "takes the background off in ComfyUI, rendered on the ground, mends the cut-out from the render, and names the model on the recipe" do
+      batch = render
+      expect(comfy.submitted.sole.values.map { |n| n["class_type"] }).to include("BiRefNetRMBG")
+      expect(batch.recipe["cutout"]).to eq("BiRefNet_toonout")
       expect(batch.recipe["positive"]).to include("plain flat green background, no shadow")
       expect(batch.recipe["positive"]).not_to include("white background")
       expect(batch.recipe["negative"]).to end_with("white background")
       expect(batch.candidates.sole).to have_attributes(status: "done", transparent: true, error: nil)
+      expect(described_class.png_alpha?(batch.candidates.sole.image.download)).to be(true)
 
       kept = ArtBatch.start!(goblin, count: 1, transparent: false)
       expect(kept.recipe["positive"]).to include("plain white background")
       expect(kept.recipe).not_to have_key("ground")
     end
 
-    it "keeps the picture, background and all, when the remover turns it down" do
-      batch = render(FakeCutout.new(raises: Cutout::Error.new("The background remover answered 500: out of memory")))
-      expect(batch.status).to eq("done")
-      expect(batch.candidates.sole).to have_attributes(status: "done", error: /out of memory/)
-      expect(batch.candidates.sole.image).to be_attached
+    it "says so when the removal left the background" do
+      comfy.cut = :opaque
+      expect(render.candidates.sole).to have_attributes(status: "done", transparent: false)
     end
 
-    it "waits when the remover can't be reached, and carries on once it's back" do
-      allow(Comfy).to receive(:client).and_return(comfy)
-      allow(Cutout).to receive(:client).and_return(FakeCutout.new(raises: Cutout::Unreachable.new("The background remover isn't reachable at http://cutout.test")))
+    it "stops the batch, saying what to install, when ComfyUI has no removal node" do
+      comfy = FakeComfy.new(capabilities: FakeComfy.capabilities(nodes: Comfy::Capabilities::NODES - [ "BiRefNetRMBG" ]))
       batch = ArtBatch.start!(goblin, count: 1, transparent: true)
-      ArtBatchJob.perform_now(batch)
-      comfy.finish!("prompt-1")
-      ArtBatchJob.perform_now(batch.reload)
-      expect(batch.reload).to have_attributes(status: "waiting", error: /background remover isn't reachable/)
-      ArtBatchJob.new.perform(batch.reload, client: comfy, cutout: FakeCutout.new)
-      expect(batch.reload.status).to eq("done")
-      expect(batch.candidates.sole.transparent).to be(true)
+      ArtBatchJob.new.perform(batch, client: comfy)
+      expect(batch.reload).to have_attributes(status: "failed", error: /install ComfyUI-RMBG/)
+      expect(comfy.submitted).to be_empty
     end
   end
 end

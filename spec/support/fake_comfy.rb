@@ -27,10 +27,21 @@ class FakeComfy
     raise Comfy::Error, @failed[id] if @failed.key?(id)
     return nil unless @done.include?(id)
 
-    [ { "filename" => "#{id}.png", "subfolder" => "polychrome", "type" => "output" } ]
+    # One image for each SaveImage in the graph: the picture as rendered
+    # ("-plain") and the cut-out, when the background comes off.
+    graph = @submitted[id.delete_prefix("prompt-").to_i - 1] || {}
+    saves = graph.values.select { |node| node["class_type"] == "SaveImage" }.map { |node| node.dig("inputs", "filename_prefix").to_s }
+    saves = [ id ] if saves.empty?
+    saves.map { |prefix| { "filename" => "#{File.basename(prefix)}_00001_.png", "subfolder" => "polychrome", "type" => "output" } }
   end
 
-  def fetch(_image) = FakeComfy.png
+  # The picture as rendered is opaque; anything else comes back cut out,
+  # unless told the removal left it opaque (cut: :opaque).
+  attr_writer :cut
+
+  def fetch(image)
+    image["filename"].to_s.include?("#{Cutout::PLAIN}_") || @cut == :opaque ? FakeComfy.rgb_png : FakeComfy.png
+  end
 
   def run_seconds(id) = (42.5 if @done.include?(id))
 
@@ -68,6 +79,15 @@ class FakeComfy
     "\x89PNG\r\n\x1A\n".b +
       chunk.("IHDR", [ 1, 1, 8, 6, 0, 0, 0 ].pack("NNCCCCC")) +
       chunk.("IDAT", Zlib::Deflate.deflate("\x00\x11\x11\x11\xFF".b)) +
+      chunk.("IEND", "")
+  end
+
+  # The same pixel with no alpha: a picture as rendered.
+  def self.rgb_png
+    chunk = ->(type, data) { [ data.bytesize ].pack("N") + type + data + [ Zlib.crc32(type + data) ].pack("N") }
+    "\x89PNG\r\n\x1A\n".b +
+      chunk.("IHDR", [ 1, 1, 8, 2, 0, 0, 0 ].pack("NNCCCCC")) +
+      chunk.("IDAT", Zlib::Deflate.deflate("\x00\x11\x11\x11".b)) +
       chunk.("IEND", "")
   end
 end
