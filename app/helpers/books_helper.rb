@@ -86,6 +86,15 @@ module BooksHelper
     worlds_label(name.to_s) || STAT_LABELS.fetch(name.to_s, name.to_s.humanize)
   end
 
+  # A character as a picture: their own portrait, or their job's (a
+  # lettered plate when the job has none either).
+  def character_portrait(character, size: :large)
+    image = character.own_portrait_image("neutral")
+    return entry_portrait(character.job, size: size) unless image
+
+    tag.figure(class: [ "portrait", "portrait--#{size}" ]) { image_tag(url_for(image), alt: character.name) }
+  end
+
   # The entry's image with its variant recipe applied, or a placeholder
   # plate when no image has been attached yet.
   def entry_portrait(entry, size: :large)

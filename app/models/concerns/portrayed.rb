@@ -27,13 +27,22 @@ module Portrayed
 
   # The image attachment for an expression, or nil.
   def portrait_image(expression = "neutral")
+    own = own_portrait_image(expression)
+    return own if own
+
+    fallback = fallback_portrait_entry
+    fallback.image if fallback&.image&.attached?
+  end
+
+  # Their own portrait for an expression, or their neutral one; nil when
+  # they have neither (no fallback).
+  def own_portrait_image(expression = "neutral")
     by_expression = (portraits.loaded? ? portraits : portraits.includes(image_attachment: :blob)).index_by(&:expression)
     [ expression, "neutral" ].each do |key|
       image = by_expression[key.to_s]&.image
       return image if image&.attached?
     end
-    fallback = fallback_portrait_entry
-    fallback.image if fallback&.image&.attached?
+    nil
   end
 
   def fallback_portrait_entry

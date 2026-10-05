@@ -8,6 +8,9 @@
 <% gm = can_gm?(owner.campaign) %>
 <% reachable = Comfy.capabilities.reachable? %>
 <% batches = ArtBatch.where(entry: owner.portraits).or(ArtBatch.where(entry: owner.sprite)).includes(:candidates).order(id: :desc).to_a %>
+<%# Each round's strip goes under the link it was made from: the sprite, the Neutral portrait from the
+    sprite, an expression from the Neutral portrait, or the prompt alone. %>
+<% strips = batches.group_by { |b| b.entry.is_a?(Sprite) ? :sprite : { "sprite" => :neutral, "portrait" => :expression }.fetch(b.recipe.dig("source", "kind"), :plain) } %>
 <% figure = owner.sprite || Sprite.new(owner: owner) %>
 <% sprite_done = figure.image.attached? %>
 <% neutral = owner.portraits.find_by(expression: "neutral") %>
@@ -46,6 +49,7 @@
           <%= submit_tag "Generate the sprite", class: "button", **disabled %>
         </div>
       <% end %>
+      <%= render "art_batches/strips", batches: strips[:sprite] %>
     </li>
 
     <li class="art-chain__link <%= 'is-done' if neutral_done %>">
@@ -72,6 +76,7 @@
         </div>
         <p class="hint">The head of the sprite, cut square and redrawn as a portrait with the sprite's seed, so it's the same face a little closer up.</p>
       <% end %>
+      <%= render "art_batches/strips", batches: strips[:neutral] %>
     </li>
 
     <li class="art-chain__link">
@@ -109,6 +114,7 @@
         </div>
         <p class="hint">Each is the Neutral portrait redrawn with the expression's words and its seed, so the face holds. "Every expression" queues all six at once; pick each from its strip below.</p>
       <% end %>
+      <%= render "art_batches/strips", batches: strips[:expression] %>
     </li>
   </ol>
 
@@ -131,10 +137,6 @@
       </div>
     <% end %>
   </details>
-
-  <% batches.each do |batch| %>
-    <%= render "art_batches/strip", batch: batch %>
-    <%= render "art_batches/strip", batch: batch.drafts if batch.drafts %>
-  <% end %>
+  <%= render "art_batches/strips", batches: strips[:plain] %>
 </details>
 <% end %>
