@@ -142,7 +142,8 @@ RSpec.describe "Where next", type: :request do
     patch campaign_controls_path(campaign), params: { kind: "travel" }
     expect(campaign.reload).to be_travelling
     get campaign_table_path(campaign)
-    expect(response.body).to include("Where next?", "To Greymere", "To Port", "Put it to the table")
+    expect(response.body).to include("To Greymere", "To Port", "Put it to the table")
+    expect(response.body[/<section class="window table-ways.*?<\/section>/m]).not_to include("<h2") # the pressed control is the title
     expect(response.body).not_to include("To The Pass") # blocked
     patch campaign_controls_path(campaign), params: { kind: "dance" }
     expect(flash[:alert]).to eq("There's no such thing to call at the table")
@@ -207,7 +208,7 @@ RSpec.describe "Where next", type: :request do
       campaign.call_controls!("doing")
       sign_in_as(kim)
       get campaign_table_path(campaign)
-      expect(response.body).to include("Day in Tule", "Attend class (until night)", "Work a shift (until dusk)", "What will you do here?")
+      expect(response.body).to include("Attend class (until night)", "Work a shift (until dusk)", "What will you do here?")
       expect(response.body).not_to include("The Undertow", "To Greymere") # not now; not the roads
       expect(Nokogiri::HTML(response.body).css("#table_ways .pick-table .pick-row").size).to eq(3) # one a row: class, the shift, camp
 

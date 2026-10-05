@@ -531,8 +531,11 @@ under the frame.
   colour from the top bar's stripe (yellow, orange, green, wine red, blue, turquoise, and steel
   grey for the tools), running into the next with no gap, so the row reads as one band like the
   stripe above it. The one called is black with white bold text; one the table can't use yet
-  (Travel with no road, Battle with no party) is hatched. A divergence from the slabs, kept to
-  this one row.
+  (Travel with no road, Battle with no party) is hatched. It hugs the top of the column under the
+  stage, edge to edge, with one rule above it (between the stage and the actions) and none below:
+  what follows draws its own top, and the folded GM tools draw nothing. The panels it calls up
+  (the ways, the things to do, the scenes, the check, the battle setup) have no heading of their
+  own: the pressed control is the title. A divergence from the slabs, kept to this one row.
 - **What the GM calls is the GM's moves.** The controls row on the Now line is the one switch:
   Talk puts the talk box under the stage (the GM's composer, a player's "Say something", and the
   GM's Whisper beside each character); under any other control it's away, so what's under the
