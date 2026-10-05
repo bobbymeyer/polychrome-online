@@ -8,14 +8,15 @@
 #   doing   things to do here this part of the day (Pastime), and the vote
 #   scene   the GM's scenes, to put one on the stage (nothing for players yet)
 #   check   the GM's check form: who rolls what (the roll lands for everyone)
+#   battle  the GM's battle setup: what they face, who fights, Start (BattleSetup)
 # A battle, an encounter, a scene on the stage or an open choice still comes
 # first: the controls say what the free table offers. There is no other
 # strip of GM tools for these: the one called is the one on the table.
 module Campaign::Controls
   extend ActiveSupport::Concern
 
-  CONTROLS = %w[talk travel doing scene check].freeze
-  CONTROL_LABELS = { "talk" => "Talk", "travel" => "Travel", "doing" => "Things to do here", "scene" => "Scene", "check" => "Check" }.freeze
+  CONTROLS = %w[talk travel doing scene check battle].freeze
+  CONTROL_LABELS = { "talk" => "Talk", "travel" => "Travel", "doing" => "Things to do here", "scene" => "Scene", "check" => "Check", "battle" => "Battle" }.freeze
 
   included do
     validates :controls, inclusion: { in: CONTROLS }

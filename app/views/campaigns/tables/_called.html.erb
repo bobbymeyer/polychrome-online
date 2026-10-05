@@ -1,7 +1,7 @@
 <%# What the GM called (Campaign::Controls), when it's a tool rather than a list of ways: the scenes to put on
-    the stage, or the check form. Only the GM has these; a player's panel is empty. Replaced live with the
-    table's panels, so calling it puts it here for the GM on every screen. %>
-<section id="table_called" class="window table-called" aria-label="What the GM called" <%= "hidden" unless gm && %w[scene check].include?(campaign.controls) %>>
+    the stage, the check form, or a battle to set up. Only the GM has these; a player's panel is empty. Replaced
+    live with the table's panels, so calling it puts it here for the GM on every screen. %>
+<section id="table_called" class="window table-called" aria-label="What the GM called" <%= "hidden" unless gm && %w[scene check battle].include?(campaign.controls) %>>
   <% if gm && campaign.controls == "scene" %>
     <h2>Scenes</h2>
     <%= render "scenes/list", campaign: campaign, play: true %>
@@ -9,5 +9,8 @@
   <% elsif gm && campaign.controls == "check" %>
     <h2>Call a check</h2>
     <%= render "campaigns/tables/gm/check", campaign: campaign %>
+  <% elsif gm && campaign.controls == "battle" && !campaign.battle_on? %>
+    <h2>Battle</h2>
+    <%= render "battles/setup", campaign: campaign, setup: BattleSetup.defaults(campaign) %>
   <% end %>
 </section>

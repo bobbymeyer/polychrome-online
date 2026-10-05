@@ -41,10 +41,17 @@ RSpec.describe "Battle screen", type: :request do
   it "tells the GM how a fight is likely to go, as they set it up" do
     campaign = create_campaign
     create_character(campaign, name: "Bartz")
-    get new_campaign_battle_path(campaign)
-    expect(response.body).to include('data-controller="forecast"', 'id="forecast"')
-    expect(response.body).to match(/>Goblin \(\d+ HP\)</) # how tough, not the book's level
-    expect(response.body).not_to include("(Lv ")
+    get new_campaign_battle_path(campaign) # the old page's address calls Battle at the table
+    expect(response).to redirect_to(campaign_table_path(campaign))
+    expect(campaign.reload.controls).to eq("battle")
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    get campaign_table_path(campaign)
+    setup = Nokogiri::HTML(response.body).at("#table_called .battle-setup")
+    expect(setup.to_html).to include('data-controller="forecast"', 'id="forecast"')
+    expect(setup.to_html).to match(/>Goblin \(\d+ HP\)</) # how tough, not the book's level
+    expect(setup.to_html).not_to include("(Lv ")
+    expect(setup.css("fieldset legend").map(&:text)).to eq([ "What they face", "Who fights" ])
+    expect(setup.at("details.battle-setup__more").text).to include("Input timer", "Seed", "Can flee") # the rest, behind More
 
     get campaign_forecast_path(campaign), params: { battle: { encounter: { "0" => { monster: "goblin", count: "1" } } } }
     expect(response.body).to match(/forecast--(easy|fair|hard|deadly)/)
@@ -201,8 +208,10 @@ RSpec.describe "Battle screen", type: :request do
     let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5) }
 
     it "starts a battle for the chosen characters and seats the creator as GM" do
-      get new_campaign_battle_path(campaign)
-      expect(response.body).to include("Bartz", "Lenna")
+      campaign.call_controls!("battle")
+      post campaign_table_seat_path(campaign), params: { seat: "gm" } # the setup is the GM's
+      get campaign_table_path(campaign)
+      expect(Nokogiri::HTML(response.body).at("#table_called").text).to include("Bartz", "Lenna")
 
       post campaign_battles_path(campaign), params: { battle: {
         name: "Ambush", seed: "42", escapable: "1", input_seconds: "60", characters: [ "", lenna.id.to_s ],
@@ -222,13 +231,13 @@ RSpec.describe "Battle screen", type: :request do
       post campaign_battles_path(campaign), params: { battle: {
         name: "Doomed", characters: [ bartz_character.id.to_s ], encounter: { "0" => { monster: "goblin", count: "1" } }
       } }
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("still standing")
+      expect(response).to redirect_to(campaign_table_path(campaign)) # back to the setup under the stage, with why
+      expect(flash[:alert]).to include("still standing")
 
       post campaign_battles_path(campaign), params: { battle: {
         name: "Empty", characters: [ lenna.id.to_s ], encounter: { "0" => { monster: "", count: "1" } }
       } }
-      expect(response.body).to include("at least one monster")
+      expect(flash[:alert]).to include("at least one monster")
     end
 
     it "only uses the campaign's own characters" do

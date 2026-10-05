@@ -12,8 +12,10 @@ RSpec.describe "Antagonists at the table", type: :request do
     gorn = campaign.npcs.find_by!(name: "Gorn the Red")
     expect(gorn).to be_antagonist
 
-    get new_campaign_battle_path(campaign)
-    expect(response.body).to include("Antagonists", "Gorn the Red", "as Goblin Chief")
+    campaign.call_controls!("battle")
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    get campaign_table_path(campaign)
+    expect(Nokogiri::HTML(response.body).at("#table_called").text).to include("Antagonists", "Gorn the Red", "as Goblin Chief")
 
     post campaign_battles_path(campaign), params: { battle: { name: "Alley", characters: [ hero.id ], antagonists: [ gorn.id ],
                                                              encounter: { "0" => { monster: "", count: "1" } } } }

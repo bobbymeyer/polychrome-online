@@ -346,9 +346,14 @@ A player's table offers what they can do at this moment, and nothing else up fro
 The GM's table works the same way:
 
 - **The Now line is the GM's prompt**, with the moves for what's happening: in free play the
-  controls row (Talk · Travel · Things to do here · Scene · Check: what kind of moment this is,
-  and what comes to the table for it); with a vote, "Settle it ↓"; with an encounter, "Fight or
-  wave it off ↓" (to its panel, where the prelude can still be edited).
+  controls row (Talk · Travel · Things to do here · Scene · Check · Battle: what kind of moment
+  this is, and what comes to the table for it); with a vote, "Settle it ↓"; with an encounter,
+  "Fight or wave it off ↓" (to its panel, where the prelude can still be edited).
+- **A battle is called at the table.** Battle puts a short setup under the stage: what they face
+  (monsters and counts, or an antagonist), who fights (the standing pre-checked), the forecast as
+  it changes, and Start; the name, the timer, the seed, where, and whether the party can flee wait
+  behind "More" with sensible defaults. There is no battle form anywhere else, and calling one off
+  is on the battle page, where the GM already is.
 - **The rest of the tools wait behind "Tools"**, always: Moves, and More (grants, music, the
   shared screen). Clocks and secrets are Prep's, not the table's: the Now line says when a clock
   is one tick from full, in red, with the way to Prep. Time passes where the day is spent: "A
@@ -594,8 +599,8 @@ other way, the GM puts it to the table.
 
 The table's actions fit the moment the GM has called, and no others. The Now line has the
 controls: **Talk** (the floor: the dialogue, nothing to pick), **Travel**, **Things to do
-here**, **Scene** and **Check**; the one called is red and pressed, and one with nothing behind
-it is greyed. Scene and Check are the GM's alone: the scene list or the check form comes to the
+here**, **Scene**, **Check** and **Battle**; the one called is red and pressed, and one with
+nothing behind it is greyed. Scene and Check are the GM's alone: the scene list or the check form comes to the
 table under the stage, where the ways would be, and players see nothing until a scene plays or
 a roll lands. Talking,
 neither the GM nor the players get a menu of ways. Calling Travel puts "Where next?" below for

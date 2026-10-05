@@ -12,12 +12,12 @@
     <p class="muted"><%= money(@campaign.gil) %> · <%= @campaign.when_it_is %></p>
   </div>
   <div class="actions">
-    <%# Open the table is the way on from here; the rest are quiet, and what needs a party waits for one. %>
+    <%# Open the table is the way on from here; the rest are quiet, and what needs a party waits for one.
+        A battle is called at the table (Campaign::Controls), not from here. %>
     <%= link_to "Open the table", campaign_table_path(@campaign), class: "button button--primary" %>
     <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" if @world.codex_entries.exists? %>
     <% if can_gm?(@campaign) %>
     <% party = @campaign.characters.any? %>
-    <%= link_to "New battle", new_campaign_battle_path(@campaign), class: "button button--quiet" if party %>
     <%# Camp is for the road: in a town, the party takes rooms at the inn. %>
     <% if !party %>
     <% elsif (inn = @campaign.inn_here) %>
@@ -152,9 +152,6 @@
         <% @battles.each do |battle| %>
           <li>
             <%= link_to battle.name, battle_path(battle) %> <span class="muted">· <%= battle.status_label %> · <%= time_ago_in_words(battle.updated_at) %> ago</span>
-            <% if !battle.over? && can_gm?(@campaign) %>
-              <%= button_to "Call off", battle_call_off_path(battle), class: "link-button", form: { class: "inline", data: { turbo_confirm: "Call off #{battle.name}? Nothing that happened in it counts." } } %>
-            <% end %>
           </li>
         <% end %>
       </ul>

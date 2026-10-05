@@ -35,7 +35,8 @@
     <% elsif gm %>
       <strong>The table is yours.</strong>
       <%= { "travel" => "Travel: the ways on are below, for everyone.", "doing" => "Things to do here are below, for everyone.",
-            "scene" => "Scene: pick one below to put on the stage.", "check" => "Check: say who rolls what, below." }[campaign.controls] %>
+            "scene" => "Scene: pick one below to put on the stage.", "check" => "Check: say who rolls what, below.",
+            "battle" => "Battle: set it up below, and start it." }[campaign.controls] %>
       <%# Clocks live in Prep; the one thing the table needs to know is when one is about to fill. %>
       <% nearly = campaign.clocks.running.select { |clock| clock.segments - clock.filled == 1 } %>
       <% if nearly.any? %>
@@ -73,7 +74,7 @@
             Scene and Check put that tool below, for the GM. %>
         <% ways = campaign.ways_on %>
         <%# Things to do here is always open to the GM: time passes there even where there's nothing else to do. %>
-        <% offered = { "travel" => ways.any? { |way| !way.dig("move", "pastime") } } %>
+        <% offered = { "travel" => ways.any? { |way| !way.dig("move", "pastime") }, "battle" => campaign.characters.any? } %>
         <div class="controls-call" role="group" aria-label="What's happening">
           <% Campaign::Controls::CONTROL_LABELS.each do |kind, label| %>
             <% current = campaign.controls == kind %>

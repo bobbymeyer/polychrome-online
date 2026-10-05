@@ -1292,6 +1292,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
 .gm-tools__reveal[aria-expanded="true"] { background: var(--ink); color: var(--paper); }
 #table_called[hidden] { display: none; }
+/* A battle set up under the stage (battles/_setup): the fieldsets tight, the rest behind More. */
+.battle-setup .panel { margin: 0 0 12px; }
+.battle-setup__more { margin: 0 0 12px; }
+.battle-setup .actions { margin-top: 0; }
 .table:has(#table_now[data-state="scene"]) #table_called { display: none; } /* the scene plays; the director's hand is on the Now line */
 
 /* ---------------------------------------------------------------------------

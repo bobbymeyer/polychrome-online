@@ -18,7 +18,8 @@ RSpec.describe "Campaigns and characters", type: :request do
       campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"))
       campaign.add_item!(item.("potion"), 3)
       get campaign_path(campaign)
-      expect(response.body).to include("Lenna", "White Mage", "Potion", "New battle")
+      expect(response.body).to include("Lenna", "White Mage", "Potion")
+      expect(response.body).not_to include("New battle") # a battle is called at the table
 
       get world_path(world)
       expect(response.body).to include("Second Run")
