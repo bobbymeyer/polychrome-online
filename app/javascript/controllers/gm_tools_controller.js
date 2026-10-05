@@ -1,9 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
 
 // The rest of the GM's tools at the table (campaigns/tables/gm/_tools),
-// behind "Tools": one tab at a time, and the one you had open stays open,
-// across reloads and the table's own refreshes, for this campaign in this
-// browser.
+// behind the Now line's "GM tools" button (after Battle): one tab at a time,
+// and the one you had open stays open, across reloads and the table's own
+// refreshes, for this campaign in this browser. The button sits in a panel
+// replaced live, so its press is heard on the window and its state put back
+// after each refresh.
 export default class extends Controller {
   static targets = ["tab", "panel"]
   static values = { campaign: Number }
@@ -13,10 +15,17 @@ export default class extends Controller {
     // A refresh by morphing puts the server's first tab back: keep ours.
     this.onMorph = () => this.show(this.current)
     document.addEventListener("turbo:morph", this.onMorph)
+    this.onClick = (event) => { if (event.target.closest?.("[data-gm-tools-toggle]")) this.reveal() }
+    window.addEventListener("click", this.onClick)
+    this.onStream = () => setTimeout(() => this.showToggle(), 0)
+    document.addEventListener("turbo:before-stream-render", this.onStream)
+    this.showToggle()
   }
 
   disconnect() {
     document.removeEventListener("turbo:morph", this.onMorph)
+    window.removeEventListener("click", this.onClick)
+    document.removeEventListener("turbo:before-stream-render", this.onStream)
   }
 
   pick(event) {
@@ -36,10 +45,15 @@ export default class extends Controller {
     next.focus()
   }
 
-  // The tabs wait behind "Tools" (stage.css): pressing it brings them out, and again puts them away.
-  reveal(event) {
-    const shown = this.element.classList.toggle("is-shown")
-    event.currentTarget.setAttribute("aria-expanded", String(shown))
+  // The tabs wait behind "GM tools" (stage.css): pressing it brings them out, and again puts them away.
+  reveal() {
+    this.element.classList.toggle("is-shown")
+    this.showToggle()
+  }
+
+  showToggle() {
+    const shown = this.element.classList.contains("is-shown")
+    document.querySelectorAll("[data-gm-tools-toggle]").forEach((button) => button.setAttribute("aria-pressed", String(shown)))
   }
 
   show(key) {

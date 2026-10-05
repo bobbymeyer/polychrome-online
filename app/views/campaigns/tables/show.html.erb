@@ -105,7 +105,7 @@
         <%# The door: with no seat, the way in comes before anything else. %>
         <%= render "campaigns/tables/take_a_seat", campaign: @campaign if !@seat.seated? && view != "screen" %>
         <% if @seat.gm? && view != "screen" %>
-          <%# What needs the GM's answer first, then the rest of their tools behind "Tools" (what they call is in the row). %>
+          <%# What needs the GM's answer first, then the rest of their tools behind "GM tools" (what they call is in the row). %>
           <%= render "campaigns/tables/gm/tools", campaign: @campaign, view: view %>
         <% end %>
         <%= tag.section(class: "your-moves", aria: { label: "Your moves" }) do %>

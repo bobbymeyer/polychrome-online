@@ -370,7 +370,7 @@ The GM's table works the same way:
   it changes, and Start; the name, the timer, the seed, where, and whether the party can flee wait
   behind "More" with sensible defaults. There is no battle form anywhere else, and calling one off
   is on the battle page, where the GM already is.
-- **The rest of the tools wait behind "Tools"**, always: Moves, and More (grants, music, the
+- **The rest of the tools wait behind "GM tools"**, a button on the Now line after Battle, always: Moves, and More (grants, music, the
   shared screen). Clocks and secrets are Prep's, not the table's: the Now line says when a clock
   is one tick from full, in red, with the way to Prep. Time passes where the day is spent: "A
   part of the day passes", "Until dawn" and "Pass N parts" sit under Things to do here, beside
@@ -507,7 +507,7 @@ under the frame.
 - **"Previously on…"** opens by itself only for a session that's over, not the one being played.
 - **Only what is in context is on the screen.** The Controls follow the table's state: in a
   battle, nothing but the way to the battle page (the fight's controls are there and only there);
-  with an encounter or a choice open, the GM's tools fold behind "Tools" and a player's field
+  with an encounter or a choice open, the GM's tools fold behind "GM tools" and a player's field
   ability waits; while a scene is on the stage, a player's ways and ability wait too, and the GM
   has the director's buttons. Travel is the Controls' (Where next?). The battle page has no
   campaign chrome but its name, and talk is a press away.
@@ -516,7 +516,8 @@ under the frame.
   scene list there and Check the check form, for the GM, in the same place a player's moves go,
   so there is one spot to look at whoever you are. There is no tab strip for these. What's left
   (Moves, and More: grants, music, one shared screen with its QR code to hold up) waits behind
-  one "Tools" button under a dashed tag, "GM tools · only you see these", one tab at a time; the
+  one "GM tools" button on the Now line after Battle (the name says who sees them; there is no
+  tag), one tab at a time; the
   open tab is ink, and the tab the GM had open stays open, per campaign, in this browser. What needs an answer now (everyone down, a
   field ability asked for) sits in front of it. On a phone as the GM's remote, the same comes
   after the play.
