@@ -94,7 +94,7 @@ RSpec.describe "Items and shops", type: :request do
       expect(campaign.reload.gil).to eq(200)
     end
 
-    it "puts each service under its building, where the GM does it like any other thing to do" do
+    it "puts each service under its building, where the party does it like any other thing to do, once the GM calls it" do
       lenna_character = campaign.characters.find_by!(name: "Lenna")
       lenna_character.update!(hp: 10, mp: 0)
       inn = town.view["services"].find { |sv| sv["kind"] == "inn" }
@@ -108,13 +108,18 @@ RSpec.describe "Items and shops", type: :request do
       expect(response.body).to include('<span class="service__offer">Buy and sell</span>')
 
       post campaign_ways_path(campaign), params: { way: label }
-      expect(response).to have_http_status(:forbidden) # the GM's to call
+      expect(response).to have_http_status(:forbidden) # not while the table is talking
       expect(campaign.open_choice).to be_nil
+
+      campaign.call_controls!("doing")
+      get location_path(town)
+      expect(response.body).to include("Rooms at #{ERB::Util.h(inn['name'])}", "suggest")
+      post campaign_ways_path(campaign), params: { way: label }
+      expect(campaign.open_choice.tally[label]).to eq([ "Lenna" ])
 
       sign_out
       sign_in_as(@admin)
       post campaign_table_seat_path(campaign), params: { seat: "gm" }
-      get location_path(town)
       post campaign_ways_path(campaign), params: { way: label, go: 1 }
       expect(campaign.reload.gil).to eq(200 - price)
       expect(lenna_character.reload.current_hp).to eq(lenna_character.stats["max_hp"])

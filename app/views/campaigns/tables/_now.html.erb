@@ -34,8 +34,13 @@
       <%= gm ? "Beat #{beat.position + 1} of #{scene.beats.size}#{scene.auto? ? ', playing on' : ''}." : "Watch the stage." %>
     <% elsif gm %>
       <strong>The table is yours.</strong>
+      <%= { "travel" => "Travel: the ways on are below, for everyone.", "doing" => "Things to do here are below, for everyone." }[campaign.controls] %>
+    <% elsif campaign.travelling? %>
+      <strong>Where next?</strong> Say where you'd go: it goes to a vote, and the GM settles it.
+    <% elsif campaign.doing? %>
+      <strong>What will you do here?</strong> Say which: it goes to a vote, and the GM settles it.
     <% else %>
-      <strong>The GM has the floor.</strong> Talk at the table; the GM asks where next.
+      <strong>The GM has the floor.</strong> Talk at the table.
     <% end %>
   </p>
   <%= render "campaigns/tables/current_battle", campaign: campaign %>
@@ -57,8 +62,18 @@
       <% elsif state == "choice" %>
         <%= link_to "Settle it ↓", "#table_choice", class: "button play" %>
       <% else %>
-        <%# Opens the ways, folded below (panels_controller follows the link): go, or put it to the table from there. %>
-        <%= link_to "Where next? ↓", "#where_next", class: "button play" if campaign.ways_on.any? %>
+        <%# The controls (Campaign::Controls): what kind of moment this is, so everyone gets the actions that fit.
+            Talk is the floor; Travel and Things to do here put the ways below, for the GM and the players alike. %>
+        <% ways = campaign.ways_on %>
+        <% offered = { "travel" => ways.any? { |way| !way.dig("move", "pastime") }, "doing" => ways.any? { |way| way.dig("move", "pastime") } } %>
+        <div class="controls-call" role="group" aria-label="What's happening">
+          <% Campaign::Controls::CONTROL_LABELS.each do |kind, label| %>
+            <% current = campaign.controls == kind %>
+            <%= button_to label, campaign_controls_path(campaign), method: :patch, params: { kind: kind },
+                          class: "button #{current ? 'play' : 'button--quiet'}", disabled: offered.fetch(kind, true) == false,
+                          "aria-pressed": current.to_s, form: { class: "inline" } %>
+          <% end %>
+        </div>
         <% if campaign.map_on_stage? %>
           <%= button_to "Show the place", campaign_map_view_path(campaign), method: :patch, params: { off: 1 }, class: "button button--quiet", form: { class: "inline" } %>
         <% else %>

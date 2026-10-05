@@ -91,12 +91,11 @@ RSpec.describe "The GM's tools at the table", type: :system do
     seat(gm, "gm")
 
     as(gm) do
-      # The ways are folded until the GM asks: the Now line's button opens them.
+      # The ways show once the GM calls travel (Campaign::Controls), for everyone.
       expect(page).to have_no_button("To The Old Ruins (by a dangerous road)")
-      click_on "Where next? ↓"
+      click_on "Travel"
       dismiss_confirm(/The road to The Old Ruins is dangerous/) { click_on "To The Old Ruins (by a dangerous road)" }
       expect(campaign.reload.current_node).to eq(here)
-      expect(page).to have_button("To The Old Ruins (by a dangerous road)") # still open, as the GM left it
       accept_confirm { click_on "To The Old Ruins (by a dangerous road)" }
       expect(page).to have_text("The party is at The Old Ruins").or have_css("#table_ways", text: "Varn")
       expect(campaign.reload.current_node).to eq(there)

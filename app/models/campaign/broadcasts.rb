@@ -18,7 +18,7 @@ module Campaign::Broadcasts
 
   # What the table shows of the campaign itself: a change to any of these
   # renders its panels again.
-  TABLE_FACTS = %w[current_node_id pending_encounter day time_of_day gil lines veils staged_scene_id stage_view shown_map_id].freeze
+  TABLE_FACTS = %w[current_node_id pending_encounter day time_of_day gil lines veils staged_scene_id stage_view shown_map_id controls].freeze
 
   included do
     include TableFacts

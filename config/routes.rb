@@ -158,6 +158,8 @@ Rails.application.routes.draw do
       resource :map_panel, only: :show
       # The stage's map view: a map to browse (GET), the GM putting one on the stage (PATCH).
       resource :map_view, only: %i[show update]
+      # The table's controls: the GM calls talk, travel or things to do here (Campaign::Controls).
+      resource :controls, only: :update
       # Where next: a player's suggestion (a vote), or the GM going (Campaign::Ways).
       resources :ways, only: :create
       resource :encounter, only: %i[create destroy]
