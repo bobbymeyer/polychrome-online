@@ -42,6 +42,26 @@ shared: &shared
   chain:
     portrait_denoise: 0.55
     expression_denoise: 0.45
+  # Taking the background off (Cutout), for the content types marked
+  # transparent and any batch asked to: in ComfyUI, with ComfyUI-RMBG's
+  # BiRefNet node (install "ComfyUI-RMBG" by 1038lab from the Manager). It
+  # fetches the model into models/RMBG the first time.
+  background_removal:
+    # BiRefNet_toonout: BiRefNet fine-tuned on anime characters (ToonOut,
+    # MIT). The node's others: BiRefNet-general, BiRefNet-HR (big pictures),
+    # Lucida (illustrations, glow and see-through things), BiRefNet_lite...
+    # The Settings page can name another.
+    model: <%= ENV.fetch("COMFY_RMBG_MODEL", "BiRefNet_toonout").to_json %>
+    # The colour a picture is rendered on when it will be cut out, in place
+    # of the type's white background: a flat ground no character design is
+    # drawn in, so the white in a design (a shirt, a face, a sail) is never
+    # mistaken for the background. Blank keeps each type's own framing
+    # (white), and only white closed in by the subject can be told from it.
+    ground: <%= ENV.fetch("COMFY_RMBG_GROUND", "green").to_json %>
+    # How far (0–255, per channel) a cleared pixel's colour may be from the
+    # ground's and still count as background. Cleared pixels further from
+    # it than this were taken out of the subject, and are put back.
+    tolerance: 56
 
   # How each family of model wants to be run (Comfy::Family). A model's file
   # name picks its family: the first family with a `match` found in the name

@@ -43,8 +43,6 @@ module Polychrome
 
     # The asset pipeline's ComfyUI settings (config/comfy.yml).
     config.x.comfy = config_for(:comfy)
-    # Background removal after ComfyUI renders (config/cutout.yml).
-    config.x.cutout = config_for(:cutout)
     # An optional language model for writing prompts (config/llm.yml).
     config.x.llm = config_for(:llm)
   end

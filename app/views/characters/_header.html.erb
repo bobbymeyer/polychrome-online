@@ -1,5 +1,5 @@
 <header class="book-page__header">
-  <%= entry_portrait(@character.job) %>
+  <%= character_portrait(@character) %>
   <div>
     <p class="eyebrow">Character<% if (player = @character.user&.name.presence || @character.player_name.presence) %> · played by <%= player %><% end %></p>
     <h1><%= @character.name %></h1>

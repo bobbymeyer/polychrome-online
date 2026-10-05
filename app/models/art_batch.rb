@@ -36,8 +36,8 @@ class ArtBatch < ApplicationRecord
       recipe = entry.art_recipe.merge("write" => write && Llm.enabled?)
       recipe["transparent"] = transparent unless transparent.nil?
       recipe = recipe.merge("source" => source, "denoise" => denoise.to_f.clamp(0.1, 1.0)) if source
-      if recipe["transparent"] && Cutout.enabled?
-        recipe["cutout"] = Cutout.label
+      if recipe["transparent"]
+        recipe["cutout"] = Cutout.label # the removal model, in ComfyUI
         recipe = Cutout.on_ground(recipe) # rendered on the ground the cut-out keys against, not white
       end
       recipe = draft_of(recipe) if draft
@@ -167,8 +167,8 @@ class ArtBatch < ApplicationRecord
   end
 
   # Collect whatever has finished. Returns true once every candidate has.
-  def collect!(client, cutout: Cutout.client)
-    candidates.reject(&:finished?).each { |candidate| candidate.collect!(client, cutout: cutout) }
+  def collect!(client)
+    candidates.reject(&:finished?).each { |candidate| candidate.collect!(client) }
     return false if candidates.reload.any? { |c| !c.finished? }
 
     if candidates.all? { |c| c.status == "failed" }

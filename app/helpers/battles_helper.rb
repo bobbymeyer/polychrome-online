@@ -1,17 +1,19 @@
 # frozen_string_literal: true
 
 module BattlesHelper
-  # The book entry whose image stands for a unit: its monster, or its
-  # job for party members. Loaded once per render.
+  # What stands for a unit: a party member's own portrait (their job's art
+  # without one), an antagonist's, or its monster. Loaded once per render.
   def unit_art(battle, unit)
     @unit_art ||= {}
     @unit_art[battle.id] ||= {
       "monsters" => battle.world.monsters.with_attached_image.index_by(&:slug),
       "jobs" => battle.world.jobs.with_attached_image.index_by(&:slug),
-      "npcs" => (battle.campaign&.npcs&.antagonists || Npc.none).to_h { |npc| [ npc.id.to_s, npc.battle_art ] }
+      "npcs" => (battle.campaign&.npcs&.antagonists || Npc.none).to_h { |npc| [ npc.id.to_s, npc.battle_art ] },
+      "characters" => (battle.campaign&.characters&.includes(:job, portraits: { image_attachment: :blob }) || Character.none)
+                        .to_h { |character| [ character.battle_unit_id, character.battle_art ] }
     }
     ref = unit["image"] || {}
-    @unit_art[battle.id].dig(ref["book"], ref["slug"])
+    @unit_art[battle.id].dig("characters", unit["id"].to_s) || @unit_art[battle.id].dig(ref["book"], ref["slug"])
   end
 
   def unit_sprite(battle, unit)

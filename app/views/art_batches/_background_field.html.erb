@@ -10,10 +10,10 @@
   <%= check_box_tag :transparent, "1", art.art_type.transparent, id: "art_transparent" %>
   <%= label_tag "art_transparent", "Remove the background" %>
   <p class="hint">
-    <% if Cutout.enabled? %>
-      With <code><%= Cutout.label %></code>, after ComfyUI renders it; white inside the subject is kept. Each image is checked for real transparency.
-    <% else %>
-      No background remover is set up (Settings), so backgrounds stay.
+    In ComfyUI, with <code><%= Cutout.label %></code> (ComfyUI-RMBG's <code><%= Cutout.node %></code>); white inside the subject is kept. Each image is checked for real transparency.
+    <% caps = Comfy.capabilities %>
+    <% if caps.reachable? && !caps.node?(Cutout.node) %>
+      <strong>This ComfyUI has no <%= Cutout.node %> node yet:</strong> install ComfyUI-RMBG (by 1038lab, in the Manager), or untick this.
     <% end %>
   </p>
 </div>

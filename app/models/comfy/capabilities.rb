@@ -6,11 +6,11 @@
 # machine ComfyUI is on and however its models are laid out.
 module Comfy
   class Capabilities
-    # The nodes the builder may use. A background-removal node is asked
-    # about as well when one is configured.
-    NODES = %w[CheckpointLoaderSimple UNETLoader CLIPLoader VAELoader LoraLoader LoraLoaderModelOnly
+    # The nodes the builder may use, and the background-removal node
+    # (ComfyUI-RMBG's, Cutout).
+    NODES = %W[CheckpointLoaderSimple UNETLoader CLIPLoader VAELoader LoraLoader LoraLoaderModelOnly
                CLIPSetLastLayer CLIPTextEncode ConditioningZeroOut KSampler EmptyLatentImage EmptySD3LatentImage
-               VAEDecode SaveImage LoadImage ImageScale VAEEncode].freeze
+               VAEDecode SaveImage LoadImage ImageScale VAEEncode #{Cutout::NODE}].freeze
 
     # offline: nothing answered at all (Comfy::Unreachable), rather than
     # ComfyUI answering with an error.

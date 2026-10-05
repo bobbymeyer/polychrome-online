@@ -44,4 +44,23 @@ RSpec.describe BattlesHelper, type: :helper do
       expect(helper.target_help(nil, ogre, target["id"])).to eq("Enemy · Normal type · Weak to Fighting · Resists Fire · Immune to Ghost and Sleep · Absorbs Ice")
     end
   end
+
+  describe "a unit's picture" do
+    let(:image) { Rack::Test::UploadedFile.new(file_fixture("goblin.png"), "image/png") }
+
+    it "draws a party member as their own portrait, their job's art without one, and a lettered plate without either" do
+      battle = start_battle
+      bartz = battle.campaign.characters.find_by!(name: "Bartz")
+      unit = battle.units.find { |u| u["id"] == bartz.battle_unit_id }
+      expect(helper.unit_sprite(battle, unit)).to include("sprite__plate", ">B<")
+
+      bartz.job.image.attach(image)
+      helper.instance_variable_set(:@unit_art, nil)
+      expect(helper.unit_sprite(battle, unit)).to include("sprite__image")
+
+      bartz.update_portraits!(uploads: { "neutral" => Rack::Test::UploadedFile.new(file_fixture("goblin.png"), "image/png") })
+      helper.instance_variable_set(:@unit_art, nil)
+      expect(helper.unit_sprite(battle, unit)).to include("sprite__image", bartz.portraits.find_by!(expression: "neutral").image.blob.filename.to_s)
+    end
+  end
 end

@@ -18,8 +18,6 @@ class Npc < ApplicationRecord
   GROWTH = 15
   SCALED = %w[max_hp max_mp str mag vit spr agi atk def mdef].freeze
 
-  Art = Data.define(:image, :variant, :colour, :level)
-
   include CampaignPages
 
   belongs_to :campaign
@@ -65,8 +63,8 @@ class Npc < ApplicationRecord
 
   # What the battle board draws: their angry face, or the monster's art.
   def battle_art
-    own = portrait_image("angry")
-    Art.new(image: own || monster&.image, variant: own ? {} : monster&.variant.to_h, colour: colour, level: monster&.level)
+    own = own_portrait_image("angry")
+    BattleArt.new(image: own || monster&.image, variant: own ? {} : monster&.variant.to_h, colour: colour, level: monster&.level)
   end
 
   private

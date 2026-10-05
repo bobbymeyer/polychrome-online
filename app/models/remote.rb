@@ -2,9 +2,8 @@
 
 require "net/http"
 
-# Talking to the services the app leans on, over HTTP: ComfyUI (Comfy), the
-# background remover (Cutout) and the language model (Llm). Each is somewhere
-# else, and may be local, on a LAN or tailnet, or behind a proxy that wants
+# Talking to the services the app leans on, over HTTP: ComfyUI (Comfy) and
+# the language model (Llm). Each is somewhere else, and may be local, on a LAN or tailnet, or behind a proxy that wants
 # a bearer token, basic auth (in the URL) or headers of its own.
 #
 # Each service has its own Error, and an Unreachable one for when nothing

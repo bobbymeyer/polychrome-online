@@ -34,10 +34,8 @@
       <%= submit_tag "Generate", class: "button", disabled: !Comfy.capabilities.reachable?, title: ("ComfyUI isn't answering" unless Comfy.capabilities.reachable?) %>
     </div>
   <% end %>
+  <%= render "art_batches/strips", batches: batch %>
   <% unless Comfy.capabilities.reachable? %>
     <p class="hint">ComfyUI at <code><%= Comfy.client.base %></code> isn't answering, so nothing can be generated. Start it and reload.</p>
   <% end %>
-
-  <%= render "art_batches/strip", batch: batch if batch %>
-  <%= render "art_batches/strip", batch: batch.drafts if batch&.drafts %>
 </details>

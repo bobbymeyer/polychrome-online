@@ -32,7 +32,7 @@
       <div class="menu join__characters">
         <% @characters.each do |character| %>
           <%= button_tag type: "submit", name: "character_id", value: character.id, class: "menu__item join__character", formnovalidate: true do %>
-            <%= entry_portrait(character.job, size: :small) %>
+            <%= character_portrait(character, size: :small) %>
             <span>
               <strong><%= character.name %></strong>
               <span class="muted">Lv <%= character.level %> <%= character.job.name %><%= " · yours" if current_user && character.user_id == current_user.id %></span>
