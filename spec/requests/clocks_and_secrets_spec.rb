@@ -137,14 +137,14 @@ RSpec.describe "Clocks and secrets", type: :request do
     end
   end
 
-  it "lets the GM pass time at the table, under the things to do here, and shows everyone the time" do
+  it "lets the GM pass time at the table, as a row of the things to do here, and shows everyone the time" do
     get campaign_table_path(campaign)
-    expect(response.body).not_to include("A part of the day passes") # not until the day's doings are called
+    expect(response.body).not_to include("Let time pass") # not until the day's doings are called
     campaign.call_controls!("doing")
     get campaign_table_path(campaign)
     ways = Nokogiri::HTML(response.body).at("#table_ways")
     expect(ways.key?("hidden")).to be(false)
-    expect(ways.text).to include("Or let time pass:", "A part of the day passes")
+    expect(ways.css(".pick-row").last.text).to include("Let time pass", "a part of the day") # the last row of the things to do
     expect(ways.text).not_to include("Until #{campaign.almanac.periods.first}") # one press, one part of the day
     patch campaign_time_path(campaign), params: { parts: 2 }
     expect(campaign.reload.time_of_day).to eq("dusk")

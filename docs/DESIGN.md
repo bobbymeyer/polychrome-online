@@ -375,9 +375,9 @@ The GM's table works the same way:
   is on the battle page, where the GM already is.
 - **The rest of the tools wait behind "GM tools"**, a button on the Now line after Battle, always: Moves, and More (grants, music, the
   shared screen). Clocks and secrets are Prep's, not the table's: the Now line says when a clock
-  is one tick from full, in red, with the way to Prep. Time passes where the day is spent: "A
-  part of the day passes", "Until dawn" and "Pass N parts" sit under Things to do here, beside
-  the pastimes and Make camp, and nowhere else (a journey takes its road's time by itself). What
+  is one tick from full, in red, with the way to Prep. Time passes where the day is spent: "Let
+  time pass" is the last row of Do, beside the pastimes and Make camp, and nowhere else (a
+  journey takes its road's time by itself). What
   needs an answer now (everyone down, a field ability asked for) stays out in front.
 - **What the GM looks up is in tabs** under the tools: Party · What they know.
 
@@ -508,8 +508,9 @@ under the frame.
   before sitting down; on the world's page, as the setting's own. Not on the campaign page.
 - **The talk box is the box first**, then one line under it: As (or To) as chips, the face as a
   plain select, Send at the end, and a help line that says what each does. No fold for the face.
-- **Time passes a part of the day at a time**: one button under the things to do here. A journey
-  takes its road's time by itself; a rest sleeps the night.
+- **Time passes a part of the day at a time**: "Let time pass" is the GM's last row of the Do
+  table, costed "a part of the day" like the pastimes above it, and the only row when there is
+  nothing else to do here. A journey takes its road's time by itself; a rest sleeps the night.
 - **The scenes called to the table** have a live search above them, and a played one is ticked
   (✅) before its name.
 - **The battle setup starts with one monster**: "+" on the first row adds another, and each added

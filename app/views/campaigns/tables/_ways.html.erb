@@ -24,7 +24,7 @@
 <%# While the party votes on where next, the GM's ways shrink to a row under the vote: the same
     places, but going now, without waiting for the vote (which goes with them). %>
 <% voting = gm && choice&.where_next? %>
-<%# Time passes where the day is spent: the GM's time tools sit under the things to do here (gm/_time). %>
+<%# Time passes where the day is spent: "Let time pass" is the last row of the GM's things to do here. %>
 <% timing = gm && campaign.doing? && !voting && !campaign.battle_on? %>
 <section class="window table-ways<%= " table-ways--straight" if voting %>" id="table_ways" aria-label="Where next" data-controller="help" <%= "hidden" if ways.empty? && !encounter && !treasure && !timing %>>
   <% if encounter %>
@@ -35,7 +35,7 @@
     <p class="table-ways__treasure"><strong>There's treasure in <%= here["name"] %>.</strong>
       <%= button_to "Take it", location_treasures_path(dungeon), params: { room: here["key"], return_to: "table" }, class: "button play", form: { class: "inline", data: { turbo_frame: "_top" } } %></p>
   <% end %>
-  <% if ways.any? %>
+  <% if ways.any? || timing %>
     <%# No heading: the control pressed on the strip (Move, Do) is the title; the stage says where and when. %>
     <% if voting %>
       <p class="muted table-ways__straight">Or go straight there, without the vote</p>
@@ -61,11 +61,17 @@
           <td class="pick-row__cost"><%= gm ? ahead : "suggest" %></td>
         </tr>
       <% end %>
+      <% if timing %>
+        <%# The GM's last row: a part of the day passes, here, for everyone. Each new day ticks the clocks that tick on a new day. %>
+        <tr class="pick-row" data-help="A part of the day passes, here. A day has <%= pluralize(campaign.almanac.periods.size, 'part') %>: <%= campaign.almanac.periods.to_sentence %>. Each new day ticks the clocks that tick on a new day.">
+          <td class="pick-row__what">
+            <%= button_to "Let time pass", campaign_time_path(campaign), method: :patch, params: { parts: 1 }, class: "pick-row__act" %>
+          </td>
+          <td class="pick-row__cost">a part of the day</td>
+        </tr>
+      <% end %>
       </tbody>
     </table>
-    <% if timing %>
-      <%= render "campaigns/tables/gm/time", campaign: campaign %>
-    <% end %>
     <% if campaign.doing? && (paid = campaign.payoff_preview).any? %>
       <%# Daily life pays off through the archetypes, at the next rest (Campaign::Payoffs). %>
       <p class="muted table-ways__payoff">
@@ -79,18 +85,17 @@
     <%# One help line for the panel (help_controller): the row or button under the pointer says what it does. %>
     <% if voting %>
       <%= help_line("Going now ends the vote.") %>
-    <% elsif gm %>
+    <% elsif gm && ways.any? %>
       <%= button_to "Put it to the table", campaign_ways_path(campaign), class: "button button--quiet",
                     data: { help: "The party votes between these; settling the vote takes them where they chose." } %>
       <%= help_line("Go straight there, or put it to the table.") %>
+    <% elsif gm %>
+      <%= help_line("Nothing to do here this part of the day: let time pass.") %>
       <%# A wider ballot (anywhere on a map, or a place pressed) is asked from the map on the stage (maps/_sheet). %>
     <% elsif deciding %>
       <%= help_line("The table is deciding something else first: settle that, then say where you'd go.") %>
     <% else %>
       <%= help_line("Say which: it goes to a vote, and the GM settles it.") %>
     <% end %>
-  <% elsif timing %>
-    <%= render "campaigns/tables/gm/time", campaign: campaign %>
-    <%= help_line("Nothing to do here this part of the day.") %>
   <% end %>
 </section>
