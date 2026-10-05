@@ -1223,7 +1223,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table-now__do:has(.controls-call) { gap: 0; }
 /* The strip hugs the top of the column under the stage, edge to edge: one rule above it, between the stage and the
    actions; nothing below it (what follows draws its own top). */
-.table-now:has(.controls-call) { margin: 0; padding: 0; border: 0; border-top: 3px solid var(--ink); }
+.table-now:has(.controls-call) { margin: 0; padding: 0; gap: 0; border: 0; border-top: 3px solid var(--ink); }
+.table-now:has(.controls-call) > * { margin: 0; }
 .table__under:has(.controls-call) { padding-top: 0; }
 .controls-call .button, .table-now__tools {
   clip-path: none; margin: 0; padding: 3px 12px; border: 0; font: 700 13px/20px var(--font); font-style: normal;
