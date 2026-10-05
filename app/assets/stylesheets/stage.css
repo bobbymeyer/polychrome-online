@@ -41,7 +41,7 @@
 }
 
 /* Parallelograms and cut corners: the two shapes of the stage. */
-.button, input[type=submit], button:not(.link-button):not(.dialogue__more):not(.dialogue__close):not(.pick-row__act), .pin {
+.button:not([data-kind]), input[type=submit], button:not(.link-button):not(.dialogue__more):not(.dialogue__close):not(.pick-row__act):not([data-kind]), .pin {
   clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
   padding-left: calc(12px + var(--slant) / 2); padding-right: calc(12px + var(--slant));
 }
@@ -1229,8 +1229,27 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table--screen { padding-right: 44px; }
 
 /* While the party votes on where next, the GM's way straight there is a small row under the vote. */
-/* The controls the GM calls (talk, travel, things to do here): a row, the one called in red and pressed. */
-.controls-call { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-right: 8px; }
+/* The controls the GM calls (Campaign::Controls): one short strip of colour, each control a rectangle in its own
+   colour from the top bar's spectrum, running into the next with no gap (a divergence from the slabs, recorded in
+   docs/DESIGN.md); the one called is black with white bold text; one the table can't use is hatched. */
+.controls-call { display: inline-flex; flex-wrap: wrap; gap: 0; margin-right: 0; }
+.table-now__do:has(.controls-call) { gap: 0; }
+.controls-call .button, .table-now__tools {
+  clip-path: none; margin: 0; padding: 3px 12px; border: 0; font: 700 13px/20px var(--font); font-style: normal;
+  background: var(--tone, var(--wash)); color: var(--tone-ink, var(--ink));
+}
+.controls-call .button:hover:not(:disabled), .table-now__tools:hover { translate: none; background: var(--tone); color: var(--tone-ink); filter: brightness(.88); }
+.controls-call .button:active:not(:disabled), .table-now__tools:active { translate: none; scale: none; }
+.controls-call .button[aria-pressed="true"], .table-now__tools[aria-pressed="true"],
+.controls-call .button[aria-pressed="true"]:hover, .table-now__tools[aria-pressed="true"]:hover { background: var(--ink); color: var(--paper); font-weight: 900; filter: none; }
+.controls-call .button:disabled { background: repeating-linear-gradient(-45deg, var(--control-fill) 0 4px, var(--paper) 4px 9px); color: var(--grey); }
+.controls-call [data-kind="talk"] { --tone: var(--sun-yellow); --tone-ink: var(--ink); }
+.controls-call [data-kind="travel"] { --tone: var(--orange); --tone-ink: var(--ink); }
+.controls-call [data-kind="doing"] { --tone: var(--green); --tone-ink: var(--ink); }
+.controls-call [data-kind="scene"] { --tone: var(--wine-red); --tone-ink: var(--paper); }
+.controls-call [data-kind="check"] { --tone: var(--blue); --tone-ink: var(--paper); }
+.controls-call [data-kind="battle"] { --tone: var(--turquoise); --tone-ink: var(--ink); }
+.table-now__tools { --tone: var(--steel-grey); --tone-ink: var(--paper); }
 .table-ways--straight { padding-top: 8px; }
 .table-ways__straight { margin: 0 0 4px; font-size: 15px; font-weight: 800; }
 .table-ways--straight .table-ways__group { font-size: 13px; margin: 6px 0 0; }

@@ -72,14 +72,15 @@
         <div class="controls-call" role="group" aria-label="What's happening">
           <% Campaign::Controls::CONTROL_LABELS.each do |kind, label| %>
             <% current = campaign.controls == kind %>
+            <%# data-kind colours it from the spectrum (stage.css, "The controls"); the one called is black. %>
             <%= button_to label, campaign_controls_path(campaign), method: :patch, params: { kind: kind },
-                          class: "button #{current ? 'play' : 'button--quiet'}", disabled: offered.fetch(kind, true) == false,
+                          class: "button", disabled: offered.fetch(kind, true) == false, data: { kind: kind },
                           "aria-pressed": current.to_s, form: { class: "inline" } %>
           <% end %>
         </div>
       <% end %>
       <%# The rest of the GM's tools (Moves, More) wait under the stage behind this (gm_tools_controller hears it). %>
-      <%= tag.button "GM tools", type: "button", class: "button button--quiet table-now__tools", aria: { pressed: false }, data: { gm_tools_toggle: true } %>
+      <%= tag.button "GM tools", type: "button", class: "button table-now__tools", aria: { pressed: false }, data: { gm_tools_toggle: true, kind: "tools" } %>
     </div>
   <% end %>
 </section>

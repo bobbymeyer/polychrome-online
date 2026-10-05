@@ -5,6 +5,12 @@ import { Controller } from "@hotwired/stimulus"
 // party travels there, road by road) and Ask the table (a vote between here
 // and there); the card's page link is the place's page. Esc, a press
 // elsewhere or Close puts it away.
+//
+// The sheet is replaced live with the table's panels (Campaign::Broadcasts),
+// so a card that's open is remembered across the replace and opened again on
+// the new sheet, where it was.
+let opened = null // { nodeId, x, y } while a card is open on this page
+
 export default class extends Controller {
   static targets = ["card", "name", "journey", "go", "ask", "page", "noRoad", "goForm", "askForm"]
 
@@ -13,6 +19,11 @@ export default class extends Controller {
     this.onDown = (e) => { if (!this.cardTarget.hidden && !this.cardTarget.contains(e.target) && !e.target.closest(".map-node__ask")) this.close() }
     document.addEventListener("keydown", this.onKey)
     document.addEventListener("pointerdown", this.onDown)
+    if (opened) {
+      const link = this.element.querySelector(`.map-node__ask[data-node-id="${CSS.escape(opened.nodeId)}"]`)
+      if (link) this.show(link, opened.x, opened.y, { focus: false })
+      else opened = null
+    }
   }
 
   disconnect() {
@@ -22,7 +33,15 @@ export default class extends Controller {
 
   open(event) {
     event.preventDefault()
-    const { nodeId, nodeName, wayLabel, journey, warn, page } = event.currentTarget.dataset
+    // Beside the press, inside the sheet.
+    const sheet = this.element.getBoundingClientRect()
+    const x = Math.min(Math.max(event.clientX - sheet.left + 12, 8), sheet.width - 240)
+    const y = Math.min(Math.max(event.clientY - sheet.top + 12, 8), sheet.height - 140)
+    this.show(event.currentTarget, x, y)
+  }
+
+  show(link, x, y, { focus = true } = {}) {
+    const { nodeId, nodeName, wayLabel, journey, warn, page } = link.dataset
     this.nameTarget.textContent = nodeName
     this.journeyTarget.textContent = journey || ""
     const reachable = Boolean(wayLabel)
@@ -36,18 +55,16 @@ export default class extends Controller {
     this.pageTarget.hidden = !page
     if (page) this.pageTarget.href = page
 
-    // Beside the press, inside the sheet.
-    const sheet = this.element.getBoundingClientRect()
-    const x = Math.min(Math.max(event.clientX - sheet.left + 12, 8), sheet.width - 240)
-    const y = Math.min(Math.max(event.clientY - sheet.top + 12, 8), sheet.height - 140)
     this.cardTarget.style.left = `${x}px`
     this.cardTarget.style.top = `${y}px`
     this.cardTarget.hidden = false
-    this.cardTarget.querySelector("button:not([hidden])")?.focus({ preventScroll: true })
+    opened = { nodeId, x, y }
+    if (focus) this.cardTarget.querySelector("button:not([hidden])")?.focus({ preventScroll: true })
   }
 
   close() {
     this.cardTarget.hidden = true
+    opened = null
   }
 
   goForm(name, value) { this.goFormTarget.querySelector(`input[name="${name}"]`).value = value }
