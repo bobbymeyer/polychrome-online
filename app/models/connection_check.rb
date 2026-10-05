@@ -3,8 +3,8 @@
 require "socket"
 require "resolv"
 
-# Why the app can't see a service it should (ComfyUI, the background
-# remover or the language model): each step of reaching it in turn,
+# Why the app can't see a service it should (ComfyUI or the language
+# model): each step of reaching it in turn,
 # stopping at the first that fails, with what that failure usually means.
 # Run from the Settings page ("Check the connection"), or
 # `bin/rails services:check` inside the app's container.
@@ -33,22 +33,8 @@ class ConnectionCheck
       caps = client.capabilities
       raise Comfy::Error, caps.error unless caps.reachable?
 
-      "answers. #{caps.models.size} models, #{caps.loras.size} LoRAs."
-    })
-  end
-
-  # A real cut-out of a tiny picture, so the model is there and loads.
-  def self.cutout
-    return nil unless Cutout.enabled?
-
-    new(url: Cutout.config[:url], name: "The background remover", token: Cutout.config[:token].present?, probe: lambda {
-      require "vips"
-      started = Time.current
-      Cutout::Launcher.ensure_running!(wait: 20) # started by the app if it should be here and isn't
-      png = Cutout.client.remove(Vips::Image.black(8, 8, bands: 3).pngsave_buffer)
-      "cuts out with #{Cutout.label} (#{(Time.current - started).round(1)}s#{', no transparency back' unless Cutout.png_alpha?(png)})" \
-        "#{Cutout.ground ? "; pictures are rendered on a #{Cutout.ground} ground" : '; pictures stay on white (no CUTOUT_GROUND)'}" \
-        "#{'; started by the app (bin/cutout)' if Cutout::Launcher.wanted?}."
+      removal = caps.node?(Cutout.node) ? "backgrounds come off with #{Cutout.node} (#{Cutout.model})" : "no #{Cutout.node} to take backgrounds off: install ComfyUI-RMBG"
+      "answers. #{caps.models.size} models, #{caps.loras.size} LoRAs; #{removal}."
     })
   end
 
@@ -118,7 +104,7 @@ class ConnectionCheck
 
     begin
       steps << Step.new(true, "Answer", "#{@name} #{@probe.call}")
-    rescue Comfy::Error, Cutout::Error, Llm::Error, OpenSSL::SSL::SSLError => e
+    rescue Comfy::Error, Llm::Error, OpenSSL::SSL::SSLError => e
       steps << Step.new(false, "Answer", "#{e.message}#{' · the certificate for this name isn\'t trusted from here' if e.is_a?(OpenSSL::SSL::SSLError)}")
     end
     steps

@@ -1050,7 +1050,7 @@ Every image slot can be uploaded or generated with
     encoder on CPU, that encoding can cost more than the image.
   - **Only what the family and server call for:** CLIP skip only when the
     family wants it, the first sampler and scheduler the server has,
-    and no background removal (that comes after, outside ComfyUI).
+    and background removal only when the batch asks for it.
   - **A missing file stops the batch before anything is queued**, whether a
     model, text encoder, VAE or LoRA, with a message naming what is
     missing. The entry's page previews the workflow ("UNETLoader →
@@ -1082,63 +1082,43 @@ Every image slot can be uploaded or generated with
     `draft` in `config/comfy.yml`; a family can also set its own
     `draft_steps`.
 - **Background removal** is a step for any batch, on by default for
-  content types marked to remove it. It happens outside ComfyUI, with a
-  background-removal service of its own (`Cutout`, `config/cutout.yml`),
-  called on each image once ComfyUI has rendered it. It is **hardwired**:
-  the address is this machine's port 7071 unless told otherwise, and when
-  nothing answers there the app starts `bin/cutout` itself the first time
-  a picture needs cutting out (`Cutout::Launcher`: the pid in
-  `tmp/pids/cutout.pid`, its output in `log/cutout.log`), waits a little
-  for it, and otherwise lets the batch wait and try again while it installs
-  and fetches the model. Nothing to set on the Settings page or in the
-  environment. From a container the remover is on the host
-  (`http://host.docker.internal:7071` is the default there), which the app
-  can't start: run `bin/cutout` on the host. `CUTOUT_AUTOSTART=0` leaves
-  starting it to you; a blank `CUTOUT_URL` turns removal off. Only the
-  remover itself answering counts as running (rembg's `/api` page): if
-  something else holds the port, every picture says so rather than going
-  to it. (The port was 7000, which a Mac's AirPlay Receiver holds, so each
-  picture came back with its background.)
-  - **Which service:** rembg, the standalone tool that runs the removal
-    models (ISNet, BiRefNet, BRIA RMBG, U²-Net) behind one HTTP API. Its
-    models, as the app has measured them on a 4-core CPU: `isnet-anime`
-    (the default: made for flat illustrated art, ~170 MB, 2–3 s a picture
-    in under 2 GB of RAM), `isnet-general-use` (the same for any picture),
-    `birefnet-general` (the finest edges, ~1 GB; on a CPU a minute a
-    picture and 14 GB of RAM, so it wants a GPU), `bria-rmbg` and others.
-    Anything that takes the image as a multipart `file` (and `model`) and
-    answers with a PNG works too. Set the address and model on the Settings
-    page, or with `CUTOUT_URL` and `CUTOUT_MODEL`.
-  - **Running one:** `bin/cutout` does it all: installs rembg (pinned) into
-    a Python environment of its own under `tmp/` (or uses Docker's
-    `danielgatis/rembg` image when there is one; the CUDA build of
-    onnxruntime when `nvidia-smi` is found or `CUTOUT_GPU=1`), fetches the
-    model first so the first picture isn't a download, serves it on port
-    7071 (`CUTOUT_PORT`) and warms the model up. `bin/cutout check` sends a
-    picture through whatever answers at `CUTOUT_URL` and says whether a
-    transparent PNG came back; "Check the connection" on Settings does the
-    same from the app, and starts the remover if it should be here and
-    isn't.
+  content types marked to remove it. It happens **in ComfyUI**, in the same
+  workflow: the picture is saved as rendered, then put through
+  [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG)'s `BiRefNetRMBG`
+  node and saved again, cut out (`Cutout`, `background_removal` in
+  `config/comfy.yml`).
+  - **Installing it:** add "ComfyUI-RMBG" (by 1038lab) from ComfyUI's
+    Manager, and restart ComfyUI. The node fetches its model into
+    `models/RMBG` the first time it runs. Without the node, a batch that
+    removes the background stops before anything is queued and says what
+    to install, and the art pages say so too; untick "Remove the
+    background" to render without it.
+  - **The model:** `BiRefNet_toonout` by default:
+    [ToonOut](https://arxiv.org/abs/2509.06839), BiRefNet fine-tuned on
+    anime characters and objects (MIT), whose authors measure 99.5% of
+    pixels right on anime against BiRefNet's 95.3%. The node's others
+    include `BiRefNet-general`, `BiRefNet-HR` (big pictures) and `Lucida`
+    (illustrations, glow and see-through things). Name another on the
+    Settings page, or with `COMFY_RMBG_MODEL`. The node runs at full
+    sensitivity, with the edge colours cleaned of the ground
+    (`refine_foreground`).
   - **White in a design is kept.** A removal model takes whatever looks
     like the background, and on art drawn on white that includes the white
     in a design: a shirt, a face, a sail. So a picture that will be cut out
-    is rendered on a **ground** of its own colour instead (`CUTOUT_GROUND`,
+    is rendered on a **ground** of its own colour instead (`COMFY_RMBG_GROUND`,
     `green` by default: the type's "plain white background" becomes "plain
     flat green background, no shadow", and white is asked against), and
     the cut-out is mended with libvips: a cleared pixel is background only
-    if it is the ground's colour (within `CUTOUT_TOLERANCE`, 56) and reaches
+    if it is the ground's colour (within `tolerance`, 56) and reaches
     the edge of the picture through ground-coloured pixels; anything else
     the model cleared was part of the subject and is put back from the
-    picture as rendered. With the ground blank, pictures stay on white and
+    picture as rendered (ComfyUI saves both). With the ground blank, pictures stay on white and
     only white closed in by the subject can be told from the ground: it is
     put back, at the cost of a closed-in gap that really is background (an
     arm on a hip), filled too.
   - **Checking:** every image that should have lost its background is
     checked for real transparency, and the strip says "background kept"
-    when it didn't, or when the remover turned it down (the picture is kept
-    either way).
-  - **Not reachable:** the batch waits and tries again, as it does for
-    ComfyUI. **Not set up:** backgrounds stay, and the pages say so.
+    when it didn't (the picture is kept either way).
 - **Can't see ComfyUI?** Use "Connection" on the Art direction page, or
   `bin/rails services:check` inside the app's container. It checks, in turn:
   - the address: in a container, 127.0.0.1 is the container itself;
@@ -1183,15 +1163,8 @@ Every image slot can be uploaded or generated with
   | `COMFY_TOKEN` | blank | Sent as `Authorization: Bearer …` |
   | `COMFY_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
   | `COMFY_MODEL` | `anima-preview.safetensors` | The model when no layer names one |
-  | `CUTOUT_URL` | `http://127.0.0.1:7071` (in a container, `http://host.docker.internal:7071`) | The background remover; blank turns removal off |
-  | `CUTOUT_AUTOSTART` | `1` | Start `bin/cutout` from the app when the address is this machine's and nothing answers |
-  | `CUTOUT_MODEL` | `isnet-anime` | The model it should use (`bin/cutout` fetches it) |
-  | `CUTOUT_PATH` | `/api/remove` | Where on it the image goes |
-  | `CUTOUT_TOKEN` | blank | Sent as a bearer token |
-  | `CUTOUT_TIMEOUT` | `300` | Seconds to wait for one picture |
-  | `CUTOUT_PORT`, `CUTOUT_MODELS`, `CUTOUT_GPU` | `7071`, `~/.rembg`, auto | `bin/cutout` only: the port, where models are kept, the CUDA build |
-  | `CUTOUT_GROUND` | `green` | The colour cut-out pictures are rendered on, in place of white; blank keeps white |
-  | `CUTOUT_TOLERANCE` | `56` | How far from the ground's colour (per channel) still counts as background |
+  | `COMFY_RMBG_MODEL` | `BiRefNet_toonout` | The model ComfyUI-RMBG's `BiRefNetRMBG` takes backgrounds off with |
+  | `COMFY_RMBG_GROUND` | `green` | The colour cut-out pictures are rendered on, in place of white; blank keeps white |
   | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1` |
   | `LLM_MODEL` | blank | The model to ask for, as the server names it |
   | `LLM_TOKEN`, `LLM_HEADERS` | blank | As for ComfyUI |

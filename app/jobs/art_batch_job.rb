@@ -5,7 +5,7 @@
 # until all are in, the batch fails, or it times out. It re-enqueues itself
 # rather than sleeping, so it never holds a worker while ComfyUI renders.
 #
-# When ComfyUI or the background remover can't be reached at all (asleep,
+# When ComfyUI or the language model can't be reached at all (asleep,
 # restarting, off the network), nothing is lost: the batch says it's
 # waiting, and the job is tried again (ApplicationJob.waits_for_services).
 # ComfyUI answering with an error (a missing model, a bad graph) still fails
@@ -18,7 +18,7 @@ class ArtBatchJob < ApplicationJob
     job.arguments.first.fail!("#{error.message}. Tried for a day; start it again once it's back.")
   end
 
-  def perform(batch, client: Comfy.client, cutout: Cutout.client, llm: Llm.enabled? ? Llm.client : nil)
+  def perform(batch, client: Comfy.client, llm: Llm.enabled? ? Llm.client : nil)
     return if batch.finished?
 
     if batch.status.in?(%w[queued waiting])
@@ -26,7 +26,7 @@ class ArtBatchJob < ApplicationJob
       batch.upload_source!(client)
       batch.submit!(client)
     end
-    return if batch.collect!(client, cutout: cutout)
+    return if batch.collect!(client)
 
     if batch.timed_out?
       batch.fail!("ComfyUI didn't finish within #{Comfy.config.fetch(:timeout, 900).to_i / 60} minutes")

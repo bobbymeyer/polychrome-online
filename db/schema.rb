@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_05_120000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -800,8 +800,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_100000) do
     t.integer "draft_steps"
     t.float "draft_denoise"
     t.integer "candidates"
-    t.string "cutout_url"
-    t.string "cutout_model"
+    t.string "rmbg_model"
   end
 
   create_table "sprites", force: :cascade do |t|
