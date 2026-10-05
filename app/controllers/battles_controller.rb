@@ -4,14 +4,15 @@ class BattlesController < ApplicationController
   include BattleSeat
   include CampaignScoped
 
-  ENCOUNTER_SLOTS = 3
-
   before_action :set_campaign, only: %i[new create]
   before_action :require_campaign_gm, only: %i[new create]
   before_action :set_battle, only: :show
 
+  # A battle is set up at the table, under the stage, once Battle is called
+  # (Campaign::Controls): the old page's address calls it and goes there.
   def new
-    @setup = default_setup
+    @campaign.call_controls!("battle")
+    redirect_to campaign_table_path(@campaign)
   end
 
   def create
@@ -23,7 +24,7 @@ class BattlesController < ApplicationController
     @error = if characters.none?(&:conscious?) then "Pick at least one character who is still standing."
     elsif encounter.empty? && antagonists.empty? then "Pick at least one monster or antagonist."
     end
-    return render :new, status: :unprocessable_content if @error
+    return redirect_to(campaign_table_path(@campaign), alert: @error, status: :see_other) if @error
 
     @battle = BattleRecord.start!(
       campaign: @campaign, characters: characters, name: @setup[:name].presence || "Battle", encounter: encounter,
@@ -33,8 +34,7 @@ class BattlesController < ApplicationController
     take_seat("gm")
     redirect_to battle_path(@battle)
   rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound => e
-    @error = e.message
-    render :new, status: :unprocessable_content
+    redirect_to campaign_table_path(@campaign), alert: e.message, status: :see_other
   end
 
   def show
@@ -49,22 +49,12 @@ class BattlesController < ApplicationController
 
   private
 
-  def default_setup
-    monster = @world.monsters.order(:level).first&.slug
-    {
-      name: "Battle", seed: nil, escapable: "1", input_seconds: BattleRecord::DEFAULT_TIMER.to_s, terrain: "",
-      # The standing first; the fallen come too, down, to be raised (and their players watch).
-      characters: @campaign.characters.order(:created_at).sort_by { |c| c.conscious? ? 0 : 1 }.first(4).map(&:id), antagonists: [],
-      encounter: [ { monster: monster.to_s, count: "3" } ] + Array.new(ENCOUNTER_SLOTS - 1) { { monster: "", count: "1" } }
-    }
-  end
-
   def setup_params
     raw = params.expect(battle: [ :name, :seed, :escapable, :input_seconds, :terrain, { characters: [], antagonists: [], encounter: [ %i[monster count] ] } ])
     raw.to_h.symbolize_keys.merge(
       characters: Array(raw[:characters]).compact_blank.map(&:to_i),
       antagonists: Array(raw[:antagonists]).compact_blank.map(&:to_i),
-      encounter: JsonCasting.rows(raw[:encounter]).map(&:symbolize_keys)
+      encounter: JsonCasting.rows(raw[:encounter]).map(&:symbolize_keys).first(BattleSetup::ENCOUNTER_SLOTS)
     )
   end
 end

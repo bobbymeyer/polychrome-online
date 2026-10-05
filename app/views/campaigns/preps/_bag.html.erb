@@ -1,0 +1,31 @@
+<%# The party's bag, stocked here before a session (InventoriesController); at the table it's spent in shops and battles. %>
+<section class="window" id="bag">
+  <h2>Bag</h2>
+  <% bag = campaign.bag %>
+  <% if bag.empty? %>
+    <p class="empty">Empty.</p>
+  <% else %>
+    <table class="book-table book-table--plain">
+      <thead><tr><th>Item</th><th>Category</th><th class="num">Qty</th></tr></thead>
+      <tbody>
+        <% bag.each do |row| %>
+          <tr>
+            <td><%= link_to row.item.name, world_armory_item_path(campaign.world, row.item) %></td>
+            <td><%= term(row.item.category) %></td>
+            <td class="num"><%= row.quantity %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+  <details id="add_items" data-turbo-permanent data-controller="fresh-form" data-action="turbo:submit-end->fresh-form#done">
+    <summary>Add items</summary>
+    <%= form_with url: campaign_inventories_path(campaign), scope: :inventory, class: "book-form" do |f| %>
+      <div class="field-row">
+        <div class="field"><%= f.label :item_id, "Item" %><%= f.select :item_id, campaign.world.items.order(:name).map { |i| [ i.name, i.id ] } %></div>
+        <div class="field"><%= f.label :quantity %><%= f.number_field :quantity, value: 1, min: 1, max: 99 %></div>
+      </div>
+      <%= f.submit "Add to bag", class: "button" %>
+    <% end %>
+  </details>
+</section>

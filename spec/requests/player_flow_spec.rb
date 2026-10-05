@@ -204,8 +204,10 @@ RSpec.describe "The player's way through", type: :request do
     expect(campaign.messages.last.body).to eq("Road was called off.")
     expect(campaign.reload).not_to be_battle_on
 
+    get campaign_legends_path(campaign) # the fights are kept with the party's record
+    expect(response.body).to include("Fights", "Called off")
     get campaign_path(campaign)
-    expect(response.body).to include("Called off")
+    expect(response.body).not_to include("Called off") # the lobby lists none
   end
 
   it "only lets the GM call a battle off" do

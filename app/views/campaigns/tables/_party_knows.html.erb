@@ -1,9 +1,9 @@
-<%# What the party knows and can see coming: public clocks, and its secrets, revealed. Replaced live as they change. %>
+<%# What moves, of what the party knows: the public clocks still running, and the questions it's asking (a
+    secret's clues found so far). What it has found out for good is Legends' ("What they found out"), and the
+    log said it as it came out; neither needs a panel at the table. Replaced live (Campaign#table_changed). %>
 <% clocks = campaign.clocks.shown_to_players.where(stopped_at: nil).order(:full_at, :id) %>
-<% secrets = campaign.secrets.revealed.order(:revealed_at) %>
-<%# What it's asking: a secret coming out a clue at a time, its clues so far (Secret#find_clue!). %>
 <% asking = campaign.secrets.kept.where("found > 0").order(:id) %>
-<section class="window party-knows" id="party_knows" aria-label="What the party knows" <%= "hidden" if clocks.none? && secrets.none? && asking.none? %>>
+<section class="window party-knows" id="party_knows" aria-label="What the party knows" <%= "hidden" if clocks.none? && asking.none? %>>
   <h2>The party knows</h2>
   <% if local_assigns[:gm] %><p class="hint">Everyone at the table sees this.</p><% end %>
   <% if clocks.any? %>
@@ -22,9 +22,5 @@
       <% end %>
     </ul>
   <% end %>
-  <% if secrets.any? %>
-    <ul class="refs secret-list">
-      <% secrets.each do |secret| %><li><%= secret.body %></li><% end %>
-    </ul>
-  <% end %>
+  <p class="hint">What the party has found out for good is on <%= link_to "Legends", campaign_legends_path(campaign), data: { turbo_frame: "_top" } %>.</p>
 </section>

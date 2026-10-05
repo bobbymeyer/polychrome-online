@@ -10,15 +10,22 @@ RSpec.describe "The live table", type: :system do
   let(:campaign) { create_campaign.tap { |c| c.update!(gm_id: gm.id) } }
   let!(:rook) { create_character(campaign, name: "Rook", user: player) }
 
-  it "tells the players what the party knows when a secret comes out" do
+  it "tells the players what the party is asking, and what it found out goes to the log and Legends" do
     seat(player, rook)
-    as(player) { expect(page).to have_no_css("#party_knows", text: "Met the king", visible: :all) }
+    as(player) { expect(page).to have_no_button("What we know") } # nothing to know yet: no tab for it
 
     campaign.secrets.create!(body: "Met the king.").reveal!
+    chain = campaign.secrets.create!(body: "The mayor pays the goblins.", key: "lamp", steps: "Why is the lamp lit at midnight?\nSomeone leaves before dawn.")
+    chain.find_clue!
 
     as(player) do
-      click_button "What we know" # the tab comes up once there's something to know
-      expect(page).to have_css("#party_knows", text: "Met the king")
+      expect(page).to logged?("Met the king") # said once, as it came out
+      click_button "What we know" # the tab comes up for what the party is asking
+      expect(page).to have_css("#party_knows", text: "Why is the lamp lit at midnight?")
+      expect(page).to have_no_css("#party_knows", text: "Met the king") # found out for good: Legends', not the table's
+      within("#party_knows") { click_on "Legends" }
+      expect(page).to have_css("h2", text: "What they found out")
+      expect(page).to have_text("Met the king.")
     end
   end
 

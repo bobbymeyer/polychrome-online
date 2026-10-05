@@ -19,23 +19,18 @@
       <strong>Encounter! <%= foes.to_sentence %>.</strong>
       <%= gm ? "It's your call." : "The GM calls it: fight, or wave it off." %>
     <% elsif choice %>
-      <% picked = choice.picks.includes(:character).map { |pick| pick.character.name } %>
-      <% unplayed, waiting = campaign.characters.order(:created_at).reject { |c| picked.include?(c.name) }.partition { |c| c.user_id.nil? }.map { |cs| cs.map(&:name) } %>
-      <strong><%= choice.where_next? ? "The party is choosing where to go next." : choice.what_now? ? "The party is down. What happens now?" : "The party has a choice to make." %></strong>
+      <%# Who has picked is the vote's own footer (choices/_panel), under the options where the picks are. %>
+      <strong><%= choice.where_next? ? "The party is choosing where to go next." : choice.what_now? ? "The party is down. What happens now?" : "The party is choosing." %></strong>
       <%# The shared screen has no buttons: it sends the table to their phones (stage.css swaps the words). %>
       <% if gm %>Settle it when you're ready.<% else %><span class="table-now__here">Pick below; the GM settles it.</span><span class="table-now__phones">Pick on your phones; the GM settles it.</span><% end %>
-      <span class="table-now__who">
-        <%= picked.any? ? "Picked: #{picked.to_sentence}." : "Nobody has picked yet." %>
-        <%= "Still to pick: #{waiting.to_sentence}." if picked.any? && waiting.any? %>
-        <%= "Nobody plays #{unplayed.to_sentence}: no pick from them." if unplayed.any? %>
-      </span>
     <% elsif scene && beat %>
       <strong>A scene is on the stage: <%= scene.name %>.</strong>
       <%= gm ? "Beat #{beat.position + 1} of #{scene.beats.size}#{scene.auto? ? ', playing on' : ''}." : "Watch the stage." %>
     <% elsif gm %>
       <strong>The table is yours.</strong>
       <%= { "travel" => "Travel: the ways on are below, for everyone.", "doing" => "Things to do here are below, for everyone.",
-            "scene" => "Scene: pick one below to put on the stage.", "check" => "Check: say who rolls what, below." }[campaign.controls] %>
+            "scene" => "Scene: pick one below to put on the stage.", "check" => "Check: say who rolls what, below.",
+            "battle" => "Battle: set it up below, and start it." }[campaign.controls] %>
       <%# Clocks live in Prep; the one thing the table needs to know is when one is about to fill. %>
       <% nearly = campaign.clocks.running.select { |clock| clock.segments - clock.filled == 1 } %>
       <% if nearly.any? %>
@@ -73,7 +68,7 @@
             Scene and Check put that tool below, for the GM. %>
         <% ways = campaign.ways_on %>
         <%# Things to do here is always open to the GM: time passes there even where there's nothing else to do. %>
-        <% offered = { "travel" => ways.any? { |way| !way.dig("move", "pastime") } } %>
+        <% offered = { "travel" => ways.any? { |way| !way.dig("move", "pastime") }, "battle" => campaign.characters.any? } %>
         <div class="controls-call" role="group" aria-label="What's happening">
           <% Campaign::Controls::CONTROL_LABELS.each do |kind, label| %>
             <% current = campaign.controls == kind %>

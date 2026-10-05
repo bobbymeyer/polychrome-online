@@ -52,24 +52,23 @@
             <div class="topbar__user-menu">
               <% if admin? %><span class="muted">Admin</span><% end %>
               <% if @campaign&.persisted? %>
-                <%# Your seat at this table, and the others you may take: one press, from any page in the campaign. %>
+                <%# Your seat at this table, and the way out of it; a seat is taken at the table's door (campaigns/tables/_take_a_seat). %>
                 <% seat = table_seat(@campaign) %>
                 <span class="muted">Seat</span>
                 <span class="topbar__seat"><%= seat.seated? ? safe_join([ "At the table as ", tag.strong(seat.name) ]) : "Not at the table" %></span>
-                <% if can_gm?(@campaign) && !seat.gm? %>
-                  <%= button_to "Sit as Game Master", campaign_table_seat_path(@campaign), params: { seat: "gm" }, class: "link-button", form: { class: "inline" } %>
-                <% end %>
-                <% @campaign.characters.order(:created_at).select { |c| can_play?(c) && seat.character != c }.each do |character| %>
-                  <%= button_to "Sit as #{character.name}#{' (unclaimed)' unless character.user_id}", campaign_table_seat_path(@campaign), params: { seat: character.id }, class: "link-button", form: { class: "inline" } %>
-                <% end %>
                 <% if seat.seated? %>
                   <%= button_to "Stand up", campaign_table_seat_path(@campaign), method: :delete, class: "link-button", form: { class: "inline" } %>
+                <% else %>
+                  <%= link_to "Take a seat", campaign_table_path(@campaign) %>
                 <% end %>
                 <span class="muted">You</span>
               <% end %>
               <%= link_to "How to play", how_to_play_path %>
               <button type="button" class="link-button" data-controller="mute" data-action="mute#toggle" aria-pressed="false"
                       title="Sound on this device">Sound on</button>
+              <%# A setting for this device, beside Sound: battles play twice as fast (fast_toggle_controller). %>
+              <button type="button" class="link-button" data-controller="fast-toggle" data-action="fast-toggle#toggle" data-battle-fast aria-pressed="false"
+                      title="Play battles twice as fast on this device">Fast animations</button>
               <% if admin? %><%= link_to "Accounts", users_path %> <%= link_to "Settings", settings_path %><% end %>
               <%= button_to "Sign out", session_path, method: :delete, class: "link-button topbar__sign-out", form: { class: "inline" } %>
             </div>

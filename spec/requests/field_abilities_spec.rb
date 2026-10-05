@@ -43,7 +43,10 @@ RSpec.describe "Field abilities", type: :request do
     kim = hero("thief", name: "Kim")
     sit(kim)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Pick Lock", "Thievery", "Use Pick Lock")
+    row = Nokogiri::HTML(response.body).at("#field_ability .pick-table .pick-row") # a row, like the ways and the vote
+    expect(row.at("button.pick-row__act").text).to eq("Use Pick Lock")
+    expect(row.at(".pick-row__note").text).to include("Thievery", "once per rest")
+    expect(row.at(".pick-row__cost").text).to eq("ask")
     get campaign_table_path(campaign, view: "controller")
     moves = Nokogiri::HTML(response.body).at("section.your-moves")
     expect(moves.at("#field_ability").text).to include("Use Pick Lock") # with the controller's other moves

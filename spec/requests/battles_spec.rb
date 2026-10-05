@@ -41,10 +41,17 @@ RSpec.describe "Battle screen", type: :request do
   it "tells the GM how a fight is likely to go, as they set it up" do
     campaign = create_campaign
     create_character(campaign, name: "Bartz")
-    get new_campaign_battle_path(campaign)
-    expect(response.body).to include('data-controller="forecast"', 'id="forecast"')
-    expect(response.body).to match(/>Goblin \(\d+ HP\)</) # how tough, not the book's level
-    expect(response.body).not_to include("(Lv ")
+    get new_campaign_battle_path(campaign) # the old page's address calls Battle at the table
+    expect(response).to redirect_to(campaign_table_path(campaign))
+    expect(campaign.reload.controls).to eq("battle")
+    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    get campaign_table_path(campaign)
+    setup = Nokogiri::HTML(response.body).at("#table_called .battle-setup")
+    expect(setup.to_html).to include('data-controller="forecast"', 'id="forecast"')
+    expect(setup.to_html).to match(/>Goblin \(\d+ HP\)</) # how tough, not the book's level
+    expect(setup.to_html).not_to include("(Lv ")
+    expect(setup.css("fieldset legend").map(&:text)).to eq([ "What they face", "Who fights" ])
+    expect(setup.at("details.battle-setup__more").text).to include("Input timer", "Seed", "Can flee") # the rest, behind More
 
     get campaign_forecast_path(campaign), params: { battle: { encounter: { "0" => { monster: "goblin", count: "1" } } } }
     expect(response.body).to match(/forecast--(easy|fair|hard|deadly)/)
@@ -78,14 +85,17 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).not_to include("Choose before the clock runs out")
   end
 
-  it "tells the GM who the round waits on, and who chooses for each, in one column" do
+  it "tells the GM who the round waits on, one line a unit, with one button when it matters" do
     battle.set_auto!(bartz, false)
     battle.set_auto!(faris, true)
     sit("gm")
     get battle_panel_path(battle)
-    expect(response.body).to include("Waiting on Bartz.", "Who chooses", "Player · waiting", "Auto this round", "Auto every round",
-                                     "Auto, every round", "Hand back")
-    expect(response.body).not_to include("Every round</th>")
+    expect(response.body).to include("Waiting on Bartz.")
+    rows = Nokogiri::HTML(response.body).css(".gm-rows[aria-label='The party'] .gm-row")
+    expect(rows.map { |r| r.at(".gm-row__name").text }).to eq(%w[Bartz Faris])
+    expect(rows[0].at(".gm-row__who").text.squish).to eq("Waiting on their player Auto") # one button: put them on auto
+    expect(rows[1].at(".gm-row__who").text.squish).to eq("Auto Hand back") # one button: take them off it
+    expect(response.body).not_to include("Auto this round", "Auto every round", "Who chooses", "<table") # no table, no two autos
 
     get battle_path(battle)
     expect(response.body).to include("Fast animations")
@@ -100,9 +110,10 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body.sub(folded, "")).not_to include("Apply override", "Bring them in")
 
     get battle_path(battle)
-    menu = response.body[/<nav class="topbar__books".*?<\/nav>/m]
-    expect(menu).to include("data-battle-fast", "Fast animations")
+    menu = response.body[/<div class="topbar__user-menu">.*?<\/details>/m]
+    expect(menu).to include("data-battle-fast", "Fast animations", "Sound on") # a device setting, beside Sound
     expect(response.body[/<header class="battle__header">.*?<\/header>/m]).not_to include("Fast animations")
+    expect(response.body[/<nav class="topbar__books".*?<\/nav>/m]).not_to include("Fast animations")
   end
 
   it "marks the hurt in the party strip, which only shows once someone is" do
@@ -201,8 +212,10 @@ RSpec.describe "Battle screen", type: :request do
     let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5) }
 
     it "starts a battle for the chosen characters and seats the creator as GM" do
-      get new_campaign_battle_path(campaign)
-      expect(response.body).to include("Bartz", "Lenna")
+      campaign.call_controls!("battle")
+      post campaign_table_seat_path(campaign), params: { seat: "gm" } # the setup is the GM's
+      get campaign_table_path(campaign)
+      expect(Nokogiri::HTML(response.body).at("#table_called").text).to include("Bartz", "Lenna")
 
       post campaign_battles_path(campaign), params: { battle: {
         name: "Ambush", seed: "42", escapable: "1", input_seconds: "60", characters: [ "", lenna.id.to_s ],
@@ -222,13 +235,13 @@ RSpec.describe "Battle screen", type: :request do
       post campaign_battles_path(campaign), params: { battle: {
         name: "Doomed", characters: [ bartz_character.id.to_s ], encounter: { "0" => { monster: "goblin", count: "1" } }
       } }
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(response.body).to include("still standing")
+      expect(response).to redirect_to(campaign_table_path(campaign)) # back to the setup under the stage, with why
+      expect(flash[:alert]).to include("still standing")
 
       post campaign_battles_path(campaign), params: { battle: {
         name: "Empty", characters: [ lenna.id.to_s ], encounter: { "0" => { monster: "", count: "1" } }
       } }
-      expect(response.body).to include("at least one monster")
+      expect(flash[:alert]).to include("at least one monster")
     end
 
     it "only uses the campaign's own characters" do
@@ -395,7 +408,8 @@ RSpec.describe "Battle screen", type: :request do
 
     it "sees every unit's HP and who the round is waiting on" do
       get battle_panel_path(battle)
-      expect(response.body).to include("The party", "waiting", "Run the round now", "The other side", "Goblin A", "50/50")
+      expect(response.body).to include("The party", "Run the round now", "The other side")
+      expect(Nokogiri::HTML(response.body).at(".gm-rows[aria-label='The other side']").text.squish).to include("Goblin A HP 50/50")
       expect(response.body).to include("Waiting on") # by the round's clock, as well as in the rows
       expect(response.body).not_to include("On auto every round")
     end

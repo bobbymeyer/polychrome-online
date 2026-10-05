@@ -314,6 +314,13 @@ keyboard, a mouse or a finger.
 
 ### The first hour
 
+- **The campaign page is the lobby**: the way to the table, the party, the cast, the invite, and
+  nothing the party does. A rest, a battle and the bag spent happen at the table; the bag is
+  stocked in Prep; the fights are kept on Legends with the rest of the party's record.
+- **Prep is two tiers.** This session on the page: Scenes, then Clocks beside The moment. The
+  reference behind one row of tabs under them: Secrets, Deeds, Rumours, Flags, Bag, with Changes
+  to places a link beside them; a link into one (#secrets, from the table) opens its tab. Maps
+  stays its own page, since it's another kind of editing.
 - **Invites.** The campaign page has an Invite players panel: a link, its code and QR, and who
   has sat down. The link lets a friend pick a character the GM made or make their own (name,
   job from cards, motive) without an account. The shared screen's QR code is the same link with
@@ -332,23 +339,37 @@ A player's table offers what they can do at this moment, and nothing else up fro
 - **Moves follow the table's state** (the Now line's `data-state`). In a battle the moves go: the
   Now line has the way in. With an encounter waiting or a vote open, only the vote and talk
   are left. In free play: the ways on, the things to do here, the field ability, and talk.
+- **The field ability is a row**, in the same table as the ways and the vote's options: the
+  ability's name as the row, its skill, "once per rest" and what it does as the note, "ask" at the
+  end. Used, or asked for and waiting on the GM, it's a greyed row that says so.
 - **A move you can't make isn't offered.** A used field ability, or one asked for, is a line
   saying so ("Pick Lock: used. It's back after a rest."). Things to do the purse can't pay for,
   and doors still locked, aren't shown to players.
 - **Talk is a button**, "Say something", that opens the box (and its To and Expression).
 - **What you look up is in tabs**: Party · What we know, closed until pressed, one at a
   time. The Party tab says "hurt" or "someone's down" without opening; What we know appears
-  once there's something to know. Your own HP stays in the "You" line.
-- **Your seat is in the account menu**, with your name: "At the table as Rook", then the other seats
-  you may take ("Sit as Game Master", "Sit as Lenna"), one press from any page in the campaign, and
-  "Stand up". The campaign's menu keeps "Previously on…".
+  once there's something to know, and holds only what moves: the public clocks still running
+  and the questions the party is asking (a secret's clues so far). What it has found out for
+  good is Legends' ("What they found out"), said once in the log as it came out; the recap draws
+  from the same secrets. Your own HP stays in the "You" line.
+- **Seating happens at the door.** Arriving at the table with no seat, the first thing under the
+  Now line is your own way in: "Sit as Lenna" in red if you have a character here, "Sit as Game
+  Master" if the campaign is yours; the characters nobody plays wait behind "Someone nobody
+  plays" (sitting as one claims it), and nobody else's character is offered. The account menu
+  says "At the table as Rook" and keeps "Stand up"; with no seat it points at the table. The
+  campaign's menu keeps "Previously on…".
 
 The GM's table works the same way:
 
 - **The Now line is the GM's prompt**, with the moves for what's happening: in free play the
-  controls row (Talk · Travel · Things to do here · Scene · Check: what kind of moment this is,
-  and what comes to the table for it); with a vote, "Settle it ↓"; with an encounter, "Fight or
-  wave it off ↓" (to its panel, where the prelude can still be edited).
+  controls row (Talk · Travel · Things to do here · Scene · Check · Battle: what kind of moment
+  this is, and what comes to the table for it); with a vote, "Settle it ↓"; with an encounter,
+  "Fight or wave it off ↓" (to its panel, where the prelude can still be edited).
+- **A battle is called at the table.** Battle puts a short setup under the stage: what they face
+  (monsters and counts, or an antagonist), who fights (the standing pre-checked), the forecast as
+  it changes, and Start; the name, the timer, the seed, where, and whether the party can flee wait
+  behind "More" with sensible defaults. There is no battle form anywhere else, and calling one off
+  is on the battle page, where the GM already is.
 - **The rest of the tools wait behind "Tools"**, always: Moves, and More (grants, music, the
   shared screen). Clocks and secrets are Prep's, not the table's: the Now line says when a clock
   is one tick from full, in red, with the way to Prep. Time passes where the day is spent: "A
@@ -561,12 +582,17 @@ under the frame.
 - **The round, and what its clock is for.** A player's command panel says "Round 2 · Choose
   before the clock runs out, or you Attack" (or "… Fire again (or Attack, if it can't)" after
   a spell), until they've chosen.
-- **The GM's panel says who the round waits on**, by its clock ("Waiting on Hoshi."), and the
-  party's table has one "Who chooses" column instead of two: "Auto, every round" with Hand back,
-  or "Player · waiting/chosen" with Auto this round and Auto every round.
-- **"Fast animations"**, not "Fast": the toggle says what it speeds up. In a campaign it sits in
-  the Menu with the way around the game (it's a setting for this device, not a move); a battle
-  with no campaign keeps it above the field.
+- **The GM's panel says who the round waits on**, by its clock ("Waiting on Hoshi."), and each
+  side is a list of one-line rows, not a table: the name, HP and MP, what's on them, and for the
+  party who chooses, with one button only when it matters: "Auto" while a player holds the round
+  up, "Hand back" while auto is on, "Send off" for a guest. Auto is one thing, this round and
+  the rest, so the GM never picks between two kinds of it.
+- **A ruling is three fields**: what they roll, how hard, and what happens if it works. How
+  much, a type, a status, on whom, and the two lines the table hears wait behind "More" with
+  their usual answers, so most rulings are one press.
+- **"Fast animations"**, not "Fast": the toggle says what it speeds up. It's a setting for this
+  device, so it sits in the account menu beside Sound on every page, and a battle already
+  playing hears the change.
 - **The log's battle section takes only the room it needs**, and section headings carry their own
   top gap, so nothing scrolled under them shows through.
 
@@ -594,8 +620,8 @@ other way, the GM puts it to the table.
 
 The table's actions fit the moment the GM has called, and no others. The Now line has the
 controls: **Talk** (the floor: the dialogue, nothing to pick), **Travel**, **Things to do
-here**, **Scene** and **Check**; the one called is red and pressed, and one with nothing behind
-it is greyed. Scene and Check are the GM's alone: the scene list or the check form comes to the
+here**, **Scene**, **Check** and **Battle**; the one called is red and pressed, and one with
+nothing behind it is greyed. Scene and Check are the GM's alone: the scene list or the check form comes to the
 table under the stage, where the ways would be, and players see nothing until a scene plays or
 a roll lands. Talking,
 neither the GM nor the players get a menu of ways. Calling Travel puts "Where next?" below for

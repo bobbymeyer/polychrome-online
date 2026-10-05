@@ -102,6 +102,8 @@
       <%# The Controls: what's happening now, then what this seat does about it. %>
       <section class="table-controls" aria-label="Controls">
         <%= render "campaigns/tables/now", campaign: @campaign, gm: @seat.gm? %>
+        <%# The door: with no seat, the way in comes before anything else. %>
+        <%= render "campaigns/tables/take_a_seat", campaign: @campaign if !@seat.seated? && view != "screen" %>
         <% if @seat.gm? && view != "screen" %>
           <%# What needs the GM's answer first, then the rest of their tools behind "Tools" (what they call is in the row). %>
           <%= render "campaigns/tables/gm/tools", campaign: @campaign, view: view %>
@@ -129,15 +131,11 @@
         <% end %>
         <% if view == "screen" %>
           <p class="hint coop-leave"><%= link_to "Leave the shared screen", campaign_table_path(@campaign, view: "off") %></p>
-        <% elsif @seat.seated? %>
-          <% if view == "controller" %>
-            <p class="coop-links">
-              <%= link_to "My sheet", character_path(@seat.character), class: "button button--quiet" if @seat.character? %>
-              <%= link_to "Leave controller view", campaign_table_path(@campaign, view: "off"), class: "link-button" %>
-            </p>
-          <% end %>
-        <% else %>
-          <%= render "campaigns/tables/take_a_seat", campaign: @campaign %>
+        <% elsif @seat.seated? && view == "controller" %>
+          <p class="coop-links">
+            <%= link_to "My sheet", character_path(@seat.character), class: "button button--quiet" if @seat.character? %>
+            <%= link_to "Leave controller view", campaign_table_path(@campaign, view: "off"), class: "link-button" %>
+          </p>
         <% end %>
       </section>
     </div>

@@ -1,21 +1,27 @@
-<%# A character's field ability, on their own table view (FieldUse). Broadcast to the character's own stream. %>
+<%# A character's field ability (FieldUse), one more thing they can do now: a row like the ways and the vote's
+    options (pick_table_controller), the row the button. Used, or asked for and waiting on the GM, it's a greyed
+    row that says so, not a move. %>
 <% ability = character.job.field_ability_entry %>
 <div id="field_ability">
   <% if ability %>
     <% campaign = character.campaign %>
     <% skill = campaign.world.skill(ability.field_skill) %>
     <% pending = campaign.field_uses.pending.exists?(character: character) %>
-    <%# A move you can't make now isn't offered: used, or asked for, it's a line saying so. %>
-    <% if character.field_used? %>
-      <p class="field-ability-status muted"><%= ability.name %>: used. It's back after a rest.</p>
-    <% elsif pending %>
-      <p class="field-ability-status muted"><%= ability.name %>: asked for. Waiting on the GM…</p>
-    <% else %>
-      <section class="window field-ability" aria-label="Field ability">
-        <h3><%= ability.name %> <span class="muted">· <%= skill ? skill["name"] : "a check" %><%= character.skill_bonuses(ability.field_skill).map { |b| ", +#{b['amount']} #{b['label']}" }.join %></span></h3>
-        <p class="hint"><%= ability.description.presence || FieldUse.describe(ability) %> Once per rest.</p>
-        <%= button_to "Use #{ability.name}", campaign_field_uses_path(campaign), class: "button" %>
-      </section>
-    <% end %>
+    <% bonus = character.skill_bonuses(ability.field_skill).map { |b| ", +#{b['amount']} #{b['label']}" }.join %>
+    <table class="pick-table play field-ability" data-controller="pick-table" aria-label="Field ability">
+      <tbody>
+        <tr class="pick-row">
+          <td class="pick-row__what">
+            <% if character.field_used? || pending %>
+              <span class="pick-row__act field-ability-status"><%= ability.name %>: <%= pending ? "asked for. Waiting on the GM…" : "used. It's back after a rest." %></span>
+            <% else %>
+              <%= button_to "Use #{ability.name}", campaign_field_uses_path(campaign), class: "pick-row__act", form: { class: "inline" } %>
+            <% end %>
+            <span class="pick-row__note"><%= skill ? skill["name"] : "A check" %><%= bonus %> · once per rest. <%= ability.description.presence || FieldUse.describe(ability) %></span>
+          </td>
+          <td class="pick-row__cost"><%= pending ? "waiting" : (character.field_used? ? "used" : "ask") %></td>
+        </tr>
+      </tbody>
+    </table>
   <% end %>
 </div>

@@ -682,6 +682,17 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .choice:not([hidden]) { animation: slash-in .3s var(--snap) both; }
 .choice h2 { margin: 0 0 10px; font: var(--display); font-size: 28px; }
 .choice__pick-form, .choice__settle-form { margin: 0; }
+.choice__footer { margin: 6px 0 0; font-size: 14px; font-weight: 600; }
+/* The door: your own way in, a red press; the rest folded. */
+.door__own { display: flex; flex-wrap: wrap; gap: 8px; }
+.door__own form { margin: 0; }
+.door__others { margin-top: 12px; }
+.door__list { display: flex; flex-wrap: wrap; gap: 8px; }
+.door__list form { margin: 0; }
+/* The field ability as a row: its status, once used or asked for, is the row's words. */
+.field-ability .pick-row__act.field-ability-status { color: var(--grey); font-style: italic; cursor: default; margin: 0; }
+.field-ability .pick-row:has(.field-ability-status) { cursor: default; }
+.pick-table.play .pick-row:has(.field-ability-status):hover { background: transparent; color: inherit; }
 .choice__settle-label { font-weight: 900; font-style: italic; font-size: 18px; }
 .choice__who { color: var(--grey); font-size: 14px; }
 .choice__option.is-mine { background: var(--signal); color: var(--paper); }
@@ -1194,8 +1205,20 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* The battle's round, what its clock is for, and (for the GM) who it's waiting on. */
 .command-panel__round, .command-panel__waiting { margin: 4px 0 8px; font-size: 14px; }
-.gm-units__who { white-space: normal; }
-.gm-units__who form.inline { margin-left: 6px; }
+/* The GM's sides, one line a unit: the name, HP and MP, what's on them, and one button when it matters. */
+.gm-rows { list-style: none; margin: 0 0 8px; padding: 0; border-top: 2px solid var(--ink); }
+.gm-row { display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; min-height: 36px; padding: 5px 0; border-bottom: 1px solid var(--rule); font-size: 14px; }
+.gm-row__name { flex: 1 1 110px; min-width: 0; font-weight: 800; overflow-wrap: anywhere; }
+.gm-row__vitals { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gm-row__vitals .label { font-size: 11px; }
+.gm-row__conditions { flex: 1 1 100%; font-size: 13px; }
+.gm-row__who { margin-left: auto; white-space: nowrap; font-size: 13px; }
+.gm-row__who form.inline { margin-left: 6px; }
+.gm-row.is-ko .gm-row__name, .gm-row.is-ko .gm-row__vitals { color: var(--grey); text-decoration: line-through; }
+.gm-row.is-low .gm-row__vitals strong { color: var(--caution-ink); }
+/* A ruling is three fields; the rest waits behind More. */
+.ruling__more { margin: 4px 0 8px; border-top: 0; padding-top: 0; }
+.ruling__more > summary { font-size: 13px; }
 
 /* Where the party is, beside when: the map's red party marker, then the place (and room). */
 .table-time__where { margin: 2px 0 0; font-weight: 800; font-size: 18px; }
@@ -1268,7 +1291,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table[data-seat="player"]:has(#table_now[data-state="encounter"]) #field_ability,
 .table[data-seat="player"]:has(#table_now[data-state="choice"]) #field_ability,
 .table:has(#table_now[data-state="scene"]) #table_ways, .table[data-seat="player"]:has(#table_now[data-state="scene"]) #field_ability { display: none; } /* the scene plays; the director's hand is on the Now line */
-.field-ability-status { margin: 8px 0; font-size: 14px; }
 /* Talk is a button until it's wanted. */
 .talk { margin: 12px 0; }
 .talk > summary { list-style: none; display: inline-flex; cursor: pointer; }
@@ -1292,6 +1314,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
 .gm-tools__reveal[aria-expanded="true"] { background: var(--ink); color: var(--paper); }
 #table_called[hidden] { display: none; }
+/* A battle set up under the stage (battles/_setup): the fieldsets tight, the rest behind More. */
+.battle-setup .panel { margin: 0 0 12px; }
+.battle-setup__more { margin: 0 0 12px; }
+.battle-setup .actions { margin-top: 0; }
 .table:has(#table_now[data-state="scene"]) #table_called { display: none; } /* the scene plays; the director's hand is on the Now line */
 
 /* ---------------------------------------------------------------------------

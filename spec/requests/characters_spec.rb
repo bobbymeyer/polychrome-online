@@ -18,7 +18,10 @@ RSpec.describe "Campaigns and characters", type: :request do
       campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"))
       campaign.add_item!(item.("potion"), 3)
       get campaign_path(campaign)
-      expect(response.body).to include("Lenna", "White Mage", "Potion", "New battle")
+      expect(response.body).to include("Lenna", "White Mage")
+      expect(response.body).not_to include("New battle", "Potion", ">Bag<") # the lobby: a battle is called at the table, the bag is stocked in Prep
+      get campaign_prep_path(campaign)
+      expect(response.body).to include("Potion", 'id="prep_bag"', "Add to bag")
 
       get world_path(world)
       expect(response.body).to include("Second Run")
@@ -49,12 +52,15 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(campaign.reload.gil).to eq(250)
     end
 
-    it "makes camp from the campaign's page, and says so at the table, but not mid-battle" do
+    it "makes camp at the table, under Things to do here, and says so there, but not mid-battle" do
       bartz.update!(hp: 1, mp: 0)
       campaign.update!(time_of_day: "dusk", current_node: campaign.map_nodes.create!(name: "The Road", kind: "field", x: 1, y: 1, visible: true))
       post campaign_table_seat_path(campaign), params: { seat: "gm" }
       get campaign_path(campaign)
-      expect(response.body).to include("Make camp")
+      expect(response.body).not_to include("Make camp") # the lobby does nothing the party does
+      campaign.call_controls!("doing")
+      get campaign_table_path(campaign)
+      expect(Nokogiri::HTML(response.body).at("#table_ways").text).to include("Make camp")
       post campaign_ways_path(campaign), params: { way: "Make camp (overnight)", go: 1 }
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
       expect(bartz.current_mp).to eq(bartz.stats["max_mp"] / 2) # a bed brings the rest
@@ -72,13 +78,13 @@ RSpec.describe "Campaigns and characters", type: :request do
       seed = (1..50).find { |n| campaign.locations.new(location_template: village, seed: n).view["services"].any? { |sv| sv["kind"] == "inn" } }
       varn = campaign.map_nodes.create!(name: "Varn", kind: "town", x: 1, y: 1, visible: true, location: campaign.locations.create!(location_template: village, seed: seed))
       campaign.place_party!(varn)
-      get campaign_path(campaign)
-      expect(response.body).not_to include("Inn: ") # nobody to take them yet
-
       bartz # the party
-      get campaign_path(campaign)
-      expect(response.body).to include("Inn: #{campaign.reload.inn_here['name']}")
-      expect(response.body).not_to include("Make camp")
+      campaign.call_controls!("doing")
+      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      get campaign_table_path(campaign)
+      ways = Nokogiri::HTML(response.body).at("#table_ways").text
+      expect(ways).to include("Rooms at #{campaign.reload.inn_here['name']}")
+      expect(ways).not_to include("Make camp")
     end
   end
 

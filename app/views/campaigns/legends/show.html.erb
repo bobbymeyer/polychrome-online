@@ -41,6 +41,17 @@
   </section>
 <% end %>
 
+<% if @battles.any? %>
+  <section class="window">
+    <h2>Fights</h2>
+    <ul class="refs">
+      <% @battles.each do |battle| %>
+        <li><%= link_to battle.name, battle_path(battle) %> <span class="muted">· <%= battle.status_label %> · <%= time_ago_in_words(battle.updated_at) %> ago</span></li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
+
 <% if (uncovered = @legends.uncovered).any? %>
   <section class="window">
     <h2>What they found out</h2>

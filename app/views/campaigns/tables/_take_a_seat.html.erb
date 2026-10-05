@@ -1,11 +1,34 @@
-<section class="window take-a-seat">
+<%# The door (docs/DESIGN.md, "Players steer"): someone at the table with no seat sees their own way in first,
+    a press each: their character, the GM's seat if the campaign is theirs; then, folded, the characters nobody
+    plays (sitting as one claims it). Nobody else's character is offered. The account menu keeps only Stand up. %>
+<% mine = campaign.characters.order(:created_at).select { |c| c.user_id == current_user&.id } %>
+<% unclaimed = campaign.characters.order(:created_at).select { |c| c.user_id.nil? } %>
+<% others = can_gm?(campaign) ? campaign.characters.order(:created_at).select { |c| c.user_id && c.user_id != current_user&.id } : [] %>
+<section class="window take-a-seat door" aria-label="Take a seat">
   <h2>Take a seat</h2>
-  <p class="hint">Sit as your character, or as the GM if this is your campaign. A character nobody has claimed becomes yours when you sit as them.</p>
-  <div class="menu" data-controller="menu" data-menu-primary-value="true">
-    <%= button_to "Game Master", campaign_table_seat_path(campaign), params: { seat: "gm" }, class: "menu__item" if can_gm?(campaign) %>
-    <% campaign.characters.order(:created_at).select { |c| can_play?(c) }.each do |character| %>
-      <%= button_to character.name + (character.user_id ? "" : " (unclaimed)"), campaign_table_seat_path(campaign),
-                    params: { seat: character.id }, class: "menu__item" %>
+  <div class="door__own">
+    <% mine.each do |character| %>
+      <%= button_to "Sit as #{character.name}", campaign_table_seat_path(campaign), params: { seat: character.id }, class: "button play", form: { class: "inline" } %>
+    <% end %>
+    <% if can_gm?(campaign) %>
+      <%= button_to "Sit as Game Master", campaign_table_seat_path(campaign), params: { seat: "gm" }, class: "button #{mine.any? ? 'button--quiet' : 'play'}", form: { class: "inline" } %>
+    <% end %>
+    <% if mine.empty? && !can_gm?(campaign) && unclaimed.empty? %>
+      <p class="hint">Nobody here is yours to play yet: ask the GM for a character, or <%= link_to "make one", new_campaign_character_path(campaign) %>.</p>
     <% end %>
   </div>
+  <% if unclaimed.any? || others.any? %>
+    <details class="door__others">
+      <summary><%= unclaimed.any? ? "Someone nobody plays" : "Someone else's character" %></summary>
+      <p class="hint"><%= "Sitting as one of these makes them yours. " if unclaimed.any? %><%= "As the GM you can sit as anyone, to play them for an absent player." if others.any? %></p>
+      <div class="door__list">
+        <% unclaimed.each do |character| %>
+          <%= button_to "Sit as #{character.name} (unclaimed)", campaign_table_seat_path(campaign), params: { seat: character.id }, class: "button button--quiet", form: { class: "inline" } %>
+        <% end %>
+        <% others.each do |character| %>
+          <%= button_to "Sit as #{character.name}", campaign_table_seat_path(campaign), params: { seat: character.id }, class: "button button--quiet", form: { class: "inline" } %>
+        <% end %>
+      </div>
+    </details>
+  <% end %>
 </section>
