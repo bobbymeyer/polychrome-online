@@ -37,7 +37,7 @@ RSpec.describe "The live table", type: :system do
     as(player) { expect(page).to have_css("#table_time", text: /night/i) }
 
     as(gm) do
-      within("#table_now") { click_on "Things to do here" } # time passes where the day is spent
+      within("#table_now") { click_on "Do", exact: true } # time passes where the day is spent
       within("#table_ways") { click_on "A part of the day passes" }
     end
 

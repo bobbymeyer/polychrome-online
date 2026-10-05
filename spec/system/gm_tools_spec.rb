@@ -15,9 +15,9 @@ RSpec.describe "The GM's tools at the table", type: :system do
     seat(gm, "gm")
 
     as(gm) do
-      within(".table-controls .gm-tools") { expect(page).to have_no_css("[role=tab]", visible: true) } # folded
-      within("#table_now") { click_on "GM tools" } # on the Now line, after Battle
-      within(".table-controls .gm-tools") do
+      expect(page).to have_no_css(".gm-tools") # not until called, like the other controls
+      within("#table_now") { click_on "GM", exact: true } # on the strip, after Fight
+      within("#table_called .gm-tools") do
         expect(page).to have_css("[role=tab]", count: 2) # Moves and More: clocks, secrets and time left the table
         expect(page).to have_css("[role=tab][aria-selected=true]", text: "Moves")
         expect(page).to have_no_text("The tide comes in")
@@ -26,7 +26,7 @@ RSpec.describe "The GM's tools at the table", type: :system do
       end
 
       visit current_path
-      within("#table_now") { click_on "GM tools" }
+      within("#table_now") { click_on "GM", exact: true }
       within(".gm-tools") do
         expect(page).to have_css("[role=tab][aria-selected=true]", text: "More")
         expect(page).to have_no_css("#gm_panel_moves", visible: true)
@@ -40,8 +40,10 @@ RSpec.describe "The GM's tools at the table", type: :system do
     seat(gm, "gm")
 
     as(gm) do
-      within("#table_now") { click_on "GM tools" }
-      within(".table-controls .gm-tools") do
+      within("#table_now") { click_on "GM", exact: true } # a control: the page comes back, and its streams with it
+      expect(page).to have_css("#table_now .controls-call [aria-pressed=true]", text: "GM") # the new page, not the old one's streams
+      wait_for_streams
+      within("#table_called .gm-tools") do
         find("[role=tab]", text: "Moves").click
         within("#gm_moves") do
           expect(page).to have_text("“Somebody's watching.”")
@@ -97,7 +99,7 @@ RSpec.describe "The GM's tools at the table", type: :system do
     as(gm) do
       # The ways show once the GM calls travel (Campaign::Controls), for everyone.
       expect(page).to have_no_button("To The Old Ruins (by a dangerous road)")
-      click_on "Travel"
+      click_on "Move", exact: true
       dismiss_confirm(/The road to The Old Ruins is dangerous/) { click_on "To The Old Ruins (by a dangerous road)" }
       expect(campaign.reload.current_node).to eq(here)
       accept_confirm { click_on "To The Old Ruins (by a dangerous road)" }
@@ -115,7 +117,7 @@ RSpec.describe "The GM's tools at the table", type: :system do
     as(gm) do
       expect(page).to have_css("#stage .table-time__view", text: /map/i) # the stage is the switch
       expect(page).to have_no_css("#table_map .map-sheet")
-      within("#table_now") { click_on "Travel" }
+      within("#table_now") { click_on "Move", exact: true }
       expect(page).to have_css("#table_map .map-sheet[data-controller=map-ask]", visible: true)
       expect(page).to have_css("#stage .table-time__view", text: /place/i)
       # The party's flag stands on the party's place, not scaled away from it (stage.css): the flag's tip (the

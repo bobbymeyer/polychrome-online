@@ -167,6 +167,7 @@ RSpec.describe "Campaigns and characters", type: :request do
 
     it "lets the GM grant EXP and ABP, from GM tools at the table" do
       post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      campaign.call_controls!("tools") # GM tools is a control on the strip
       get campaign_table_path(campaign)
       expect(response.body).to include("Grant EXP and ABP", 'id="grant_character_id"')
       post campaign_grants_path(campaign), params: { character_id: bartz.id, grant: { exp: "1000", abp: "20" } }

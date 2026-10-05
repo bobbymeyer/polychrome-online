@@ -136,7 +136,7 @@ RSpec.describe "The table", type: :request do
       expect(page.css("##{ActionView::RecordIdentifier.dom_id(bartz, :vitals)}").size).to eq(1)
 
       get campaign_composer_path(campaign)
-      expect(response.body).to include("Everyone at the table hears it, said as Bartz. Whispered, only the GM does.")
+      expect(response.body).to include("Everyone at the table hears it, said as Bartz.", "Only the GM hears it.") # the To chips' help
     end
 
     it "shows what they can do now, and keeps the rest a tap away" do
@@ -388,7 +388,7 @@ RSpec.describe "The table", type: :request do
       sit("gm")
       get campaign_table_path(campaign)
       expect(now).not_to include("The table is yours.", "Now") # in free play the GM's line is the controls row alone
-      expect(now).to eq("Talk Travel Things to do here Scene Check Battle GM tools")
+      expect(now).to eq("Talk Move Do Scene Check Fight GM") # GM is a control like the others
 
       Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
       get campaign_table_path(campaign)
@@ -443,18 +443,24 @@ RSpec.describe "The table", type: :request do
       get campaign_table_path(campaign)
       expect(response.body).not_to include("your-moves__tag", "table-you")
       get campaign_composer_path(campaign)
-      expect(response.body).to include("Everyone hears it. Start a line with a name and a colon to speak as them", "Whisper from the party panel.")
+      expect(response.body).to include("Everyone hears it. Start a line with a name and a colon to speak as them", "Whisper from the party panel.") # the Send button's help
     end
 
     it "gives the GM the moves for what's happening, in the Now line, with the rest of the tools behind Tools" do
       sit("gm")
       get campaign_table_path(campaign)
       page = Nokogiri::HTML(response.body)
-      expect(page.css("#table_now .controls-call button").map(&:text)).to eq([ "Talk", "Travel", "Things to do here", "Scene", "Check", "Battle" ])
+      expect(page.css("#table_now .controls-call button").map(&:text)).to eq([ "Talk", "Move", "Do", "Scene", "Check", "Fight", "GM" ])
       expect(page.at("#table_now .table-now__do").text).not_to include("Call a check", "Play a scene") # no second way in
-      expect(page.css(".gm-tools [role=tab]").map { |t| t.text.strip }).to eq(%w[Moves More]) # the rest is called, or Prep's
-      expect(page.at("#table_now .table-now__do button[data-gm-tools-toggle]").text).to eq("GM tools") # after the row; the tools fold until pressed
+      expect(page.at(".gm-tools")).to be_nil # the rest of the tools are a control: called, they replace what's under the stage
       expect(page.at("#table_called").key?("hidden")).to be(true) # nothing called
+      campaign.call_controls!("tools")
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      expect(page.css("#table_called .gm-tools [role=tab]").map { |t| t.text.strip }).to eq(%w[Moves More]) # the rest is called, or Prep's
+      expect(page.at("#table_now .controls-call button[aria-pressed=true]").text).to eq("GM")
+      expect(page.at("#table_ways").key?("hidden")).to be(true) # nothing else under the stage
+      campaign.call_controls!("talk")
       %w[party knows].each { |key| expect(page.at("#drawer_#{key}")).to be_present } # what the GM looks up, in tabs
       expect(page.at(".table__stage #stage #table_map")["hidden"]).not_to be_nil # the map, until the GM shows it
       expect(page.at("#drawer_knows #party_knows")).to be_present
@@ -469,7 +475,10 @@ RSpec.describe "The table", type: :request do
       campaign.clocks.create!(name: "The tide", segments: 4, public: true)
       sit("gm")
       get campaign_table_path(campaign)
-      expect(response.body).to include("GM tools</button>", "gm_tab_more", "Grant an archetype", "Music for the table")
+      campaign.call_controls!("tools")
+      get campaign_table_path(campaign)
+      expect(response.body).to include("GM</button>", "gm_tab_more", "Grant an archetype", "Music for the table")
+      campaign.call_controls!("talk")
       expect(response.body).not_to include("only you see these") # the button's name says who sees them
       get campaign_maps_path(campaign)
       expect(response.body).to include("Secret Grotto", "Hidden from the players") # the maps page, the GM's

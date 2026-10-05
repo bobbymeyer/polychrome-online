@@ -1,16 +1,9 @@
 <%# Time passing by the GM's hand (Timekeeping), where the day is spent: under the things to do here, once the
-    GM has called them (Campaign::Controls "doing"). A journey takes its road's time by itself. %>
+    GM has called them (Campaign::Controls "doing"). One press, one part of the day; a journey takes its road's
+    time by itself, and a rest sleeps the night. %>
 <div class="time-tools" data-controller="help">
   <span class="time-tools__label">Or let time pass:</span>
   <%= button_to "A part of the day passes", campaign_time_path(campaign), method: :patch, params: { parts: 1 }, class: "button button--quiet",
-                data: { help: "One part of the day passes, here." } %>
-  <%= button_to "Until #{campaign.almanac.periods.first}", campaign_time_path(campaign), method: :patch, params: { until: "the_day" }, class: "button button--quiet",
-                data: { help: "The rest of the day passes, as a rest does. Each new day ticks the clocks that tick on a new day." } %>
-  <%= form_with url: campaign_time_path(campaign), method: :patch, class: "time-tools__pass" do |f| %>
-    <%= label_tag :time_parts, "Pass" %>
-    <%= number_field_tag :parts, 4, min: 1, max: 28, id: "time_parts" %>
-    <span class="muted">parts of the day</span>
-    <%= f.submit "Go", class: "button button--quiet", data: { help: "That many parts pass. A journey takes its road's time by itself." } %>
-  <% end %>
+                data: { help: "One part of the day passes, here. Each new day ticks the clocks that tick on a new day." } %>
   <%= help_line("A day here has #{pluralize(campaign.almanac.periods.size, 'part')}: #{campaign.almanac.periods.to_sentence}.") %>
 </div>

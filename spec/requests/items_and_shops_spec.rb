@@ -101,7 +101,7 @@ RSpec.describe "Items and shops", type: :request do
       price = town.service_price("inn", lenna_character)
       label = "Rooms at #{inn['name']} (#{price} gil, overnight)"
       get location_path(town)
-      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="pick-row service service--inn"', "Done at the table, under Things to do here")
+      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="pick-row service service--inn"', "Done at the table, under Do")
       expect(response.body).not_to include("suggest", "Rooms at", campaign_ways_path(campaign)) # one home for doing it: the table
       # What each is for, and what it costs, before it's opened.
       expect(response.body).to match(%r{<td class="pick-row__cost service__offer">Rest the night · \d+ gil</td>})

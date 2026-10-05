@@ -136,8 +136,8 @@ RSpec.describe "Where next", type: :request do
     get campaign_table_path(campaign)
     expect(Nokogiri::HTML(response.body).at("#table_ways").key?("hidden")).to be(true) # the GM has no menu either
     controls = Nokogiri::HTML(response.body).css("#table_now .controls-call button")
-    expect(controls.map(&:text)).to eq([ "Talk", "Travel", "Things to do here", "Scene", "Check", "Battle" ])
-    expect(controls.map { |b| b["aria-pressed"] }).to eq(%w[true false false false false false])
+    expect(controls.map(&:text)).to eq([ "Talk", "Move", "Do", "Scene", "Check", "Fight", "GM" ])
+    expect(controls.map { |b| b["aria-pressed"] }).to eq(%w[true false false false false false false])
     expect(controls.map { |b| b["disabled"] }).to all(be_nil) # there's always the night to make camp
     patch campaign_controls_path(campaign), params: { kind: "travel" }
     expect(campaign.reload).to be_travelling

@@ -41,7 +41,7 @@
 }
 
 /* Parallelograms and cut corners: the two shapes of the stage. */
-.button:not([data-kind]), input[type=submit], button:not(.link-button):not(.dialogue__more):not(.dialogue__close):not(.pick-row__act):not([data-kind]), .pin {
+.button:not([data-kind]), input[type=submit], button:not(.link-button):not(.dialogue__more):not(.dialogue__close):not(.pick-row__act):not([data-kind]):not(.rows__add):not(.rows__remove), .pin {
   clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
   padding-left: calc(12px + var(--slant) / 2); padding-right: calc(12px + var(--slant));
 }
@@ -610,6 +610,11 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .music-fields__current audio { height: 32px; max-width: 100%; }
 
 /* The GM's scenes: a running order, played from the table. */
+.filter__input { width: 100%; margin: 0 0 8px; }
+/* The battle's monsters: one row, "+" to add one, "−" on the added. */
+.grid-form__act { width: 1%; white-space: nowrap; }
+.rows__add, .rows__remove { min-height: 32px; width: 32px; padding: 0; clip-path: none; font: 900 18px/32px var(--font); text-align: center; background: var(--control-fill); border: 0; }
+.rows__add:hover, .rows__remove:hover { translate: none; background: var(--ink); color: var(--paper); }
 .scene-list { list-style: none; margin: 0; padding: 0; border-top: 3px solid var(--ink); }
 .scene-list__item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding: 10px 0; border-bottom: 1px solid var(--light-grey); }
 .scene-list__item strong { font-style: italic; font-weight: 900; font-size: 18px; margin-right: 8px; }
@@ -759,7 +764,9 @@ a.pick-row__act { text-decoration: none; }
 .check-moment.is-success .check-moment__verdict { color: var(--forest-green); }
 .check-moment.is-failure { box-shadow: 8px 8px 0 var(--signal), 16px 16px 0 var(--ink); }
 .check-moment.is-failure .check-moment__verdict { color: var(--signal); }
-.check-form fieldset { border: 0; padding: 0; margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.check-form fieldset { border: 0; padding: 0; margin: 0 0 8px; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.check-form fieldset legend { float: left; width: 100%; margin: 0 0 4px; }
+.check-form fieldset label.inline { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
 
 /* How a fight is likely to go, on the battle and scene forms. */
 .forecast { margin: 12px 0; padding: 10px 14px 12px; border-left: 8px solid var(--c, var(--grey)); background: var(--tint); }
@@ -1108,7 +1115,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* The GM's tools at the table (campaigns/tables/gm/_tools): tabs beside the
  * play, one open at a time. Grey controls; the open one is ink, like a
  * pressed button. */
-.gm-tools { margin-top: 24px; border-top: 3px solid var(--ink); padding-top: 12px; }
+.gm-tools { margin: 0; }
 .gm-tools__tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
 .gm-tools__tab {
   padding: 6px 12px; min-height: 36px; border: 0; background: var(--control-fill); color: var(--ink);
@@ -1123,7 +1130,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .gm-tools__panel .field-row { flex-wrap: wrap; }
 .gm-tools__heading { margin: 24px 0 8px; font-style: italic; font-weight: 900; font-size: 18px; }
 .gm-tools__heading:first-child { margin-top: 0; }
-.gm-tools .field-requests, .gm-tools .recovery { margin: 0 0 16px; }
+.table-controls > .field-requests, .table-controls > .recovery { margin: 12px 0 0; }
 
 /* The log pinned open (the GM's seat): a column beside the page, not over it. */
 .log-drawer__actions { display: flex; gap: 8px; }
@@ -1177,12 +1184,12 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .coop-party__motive { margin: 2px 0 4px; }
 .composer__to-hint { margin: 6px 0 0; }
 /* Who speaks, and who hears: chips, the pressed one ink (the GM's speaker follows the scene). */
-.composer__as { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 8px; }
+.composer__as { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
 .composer__as-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--grey); margin-right: 2px; }
 .composer__chip { min-height: 32px; padding: 0 12px; font-size: 14px; font-weight: 700; background: var(--control-fill); border: 0; color: var(--ink); }
 .composer__chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .composer__chip:hover { translate: none; }
-.composer__whispering { flex-basis: 100%; margin: 0 0 8px; padding: 6px 10px; background: var(--tint); font-size: 14px; }
+.composer__whispering { flex-basis: 100%; margin: 0; padding: 6px 10px; background: var(--tint); font-size: 14px; }
 .composer__whispering[hidden] { display: none; }
 .coop-party__whisper { align-self: flex-start; font-size: 13px; white-space: nowrap; }
 
@@ -1223,16 +1230,16 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table-now__do:has(.controls-call) { gap: 0; }
 /* The strip hugs the top of the column under the stage, edge to edge: one rule above it, between the stage and the
    actions; nothing below it (what follows draws its own top). */
-.table-now:has(.controls-call) { margin: 0; padding: 0; border: 0; border-top: 3px solid var(--ink); }
+.table-now:has(.controls-call) { margin: 0; padding: 0; gap: 0; border: 0; border-top: 3px solid var(--ink); }
+.table-now:has(.controls-call) > * { margin: 0; }
 .table__under:has(.controls-call) { padding-top: 0; }
-.controls-call .button, .table-now__tools {
+.controls-call .button {
   clip-path: none; margin: 0; padding: 3px 12px; border: 0; font: 700 13px/20px var(--font); font-style: normal;
   background: var(--tone, var(--wash)); color: var(--tone-ink, var(--ink));
 }
-.controls-call .button:hover:not(:disabled), .table-now__tools:hover { translate: none; background: var(--tone); color: var(--tone-ink); filter: brightness(.88); }
-.controls-call .button:active:not(:disabled), .table-now__tools:active { translate: none; scale: none; }
-.controls-call .button[aria-pressed="true"], .table-now__tools[aria-pressed="true"],
-.controls-call .button[aria-pressed="true"]:hover, .table-now__tools[aria-pressed="true"]:hover { background: var(--ink); color: var(--paper); font-weight: 900; filter: none; }
+.controls-call .button:hover:not(:disabled) { translate: none; background: var(--tone); color: var(--tone-ink); filter: brightness(.88); }
+.controls-call .button:active:not(:disabled) { translate: none; scale: none; }
+.controls-call .button[aria-pressed="true"], .controls-call .button[aria-pressed="true"]:hover { background: var(--ink); color: var(--paper); font-weight: 900; filter: none; }
 .controls-call .button:disabled { background: repeating-linear-gradient(-45deg, var(--control-fill) 0 4px, var(--paper) 4px 9px); color: var(--grey); }
 .controls-call [data-kind="talk"] { --tone: var(--sun-yellow); --tone-ink: var(--ink); }
 .controls-call [data-kind="travel"] { --tone: var(--orange); --tone-ink: var(--ink); }
@@ -1240,7 +1247,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .controls-call [data-kind="scene"] { --tone: var(--wine-red); --tone-ink: var(--paper); }
 .controls-call [data-kind="check"] { --tone: var(--blue); --tone-ink: var(--paper); }
 .controls-call [data-kind="battle"] { --tone: var(--turquoise); --tone-ink: var(--ink); }
-.table-now__tools { --tone: var(--steel-grey); --tone-ink: var(--paper); }
+.controls-call [data-kind="tools"] { --tone: var(--steel-grey); --tone-ink: var(--paper); }
 .table-ways--straight { padding-top: 8px; }
 .table-ways__straight { margin: 0 0 4px; font-size: 13px; }
 .table-ways--straight .table-ways__group { font-size: 13px; margin: 6px 0 0; }
@@ -1310,9 +1317,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
    (everyone down, a field ability asked for) stays out in front. */
 .table-now__do { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
 .table-now__do form { margin: 0; }
-.gm-tools:not(.is-shown) :is(.gm-tools__tabs, .gm-tools__panel) { display: none; }
-/* Folded, the tools take no room and draw no rule: what's under the strip draws its own. */
-.gm-tools:not(.is-shown):not(:has(.recovery, .field-requests)) { margin: 0; padding: 0; border: 0; }
+
 #table_called[hidden] { display: none; }
 /* A battle set up under the stage (battles/_setup): the fieldsets tight, the rest behind More. */
 .battle-setup .panel { margin: 0 0 12px; }
@@ -1494,7 +1499,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .stage--table { width: min(100%, calc((100vh - var(--stage-top, 220px) - max(var(--stage-below, 48px), 40vh)) * 16 / 9)); }
 .stage__frame, .battle .stage {
   position: relative; aspect-ratio: 16 / 9; overflow: hidden; container-type: size;
-  border: 3px solid var(--ink); background: var(--paper); box-shadow: 8px 8px 0 var(--ink);
+  border: 3px solid var(--ink); background: var(--paper);
 }
 /* The place's picture fills the frame when it has one. */
 .stage--table #table_scene { position: absolute; inset: 0; margin: 0; border: 0; }
@@ -1548,7 +1553,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 @media (max-width: 640px) {
   .stage { width: 100%; min-width: 0; }
   /* A phone's frame is 4:3, so the words along its bottom have room. */
-  .stage__frame { box-shadow: 4px 4px 0 var(--ink); aspect-ratio: 4 / 3; }
+  .stage__frame { aspect-ratio: 4 / 3; }
   /* On a phone, under the frame: the line, then where. */
   .stage__hud .table-time { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 8px 0; margin-top: 8px; border-bottom: 3px solid var(--ink); }
   .stage__hud .table-time__plate, .stage__hud .table-time__where { position: static; max-width: none; text-align: left; box-shadow: none; border: 0; padding: 0; }
@@ -1769,7 +1774,9 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .topbar__user-menu > .topbar__seat { display: block; line-height: 32px; color: var(--grey); white-space: nowrap; }
 .topbar__seat strong { color: inherit; }
 @media (max-width: 1099px) {
-  .table__main { display: flex; flex-direction: column; gap: 16px; }
+  /* One column: everything as wide as the page, so what's under the stage (a wide list, a form) never widens the stage. */
+  .table__main { display: flex; flex-direction: column; align-items: stretch; gap: 16px; }
+  .table__stage { width: 100%; }
   .table__side { display: contents; }
   .table__side > .drawers, .table__side > #table_party { order: 1; }
   .table__stage { order: 0; }

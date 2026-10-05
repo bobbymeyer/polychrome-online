@@ -37,6 +37,7 @@ RSpec.describe "The GM's moves panel (Campaign::Moves)", type: :request do
     campaign.npcs.create!(name: "Never met", monster: world.monsters.first)
 
     post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    campaign.call_controls!("tools") # GM tools is a control on the strip
     get campaign_table_path(campaign)
     expect(response.body).to include("gm_moves", "Moves")
 
