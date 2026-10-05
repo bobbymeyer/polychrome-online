@@ -5,9 +5,18 @@
 <% choice = campaign.open_choice %>
 <% scene = campaign.staged_scene %>
 <% beat = scene&.current_beat %>
-<%# data-state says which: a player's moves follow it (stage.css, "What you can do now"). %>
+<%# data-state says which: a player's moves follow it (stage.css, "What you can do now"); data-controls what the GM
+    has called (Campaign::Controls): the talk box is there only under Talk. %>
 <% state = battle ? "battle" : campaign.pending_encounter.present? ? "encounter" : choice ? "choice" : (scene && beat) ? "scene" : "free" %>
-<section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>" data-change="state" data-change-key="table-now">
+<section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>" data-controls="<%= campaign.controls %>" data-change="state" data-change-key="table-now">
+  <%# In free play the GM's line is the controls row and nothing else: no label, no sentence. %>
+  <% if gm && state == "free" %>
+    <%# Clocks live in Prep; the one thing the table needs to know is when one is about to fill. %>
+    <% nearly = campaign.clocks.running.select { |clock| clock.segments - clock.filled == 1 } %>
+    <% if nearly.any? %>
+      <p class="table-now__clock"><%= nearly.map(&:name).to_sentence %> <%= nearly.one? ? "is" : "are" %> one tick from full · <%= link_to "Clocks", campaign_prep_path(campaign, anchor: "clocks") %></p>
+    <% end %>
+  <% else %>
   <p class="table-now__label">Now</p>
   <p class="table-now__what" data-change="text">
     <% if battle %>
@@ -26,16 +35,6 @@
     <% elsif scene && beat %>
       <strong>A scene is on the stage: <%= scene.name %>.</strong>
       <%= gm ? "Beat #{beat.position + 1} of #{scene.beats.size}#{scene.auto? ? ', playing on' : ''}." : "Watch the stage." %>
-    <% elsif gm %>
-      <strong>The table is yours.</strong>
-      <%= { "travel" => "Travel: the ways on are below, for everyone.", "doing" => "Things to do here are below, for everyone.",
-            "scene" => "Scene: pick one below to put on the stage.", "check" => "Check: say who rolls what, below.",
-            "battle" => "Battle: set it up below, and start it." }[campaign.controls] %>
-      <%# Clocks live in Prep; the one thing the table needs to know is when one is about to fill. %>
-      <% nearly = campaign.clocks.running.select { |clock| clock.segments - clock.filled == 1 } %>
-      <% if nearly.any? %>
-        <span class="table-now__clock"><%= nearly.map(&:name).to_sentence %> <%= nearly.one? ? "is" : "are" %> one tick from full · <%= link_to "Clocks", campaign_prep_path(campaign, anchor: "clocks") %></span>
-      <% end %>
     <% elsif campaign.travelling? %>
       <strong>Where next?</strong> Say where you'd go: it goes to a vote, and the GM settles it.
     <% elsif campaign.doing? %>
@@ -44,6 +43,7 @@
       <strong>The GM has the floor.</strong> Talk at the table.
     <% end %>
   </p>
+  <% end %>
   <%= render "campaigns/tables/current_battle", campaign: campaign %>
   <%# The GM's prompt: the moves that fit this state, right here (the panels below have the detail). %>
   <% if gm && !battle %>

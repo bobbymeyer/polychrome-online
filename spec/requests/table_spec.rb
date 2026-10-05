@@ -157,6 +157,20 @@ RSpec.describe "The table", type: :request do
       expect(Nokogiri::HTML(response.body).at("#table_now")["data-state"]).to eq("choice")
     end
 
+    it "keeps the talk box for Talk: the Now line says which controls are called, and the rest follows it" do
+      sit(bartz)
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      expect(page.at("#table_now")["data-controls"]).to eq("talk")
+      expect(page.at(".table-talk #composer")).to be_present
+
+      campaign.call_controls!("travel")
+      get campaign_table_path(campaign)
+      page = Nokogiri::HTML(response.body)
+      expect(page.at("#table_now")["data-controls"]).to eq("travel") # stage.css hides .table-talk and the whispers under it
+      expect(page.at(".table-talk #composer")).to be_present
+    end
+
     it "always speaks as their own character, whatever the params say" do
       say(body: "Hi!", speaker: "npc:#{cid.id}", expression: "happy")
       expect(campaign.messages.last).to have_attributes(speaker: bartz, expression: "happy", scope: "table")
@@ -372,7 +386,8 @@ RSpec.describe "The table", type: :request do
     it "says what the table is doing and whose move it is, to the GM and to the players" do
       sit("gm")
       get campaign_table_path(campaign)
-      expect(now).to include("The table is yours.")
+      expect(now).not_to include("The table is yours.", "Now") # in free play the GM's line is the controls row alone
+      expect(now).to eq("Talk Travel Things to do here Scene Check Battle GM tools")
 
       Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
       get campaign_table_path(campaign)
