@@ -566,9 +566,14 @@ under the frame.
 - **The round, and what its clock is for.** A player's command panel says "Round 2 · Choose
   before the clock runs out, or you Attack" (or "… Fire again (or Attack, if it can't)" after
   a spell), until they've chosen.
-- **The GM's panel says who the round waits on**, by its clock ("Waiting on Hoshi."), and the
-  party's table has one "Who chooses" column instead of two: "Auto, every round" with Hand back,
-  or "Player · waiting/chosen" with Auto this round and Auto every round.
+- **The GM's panel says who the round waits on**, by its clock ("Waiting on Hoshi."), and each
+  side is a list of one-line rows, not a table: the name, HP and MP, what's on them, and for the
+  party who chooses, with one button only when it matters: "Auto" while a player holds the round
+  up, "Hand back" while auto is on, "Send off" for a guest. Auto is one thing, this round and
+  the rest, so the GM never picks between two kinds of it.
+- **A ruling is three fields**: what they roll, how hard, and what happens if it works. How
+  much, a type, a status, on whom, and the two lines the table hears wait behind "More" with
+  their usual answers, so most rulings are one press.
 - **"Fast animations"**, not "Fast": the toggle says what it speeds up. In a campaign it sits in
   the Menu with the way around the game (it's a setting for this device, not a move); a battle
   with no campaign keeps it above the field.

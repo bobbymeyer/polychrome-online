@@ -85,14 +85,17 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).not_to include("Choose before the clock runs out")
   end
 
-  it "tells the GM who the round waits on, and who chooses for each, in one column" do
+  it "tells the GM who the round waits on, one line a unit, with one button when it matters" do
     battle.set_auto!(bartz, false)
     battle.set_auto!(faris, true)
     sit("gm")
     get battle_panel_path(battle)
-    expect(response.body).to include("Waiting on Bartz.", "Who chooses", "Player · waiting", "Auto this round", "Auto every round",
-                                     "Auto, every round", "Hand back")
-    expect(response.body).not_to include("Every round</th>")
+    expect(response.body).to include("Waiting on Bartz.")
+    rows = Nokogiri::HTML(response.body).css(".gm-rows[aria-label='The party'] .gm-row")
+    expect(rows.map { |r| r.at(".gm-row__name").text }).to eq(%w[Bartz Faris])
+    expect(rows[0].at(".gm-row__who").text.squish).to eq("Waiting on their player Auto") # one button: put them on auto
+    expect(rows[1].at(".gm-row__who").text.squish).to eq("Auto Hand back") # one button: take them off it
+    expect(response.body).not_to include("Auto this round", "Auto every round", "Who chooses", "<table") # no table, no two autos
 
     get battle_path(battle)
     expect(response.body).to include("Fast animations")
@@ -404,7 +407,8 @@ RSpec.describe "Battle screen", type: :request do
 
     it "sees every unit's HP and who the round is waiting on" do
       get battle_panel_path(battle)
-      expect(response.body).to include("The party", "waiting", "Run the round now", "The other side", "Goblin A", "50/50")
+      expect(response.body).to include("The party", "Run the round now", "The other side")
+      expect(Nokogiri::HTML(response.body).at(".gm-rows[aria-label='The other side']").text.squish).to include("Goblin A HP 50/50")
       expect(response.body).to include("Waiting on") # by the round's clock, as well as in the rows
       expect(response.body).not_to include("On auto every round")
     end
