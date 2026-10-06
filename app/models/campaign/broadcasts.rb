@@ -35,12 +35,12 @@ module Campaign::Broadcasts
   # check), the time and where the party is, what
   # the party knows, its lines and veils, a dungeon's floorplan while the
   # party is in one, the stage's scene and map (players' without hidden
-  # places). Not the dialogue box, the log or the composer.
+  # places), the GM's music switch. Not the dialogue box, the log or the composer.
   TABLE_PANELS = {
     "table_party" => "campaigns/tables/party",
     "table_ways" => "campaigns/tables/ways", "table_called" => "campaigns/tables/called", "table_time" => "campaigns/tables/time", "party_knows" => "campaigns/tables/party_knows",
     "table_floorplan" => "campaigns/tables/floorplan", "table_now" => "campaigns/tables/now", "table_scene" => "campaigns/tables/scene",
-    "table_map" => "campaigns/tables/map", "table_limits" => "campaigns/tables/limits"
+    "table_map" => "campaigns/tables/map", "table_limits" => "campaigns/tables/limits", "stage_music" => "campaigns/tables/music"
   }.freeze
 
   # Something the table shows changed: its panels render again, once for a

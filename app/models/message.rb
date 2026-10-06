@@ -115,7 +115,7 @@ class Message < ApplicationRecord
 
   def broadcast
     streams.each do |stream|
-      broadcast_append_to(*stream, target: "chat_log", partial: "messages/message", locals: { message: self, live: true })
+      broadcast_prepend_to(*stream, target: "chat_log", partial: "messages/message", locals: { message: self, live: true }) # newest first
     end
   end
 

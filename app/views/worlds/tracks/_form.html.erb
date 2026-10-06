@@ -1,0 +1,56 @@
+<%# One form for the three kinds of track (kind_switch_controller shows the fields the source needs). %>
+<%= form_with model: track, url: track.persisted? ? world_track_path(@world, track) : world_tracks_path(@world), class: "book-form", multipart: true,
+              data: { controller: "kind-switch" } do |f| %>
+  <%= render "book_entries/errors", entry: track %>
+  <div class="field-row">
+    <div class="field"><%= f.label :name %><%= f.text_field :name, required: true, placeholder: "The Road to Hommlet" %></div>
+    <div class="field">
+      <%= f.label :scene, "Plays" %>
+      <%= f.select :scene, World::MUSIC.map { |scene| [ "In the #{scene}", scene ] }, include_blank: "When the GM calls it, by name" %>
+    </div>
+    <div class="field">
+      <%= f.label :source, "From" %>
+      <%= f.select :source, Track::SOURCES.map { |s| [ { "upload" => "A file", "link" => "YouTube or Spotify", "generated" => "ACE-Step in ComfyUI" }[s], s ] }, {},
+                   data: { kind_switch_target: "select", action: "kind-switch#update" } %>
+    </div>
+  </div>
+  <div class="field" data-show-for="upload">
+    <%= f.label :audio, "Audio file" %>
+    <% if track.persisted? && track.audio.attached? %>
+      <p class="music-fields__current"><audio controls preload="none" src="<%= rails_blob_path(track.audio) %>"></audio> <span class="muted"><%= track.audio.filename %></span></p>
+    <% end %>
+    <%= f.file_field :audio, accept: "audio/*" %>
+    <p class="hint">Up to <%= Track::MAX_BYTES / 1.megabyte %> MB, looped at the table.</p>
+  </div>
+  <div class="field" data-show-for="link">
+    <%= f.label :url, "Link" %>
+    <%= f.url_field :url, placeholder: "https://www.youtube.com/watch?v=… or https://open.spotify.com/track/…" %>
+    <p class="hint">Played in a small YouTube or Spotify player in the corner, which each viewer may need to press. Spotify plays a preview unless the viewer is signed in.</p>
+  </div>
+  <div data-show-for="generated">
+    <div class="field">
+      <%= f.label :prompt, "What it sounds like" %>
+      <%= f.text_field :prompt, placeholder: "medieval folk, lute and fiddle, slow, melancholic, no drums" %>
+      <p class="hint">Tags, like a prompt for a picture: genre, instruments, tempo, mood. ACE-Step needs its checkpoint on ComfyUI (<%= Comfy::Music.settings[:model] %>).</p>
+    </div>
+    <div class="field-row">
+      <div class="field"><%= f.label :lyrics, "Lyrics (blank for instrumental)" %><%= f.text_area :lyrics, rows: 4, placeholder: "[verse]\nThe road runs on…" %></div>
+      <div class="field"><%= f.label :seconds, "Seconds" %><%= f.number_field :seconds, min: Track::SECONDS.min, max: Track::SECONDS.max %></div>
+    </div>
+    <% if track.persisted? && track.generated? %>
+      <p class="muted">ComfyUI: <%= track.status || "not started" %><%= " · #{track.error}" if track.error.present? %></p>
+    <% end %>
+  </div>
+  <div class="actions">
+    <%= f.submit class: "button" %>
+    <%= link_to "Cancel", world_tracks_path(@world), class: "button button--quiet" %>
+  </div>
+<% end %>
+<% if track.persisted? %>
+  <div class="actions">
+    <% if track.generated? %>
+      <%= button_to "Make it again in ComfyUI", world_track_generation_path(@world, track), class: "button button--quiet", form: { class: "inline" } %>
+    <% end %>
+    <%= button_to "Take it out of the book", world_track_path(@world, track), method: :delete, class: "button button--danger", form: { class: "inline", data: { turbo_confirm: "Take #{track.name} out of the book?" } } %>
+  </div>
+<% end %>

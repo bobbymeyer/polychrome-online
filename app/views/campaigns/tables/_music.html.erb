@@ -1,0 +1,17 @@
+<%# The table's music, on the stage's bottom-left corner, the GM's: one select over the world's Music book.
+    Follow the scene; a kind of scene's track; a track by name; silence (Campaigns::MusicController). Replaced live. %>
+<div id="stage_music" class="stage-music" <%= "hidden" unless gm %>>
+  <% if gm %>
+    <% tracks = campaign.world.tracks %>
+    <% named = tracks.select { |t| t.scene.nil? && t.playable? } %>
+    <% choices = [ [ "Follow the scene (#{campaign.scene})", "" ] ] +
+                 World::MUSIC.map { |c| [ c.capitalize + (campaign.world.music_track(c) ? "" : " (no track)"), c ] } +
+                 named.map { |t| [ "♪ #{t.name}", "track:#{t.id}" ] } +
+                 [ [ "Silence", "silence" ] ] %>
+    <%= form_with url: campaign_music_path(campaign), method: :patch, class: "music-switch", data: { controller: "autosubmit", turbo_frame: "_top" } do %>
+      <%= label_tag :music, "Music for the table", class: "visually-hidden" %>
+      <%= select_tag :music, options_for_select(choices, campaign.music), data: { action: "autosubmit#submit" }, title: "Music for the table" %>
+      <noscript><%= submit_tag "Play", class: "button button--quiet" %></noscript>
+    <% end %>
+  <% end %>
+</div>

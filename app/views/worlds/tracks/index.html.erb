@@ -1,0 +1,44 @@
+<% content_for :title, "Music · #{@world.name}" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Music</div>
+<div class="book-header">
+  <h1>Music</h1>
+  <% if can_edit_world? %><%= link_to "New track", new_world_track_path(@world), class: "button" %><% end %>
+</div>
+<p class="prose">
+  What <%= @world.name %> sounds like. A track for a kind of scene (field, town, dungeon, battle, boss) plays wherever the party is in one, looped;
+  the rest are the GM's to call by name from the stage. A track is a file uploaded, a YouTube or Spotify link (played in its own small player), or
+  made in ComfyUI with ACE-Step from a description. Only music you have the rights to.
+</p>
+<%# The list follows a track being made (Track#refresh_watchers reloads this frame). %>
+<%= turbo_stream_from @world, :music %>
+<%= turbo_frame_tag "music_book", data: { src: world_tracks_path(@world) } do %>
+  <% if @tracks.any? %>
+    <table class="pick-table music-book">
+      <thead><tr><th>Track</th><th>Plays</th><th>From</th><th></th></tr></thead>
+      <tbody>
+      <% @tracks.each do |track| %>
+        <tr class="music-book__row">
+          <td><strong><%= track.name %></strong><% if track.generated? && track.prompt %><br><span class="muted"><%= truncate(track.prompt, length: 80) %></span><% end %></td>
+          <td><%= track.scene ? "In the #{track.scene}" : "When called" %></td>
+          <td>
+            <% if track.link? %>
+              <%= tag.a track.service, href: track.link_href, target: "_blank", rel: "noopener" %>
+            <% elsif track.audio.attached? %>
+              <audio controls preload="none" src="<%= rails_blob_path(track.audio) %>"></audio>
+            <% else %>
+              <span class="muted"><%= track.state %><%= ": #{track.error}" if track.status == "failed" && track.error %></span>
+            <% end %>
+          </td>
+          <td class="music-book__acts">
+            <% if can_edit_world? %>
+              <%= link_to "Edit", edit_world_track_path(@world, track), class: "button button--quiet", data: { turbo_frame: "_top" } %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="empty">No music yet. <%= link_to "Add the first track", new_world_track_path(@world), data: { turbo_frame: "_top" } if can_edit_world? %></p>
+  <% end %>
+<% end %>

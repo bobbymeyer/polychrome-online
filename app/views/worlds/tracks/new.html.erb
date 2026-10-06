@@ -1,0 +1,4 @@
+<% content_for :title, "New track · #{@world.name}" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / <%= link_to "Music", world_tracks_path(@world) %> / New</div>
+<h1>New track</h1>
+<%= render "form", track: @track %>

@@ -38,7 +38,7 @@ RSpec.describe "The live table", type: :system do
 
     as(gm) do
       within("#table_now") { click_on "Do", exact: true } # time passes where the day is spent
-      within("#table_ways") { click_on "A part of the day passes" }
+      within("#table_ways") { click_on "Let time pass" }
     end
 
     as(player) { expect(page).to have_css("#table_time", text: /day 2/i).and have_css("#table_time", text: /dawn/i) }
@@ -185,14 +185,25 @@ RSpec.describe "The live table", type: :system do
       expect(page).to have_css("#stage .dialogue", text: "Off with you")
     end
   end
-  it "is three views on a phone: you and the party, the stage, the log, picked from a strip under the top bar" do
+  it "is three views on a phone or a tablet: you and the party, the stage, the log, picked from a strip in the top bar" do
     marga = campaign.npcs.create!(name: "Old Marga")
     seat(player, rook)
 
     as(player) do
+      # A tablet: the same three views, the strip in the bar between the brand and Menu, the links folded.
+      page.driver.browser.manage.window.resize_to(820, 1180)
+      visit campaign_table_path(campaign)
+      expect(page).to have_css(".topbar .table-views", visible: true)
+      expect(page).to have_css(".topbar__toggle", visible: true, text: "Menu")
+      expect(page).to have_no_css("#table_party li.is-you", visible: true)
+      click_on "You & party"
+      expect(page).to have_css("#table_party li.is-you", visible: true, text: "Rook")
+      expect(page).to have_no_css("#stage", visible: true)
+      click_on "Stage" # back to the first view, so the phone below starts there too
+
       page.driver.browser.manage.window.resize_to(390, 844)
       visit campaign_table_path(campaign)
-      expect(page).to have_css(".table-views", visible: true)
+      expect(page).to have_css(".topbar .table-views", visible: true)
       expect(page).to have_css(".table-views__tab[aria-current=page]", text: "Stage") # the stage first
       expect(page).to have_css("#stage", visible: true)
       expect(page).to have_no_css("#table_party li.is-you", visible: true)
@@ -209,6 +220,15 @@ RSpec.describe "The live table", type: :system do
       expect(page).to have_css("#log_drawer", visible: true, text: "The bridge is out.")
       expect(page).to have_no_css(".table-views__badge", visible: true)
       expect(page).to have_no_css("#table_party li.is-you", visible: true)
+      # The newest line is on top, and the search narrows the log as you type, new lines included.
+      expect(page).to have_css("#chat_log li:first-child", text: "The bridge is out.")
+      find("#log_drawer .chat-log__search").set("ferry")
+      expect(page).to have_no_css("#chat_log li", text: "The bridge is out.", visible: true)
+      campaign.messages.create!(body: "Take the ferry.", speaker: marga)
+      expect(page).to have_css("#chat_log li:first-child", text: "Take the ferry.", visible: true)
+      expect(page).to have_no_css("#chat_log li", text: "The bridge is out.", visible: true)
+      find("#log_drawer .chat-log__search").set("")
+      expect(page).to have_css("#chat_log li", text: "The bridge is out.", visible: true)
 
       visit current_path # the view you were on is kept
       expect(page).to have_css(".table-views__tab[aria-current=page]", text: "Log")

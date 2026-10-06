@@ -123,11 +123,15 @@ remembers. The melodies are our own:
   quick notes.
 - **Confirm:** a soft blip on game menus and play buttons, and nowhere else.
 
-Music is the world's own: a track for each kind of scene (field, town, dungeon, battle,
-boss), uploaded on the world's edit page. Each page plays its scene's track, crossfading as
-you move, and a scene without a track is quiet. At the table the GM can switch everyone to
-another scene's track, or to silence; battles keep their own. A boss's entrance stops the
-music for its moment, then the boss track starts.
+Music is the world's own, a book like the others (Music): a track for each kind of scene
+(field, town, dungeon, battle, boss), and any more for the GM to call by name. A track is a
+file uploaded, a YouTube or Spotify link, or made in ComfyUI with ACE-Step from a description
+and lyrics. Each page plays its scene's track, crossfading as you move, and a scene without a
+track is quiet. A linked track can't be fetched, so it plays in its own small player in the
+page's bottom-right corner, kept across pages; the viewer may need to press it once. At the
+table the GM switches everyone from the stage's bottom-left corner: another scene's track, one
+by name, or silence; battles keep their own. A boss's entrance stops the music for its moment,
+then the boss track starts.
 
 Nothing sounds until the viewer has clicked or pressed a key (browsers insist), and "Sound
 on/off" in the top bar mutes this device.
@@ -375,9 +379,9 @@ The GM's table works the same way:
   is on the battle page, where the GM already is.
 - **The rest of the tools wait behind "GM tools"**, a button on the Now line after Battle, always: Moves, and More (grants, music, the
   shared screen). Clocks and secrets are Prep's, not the table's: the Now line says when a clock
-  is one tick from full, in red, with the way to Prep. Time passes where the day is spent: "A
-  part of the day passes", "Until dawn" and "Pass N parts" sit under Things to do here, beside
-  the pastimes and Make camp, and nowhere else (a journey takes its road's time by itself). What
+  is one tick from full, in red, with the way to Prep. Time passes where the day is spent: "Let
+  time pass" is the last row of Do, beside the pastimes and Make camp, and nowhere else (a
+  journey takes its road's time by itself). What
   needs an answer now (everyone down, a field ability asked for) stays out in front.
 - **What the GM looks up is in tabs** under the tools: Party · What they know.
 
@@ -508,8 +512,11 @@ under the frame.
   before sitting down; on the world's page, as the setting's own. Not on the campaign page.
 - **The talk box is the box first**, then one line under it: As (or To) as chips, the face as a
   plain select, Send at the end, and a help line that says what each does. No fold for the face.
-- **Time passes a part of the day at a time**: one button under the things to do here. A journey
-  takes its road's time by itself; a rest sleeps the night.
+- **Grants go to one or to all**: "The party (everyone)" is the first choice of who gets EXP and
+  ABP, and each gets the same.
+- **Time passes a part of the day at a time**: "Let time pass" is the GM's last row of the Do
+  table, costed "a part of the day" like the pastimes above it, and the only row when there is
+  nothing else to do here. A journey takes its road's time by itself; a rest sleeps the night.
 - **The scenes called to the table** have a live search above them, and a played one is ticked
   (✅) before its name.
 - **The battle setup starts with one monster**: "+" on the first row adds another, and each added
@@ -641,8 +648,10 @@ under the frame.
   waiting encounter, and travel is the table's (the Travel control, the map on the stage).
 - **Setting up is the lobby's, playing is the table's.** Playing around one screen (the shared
   screen, the QR code and the controller link) is set up on the campaign page beside the invite,
-  before play. The music is on the stage: one small select on its corner tag beside Map/Place,
-  the GM's, since what the table hears belongs with what it sees. GM tools' More is grants only.
+  before play. The music is on the stage: one small select in the frame's bottom-left corner
+  (where the map's "Ask the table: anywhere" button was; asking is done from a place pressed on
+  the map, and from Move), the GM's, since what the table hears belongs with what it sees. GM
+  tools' More is grants only.
 - **"Fast animations"**, not "Fast": the toggle says what it speeds up. It's a setting for this
   device, so it sits in the account menu beside Sound on every page, and a battle already
   playing hears the change. **The timing meter** is the same kind of thing, so its switch sits
@@ -814,11 +823,17 @@ Phones are where most players are, so every page is checked at 390×844, 360×64
 - **The top bar is one line**: the name, a Menu button, and the log's tab. The links open from
   Menu at 44px, with Sign out set apart at the end, where a guest won't tap it by mistake. The
   log's tab scrolls away with the bar instead of floating over what you're reading.
-- **The table is three views.** Its three columns (you and the party; the stage and what you can
-  do; the log) are too much for one phone screen stacked, so a thin strip under the top bar picks
-  one: "You & party", "Stage", "Log", the one shown in ink, the Stage first. The log's tab goes
-  away on this page: the log is the third view, in the page, and the count of lines you haven't
-  seen sits on its name in the strip. The view you were on is kept for the session.
+- **The table is three views, on a phone and on a tablet alike** (up to 1099px). Its three
+  columns (you and the party; the stage and what you can do; the log) are too much for one
+  screen stacked, so a strip in the top bar, between the brand and Menu, picks one: "You &
+  party", "Stage", "Log", the one shown on paper in the bar's ink, the Stage first. On a tablet
+  the bar folds its links behind Menu as a phone's does, to make room. The log's tab goes away
+  on this page: the log is the third view, in the page, and the count of lines you haven't seen
+  sits on its name in the strip. The view you were on is kept for the session.
+- **The log reads newest first.** A new line lands on top, and opening the log shows the top, so
+  the latest is always at hand without scrolling; the battle's own section still grows downward
+  as a fight plays. A search box sits in the log's sticky head: typing narrows the lines to the
+  ones with those words, new lines included, and clearing it shows all.
 - **In battle, the commands are pinned to the bottom** while the fight plays above them. The
   pinned panel carries a strip of everyone's HP and, above it, the last lines of what just
   happened, so nobody has to open the log mid-fight. The page title steps aside and enemies size

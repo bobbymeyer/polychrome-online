@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-# Music for each kind of scene, uploaded by the world's author. Every page
-# at the table asks for one (ApplicationHelper#music_meta); a scene with no
-# track is silent. The jingles are synthesised (sound.js), so they need
-# nothing uploaded.
+# The world's Music book (Track): a track for each kind of scene, and any
+# number more for the GM to call by name. Every page at the table asks for
+# one (ApplicationHelper#music_meta); a scene with no track is silent. The
+# jingles are synthesised (sound.js), so they need nothing uploaded.
 module World::Music
   extend ActiveSupport::Concern
 
@@ -11,36 +11,33 @@ module World::Music
   MUSIC_MAX_BYTES = 25.megabytes
 
   included do
-    MUSIC.each { |scene| has_one_attached :"music_#{scene}" }
-    validate :music_is_audio
+    has_many :tracks, -> { order(:position, :id) }, dependent: :destroy
   end
 
+  # The track a kind of scene plays: the first in the book for it that has
+  # anything to hear.
   def music_track(scene)
     return unless MUSIC.include?(scene.to_s)
 
-    track = public_send(:"music_#{scene}")
-    track if track.attached?
+    tracks.find { |track| track.scene == scene.to_s && track.playable? }
   end
 
-  # Where a scene's track is served from, or nil for silence.
-  def music_path(scene)
-    track = music_track(scene)
-    Rails.application.routes.url_helpers.rails_blob_path(track, only_path: true) if track
+  # Where a choice of music is heard from, or nil for silence: a kind of
+  # scene, or one track by name ("track:12", Campaign#music).
+  def music_path(choice)
+    return if choice.blank? || choice.to_s == "silence"
+
+    if (id = choice.to_s.delete_prefix("track:")) != choice.to_s
+      tracks.find { |track| track.id == id.to_i }&.play_url
+    else
+      music_track(choice)&.play_url
+    end
   end
 
   def copy_music_from!(source)
-    MUSIC.each { |scene| (track = source.music_track(scene)) && public_send(:"music_#{scene}").attach(track.blob) }
-  end
-
-  private
-
-  def music_is_audio
-    MUSIC.each do |scene|
-      track = public_send(:"music_#{scene}")
-      next unless track.attached?
-
-      errors.add(:"music_#{scene}", "must be an audio file") unless track.blob.content_type.to_s.start_with?("audio/")
-      errors.add(:"music_#{scene}", "must be under #{MUSIC_MAX_BYTES / 1.megabyte} MB") if track.blob.byte_size > MUSIC_MAX_BYTES
+    source.tracks.each do |track|
+      copy = tracks.create!(track.attributes.except("id", "world_id", "created_at", "updated_at", "prompt_id", "started_at"))
+      copy.audio.attach(track.audio.blob) if track.audio.attached?
     end
   end
 end

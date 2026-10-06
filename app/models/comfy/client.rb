@@ -28,8 +28,8 @@ module Comfy
       body.fetch("prompt_id") { raise Error, "ComfyUI didn't return a prompt id" }
     end
 
-    # nil while the prompt is queued or running; otherwise the images its
-    # output nodes saved, as [{ "filename", "subfolder", "type" }].
+    # nil while the prompt is queued or running; otherwise the images (or
+    # audio) its output nodes saved, as [{ "filename", "subfolder", "type" }].
     def result(prompt_id)
       entry = get_json("/history/#{prompt_id}")[prompt_id]
       return nil unless entry
@@ -42,7 +42,7 @@ module Comfy
       end
       return nil if status.key?("completed") && !status["completed"]
 
-      entry.fetch("outputs", {}).values.flat_map { |output| output["images"] || [] }.reject { |image| image["type"] == "temp" }
+      entry.fetch("outputs", {}).values.flat_map { |output| Array(output["images"]) + Array(output["audio"]) }.reject { |file| file["type"] == "temp" }
     end
 
     # Seconds from ComfyUI starting a prompt to finishing it, from the
@@ -62,7 +62,7 @@ module Comfy
       [ answer["subfolder"].presence, answer.fetch("name") { raise Error, "ComfyUI didn't take the image" } ].compact.join("/")
     end
 
-    # The bytes of one saved image.
+    # The bytes of one saved image (or audio file).
     def fetch(image)
       query = URI.encode_www_form(filename: image["filename"], subfolder: image["subfolder"].to_s, type: image["type"] || "output")
       @remote.get("/view?#{query}").body

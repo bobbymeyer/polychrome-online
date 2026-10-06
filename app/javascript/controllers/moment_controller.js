@@ -41,9 +41,10 @@ export default class extends Controller {
   connect() {
     // A card's line that arrived a moment ago, before this page was up (the
     // GM who set it off comes back to the table on a fresh page): shown once.
-    const lines = [ ...this.element.querySelectorAll("[data-chat-line-cue-value]") ]
+    // The latest of them, by id: the log keeps its newest line first (campaigns/tables/_chat_log).
+    const last = [ ...this.element.querySelectorAll("[data-chat-line-cue-value]") ]
       .filter((line) => this.card(line.dataset.chatLineCueValue))
-    const last = lines[lines.length - 1]
+      .reduce((latest, line) => (!latest || Number(line.dataset.chatLineIdValue) > Number(latest.dataset.chatLineIdValue) ? line : latest), null)
     if (!last) return
 
     const id = Number(last.dataset.chatLineIdValue)

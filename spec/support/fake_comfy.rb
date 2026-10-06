@@ -30,6 +30,10 @@ class FakeComfy
     # One image for each SaveImage in the graph: the picture as rendered
     # ("-plain") and the cut-out, when the background comes off.
     graph = @submitted[id.delete_prefix("prompt-").to_i - 1] || {}
+    # A graph that saves audio (Comfy::Music) gets one file back.
+    audio = graph.values.find { |node| node["class_type"].to_s.start_with?("SaveAudio") }
+    return [ { "filename" => "#{File.basename(audio.dig('inputs', 'filename_prefix').to_s)}_00001_.#{audio['class_type'] == 'SaveAudioMP3' ? 'mp3' : 'flac'}", "subfolder" => "polychrome", "type" => "output" } ] if audio
+
     saves = graph.values.select { |node| node["class_type"] == "SaveImage" }.map { |node| node.dig("inputs", "filename_prefix").to_s }
     saves = [ id ] if saves.empty?
     saves.map { |prefix| { "filename" => "#{File.basename(prefix)}_00001_.png", "subfolder" => "polychrome", "type" => "output" } }

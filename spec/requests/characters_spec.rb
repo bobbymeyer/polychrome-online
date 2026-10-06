@@ -169,10 +169,18 @@ RSpec.describe "Campaigns and characters", type: :request do
       post campaign_table_seat_path(campaign), params: { seat: "gm" }
       campaign.call_controls!("tools") # GM tools is a control on the strip
       get campaign_table_path(campaign)
-      expect(response.body).to include("Grant EXP and ABP", 'id="grant_character_id"')
+      expect(response.body).to include("Grant EXP and ABP", 'id="grant_character_id"', "The party (everyone)")
       post campaign_grants_path(campaign), params: { character_id: bartz.id, grant: { exp: "1000", abp: "20" } }
       follow_redirect!
       expect(response.body).to include("Bartz gains 1000 EXP and 20 ABP.", "Level 11!", "Learned Armor Break.")
+
+      # To the party: everyone gets the same.
+      lenna = create_character(campaign, name: "Lenna")
+      before = lenna.exp
+      post campaign_grants_path(campaign), params: { character_id: "party", grant: { exp: "50", abp: "5" } }
+      follow_redirect!
+      expect(response.body).to include("Bartz gains 50 EXP and 5 ABP.", "Lenna gains 50 EXP and 5 ABP.")
+      expect(lenna.reload.exp).to eq(before + 50)
     end
 
     it "edits and removes a character, returning their gear to the bag" do

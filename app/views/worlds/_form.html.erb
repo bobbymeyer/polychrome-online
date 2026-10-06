@@ -100,24 +100,7 @@
       <div class="field"><%= f.label :lines %><%= f.text_area :lines, rows: 2, placeholder: "harm to children, sexual violence" %></div>
       <div class="field"><%= f.label :veils %><%= f.text_area :veils, rows: 2, placeholder: "torture, the details of a plague" %></div>
     </fieldset>
-    <fieldset class="field music-fields">
-      <legend>Music</legend>
-      <p class="hint">A track for each kind of scene, looped while the party is there. Every page at the table plays its scene's track; the GM can switch it from the table. A scene without a track is quiet. Audio files up to <%= World::MUSIC_MAX_BYTES / 1.megabyte %> MB, and only music you have the rights to.</p>
-      <% World::MUSIC.each do |scene| %>
-        <% track = world.music_track(scene) %>
-        <div class="field">
-          <%= f.label :"music_#{scene}", scene.capitalize %>
-          <% if track&.persisted? %>
-            <p class="music-fields__current">
-              <audio controls preload="none" src="<%= rails_blob_path(track) %>"></audio>
-              <span class="muted"><%= track.filename %></span>
-              <label class="inline"><%= check_box_tag "world[remove_music][]", scene, false, id: "remove_music_#{scene}" %> Remove</label>
-            </p>
-          <% end %>
-          <%= f.file_field :"music_#{scene}", accept: "audio/*" %>
-        </div>
-      <% end %>
-    </fieldset>
+    <p class="hint">Music is a book of its own: <%= link_to "Music", world_tracks_path(world) %>, a track for each kind of scene and more for the GM to call by name.</p>
   <% end %>
   <% unless world.persisted? %>
     <% sources = World.order(:name) %>

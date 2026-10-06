@@ -345,9 +345,10 @@ export default class extends Controller {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches
   }
 
+  // To the newest line: on top (campaigns/tables/_chat_log), unless the list grows downward.
   scrollLog() {
     if (!this.hasLogTarget) return
     const scroller = this.logTarget.parentElement
-    scroller.scrollTop = scroller.scrollHeight
+    scroller.scrollTop = this.logTarget.dataset.newest === "first" ? 0 : scroller.scrollHeight
   }
 }

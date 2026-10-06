@@ -15,7 +15,7 @@
     card) and the party, what it knows. Middle, the Stage, and under it the Controls: the Now line, then what
     this seat can do (a player's moves; the GM's tools in their place). Right, the log. On a phone, one column:
     you, the stage, the controls, the party. %>
-<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment whisper-toast<%= " heartbeat" if @seat.character? %><%= " table-views" unless view %>" <%= tag.attributes(data: { heartbeat_url_value: (campaign_presence_path(@campaign) if @seat.character?), whisper_toast_seat_value: @seat.character&.name, table_views_key_value: (@campaign.id unless view) }) %> <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive chat-line:arrived->whisper-toast#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment whisper-toast<%= " heartbeat" if @seat.character? %>" <%= tag.attributes(data: { heartbeat_url_value: (campaign_presence_path(@campaign) if @seat.character?), whisper_toast_seat_value: @seat.character&.name }) %> <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive chat-line:arrived->whisper-toast#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>" data-recap-asked-value="<%= params[:recap].present? %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%= render "campaigns/tables/cards" %>
@@ -31,15 +31,17 @@
     <%= link_to "Leave the stage", campaign_table_path(@campaign, view: "off"), class: "stage-leave" %>
   <% else %>
   <% unless view %>
-    <%# On a phone the three columns are three views (table_views_controller): a thin strip under the top bar picks
-        one. Wider, the strip is hidden and all three show (stage.css). %>
-    <nav class="table-views" aria-label="Table views">
-      <% { "party" => (@seat.character? ? "You & party" : "Party"), "stage" => "Stage", "log" => "Log" }.each do |key, label| %>
-        <%= tag.button type: "button", class: "table-views__tab", aria: { current: "false" }, data: { table_views_target: "tab", key: key, action: "table-views#pick" } do %>
-          <%= label %><% if key == "log" %> <span class="table-views__badge" data-table-views-target="badge" hidden></span><% end %>
+    <%# Up to a tablet's width the three columns are three views (table_views_controller): a strip in the top bar
+        picks one. Wider, the strip is hidden and all three show (stage.css). %>
+    <% content_for :table_views do %>
+      <nav class="table-views" aria-label="Table views" data-controller="table-views" data-table-views-key-value="<%= @campaign.id %>">
+        <% { "party" => (@seat.character? ? "You & party" : "Party"), "stage" => "Stage", "log" => "Log" }.each do |key, label| %>
+          <%= tag.button type: "button", class: "table-views__tab", aria: { current: "false" }, data: { table_views_target: "tab", key: key, action: "table-views#pick" } do %>
+            <%= label %><% if key == "log" %> <span class="table-views__badge" data-table-views-target="badge" hidden></span><% end %>
+          <% end %>
         <% end %>
-      <% end %>
-    </nav>
+      </nav>
+    <% end %>
   <% end %>
   <% if view == "controller" %>
     <%# This device was made a controller (a phone's view) and stays one until told otherwise: say so, up top. %>

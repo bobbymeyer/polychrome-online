@@ -69,11 +69,12 @@ class Campaign < ApplicationRecord
     result
   end
 
-  # The GM's choice of music: a scene's track or silence. Nil follows the
-  # scene, so a town sounds like a town and a dungeon like a dungeon.
+  # The GM's choice of music: a kind of scene's track, one of the world's
+  # tracks by name ("track:12"), or silence. Nil follows the
+  # scene (each page plays its own).
   MUSIC_CHOICES = (World::MUSIC + %w[silence]).freeze
   normalizes :music, with: ->(value) { value.presence }
-  validates :music, inclusion: { in: MUSIC_CHOICES }, allow_nil: true
+  validate :music_is_heard, if: :music
 
   validates :name, presence: true
   validates :gil, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
@@ -148,4 +149,11 @@ class Campaign < ApplicationRecord
 
   # An amount in the world's money: "150 gil", "150 crowns".
   delegate :money, to: :world
+
+  def music_is_heard
+    return if MUSIC_CHOICES.include?(music)
+    return if music.start_with?("track:") && world.tracks.any? { |track| track.id == music.delete_prefix("track:").to_i }
+
+    errors.add(:music, "isn't one of the world's tracks")
+  end
 end

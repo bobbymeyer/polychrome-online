@@ -1,12 +1,17 @@
-<%# The table's log: every line said and everything that happened, as the seat may see it.
+<%# The table's log: every line said and everything that happened, as the seat may see it, the newest
+    first (a new line is put on top, Message#broadcast), with a live search over it (filter_controller).
     data-retract says whose lines this seat may take back: the GM any line said, a player their
     own (the lines themselves are the same for everyone; chat_line_controller shows the button). %>
 <% seat = local_assigns[:seat] %>
 <% retract = seat&.retracts %>
-<section class="chat-log log-drawer__section" aria-label="Table" <%= tag.attributes(data: { retract: retract }) %>>
-  <h3>Table</h3>
-  <ol id="chat_log" data-dialogue-target="log" data-log-drawer-target="list">
-    <% messages.each do |message| %>
+<section class="chat-log log-drawer__section" aria-label="Table" data-controller="filter" <%= tag.attributes(data: { retract: retract }) %>>
+  <div class="chat-log__head">
+    <h3>Table</h3>
+    <input type="search" class="filter__input chat-log__search" placeholder="Search the log…" aria-label="Search the log" autocomplete="off"
+           data-filter-target="input" data-action="input->filter#apply">
+  </div>
+  <ol id="chat_log" data-dialogue-target="log" data-log-drawer-target="list" data-newest="first">
+    <% messages.reverse_each do |message| %>
       <%= render "messages/message", message: message %>
     <% end %>
   </ol>
