@@ -224,6 +224,8 @@ RSpec.describe "The live table", type: :system do
       refresh.()
       expect(find("#table")["data-table-view"]).to eq("stage")
       expect(page).to have_css(".topbar.is-open .topbar__menu", visible: true)
+    ensure
+      page.driver.browser.manage.window.resize_to(1280, 900) # the browser is kept for the next example: as it came
     end
   end
 
