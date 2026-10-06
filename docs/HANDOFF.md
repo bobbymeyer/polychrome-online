@@ -166,6 +166,8 @@ The GM keeps families through rerolls and edits a place's past on the atlas; an 
 
 **Chat.** Portrait + dialogue box. `messages` broadcast via Turbo Streams. GM has a "speak as" picker for any NPC (possession). Expression tag selects portrait variant. Whispers are scoped broadcasts. Open design question: sequential dialogue box vs simultaneous chat — leaning toward GM/NPC lines in the box and player lines in a side log.
 
+**Controllers.** Everything of one campaign lives under `app/controllers/campaigns/` and inherits `Campaigns::BaseController`, which loads the campaign; a controller adds which GM it needs (`require_table_gm` for the table's controls, `require_campaign_gm` for Prep). A world's books include `WorldScoped`. Scenes, beats and characters load through `CampaignScoped`. A refusal (`Refusal`) is answered once, in `ApplicationController`, back at the table.
+
 **Books.** Each book is a Rails resource namespace. Each entry has two faces: a form and a rendered "page" (stat block, prose, cross-references, image). Cross-references between entries are the index.
 
 ## 8. Asset pipeline

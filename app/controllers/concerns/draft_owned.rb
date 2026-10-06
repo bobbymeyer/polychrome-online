@@ -6,8 +6,6 @@ module DraftOwned
   extend ActiveSupport::Concern
 
   included do
-    include TableSeat
-
     before_action :set_owner
   end
 

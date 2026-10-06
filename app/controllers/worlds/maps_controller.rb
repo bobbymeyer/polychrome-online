@@ -4,7 +4,7 @@
 # edits the one open (?map=); making, changing (a form, or x, y alone from
 # dragging on the parent map) and removing them is the world's editors'.
 class Worlds::MapsController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_world_editor
   before_action :set_map, only: %i[edit update destroy]
 
@@ -43,10 +43,6 @@ class Worlds::MapsController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
 
   def set_map
     @map = @world.world_maps.find(params[:id])

@@ -1,10 +1,7 @@
 # frozen_string_literal: true
 
 # GM tool: put items in the party's chest or a character's bag, or correct a quantity.
-class Campaigns::InventoriesController < ApplicationController
-  include CampaignScoped
-
-  before_action :set_campaign
+class Campaigns::InventoriesController < Campaigns::BaseController
   before_action :require_campaign_gm
 
   def create

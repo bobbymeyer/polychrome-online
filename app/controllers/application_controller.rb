@@ -11,11 +11,12 @@ class ApplicationController < ActionController::Base
 
   helper_method :entry_page
 
-  # The game said no: tell whoever asked, back where they were. Controllers
-  # that know a better place to say it rescue it themselves.
+  # The game said no: tell whoever asked, back where they were (else at the
+  # table, when there is one). Controllers that know a better place to say
+  # it (a prep anchor, the map's panel) rescue it themselves.
   rescue_from Refusal do |refusal|
     respond_to do |format|
-      format.html { redirect_back_or_to root_path, alert: refusal.message, status: :see_other }
+      format.html { redirect_back_or_to(@campaign ? campaign_table_path(@campaign) : root_path, alert: refusal.message, status: :see_other) }
       format.any { head :unprocessable_content }
     end
   end

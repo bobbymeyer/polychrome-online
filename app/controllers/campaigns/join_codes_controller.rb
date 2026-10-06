@@ -1,10 +1,7 @@
 # frozen_string_literal: true
 
 # A new invite code: the old link and QR code stop working.
-class Campaigns::JoinCodesController < ApplicationController
-  include CampaignScoped
-
-  before_action :set_campaign
+class Campaigns::JoinCodesController < Campaigns::BaseController
   before_action :require_campaign_gm
 
   def create

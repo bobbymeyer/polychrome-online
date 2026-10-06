@@ -3,11 +3,7 @@
 # The GM's record of what the party did (Campaign::Deeds): written at the
 # table, or struck when it was a mistake. A deed is its story (Rumour#deed),
 # so striking it takes back what the towns it reached thought of the party.
-class Campaigns::DeedsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::DeedsController < Campaigns::BaseController
   before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
 
   def create

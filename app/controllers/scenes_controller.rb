@@ -47,12 +47,6 @@ class ScenesController < ApplicationController
 
   private
 
-  def set_scene
-    @scene = Scene.find(params[:id])
-    @campaign = @scene.campaign
-    @world = @campaign.world
-  end
-
   def scene_params
     raw = params.expect(scene: [ :name, :script, :ending, :map_node_id, :mode_choice, { encounter: [ %i[monster count] ] } ])
     encounter = JsonCasting.rows(raw.delete(:encounter)).each_with_object({}) do |row, counts|

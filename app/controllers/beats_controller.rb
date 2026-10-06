@@ -3,6 +3,8 @@
 # The steps of a scene (Beat), written one by one in prep: the sequencer on
 # the scene's page. Each step is its own small form, saved as it changes.
 class BeatsController < ApplicationController
+  include CampaignScoped
+
   # What a new step of each kind starts as.
   STARTS = {
     "say" => { "text" => "…" }, "choice" => { "options" => [ "Yes", "No" ] }, "backdrop" => { "backdrop" => "black" },
@@ -46,19 +48,6 @@ class BeatsController < ApplicationController
   end
 
   private
-
-  def set_scene
-    @scene = Scene.find(params[:scene_id])
-    @campaign = @scene.campaign
-    @world = @campaign.world
-  end
-
-  def set_beat
-    @beat = Beat.find(params[:id])
-    @scene = @beat.scene
-    @campaign = @scene.campaign
-    @world = @campaign.world
-  end
 
   # Each kind takes its own fields. A line's speaker comes as "Npc:3",
   # "Character:7" or "" (the narrator), and a line written as "? A | B ->

@@ -75,7 +75,7 @@ module TableSeat
   # between sessions as much as at the table (Authorization#require_campaign_gm).
   #   before_action :require_table_gm
   def require_table_gm
-    head :forbidden unless table_gm?
+    forbid("Sit as the GM to do that.") unless table_gm?
   end
 
   def take_table_seat(campaign, seat)

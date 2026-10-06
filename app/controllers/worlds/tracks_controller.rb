@@ -5,7 +5,7 @@
 # can read it; its editors change it. A track is uploaded, linked (YouTube,
 # Spotify) or made in ComfyUI with ACE-Step (Worlds::Tracks::GenerationsController).
 class Worlds::TracksController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_world_editor, except: :index
   before_action :set_track, only: %i[edit update destroy]
 
@@ -43,10 +43,6 @@ class Worlds::TracksController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
 
   def set_track
     @track = @world.tracks.find(params[:id])

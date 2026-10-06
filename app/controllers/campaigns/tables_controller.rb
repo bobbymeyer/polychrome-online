@@ -2,13 +2,8 @@
 
 # The campaign's table: one long-lived page (§9.9) with the dialogue box, the
 # log and a composer for whoever is sitting here.
-class Campaigns::TablesController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
+class Campaigns::TablesController < Campaigns::BaseController
   LOG_LENGTH = 80
-
-  before_action :set_campaign
 
   def show
     remember_coop_view(@campaign)

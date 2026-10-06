@@ -1,11 +1,10 @@
 # frozen_string_literal: true
 
 # A map put beside another, by direction (MapLink): "to is <direction> of from".
-class Campaigns::Maps::MapLinksController < ApplicationController
-  include CampaignScoped
+class Campaigns::Maps::MapLinksController < Campaigns::BaseController
   include MapGm
 
-  before_action :set_campaign, :require_table_gm
+  before_action :require_table_gm
 
   def create
     from = @campaign.maps.find(params[:map_id])

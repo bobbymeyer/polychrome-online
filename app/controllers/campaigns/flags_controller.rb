@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
 # The GM's campaign flags (§4).
-class Campaigns::FlagsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::FlagsController < Campaigns::BaseController
   before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
   before_action :set_flag, only: %i[update destroy]
 
@@ -28,7 +24,6 @@ class Campaigns::FlagsController < ApplicationController
   end
 
   private
-
 
   def set_flag
     @flag = @campaign.flags.find(params[:id])

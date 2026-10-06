@@ -2,6 +2,8 @@
 
 # A beat doubled, right after itself: the same stage, the next line.
 class Beats::CopiesController < ApplicationController
+  include CampaignScoped
+
   before_action :set_beat
   before_action :require_campaign_gm
 
@@ -12,14 +14,5 @@ class Beats::CopiesController < ApplicationController
                                                   "figures", "cue", "music", "options", "flag_key", "action", "fx", "transition").merge("position" => @beat.position + 1))
     end
     redirect_to edit_scene_path(@scene, beat: copy.id, anchor: "beat_#{copy.id}"), status: :see_other
-  end
-
-  private
-
-  def set_beat
-    @beat = Beat.find(params[:beat_id])
-    @scene = @beat.scene
-    @campaign = @scene.campaign
-    @world = @campaign.world
   end
 end

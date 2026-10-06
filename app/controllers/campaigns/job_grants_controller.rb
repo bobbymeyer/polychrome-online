@@ -2,11 +2,7 @@
 
 # The GM grants an archetype at the table, to the party or to someone, who
 # awakens to it (Campaign#grant_job!): a story reward.
-class Campaigns::JobGrantsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::JobGrantsController < Campaigns::BaseController
   before_action :require_table_gm
 
   def create

@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
 # Nudging a counter flag up or down at the table (Flag#bump!).
-class Campaigns::Flags::BumpsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::Flags::BumpsController < Campaigns::BaseController
   before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
 
   def create

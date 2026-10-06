@@ -2,11 +2,7 @@
 
 # GM tool at the table: EXP and ABP to someone outside battle (a quest
 # reward, a montage), or to the whole party at once, from GM tools' More.
-class Campaigns::GrantsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::GrantsController < Campaigns::BaseController
   before_action :require_table_gm
 
   def create

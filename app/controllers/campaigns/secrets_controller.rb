@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
 # The GM's secrets and clues (Secret): written in prep, revealed at the table.
-class Campaigns::SecretsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::SecretsController < Campaigns::BaseController
   before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
   before_action :set_secret, only: %i[update destroy]
 
@@ -25,7 +21,6 @@ class Campaigns::SecretsController < ApplicationController
   end
 
   private
-
 
   def set_secret
     @secret = @campaign.secrets.find(params[:id])

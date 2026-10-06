@@ -3,7 +3,7 @@
 # A world's skills (World#skills): what its checks are made with, each on a
 # stat. A removed skill comes off the jobs that were good at it.
 class Worlds::SkillsController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_world_editor, only: %i[edit update]
 
   def show; end
@@ -26,10 +26,6 @@ class Worlds::SkillsController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
 
   # Kept and added skills, in the form's order. A new skill's id comes
   # from its name.

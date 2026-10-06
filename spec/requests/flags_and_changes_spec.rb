@@ -109,9 +109,9 @@ RSpec.describe "Flags and GM changes", type: :request do
     it "is the GM's" do
       sit(bartz.id)
       get campaign_changes_path(campaign)
-      expect(response).to have_http_status(:forbidden)
+      expect(response).to have_http_status(:see_other) # the GM seat's: turned back with a word
       post location_reversions_path(cave), params: { kind: "name" }
-      expect(response).to have_http_status(:forbidden)
+      expect(response).to have_http_status(:see_other)
     end
   end
 end

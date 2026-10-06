@@ -47,9 +47,9 @@ RSpec.describe "Locations", type: :request do
     town = generate("village")
     sit(bartz.id)
     post location_reroll_path(town)
-    expect(response).to have_http_status(:forbidden)
+    expect(response).to have_http_status(:see_other) # the GM seat's: turned back with a word
     post location_pins_path(town), params: { key: "npc-0" }
-    expect(response).to have_http_status(:forbidden)
+    expect(response).to have_http_status(:see_other)
   end
 
   describe "as GM" do

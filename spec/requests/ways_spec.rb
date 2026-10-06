@@ -128,7 +128,7 @@ RSpec.describe "Where next", type: :request do
     expect(response).to have_http_status(:forbidden) # not while the table is talking
     expect(campaign.open_choice).to be_nil
     patch campaign_controls_path(campaign), params: { kind: "travel" }
-    expect(response).to have_http_status(:forbidden) # the GM calls it
+    expect(response).to have_http_status(:see_other) # the GM calls it: turned back with a word
     expect(campaign.reload.controls).to eq("talk")
     sign_out
 

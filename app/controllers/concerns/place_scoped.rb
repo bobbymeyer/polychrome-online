@@ -7,8 +7,6 @@ module PlaceScoped
   extend ActiveSupport::Concern
 
   included do
-    include TableSeat
-
     before_action :set_node
     before_action :require_table_gm
 
@@ -24,7 +22,6 @@ module PlaceScoped
     @campaign = @node.campaign
     @world = @campaign.world
   end
-
 
   def back(notice = nil, alert: nil)
     place = @node.location ? location_path(@node.location) : campaign_maps_path(@campaign, map: @node.map_id)

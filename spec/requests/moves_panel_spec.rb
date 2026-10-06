@@ -78,8 +78,8 @@ RSpec.describe "The GM's moves panel (Campaign::Moves)", type: :request do
   it "is the GM's alone" do
     sign_in_as(player)
     get campaign_moves_path(campaign)
-    expect(response).to have_http_status(:forbidden)
+    expect(response).to have_http_status(:see_other) # the GM seat's: turned back with a word
     post campaign_moves_path(campaign), params: { move: { text: "Hi." } }
-    expect(response).to have_http_status(:forbidden)
+    expect(response).to have_http_status(:see_other)
   end
 end

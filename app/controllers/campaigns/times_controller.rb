@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
 # The GM passes time at the table (Timekeeping).
-class Campaigns::TimesController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::TimesController < Campaigns::BaseController
   before_action :require_table_gm
 
   def update

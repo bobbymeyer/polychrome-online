@@ -8,12 +8,7 @@
 # GM can also just go: from the table, the stage's map (a place pressed:
 # to, anywhere on the roads), the maps page's panel (return_to: "map") or
 # the campaign's page, whatever the controls say.
-class Campaigns::WaysController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
-
+class Campaigns::WaysController < Campaigns::BaseController
   def create
     seat = table_seat
     return head(:forbidden) unless seat.gm? || (seat.seated? && @campaign.controls != "talk")

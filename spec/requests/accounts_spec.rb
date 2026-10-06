@@ -141,7 +141,8 @@ RSpec.describe "Accounts", type: :request do
       expect(response).to have_http_status(:see_other)
       expect(campaign.flags.find_by(key: "cheat")).to be_nil
       patch campaign_time_path(campaign), params: { parts: 1 }
-      expect(response).to have_http_status(:forbidden)
+      expect(response).to have_http_status(:see_other)
+      expect(flash[:alert]).to eq("Sit as the GM to do that.")
     end
 
     it "can't take the GM seat in a battle, or someone else's unit" do

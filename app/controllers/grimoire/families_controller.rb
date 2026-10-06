@@ -3,7 +3,7 @@
 module Grimoire
   # Writes a tiered family of abilities (AbilityFamily) into the Grimoire.
   class FamiliesController < ApplicationController
-    before_action :set_world
+    include WorldScoped
     before_action :require_world_editor
 
     # Suggested names (Drafts::Family) arrive filled in.
@@ -23,10 +23,6 @@ module Grimoire
     end
 
     private
-
-    def set_world
-      @world = World.find_by!(slug: params[:world_slug])
-    end
 
     def family_params
       fields = params.expect(family: [ :root, :shape, :type, :status, :job_id, { tiers: [ %i[name description power mp level] ] } ])

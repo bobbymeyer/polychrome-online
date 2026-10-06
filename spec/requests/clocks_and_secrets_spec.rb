@@ -160,7 +160,7 @@ RSpec.describe "Clocks and secrets", type: :request do
     get campaign_table_path(campaign)
     expect(response.body).to include(%(<p class="table-time__date">Day 2</p>), %(<p class="table-time__part">dawn</p>))
     patch campaign_time_path(campaign), params: { parts: 1 }
-    expect(response).to have_http_status(:forbidden)
+    expect(response).to have_http_status(:see_other) # the GM seat's
   end
 
   it "keeps clocks and secrets in Prep, and tells the GM at the table when a clock is one tick from full" do

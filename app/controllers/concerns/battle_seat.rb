@@ -10,7 +10,6 @@
 # GM stays GM, and a character's player controls that character's unit.
 module BattleSeat
   extend ActiveSupport::Concern
-  include TableSeat
 
   included do
     helper_method :current_seat, :gm_seat?, :seat_unit, :battle_gm?, :may_sit?

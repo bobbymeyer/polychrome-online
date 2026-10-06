@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
 # Dealing one of the setting's fronts into a campaign (WorldFront#deal!).
-class Campaigns::FrontDealsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::FrontDealsController < Campaigns::BaseController
   before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
 
   def create
