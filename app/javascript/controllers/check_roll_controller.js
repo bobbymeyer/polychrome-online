@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { reducedMotion } from "screen"
 import { animate } from "animejs"
 import { play } from "sound"
 
@@ -58,7 +59,7 @@ function show(queue) {
   const steps = el.querySelector(".check-moment__steps")
   const verdict = el.querySelector(".check-moment__verdict")
   const modifiers = result.modifiers || []
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  const reduced = reducedMotion()
   const signed = (n) => `${n < 0 ? "−" : "+"}${Math.abs(n)}`
   const chip = (m) => {
     const b = document.createElement("b")

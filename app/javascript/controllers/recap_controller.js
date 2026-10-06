@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { get, set } from "storage"
 
 // "Previously on…" (app/views/tables/_recap): opens by itself when this
 // device hasn't been at the table for a while and the recap is of a session
@@ -39,13 +40,12 @@ export default class extends Controller {
   }
 
   get lastSeen() {
-    try {
-      const value = window.localStorage.getItem(this.key)
-      return value === null ? null : Number(value)
-    } catch { return Date.now() } // no storage: never open by itself
+    const value = get(this.key)
+    if (value === undefined) return Date.now() // no storage: never open by itself
+    return value === null ? null : Number(value)
   }
 
   here() {
-    try { window.localStorage.setItem(this.key, String(Date.now())) } catch { /* no storage: the link still works */ }
+    set(this.key, String(Date.now())) // no storage: the link still works
   }
 }

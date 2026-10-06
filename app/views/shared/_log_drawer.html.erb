@@ -4,7 +4,7 @@
 <%# wide: a player's screen, where the log is a column from 1100px (pinned there unless unpinned). %>
 <div class="log-drawer" data-controller="log-drawer" <%= tag.attributes(data: { log_drawer_self_value: local_assigns[:self_name], log_drawer_dockable_value: (local_assigns[:dockable] || local_assigns[:wide]) || nil,
                                                                               log_drawer_pin_from_value: (1100 if local_assigns[:wide]) }) %>
-     data-action="keydown@window->log-drawer#key:capture">
+     data-action="keydown@window->log-drawer#key:capture table-views:changed@window->log-drawer#view">
   <button type="button" class="log-drawer__tab" data-log-drawer-target="tab" data-action="log-drawer#toggle"
           aria-expanded="false" aria-controls="log_drawer" title="The log (L)">
     Log <span class="log-drawer__count" data-log-drawer-target="count" hidden></span>

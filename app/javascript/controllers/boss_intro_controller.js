@@ -1,6 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 import { animate } from "animejs"
 import { play, holdMusic, releaseMusic } from "sound"
+import { seen, markSeen } from "storage"
+import { reducedMotion } from "screen"
 
 // A boss's entrance (docs/DESIGN.md, "The stage"): the room goes quiet, its
 // name is slammed across the stage, and it has the first word. Plays once per
@@ -32,7 +34,7 @@ export default class extends Controller {
     const card = this.cardTarget
     this.element.hidden = false
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (reducedMotion()) {
       this.timer = setTimeout(() => this.leave(), HOLD_MS)
       return
     }
@@ -60,13 +62,10 @@ export default class extends Controller {
   }
 
   get seen() {
-    try { return JSON.parse(window.sessionStorage.getItem(SEEN_KEY) || "[]").includes(this.keyValue) } catch { return false }
+    return seen(SEEN_KEY, this.keyValue, { session: true })
   }
 
   set seen(_) {
-    try {
-      const seen = JSON.parse(window.sessionStorage.getItem(SEEN_KEY) || "[]")
-      window.sessionStorage.setItem(SEEN_KEY, JSON.stringify([ ...seen, this.keyValue ].slice(-20)))
-    } catch { /* private mode: it plays again, no harm */ }
+    markSeen(SEEN_KEY, this.keyValue, { cap: 20, session: true }) // private mode: it plays again, no harm
   }
 }

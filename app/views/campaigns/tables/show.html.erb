@@ -15,7 +15,7 @@
     card) and the party, what it knows. Middle, the Stage, and under it the Controls: the Now line, then what
     this seat can do (a player's moves; the GM's tools in their place). Right, the log. On a phone, one column:
     you, the stage, the controls, the party. %>
-<div class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment whisper-toast<%= " heartbeat" if @seat.character? %>" <%= tag.attributes(data: { heartbeat_url_value: (campaign_presence_path(@campaign) if @seat.character?), whisper_toast_seat_value: @seat.character&.name }) %> <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive chat-line:arrived->whisper-toast#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+<div id="table" class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment whisper-toast<%= " heartbeat" if @seat.character? %>" <%= tag.attributes(data: { heartbeat_url_value: (campaign_presence_path(@campaign) if @seat.character?), whisper_toast_seat_value: @seat.character&.name }) %> <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive chat-line:arrived->whisper-toast#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>" data-recap-asked-value="<%= params[:recap].present? %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%= render "campaigns/tables/cards" %>
@@ -34,7 +34,8 @@
     <%# Up to a tablet's width the three columns are three views (table_views_controller): a strip in the top bar
         picks one. Wider, the strip is hidden and all three show (stage.css). %>
     <% content_for :table_views do %>
-      <nav class="table-views" aria-label="Table views" data-controller="table-views" data-table-views-key-value="<%= @campaign.id %>">
+      <nav class="table-views" aria-label="Table views" data-controller="table-views" data-table-views-key-value="<%= @campaign.id %>"
+           data-action="log-drawer:unread@window->table-views#unread table-views:show@window->table-views#go">
         <%# Icons (RPG Awesome): a player for the party, the spawn point for the stage, speech bubbles for the log; the name is the title. %>
         <% { "party" => [ (@seat.character? ? "You & party" : "Party"), "ra-player" ], "stage" => [ "Stage", "ra-spawn-node" ], "log" => [ "Log", "ra-speech-bubbles" ] }.each do |key, (label, icon)| %>
           <%= tag.button type: "button", class: "table-views__tab", title: label, aria: { current: "false", label: label },
@@ -57,7 +58,7 @@
       <% if view == "screen" %>
         <%= render "campaigns/tables/party", campaign: @campaign %>
       <% else %>
-        <div class="drawers" data-controller="drawers" data-drawers-wide-value="party">
+        <div class="drawers" data-controller="drawers" data-drawers-wide-value="party" data-action="table-views:changed@window->drawers#view">
           <div class="drawers__tabs" role="group" aria-label="Look up">
             <% { "party" => "Party", "knows" => (@seat.gm? ? "What they know" : "What we know") }.each do |key, label| %>
               <%= tag.button label, type: "button", class: "drawers__tab drawers__tab--#{key}", aria: { expanded: false, controls: "drawer_#{key}" },

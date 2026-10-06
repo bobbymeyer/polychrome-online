@@ -1,4 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
+import { getJSON, setJSON } from "storage"
+import { reducedMotion } from "screen"
 
 // Collapsible panels that stay as you left them (a town's services): which
 // are open is remembered for this page in this tab, so paying at the inn
@@ -33,7 +35,7 @@ export default class extends Controller {
     const panel = id && document.getElementById(id)?.closest("details")
     if (!panel || !this.element.contains(panel)) return
     panel.open = true
-    panel.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })
+    panel.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" })
   }
 
   get key() {
@@ -45,8 +47,7 @@ export default class extends Controller {
   }
 
   restore() {
-    let open = []
-    try { open = JSON.parse(window.sessionStorage.getItem(this.key) || "[]") } catch { /* no storage */ }
+    const open = getJSON(this.key, [], { session: true })
     const hash = decodeURIComponent(window.location.hash.slice(1))
     const target = hash && document.getElementById(hash)
     if (target && this.element.contains(target)) open.push(target.closest("details")?.id)
@@ -55,7 +56,7 @@ export default class extends Controller {
 
   save() {
     const open = this.panels().filter((panel) => panel.open).map((panel) => panel.id)
-    try { window.sessionStorage.setItem(this.key, JSON.stringify(open)) } catch { /* no storage */ }
+    setJSON(this.key, open, { session: true })
     // Closing the panel the address points at forgets the address, or the next refresh would open it again.
     const hash = decodeURIComponent(window.location.hash.slice(1))
     const pointed = hash && document.getElementById(hash)?.closest("details")

@@ -1,8 +1,13 @@
 import { Controller } from "@hotwired/stimulus"
+import { narrow } from "screen"
 
 // What a player looks up at the table (the map, the party, what they know):
 // a row of tabs over closed panels, one open at a time, and pressing the open
 // one closes it again. What they can do now stays in front.
+//
+// On a phone or a tablet the party view (table_views_controller) starts on
+// the party, not on two closed tabs: it hears which view is up and opens the
+// party panel for "party" unless one is open already.
 export default class extends Controller {
   static targets = ["tab", "panel"]
   // On a wide screen, the one that starts open (a player's map, as the scene's art).
@@ -10,9 +15,17 @@ export default class extends Controller {
 
   connect() {
     // A link into a panel (#secrets, from the table) opens it; else, on a wide screen, the one that starts open.
-    if (!this.follow() && this.wideValue && window.matchMedia("(min-width: 1100px)").matches) this.show(this.wideValue)
+    if (!this.follow() && this.wideValue && !narrow()) this.show(this.wideValue)
     this.onHash = () => this.follow()
     window.addEventListener("hashchange", this.onHash)
+    // The table may have picked its view before this connected: the attribute says which.
+    this.view({ detail: { key: this.element.closest("[data-table-view]")?.dataset.tableView } })
+  }
+
+  // A view of the table was picked (table-views:changed).
+  view(event) {
+    if (event.detail.key !== "party" || !narrow()) return
+    if (!this.tabTargets.some((tab) => tab.getAttribute("aria-expanded") === "true")) this.show("party")
   }
 
   disconnect() {

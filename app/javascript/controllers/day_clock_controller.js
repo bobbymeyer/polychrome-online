@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { reducedMotion } from "screen"
 
 // The day clock (campaigns/tables/_day_clock): when the part of the day
 // moves on, the dial turns forward from where this page last saw it, round
@@ -15,7 +16,7 @@ export default class extends Controller {
     const to = this.turnValue
     const from = seen.get(this.campaignValue)
     seen.set(this.campaignValue, to)
-    if (from === undefined || from === to || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    if (from === undefined || from === to || reducedMotion()) return
 
     // A long wait turns once round and on to where it is, not round and round.
     const start = from - to > FULL ? to + FULL : from

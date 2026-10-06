@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { get, set } from "storage"
 
 // The rest of the GM's tools at the table (campaigns/tables/gm/_tools), called
 // from the strip like the other controls: one tab at a time, and the one you
@@ -56,10 +57,10 @@ export default class extends Controller {
   }
 
   stored() {
-    try { return localStorage.getItem(this.storageKey) } catch { return null }
+    return get(this.storageKey) ?? null
   }
 
   store(key) {
-    try { localStorage.setItem(this.storageKey, key) } catch { /* private window: the first tab it is */ }
+    set(this.storageKey, key) // private window: the first tab it is
   }
 }
