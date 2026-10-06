@@ -55,12 +55,7 @@ module Campaign::Travelling
       @arriving = destination # what it's like there is said once, on arrival
       pass_time!(edge.duration, announce: :new_day)
       @arriving = nil
-      how_it_is_here!(destination)
-      destination.location&.remember!
-      happen!("arrive", at: destination)
-      hear_rumours!(destination)
-      welcome_back!(destination)
-      drop_stale_where_next!
+      arrive_at!(destination)
     end
     rolled
   end
@@ -155,12 +150,7 @@ module Campaign::Travelling
       current_node&.location&.leave! if moved
       update!(current_node: node)
       narrate("The party is at #{node.name}.", data: MOVED)
-      how_it_is_here!(node) if moved
-      node.location&.remember!
-      happen!("arrive", at: node) if moved
-      hear_rumours!(node)
-      welcome_back!(node)
-      drop_stale_where_next!
+      arrive_at!(node, moved: moved)
     end
   end
 
@@ -180,7 +170,7 @@ module Campaign::Travelling
   # battle's pull waits for them (stage.js).
   def start_pending_encounter!(input_seconds: nil, prelude: [])
     encounter = pending_encounter or raise Refusal, "No encounter is waiting"
-    party = characters.order(:created_at).to_a
+    party = characters.reload.to_a # as they are now, not as this instance last saw them
     raise Refusal, "Nobody is standing to fight" if party.none?(&:conscious?)
 
     # Read as a scene's lines are: "Kurosaki (sad): …" is Kurosaki's, sadly.
@@ -230,6 +220,20 @@ module Campaign::Travelling
   end
 
   private
+
+  # The party is at a place (the campaign saved there): what it's like
+  # there, what happens on arriving (Campaign::Happenings), what people are
+  # saying and how the place takes to them (Campaign::Deeds), and the vote
+  # on where next is over. moved: whether they weren't there already (put
+  # where they stand, only the place's news is heard again).
+  def arrive_at!(node, moved: true)
+    how_it_is_here!(node) if moved
+    node.location&.remember!
+    happen!("arrive", at: node) if moved
+    hear_rumours!(node) # a step (a door, a platform) passes no time, so nothing heard it on the way (Happenings "hours")
+    welcome_back!(node)
+    drop_stale_where_next!
+  end
 
   # A waiting fight, as it's kept (#waylay!).
   def fight(name, monsters, boss: false, **details)

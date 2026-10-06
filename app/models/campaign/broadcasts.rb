@@ -20,14 +20,29 @@ module Campaign::Broadcasts
   # renders its panels again.
   TABLE_FACTS = %w[current_node_id pending_encounter day time_of_day gil lines veils staged_scene_id stage_view shown_map_id controls].freeze
 
+  # What no page shows: where the dice got to (Campaign#roll), and the count
+  # of visits (Campaign::Moment). A save that moves only these refreshes nothing.
+  UNSHOWN = %w[rng visits updated_at].freeze
+
   included do
     include TableFacts
 
     after_update_commit :broadcast_music, if: :saved_change_to_music?
-    after_update_commit :refresh_pages
+    # Counting every save in the transaction, as TableFacts does: a roll
+    # after the change that matters still saves only the dice last.
+    after_save { @pages_changed = true if (saved_changes.keys - UNSHOWN).any? }
+    after_rollback { @pages_changed = false }
+    after_update_commit :refresh_pages, if: :pages_changed?
     # Counting every save in the transaction (TableFacts): passing time saves
     # the campaign again, after the time, as the world moves on.
     table_facts(TABLE_FACTS) { |changed| table_changed if changed && !previously_new_record? } # a new campaign has no table yet
+  end
+
+  # Whether anything a page shows changed since the transaction began; asked once, at the commit.
+  def pages_changed?
+    changed = @pages_changed == true
+    @pages_changed = false
+    changed
   end
 
   # The table's live panels, each rendered once for the GM and once for the

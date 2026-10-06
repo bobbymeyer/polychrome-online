@@ -40,10 +40,7 @@ class Message < ApplicationRecord
   before_create :mark_story_time
   after_create_commit :broadcast
   include Choice # after the line itself goes out, the choice panel
-  # An NPC speaking at the table reminds whoever is tied to them (Campaign::Belonging).
-  after_create_commit -> { campaign.remind_ties!(speaker) }, if: -> { speaker.is_a?(Npc) && scope == "table" && kind == "say" }
-  # And, if they're behind a secret, its next clue is offered to the GM (Campaign::Remarks).
-  after_create_commit -> { campaign.offer_clue_from!(speaker) }, if: -> { speaker.is_a?(Npc) && scope == "table" && kind == "say" }
+  after_create_commit :npc_spoke, if: -> { speaker.is_a?(Npc) && scope == "table" && kind == "say" }
   after_destroy_commit { streams.each { |stream| broadcast_remove_to(*stream) } }
 
   def whisper?
@@ -117,6 +114,14 @@ class Message < ApplicationRecord
     streams.each do |stream|
       broadcast_prepend_to(*stream, target: "chat_log", partial: "messages/message", locals: { message: self, live: true }) # newest first
     end
+  end
+
+  # An NPC spoke at the table: whoever is tied to them is reminded
+  # (Campaign::Belonging), and, if they're behind a secret, its next clue is
+  # offered to the GM (Campaign::Remarks).
+  def npc_spoke
+    campaign.remind_ties!(speaker)
+    campaign.offer_clue_from!(speaker)
   end
 
   def everyone_is_at_this_table

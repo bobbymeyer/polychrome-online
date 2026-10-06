@@ -15,12 +15,8 @@ module Campaign::Limits
   SAID = { "line" => "never", "veil" => "off-screen" }.freeze
 
   # Every line, the world's then the table's, one each.
-  def every_line = limits(world.lines, lines)
-  def every_veil = limits(world.veils, veils)
-
-  # Only the table's own.
-  def table_lines = limits(lines)
-  def table_veils = limits(veils)
+  def every_line = (world.line_list(:lines) + line_list(:lines)).uniq
+  def every_veil = (world.line_list(:veils) + line_list(:veils)).uniq
 
   # Adds a line ("line") or a veil ("veil") to this table's and tells the
   # table, with no name on it. Adding one already there changes nothing.
@@ -29,16 +25,19 @@ module Campaign::Limits
     text = text.to_s.squish
     raise Refusal, "Say what it is." if text.empty?
     raise Refusal, "Keep it short: #{MAX_LENGTH} characters at most." if text.length > MAX_LENGTH
-    return false if limits(self[column]).any? { |had| had.casecmp?(text) }
+    return false if line_list(column).any? { |had| had.casecmp?(text) }
 
     update!(column => [ self[column].presence, text ].compact.join("\n"))
+    @story_avoid = nil
     narrate("New for this table, #{SAID.fetch(kind.to_s)}: #{text}.")
     true
   end
 
   private
 
-  def limits(*texts)
-    texts.flat_map { |text| text.to_s.lines.map(&:strip) }.compact_blank.uniq
+  # What the story matcher keeps out of every line it offers: every line
+  # and veil, read once a request (Campaign#reload forgets it).
+  def story_avoid
+    @story_avoid ||= every_line + every_veil
   end
 end

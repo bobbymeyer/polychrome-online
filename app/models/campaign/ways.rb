@@ -126,7 +126,7 @@ module Campaign::Ways
 
   # The names of the clocks an event would tick now, for the ways' notes.
   def ticking_on(event)
-    clocks.where(stopped_at: nil).reject(&:full?).select { |clock| clock.ticks_on?(event) }.map(&:name)
+    clocks.running.select { |clock| clock.ticks_on?(event) }.map(&:name)
   end
 
   # Parts of a day as the table hears them: "a part of a day", "2 days", "a day and 2 parts".
@@ -208,8 +208,7 @@ module Campaign::Ways
     stale = open_choice
     return unless stale&.where_next?
 
-    stale.destroy!
-    stale.broadcast_choice
+    stale.destroy! # the table's choice panel follows (Message::Choice)
   end
 
   # A rolled encounter is the table's now: the GM fights it or waves it off before the party goes on.

@@ -37,12 +37,13 @@ module Campaign::Remarks
   }.freeze
 
   # Offers the best-fitting arrival line for a place, if any row fits.
-  # Returns the note, or nil.
-  def offer_arrival_line!(node)
+  # facts: the moment there (Campaign::Moment), when the caller has read it
+  # already. Returns the note, or nil.
+  def offer_arrival_line!(node, facts: moment(at: node))
     rows = story_rows("arrivals")
     return nil if rows.empty?
 
-    _, line = Story::Matcher.best(rows, moment(at: node), story_dice(node), avoid: every_line + every_veil)
+    _, line = Story::Matcher.best(rows, facts, story_dice(node), avoid: story_avoid)
     return nil unless line
 
     narrate("To say, arriving at #{node.name}: “#{line['text']}”", scope: "gm",
@@ -54,18 +55,17 @@ module Campaign::Remarks
   # chance (a clock 3 of 6 along, half the time); the first that comes up
   # offers the sign of its latest step that fits the moment best, or an
   # earlier step's. At most one a visit. Returns the note, or nil.
-  def offer_sign!(node)
+  def offer_sign!(node, facts: moment(at: node))
     candidates = clocks.running.where.not(portents: nil).where("filled > 0").to_a
                        .sort_by { |clock| [ -clock.filled.fdiv(clock.segments), clock.id ] }
     return nil if candidates.empty?
 
-    facts = moment(at: node)
     dice = Battle::Rng.new(story_dice(node) ^ 0x5BD1_E995)
     candidates.each do |clock|
       next unless dice.percent?(100 * clock.filled / clock.segments)
 
       clock.reached_portents.each do |portent, _segment|
-        _, line = Story::Matcher.best(portent.signs, facts, dice.state, avoid: every_line + every_veil)
+        _, line = Story::Matcher.best(portent.signs, facts, dice.state, avoid: story_avoid)
         next unless line
 
         return narrate("A sign of “#{clock.name}” (#{clock.filled} of #{clock.segments}): “#{line['text']}”", scope: "gm",
@@ -118,7 +118,7 @@ module Campaign::Remarks
       row.merge("choices" => EventChoices.new(options: options, flag: choices.flag)) if options.size >= 2
     end
     state = Battle::Rng.seed_state(rng ^ (parts_gone * 2_246_822_519) ^ (on == "rest" ? 1 : 2))
-    _, line = Story::Matcher.best(choosable, facts.compact, state, avoid: every_line + every_veil)
+    _, line = Story::Matcher.best(choosable, facts.compact, state, avoid: story_avoid)
     return nil unless line
 
     choices = line["row"]["choices"]
@@ -133,15 +133,15 @@ module Campaign::Remarks
   # hard one, each the row that fits best, to make or to let go by.
   # results: the check's lines' data. Returns the notes.
   def offer_complications!(results)
-    rows = story_rows("complications")
-    return [] if rows.empty? || results.all? { |result| result["success"] }
+    return [] if results.all? { |result| result["success"] }
+
+    soft, hard = complication_rows
+    return [] if soft.empty? && hard.empty?
 
     facts = moment.merge(check_facts(results))
-    soft, hard = rows.partition { |row| row["does"].blank? }
-    hard = hard.select { |row| (outcome = Outcome.parse(row["does"])) && outcome.bites?(self) }
     state = Battle::Rng.seed_state(rng ^ 0x9E37_79B9)
     [ [ soft, "A soft move" ], [ hard, "A hard move" ] ].filter_map do |candidates, label|
-      state, line = Story::Matcher.best(candidates, facts, state, avoid: every_line + every_veil)
+      state, line = Story::Matcher.best(candidates, facts, state, avoid: story_avoid)
       next unless line
 
       does = line["row"]["does"].presence
@@ -172,6 +172,13 @@ module Campaign::Remarks
   # Rows of a kind from every one of the world's tables of it.
   def story_rows(kind)
     world.generator_tables.where(kind: kind).order(:id).flat_map(&:entries)
+  end
+
+  # The GM's moves the world has written: [soft, hard], the soft ones words
+  # only, the hard ones those whose outcome could happen now.
+  def complication_rows
+    soft, hard = story_rows("complications").partition { |row| row["does"].blank? }
+    [ soft, hard.select { |row| (outcome = Outcome.parse(row["does"])) && outcome.bites?(self) } ]
   end
 
   # Dice of their own for each arrival, from the campaign's and the place
@@ -228,7 +235,6 @@ module Campaign::Remarks
   end
 
   def remember_fact!(write)
-    flag = flags.find_or_initialize_by(key: write["key"])
-    flag.update!(value: Story::Criteria.written(write, flag.value))
+    set_flag!(write["key"]) { |was| Story::Criteria.written(write, was) }
   end
 end

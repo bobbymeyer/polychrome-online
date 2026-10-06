@@ -6,7 +6,7 @@ module Campaign::JobRewards
   extend ActiveSupport::Concern
 
   included do
-    validate :open_jobs_are_the_worlds
+    validate :open_jobs_are_the_worlds, if: :will_save_change_to_open_jobs?
   end
 
   # The jobs characters can take in this campaign: every job, unless the GM
@@ -18,10 +18,6 @@ module Campaign::JobRewards
 
   def job_open?(job)
     open_jobs.nil? || open_jobs.include?(job.slug)
-  end
-
-  def locked_jobs
-    open_jobs.nil? ? world.jobs.none : world.jobs.alphabetical.where.not(slug: open_jobs)
   end
 
   # The GM grants an archetype, as a story reward, with a line for the

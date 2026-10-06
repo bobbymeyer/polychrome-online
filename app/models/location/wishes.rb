@@ -23,7 +23,7 @@ module Location::Wishes
       item = held[person["wants"]] or next
       next if met?(person["key"])
 
-      Pastime.new(name: "Bring #{person['name']} #{a_or_an(item.name)}", takes: 0, service: "wish", wish: person["key"])
+      Pastime.new(name: "Bring #{person['name']} #{Wording.a_or_an(item.name)}", takes: 0, service: "wish", wish: person["key"])
     end
   end
 
@@ -38,7 +38,7 @@ module Location::Wishes
     transaction do
       campaign.take_from_party!(item)
       met!(key)
-      campaign.narrate("#{by} gives #{person['name']} #{a_or_an(item.name)}. “#{thanks(key)}”")
+      campaign.narrate("#{by} gives #{person['name']} #{Wording.a_or_an(item.name)}. “#{thanks(key)}”")
       campaign.record_deed!("#{campaign.party_names} did #{person['name']} of #{name} a good turn.", at: map_node, sway: 1, kind: "favour", seen: true)
     end
   end
@@ -50,13 +50,9 @@ module Location::Wishes
     end
   end
 
-  def met!(key)
-    update!(progress: progress.merge("met" => progress.fetch("met", []) | [ key ]))
-  end
+  def met!(key) = remember_in_progress!("met", key)
 
   private
-
-  def a_or_an(name) = "#{name.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{name}"
 
   def thanks(key) = THANKS[(seed + key[/\d+/].to_i) % THANKS.size]
 

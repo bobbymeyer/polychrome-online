@@ -128,10 +128,10 @@ module Location::Exploration
       walk_away_from_fight!(to: key)
       pay!(path, toll) if path&.dig("cost") && !paid?(path)
       if lock
-        update!(progress: progress.merge("unlocked" => progress.fetch("unlocked", []) | [ lock["id"] ]))
+        remember_in_progress!("unlocked", lock["id"])
         campaign.narrate("#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.", cue: "door")
       end
-      update!(progress: progress.merge("current" => key, "visited" => (visited | [ key ])))
+      remember_in_progress!("visited", key, "current" => key)
       campaign.narrate("#{name}: the party enters #{target['name']}.", data: Campaign::MOVED)
       announce(target) unless resolved?(key)
       campaign.drop_stale_where_next!
@@ -190,11 +190,20 @@ module Location::Exploration
     toll unless toll.free?
   end
 
-  def resolve!(key)
-    update!(progress: progress.merge("resolved" => (progress.fetch("resolved", []) | [ key ])))
-  end
+  def resolve!(key) = remember_in_progress!("resolved", key)
 
   private
+
+  # One more thing in one of #progress's lists (once), and whatever else
+  # changed with it: remember_in_progress!("visited", key, "current" => key).
+  def remember_in_progress!(list, value, **also)
+    update!(progress: progress.merge(also).merge(list => progress.fetch(list, []) | [ value ]))
+  end
+
+  # The strongest of some monsters (by slug), who heads what waits in a room.
+  def strongest_monster(slugs)
+    campaign.world.monsters.where(slug: slugs).order(level: :desc).first
+  end
 
   # The way's toll: the table hears what it costs, the party pays, what it
   # takes happens (Outcome), and the time goes by.
@@ -209,7 +218,7 @@ module Location::Exploration
       end
       campaign.pass_time!(toll.takes) if toll.takes.positive?
     end
-    update!(progress: progress.merge("paid" => progress.fetch("paid", []) | [ path["key"] ]))
+    remember_in_progress!("paid", path["key"])
   end
 
   # The party walked on without fighting what waits in a room here: it
@@ -239,7 +248,7 @@ module Location::Exploration
       campaign.narrate("The way splits. One path has a cost: #{Toll.of(decision['text']).words}#{worth}")
       resolve!(target["key"])
     when "key"
-      update!(progress: progress.merge("keys" => keys_found | [ decision["lock"] ]))
+      remember_in_progress!("keys", decision["lock"])
       lock = view.fetch("paths", []).find { |p| p.dig("lock", "id") == decision["lock"] }&.dig("lock")
       campaign.narrate("Found #{decision['name']} in #{target['name']}.#{" It must open #{lock['name']}." if lock}", cue: "key")
       resolve!(target["key"])
@@ -255,7 +264,7 @@ module Location::Exploration
     # Who the place's past says waits here (Generators::Provenance) is who
     # the table fights: the strongest of them takes that name.
     who = decision["who"].to_s.split(",").first.presence
-    leader = who && campaign.world.monsters.where(slug: decision["monsters"].keys).order(level: :desc).first
+    leader = who && strongest_monster(decision["monsters"].keys)
     campaign.waylay!(label, decision["monsters"], boss: boss, terrain: location_template.encounter_table&.terrain_type,
                                                   names: ({ leader.slug => who } if leader), location: id, room: target["key"],
                                                   prelude: (boss_prelude(target, who) if boss))
@@ -268,7 +277,7 @@ module Location::Exploration
   # the entrance is theirs too.
   def meet_villain(target, villain)
     monsters = target.dig("decision", "monsters").to_h.dup
-    leader = campaign.world.monsters.where(slug: monsters.keys).order(level: :desc).first
+    leader = strongest_monster(monsters.keys)
     if leader
       monsters[leader.slug] -= 1
       monsters.delete(leader.slug) unless monsters[leader.slug].positive?
@@ -303,7 +312,7 @@ module Location::Exploration
   def boss_prelude(target, who)
     past = view.fetch("past", {})
     fall = campaign.world.lore.dig("falls", past.dig("fall", "kind"))
-    leader = campaign.world.monsters.where(slug: target.dig("decision", "monsters").to_h.keys).order(level: :desc).first
+    leader = strongest_monster(target.dig("decision", "monsters").to_h.keys)
     lines = [ "#{target['name']}. #{fall&.dig('trace') || 'The air is still, and something is waiting.'}" ]
     lost = Array(past["lost"]).last if fall
     if fall && past["was"]
