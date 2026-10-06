@@ -165,7 +165,11 @@ body { padding-top: var(--topbar); }
   body.has-table-views .topbar__brand { grid-column: 2; }
   body.has-table-views .table-views { grid-column: 3; justify-self: end; }
 }
-/* A phone either way up (and the table page up to a tablet's width): the top bar is one line with a Menu. */
+/* The folded bar: one line with a Menu, the links in a list behind it, the account's menu part of that list (its
+   links light, since stage.css paints the bar black). The bar folds on a phone either way up (this block) and on the
+   table page up to a tablet's width (the next block, for body.has-table-views, which the layout sets). Plain CSS
+   can't put a media condition and a class in one selector list, so the rules are written twice.
+   MIRROR of the block below; change both. */
 @media (max-width: 640px), (max-height: 500px) and (orientation: landscape) {
   .topbar { padding: 4px 16px; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; }
   .topbar__toggle { display: inline-flex; align-items: center; justify-content: center; grid-column: 1; width: 36px; min-height: 36px; padding: 0;
@@ -173,8 +177,10 @@ body { padding-top: var(--topbar); }
   .topbar__brand { grid-column: 2; }
   .topbar__menu { display: none; grid-column: 1 / -1; max-height: calc(100vh - var(--topbar)); overflow-y: auto; padding-bottom: 12px; }
   .topbar.is-open .topbar__menu { display: block; }
-  /* On a phone the account's menu is part of the list, not a drop-down. */
+  /* The account's menu is part of the list, not a drop-down. */
   .topbar__user-menu { position: static; border: 0; padding: 0 0 0 16px; background: none; color: inherit; }
+  .topbar .topbar__user-menu a, .topbar .topbar__user-menu .link-button { color: #bdbdbd; }
+  .topbar .topbar__user-menu .muted { color: #8a8a8a; }
   .topbar__user > summary { min-height: 44px; display: flex; align-items: center; font-size: 16px; }
   .topbar__books, .topbar__account { flex-direction: column; align-items: stretch; margin-top: var(--unit); font-size: 16px; }
   .topbar__books a, .topbar__account a, .topbar__account .link-button, .topbar__account > span { display: flex; align-items: center; min-height: 44px; }
@@ -183,7 +189,7 @@ body { padding-top: var(--topbar); }
   .topbar__sign-out { margin-top: 16px; }
   .topbar.is-open .topbar__book { display: flex; }
 }
-/* The table page, up to a tablet's width, keeps the same folded bar (the same rules, for that page). */
+/* MIRROR of the block above, for the table page up to a tablet's width (its grid columns are set two blocks up); change both. */
 @media (min-width: 641px) and (max-width: 1099px) {
   body.has-table-views .topbar { padding: 4px 16px; column-gap: 12px; align-items: center; }
   body.has-table-views .topbar__toggle { display: inline-flex; align-items: center; justify-content: center; width: 36px; min-height: 36px; padding: 0;
@@ -191,6 +197,8 @@ body { padding-top: var(--topbar); }
   body.has-table-views .topbar__menu { display: none; grid-column: 1 / -1; max-height: calc(100vh - var(--topbar)); overflow-y: auto; padding-bottom: 12px; }
   body.has-table-views .topbar.is-open .topbar__menu { display: block; }
   body.has-table-views .topbar__user-menu { position: static; border: 0; padding: 0 0 0 16px; background: none; color: inherit; }
+  .has-table-views .topbar__user-menu a, .has-table-views .topbar__user-menu .link-button { color: #bdbdbd; }
+  .has-table-views .topbar__user-menu .muted { color: #8a8a8a; }
   body.has-table-views .topbar__user > summary { min-height: 44px; display: flex; align-items: center; font-size: 16px; }
   body.has-table-views .topbar__books, body.has-table-views .topbar__account { flex-direction: column; align-items: stretch; margin-top: var(--unit); font-size: 16px; }
   body.has-table-views .topbar__books a, body.has-table-views .topbar__account a, body.has-table-views .topbar__account .link-button,
@@ -282,8 +290,9 @@ form.inline { display: inline; }
   .jobs-table td[data-label] { grid-column: 1 / -1; margin-top: 4px; }
   .jobs-table td[data-label]::before { content: attr(data-label) ": "; font-weight: 700; }
 }
-/* On any page: sections to jump to, and a danger zone set apart at the end. */
-.sheet-nav { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 24px; font-size: 15px; font-weight: 700; }
+/* On any page: sections to jump to, kept at the top of the screen as the page scrolls; and a danger zone set apart at the end. */
+.sheet-nav { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 24px; padding: 0; font-size: 15px; font-weight: 700;
+             position: sticky; top: 0; z-index: 20; background: var(--paper); border-bottom: 2px solid var(--ink); }
 .sheet-nav a { display: inline-flex; align-items: center; min-height: 44px; }
 .character-sheet .window { scroll-margin-top: 16px; }
 .danger-zone { margin-top: 64px; padding-top: 16px; border-top: 2px solid var(--signal); }
@@ -319,7 +328,6 @@ form.inline { display: inline; }
 
 .book-page__header { display: grid; grid-template-columns: auto 1fr; gap: var(--gutter); align-items: start; margin-bottom: 48px; }
 .book-page__header--plain { grid-template-columns: 1fr; }
-[data-show-for][hidden] { display: none !important; }
 .example-columns { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gutter); margin-top: 24px; }
 @media (max-width: 640px) { .example-columns { grid-template-columns: 1fr; } }
 .example-rooms { margin-top: 16px; }
@@ -417,7 +425,7 @@ details[open] > summary { margin-bottom: 16px; }
 .battle__controls { display: flex; gap: 16px; align-items: center; }
 .playback { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-.stage { position: relative; }
+/* The stage (.stage) is stage.css's: the 16:9 frame. */
 .fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 
 /* The field: enemies left, party right, standing on one black line. The
@@ -564,8 +572,6 @@ details[open] > summary { margin-bottom: 16px; }
 .command-panel__footer form { margin: 0; }
 .countdown { margin: 0; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .countdown.is-urgent { background: var(--ink); color: var(--paper); padding: 0 8px; }
-.gm-units tr.is-ko td { color: var(--grey); text-decoration: line-through; }
-.gm-units tr.is-low td:nth-child(2) { color: var(--caution-ink); font-weight: 800; }
 .gm-override { margin-top: 24px; }
 .gm-controls { margin-top: 24px; }
 .gm-controls > summary { font-weight: 700; }
@@ -962,7 +968,6 @@ details[open] > summary { margin-bottom: 16px; }
   .shop-form input[type=number] { width: 64px; }
 }
 .table-ways h2 { margin-top: 0; }
-.table-ways__group { margin: 12px 0 6px; font-size: 14px; font-style: italic; font-weight: 900; }
 .table-ways .encounter-call { margin-bottom: 16px; }
 
 /* A long form's one button stays in reach at the bottom of the screen. */

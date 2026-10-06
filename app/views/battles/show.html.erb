@@ -11,7 +11,8 @@
 <% bosses = villains ? [] : @battle.boss_monsters.to_a %>
 <% view = @battle.campaign && coop_view(@battle.campaign) %>
 <%# A setting for this device, not a move: in the Menu with the rest of the way around (DESIGN.md, "Only the battle"). %>
-<div class="battle<%= " battle--#{view}" if view %><%= " battle--boss" if boss_names.any? %>" data-controller="battle-player dialogue heartbeat<%= " recap" if @battle.campaign %>" data-heartbeat-url-value="<%= battle_watch_path(@battle) %>" <%= tag.attributes(data: { recap_campaign_value: @battle.campaign_id }) if @battle.campaign %>
+<%# battle--play: the battle as a player or the GM plays it (stage.css lays it out); else the co-op screen, controller or stage view. %>
+<div class="battle battle--<%= view || "play" %><%= " battle--boss" if boss_names.any? %>" data-controller="battle-player dialogue heartbeat<%= " recap" if @battle.campaign %>" data-heartbeat-url-value="<%= battle_watch_path(@battle) %>" <%= tag.attributes(data: { recap_campaign_value: @battle.campaign_id }) if @battle.campaign %>
      <%= tag.attributes(data: { boss_down: ("#{boss_names.to_sentence} #{boss_names.size > 1 ? 'fall' : 'falls'}!" if boss_names.any?) }) %>
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
      data-battle-player-words-value="<%= battle_words(@battle.campaign.world).to_json %>"
@@ -52,7 +53,8 @@
   </header>
   <% end %>
 
-  <div class="stage" data-battle-player-target="stage" data-controller="stage-fit" data-stage-fit-below-value="24">
+  <%# The battle's stage is the frame itself (stage.css, "The Stage"): the field fills it, the roster along its bottom. %>
+  <div class="stage stage__frame" data-battle-player-target="stage" data-controller="stage-fit" data-stage-fit-below-value="24">
     <%# This round's order, as it plays: who has gone, who's up, who's still to come (battle/board.js). %>
     <ol class="turn-rail" data-battle-player-target="rail" aria-label="This round" hidden></ol>
     <div data-battle-player-target="boardContainer">
