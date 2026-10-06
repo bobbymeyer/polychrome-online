@@ -28,13 +28,14 @@ RSpec.describe "Queries per page", type: :request do
     campaign.update!(current_node: campaign.map_nodes.first)
   end
 
-  # Queries the page runs (not the ones Rails answers from its cache).
+  # Queries the page runs (not the ones Rails answers from its cache, unless
+  # asked: cached ones still mean code asking again for what it has).
   # SHOW_QUERIES=1 prints the lines whose queries grew, to find the culprit.
-  def queries_for(path)
+  def queries_for(path, cached: false)
     get path # warm up: the first render also loads caches
     count = 0
     counter = lambda do |*, payload|
-      next if payload[:name].in?([ "SCHEMA", "TRANSACTION" ]) || payload[:cached]
+      next if payload[:name].in?([ "SCHEMA", "TRANSACTION" ]) || (payload[:cached] && !cached)
 
       count += 1
       @sites[[ @phase, path, where_from(caller) ]] += 1 if ENV["SHOW_QUERIES"]
@@ -65,6 +66,40 @@ RSpec.describe "Queries per page", type: :request do
     if ENV["SHOW_QUERIES"]
       puts "QUERIES small=#{small} big=#{big}"
       @sites.each { |(phase, path, site), n| puts "+#{n - @sites[[ :small, path, site ]]} #{path} #{site}" if phase == :big && n > @sites[[ :small, path, site ]] }
+    end
+    expect(big).to eq(small)
+  end
+
+  # A scene on the stage: its step's stage is folded from every step before
+  # it (Scene#stage_at), and each sprite step names someone from the cast.
+  # However many sprite steps the fold runs through, the table asks for the
+  # cast once (counting the questions the query cache answers, too: asking
+  # again for each step is the waste).
+  def stage_scene_with(sprite_steps)
+    cast = [ campaign.npcs.find_or_create_by!(name: "Cid"), campaign.npcs.find_or_create_by!(name: "Faris") ]
+    scene = campaign.scenes.create!(name: "Steps #{sprite_steps}")
+    sprite_steps.times do |i|
+      figure = { type: "Npc", id: cast[i % 2].id, side: (i.even? ? "left" : "right"), expression: Portrait::EXPRESSIONS[i % Portrait::EXPRESSIONS.size] }
+      scene.beats.create!(kind: "sprite", action: (i < 2 ? "enter" : "change"), figures: [ figure ])
+    end
+    scene.beats.create!(text: "Here we are.")
+    scene.start!
+    scene
+  end
+
+  it "asks for the cast once however many sprite steps the staged scene has" do
+    @sites = Hash.new(0)
+    path = campaign_table_path(campaign)
+    few = stage_scene_with(2)
+    @phase = :small
+    small = queries_for(path, cached: true)
+    few.stop!
+    stage_scene_with(8)
+    @phase = :big
+    big = queries_for(path, cached: true)
+    if ENV["SHOW_QUERIES"]
+      puts "QUERIES small=#{small} big=#{big}"
+      @sites.each { |(phase, p, site), n| puts "+#{n - @sites[[ :small, p, site ]]} #{p} #{site}" if phase == :big && n > @sites[[ :small, p, site ]] }
     end
     expect(big).to eq(small)
   end

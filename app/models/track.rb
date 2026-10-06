@@ -56,29 +56,25 @@ class Track < ApplicationRecord
   # YouTube and Spotify play in their own small player: an embed of the link,
   # on repeat where the player allows it.
   def embed_url
-    return unless link? && url
+    return unless link?
 
-    if (m = url.match(YOUTUBE))
-      "https://www.youtube-nocookie.com/embed/#{m[1]}?autoplay=1&loop=1&playlist=#{m[1]}&rel=0"
-    elsif (m = url.match(SPOTIFY))
-      "https://open.spotify.com/embed/#{m[1]}/#{m[2]}"
+    case parsed_link
+    in [ "YouTube", _, id ] then "https://www.youtube-nocookie.com/embed/#{id}?autoplay=1&loop=1&playlist=#{id}&rel=0"
+    in [ "Spotify", kind, id ] then "https://open.spotify.com/embed/#{kind}/#{id}"
+    in nil then nil
     end
   end
 
-  def service
-    return "YouTube" if url&.match?(YOUTUBE)
-
-    "Spotify" if url&.match?(SPOTIFY)
-  end
+  def service = parsed_link&.first
 
   # The link as the service writes it, from what was pasted: safe to put in a page.
   def link_href
-    return unless link? && url
+    return unless link?
 
-    if (m = url.match(YOUTUBE))
-      "https://www.youtube.com/watch?v=#{m[1]}"
-    elsif (m = url.match(SPOTIFY))
-      "https://open.spotify.com/#{m[1]}/#{m[2]}"
+    case parsed_link
+    in [ "YouTube", _, id ] then "https://www.youtube.com/watch?v=#{id}"
+    in [ "Spotify", kind, id ] then "https://open.spotify.com/#{kind}/#{id}"
+    in nil then nil
     end
   end
 
@@ -124,6 +120,18 @@ class Track < ApplicationRecord
   def wait!(message) = update!(status: "waiting", error: message.to_s.truncate(500))
 
   private
+
+  # The pasted link read: [service, kind, id] ("YouTube", "video", the video's id; "Spotify", "track" /
+  # "album" / "playlist" / "episode", its id), or nil for a link neither plays.
+  def parsed_link
+    return unless url
+
+    if (m = url.match(YOUTUBE))
+      [ "YouTube", "video", m[1] ]
+    elsif (m = url.match(SPOTIFY))
+      [ "Spotify", m[1], m[2] ]
+    end
+  end
 
   def link_plays
     errors.add(:url, "must be a YouTube or Spotify link") if url && embed_url.nil?

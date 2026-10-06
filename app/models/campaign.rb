@@ -151,7 +151,7 @@ class Campaign < ApplicationRecord
   delegate :money, to: :world
 
   def music_is_heard
-    return if MUSIC_CHOICES.include?(music) || world.music_track_choice?(music)
+    return if world.music_choice?(music)
 
     errors.add(:music, "isn't one of the world's tracks")
   end
