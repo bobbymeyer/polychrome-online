@@ -14,7 +14,7 @@ class Campaigns::TablesController < Campaigns::BaseController
     # The last thing said stays up in the dialogue box, unless the party has
     # moved on since: then it was said somewhere else (Campaign::MOVED).
     last = @messages.reverse.find(&:dialogue?)
-    @last_dialogue = last unless last && @messages.any? { |m| m.id > last.id && m.data.to_h["moved"] }
+    @last_dialogue = last unless last && @messages.any? { |m| m.id > last.id && m.moved? }
     @recap = Recap.for(@campaign)
     @recap = nil if @recap&.empty?
   end

@@ -8,7 +8,7 @@
     data-chat-line-live-value="<%= live %>"
     data-chat-line-id-value="<%= message.id %>"
     data-said-at="<%= message.created_at.iso8601 %>"
-    <%= tag.attributes(data: { moved: true }) if message.data.to_h["moved"] %>
+    <%= tag.attributes(data: { moved: true }) if message.moved? %>
     <%= tag.attributes(data: { choice: true }) if message.choice? %>
     data-chat-line-dialogue-value="<%= message.dialogue? %>"
     data-chat-line-cue-value="<%= message.cue %>"
@@ -29,7 +29,7 @@
       <%= message.body %>
       <% if message.cue == "jobs" %>
         <span class="reward-cards reward-cards--jobs">
-          <% Array(message.data["jobs"]).each do |job| %>
+          <% Array(message.jobs).each do |job| %>
             <span class="reward-card reward-card--new-job">
               <span class="reward-card__kind">New archetype!</span>
               <strong class="reward-card__name"><%= job["name"] %></strong>
@@ -43,12 +43,12 @@
         <%= link_to(joinable ? "Join the battle →" : "See the battle", battle_path(message.battle), class: ("play" if joinable), data: { turbo_frame: "_top" }) %>
       <% end %>
     </p>
-    <% if message.data.to_h["offer"] && message.gm_only? %>
+    <% if message.offer && message.gm_only? %>
       <%# Offered to the GM alone (Campaign::Remarks): say it, or let it go by. %>
-      <% if message.data["said"] %>
+      <% if message.said? %>
         <p class="hint">Said.</p>
       <% else %>
-        <%= button_to message.data["offer"]["clue"] ? "Let them find it" : message.data["offer"]["choices"] ? "Put it to the table" : message.data["offer"]["does"] ? "Make it so" : "Say it", message_saying_path(message), class: "link-button", form: { class: "chat-line__offer" } %>
+        <%= button_to offer_verb(message.offer), message_saying_path(message), class: "link-button", form: { class: "chat-line__offer" } %>
       <% end %>
     <% end %>
   <% else %>

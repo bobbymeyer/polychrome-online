@@ -10,8 +10,11 @@ module Location::Exploration
     view.fetch("rooms", []).find { |r| r["key"] == key }
   end
 
+  # The room the party is in: its key (in progress), and the room itself.
+  def current_room_key = progress["current"]
+
   def current_room
-    room(progress["current"])
+    room(current_room_key)
   end
 
   def visited
@@ -99,7 +102,7 @@ module Location::Exploration
   # The party went back out onto the map: next time, they come in at the entrance.
   def leave!
     walk_away_from_fight!
-    update!(progress: progress.except("current")) if progress["current"]
+    update!(progress: progress.except("current")) if current_room_key
   end
 
   def enter!
@@ -110,7 +113,7 @@ module Location::Exploration
   # decision at the table: an event is narrated; an encounter or the boss
   # waits for the GM to fight or wave off (like on the map); treasure waits
   # to be handed over; a fork shows its visible cost.
-  def move_to!(key, from: progress["current"])
+  def move_to!(key, from: current_room_key)
     raise Refusal, "The party isn't at #{name}. Take them there on the map first." unless party_here?
 
     target = room(key) or raise Refusal, "No such room"

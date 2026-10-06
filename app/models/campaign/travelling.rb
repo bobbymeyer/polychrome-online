@@ -216,7 +216,7 @@ module Campaign::Travelling
   # The dungeon the party is inside right now, if any.
   def dungeon_in_progress
     location = current_node&.location
-    location if location&.dungeon? && location.progress["current"]
+    location if location&.dungeon? && location.current_room_key
   end
 
   private

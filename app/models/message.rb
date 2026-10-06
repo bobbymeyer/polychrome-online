@@ -25,6 +25,14 @@ class Message < ApplicationRecord
   belongs_to :recipient, class_name: "Character", optional: true
   belongs_to :battle, class_name: "BattleRecord", optional: true
 
+  # What a line carries besides its words, kept in its data, by name: moved,
+  # said as the party got somewhere new (Campaign::Travelling); offer and
+  # said, a line the world offers the GM and whether they said it
+  # (Campaign::Remarks); jobs, the archetypes a reward opened
+  # (Campaign::JobRewards); moves, recovery and outcomes, what a choice's
+  # options do (Message::Choice).
+  store_accessor :data, :moved, :offer, :said, :jobs, :moves, :recovery, :outcomes
+
   normalizes :body, with: ->(body) { body.to_s.strip }
   normalizes :expression, with: ->(expression) { expression.presence }
 
@@ -68,7 +76,11 @@ class Message < ApplicationRecord
   end
 
   # Said by a scene's beat (Scene#show!).
-  def scene? = data.to_h["scene"].present?
+  def scene? = data["scene"].present?
+
+  def moved? = moved.present?
+
+  def said? = said.present?
 
   # The character on the other end of a whisper.
   def whisper_character

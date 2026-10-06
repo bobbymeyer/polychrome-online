@@ -45,4 +45,13 @@ module MessagesHelper
       "whispers to #{message.recipient&.name}"
     end
   end
+
+  # What saying an offered line does, on its button: a clue found, a choice put, an outcome made, or words said.
+  def offer_verb(offer)
+    if offer["clue"] then "Let them find it"
+    elsif offer["choices"] then "Put it to the table"
+    elsif offer["does"] then "Make it so"
+    else "Say it"
+    end
+  end
 end

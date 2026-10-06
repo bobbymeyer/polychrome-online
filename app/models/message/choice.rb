@@ -50,11 +50,11 @@ module Message::Choice
 
   # A "Where next?" (Campaign::Ways): its options carry the party's moves.
   def where_next?
-    choice? && data.key?("moves") && !data["recovery"]
+    choice? && !moves.nil? && !recovery
   end
 
   # "Everyone is KO'd. What happens now?" (Campaign::Defeat#ask_what_now!).
-  def what_now? = choice? && data["recovery"].present?
+  def what_now? = choice? && recovery.present?
 
   # { option => [character names] }, in the options' order.
   def tally
@@ -71,7 +71,7 @@ module Message::Choice
 
     transaction do
       update!(settled: option)
-      campaign.make_move!(data.dig("moves", option)) if data.dig("moves", option)
+      campaign.make_move!(moves[option]) if moves&.dig(option)
       campaign.set_flag!(flag_key, option) if flag_key
       # Said with a card, so the whole table sees it land (campaigns/tables/_cards).
       campaign.narrate("The party chose: #{option}.", cue: "chosen", data: { "option" => option })
@@ -92,7 +92,7 @@ module Message::Choice
   # An event's option does what it says (Outcome), each in turn; what
   # can't happen any more (the potion was drunk meanwhile) is let go.
   def do_what_it_says!(option)
-    Array(data.dig("outcomes", option)).each do |word|
+    Array(outcomes&.dig(option)).each do |word|
       outcome = Outcome.parse(word) or next
       outcome.can_happen!(campaign)
       said = outcome.apply!(campaign, by: "The party")
@@ -105,7 +105,7 @@ module Message::Choice
   def choices_have_options
     return unless choice?
 
-    most = data.key?("moves") ? MAX_MOVES + 1 : MAX_OPTIONS # the moves, and Stay here
+    most = moves.nil? ? MAX_OPTIONS : MAX_MOVES + 1 # the moves, and Stay here
     errors.add(:options, "need at least two") if options.size < 2
     errors.add(:options, "can be at most #{most}") if options.size > most
     errors.add(:options, "must be different") if options.uniq.size != options.size
