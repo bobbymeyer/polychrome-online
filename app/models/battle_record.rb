@@ -85,6 +85,9 @@ class BattleRecord < ApplicationRecord
     campaign&.narrate(body, battle: self)
   end
 
+  # The battle's numbers so far, from its replay log (Battle::Report).
+  def report = Battle::Report.build(initial_state, battle_events.map(&:payload), state)
+
   def over?
     status != "input"
   end

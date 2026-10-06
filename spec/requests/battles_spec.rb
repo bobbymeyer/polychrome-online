@@ -29,6 +29,28 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include(Turbo::StreamsChannel.signed_stream_name([ battle.campaign, :table ]))
   end
 
+  it "reports the battle's numbers to the GM, and to nobody else" do
+    goblin = battle.state["units"].find { |u| u["side"] == "enemy" }["id"]
+    battle.apply!({ "type" => "command", "actor" => bartz, "command" => { "kind" => "ability", "ability" => "attack", "target" => goblin } }, actor: "gm")
+    battle.apply!({ "type" => "command", "actor" => faris, "command" => { "kind" => "ability", "ability" => "attack", "target" => goblin } }, actor: "gm")
+    report = battle.reload.report
+
+    get battle_path(battle)
+    expect(page.at("a[href='#{battle_report_path(battle)}']").text).to eq("Report")
+    get battle_report_path(battle)
+    expect(response).to have_http_status(:ok)
+    party = page.css(".battle-report__side").first
+    expect(party.at("h2").text).to eq("The party")
+    bartz_row = party.css("tbody tr").find { |tr| tr.at("th").text == "Bartz" }
+    expect(bartz_row.css("td").first.text.to_i).to eq(report["units"].find { |r| r["id"] == bartz }["dealt"]).and be_positive
+    expect(bartz_row.text).to include("Attack ×1")
+    expect(page.at(".battle-report__rounds tbody tr th").text).to eq("1")
+
+    sign_in_as(make_user("Player"))
+    get battle_report_path(battle)
+    expect(response).to redirect_to(root_path)
+  end
+
   it "lets the seated speak from the battle, and takes back lines there too" do
     sit(battle.campaign, "gm")
     get battle_path(battle)
