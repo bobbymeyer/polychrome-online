@@ -8,7 +8,7 @@
   <div class="stage__frame">
     <%= render "campaigns/tables/scene", campaign: campaign %>
     <%= render "campaigns/tables/map", campaign: campaign, gm: gm %>
-    <%= render "campaigns/tables/dialogue_box", last_dialogue: last_dialogue, extra: "dialogue--stage" %>
+    <%= render "campaigns/tables/dialogue_box", campaign: campaign, last_dialogue: last_dialogue, extra: "dialogue--stage" %>
   </div>
   <div class="stage__hud"><%= render "campaigns/tables/time", campaign: campaign, gm: gm %></div>
 </section>

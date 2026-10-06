@@ -13,7 +13,9 @@
 class Message < ApplicationRecord
   KINDS = %w[say system choice].freeze
   # The jingle a line plays as it arrives (sound.js).
-  CUES = %w[key door treasure check jobs cleared deadline awakening arrival].freeze
+  CUES = %w[key door treasure check jobs cleared deadline awakening arrival chosen].freeze
+  # A scene's beat can cue these; "chosen" comes only with a settled choice, whose outcome its card shows.
+  BEAT_CUES = (CUES - %w[chosen]).freeze
   # table: everyone; whisper: a player and the GM; gm: a note for the GM alone.
   SCOPES = %w[table whisper gm].freeze
   SPEAKER_TYPES = %w[Character Npc].freeze

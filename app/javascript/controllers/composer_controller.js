@@ -47,11 +47,19 @@ export default class extends Controller {
   }
 
   // The stage's scene changed: with nothing typed, fetch the box again for the speaker it has now.
+  // From its home (data-home): after a line is sent the frame's src is the URL it was posted to,
+  // which can't be fetched.
   staged(event) {
     if (event.detail?.newStream?.target !== "table_scene") return
     if (this.bodyTarget.value.trim()) return
     const frame = this.element.closest("turbo-frame")
-    if (frame?.src) setTimeout(() => frame.reload(), 50)
+    const home = frame?.dataset.home
+    if (!home) return
+    setTimeout(() => {
+      const at = (url) => new URL(url, window.location.href).href
+      if (frame.src && at(frame.src) === at(home)) frame.reload()
+      else frame.src = home
+    }, 50)
   }
 
   press(chip) {

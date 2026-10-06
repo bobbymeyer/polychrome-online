@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 import { animate } from "animejs"
 import { GESTURES } from "motion/gestures"
 import { reducedMotion } from "screen"
+import { get, set } from "storage"
 
 // The dialogue box (docs/HANDOFF.md §7, §9.5): GM and NPC lines play here one
 // at a time, typed out beside the speaker's portrait. Player lines go
@@ -14,7 +15,8 @@ import { reducedMotion } from "screen"
 // Click the box to finish typing, or to move on to the next page or line.
 // Waiting pages and lines also move on by themselves, so a busy GM doesn't
 // strand anyone. The × puts the box away (what's left goes to the log) until
-// the next line comes.
+// the next line comes, and this browser remembers it: a reload or coming back
+// to the table doesn't bring back a line already put away.
 // Nothing here is shared: each viewer reads at their own pace.
 //
 // In battle (autoHide) the box only appears while someone is speaking, and
@@ -23,6 +25,8 @@ const TYPE_MS = 22
 const BATCH_MS = 60
 const HOLD_MS = 1600
 const HOLD_PER_CHAR_MS = 35
+// The newest line this browser put away, per campaign: lines up to it stay away.
+const DISMISSED_KEY = "polychrome.dialogueDismissed"
 
 // How the portrait reacts to an expression, from the shared gestures (§3.2).
 const EXPRESSION_GESTURES = { happy: "bounce", angry: "shake", surprised: "pop", worried: "float", sad: "float", determined: "bounce" }
@@ -36,7 +40,9 @@ export default class extends Controller {
     this.current = null
     this.speakerKey = null
     this.pages = []
-    // The last line said, as the page came: in pages too, once the box has its size.
+    // The last line said, as the page came, unless it was put away here already.
+    if (this.hasBoxTarget && this.lastId && this.lastId <= this.dismissedId) this.boxTarget.hidden = true
+    // Otherwise in pages too, once the box has its size.
     if (this.hasBoxTarget && !this.boxTarget.hidden && this.textTarget.textContent.trim()) {
       requestAnimationFrame(() => {
         if (this.current || this.boxTarget.hidden) return
@@ -143,10 +149,31 @@ export default class extends Controller {
     this.onTyped = null
     this.clearPages()
     for (const line of [ this.current, ...this.queue ]) line?.element.classList.remove("is-pending")
+    const ids = [ this.current, ...this.queue ].map(line => line?.idValue || 0)
+    this.dismissedId = Math.max(this.lastId, ...ids)
     this.queue = []
     this.current = null
     this.boxTarget.hidden = true
     this.busy = false
+  }
+
+  // The line the page came with (the box's last-id), or the newest one typed since.
+  get lastId() {
+    return Number(this.hasBoxTarget && this.boxTarget.dataset.dialogueLastId) || 0
+  }
+
+  get dismissedKey() {
+    const campaign = this.hasBoxTarget && this.boxTarget.dataset.dialogueCampaign
+    return campaign && `${DISMISSED_KEY}.${campaign}`
+  }
+
+  get dismissedId() {
+    return (this.dismissedKey && Number(get(this.dismissedKey))) || 0
+  }
+
+  set dismissedId(id) {
+    if (!this.dismissedKey || !id || id <= this.dismissedId) return
+    set(this.dismissedKey, String(id))
   }
 
   // Escape works anywhere, even mid-sentence in the composer. Enter, Space and
@@ -173,6 +200,7 @@ export default class extends Controller {
     }
 
     this.current = line
+    if (line.idValue) this.boxTarget.dataset.dialogueLastId = line.idValue
     clearTimeout(this.hideTimer)
     this.boxTarget.hidden = false
     this.moreTarget.hidden = true

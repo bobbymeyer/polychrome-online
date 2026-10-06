@@ -25,7 +25,7 @@
       </div>
       <% unless beat.choice? %>
         <div class="beat__stage">
-          <%= f.select :cue, options_for_select([ [ "No jingle", "" ] ] + Message::CUES.map { |c| [ c.humanize, c ] }, beat.cue), {}, "aria-label": "Jingle" %>
+          <%= f.select :cue, options_for_select([ [ "No jingle", "" ] ] + Message::BEAT_CUES.map { |c| [ c.humanize, c ] }, beat.cue), {}, "aria-label": "Jingle" %>
         </div>
       <% end %>
     <% when "backdrop" %>
