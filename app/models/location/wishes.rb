@@ -2,7 +2,7 @@
 
 # What a townsperson wishes for (Generators::Town#couplets), and the party
 # meeting it. A wish for an item is a thing to do in their town while the
-# bag holds it ("Bring Oskar a Remedy": a vote like any other, Campaign::
+# party holds it, in the chest or a bag, ("Bring Oskar a Remedy": a vote like any other, Campaign::
 # Ways); a wish for the nearest dungeon cleared is met when the town
 # welcomes the party back for clearing it, and they're the one who says so
 # (Campaign::Deeds#welcome_back!). Either is a deed, so the town thinks
@@ -18,7 +18,7 @@ module Location::Wishes
   def wishes
     return [] unless town?
 
-    held = campaign.bag.to_h { |row| [ row.item.slug, row.item ] }
+    held = campaign.party_holdings.transform_values(&:first)
     townsfolk.filter_map do |person|
       item = held[person["wants"]] or next
       next if met?(person["key"])
@@ -27,16 +27,16 @@ module Location::Wishes
     end
   end
 
-  # The party hands over what they wished for, from the bag.
+  # The party hands over what they wished for, from the chest or a bag.
   def meet_wish!(key, by: "The party")
     person = townsfolk.find { |p| p["key"] == key } or raise Refusal, "Nobody like that lives here"
     raise Refusal, "#{person['name']} already has what they wished for" if met?(key)
 
     item = campaign.world.items.find_by(slug: person["wants"]) or raise Refusal, "#{person['name']} isn't asking for anything the party carries"
-    raise Refusal, "There's no #{item.name} in the bag" unless campaign.quantity_of(item).positive?
+    raise Refusal, "There's no #{item.name} in the chest or anyone's bag" unless campaign.party_quantity_of(item).positive?
 
     transaction do
-      campaign.take_item!(item)
+      campaign.take_from_party!(item)
       met!(key)
       campaign.narrate("#{by} gives #{person['name']} #{a_or_an(item.name)}. “#{thanks(key)}”")
       campaign.record_deed!("#{campaign.party_names} did #{person['name']} of #{name} a good turn.", at: map_node, sway: 1, kind: "favour", seen: true)

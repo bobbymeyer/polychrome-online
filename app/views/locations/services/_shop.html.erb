@@ -1,4 +1,4 @@
-<%# The shop (locations/_town, under the services): its stock, and selling from the bag and off the party. %>
+<%# The shop (locations/_town, under the services): its stock, and selling from the chest, your bag and off the party. %>
 <div id="shop" data-controller="help">
   <h3>Buy and sell</h3>
   <% items = location.stock_items %>
@@ -42,18 +42,21 @@
     </table>
   <% end %>
 
-  <% if shopping && (bag = @campaign.bag).any? %>
+  <%# What's for sale from the party: the chest, and the bags of the characters you play (the GM's, all of them). %>
+  <% sellers = shopping ? ([ @campaign ] + party.select { |c| can_manage?(c) }).flat_map { |h| h.bag.map { |row| [ h, row ] } } : [] %>
+  <% if sellers.any? %>
     <h3>Sell</h3>
     <table class="book-table book-table--plain shop-table">
       <tbody>
-        <% bag.each do |row| %>
+        <% sellers.each do |holder, row| %>
           <tr>
-            <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span></td>
+            <td><%= row.item.name %> <span class="muted">×<%= row.quantity %>, <%= holder.bag_name %></span></td>
             <td class="num"><%= money(location.resale_price_of(row.item)) %></td>
             <td class="shop-table__buy">
               <%= form_with url: location_sales_path(location), class: "inline-form shop-form" do |f| %>
                 <%= hidden_field_tag :item, row.item.slug, id: nil %>
-                <%= number_field_tag :quantity, 1, min: 1, max: row.quantity, id: "sell_#{row.item.slug}", "aria-label": "How many #{row.item.name} to sell" %>
+                <%= hidden_field_tag :character_id, holder.id, id: nil if holder.is_a?(Character) %>
+                <%= number_field_tag :quantity, 1, min: 1, max: row.quantity, id: "sell_#{holder.is_a?(Character) ? "#{holder.id}_" : ''}#{row.item.slug}", "aria-label": "How many #{row.item.name} to sell" %>
                 <%= f.submit "Sell", class: "button play" %>
               <% end %>
             </td>

@@ -410,8 +410,10 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   map steps aside, and whoever stands in the scene is along the bottom, left and right, full body as
   their sprite with their feet behind the dialogue box (as on a visual novel's stage), or as their
   portrait just above it until they have one; the speaker lit and a step larger, the rest dimmed. The
-  line plays in the dialogue box as any line does. The GM steps the scene line to line from the Now
-  line, or lets it play on; the changes between lines (a backdrop, someone entering or leaving, music,
+  line plays in the dialogue box as any line does. Starting a scene only changes the stage: no title
+  card, nothing said on the Now line, which keeps the controls. The GM steps the scene line to line
+  from the stage's corner tag (the beat count, Next in red, Play on or Pause, and ×, where the
+  Map/Place switch sits otherwise), or lets it play on; the changes between lines (a backdrop, someone entering or leaving, music,
   an effect) are made on the way, so the table only ever stops on something said or asked. Each change
   comes on with the line after it, with its own transition: a quick fade (300 ms) unless the step says a
   slow one (1.4 s), a slide in from the figure's side, or a cut; someone leaving goes out the same way.
@@ -557,9 +559,11 @@ under the frame.
   (the ways, the things to do, the scenes, the check, the battle setup) have no heading of their
   own: the pressed control is the title. A divergence from the slabs, kept to this one row.
 - **What the GM calls is the GM's moves.** The controls row on the Now line is the one switch:
-  Talk puts the talk box under the stage (the GM's composer, a player's "Say something", and the
-  GM's Whisper beside each character); under any other control it's away, so what's under the
-  stage is only what the moment is for. Travel and Things to do here put the ways there for
+  Talk puts the GM's talk box under the stage (their composer, and Whisper beside each character);
+  under any other control it's away, so what's under the stage is only what the moment is for. A
+  player's "Say something" is always there: talking needs nobody's say-so. Only a battle manages
+  it, where Talk is a row of the command menu that opens the composer under the field, so saying
+  something is one press like any command, and the command chosen stands. Travel and Things to do here put the ways there for
   everyone; Scene puts the scene list there and Check the check form, for the GM, in the same place a player's moves go,
   so there is one spot to look at whoever you are. There is no tab strip for these. What's left
   (Moves, and More: an archetype to grant, EXP and ABP to grant) is one more control on the
@@ -830,6 +834,22 @@ Phones are where most players are, so every page is checked at 390×844, 360×64
   the bar folds its links behind Menu as a phone's does, to make room. The log's tab goes away
   on this page: the log is the third view, in the page, and the count of lines you haven't seen
   sits on its name in the strip. The view you were on is kept for the session.
+- **Menu is a hamburger**, before the wordmark, wherever the links fold (a phone, and the table up to
+  a tablet's width); the table's three views sit at the bar's right end, plain names with no border,
+  the one shown on paper.
+- **A sheet is its player's and the GM's.** Nobody else opens a character's sheet (gear, items,
+  archetypes and all): on the campaign page their card is a card, not a link, and the table's party
+  panel names them. The GM opens every sheet.
+- **Items are each adventurer's own, and the party has a chest.** What a character carries is in
+  their own bag: it goes into battle with them, is what they wear from, use outside battle and sell
+  at a shop; what they buy goes into their bag. The chest is the party's: what's found, dropped or
+  stolen goes into it, and anyone takes from it or puts into it from
+  their sheet's Gear tab, which shows their bag beside the chest. Leaving the party leaves gear and
+  bag in the chest. A wish or a "give" takes from the chest first, then from whoever carries it.
+  In battle everything the party has, bags and chest, is one flat count for the Item command (the
+  engine shares the party's items); used ones come out of their own bags first, then the chest.
+- **A scene's music step can name a track**: the Music book's tracks called by name, a YouTube or
+  Spotify link among them, sit in the step's select after the kinds of scene, as on the stage's switch.
 - **The log reads newest first.** A new line lands on top, and opening the log shows the top, so
   the latest is always at hand without scrolling; the battle's own section still grows downward
   as a fight plays. A search box sits in the log's sticky head: typing narrows the lines to the

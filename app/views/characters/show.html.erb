@@ -26,7 +26,7 @@
     <div class="character-sheet__body">
       <% panel = ->(key, &block) { tag.div(class: "sheet-panel", data: { sheet_tabs_target: "panel", key: key }, &block) } %>
       <%= panel.("stats") { render "characters/stats", stages: @character.stat_stages } %>
-      <%= panel.("gear") { safe_join([ render("characters/equipment"), (render("characters/items") if can_manage?(@character)) ].compact) } %>
+      <%= panel.("gear") { safe_join([ render("characters/equipment"), render("characters/chest"), (render("characters/items") if can_manage?(@character)) ].compact) } %>
       <%= panel.("abilities") { render "characters/abilities" } %>
       <%= panel.("skills") { safe_join([ render("characters/skills"), (render("characters/mastery", masteries: masteries) if masteries.any?) ].compact) } %>
       <%= panel.("jobs") { render "characters/jobs" } %>

@@ -33,7 +33,7 @@ RSpec.describe Character do
       lenna = campaign.characters.create!(name: "Lenna", job: job.("white_mage"), starting_level: 5)
       expect(lenna.equipped.transform_values { |slot| slot.item.slug }).to eq("weapon" => "staff", "body" => "cotton_robe", "head" => "leather_cap")
       expect(lenna.stats["atk"]).to be_positive
-      expect(campaign.inventories.sum(:quantity)).to eq(0) # issued, not taken from the bag
+      expect(campaign.inventories.sum(:quantity)).to eq(0) # issued, not taken from the chest or their bag
     end
 
     it "can start with nothing learned" do
@@ -51,8 +51,8 @@ RSpec.describe Character do
   describe "stats" do
     it "derives from level base, job, gear and innates, stage by stage" do
       bartz = create
-      campaign.add_item!(item.("broadsword"))
-      campaign.add_item!(item.("power_ring"))
+      bartz.add_item!(item.("broadsword"))
+      bartz.add_item!(item.("power_ring"))
       bartz.equip!(item.("broadsword"))
       bartz.equip!(item.("power_ring"))
 
@@ -109,15 +109,15 @@ RSpec.describe Character do
       expect(bartz.character_job.level).to eq(12)
     end
 
-    it "sends gear the new job can't use back to the bag" do
+    it "sends gear the new job can't use back to their bag" do
       bartz = create
-      campaign.add_item!(item.("broadsword"))
-      campaign.add_item!(item.("power_ring"))
+      bartz.add_item!(item.("broadsword"))
+      bartz.add_item!(item.("power_ring"))
       bartz.equip!(item.("broadsword"))
       bartz.equip!(item.("power_ring"))
       bartz.change_job!(job.("black_mage"))
       expect(bartz.equipped.keys).to eq([ "accessory" ])
-      expect(campaign.quantity_of(item.("broadsword"))).to eq(1)
+      expect(bartz.quantity_of(item.("broadsword"))).to eq(1)
     end
 
     it "clears ability slots the new job doesn't have" do
@@ -189,34 +189,45 @@ RSpec.describe Character do
   describe "equipment" do
     let(:bartz) { create }
 
-    it "comes from the bag and goes back to it" do
-      campaign.add_item!(item.("broadsword"))
+    it "comes from their own bag and goes back to it, not the chest" do
+      bartz.add_item!(item.("broadsword"))
       bartz.equip!(item.("broadsword"))
-      expect(campaign.quantity_of(item.("broadsword"))).to eq(0)
+      expect(bartz.quantity_of(item.("broadsword"))).to eq(0)
       expect(bartz.equipped["weapon"].item.slug).to eq("broadsword")
 
-      campaign.add_item!(item.("dagger")) # knights can't use knives
+      bartz.add_item!(item.("dagger")) # knights can't use knives
       expect { bartz.equip!(item.("dagger")) }.to raise_error(ActiveRecord::RecordInvalid, /can't equip Dagger/)
 
       bartz.unequip!("weapon")
-      expect(campaign.quantity_of(item.("broadsword"))).to eq(1)
+      expect(bartz.quantity_of(item.("broadsword"))).to eq(1)
+      expect(campaign.quantity_of(item.("broadsword"))).to eq(0)
       expect(bartz.equipped).to be_empty
     end
 
     it "swaps, returning the old item" do
-      campaign.add_item!(item.("broadsword"), 2)
+      bartz.add_item!(item.("broadsword"), 2)
       bartz.equip!(item.("broadsword"))
       bartz.equip!(item.("broadsword"))
-      expect(campaign.quantity_of(item.("broadsword"))).to eq(1)
+      expect(bartz.quantity_of(item.("broadsword"))).to eq(1)
     end
 
-    it "can't equip what isn't in the bag, and changes nothing if it fails" do
-      expect { bartz.equip!(item.("broadsword")) }.to raise_error(ActiveRecord::RecordInvalid, /not in the bag/)
+    it "can't equip what isn't in their bag (the chest doesn't count), and changes nothing if it fails" do
+      campaign.add_item!(item.("broadsword"))
+      expect { bartz.equip!(item.("broadsword")) }.to raise_error(ActiveRecord::RecordInvalid, /not in .*bag/)
       expect(bartz.equipped).to be_empty
     end
 
+    it "takes from the chest and puts back" do
+      campaign.add_item!(item.("potion"), 3)
+      bartz.take_from_chest!(item.("potion"), 2)
+      expect([ bartz.quantity_of(item.("potion")), campaign.quantity_of(item.("potion")) ]).to eq([ 2, 1 ])
+      bartz.put_in_chest!(item.("potion"), 2)
+      expect([ bartz.quantity_of(item.("potion")), campaign.quantity_of(item.("potion")) ]).to eq([ 0, 3 ])
+      expect { bartz.take_from_chest!(item.("potion"), 4) }.to raise_error(ActiveRecord::RecordInvalid, /not in the chest/)
+    end
+
     it "never takes a consumable" do
-      campaign.add_item!(item.("potion"))
+      bartz.add_item!(item.("potion"))
       expect { bartz.equip!(item.("potion")) }.to raise_error(ActiveRecord::RecordInvalid)
     end
   end

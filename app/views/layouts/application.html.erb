@@ -14,11 +14,13 @@
 
   <body data-book="<%= current_book %>" class="<%= "has-table-views" if content_for?(:table_views) %>" style="<%= accent_style %>" <%= tag.attributes(data: { view: coop_view(@campaign || @battle&.campaign) }) %>>
     <header class="topbar" data-controller="topbar" data-action="click@window->topbar#outside keydown@window->topbar#escape">
+      <%# On a phone (and the table page up to a tablet's width) the links fold behind one button: a hamburger, before the wordmark. %>
+      <button type="button" class="topbar__toggle" data-action="topbar#toggle" data-topbar-target="toggle" aria-expanded="false" aria-controls="topbar_menu" aria-label="Menu" title="Menu">
+        <span class="topbar__burger" aria-hidden="true"></span>
+      </button>
       <%= link_to "Polychrome", root_path, class: "topbar__brand" %>
-      <%# The table's three views, up to a tablet's width (campaigns/tables/show). %>
+      <%# The table's three views, up to a tablet's width, at the bar's right end (campaigns/tables/show). %>
       <%= yield :table_views %>
-      <%# On a phone the links fold behind one button. %>
-      <button type="button" class="topbar__toggle" data-action="topbar#toggle" data-topbar-target="toggle" aria-expanded="false" aria-controls="topbar_menu">Menu</button>
       <div class="topbar__menu" id="topbar_menu">
       <% in_campaign = @campaign&.persisted? ? @campaign : @battle&.campaign %>
       <% if in_campaign && current_user %>

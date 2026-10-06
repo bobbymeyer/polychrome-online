@@ -104,7 +104,7 @@
           <%= render "campaigns/tables/called", campaign: @campaign, gm: @seat.gm? unless view == "screen" %>
           <%= render "campaigns/field_uses/ability", character: @seat.character if @seat.character? %>
           <% if @seat.seated? && !view %>
-            <%# The talk box: here only while the GM has called Talk (#table_now data-controls, stage.css). %>
+            <%# The talk box: a player's always; the GM's only while they've called Talk (#table_now data-controls, stage.css). %>
             <div class="table-talk">
               <% if @seat.gm? %>
                 <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign) do %>

@@ -34,6 +34,18 @@ module World::Music
     end
   end
 
+  # The tracks the GM calls by name (not a kind of scene's), as choices for a
+  # select: the stage's switch and a scene's music step.
+  def named_music_choices
+    tracks.select { |track| track.scene.nil? && track.playable? }.map { |track| [ "♪ #{track.name}", "track:#{track.id}" ] }
+  end
+
+  # Whether a choice of music names one of this world's tracks ("track:12").
+  def music_track_choice?(choice)
+    id = choice.to_s.delete_prefix("track:")
+    id != choice.to_s && tracks.any? { |track| track.id == id.to_i }
+  end
+
   def copy_music_from!(source)
     source.tracks.each do |track|
       copy = tracks.create!(track.attributes.except("id", "world_id", "created_at", "updated_at", "prompt_id", "started_at"))

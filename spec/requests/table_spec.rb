@@ -158,7 +158,7 @@ RSpec.describe "The table", type: :request do
       expect(Nokogiri::HTML(response.body).at("#table_now")["data-state"]).to eq("choice")
     end
 
-    it "keeps the talk box for Talk: the Now line says which controls are called, and the rest follows it" do
+    it "says which controls are called on the Now line, and a player keeps the talk box whatever is called" do
       sit(bartz)
       get campaign_table_path(campaign)
       page = Nokogiri::HTML(response.body)
@@ -168,8 +168,8 @@ RSpec.describe "The table", type: :request do
       campaign.call_controls!("travel")
       get campaign_table_path(campaign)
       page = Nokogiri::HTML(response.body)
-      expect(page.at("#table_now")["data-controls"]).to eq("travel") # stage.css hides .table-talk and the whispers under it
-      expect(page.at(".table-talk #composer")).to be_present
+      expect(page.at("#table_now")["data-controls"]).to eq("travel") # stage.css hides the GM's .table-talk and whispers under it; a player's stays (data-seat)
+      expect(page.at(".table[data-seat=player] .table-talk #composer")).to be_present
     end
 
     it "always speaks as their own character, whatever the params say" do

@@ -9,8 +9,10 @@
     has called (Campaign::Controls): the talk box is there only under Talk. %>
 <% state = battle ? "battle" : campaign.pending_encounter.present? ? "encounter" : choice ? "choice" : (scene && beat) ? "scene" : "free" %>
 <section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>" data-controls="<%= campaign.controls %>" data-change="state" data-change-key="table-now">
-  <%# In free play the GM's line is the controls row and nothing else: no label, no sentence. %>
-  <% if gm && state == "free" %>
+  <%# In free play the GM's line is the controls row and nothing else: no label, no sentence. A scene on the stage
+      says nothing here either: the stage is the scene, and the director's hand is on the stage's corner tag
+      (campaigns/tables/_time). %>
+  <% if (gm && state.in?(%w[free scene])) || (!gm && state == "scene") %>
     <%# Clocks live in Prep; the one thing the table needs to know is when one is about to fill. %>
     <% nearly = campaign.clocks.running.select { |clock| clock.segments - clock.filled == 1 } %>
     <% if nearly.any? %>
@@ -32,9 +34,6 @@
       <strong><%= choice.where_next? ? "The party is choosing where to go next." : choice.what_now? ? "The party is down. What happens now?" : "The party is choosing." %></strong>
       <%# The shared screen has no buttons: it sends the table to their phones (stage.css swaps the words). %>
       <% if gm %>Settle it when you're ready.<% else %><span class="table-now__here">Pick below; the GM settles it.</span><span class="table-now__phones">Pick on your phones; the GM settles it.</span><% end %>
-    <% elsif scene && beat %>
-      <strong>A scene is on the stage: <%= scene.name %>.</strong>
-      <%= gm ? "Beat #{beat.position + 1} of #{scene.beats.size}#{scene.auto? ? ', playing on' : ''}." : "Watch the stage." %>
     <% elsif campaign.travelling? %>
       <strong>Where next?</strong> Say where you'd go: it goes to a vote, and the GM settles it.
     <% elsif campaign.doing? %>
@@ -48,17 +47,7 @@
   <%# The GM's prompt: the moves that fit this state, right here (the panels below have the detail). %>
   <% if gm && !battle %>
     <div class="table-now__do">
-      <% if state == "scene" %>
-        <%# The director's hand: the next beat (or the ending), play on or pause, and down. %>
-        <% ending = { "battle" => "then the battle", "reveal" => "then #{scene.map_node&.name} appears", "mode" => "then #{scene.map_node&.name} changes" }[scene.ending] %>
-        <%= button_to(scene.last_beat? ? "Finish#{", #{ending}" if ending}" : "Next beat", scene_play_path(scene), method: :patch, params: { go: "next" }, class: "button play", form: { class: "inline" }) %>
-        <% if scene.auto? %>
-          <%= button_to "Pause", scene_play_path(scene), method: :patch, params: { go: "pause" }, class: "button button--quiet", form: { class: "inline" } %>
-        <% elsif !scene.last_beat? && !beat.choice? %>
-          <%= button_to "Play on", scene_play_path(scene), method: :patch, params: { go: "on" }, class: "button button--quiet", form: { class: "inline" } %>
-        <% end %>
-        <%= button_to "Take it down", scene_play_path(scene), method: :delete, class: "link-button", form: { class: "inline", data: { turbo_confirm: "Take #{scene.name} off the stage without its ending?" } } %>
-      <% elsif state == "encounter" %>
+      <% if state == "encounter" %>
         <%= link_to "Fight or wave it off ↓", "#table_ways", class: "button play" %>
       <% elsif state == "choice" %>
         <%= link_to "Settle it ↓", "#table_choice", class: "button play" %>

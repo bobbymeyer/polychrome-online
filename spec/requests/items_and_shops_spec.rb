@@ -13,19 +13,21 @@ RSpec.describe "Items and shops", type: :request do
     let!(:faris) { campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "monk"), starting_level: 5, starting_gear: false) }
 
     before do
-      campaign.add_item!(potion, 2)
-      campaign.add_item!(world.items.find_by!(slug: "broadsword")) # gear never comes into battle
+      bartz.add_item!(potion, 1)
+      faris.add_item!(potion, 1) # what each carries goes in together
+      bartz.add_item!(world.items.find_by!(slug: "broadsword")) # gear never comes into battle
+      campaign.add_item!(potion, 5) # the chest comes too, flattened in with the bags
     end
 
-    it "brings the bag's usable items, offers them as a command, and takes used ones out of the bag after" do
+    it "brings everything the party has, bags and chest as one count, offers it as a command, and takes used ones out of their bags first" do
       battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 3 }, seed: 3)
       expect(battle.state["items"].keys).to eq([ "potion" ])
 
       post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
       get battle_panel_path(battle)
-      expect(response.body).to include(">Item</a>", "<td class=\"pick-row__cost\">×2</td>")
+      expect(response.body).to include(">Item</a>", "<td class=\"pick-row__cost\">×7</td>", 'data-menu-key="Talk"') # talk is an action here
       get battle_panel_path(battle, items: 1)
-      expect(response.body).to include("Potion", "Single ally · Restore HP, power 30 · 2 left")
+      expect(response.body).to include("Potion", "Single ally · Restore HP, power 30 · 7 left")
       get battle_panel_path(battle, item: "potion")
       expect(response.body).to include("<strong>Potion</strong>: choose a target.")
 
@@ -36,17 +38,17 @@ RSpec.describe "Items and shops", type: :request do
 
       post battle_seat_path(battle), params: { seat: "gm" }
       post battle_actions_path(battle), params: { gm: { op: "execute_round" } }
-      expect(battle.reload.state["items"]["potion"]["count"]).to eq(1)
+      expect(battle.reload.state["items"]["potion"]["count"]).to eq(6)
       expect(battle.battle_events.map(&:payload)).to include(a_hash_including("type" => "item_used", "item" => "potion"))
 
       post battle_actions_path(battle), params: { gm: { op: "end_battle", result: "fled" } }
-      expect(campaign.reload.quantity_of(potion)).to eq(1)
+      expect([ bartz.reload.quantity_of(potion), faris.reload.quantity_of(potion), campaign.reload.quantity_of(potion) ]).to eq([ 0, 1, 5 ])
       expect(battle.reload.settlement["used"]).to eq("Potion" => 1)
       expect(campaign.messages.last.body).to include("Used 1 × Potion.")
     end
 
-    it "leaves the Item command out when the party carries nothing usable" do
-      campaign.use_items!(potion, 2)
+    it "leaves the Item command out when the party has nothing usable" do
+      campaign.use_items!(potion, 7) # their bags first, then the chest
       battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 1 }, seed: 3)
       post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
       get battle_panel_path(battle)
@@ -70,27 +72,35 @@ RSpec.describe "Items and shops", type: :request do
       sign_in_as(lenna)
     end
 
-    it "sells the stock for party gil, and buys from the bag at half price" do
+    it "sells the stock for party gil into the buyer's bag, and buys from a bag or the chest at half price" do
+      character = campaign.characters.find_by!(name: "Lenna")
+      campaign.add_item!(potion) # one in the chest
       get location_path(town)
       expect(response.body).to include("The party has <strong>200 gil</strong>", "Antidote", 'value="Buy"')
 
       post location_purchases_path(town), params: { item: "potion", quantity: 3 }
       expect(campaign.reload.gil).to eq(80)
-      expect(campaign.quantity_of(potion)).to eq(3)
+      expect(character.quantity_of(potion)).to eq(3)
+      expect(campaign.quantity_of(potion)).to eq(1)
       expect(campaign.messages.last.body).to eq("Lenna bought 3 × Potion in #{town.name} for 120 gil.")
 
-      post location_sales_path(town), params: { item: "potion", quantity: 2 }
+      get location_path(town)
+      expect(response.body).to include("×3, Lenna&#39;s bag", "×1, the chest")
+      post location_sales_path(town), params: { item: "potion", quantity: 2, character_id: character.id }
       expect(campaign.reload.gil).to eq(120)
-      expect(campaign.quantity_of(potion)).to eq(1)
+      expect(character.quantity_of(potion)).to eq(1)
+      post location_sales_path(town), params: { item: "potion", quantity: 1 }
+      expect(campaign.reload.gil).to eq(140)
+      expect(campaign.quantity_of(potion)).to eq(0)
     end
 
-    it "won't sell what it doesn't stock, overspend, or buy what the bag lacks" do
+    it "won't sell what it doesn't stock, overspend, or buy what the chest lacks" do
       post location_purchases_path(town), params: { item: "phoenix_down" }
       expect(flash[:alert]).to include("doesn't sell Phoenix Down")
       post location_purchases_path(town), params: { item: "antidote", quantity: 5 }
       expect(flash[:alert]).to include("The party has 200 gil; 5 × Antidote costs 250")
       post location_sales_path(town), params: { item: "antidote" }
-      expect(flash[:alert]).to include("The bag has 0 × Antidote")
+      expect(flash[:alert]).to include("The chest has 0 × Antidote")
       expect(campaign.reload.gil).to eq(200)
     end
 
@@ -147,16 +157,17 @@ RSpec.describe "Items and shops", type: :request do
     let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5, starting_gear: false) }
 
     before do
-      campaign.add_item!(potion, 2)
-      campaign.add_item!(antidote)
+      lenna.add_item!(potion, 2)
+      lenna.add_item!(antidote)
       bartz.update!(hp: 20)
     end
 
-    it "uses a healing item from the bag on a party member, through the engine's formula" do
+    it "uses a healing item from their own bag on a party member, through the engine's formula" do
       get character_path(lenna)
       expect(response.body).to include('id="items"', 'data-key="gear"', "Potion", "Bartz (HP 20/")
-      expect(response.body).not_to include("Antidote <span") # cures only work in battle
-      expect(response.body).not_to include("Lenna (HP") # unhurt: nothing to heal
+      usable = Nokogiri::HTML(response.body).at("#items").text
+      expect(usable).not_to include("Antidote") # cures only work in battle (it's in the bag, above)
+      expect(usable).not_to include("Lenna (HP") # unhurt: nothing to heal
 
       bartz.update!(hp: bartz.stats["max_hp"])
       get character_path(lenna)
@@ -166,8 +177,8 @@ RSpec.describe "Items and shops", type: :request do
       rng = campaign.rng
       post character_item_use_path(lenna), params: { item: "potion", target_id: bartz.id }
       expect(bartz.reload.hp).to be > 20
-      expect(campaign.reload.quantity_of(potion)).to eq(1)
-      expect(campaign.rng).not_to eq(rng)
+      expect(lenna.reload.quantity_of(potion)).to eq(1)
+      expect(campaign.reload.rng).not_to eq(rng)
       expect(campaign.messages.last.body).to eq("Lenna uses Potion on Bartz: HP 20 → #{bartz.hp}.")
     end
 
@@ -180,7 +191,7 @@ RSpec.describe "Items and shops", type: :request do
       BattleRecord.start!(campaign: campaign, characters: [ bartz, lenna ], name: "Road", encounter: { "goblin" => 1 }, seed: 3)
       post character_item_use_path(lenna), params: { item: "potion", target_id: bartz.id }
       expect(flash[:alert]).to include("Not while a battle is on")
-      expect(campaign.reload.quantity_of(potion)).to eq(2)
+      expect(lenna.reload.quantity_of(potion)).to eq(2)
     end
 
     it "is only for someone who plays that character (or the GM)" do
@@ -203,7 +214,7 @@ RSpec.describe "Items and shops", type: :request do
 
     before do
       campaign.update!(current_node: node)
-      campaign.add_item!(broadsword)
+      bartz.add_item!(broadsword)
       bartz.equip!(broadsword)
     end
 
@@ -214,7 +225,7 @@ RSpec.describe "Items and shops", type: :request do
       post location_sales_path(town), params: { character_id: bartz.id, slot: "weapon" }
       expect(bartz.reload.equipped["weapon"]).to be_nil
       expect(campaign.reload.gil).to eq(200 + broadsword.resale_price)
-      expect(campaign.quantity_of(broadsword)).to eq(0)
+      expect(bartz.quantity_of(broadsword)).to eq(0)
     end
 
     it "only for the character's player or the GM" do

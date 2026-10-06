@@ -1,7 +1,8 @@
 <section class="window" id="equipment">
   <h2>Equipment</h2>
   <% equipped = @character.equipped %>
-  <% bag = @campaign.bag.map(&:item) %>
+  <%# Worn from their own bag (characters/_chest has the bag and the party's chest). %>
+  <% bag = @character.bag.map(&:item) %>
   <% unless can_manage?(@character) %>
     <dl class="facts">
       <% Character::SLOTS.each do |slot| %><dt><%= term(slot) %></dt><dd><%= equipped[slot]&.item&.name || "—" %></dd><% end %>

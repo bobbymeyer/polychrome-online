@@ -16,7 +16,7 @@
 #   restore 25  25% of HP and MP back for everyone standing
 #   raise       the KO'd back on their feet, whole
 #   reveal      every place next to the party's comes into view
-#   find 100    an item worth up to 100, into the bag
+#   find 100    an item worth up to 100, into the chest
 #   learn       the waiting encounter's weaknesses are known
 #   sneak       the waiting encounter is avoided
 #   safe road   the next dangerous path rolls no encounter
@@ -32,7 +32,7 @@
 #   time 2      two parts of the day go by
 #   tick        a running clock goes on a segment: one at the party's place
 #               if there is one, else the one nearest to full
-#   give potion one of that item, out of the bag (a camp or road event's
+#   give potion one of that item, out of the chest or a bag (a camp or road event's
 #               choice: Campaign::Remarks)
 #
 # What takes is the GM's hard moves (Dungeon World's, ch. 20 of
@@ -43,7 +43,7 @@
 # clock's does (Scene#outcome, Clock):
 #   reveal      a place comes into view            { "node" => id }
 #   mode        a place is set in a mode, or back  { "node" => id, "mode" => key or nil }
-#   find        that item, into the bag            { "item" => slug } (a dungeon's treasure)
+#   find        that item, into the chest          { "item" => slug } (a dungeon's treasure)
 #   battle      a fight starts, now                { "name" => "...", "monsters" => { slug => count } }
 Outcome = Data.define(:kind, :amount, :target)
 
@@ -58,7 +58,7 @@ class Outcome
     "restore" => [ "Everyone standing gets %{amount}% of %{hp} and %{mp} back", 25 ],
     "raise" => [ "The KO'd are back on their feet, whole", nil ],
     "reveal" => [ "Every place next to the party's comes into view", nil ],
-    "find" => [ "An item worth up to %{amount}, into the bag", 100 ],
+    "find" => [ "An item worth up to %{amount}, into the chest", 100 ],
     "learn" => [ "The waiting encounter's weaknesses are known before the fight", nil ],
     "sneak" => [ "The encounter waiting on the road is avoided", nil ],
     "safe_road" => [ "The next dangerous path rolls no encounter", nil ],
@@ -143,7 +143,7 @@ class Outcome
     when "hurt" then standing.any? { |c| c.current_hp > 1 }
     when "weary" then standing.any? { |c| c.current_mp.positive? }
     when "lose" then campaign.gil.positive?
-    when "give" then (item = campaign.world.items.find_by(slug: target["item"])) && campaign.quantity_of(item).positive?
+    when "give" then (item = campaign.world.items.find_by(slug: target["item"])) && campaign.party_quantity_of(item).positive?
     when "tick" then !campaign.clock_to_tick.nil?
     when "ambush" then !(campaign.dungeon_in_progress || campaign.current_node&.location)&.location_template&.encounter_table.nil?
     else true
@@ -335,9 +335,9 @@ class Outcome
 
   def give!(campaign, by:, **)
     item = campaign.world.items.find_by(slug: target["item"])
-    return "#{by} has nothing like that to give." unless item && campaign.quantity_of(item).positive?
+    return "#{by} has nothing like that to give." unless item && campaign.party_quantity_of(item).positive?
 
-    campaign.take_item!(item)
+    campaign.take_from_party!(item)
     "#{by} gives up #{item.name.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{item.name}."
   end
 

@@ -144,23 +144,33 @@ body { padding-top: var(--topbar); }
 /* The links sit in the grid as if the menu weren't there; on a phone they fold behind it. */
 .topbar__menu { display: contents; }
 .topbar__toggle { display: none; }
+/* The hamburger: three bars of the bar's own colour; an open menu crosses them. */
+.topbar__burger, .topbar__burger::before, .topbar__burger::after { display: block; width: 20px; height: 2px; background: currentColor; transition: transform var(--quick, .15s), opacity var(--quick, .15s); }
+.topbar__burger { position: relative; }
+.topbar__burger::before, .topbar__burger::after { content: ""; position: absolute; left: 0; }
+.topbar__burger::before { top: -6px; }
+.topbar__burger::after { top: 6px; }
+.topbar.is-open .topbar__burger { background: transparent; }
+.topbar.is-open .topbar__burger::before { transform: translateY(6px) rotate(45deg); }
+.topbar.is-open .topbar__burger::after { transform: translateY(-6px) rotate(-45deg); }
 
 .page { max-width: var(--measure); margin: 0 auto; padding: 40px var(--gutter) 96px; }
 @media (max-width: 640px) {
   .page { padding: 24px 16px 64px; }
 }
-/* The table's three views sit in the bar's middle up to a tablet's width (stage.css): brand, views, Menu. */
+/* The table's three views sit at the bar's right end up to a tablet's width (stage.css): Menu, the wordmark, the views. */
 @media (max-width: 1099px) {
-  body.has-table-views .topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
-  body.has-table-views .topbar__brand { grid-column: 1; }
-  body.has-table-views .topbar__toggle { grid-column: 3; }
+  body.has-table-views .topbar { grid-template-columns: auto auto minmax(0, 1fr); }
+  body.has-table-views .topbar__toggle { grid-column: 1; }
+  body.has-table-views .topbar__brand { grid-column: 2; }
+  body.has-table-views .table-views { grid-column: 3; justify-self: end; }
 }
 /* A phone either way up (and the table page up to a tablet's width): the top bar is one line with a Menu. */
 @media (max-width: 640px), (max-height: 500px) and (orientation: landscape) {
-  .topbar { padding: 4px 16px; grid-template-columns: 1fr auto; align-items: center; }
-  .topbar__brand { grid-column: 1; }
-  .topbar__toggle { display: inline-flex; align-items: center; grid-column: 2; min-height: 34px; padding: 0 12px; font-size: 14px;
-                    border: 2px solid currentColor; background: none; color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
+  .topbar { padding: 4px 16px; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; }
+  .topbar__toggle { display: inline-flex; align-items: center; justify-content: center; grid-column: 1; width: 36px; min-height: 36px; padding: 0;
+                    border: 0; background: none; color: inherit; cursor: pointer; }
+  .topbar__brand { grid-column: 2; }
   .topbar__menu { display: none; grid-column: 1 / -1; max-height: calc(100vh - var(--topbar)); overflow-y: auto; padding-bottom: 12px; }
   .topbar.is-open .topbar__menu { display: block; }
   /* On a phone the account's menu is part of the list, not a drop-down. */
@@ -175,9 +185,9 @@ body { padding-top: var(--topbar); }
 }
 /* The table page, up to a tablet's width, keeps the same folded bar (the same rules, for that page). */
 @media (min-width: 641px) and (max-width: 1099px) {
-  body.has-table-views .topbar { padding: 4px 16px; align-items: center; }
-  body.has-table-views .topbar__toggle { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; font-size: 14px;
-                                         border: 2px solid currentColor; background: none; color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
+  body.has-table-views .topbar { padding: 4px 16px; column-gap: 12px; align-items: center; }
+  body.has-table-views .topbar__toggle { display: inline-flex; align-items: center; justify-content: center; width: 36px; min-height: 36px; padding: 0;
+                                         border: 0; background: none; color: inherit; cursor: pointer; }
   body.has-table-views .topbar__menu { display: none; grid-column: 1 / -1; max-height: calc(100vh - var(--topbar)); overflow-y: auto; padding-bottom: 12px; }
   body.has-table-views .topbar.is-open .topbar__menu { display: block; }
   body.has-table-views .topbar__user-menu { position: static; border: 0; padding: 0 0 0 16px; background: none; color: inherit; }

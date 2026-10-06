@@ -151,8 +151,7 @@ class Campaign < ApplicationRecord
   delegate :money, to: :world
 
   def music_is_heard
-    return if MUSIC_CHOICES.include?(music)
-    return if music.start_with?("track:") && world.tracks.any? { |track| track.id == music.delete_prefix("track:").to_i }
+    return if MUSIC_CHOICES.include?(music) || world.music_track_choice?(music)
 
     errors.add(:music, "isn't one of the world's tracks")
   end

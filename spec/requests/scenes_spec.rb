@@ -35,7 +35,10 @@ RSpec.describe "Scenes", type: :request do
     expect(campaign.messages.pluck(:body)).to include("Behind you!")
     expect(campaign.reload.staged_scene).to eq(scene)
     get campaign_table_path(campaign)
-    expect(response.body).to include("A scene is on the stage: Ambush.", "Finish, then the battle", 'class="table-scene is-scene"')
+    expect(response.body).not_to include("A scene is on the stage") # no title card: the stage is the scene
+    corner = Nokogiri::HTML(response.body).at("#table_time .table-time__scene")
+    expect(corner.text.squish).to include("1/1", "Finish, then the battle")
+    expect(response.body).to include('class="table-scene is-scene"', 'data-state="scene"')
 
     patch scene_play_path(scene), params: { go: "next" }
     expect(campaign.battles.last.name).to eq("Ambush")

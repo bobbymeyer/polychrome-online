@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -445,8 +445,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
     t.integer "quantity", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["campaign_id", "item_id"], name: "index_inventories_on_campaign_id_and_item_id", unique: true
+    t.integer "character_id"
+    t.index ["campaign_id", "character_id", "item_id"], name: "index_inventories_on_campaign_id_and_character_id_and_item_id", unique: true
     t.index ["campaign_id"], name: "index_inventories_on_campaign_id"
+    t.index ["character_id"], name: "index_inventories_on_character_id"
     t.index ["item_id"], name: "index_inventories_on_item_id"
   end
 
@@ -1007,6 +1009,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_05_160000) do
   add_foreign_key "front_secrets", "world_places", column: "place_id", on_delete: :nullify
   add_foreign_key "generator_tables", "worlds"
   add_foreign_key "inventories", "campaigns"
+  add_foreign_key "inventories", "characters"
   add_foreign_key "inventories", "items"
   add_foreign_key "items", "worlds"
   add_foreign_key "job_levels", "abilities"
