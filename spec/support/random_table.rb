@@ -80,13 +80,11 @@ class RandomTable
     return { "type" => "timeout" } if roll < 8
     return gm_action(state) if roll < 14
 
-    awaiting = state["units"].select do |u|
-      u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] && !state["inputs"].key?(u["id"]) &&
-        u["statuses"].none? { |s| Battle::NO_INPUT_STATUSES.include?(s["kind"]) }
-    end
+    awaiting = Battle::State.awaiting_input(state)
     return { "type" => "timeout" } if awaiting.empty?
 
-    player_command(state, awaiting.sample(random: @chooser))
+    chosen = awaiting.sample(random: @chooser)
+    player_command(state, state["units"].find { |u| u["id"] == chosen })
   end
 
   def player_command(state, u)
@@ -149,13 +147,10 @@ class RandomTable
 
       { "type" => "gm_override", "op" => "dismiss", "unit" => leaving["id"] }
     else
-      missing = state["units"].select do |u|
-        u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] && !state["inputs"].key?(u["id"]) &&
-          u["statuses"].none? { |s| Battle::NO_INPUT_STATUSES.include?(s["kind"]) }
-      end
+      missing = Battle::State.awaiting_input(state)
       return { "type" => "timeout" } if missing.empty?
 
-      { "type" => "gm_override", "op" => "auto", "unit" => missing.sample(random: @chooser)["id"] }
+      { "type" => "gm_override", "op" => "auto", "unit" => missing.sample(random: @chooser) }
     end
   end
 

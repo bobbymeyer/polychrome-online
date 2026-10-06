@@ -4,16 +4,13 @@ require "rails_helper"
 
 RSpec.describe "Flags and GM changes", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
-  let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight")) }
+  let(:campaign) { base_campaign }
+  let!(:bartz) { base_character(campaign, name: "Bartz") }
 
-  def sit(seat)
-    post campaign_table_seat_path(campaign), params: { seat: seat }
-  end
 
   describe "flags" do
     it "are the GM's to set, count and clear" do
-      sit("gm")
+      sit(campaign, "gm")
       post campaign_flags_path(campaign), params: { flag: { key: "Crystals found", value: "1" } }
       flag = campaign.flags.find_by!(key: "crystals_found")
       post campaign_flag_bumps_path(campaign, flag), params: { by: 1 }
@@ -34,14 +31,14 @@ RSpec.describe "Flags and GM changes", type: :request do
     it "gives every field on the campaign page its own id" do
       campaign.flags.create!(key: "a", value: "1")
       campaign.flags.create!(key: "b", value: "2")
-      sit("gm")
+      sit(campaign, "gm")
       get campaign_path(campaign)
-      ids = Nokogiri::HTML(response.body).css("[id]").map { |node| node["id"] }
+      ids = page.css("[id]").map { |node| node["id"] }
       expect(ids.tally.select { |_, n| n > 1 }).to eq({})
     end
 
     it "reports bad keys" do
-      sit("gm")
+      sit(campaign, "gm")
       post campaign_flags_path(campaign), params: { flag: { key: "9 lives", value: "x" } }
       follow_redirect!
       expect(response.body).to include("must start with a letter")
@@ -59,7 +56,7 @@ RSpec.describe "Flags and GM changes", type: :request do
       get campaign_path(campaign)
       expect(response.body).not_to include("the_king_is_a_fake")
       get campaign_table_path(campaign)
-      expect(Nokogiri::HTML(response.body).at("#party_knows").text).not_to include("Met the king") # found out for good: Legends', not the table's
+      expect(page.at("#party_knows").text).not_to include("Met the king") # found out for good: Legends', not the table's
       expect(response.body).to include("The party learns: Met the king.") # the log said it
       expect(response.body).not_to include("fake")
       get campaign_legends_path(campaign)
@@ -79,7 +76,7 @@ RSpec.describe "Flags and GM changes", type: :request do
       added = cave.add_room!(name: "Hidden Vault", connect: cave.view["entrance"], decision: { "kind" => "treasure", "item" => "power_ring" })
       rolled = cave.generated
 
-      sit("gm")
+      sit(campaign, "gm")
       get campaign_changes_path(campaign)
       expect(response.body).to include("Renamed to The Den", "Boss placed: 1 × Ogre", "Added room Hidden Vault", "Revert")
 
@@ -98,7 +95,7 @@ RSpec.describe "Flags and GM changes", type: :request do
       galuf = campaign.npcs.create!(name: "Galuf", location: town)
       expect(town.changes.map { |c| c["summary"] }).to include(start_with("Pinned"), "Wrote in Galuf")
 
-      sit("gm")
+      sit(campaign, "gm")
       town.changes.select { |c| c["kind"] == "npc" }.each do |change|
         post location_reversions_path(town), params: { kind: "npc", key: change["key"] }
       end
@@ -107,7 +104,7 @@ RSpec.describe "Flags and GM changes", type: :request do
     end
 
     it "is the GM's" do
-      sit(bartz.id)
+      sit(campaign, bartz)
       get campaign_changes_path(campaign)
       expect(response).to have_http_status(:see_other) # the GM seat's: turned back with a word
       post location_reversions_path(cave), params: { kind: "name" }

@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Field abilities", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
+  let(:campaign) { base_campaign(gm: @admin) }
   let(:job) { ->(slug) { world.jobs.find_by!(slug: slug) } }
   let(:tule) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true) }
   let(:ruins) { campaign.map_nodes.create!(name: "Ruins", kind: "dungeon", x: 400, y: 300) }
@@ -13,16 +13,13 @@ RSpec.describe "Field abilities", type: :request do
     campaign.characters.create!(name: name, job: job.(slug), starting_level: 10, starting_gear: false)
   end
 
-  def sit(seat)
-    post campaign_table_seat_path(campaign), params: { seat: seat.respond_to?(:id) ? seat.id : seat }
-  end
 
   # The player asks; the GM rolls it at an easy difficulty.
   def use!(character, difficulty: "easy")
-    sit(character)
+    sit(campaign, character)
     post campaign_field_uses_path(campaign)
     raise flash[:alert] if flash[:alert]
-    sit("gm")
+    sit(campaign, "gm")
     patch campaign_field_use_path(campaign, campaign.field_uses.last), params: { difficulty: difficulty }
     campaign.field_uses.last.reload
   end
@@ -41,14 +38,13 @@ RSpec.describe "Field abilities", type: :request do
 
   it "shows a character their field ability, lets them ask, and shows the GM the request" do
     kim = hero("thief", name: "Kim")
-    sit(kim)
-    get campaign_table_path(campaign)
-    row = Nokogiri::HTML(response.body).at("#field_ability .pick-table .pick-row") # a row, like the ways and the vote
+    at_the_table(campaign, as: kim)
+    row = page.at("#field_ability .pick-table .pick-row") # a row, like the ways and the vote
     expect(row.at("button.pick-row__act").text).to eq("Use Pick Lock")
     expect(row.at(".pick-row__note").text).to include("Thievery", "once per rest")
     expect(row.at(".pick-row__cost").text).to eq("ask")
     get campaign_table_path(campaign, view: "controller")
-    moves = Nokogiri::HTML(response.body).at("section.your-moves")
+    moves = page.at("section.your-moves")
     expect(moves.at("#field_ability").text).to include("Use Pick Lock") # with the controller's other moves
 
     post campaign_field_uses_path(campaign)
@@ -57,9 +53,10 @@ RSpec.describe "Field abilities", type: :request do
     expect(response.body).to include("Pick Lock: asked for. Waiting on the GM…")
     expect(response.body).not_to include("Use Pick Lock") # not a move you can make now
 
-    sit("gm")
-    get campaign_table_path(campaign)
-    expect(response.body).to include("Asked for", "Kim</strong> wants to <strong>Pick Lock", "Roll it", "Not now")
+    at_the_table(campaign, as: "gm")
+    expect(page.text).to include("Asked for", "Kim wants to Pick Lock")
+    expect(response.body).to include("Roll it", "Not now")
+    expect(page.css("strong").map(&:text)).to include("Kim", "Pick Lock")
   end
 
   it "rolls on the GM's yes with the skill and the job's bonus, once per rest, back after a rest" do
@@ -70,7 +67,7 @@ RSpec.describe "Field abilities", type: :request do
     expect(use).to have_attributes(status: "done", difficulty: "hard")
     expect(kim.reload).to be_field_used
 
-    sit(kim)
+    sit(campaign, kim)
     post campaign_field_uses_path(campaign)
     expect(flash[:alert]).to eq("Kim has used Pick Lock since the last rest")
     campaign.sleep!
@@ -79,9 +76,9 @@ RSpec.describe "Field abilities", type: :request do
 
   it "costs nothing when the GM says no" do
     kim = hero("thief", name: "Kim")
-    sit(kim)
+    sit(campaign, kim)
     post campaign_field_uses_path(campaign)
-    sit("gm")
+    sit(campaign, "gm")
     patch campaign_field_use_path(campaign, campaign.field_uses.last), params: { verdict: "veto", line: "The guards are watching." }
     expect(campaign.messages.last.body).to eq("Not now, Kim. The guards are watching.")
     expect(kim.reload).not_to be_field_used
@@ -89,7 +86,7 @@ RSpec.describe "Field abilities", type: :request do
 
   it "only lets the GM say yes, and a player ask only as themselves" do
     kim = hero("thief", name: "Kim")
-    sit(kim)
+    sit(campaign, kim)
     post campaign_field_uses_path(campaign)
     patch campaign_field_use_path(campaign, campaign.field_uses.last), params: { difficulty: "easy" }
     expect(campaign.field_uses.last).to be_pending
@@ -116,7 +113,7 @@ RSpec.describe "Field abilities", type: :request do
     end
 
     it "won't sneak past or read an encounter that isn't there" do
-      sit(hero("red_mage", name: "Terra"))
+      sit(campaign, hero("red_mage", name: "Terra"))
       post campaign_field_uses_path(campaign)
       expect(flash[:alert]).to match(/no encounter on the road/)
     end

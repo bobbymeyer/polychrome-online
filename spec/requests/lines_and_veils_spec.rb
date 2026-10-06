@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "A table's own lines and veils", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }
   let(:player) { make_user("Player") }
   let!(:rook) { create_character(campaign, name: "Rook", user: player) }
 
@@ -12,8 +12,7 @@ RSpec.describe "A table's own lines and veils", type: :request do
 
   it "lets a player draw one from their seat, with no name on it, beside the world's" do
     sign_in_as(player)
-    post campaign_table_seat_path(campaign), params: { seat: rook.id }
-    get campaign_table_path(campaign)
+    at_the_table(campaign, as: rook)
     expect(response.body).to include("Add one for this table")
 
     post campaign_limits_path(campaign), params: { kind: "line", text: "  spiders " }
@@ -29,7 +28,7 @@ RSpec.describe "A table's own lines and veils", type: :request do
     expect(campaign.reload.lines).to eq("spiders")
 
     get campaign_table_path(campaign) # read where they're drawn: the table (and the join page); not the campaign page
-    expect(response.body).to include("harm to children<br>spiders", "torture<br>drowning")
+    expect(page.css("br").map { |br| [ br.previous.text.strip, br.next.text.strip ] }).to include(%w[harm\ to\ children spiders], %w[torture drowning])
     get campaign_path(campaign)
     expect(response.body).not_to include("Lines and veils")
     get join_path(campaign.join_code || campaign.new_join_code!)

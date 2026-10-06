@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Story rows: arrival lines, the facts page and the moment", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let!(:tule) do
     campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true, location: campaign.locations.create!(location_template: village, seed: 11))
@@ -41,8 +41,7 @@ RSpec.describe "Story rows: arrival lines, the facts page and the moment", type:
     expect(response).to have_http_status(:see_other) # the GM seat's: turned back with a word
 
     sign_in_as(@admin)
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    get campaign_table_path(campaign)
+    at_the_table(campaign, as: "gm")
     expect(response.body).to include("Say it")
     post message_saying_path(note)
     expect(campaign.messages.where(scope: "table", kind: "say").pluck(:body)).to eq([ "A lamp." ])
@@ -67,8 +66,7 @@ RSpec.describe "Story rows: arrival lines, the facts page and the moment", type:
     note = campaign.narrate("An event, on the road: “A cart in the ditch.”", scope: "gm",
                             data: { "offer" => { "text" => "A cart in the ditch.", "flag" => "helped_cart",
                                                  "choices" => [ { "label" => "Help", "does" => [ "money 30" ] }, { "label" => "Leave it", "does" => [] } ] } })
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    get campaign_table_path(campaign)
+    at_the_table(campaign, as: "gm")
     expect(response.body).to include("Put it to the table")
     post message_saying_path(note)
     expect(campaign.reload.open_choice).to have_attributes(options: [ "Help", "Leave it" ], flag_key: "helped_cart")
@@ -78,8 +76,7 @@ RSpec.describe "Story rows: arrival lines, the facts page and the moment", type:
     campaign.update!(gil: 100)
     note = campaign.narrate("A hard move, for the failed check: “A purse goes missing.”", scope: "gm",
                             data: { "offer" => { "text" => "A purse goes missing.", "does" => "lose 50" } })
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    get campaign_table_path(campaign)
+    at_the_table(campaign, as: "gm")
     expect(response.body).to include("Make it so")
     post message_saying_path(note)
     expect(campaign.reload.gil).to eq(50)

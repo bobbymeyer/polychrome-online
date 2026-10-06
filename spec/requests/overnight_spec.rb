@@ -5,18 +5,18 @@ require "rails_helper"
 RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :request do
   let!(:world) { base_world }
   let(:village) { world.location_templates.find_by!(slug: "village") }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }
   let(:varn_town) { campaign.locations.create!(location_template: village, seed: 11) }
   let(:tule_town) { campaign.locations.create!(location_template: village, seed: 12) }
   let!(:varn) { campaign.map_nodes.create!(name: "Varn", kind: "town", x: 100, y: 100, visible: true, location: varn_town) }
   let!(:tule) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 300, y: 100, visible: true, location: tule_town) }
   let!(:road) { campaign.map_edges.create!(from_node: varn, to_node: tule, state: "dangerous") }
-  let(:hero) { campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), user: @admin) }
+  let(:hero) { base_character(campaign, name: "Rook", user: @admin) }
 
   before do
     hero
     campaign.update!(current_node: tule)
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
   end
 
   it "lets a rumour loose, carries it a road a night, and the party hears it where it gets to" do

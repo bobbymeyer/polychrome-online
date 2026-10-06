@@ -4,8 +4,8 @@ require "rails_helper"
 
 RSpec.describe "Antagonists at the table", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
-  let!(:hero) { campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), starting_level: 10) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }
+  let!(:hero) { base_character(campaign, name: "Rook", starting_level: 10) }
 
   it "makes an NPC an antagonist, puts them in a battle, and shows them on the board" do
     post campaign_npcs_path(campaign), params: { npc: { name: "Gorn the Red", monster_id: world.monsters.find_by!(slug: "goblin_chief").id } }
@@ -13,9 +13,8 @@ RSpec.describe "Antagonists at the table", type: :request do
     expect(gorn).to be_antagonist
 
     campaign.call_controls!("battle")
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    get campaign_table_path(campaign)
-    expect(Nokogiri::HTML(response.body).at("#table_called").text).to include("Antagonists", "Gorn the Red", "as Goblin Chief")
+    at_the_table(campaign, as: "gm")
+    expect(page.at("#table_called").text).to include("Antagonists", "Gorn the Red", "as Goblin Chief")
 
     post campaign_battles_path(campaign), params: { battle: { name: "Alley", characters: [ hero.id ], antagonists: [ gorn.id ],
                                                              encounter: { "0" => { monster: "", count: "1" } } } }

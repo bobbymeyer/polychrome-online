@@ -15,6 +15,17 @@ module BaseWorldHelper
     [ WorldFront, WorldFigure, WorldRoute, WorldPlace ].each { |canon| canon.where(world: world).destroy_all }
     world
   end
+
+  # A campaign in the base world, with no map or cast dealt in.
+  def base_campaign(name: "Crystal Road", **attrs)
+    base_world.campaigns.create!(name: name, **attrs)
+  end
+
+  # A character in a base-world campaign, in one of its jobs (by slug).
+  def base_character(campaign, name: "Bartz", job: "knight", **attrs)
+    job = campaign.world.jobs.find_by!(slug: job) if job.is_a?(String)
+    campaign.characters.create!(name: name, job: job, **attrs)
+  end
 end
 
 RSpec.configure do |config|

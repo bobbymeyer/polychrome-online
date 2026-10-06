@@ -65,6 +65,14 @@ module SystemHelpers
   end
 end
 
+# A GM's campaign with one player, Rook's: what the system specs sit down at.
+RSpec.shared_context "a GM's table" do
+  let(:gm) { make_user("Gamemaster") }
+  let(:player) { make_user("Player") }
+  let(:campaign) { create_campaign.tap { |c| c.update!(gm_id: gm.id) } }
+  let!(:rook) { create_character(campaign, name: "Rook", user: player) }
+end
+
 RSpec.configure do |config|
   config.include SignIn, type: :system
   # Several browsers and a live connection each: give pages time to settle.

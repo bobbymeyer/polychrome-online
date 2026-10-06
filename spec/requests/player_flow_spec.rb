@@ -8,7 +8,7 @@ RSpec.describe "The player's way through", type: :request do
   include Turbo::Broadcastable::TestHelper
 
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
+  let(:campaign) { base_campaign(gm: @admin) }
   let(:knight) { world.jobs.find_by!(slug: "knight") }
   let(:white_mage) { world.jobs.find_by!(slug: "white_mage") }
   let!(:krile) { make_user("Krile") }
@@ -81,7 +81,7 @@ RSpec.describe "The player's way through", type: :request do
 
     sign_in_as(krile)
     get campaign_table_path(campaign)
-    expect(Nokogiri::HTML(response.body).at("#table_party li.is-you").text).to include("Krile")
+    expect(page.at("#table_party li.is-you").text).to include("Krile")
     delete campaign_table_seat_path(campaign)
     get campaign_table_path(campaign)
     expect(response.body).to include("Take a seat")
@@ -92,7 +92,7 @@ RSpec.describe "The player's way through", type: :request do
 
     sign_in_as(@admin) # the GM, who plays nobody
     get campaign_table_path(campaign)
-    expect(response.body).to include("At the table as <strong>GM</strong>")
+    expect(page.at(".topbar__seat").text.squish).to include("At the table as GM")
   end
 
   it "leaves the GM's characters unclaimed, and seats the GM as GM even if they own one" do
@@ -101,7 +101,7 @@ RSpec.describe "The player's way through", type: :request do
 
     campaign.characters.create!(name: "Faris", job: knight, user: @admin) # made before this fix
     get campaign_table_path(campaign)
-    expect(response.body).to include("At the table as <strong>GM</strong>")
+    expect(page.at(".topbar__seat").text.squish).to include("At the table as GM")
   end
 
   it "takes a character back off auto when their player sits down and chooses" do
@@ -117,7 +117,7 @@ RSpec.describe "The player's way through", type: :request do
 
     bartz.update!(user: krile) # Krile picks Bartz up too
     sign_in_as(krile)
-    post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
+    sit_in_battle(battle, bartz.battle_unit_id)
     post battle_actions_path(battle), params: { command: { kind: "ability", ability: "attack", target: "goblin" } }
     expect(battle.reload.auto?(bartz.battle_unit_id)).to be(false)
 
@@ -152,7 +152,7 @@ RSpec.describe "The player's way through", type: :request do
     expect(Battle::State.target_options(battle.state, battle.unit(bartz.battle_unit_id), battle.state["abilities"]["attack"])).not_to include(lenna.battle_unit_id)
 
     sign_in_as(krile)
-    post battle_seat_path(battle), params: { seat: lenna.battle_unit_id }
+    sit_in_battle(battle, lenna.battle_unit_id)
     get battle_panel_path(battle)
     expect(response.body).to include("You're KO'd: you watch until someone raises you.")
     expect(response.body).not_to include("Take a seat")
@@ -180,13 +180,13 @@ RSpec.describe "The player's way through", type: :request do
     expect(header.to_html).to include("Go to the battle", "/battles/#{@new.id}")
 
     get campaign_table_path(campaign)
-    expect(response.body[%r{<div id="table_battle">.*?</div>}m]).to include("/battles/#{@new.id}")
+    expect(page.at("#table_battle a")["href"]).to include("/battles/#{@new.id}")
     expect(response.body.scan("Join the battle").size).to eq(1) # only the current battle's line invites you
 
     post battle_call_off_path(@new)
     expect(@new.reload.status).to eq("abandoned")
     get campaign_table_path(campaign)
-    expect(response.body[%r{<div id="table_battle">.*?</div>}m]).to include("/battles/#{old.id}")
+    expect(page.at("#table_battle a")["href"]).to include("/battles/#{old.id}")
     post battle_call_off_path(old)
     get campaign_table_path(campaign)
     expect(response.body).not_to include("Go to the battle")
@@ -236,6 +236,7 @@ RSpec.describe "The player's way through", type: :request do
     campaign.characters.create!(name: "Faris", job: knight, user: make_user("Faris's player"))
     sign_in_as(krile)
     get campaign_path(campaign)
-    expect(response.body).to include("<strong>You</strong>", "Unclaimed: sit as them at the table", "Played by Faris&#39;s player")
+    expect(page.css("strong").map(&:text)).to include("You")
+    expect(page.text).to include("Unclaimed: sit as them at the table", "Played by Faris's player")
   end
 end

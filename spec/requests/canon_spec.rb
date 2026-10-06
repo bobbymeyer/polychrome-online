@@ -94,7 +94,7 @@ RSpec.describe "A setting's canon: atlas, cast and codex", type: :request do
     campaign.show_map!
     sign_in_as(make_user("Player"))
     get campaign_table_path(campaign)
-    expect(response.body).to include("<desc>Rain, rust and ropes.</desc>")
+    expect(page.css("desc").map(&:text)).to include("Rain, rust and ropes.")
   end
 
   it "keeps the atlas and cast to the world's editors and GMs, and the codex's GM side from players" do

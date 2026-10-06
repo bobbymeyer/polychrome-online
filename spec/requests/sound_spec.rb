@@ -14,9 +14,7 @@ RSpec.describe "Sound", type: :request do
     Rack::Test::UploadedFile.new(StringIO.new(header), "audio/wav", original_filename: name)
   end
 
-  def music_meta
-    Nokogiri::HTML(response.body).at('meta[name="polychrome-music"]')
-  end
+  def music_meta = page.at('meta[name="polychrome-music"]')
 
   def track(scene, name = scene.capitalize, file: wav("#{scene}.wav"))
     world.tracks.create!(name: name, scene: scene).tap { |t| t.audio.attach(file) }
@@ -105,9 +103,8 @@ RSpec.describe "Sound", type: :request do
   it "lets the GM switch the table's music from the stage, by scene or by name, and every page hears about it" do
     create_character(campaign, name: "Bartz")
     named = world.tracks.create!(name: "Tavern night", source: "link", url: "https://youtu.be/dQw4w9WgXcQ")
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    get campaign_table_path(campaign)
-    stage = Nokogiri::HTML(response.body).at("#stage #stage_music")
+    at_the_table(campaign, as: "gm")
+    stage = page.at("#stage #stage_music")
     expect(stage.text).to include("Music for the table", "Follow the scene (field)", "Town (no track)", "♪ Tavern night")
 
     expect { patch campaign_music_path(campaign), params: { music: "dungeon" } }

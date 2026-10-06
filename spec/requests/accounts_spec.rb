@@ -51,7 +51,7 @@ RSpec.describe "Accounts", type: :request do
 
   describe "what a player can and can't do" do
     let!(:world) { base_world }
-    let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
+    let(:campaign) { base_campaign(gm: @admin) }
     let!(:lenna) { make_user("Lenna") }
     let(:goblin) { world.monsters.find_by!(slug: "goblin") }
 
@@ -100,7 +100,7 @@ RSpec.describe "Accounts", type: :request do
     end
 
     it "makes their own character, at the party's lowest level, and only they (and the GM) run it" do
-      campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5)
+      base_character(campaign, name: "Bartz", starting_level: 5)
       post campaign_characters_path(campaign), params: { character: { name: "Lenna", job_id: world.jobs.find_by!(slug: "white_mage").id, starting_level: 99 } }
       mine = campaign.characters.find_by!(name: "Lenna")
       expect(mine.user).to eq(lenna)
@@ -118,23 +118,22 @@ RSpec.describe "Accounts", type: :request do
     end
 
     it "sits only as their own or an unclaimed character, never as the GM, and claims by sitting" do
-      taken = campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), user: make_user("Someone"))
-      free = campaign.characters.create!(name: "Galuf", job: world.jobs.find_by!(slug: "monk"))
+      taken = base_character(campaign, name: "Bartz", user: make_user("Someone"))
+      free = base_character(campaign, name: "Galuf", job: "monk")
 
       get campaign_table_path(campaign)
-      seats = response.body[%r{<h2>Take a seat</h2>.*?</section>}m]
-      expect(seats).to include("Galuf (unclaimed)")
-      expect(seats).not_to include(">Game Master<", ">Bartz<")
+      seats = page.css("h2").find { |h| h.text == "Take a seat" }.parent
+      expect(seats.text).to include("Galuf (unclaimed)")
+      expect(seats.css("button").map { |b| b.text.strip }).not_to include("Game Master", "Bartz")
 
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
-      post campaign_table_seat_path(campaign), params: { seat: taken.id }
-      get campaign_table_path(campaign)
+      sit(campaign, "gm")
+      at_the_table(campaign, as: taken)
       expect(response.body).to include("Take a seat")
 
-      post campaign_table_seat_path(campaign), params: { seat: free.id }
+      sit(campaign, free)
       expect(free.reload.user).to eq(lenna)
       get campaign_table_path(campaign)
-      expect(Nokogiri::HTML(response.body).at("#table_party li.is-you").text).to include("Galuf")
+      expect(page.at("#table_party li.is-you").text).to include("Galuf")
 
       # A GM power, tried by hand, is refused: Prep's is the GM's account's (turned back with a word), the table's is the GM seat's.
       post campaign_flags_path(campaign), params: { flag: { key: "cheat", value: "1" } }
@@ -153,13 +152,13 @@ RSpec.describe "Accounts", type: :request do
 
       # Her only character is the obvious seat: she's already in it.
       get battle_panel_path(battle)
-      expect(response.body).to include("Seated as <strong>Faris</strong>")
+      expect(page.text).to include("Seated as Faris")
       expect(response.body).not_to include("Game Master")
 
-      post battle_seat_path(battle), params: { seat: "gm" }
-      post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
+      sit_in_battle(battle, "gm")
+      sit_in_battle(battle, bartz.battle_unit_id)
       get battle_panel_path(battle)
-      expect(response.body).to include("Seated as <strong>Faris</strong>")
+      expect(page.text).to include("Seated as Faris")
       post battle_actions_path(battle), params: { gm: { op: "execute_round" } }
       expect(battle.reload.round).to eq(1)
     end
@@ -167,7 +166,7 @@ RSpec.describe "Accounts", type: :request do
 
   describe "a campaign's GM" do
     let!(:world) { base_world }
-    let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
+    let(:campaign) { base_campaign(gm: @admin) }
     let!(:krile) { make_user("Krile") }
 
     it "is whoever an admin makes it, and runs that campaign (portraits included) but not the world" do
@@ -175,9 +174,8 @@ RSpec.describe "Accounts", type: :request do
       expect(campaign.reload.gm).to eq(krile)
 
       sign_in_as(krile)
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
-      get campaign_table_path(campaign)
-      expect(response.body).to include("At the table as <strong>GM</strong>")
+      at_the_table(campaign, as: "gm")
+      expect(page.at(".topbar__seat").text.squish).to include("At the table as GM")
       patch campaign_path(campaign), params: { campaign: { name: "The Void", gm_id: krile.id } }
       expect(campaign.reload.name).to eq("The Void")
 

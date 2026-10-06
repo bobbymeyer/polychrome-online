@@ -50,7 +50,7 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     expect(clock).to have_attributes(impulse: "To own every berth", portents: "Dockhands go quiet.\n- Brass paint on the doors. | town")
 
     # The GM can rewrite its steps from prep without losing what it sets off.
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     get campaign_prep_path(campaign)
     expect(response.body).to include("Wants to own every berth", "Next: Dockhands go quiet.")
     patch campaign_clock_path(campaign, clock), params: { clock: { impulse: "To own the river", portents: "Gulls go quiet." } }
@@ -94,7 +94,7 @@ RSpec.describe "A setting's fronts (WorldFront)", type: :request do
     post world_campaigns_path(world), params: { campaign: { name: "Rust" } }
     campaign = world.campaigns.find_by!(name: "Rust")
     front = write_front
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     get campaign_prep_path(campaign)
     expect(response.body).to include("Fronts from #{world.name}", "The Syndicate&#39;s grab")
     post campaign_front_deals_path(campaign), params: { front_id: front.id }

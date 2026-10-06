@@ -6,9 +6,7 @@ require "rails_helper"
 # and remembered; the log pinned open as a column; and a way on that asks
 # first when it's a dangerous road.
 RSpec.describe "The GM's tools at the table", type: :system do
-  let(:gm) { make_user("Gamemaster") }
-  let(:campaign) { create_campaign.tap { |c| c.update!(gm_id: gm.id) } }
-  let!(:rook) { create_character(campaign, name: "Rook") }
+  include_context "a GM's table"
 
   it "keeps the rest of the tools behind Tools, one at a time, and keeps the one the GM had open" do
     campaign.clocks.create!(name: "The tide comes in", segments: 4)
