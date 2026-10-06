@@ -617,6 +617,9 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .music-embed iframe { display: block; width: 100%; height: 169px; border: 0; }
 .music-embed--spotify iframe { height: 80px; }
 @media (max-width: 699px) { .music-embed { right: 8px; bottom: 8px; width: 200px; } .music-embed iframe { height: 113px; } .music-embed--spotify iframe { height: 80px; } }
+/* The sheet's bag and the party's chest, side by side where there's room. */
+.chest-tables { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 var(--gutter); }
+.chest-tables h3 { margin: 8px 0 4px; font-size: 15px; }
 .music-book td { vertical-align: middle; }
 .music-book audio { max-width: 260px; height: 32px; }
 .music-book__acts { text-align: right; }
@@ -1796,8 +1799,8 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
    the page as the third view, its tab and its own head put away. */
 .table-views { display: none; }
 @media (max-width: 1099px) {
-  /* In the ink of the top bar: grey names, the one shown on paper. */
-  .table-views { display: flex; justify-self: center; gap: 0; border: 2px solid var(--paper); }
+  /* In the ink of the top bar, at its right end: grey names, the one shown on paper; no border. */
+  .table-views { display: flex; justify-self: end; gap: 2px; }
   .table-views__tab {
     flex: 0 1 auto; min-height: 28px; padding: 0 12px; border: 0; background: var(--ink); box-shadow: none; clip-path: none;
     font: 800 13px/28px var(--font); letter-spacing: .02em; color: #bdbdbd; text-align: center; white-space: nowrap;

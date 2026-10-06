@@ -1,0 +1,63 @@
+<%# What they carry, and the party's chest: items go between the two a few at a time (Characters::ChestsController),
+    for their player and the GM. Everyone sees what's in the chest. %>
+<section class="window" id="chest" data-controller="help">
+  <h2>Bag and chest</h2>
+  <% mine = @character.bag %>
+  <% chest = @campaign.chest %>
+  <% manage = can_manage?(@character) %>
+  <div class="chest-tables">
+    <div>
+      <h3><%= @character.name %>'s bag</h3>
+      <% if mine.empty? %>
+        <p class="empty">Nothing carried.</p>
+      <% else %>
+        <table class="book-table book-table--plain shop-table">
+          <tbody>
+            <% mine.each do |row| %>
+              <tr data-help="What <%= @character.name %> carries: into battle, and to use, wear or sell.">
+                <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span> <span class="muted"><%= term(row.item.category).downcase %></span></td>
+                <td class="shop-table__buy">
+                  <% if manage %>
+                    <%= form_with url: character_chest_path(@character), method: :patch, class: "inline-form shop-form" do |f| %>
+                      <%= hidden_field_tag :item_id, row.item.id, id: nil %>
+                      <%= hidden_field_tag :direction, "put", id: nil %>
+                      <%= number_field_tag :quantity, 1, min: 1, max: row.quantity, id: "put_#{row.item.slug}", "aria-label": "How many #{row.item.name} to put in the chest" %>
+                      <%= f.submit "Put in chest", class: "button button--quiet" %>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+    <div>
+      <h3>The party's chest</h3>
+      <% if chest.empty? %>
+        <p class="empty">The chest is empty.</p>
+      <% else %>
+        <table class="book-table book-table--plain shop-table">
+          <tbody>
+            <% chest.each do |row| %>
+              <tr data-help="Shared: anyone takes from the chest, and what's in it stays behind in a fight.">
+                <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span> <span class="muted"><%= term(row.item.category).downcase %></span></td>
+                <td class="shop-table__buy">
+                  <% if manage %>
+                    <%= form_with url: character_chest_path(@character), method: :patch, class: "inline-form shop-form" do |f| %>
+                      <%= hidden_field_tag :item_id, row.item.id, id: nil %>
+                      <%= hidden_field_tag :direction, "take", id: nil %>
+                      <%= number_field_tag :quantity, 1, min: 1, max: row.quantity, id: "take_#{row.item.slug}", "aria-label": "How many #{row.item.name} to take" %>
+                      <%= f.submit "Take", class: "button play" %>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
+  <%= help_line("Items are each adventurer's own; the chest is the party's, for what nobody carries.") %>
+</section>

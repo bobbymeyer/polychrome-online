@@ -32,9 +32,13 @@ module LocationScoped
 
   def away_message = "You can only shop in the town where the party is."
 
-  # Who's paying: the player's character, or the GM by name.
+  # Who's paying: the player's character (seated, else theirs in this party), or the GM by name.
+  def payer
+    table_seat(@campaign).character || @campaign.characters.find_by(user: current_user)
+  end
+
   def payer_name
-    table_seat(@campaign).character&.name || current_user.name
+    payer&.name || current_user.name
   end
 
   def back(notice = nil, alert: nil, anchor: back_anchor)

@@ -19,9 +19,9 @@ RSpec.describe "Campaigns and characters", type: :request do
       campaign.add_item!(item.("potion"), 3)
       get campaign_path(campaign)
       expect(response.body).to include("Lenna", "White Mage")
-      expect(response.body).not_to include("New battle", "Potion", ">Bag<") # the lobby: a battle is called at the table, the bag is stocked in Prep
+      expect(response.body).not_to include("New battle", "Potion", ">Bag<") # the lobby: a battle is called at the table, the chest is stocked in Prep
       get campaign_prep_path(campaign)
-      expect(response.body).to include("Potion", 'id="prep_bag"', "Add to bag")
+      expect(response.body).to include("Potion", 'id="prep_bag"', "Add to chest", "The chest", "Lenna&#39;s bag")
 
       get world_path(world)
       expect(response.body).to include("Second Run")
@@ -121,9 +121,9 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(response.body).not_to include("played by Sam")
     end
 
-    it "equips from the bag, all slots in one form" do
-      campaign.add_item!(item.("broadsword"))
-      campaign.add_item!(item.("buckler"))
+    it "equips from their own bag, all slots in one form" do
+      bartz.add_item!(item.("broadsword"))
+      bartz.add_item!(item.("buckler"))
       patch character_equipment_path(bartz), params: { equipment: {
         weapon: item.("broadsword").id, shield: item.("buckler").id, head: "", body: "", accessory: ""
       } }
@@ -132,21 +132,21 @@ RSpec.describe "Campaigns and characters", type: :request do
 
       patch character_equipment_path(bartz), params: { equipment: { weapon: "", shield: item.("buckler").id } }
       expect(bartz.equipped.keys).to eq([ "shield" ])
-      expect(campaign.quantity_of(item.("broadsword"))).to eq(1)
+      expect(bartz.quantity_of(item.("broadsword"))).to eq(1)
     end
 
     it "refuses gear the job can't use, and changes nothing" do
-      campaign.add_item!(item.("broadsword"))
-      campaign.add_item!(item.("dagger"))
+      bartz.add_item!(item.("broadsword"))
+      bartz.add_item!(item.("dagger"))
       patch character_equipment_path(bartz), params: { equipment: { weapon: item.("dagger").id, accessory: "" } }
       follow_redirect!
       expect(response.body).to include("Knight can&#39;t equip Dagger")
       expect(bartz.equipped).to be_empty
-      expect(campaign.quantity_of(item.("dagger"))).to eq(1)
+      expect(bartz.quantity_of(item.("dagger"))).to eq(1)
     end
 
     it "refuses an item in the wrong slot" do
-      campaign.add_item!(item.("buckler"))
+      bartz.add_item!(item.("buckler"))
       patch character_equipment_path(bartz), params: { equipment: { weapon: item.("buckler").id } }
       follow_redirect!
       expect(response.body).to include("weapon can&#39;t hold that")
@@ -183,16 +183,48 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(lenna.reload.exp).to eq(before + 50)
     end
 
-    it "edits and removes a character, returning their gear to the bag" do
+    it "edits and removes a character, leaving their gear and bag in the chest" do
       patch character_path(bartz), params: { character: { name: "Butz", player_name: "Sam" } }
       expect(bartz.reload.name).to eq("Butz")
 
-      campaign.add_item!(item.("broadsword"))
+      bartz.add_item!(item.("broadsword"))
+      bartz.add_item!(item.("potion"), 2)
       bartz.equip!(item.("broadsword"))
       delete character_path(bartz)
       expect(response).to redirect_to(campaign_path(campaign))
       expect(Character.exists?(bartz.id)).to be(false)
       expect(campaign.quantity_of(item.("broadsword"))).to eq(1)
+      expect(campaign.quantity_of(item.("potion"))).to eq(2)
+    end
+
+    it "takes from the party's chest and puts back, from the sheet; the chest shows on everyone's sheet" do
+      campaign.add_item!(item.("potion"), 3)
+      get character_path(bartz)
+      expect(response.body).to include('id="chest"', "The party's chest", "Potion", 'value="Take"')
+
+      patch character_chest_path(bartz), params: { item_id: item.("potion").id, quantity: 2, direction: "take" }
+      expect(bartz.quantity_of(item.("potion"))).to eq(2)
+      expect(campaign.quantity_of(item.("potion"))).to eq(1)
+      patch character_chest_path(bartz), params: { item_id: item.("potion").id, quantity: 1, direction: "put" }
+      expect(bartz.quantity_of(item.("potion"))).to eq(1)
+      expect(campaign.quantity_of(item.("potion"))).to eq(2)
+
+      patch character_chest_path(bartz), params: { item_id: item.("potion").id, quantity: 5, direction: "take" }
+      expect(flash[:alert]).to include("Potion is not in the chest")
+      expect(bartz.reload.quantity_of(item.("potion"))).to eq(1)
+    end
+
+    it "opens the sheet to its player and the GM only" do
+      bartz.update!(user: make_user("Sam"))
+      get character_path(bartz)
+      expect(response).to have_http_status(:ok) # the GM
+
+      sign_in_as(make_user("Stranger"))
+      get character_path(bartz)
+      expect(response).to redirect_to(root_path)
+      get campaign_path(campaign)
+      expect(response.body).to include("Bartz")
+      expect(response.body).not_to include("href=\"#{character_path(bartz)}\"") # the card, not the sheet
     end
   end
 

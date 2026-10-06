@@ -230,6 +230,7 @@ Rails.application.routes.draw do
       resource :equipment, only: :update, controller: "equipment"
       resource :ability_slots, only: :update
       resource :item_use, only: :create
+      resource :chest, only: :update # taking from and putting into the party's chest
     end
   end
 

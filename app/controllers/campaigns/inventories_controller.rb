@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# GM tool: put items in the party bag, or correct a quantity.
+# GM tool: put items in the party's chest or a character's bag, or correct a quantity.
 class Campaigns::InventoriesController < ApplicationController
   include CampaignScoped
 
@@ -8,16 +8,17 @@ class Campaigns::InventoriesController < ApplicationController
   before_action :require_campaign_gm
 
   def create
-    entry = params.expect(inventory: %i[item_id quantity])
+    entry = params.expect(inventory: %i[item_id quantity character_id])
     item = @world.items.find(entry[:item_id])
     count = entry[:quantity].to_i.clamp(1, 99)
-    @campaign.add_item!(item, count)
-    redirect_to campaign_path(@campaign), notice: "Added #{count} × #{item.name}.", status: :see_other
+    holder = entry[:character_id].present? ? @campaign.characters.find(entry[:character_id]) : @campaign
+    holder.add_item!(item, count)
+    redirect_to campaign_prep_path(@campaign, anchor: "bag"), notice: "Added #{count} × #{item.name} to #{holder.bag_name}.", status: :see_other
   end
 
   def update
     row = @campaign.inventories.find(params[:id])
     row.update!(quantity: params.expect(inventory: [ :quantity ])[:quantity].to_i.clamp(0, 999))
-    redirect_to campaign_path(@campaign), status: :see_other
+    redirect_to campaign_prep_path(@campaign, anchor: "bag"), status: :see_other
   end
 end

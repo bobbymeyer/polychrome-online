@@ -4,9 +4,9 @@
 module Campaign::Shopping
   extend ActiveSupport::Concern
 
-  # Buy from a town's stock with party gil. Raises Refusal with a
-  # reason the table can read.
-  def buy!(item, quantity, at:, by:)
+  # Buy from a town's stock with party gil, into the buyer's bag (to: a
+  # character), else the chest. Raises Refusal with a reason the table can read.
+  def buy!(item, quantity, at:, by:, to: nil)
     quantity = quantity.to_i.clamp(1, 99)
     raise Refusal, "The shop is shut: #{at.shut_by('shop').name.downcase}" if at.shut_by("shop")
     raise Refusal, "#{at.name} doesn't sell #{item.name}" unless at.stock_items.include?(item)
@@ -18,19 +18,20 @@ module Campaign::Shopping
       raise Refusal, "The party has #{money(gil)}; #{quantity} × #{item.name} costs #{cost}" if cost > gil
 
       update!(gil: gil - cost)
-      add_item!(item, quantity)
+      (to || self).add_item!(item, quantity)
       narrate("#{by} bought #{quantity} × #{item.name} in #{at.name} for #{money(cost)}.")
     end
   end
 
-  # Sell from the bag, for half the price.
-  def sell!(item, quantity, at:, by:)
+  # Sell from a bag (from: a character), else the chest, for half the price.
+  def sell!(item, quantity, at:, by:, from: nil)
     quantity = quantity.to_i.clamp(1, 99)
     raise Refusal, "The shop is shut: #{at.shut_by('shop').name.downcase}" if at.shut_by("shop")
     refuse_if_shunned!(at)
+    holder = from || self
     transaction do
-      row = inventories.find_by(item: item)
-      raise Refusal, "The bag has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
+      row = holder.carried.find_by(item: item)
+      raise Refusal, "#{holder.bag_name.upcase_first} has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
 
       row.update!(quantity: row.quantity - quantity)
       earned = at.resale_price_of(item) * quantity
@@ -44,7 +45,7 @@ module Campaign::Shopping
     item = character.equipment_slots.find_by(slot: slot)&.item or raise Refusal, "#{character.name} isn't wearing anything there"
     transaction do
       character.unequip!(slot)
-      sell!(item, 1, at: at, by: by)
+      sell!(item, 1, at: at, by: by, from: character)
     end
   end
 

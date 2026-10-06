@@ -6,7 +6,8 @@ class CharactersController < ApplicationController
 
   before_action :set_campaign, only: %i[new create]
   before_action :set_character, only: %i[show edit update destroy]
-  before_action :require_character_manager, only: %i[edit update destroy]
+  # The sheet (gear, items, archetypes and all) is the player's own and the GM's: nobody else's to read.
+  before_action :require_character_manager, only: %i[show edit update destroy]
 
   def new
     @character = @campaign.characters.new(starting_level: Campaign::FIRST_LEVEL,
@@ -47,9 +48,9 @@ class CharactersController < ApplicationController
   end
 
   def destroy
-    @character.equipment_slots.each { |slot| @character.unequip!(slot.slot) }
+    @character.leave_gear_in_chest!
     @character.destroy!
-    redirect_to campaign_path(@campaign), notice: "#{@character.name} left the party. Their gear went to the bag.",
+    redirect_to campaign_path(@campaign), notice: "#{@character.name} left the party. Their gear and bag went to the chest.",
                                           status: :see_other
   end
 end

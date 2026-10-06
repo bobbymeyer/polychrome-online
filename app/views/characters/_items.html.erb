@@ -1,11 +1,11 @@
 <section class="window" id="items" data-controller="help">
-  <h2>Items</h2>
-  <% usable = @campaign.field_items %>
+  <h2>Use an item</h2>
+  <% usable = @character.field_items %>
   <% if @campaign.battle_on? %>
     <% open_battle = @campaign.battles.where(status: "input").order(:id).last %>
     <p class="hint">A battle is on (<%= link_to open_battle.name, battle_path(open_battle) %>): use items from its Item menu. The GM can end it from the battle if it's been abandoned.</p>
   <% elsif usable.empty? %>
-    <p class="empty">Nothing in the bag that works outside battle: only things that heal or raise the fallen do.</p>
+    <p class="empty">Nothing in <%= @character.name %>'s bag that works outside battle: only things that heal or raise the fallen do. Take some from the chest.</p>
   <% else %>
     <% party = @campaign.characters.order(:created_at) %>
     <table class="book-table book-table--plain shop-table">

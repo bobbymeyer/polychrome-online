@@ -194,7 +194,7 @@ RSpec.describe "The live table", type: :system do
       page.driver.browser.manage.window.resize_to(820, 1180)
       visit campaign_table_path(campaign)
       expect(page).to have_css(".topbar .table-views", visible: true)
-      expect(page).to have_css(".topbar__toggle", visible: true, text: "Menu")
+      expect(page).to have_css(".topbar__toggle[aria-label=Menu]", visible: true) # the hamburger, before the wordmark
       expect(page).to have_no_css("#table_party li.is-you", visible: true)
       click_on "You & party"
       expect(page).to have_css("#table_party li.is-you", visible: true, text: "Rook")
