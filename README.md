@@ -23,11 +23,9 @@ contract is [`docs/HANDOFF.md`](docs/HANDOFF.md). Read it before writing code.
   every override on generated locations, each with a revert. World-version
   pins are deliberately not built yet: campaigns read the books live, so a
   change to a book shows up in every campaign straight away.
-- **Step 9 (done):** the asset pipeline. Every image slot can be uploaded or
-  generated with ComfyUI: all seven books, and each speaker's portraits. The
-  prompt is composed in layers (world, content type, subject, and a portrait's
-  expression), and each layer can add LoRAs. You pick from a strip of
-  candidates, and the winner keeps its seed and recipe.
+- **Step 9 (moved out):** the asset pipeline is its own product now,
+  baible, a general worldbuilding asset tool. Polychrome takes the
+  finished images and music as uploads. See "Art".
 - **Accounts:** a login, with the first account as admin. A campaign has a GM
   account and characters belong to players. See "Accounts".
 - **Presentation:** starts Swiss instead of SNES and diverges where play needs
@@ -97,12 +95,8 @@ page with its stat block, prose, image and cross-references ("Used by",
 - **Slugs are an entry's identity** inside its world and can't change after
   creation. They're the engine's ids and what AI scripts and drop tables use to
   refer to other entries.
-- Each entry has an image slot (Active Storage) and a variant recipe (hue,
-  scale, flip), applied with CSS. How it's drawn lives in its `Art`: the art
-  notes, LoRAs and model it adds to a prompt, and the seed, prompt and recipe
-  of its generated picture. Speakers, the cast, portraits and mode pictures
-  have one too. Each still reads and writes these as `entry.art_notes`,
-  `entry.image_seed` and so on (`Drawn`).
+- Each entry has an image slot (Active Storage), uploaded on its form, and a
+  variant recipe (hue, scale, flip), applied with CSS. See "Art".
 - `World#battle(seed:, party:, monsters: { "goblin" => 3 })` builds a battle
   state straight from the books. `Job#to_derivation`, `Job#passives` and
   `Item#to_equipment` feed `Stats::Derivation`.
@@ -185,9 +179,11 @@ other browsers and have each player take a seat.
   player plays victory and defeat, `stage.js` the encounter and boss calls,
   and a log line with a `cue` (`key`, `door`, `treasure`, set where
   `Location` writes the line) plays its jingle as it arrives live.
-- **Music** comes from the world's uploaded tracks (`World::MUSIC`, one
-  Active Storage attachment per scene, audio only, 25 MB each; removed
-  tracks are purged in the background). Every game page names its track in
+- **Music** comes from the world's Music book (`Track`): a file uploaded
+  (Active Storage, audio only, 25 MB each; removed tracks are purged in the
+  background) or a YouTube or Spotify link, for a kind of scene
+  (`World::MUSIC`) or called by name. Music is made elsewhere (baible, see
+  "Art"), never here. Every game page names its track in
   `<meta name="polychrome-music">` (`ApplicationHelper#music_meta`), and one
   `Audio` element, which lives as long as the tab does, crossfades between
   tracks across Turbo visits.
@@ -356,15 +352,11 @@ the effect), so a step only says what changes.
   speaks as the NPC with that expression; `Bartz: Hold on!` as a party
   member; anything else is narration): each line becomes a step after the
   ones there. End on `? Trust Cid | Refuse -> trusted_cid` for a choice.
-- **A panel** is generated like a mode's picture (`Artwork`): the place the
-  last place backdrop before it set is the subject and the step's words (or
-  the last line's) are the layer after it, so the burning inn is still the
-  inn; the GM picks from candidates on the scene's page, and the panel is
-  the step's own image. Figures stand full body as their **sprite**
-  (`Sprite`: one per speaker, uploaded in their form beside the portraits or
-  generated like one, cut out, the same face by starting from the Neutral
-  portrait's seed; a character without one stands as their archetype's
-  figure), else as their portrait; whoever speaks is on the stage for the
+- **A panel** is an image uploaded on its backdrop step, the step's own
+  image. Figures stand full body as their **sprite**
+  (`Sprite`: one per speaker, uploaded in their form beside the portraits;
+  a character without one stands as their archetype's figure), else as their
+  portrait; whoever speaks is on the stage for the
   line even if no sprite step put them there, lit and a step larger, the
   rest dimmed.
 - **Playing.** The GM puts the scene on the stage (`Scene#start!`) and steps
@@ -430,9 +422,7 @@ loud (or on voice chat), so the app doesn't need to carry the talking.
 A setting's atlas is several **maps** (`WorldMap`): the world, the regions
 on it, a town on one of those. A campaign starts with copies of them all
 (`Map`, brought in by `Atlas` with the places) and the GM can add their own.
-Each map is a 16:9 picture (uploaded, or generated through the art pipeline
-as the `map` kind, the world's style over "a painted land seen from above")
-with the campaign's **places** on it (`map_nodes`: town, dungeon, landmark,
+Each map is a 16:9 picture (uploaded) with the campaign's **places** on it (`map_nodes`: town, dungeon, landmark,
 wilds, field or event; revealed or hidden) and the **roads** between them
 (`map_edges`: open, dangerous or blocked, with an encounter table and a
 travel event, and **bends** so a road follows the painted valley: waypoints,
@@ -758,7 +748,7 @@ every campaign in it uses them.
   tropes to avoid. The language model writes in it.
 - **Lines and veils:** lines never happen in the setting; veils happen
   off-screen. They are shown on the world and campaign pages, and the model
-  never writes them, image prompts included.
+  never writes them.
   - **A table's own** (`Campaign::Limits`): anyone who plays in a campaign
     can add a line or a veil from the campaign page or the table's "What we
     know" drawer. No name is recorded; the table hears "New for this table,
@@ -840,11 +830,9 @@ every campaign in it uses them.
   off at the table: the city burns, the mine floods, the festival starts.
   - **While it lasts:** services can be shut, the music changes, and
     arriving can mean trouble. The rest of the world stays as it is.
-  - **A picture of its own.** A mode can have "art words" ("on fire, thick
-    smoke") and a generated picture: the place's Gazetteer image, with those
-    words added as one more layer. It starts from the same seed, so the
-    place stays recognisable. While the mode lasts, the location page shows
-    that picture instead.
+  - **A picture of its own** (`ModeArt`), uploaded: while the mode lasts,
+    the location page and the stage show it instead of the place's
+    Gazetteer image.
   - Made on the location page ("GM: modes", "Pictures for modes").
 - **Clocks** are things that happen if the party doesn't stop them: "The
   Brass Syndicate takes the docks", in 2–12 segments.
@@ -912,7 +900,7 @@ every campaign in it uses them.
 
 ## Suggestions from a language model
 
-With a language model set up (`LLM_URL`, see "Art"), the GM can ask it for
+With a language model set up (`LLM_URL`, see "The language model"), the GM can ask it for
 drafts while preparing and world building. It drafts and the GM decides:
 nothing it writes is used until it is kept, and keeping goes through the same
 forms and checks as writing by hand. Without one, none of this shows.
@@ -924,7 +912,7 @@ forms and checks as writing by hand. Without one, none of this shows.
   - **A scene:** its script goes onto the new scene form, with lines to fix
     flagged, for the GM to pick an ending and save.
   - **Modes for a place:** each has its line, what players read, services
-    shut, music and art words.
+    shut and music.
 - **World building** (for whoever can edit the world):
   - **An entry's description,** in the voice of the rest of its book (the
     entry's page). Only words: the numbers stay the author's.
@@ -949,8 +937,8 @@ generator (email and password, with `bcrypt`), plus a sign-up page.
 
 | Who | What they can do |
 | --- | --- |
-| **Admin** (the first account ever made) | Everything: every world's books, art direction and book art. Can GM any campaign. Manages accounts on the Accounts page. |
-| **A campaign's GM** (whoever started it, or whoever an admin hands it to) | Runs that campaign: the GM seat, map, flags, locations, battles, scenes, NPCs, the bag, rests, EXP grants, starting levels, and making its speakers' looks (a player makes their own character's). |
+| **Admin** (the first account ever made) | Everything: every world's books and their images. Can GM any campaign. Manages accounts on the Accounts page and the language model on the Settings page. |
+| **A campaign's GM** (whoever started it, or whoever an admin hands it to) | Runs that campaign: the GM seat, map, flags, locations, battles, scenes, NPCs, the bag, rests, EXP grants, starting levels, and uploading its speakers' looks (a player uploads their own character's). |
 | **A world's owner** (whoever made it, usually as a copy) | Changes its books as they play. So do the GMs of campaigns in that world. |
 | **Anyone** | Starts a campaign in any world and GMs it. Makes a world, usually by copying one. Makes characters, which start at the party's lowest level, and sits as, equips and levels their own. Reads every book. |
 
@@ -979,227 +967,69 @@ generator (email and password, with `bcrypt`), plus a sign-up page.
   (SMTP settings, and a `from` address in `ApplicationMailer`). Until then,
   an admin can't reset anyone's password from the app.
 
-## Art (the asset pipeline)
+## Art
 
-Every image slot can be uploaded or generated with
-[ComfyUI](https://github.com/comfyanonymous/ComfyUI) (§8):
+Images and music are made outside Polychrome, in **baible**, a separate,
+general worldbuilding asset tool (§8), and uploaded here. Polychrome keeps
+the files and nothing about how they were made: no prompts, seeds, models or
+LoRAs. Every slot is a plain Active Storage attachment, and replacing one is
+a file replace.
 
-- **Book entries** in all seven books. Upload on the edit form; generate in
-  the Art section of the entry's page.
-- **Speaker portraits,** one per expression, for NPCs and characters. Upload
-  in their edit form; make them in "Make their look" below it, a chain of
-  three links so it's the same face: the **sprite** first (full body, from
-  the prompt), the **Neutral portrait** redrawn from the sprite's head
-  (`Headshot` cuts it square on plain ground; the batch starts from it,
-  image to image, re-noised by `chain.portrait_denoise`, with the sprite's
-  seed), then **every other expression** redrawn from the Neutral portrait
-  (`chain.expression_denoise`, one strip each, all six at once if asked).
-  A player makes their own character's look (their specifics; the model
-  and LoRAs stay the GM's); the GM makes anyone's. Each link can also be
-  made from the prompt alone.
+- **Book entries** in all seven books: one image each, on the entry's edit
+  form, with its variant recipe (hue, scale, flip).
+- **Speakers** (NPCs, characters and the cast): a portrait per expression and
+  a full-body sprite for the stage, in their form (a character's under Look
+  on their sheet). A player uploads their own character's; the GM anyone's.
+- **Maps:** a 16:9 picture per map, in the map's form, the setting's and the
+  campaign's alike.
+- **Location modes:** a picture per mode, on the location page ("Pictures
+  for modes", the GM's).
+- **Scene panels:** an image on a backdrop step set to a panel.
+- **Music:** tracks in the world's Music book, uploaded or linked (see
+  "Sound").
+- **Sprite rips** stay placeholders: they go in through the same slots
+  (stored in `storage/`), never into the repo or a shared deploy.
 
-- **Every image is composed in three layers:** world, content type,
-  subject. Any layer can set a prompt, a model and LoRAs.
-  - **World:** the house style ("line art, hand drawn, monochrome"), the
-    negative prompt, a model and LoRAs. Edited on the world's Art direction
-    page.
-  - **Content type:** framing per kind of entry ("3/4 view of an object",
-    "front view of a building"), plus a negative prompt, size, whether to
-    remove the background, a model and LoRAs. Also on the Art direction
-    page, and seeded from `config/comfy.yml`.
-  - **Subject:** a book entry's name and specifics (blank uses its
-    description), or a speaker's name, title or job, and looks. Also a model
-    and LoRAs. Edited where it is generated. An NPC's notes are GM-private
-    and never go into a prompt.
-  - **Expression** (portraits only): words per expression from
-    `config/comfy.yml`, such as "smiling happily".
-- **How the layers combine:**
-  - **Model:** the lowest layer that names one wins, then `COMFY_MODEL`.
-    Anima is the default.
-  - **LoRAs** stack in layer order, world first. A lower layer that names
-    the same LoRA changes its strength in place, or switches it off with the
-    "On" box. Each layer's page shows the stack from the layers above.
-  - **Prompts** join in order: the model family's quality words, world
-    style, type framing, subject, expression.
-- **Model families** (`families` in `config/comfy.yml`) say how each kind of
-  model runs. They cover Anima, Krea 2 (raw and Turbo), SDXL (with Pony,
-  Illustrious/NoobAI and Lightning/Turbo variants) and SD 1.5. Each family
-  sets:
-  - loaders and the text encoder and VAE files to look for;
-  - steps, CFG, and sampler and scheduler preferences;
-  - CLIP skip and quality words;
-  - whether it uses a negative prompt;
-  - its trained size range. Sizes are scaled into it, keeping their shape.
+## The language model
 
-  A model's file name picks its family. A name no family matches goes by
-  where the file is: a checkpoint is taken for SDXL, a bare diffusion model
-  for the default family. To teach it a new name, add a `match`. To support
-  a new architecture that loads the same way, add a family.
-- **The workflow is built for each image, not templated.**
-  `Comfy::Workflow` asks ComfyUI what it has installed (`/object_info`, one
-  node at a time) and builds the smallest graph that does the job:
-  - **The model loads the way it is stored.** A checkpoint uses one
-    `CheckpointLoaderSimple`. A bare diffusion model uses `UNETLoader`, plus
-    the family's text encoder (`CLIPLoader` with the first `type` this
-    ComfyUI offers) and its VAE.
-  - **LoRAs chain in stack order.** Each uses `LoraLoaderModelOnly`, or
-    `LoraLoader` for families whose LoRAs train the text encoder too.
-    Switched-off LoRAs are left out.
-  - **The negative prompt is never encoded when CFG is 1**, since the
-    sampler ignores it (`ConditioningZeroOut` instead). With a large text
-    encoder on CPU, that encoding can cost more than the image.
-  - **Only what the family and server call for:** CLIP skip only when the
-    family wants it, the first sampler and scheduler the server has,
-    and background removal only when the batch asks for it.
-  - **A missing file stops the batch before anything is queued**, whether a
-    model, text encoder, VAE or LoRA, with a message naming what is
-    missing. The entry's page previews the workflow ("UNETLoader →
-    CLIPLoader → …") or what is missing, before you press Generate.
-- **Candidates.** Generate queues 1–8 candidates, each its own ComfyUI prompt
-  with its own seed and the same prompt text. ComfyUI keeps the loaded model
-  and encoded prompt between them. `ArtBatchJob` submits them and checks back
-  every few seconds without holding a worker. Each image appears on the page
-  as it lands, for everyone viewing it. Only the art section reloads (a Turbo
-  Frame and a `reload_frame` stream action), so a half-typed form elsewhere on
-  the page is left alone. For a portrait, the first candidate reuses the
-  Neutral portrait's seed, so the face stays closer across expressions.
-  "Use this" makes one the entry's image and stores its seed, prompt and
-  full recipe on the entry's `Art`, including the workflow's outline,
-  so it can be regenerated exactly. Uploading an image by hand clears them.
-- **Drafts first** (on by default for each batch): rough previews of about
-  512 × 512 (the same pixel count, keeping the shape) in 16 steps, cut out
-  like the full render when the batch removes the background.
-  - **"Make this one properly"** re-renders a chosen draft at full size and
-    steps, starting from the draft image itself. It scales the draft up and
-    re-noises it in part (`draft.denoise` in `config/comfy.yml`), so it
-    stays the same picture. A new image from the same seed at a different
-    size would not.
-  - **"Use the draft"** keeps a draft as it is.
-  - **Timings:** each image shows how long ComfyUI spent on it, from
-    ComfyUI's own history.
-  - **Tuning** is on the Settings page: draft size and steps, how much
-    "properly" changes a draft, and candidates per batch. Blank uses
-    `draft` in `config/comfy.yml`; a family can also set its own
-    `draft_steps`.
-- **Background removal** is a step for any batch, on by default for
-  content types marked to remove it. It happens **in ComfyUI**, in the same
-  workflow: the picture is saved as rendered, then put through
-  [ComfyUI-RMBG](https://github.com/1038lab/ComfyUI-RMBG)'s `BiRefNetRMBG`
-  node and saved again, cut out (`Cutout`, `background_removal` in
-  `config/comfy.yml`).
-  - **Installing it:** add "ComfyUI-RMBG" (by 1038lab) from ComfyUI's
-    Manager, and restart ComfyUI. Take **version 3.1.0** ("Switch Ver" in
-    the Manager, or `git checkout b4c2745` in `custom_nodes/ComfyUI-RMBG`):
-    3.2.0 doesn't load at all on a machine without triton, a Mac among
-    them (its loader trips over its own error message when the SAM3 node
-    can't import triton), so `BiRefNetRMBG` never appears. The node fetches its model into
-    `models/RMBG` the first time it runs. Without the node, a batch that
-    removes the background stops before anything is queued and says what
-    to install, and the art pages say so too; untick "Remove the
-    background" to render without it.
-  - **The model:** `BiRefNet_toonout` by default:
-    [ToonOut](https://arxiv.org/abs/2509.06839), BiRefNet fine-tuned on
-    anime characters and objects (MIT), whose authors measure 99.5% of
-    pixels right on anime against BiRefNet's 95.3%. The node's others
-    include `BiRefNet-general`, `BiRefNet-HR` (big pictures) and `Lucida`
-    (illustrations, glow and see-through things). Name another on the
-    Settings page, or with `COMFY_RMBG_MODEL`. The node runs at full
-    sensitivity, with the edge colours cleaned of the ground
-    (`refine_foreground`).
-  - **White in a design is kept.** A removal model takes whatever looks
-    like the background, and on art drawn on white that includes the white
-    in a design: a shirt, a face, a sail. So a picture that will be cut out
-    is rendered on a **ground** of its own colour instead (`COMFY_RMBG_GROUND`,
-    `green` by default: the type's "plain white background" becomes "plain
-    flat green background, no shadow", and white is asked against), and
-    the cut-out is mended with libvips: a cleared pixel is background only
-    if it is the ground's colour (within `tolerance`, 56) and reaches
-    the edge of the picture through ground-coloured pixels; anything else
-    the model cleared was part of the subject and is put back from the
-    picture as rendered (ComfyUI saves both). With the ground blank, pictures stay on white and
-    only white closed in by the subject can be told from the ground: it is
-    put back, at the cost of a closed-in gap that really is background (an
-    arm on a hip), filled too.
-  - **Checking:** every image that should have lost its background is
-    checked for real transparency, and the strip says "background kept"
-    when it didn't (the picture is kept either way).
-- **Can't see ComfyUI?** Use "Connection" on the Art direction page, or
+An optional OpenAI-compatible language model (`Llm`, `config/llm.yml`) writes
+drafts and suggestions (see "Suggestions from a language model"). Without one,
+everything else works the same.
+
+- **It can be anywhere the app can reach over HTTP:** the same machine, a
+  LAN or tailnet, or behind a proxy. It speaks the OpenAI-compatible chat
+  API: llama.cpp's server, llama-swap, Ollama (`…:11434/v1`), LM Studio, vLLM
+  or a hosted API.
+- **Settings:** an admin sets its address and model on the Settings page
+  (`/settings`), with a check that the app can reach it. A blank field falls
+  back to the environment variables below, which `config/llm.yml` reads.
+  Only addresses and names go in the app. A token, a header or a password in
+  a URL stays in the environment, never in the database or git, and error
+  messages never repeat them.
+
+  | Variable | Default | What |
+  | --- | --- | --- |
+  | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1`. A path prefix and `https://user:pass@host` basic auth both work |
+  | `LLM_MODEL` | blank | The model to ask for, as the server names it |
+  | `LLM_TOKEN` | blank | Sent as `Authorization: Bearer …` |
+  | `LLM_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
+  | `LLM_TIMEOUT` | `120` | Seconds, room for the server to load the model |
+- **Can't reach it?** Use "Check the connection" on the Settings page, or
   `bin/rails services:check` inside the app's container. It checks, in turn:
   - the address: in a container, 127.0.0.1 is the container itself;
   - the name: `host.docker.internal` needs `extra_hosts`, and MagicDNS
     names don't resolve in containers;
-  - the connection: a refusal usually means ComfyUI only listens on
+  - the connection: a refusal usually means the server only listens on
     127.0.0.1, and a timeout on a 100.x address means the container isn't
     on the tailnet;
-  - the answer: TLS trouble, or what's installed.
+  - the answer: TLS trouble, or what the model says.
 
-  It does the same for the language model, and never prints a token or
-  password.
-- **Optional: a language model writes the subject** (`PromptWriter`,
-  `config/llm.yml`).
-  - When `LLM_URL` is set, each batch first has the subject layer rewritten
-    in the way the image model reads best: booru tags for Anima, Pony and
-    Illustrious, plain sentences for Krea 2 and SDXL.
-  - Style, framing and quality words are left as written.
-  - It runs once per batch, in the job, and answers are cached.
-  - There's a checkbox to skip it. If the model can't be reached, the batch
-    goes ahead with the prompt as written.
-  - It speaks the OpenAI-compatible chat API: llama.cpp's server,
-    llama-swap, Ollama (`…:11434/v1`), LM Studio, vLLM or a hosted API.
-- **ComfyUI and the language model can be anywhere the app can reach over
-  HTTP.** They can run on the same machine, on a LAN or tailnet, or behind a
-  proxy. Nothing assumes a particular machine or file layout.
-- **Settings:** an admin sets them on the Settings page (`/settings`):
-  - ComfyUI's address, its default model, and a background-removal node
-    to try first;
-  - the language model's address and model;
-  - a check that the app can reach both.
-
-  A blank field falls back to the environment variables below, which
-  `config/comfy.yml` and `config/llm.yml` read. Only addresses and names go
-  in the app. A token, a header or a password in a URL stays in the
-  environment, never in the database or git, and error messages never
-  repeat them.
-
-  | Variable | Default | What |
-  | --- | --- | --- |
-  | `COMFY_URL` | `http://127.0.0.1:8188` | Where ComfyUI answers. A path prefix and `https://user:pass@host` basic auth both work |
-  | `COMFY_TOKEN` | blank | Sent as `Authorization: Bearer …` |
-  | `COMFY_HEADERS` | `{}` | Other headers a proxy wants, as JSON, such as Cloudflare Access's |
-  | `COMFY_MODEL` | `anima-preview.safetensors` | The model when no layer names one |
-  | `COMFY_RMBG_MODEL` | `BiRefNet_toonout` | The model ComfyUI-RMBG's `BiRefNetRMBG` takes backgrounds off with |
-  | `COMFY_RMBG_GROUND` | `green` | The colour cut-out pictures are rendered on, in place of white; blank keeps white |
-  | `LLM_URL` | blank (off) | An OpenAI-compatible API, up to `/v1` |
-  | `LLM_MODEL` | blank | The model to ask for, as the server names it |
-  | `LLM_TOKEN`, `LLM_HEADERS` | blank | As for ComfyUI |
-  | `LLM_TIMEOUT` | `120` | Seconds, room for the server to load the model |
-
-  Models and LoRAs are picked from what ComfyUI reports as installed.
-  - **Models** are grouped by the family each would run as (Anima, Krea 2
-    Turbo, Pony, SDXL, and so on).
-  - **LoRAs** are grouped by the subfolder they sit in, so keeping them in
-    folders per family (`loras/SDXL/…`) keeps the list tidy.
-  - **A saved name ComfyUI no longer has** stays selected under "Not on
-    ComfyUI", so saving doesn't lose it.
-  - **While ComfyUI isn't answering,** both are plain text fields.
-  - **New files** appear within a minute.
-- **Anima** needs three files, from Comfy Org's repackaged release:
-  - `anima-preview.safetensors` in `models/diffusion_models`;
-  - `qwen_3_06b_base.safetensors` in `models/text_encoders`;
-  - `qwen_image_vae.safetensors` in `models/vae`.
-
-  Its LoRAs patch the model only. On Apple Silicon, use bf16 files rather
-  than fp8.
-- **ComfyUI or a language model on the same machine as the container:**
-  - Either service must listen beyond 127.0.0.1 for the container to reach
-    it. For ComfyUI, start it with `--listen`; otherwise use its address on
-    the LAN or tailnet.
-  - Run the container with
-    `--add-host=host.docker.internal:host-gateway`.
-  - Use `http://host.docker.internal:<port>`.
-  - `SOLID_QUEUE_IN_PUMA` (set in the Dockerfile) runs the job worker that
-    drives generation.
-  - Images are also kept in ComfyUI's `output/polychrome/` folder.
+  It never prints a token or password.
+- **On the same machine as the container:** the server must listen beyond
+  127.0.0.1; run the container with
+  `--add-host=host.docker.internal:host-gateway` and use
+  `http://host.docker.internal:<port>/v1`. `SOLID_QUEUE_IN_PUMA` (set in the
+  Dockerfile) runs the job worker that asks it.
 
 ## Layout
 
@@ -1215,8 +1045,7 @@ Every image slot can be uploaded or generated with
 | `lib/generators/` | Town and dungeon generators, and GM overrides on top (pure, seeded) |
 | `app/models/location.rb`, `app/views/locations/` | Campaign locations: skyline, floorplan, GM controls, exploration |
 | `app/javascript/controllers/battle_player_controller.js`, `app/javascript/battle/gestures.js` | The event player and the motion gestures (§3.2) |
-| `app/models/comfy/`, `app/models/art_*.rb`, `app/models/concerns/artwork.rb`, `app/jobs/art_batch_job.rb` | The asset pipeline: the ComfyUI client, model families, the workflow builder, layered recipes, batches and candidates |
-| `app/models/llm/`, `app/models/prompt_writer.rb` | The optional language model that writes image subjects |
+| `app/models/llm.rb`, `app/models/llm/`, `app/models/draft.rb` | The optional language model and its drafts |
 | `db/seeds/base_world.rb`, `db/seeds/base_world/` | The base world's first entries, one file per book (idempotent) |
 | `lib/stats/derivation.rb` | `Stats::Derivation.derive` (base × job + equipment + passives) and `.effective` (+ buffs + statuses) |
 | `lib/battle/resolver.rb` | `Battle::Resolver.apply(state, action) -> [new_state, events]` |
@@ -1343,6 +1172,9 @@ The chart is on `/types`, linked from the Bestiary and the Grimoire.
 - **Damage types, not elements.** The handoff's eight elements are replaced
   by Pokémon's type chart, less fairy and dragon (see "Damage types").
 - **Buff/debuff `amount` is a percentage**, so it scales across levels.
+- **No asset pipeline here.** §8's ComfyUI pipeline was built (step 9), then
+  moved out into its own product, baible. Polychrome only takes uploads, and
+  keeps no `image_seed` or `image_prompt` (see "Art").
 - **`haste`/`slow` are statuses** that modify agi through `Stats::Derivation`.
   `blind` halves physical hit chance. `sleep` and `paralyze` skip turns, and
   a physical hit ends sleep.

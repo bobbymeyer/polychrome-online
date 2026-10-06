@@ -13,7 +13,6 @@ class Map < ApplicationRecord
   has_many :links_out, class_name: "MapLink", foreign_key: :from_map_id, dependent: :destroy, inverse_of: :from_map
   has_many :links_in, class_name: "MapLink", foreign_key: :to_map_id, dependent: :destroy, inverse_of: :to_map
 
-  include Artwork
   include MapSheet
 
   validates :name, uniqueness: { scope: :campaign_id }
@@ -24,8 +23,6 @@ class Map < ApplicationRecord
 
   scope :in_order, -> { order(:id) }
 
-  def art_world = campaign.world
-  def art_stream = self
   def places = map_nodes
 
   # The map the party is on: the one holding the place they're at.

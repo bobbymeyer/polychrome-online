@@ -39,8 +39,7 @@ class Atlas
     copies = campaign.maps.where.not(world_map_id: nil).index_by(&:world_map_id)
     campaign.transaction do
       missing_maps.each do |sheet|
-        copies[sheet.id] = campaign.maps.create!(world_map: sheet, name: unique_map_name(sheet.name), x: sheet.x, y: sheet.y, description: sheet.description,
-                                                 art_notes: sheet.art_notes, image_seed: sheet.image_seed)
+        copies[sheet.id] = campaign.maps.create!(world_map: sheet, name: unique_map_name(sheet.name), x: sheet.x, y: sheet.y, description: sheet.description)
         copies[sheet.id].image.attach(sheet.image.blob) if sheet.image.attached?
       end
       world.world_maps.find_each do |sheet|
@@ -120,7 +119,7 @@ class Atlas
     campaign.transaction do
       figures.each do |figure|
         npc = campaign.npcs.create!(name: figure.name, title: figure.title, description: figure.description.presence || figure.blurb,
-                                    art_notes: figure.art_notes, colour: figure.colour, monster: figure.monster,
+                                    colour: figure.colour, monster: figure.monster,
                                     location_id: homes[figure.world_place_id], world_figure: figure)
         figure.portraits.each do |portrait|
           npc.portraits.create!(expression: portrait.expression).image.attach(portrait.image.blob) if portrait.image.attached?

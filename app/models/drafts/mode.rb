@@ -8,8 +8,7 @@ module Drafts
         "(the town burns, the mine floods, the festival starts). The rest of the world stays as it is. " \
         'Reply with JSON: {"modes": [{"name": "one or two words", "line": "what the table hears when it starts", ' \
         '"description": "what players read about the place meanwhile", "closed": [services shut meanwhile, from the list], ' \
-        "\"music\": one of #{Campaign::MUSIC_CHOICES.join(', ')} or null, " \
-        '"art": "a few words for how its picture changes"}]}, with 3 modes.'
+        "\"music\": one of #{Campaign::MUSIC_CHOICES.join(', ')} or null}]}, with 3 modes."
     end
 
     def context
@@ -28,8 +27,7 @@ module Drafts
 
         { "name" => name, "line" => clip(row["line"], 300).presence, "description" => clip(row["description"], 300).presence,
           "closed" => Array(row["closed"]).map(&:to_s) & services,
-          "music" => (row["music"].to_s if Campaign::MUSIC_CHOICES.include?(row["music"].to_s)),
-          "art" => clip(row["art"], 200).presence }.compact
+          "music" => (row["music"].to_s if Campaign::MUSIC_CHOICES.include?(row["music"].to_s)) }.compact
       end.first(5)
     end
 

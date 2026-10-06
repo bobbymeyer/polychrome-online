@@ -3,7 +3,7 @@
 # Starting a new world from another one's: its books, then its canon
 # (atlas, cast, codex, fronts), each pointing at the new world's copies.
 # Rules only takes the books and leaves the setting behind: no canon, and
-# none of its voice, words, calendar, origins, history or art direction.
+# none of its voice, words, calendar, origins or history.
 module World::Copying
   extend ActiveSupport::Concern
 
@@ -36,7 +36,6 @@ module World::Copying
         entries.find_each do |entry|
           copy = entry.dup
           copy.world = self
-          copy.build_art(entry.art.attributes.slice(*Drawn::FIELDS.values.map(&:to_s))) if entry.respond_to?(:art) && entry.art
           copy.encounter_table_id = tables[entry.encounter_table_id] if book == :location_templates
           copy.save!
           copy.image.attach(entry.image.blob) if entry.image.attached?
@@ -47,10 +46,9 @@ module World::Copying
           end
         end
       end
-      source.art_types.each { |type| art_types.create!(type.attributes.except("id", "world_id", "created_at", "updated_at")) }
       return if rules_only
 
-      %w[art_style art_negative art_loras art_model voice avoid lines veils terms calendar origins history].each { |attr| self[attr] = source[attr] if self[attr].blank? }
+      %w[voice avoid lines veils terms calendar origins history].each { |attr| self[attr] = source[attr] if self[attr].blank? }
       save!
       copy_canon_from!(source)
     end
@@ -60,7 +58,7 @@ module World::Copying
   def copy_canon_from!(source)
     maps = {}
     source.world_maps.in_order.each do |sheet|
-      maps[sheet.id] = world_maps.create!(sheet.attributes.except(*COPIED, "parent_id").merge(art_notes: sheet.art_notes, image_seed: sheet.image_seed))
+      maps[sheet.id] = world_maps.create!(sheet.attributes.except(*COPIED, "parent_id"))
       maps[sheet.id].image.attach(sheet.image.blob) if sheet.image.attached?
     end
     source.world_maps.where.not(parent_id: nil).find_each { |sheet| maps[sheet.id].update!(parent: maps[sheet.parent_id]) if maps[sheet.parent_id] }
@@ -77,7 +75,7 @@ module World::Copying
                                 .merge(from_place: places.fetch(route.from_place_id), to_place: places.fetch(route.to_place_id), encounter_table: table))
     end
     source.world_figures.includes(portraits: { image_attachment: :blob }).find_each do |figure|
-      copy = world_figures.create!(figure.attributes.except(*COPIED, "monster_id", "world_place_id").merge(art_notes: figure.art_notes)
+      copy = world_figures.create!(figure.attributes.except(*COPIED, "monster_id", "world_place_id")
                                          .merge(monster: figure.monster && monsters.find_by(slug: figure.monster.slug),
                                                 world_place: places[figure.world_place_id]))
       figure.portraits.each { |p| copy.portraits.create!(expression: p.expression).image.attach(p.image.blob) if p.image.attached? }

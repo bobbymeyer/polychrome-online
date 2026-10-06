@@ -12,7 +12,6 @@
 # abilities and jobs, equipment, background and their battle unit.
 class Character < ApplicationRecord
   include Portrayed
-  include ArtSubject
   include Colourable
 
   include Progression, Abilities, Equipment, Background, InBattle

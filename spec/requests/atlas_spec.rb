@@ -16,7 +16,7 @@ RSpec.describe "The atlas's maps", type: :request do
     get world_world_places_path(world)
     expect(page.at(".map-sheet--editor")).to be_present
     expect(page.at("[data-controller~=map-editor]")).to be_present
-    expect(response.body).to include("New map on #{world.name}", "Generate the picture", "Varn", "The Old Light")
+    expect(response.body).to include("New map on #{world.name}", "Its picture (16:9)", "Varn", "The Old Light")
   end
 
   it "makes maps on maps and beside them, moves them and the places, bends the roads, and keeps it to editors" do

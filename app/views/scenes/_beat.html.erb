@@ -14,7 +14,7 @@
   </div>
   <div class="beat__body">
   <span class="beat__kind"><%= beat.label %></span>
-  <%= form_with model: beat, url: beat_path(beat), class: "beat__form", data: { controller: "autosubmit kind-switch", action: "change->autosubmit#submit", turbo_frame: "_top" } do |f| %>
+  <%= form_with model: beat, url: beat_path(beat), class: "beat__form", multipart: true, data: { controller: "autosubmit kind-switch", action: "change->autosubmit#submit", turbo_frame: "_top" } do |f| %>
     <% case beat.kind %>
     <% when "say", "choice" %>
       <div class="beat__line">
@@ -35,12 +35,12 @@
         <span data-show-for="place">
           <%= f.select :map_node_id, options_for_select(places.map { |n| [ n.name, n.id ] }, beat.map_node_id), { include_blank: "(which place)" }, "aria-label": "Which place" %>
         </span>
-        <span data-show-for="panel" class="beat__panel-words">
-          <%= f.text_field :art_notes, value: beat.art_notes, placeholder: "what the panel shows (blank: the line before it)", "aria-label": "What the panel shows" %>
+        <span data-show-for="panel" class="beat__panel-upload">
+          <%= f.file_field :image, accept: "image/*", "aria-label": "The panel" %>
         </span>
       </div>
       <% if beat.backdrop == "panel" %>
-        <p class="hint"><%= beat.image.attached? ? "The panel is made." : "No panel yet: make one in the studio on the right (Preview this step first)." %></p>
+        <p class="hint"><%= beat.image.attached? ? "The panel is uploaded (#{beat.image.filename}); upload another to replace it." : "No panel yet: upload one, 16:9 like the stage." %></p>
       <% end %>
     <% when "sprite" %>
       <div class="beat__stage">

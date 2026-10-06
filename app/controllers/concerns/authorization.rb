@@ -6,7 +6,7 @@ module Authorization
   extend ActiveSupport::Concern
 
   included do
-    helper_method :current_user, :admin?, :can_make_games?, :can_gm?, :can_play?, :can_manage?, :can_generate?, :can_portray?, :can_edit_world?, :knows_the_lore?
+    helper_method :current_user, :admin?, :can_make_games?, :can_gm?, :can_play?, :can_manage?, :can_portray?, :can_edit_world?, :knows_the_lore?
   end
 
   private
@@ -54,19 +54,6 @@ module Authorization
   # and a player's for their own character.
   def can_portray?(owner)
     can_gm?(owner.campaign) || (owner.is_a?(Character) && can_manage?(owner))
-  end
-
-  # Generating art costs GPU time: admins for book entries; a campaign's GM
-  # (or an admin) for its scenes and places; a speaker's look as above.
-  def can_generate?(entry)
-    case entry
-    when Portrait, Sprite then can_portray?(entry.owner)
-    when ModeArt then can_gm?(entry.location.campaign)
-    when Beat then can_gm?(entry.campaign)
-    when Map then can_gm?(entry.campaign)
-    when WorldMap then can_edit_world?(entry.world)
-    else admin?
-    end
   end
 
   def require_admin

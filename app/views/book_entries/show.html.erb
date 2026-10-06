@@ -1,14 +1,8 @@
 <% content_for :title, "#{@entry.name} · #{book_title}" %>
-<% if @entry.respond_to?(:art_recipe) && can_generate?(@entry) %>
-  <%= turbo_stream_from @entry, :art %>
-<% end %>
 <div class="crumbs"><%= link_to book_title, entries_path %> / <%= @entry.name %></div>
 <article class="book-page">
   <%= render "page", entry: @entry %>
 </article>
-<% if @entry.respond_to?(:art_recipe) && can_generate?(@entry) %>
-  <%= render "art_batches/studio", entry: @entry %>
-<% end %>
 <% if can_edit_world? && @entry.has_attribute?(:description) %>
   <%= render "drafts/panel", owner: @world, kind: "description", target: @entry, title: "Suggest a description", placeholder: "grimmer, or funnier" %>
 <% end %>

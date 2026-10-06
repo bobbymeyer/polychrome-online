@@ -1,4 +1,4 @@
-<%# Image slot and variant recipe (§3.3). Generation (§8) happens on the entry's page. %>
+<%# Image slot and variant recipe (§3.3). The image is uploaded (§8). %>
 <fieldset class="panel">
   <legend>Art</legend>
   <div class="art-fields">
@@ -31,7 +31,4 @@
       </div>
     </div>
   </div>
-  <% if f.object.respond_to?(:art_recipe) && f.object.persisted? %>
-    <p class="hint">Uploading an image replaces a generated one. To generate one with ComfyUI, use the Art section on this entry's page.</p>
-  <% end %>
 </fieldset>

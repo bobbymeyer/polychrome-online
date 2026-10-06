@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -71,64 +71,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
-  end
-
-  create_table "art_batches", force: :cascade do |t|
-    t.integer "world_id", null: false
-    t.string "entry_type", null: false
-    t.integer "entry_id", null: false
-    t.json "recipe", default: {}, null: false
-    t.string "status", default: "queued", null: false
-    t.text "error"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.datetime "submitted_at"
-    t.index ["entry_type", "entry_id"], name: "index_art_batches_on_entry"
-    t.index ["world_id"], name: "index_art_batches_on_world_id"
-  end
-
-  create_table "art_candidates", force: :cascade do |t|
-    t.integer "art_batch_id", null: false
-    t.integer "position", null: false
-    t.integer "seed", null: false
-    t.string "comfy_prompt_id"
-    t.string "status", default: "queued", null: false
-    t.text "error"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.boolean "transparent"
-    t.float "run_seconds"
-    t.index ["art_batch_id"], name: "index_art_candidates_on_art_batch_id"
-  end
-
-  create_table "art_types", force: :cascade do |t|
-    t.integer "world_id", null: false
-    t.string "kind", null: false
-    t.text "prompt"
-    t.text "negative"
-    t.json "loras", default: [], null: false
-    t.integer "width", default: 1024, null: false
-    t.integer "height", default: 1024, null: false
-    t.boolean "transparent", default: true, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "model"
-    t.index ["world_id", "kind"], name: "index_art_types_on_world_id_and_kind", unique: true
-    t.index ["world_id"], name: "index_art_types_on_world_id"
-  end
-
-  create_table "arts", force: :cascade do |t|
-    t.string "subject_type", null: false
-    t.integer "subject_id", null: false
-    t.text "notes"
-    t.json "loras", default: [], null: false
-    t.string "model"
-    t.integer "seed"
-    t.text "prompt"
-    t.json "recipe"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["subject_type", "subject_id"], name: "index_arts_on_subject", unique: true
   end
 
   create_table "battle_actions", force: :cascade do |t|
@@ -646,7 +588,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
     t.json "closed", default: [], null: false
     t.string "music"
     t.integer "encounter_table_id"
-    t.text "art"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "times", default: [], null: false
@@ -793,17 +734,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
   end
 
   create_table "site_settings", force: :cascade do |t|
-    t.string "comfy_url"
-    t.string "comfy_model"
     t.string "llm_url"
     t.string "llm_model"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "draft_size"
-    t.integer "draft_steps"
-    t.float "draft_denoise"
-    t.integer "candidates"
-    t.string "rmbg_model"
   end
 
   create_table "sprites", force: :cascade do |t|
@@ -820,13 +754,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
     t.string "scene"
     t.string "source", default: "upload", null: false
     t.string "url"
-    t.text "prompt"
-    t.text "lyrics"
-    t.integer "seconds", default: 60, null: false
-    t.string "status"
-    t.text "error"
-    t.string "prompt_id"
-    t.datetime "started_at"
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -944,10 +871,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.text "art_style"
-    t.text "art_negative"
-    t.json "art_loras", default: [], null: false
-    t.string "art_model"
     t.integer "owner_id"
     t.json "damage_types", default: [], null: false
     t.json "terrain_types", default: {}, null: false
@@ -970,9 +893,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_100000) do
   add_foreign_key "ability_slots", "characters"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "art_batches", "worlds"
-  add_foreign_key "art_candidates", "art_batches"
-  add_foreign_key "art_types", "worlds"
   add_foreign_key "battle_actions", "battles"
   add_foreign_key "battle_events", "battle_actions"
   add_foreign_key "battle_events", "battles"

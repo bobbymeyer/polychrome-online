@@ -1,8 +1,0 @@
-<%# The model and LoRA pickers list what ComfyUI has installed; while it isn't answering they are plain text fields. %>
-<% if !Comfy.capabilities.reachable? %>
-  <p class="hint">
-    ComfyUI at <code><%= Comfy.client.base %></code> isn't answering<%= ": #{Comfy.capabilities.error}" if Comfy.capabilities.error %>.
-    Nothing can be generated, and model and LoRA names can't be picked from a list (type them instead). Uploading an image on the edit page still works.
-    <%= link_to "Check the connection step by step", settings_path(check: 1, anchor: "connection") if admin? %>
-  </p>
-<% end %>

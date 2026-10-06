@@ -11,7 +11,6 @@
 </p>
 
 <% editing = can_edit_world? %>
-<%= turbo_stream_from @map, :art %>
 <%= render "maps/list", maps: @maps, open: @map, scope: @scope %>
 <% if editing %>
   <%= form_with url: world_world_maps_path(@world), class: "book-form inline-form map-new" do |f| %>
@@ -34,7 +33,6 @@
         <%= render "maps/form", map: @map, maps: @maps.to_a, urls: { param: "world_map", update: world_world_map_path(@world, @map), destroy: world_world_map_path(@world, @map),
                                                                      link: world_world_map_world_map_links_path(@world, @map), unlink: ->(link) { world_world_map_world_map_link_path(@world, @map, link) } } %>
       </section>
-      <%= render "art_batches/map_art", map: @map %>
     </div>
   <% end %>
 </div>

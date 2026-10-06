@@ -14,7 +14,6 @@
   </div>
   <div class="field"><%= f.label :blurb, "What people say about them" %><%= f.text_field :blurb, placeholder: "Never raises her voice. Never needs to." %></div>
   <div class="field"><%= f.label :description, "Notes (GM only)" %><%= f.text_area :description, rows: 3 %></div>
-  <div class="field"><%= f.label :art_notes, "What they look like" %><%= f.text_field :art_notes, placeholder: "grey braid, brass rings on every finger, a docker's coat" %></div>
   <%= render "portraits/fields", owner: figure %>
   <div class="actions">
     <%= f.submit class: "button" %>

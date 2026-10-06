@@ -1,0 +1,27 @@
+<%# Pictures for a location's modes (§8), on its page, for the GM: while a mode lasts, the table sees its
+    picture instead of the Gazetteer entry's. Each is uploaded. location %>
+<% arts = location.mode_arts.includes(:mode, image_attachment: :blob).index_by(&:mode_key) %>
+<details class="window gm-tools" id="mode-pictures">
+  <summary>Pictures for modes</summary>
+  <p class="hint">While a mode lasts, the table sees its picture instead of <%= location.location_template.name %>'s. Without one, the place looks as it always does.</p>
+  <ul class="mode-pictures">
+    <% location.map_node.modes.each do |mode| %>
+      <% art = arts[mode.key] %>
+      <li>
+        <% if art&.image&.attached? %>
+          <%= image_tag url_for(art.image), alt: "#{location.name}: #{mode.name}" %>
+        <% else %>
+          <span class="mode-pictures__empty">No picture</span>
+        <% end %>
+        <span><%= mode.name %></span>
+        <%= form_with url: location_mode_art_path(location, mode.key), method: :patch, multipart: true, class: "inline-form" do |f| %>
+          <%= f.file_field "mode_art[image]", accept: "image/*", required: true, id: "mode_art_image_#{mode.key}", "aria-label": "Picture for #{mode.name}" %>
+          <%= f.submit "Upload", class: "button button--quiet" %>
+        <% end %>
+        <% if art&.image&.attached? %>
+          <%= button_to "Remove", location_mode_art_path(location, mode.key), method: :delete, class: "link-button", form: { class: "inline" } %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</details>

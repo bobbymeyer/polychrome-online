@@ -3,9 +3,9 @@
 require "socket"
 require "resolv"
 
-# Why the app can't see a service it should (ComfyUI or the language
-# model): each step of reaching it in turn,
-# stopping at the first that fails, with what that failure usually means.
+# Why the app can't see a service it should (the language model): each
+# step of reaching it in turn, stopping at the first that fails, with what
+# that failure usually means.
 # Run from the Settings page ("Check the connection"), or
 # `bin/rails services:check` inside the app's container.
 #
@@ -23,19 +23,6 @@ class ConnectionCheck
     @probe = probe # ->() { detail string } raising on failure
     @headers = headers
     @token = token
-  end
-
-  def self.comfy
-    headers = (JSON.parse(Comfy.config[:headers].presence || "{}").keys rescue [])
-    new(url: Comfy.config[:url], name: "ComfyUI", token: Comfy.config[:token].present?, headers: headers, probe: lambda {
-      client = Comfy.client(timeout: 10)
-      client.send(:get_json, "/system_stats")
-      caps = client.capabilities
-      raise Comfy::Error, caps.error unless caps.reachable?
-
-      removal = caps.node?(Cutout.node) ? "backgrounds come off with #{Cutout.node} (#{Cutout.model})" : "no #{Cutout.node} to take backgrounds off: install ComfyUI-RMBG"
-      "answers. #{caps.models.size} models, #{caps.loras.size} LoRAs; #{removal}."
-    })
   end
 
   def self.llm
@@ -93,7 +80,7 @@ class ConnectionCheck
         "Nothing is listening on port #{uri.port} here: is #{@name} running on this machine?"
       else
         "Nothing that the app can reach listens there. #{@name} listening only on 127.0.0.1 is the usual cause: " \
-          "start it listening wider (ComfyUI: --listen), or go through the proxy that serves it (Caddy on the tailnet)."
+          "start it listening wider, or go through the proxy that serves it (Caddy on the tailnet)."
       end
       return steps << Step.new(false, "Connection", "#{address}:#{uri.port} refused. #{hint}")
     rescue Errno::ETIMEDOUT, Errno::EHOSTUNREACH, Errno::ENETUNREACH, IO::TimeoutError, SocketError => e
@@ -104,7 +91,7 @@ class ConnectionCheck
 
     begin
       steps << Step.new(true, "Answer", "#{@name} #{@probe.call}")
-    rescue Comfy::Error, Llm::Error, OpenSSL::SSL::SSLError => e
+    rescue Llm::Error, OpenSSL::SSL::SSLError => e
       steps << Step.new(false, "Answer", "#{e.message}#{' · the certificate for this name isn\'t trusted from here' if e.is_a?(OpenSSL::SSL::SSLError)}")
     end
     steps

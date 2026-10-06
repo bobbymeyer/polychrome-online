@@ -126,8 +126,7 @@ remembers. The melodies are our own:
 
 Music is the world's own, a book like the others (Music): a track for each kind of scene
 (field, town, dungeon, battle, boss), and any more for the GM to call by name. A track is a
-file uploaded, a YouTube or Spotify link, or made in ComfyUI with ACE-Step from a description
-and lyrics. Each page plays its scene's track, crossfading as you move, and a scene without a
+file uploaded or a YouTube or Spotify link (music is made elsewhere, in baible). Each page plays its scene's track, crossfading as you move, and a scene without a
 track is quiet. A linked track can't be fetched, so it plays in its own small player in the
 page's bottom-right corner, kept across pages; the viewer may need to press it once. At the
 table the GM switches everyone from the stage's bottom-left corner: another scene's track, one
@@ -416,7 +415,7 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   a tag in the top-left corner, across from when. What's being said plays along the bottom, in the
   dialogue box.
 - **A scene plays on the same frame.** While the GM has a scene on the stage, its step is what the
-  frame shows: the backdrop (a place's picture, a panel painted for the step, or black) fills it, the
+  frame shows: the backdrop (a place's picture, a panel uploaded for the step, or black) fills it, the
   map steps aside, and whoever stands in the scene is along the bottom, left and right, full body as
   their sprite with their feet behind the dialogue box (as on a visual novel's stage), or as their
   portrait just above it until they have one; the speaker lit and a step larger, the rest dimmed. The
@@ -590,9 +589,8 @@ under the frame.
   with the section in its address lands on it. Who they are (portrait, name, their line, level, archetype,
   HP and MP) is a column on the left that stays put beside whichever section is open. On a phone it is one
   column, the links first. Without the script every section shows, one under another. Their look
-  (the portrait uploads, the sprite, and the chain that makes them) is a section of its own, "Look",
-  for the GM and the character's own player, not a stretch of the edit form; making art sends you
-  back to it.
+  (the portrait uploads and the sprite) is a section of its own, "Look", for the GM and the
+  character's own player, not a stretch of the edit form.
 - **Narration is only as tall as its words**: with no portrait to make room for, the dialogue box
   doesn't hold a speaker's height open under one line.
 - **A place's page is the place first.** The GM's controls for it (modes, rename) come after it,
@@ -635,9 +633,9 @@ under the frame.
   they take at the phone's size, so they clear each other there and everywhere.
 - **The shared screen sends the table to their phones** ("Pick on your phones"), and its right
   edge stays clear of the log's tab.
-- **Pictures come last.** Generating a place's, a speaker's or an entry's picture sits in a closed
-  panel at the bottom of the page (open while a batch is running or waiting to be picked from),
-  and its summary says when ComfyUI isn't answering. The place or person comes first.
+- **Pictures come last.** A place's mode pictures are uploaded in a closed panel at the bottom of
+  its page. The place comes first. Pictures are made outside the game (baible) and only uploaded
+  here, so no page has a studio, a candidate strip or a prompt.
 
 ### Battle, at a glance
 

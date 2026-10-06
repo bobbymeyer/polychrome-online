@@ -93,12 +93,12 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
 
   it "suggests modes for a place, only with services it has" do
     draft = suggest(campaign, "mode", '{"modes": [{"name": "Plague", "line": "Bells, and no one answers.", "closed": ["inn", "casino"], ' \
-                                      '"music": "dungeon", "art": "empty streets, chalk marks on doors"}]}', target: node)
+                                      '"music": "dungeon"}]}', target: node)
     expect(@llm.asked.sole[:user]).to include("The place: #{node.name}")
     closed = draft.items.sole["closed"]
     expect(closed).not_to include("casino")
     keep(draft)
-    expect(town.map_node.reload.modes.sole).to have_attributes(name: "Plague", music: "dungeon", art: "empty streets, chalk marks on doors")
+    expect(town.map_node.reload.modes.sole).to have_attributes(name: "Plague", music: "dungeon")
   end
 
   it "keeps prep drafts to the campaign's GM" do

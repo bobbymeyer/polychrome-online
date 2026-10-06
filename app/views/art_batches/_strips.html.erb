@@ -1,6 +1,0 @@
-<%# The strips for some rounds of candidates, newest first, each with the drafts it was made from, right
-    under the form that made them. batches: ArtBatches, or nil. %>
-<% Array(batches).each do |batch| %>
-  <%= render "art_batches/strip", batch: batch %>
-  <%= render "art_batches/strip", batch: batch.drafts if batch.drafts %>
-<% end %>

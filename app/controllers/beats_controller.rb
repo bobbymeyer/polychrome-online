@@ -54,7 +54,7 @@ class BeatsController < ApplicationController
   # flag" is a choice (and a choice rewritten without the ? a line); a
   # sprite step's someone as "Npc:3" too.
   def beat_params
-    raw = params.expect(beat: [ :speaker, :expression, :text, :backdrop, :map_node_id, :cue, :music, :art_notes, :who, :side, :action, :fx, :transition ])
+    raw = params.expect(beat: [ :speaker, :expression, :text, :backdrop, :map_node_id, :cue, :music, :image, :who, :side, :action, :fx, :transition ])
     case @beat.kind
     when "say", "choice"
       attrs = raw.slice(:expression, :text, :cue).to_h
@@ -65,8 +65,9 @@ class BeatsController < ApplicationController
         attrs.merge(kind: "say", options: [], flag_key: nil)
       end
     when "backdrop"
-      attrs = raw.slice(:backdrop, :map_node_id, :art_notes, :transition).to_h
+      attrs = raw.slice(:backdrop, :map_node_id, :image, :transition).to_h
       attrs[:map_node_id] = nil unless attrs[:backdrop] == "place"
+      attrs.delete(:image) if attrs[:image].blank? # the panel stays unless another is uploaded
       attrs
     when "sprite"
       who = person(raw[:who])

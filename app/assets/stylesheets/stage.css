@@ -1732,7 +1732,7 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .beat__text { min-height: 56px; }
 .beat--choice .beat__speaker, .beat--choice .beat__expression { visibility: hidden; }
 .beat__stage { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
-.beat__panel-words input { min-width: 260px; }
+.beat__panel-upload input { max-width: 260px; }
 .beat__body { min-width: 0; }
 .beat__kind { display: inline-block; margin: 0 0 6px; padding: 1px 8px; font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; background: var(--ink); color: var(--paper); }
 .beat--backdrop .beat__kind { background: var(--dark-blue); }
@@ -1753,7 +1753,6 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .add-step__kind:hover { background: var(--ink); color: var(--paper); }
 .beat__actions { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; }
 .beat__actions form { margin: 0; }
-.art-studio--beat .art-studio__panel { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border: 3px solid var(--ink); margin: 8px 0 12px; }
 .scene-list__item.is-staged strong { color: var(--signal); }
 @media (max-width: 640px) {
   .beat__line { grid-template-columns: 1fr 1fr; }

@@ -4,7 +4,7 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
   resource :registration, only: %i[new create]
   resources :users, only: %i[index update destroy]
-  # Where ComfyUI and the language model are (SiteSetting), for admins.
+  # Where the language model is (SiteSetting), for admins.
   resource :settings, only: %i[show update]
   get "up" => "rails/health#show", as: :rails_health_check
 
@@ -65,24 +65,10 @@ Rails.application.routes.draw do
       resources :world_figures, path: "cast", except: :show, controller: "figures"
       resources :codex_entries, path: "codex"
       resources :world_fronts, path: "fronts", except: :show, controller: "fronts"
-      # Its music (Track): uploaded, linked, or made in ComfyUI.
-      resources :tracks, path: "music", except: :show do
-        resource :generation, only: :create, module: :tracks
-      end
+      # Its music (Track): uploaded or linked.
+      resources :tracks, path: "music", except: :show
       # Its pocket history, rolled over the atlas and written into the canon.
       resource :history, only: %i[show update create destroy], controller: "histories"
-    end
-
-    # The asset pipeline (§8): the world's art direction, and generating
-    # candidates for an entry's image with ComfyUI.
-    resource :art_direction, only: %i[show update], path: "art"
-    resources :art_batches, only: %i[create destroy], path: "art/batches"
-    resource :art_panel, only: :show, path: "art/panel"
-    resources :art_candidates, only: [], path: "art/candidates" do
-      scope module: :art_candidates do
-        resource :pick, only: :create
-        resources :refinements, only: :create
-      end
     end
 
     # The language model's suggestions for world building (Draft).
@@ -189,6 +175,8 @@ Rails.application.routes.draw do
   resources :locations, only: %i[show update] do
     scope module: :locations do
       resource :reroll, only: :create
+      # A picture for one of its modes (ModeArt), uploaded by the GM.
+      resources :mode_arts, only: %i[update destroy], path: "mode-pictures", param: :mode
       resource :memory, only: :destroy # the tables it was rolled from when the party came
       resources :pins, only: %i[create destroy]
       resource :stock, only: %i[update destroy]

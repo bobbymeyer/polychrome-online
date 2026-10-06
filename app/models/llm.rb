@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # An optional language model (config/llm.yml), reached over an
-# OpenAI-compatible chat API. Used to write image prompts (PromptWriter);
+# OpenAI-compatible chat API. Used for drafts and suggestions (Draft);
 # everything works without one.
 module Llm
   class Error < StandardError; end

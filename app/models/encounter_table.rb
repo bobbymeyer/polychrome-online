@@ -5,7 +5,6 @@
 # (Pointcrawl::Encounters).
 class EncounterTable < ApplicationRecord
   include BookEntry
-  include Artwork
 
   TERRAINS = %w[plains forest desert mountain cave crypt sea town].freeze
   # The damage type of a fight here (World#terrain_type).
