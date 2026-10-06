@@ -72,16 +72,24 @@ class Scene < ApplicationRecord
   def stage_at(beat)
     state = { "backdrop" => nil, "figures" => [], "fx" => nil, "leaving" => [], "fresh" => {} }
     settled = false
-    beats.to_a.take_while { |b| b.position <= beat.position }.each do |b|
+    steps = beats.to_a.take_while { |b| b.position <= beat.position }
+    cast = steps.any? { |b| b.kind == "sprite" } ? stage_cast : {}
+    steps.each do |b|
       if settled # the table stopped on a line: the changes before it have played
         state["figures"].each { |f| f.delete("arrived") }
         state["leaving"] = []
         state["fresh"] = {}
       end
-      b.apply_to(state)
+      b.apply_to(state, cast)
       settled = b.waits?
     end
     state
+  end
+
+  # Everyone a sprite step can put on the stage, the cast and the party, by
+  # [type, id]: read fresh for one fold, so nothing stale is kept on the campaign.
+  def stage_cast
+    (Npc.where(campaign: campaign).to_a + Character.where(campaign: campaign).to_a).index_by { |person| [ person.class.name, person.id ] }
   end
 
   # The script's lines, read as a scene reads them (not beats yet).

@@ -78,17 +78,29 @@ class Beat < ApplicationRecord
 
   def figure = figures.first
 
-  # Who a sprite step is about (Npc or Character), or nil.
-  def who
+  # Who a sprite step is about (Npc or Character), or nil: looked up at the
+  # table, or in a cast indexed by [type, id] (Scene#stage_cast) when folding.
+  def who(cast = nil)
     f = figure or return nil
+    return cast[[ f["type"], f["id"] ]] if cast
+
     campaign.public_send(f["type"].underscore.pluralize).find_by(id: f["id"])
   end
 
-  # The stage as it is at this step (Scene#stage_at): who stands on it,
-  # [{ "who", "side", "expression", "speaking" }], the speaker of a line
-  # among them (lit) even if nobody put them there.
+  # The stage as it is at this step (Scene#stage_at), folded once per
+  # instance: the accessors below read from it.
+  def stage = @stage ||= scene.stage_at(self)
+
+  def reload(*)
+    @stage = nil
+    super
+  end
+
+  # Who stands on the stage at this step, [{ "who", "side", "expression",
+  # "speaking" }], the speaker of a line among them (lit) even if nobody put
+  # them there.
   def on_stage
-    placed = scene.stage_at(self)["figures"].map { |f| f.merge("speaking" => f["who"] == speaker) }
+    placed = stage["figures"].map { |f| f.merge("speaking" => f["who"] == speaker) }
     if say? && speaker && placed.none? { |f| f["speaking"] }
       # The speaker takes the emptier side.
       side = placed.count { |f| f["side"] == "left" } > placed.count { |f| f["side"] == "right" } ? "right" : "left"
@@ -100,7 +112,7 @@ class Beat < ApplicationRecord
   # The backdrop at this step: { "kind" => "place", "node" => MapNode } |
   # { "kind" => "panel", "beat" => Beat } | { "kind" => "black" } | nil
   # (the table as usual).
-  def effective_backdrop = scene.stage_at(self)["backdrop"]
+  def effective_backdrop = stage["backdrop"]
 
   # The picture behind it, if the backdrop has one.
   def backdrop_image
@@ -112,19 +124,20 @@ class Beat < ApplicationRecord
   end
 
   # The effect at this step, if the last effect step is still the latest word (placeholder).
-  def effect = scene.stage_at(self)["fx"]
+  def effect = stage["fx"]
 
   # Who left on the way to this step, [{ "who", "side", "expression", "transition" }]: they go
   # out as the step comes on, then they're gone.
-  def leaving = scene.stage_at(self)["leaving"]
+  def leaving = stage["leaving"]
 
   # The transition the backdrop came on with, if it changed on the way to this step.
-  def fresh_backdrop = scene.stage_at(self)["fresh"]["backdrop"]
+  def fresh_backdrop = stage["fresh"]["backdrop"]
 
   # What this step sets, for the stage fold (Scene#stage_at). A change marks what it changed
   # with its transition ("arrived" on a figure, "fresh" on the stage, the leaving kept aside);
   # the fold clears the marks once the table has stopped on a line, so each change plays once.
-  def apply_to(state)
+  # cast: the table's, indexed by [type, id], so a sprite step's who needs no lookup.
+  def apply_to(state, cast = nil)
     case kind
     when "backdrop"
       state["backdrop"] = case backdrop
@@ -135,7 +148,7 @@ class Beat < ApplicationRecord
       state["fresh"]["backdrop"] = transition
     when "sprite"
       f = figure or return state
-      person = who or return state
+      person = who(cast) or return state
       state["figures"] = state["figures"].reject { |g| g["who"] == person }
       if action == "leave"
         state["leaving"] = state["leaving"].reject { |g| g["who"] == person } << { "who" => person, "side" => f["side"], "expression" => f["expression"], "transition" => transition }
@@ -163,11 +176,7 @@ class Beat < ApplicationRecord
   end
 
   # A music step's track, named: a kind of scene, silence, or one of the world's by name.
-  def music_name
-    return music unless campaign.world.music_track_choice?(music)
-
-    campaign.world.tracks.find { |track| "track:#{track.id}" == music }&.name || music
-  end
+  def music_name = campaign.world.named_track(music)&.name || music
 
   # One line for the sequencer and the summary.
   def describe
@@ -202,15 +211,21 @@ class Beat < ApplicationRecord
   def art_seed_hint = panel_template&.image_seed
 
   # What the panel shows, in the GM's words (art_notes), else the line before it, else the scene's name.
-  def panel_words = art_notes.presence || scene.beats.in_order.to_a.reverse.find { |b| b.position <= position && b.says? }&.text.presence || scene.name
+  def panel_words = art_notes.presence || last_step_before(&:says?)&.text.presence || scene.name
 
   # The place this step stands in: the last place set on or before it.
   def panel_template
-    behind = scene.beats.in_order.to_a.reverse.find { |b| b.position <= position && b.kind == "backdrop" && b.backdrop == "place" && b.map_node }
+    behind = last_step_before { |b| b.kind == "backdrop" && b.backdrop == "place" && b.map_node }
     behind&.map_node&.location&.location_template
   end
 
   private
+
+  # The last of the scene's steps, this one included, that the block takes: read from the
+  # steps the scene has loaded (in order, as Scene#stage_at reads them).
+  def last_step_before(&block)
+    scene.beats.to_a.select { |b| b.position <= position && block.call(b) }.max_by { |b| [ b.position, b.id ] }
+  end
 
   def everyone_is_at_this_table
     errors.add(:speaker, "isn't in this campaign") if speaker && speaker.campaign_id != campaign.id
@@ -228,7 +243,7 @@ class Beat < ApplicationRecord
     when "sprite"
       errors.add(:action, "must be enter, change or leave") unless ACTIONS.include?(action)
       errors.add(:figures, "needs someone from the cast or the party") if who.nil?
-    when "music" then errors.add(:music, "must be one of the table's tracks, silence, or follow") unless (Campaign::MUSIC_CHOICES + %w[follow]).include?(music) || campaign.world.music_track_choice?(music)
+    when "music" then errors.add(:music, "must be one of the table's tracks, silence, or follow") unless campaign.world.music_choice?(music, extra: %w[follow])
     when "fx" then errors.add(:fx, "needs a name") if fx.blank?
     end
     if changes_stage? && !transitions.key?(transition)

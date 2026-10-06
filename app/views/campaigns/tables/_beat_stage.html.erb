@@ -7,13 +7,15 @@
 <% behind = beat.effective_backdrop %>
 <% image = beat.backdrop_image || (behind.nil? ? beat.campaign.current_node&.location&.picture : nil) %>
 <% fresh = beat.fresh_backdrop %>
+<% on_stage = beat.on_stage %>
+<% leaving = beat.leaving.map { |f| f.merge("leaving" => true) } %>
 <div class="beat-stage beat-stage--<%= behind&.dig("kind") || "table" %>" data-controller="stage-change"
      <%= tag.attributes(data: { fx: beat.effect, arrive: fresh, arrive_key: (fresh && "#{beat.id}:backdrop") }.compact) %>>
   <%= image_tag url_for(image), alt: "", class: "beat-stage__backdrop" if image %>
   <div class="beat-stage__figures">
     <% Beat::SIDES.each do |side| %>
       <div class="beat-stage__side beat-stage__side--<%= side %>">
-        <% figures = beat.on_stage.select { |f| f["side"] == side } + beat.leaving.select { |f| f["side"] == side }.map { |f| f.merge("leaving" => true) } %>
+        <% figures = (on_stage + leaving).select { |f| f["side"] == side } %>
         <% figures.each do |figure| %>
           <% sprite = figure["who"].sprite_image %>
           <% key = "#{beat.id}:#{figure['who'].class.name}:#{figure['who'].id}" %>
