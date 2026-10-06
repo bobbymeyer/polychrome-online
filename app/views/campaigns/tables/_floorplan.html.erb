@@ -5,7 +5,7 @@
 <div id="table_floorplan" class="table-floorplan">
   <% if dungeon %>
     <% view = dungeon.view %>
-    <% current = dungeon.progress["current"] %>
+    <% current = dungeon.current_room_key %>
     <p class="table-floorplan__title">
       <strong><%= dungeon.name %></strong><%= " · #{dungeon.current_room['name']}" if dungeon.current_room %>
     </p>

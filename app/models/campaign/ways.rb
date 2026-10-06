@@ -220,7 +220,7 @@ module Campaign::Ways
   # to look for, but not a way anyone can vote for. ["Iron door (needs the Rusty key)"]
   def locked_ways
     dungeon = dungeon_in_progress or return []
-    here = dungeon.progress["current"]
+    here = dungeon.current_room_key
     dungeon.neighbours(here).filter_map do |key|
       path = dungeon.path_between(here, key)
       "#{path['lock']['name']} (needs #{path['lock']['key_name']})" if dungeon.locked?(path) && !dungeon.has_key?(path["lock"])
@@ -230,7 +230,7 @@ module Campaign::Ways
   private
 
   def dungeon_ways(dungeon)
-    here = dungeon.progress["current"]
+    here = dungeon.current_room_key
     ways = dungeon.neighbours(here).filter_map do |key|
       path = dungeon.path_between(here, key)
       [ key, path ] unless dungeon.locked?(path) && !dungeon.has_key?(path["lock"])

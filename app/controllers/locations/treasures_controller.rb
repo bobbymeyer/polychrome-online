@@ -9,7 +9,7 @@ class Locations::TreasuresController < ApplicationController
 
   def create
     room = params.expect(:room)
-    raise Refusal, "The party isn't in that room" unless table_gm? || @location.progress["current"] == room
+    raise Refusal, "The party isn't in that room" unless table_gm? || @location.current_room_key == room
 
     line = @location.take_treasure!(room)
     params[:return_to] == "table" ? redirect_to(campaign_table_path(@campaign), notice: line, status: :see_other) : back(line)

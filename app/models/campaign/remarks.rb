@@ -155,15 +155,15 @@ module Campaign::Remarks
   # remembers is remembered, and a hard move's outcome happens. An offered
   # clue is found, if it's still the next one.
   def say_offer!(note)
-    offer = note.data.to_h["offer"]
+    offer = note.offer
     raise Refusal, "That isn't a line to say." unless note.campaign_id == id && note.gm_only? && offer
-    raise Refusal, "Already said." if note.data["said"]
+    raise Refusal, "Already said." if note.said?
     return let_them_find!(note, offer) if offer["clue"]
 
     transaction do
       say_line!(offer["text"], sets: offer["sets"], does: offer["does"])
       put_to_the_table!(offer["choices"], flag: offer["flag"]) if offer["choices"]
-      note.update!(data: note.data.merge("said" => true))
+      note.update!(said: true)
     end
   end
 
@@ -220,7 +220,7 @@ module Campaign::Remarks
 
     transaction do
       secret.find_clue!(by: offer["by"])
-      note.update!(data: note.data.merge("said" => true))
+      note.update!(said: true)
     end
   end
 

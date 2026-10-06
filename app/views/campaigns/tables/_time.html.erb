@@ -26,7 +26,7 @@
   <% if node || local_assigns[:gm] %>
   <div class="table-time__corner">
     <% dungeon = campaign.dungeon_in_progress %>
-    <% room = dungeon && dungeon.room(dungeon.progress["current"]) %>
+    <% room = dungeon && dungeon.current_room %>
     <div class="table-time__where">
       <% if node %>
         <span class="table-time__pin" aria-hidden="true"></span>
