@@ -1309,7 +1309,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table:has(#table_now[data-state="battle"]) :is(.your-moves, .gm-tools) { display: none; } /* the fight is on its own page */
 .table[data-seat="player"]:has(#table_now[data-state="encounter"]) #field_ability,
 .table[data-seat="player"]:has(#table_now[data-state="choice"]) #field_ability,
-.table:has(#table_now[data-state="scene"]) #table_ways, .table[data-seat="player"]:has(#table_now[data-state="scene"]) #field_ability { display: none; } /* the scene plays; the director's hand is on the Now line */
+.table:has(#table_now[data-state="scene"]) #table_ways, .table[data-seat="player"]:has(#table_now[data-state="scene"]) #field_ability { display: none; } /* the scene plays; the director's hand is on the stage's corner tag */
 /* Talk is a button until it's wanted. */
 .talk { margin: 12px 0; }
 .talk > summary { list-style: none; display: inline-flex; cursor: pointer; }
@@ -1335,7 +1335,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .battle-setup .panel { margin: 0 0 12px; }
 .battle-setup__more { margin: 0 0 12px; }
 .battle-setup .actions { margin-top: 0; }
-.table:has(#table_now[data-state="scene"]) #table_called { display: none; } /* the scene plays; the director's hand is on the Now line */
+.table:has(#table_now[data-state="scene"]) #table_called { display: none; } /* the scene plays; the director's hand is on the stage's corner tag */
 /* The talk box, and the GM's whisper to someone, are Talk's: under any other control they're away (Campaign::Controls). */
 .table:has(#table_now:not([data-controls="talk"])) :is(.table-talk, .coop-party__whisper) { display: none; }
 
@@ -1903,4 +1903,10 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 /* The place's tag on the stage carries the GM's switch between the place and the map. */
 .table-time__view { margin-left: 8px; min-height: 0; padding: 0 8px; font-size: 11px; line-height: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; background: var(--ink); color: var(--paper); border: 0; vertical-align: 1px; }
 .table-time__view:hover { background: var(--signal); color: var(--paper); translate: none; }
+/* A scene's steps on the corner tag: the beat count, then Next in red (the game move), Play on or Pause, and down. */
+.table-time__scene { display: inline-flex; align-items: center; gap: 0; margin-left: 8px; }
+.table-time__scene form { margin: 0; }
+.table-time__scene .table-time__view { margin-left: 2px; white-space: nowrap; }
+.table-time__view--play { background: var(--signal); }
+.table-time__beat { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--grey); }
 .checks-row { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 8px; }

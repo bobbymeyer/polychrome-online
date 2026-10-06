@@ -410,8 +410,10 @@ broadcasts, so it changes under everyone at once and nobody refreshes to see it.
   map steps aside, and whoever stands in the scene is along the bottom, left and right, full body as
   their sprite with their feet behind the dialogue box (as on a visual novel's stage), or as their
   portrait just above it until they have one; the speaker lit and a step larger, the rest dimmed. The
-  line plays in the dialogue box as any line does. The GM steps the scene line to line from the Now
-  line, or lets it play on; the changes between lines (a backdrop, someone entering or leaving, music,
+  line plays in the dialogue box as any line does. Starting a scene only changes the stage: no title
+  card, nothing said on the Now line, which keeps the controls. The GM steps the scene line to line
+  from the stage's corner tag (the beat count, Next in red, Play on or Pause, and ×, where the
+  Map/Place switch sits otherwise), or lets it play on; the changes between lines (a backdrop, someone entering or leaving, music,
   an effect) are made on the way, so the table only ever stops on something said or asked. Each change
   comes on with the line after it, with its own transition: a quick fade (300 ms) unless the step says a
   slow one (1.4 s), a slide in from the figure's side, or a cut; someone leaving goes out the same way.
