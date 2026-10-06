@@ -1,0 +1,113 @@
+<% content_for :title, "#{@campaign.name} · Simulate" %>
+<%# A fight played out many times before anyone plays it (BattleSimulation, Battle::Forecast): who fights and what they
+    face above; how it tends to go below, run by run and over every run, in the same tables as the battle report. %>
+<% sim = @simulation %>
+<% hp, mp = @world.word("hp"), @world.word("mp") %>
+<% picked = sim.characters.map(&:id) %>
+<% rows = sim.encounter.map { |slug, count| { monster: slug, count: count } } %>
+<% rows += Array.new([ 3 - rows.size, 0 ].max) { { monster: "", count: 1 } } %>
+<div class="battle-report simulation">
+  <p class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= link_to "Prep", campaign_prep_path(@campaign) %> · Simulate</p>
+  <h1>Simulate</h1>
+  <p>
+    Play a fight out many times before anyone plays it, from a different seed each time. Nothing is kept: no battle,
+    no line in the log.
+  </p>
+
+  <%= form_with url: campaign_simulation_path(@campaign), method: :get, scope: :simulation, class: "simulation__form", data: { turbo_frame: "_top" } do %>
+    <fieldset class="panel">
+      <legend>Who fights</legend>
+      <div class="checks">
+        <% @campaign.characters.each do |character| %>
+          <label>
+            <%= check_box_tag "simulation[characters][]", character.id, picked.include?(character.id), id: "simulation_character_#{character.id}" %>
+            <%= character.name %> <span class="muted">(<%= character.job.name %>, level <%= character.level %>)</span>
+          </label>
+        <% end %>
+      </div>
+      <label>
+        <%= hidden_field_tag "simulation[rested]", "0", id: nil %>
+        <%= check_box_tag "simulation[rested]", "1", sim.rested?, id: "simulation_rested" %>
+        Rested: everyone starts at full <%= hp %> and <%= mp %> (else as they are now)
+      </label>
+    </fieldset>
+
+    <fieldset class="panel">
+      <legend>What they face</legend>
+      <table class="grid-form">
+        <thead><tr><th>Monster</th><th>Count</th></tr></thead>
+        <tbody>
+          <% rows.each_with_index do |row, i| %>
+            <tr>
+              <td><%= select_tag "simulation[encounter][#{i}][monster]", options_for_select(monster_options(@world.monsters), row[:monster]), include_blank: "(none)", "aria-label": "Monster #{i + 1}" %></td>
+              <td><%= number_field_tag "simulation[encounter][#{i}][count]", row[:count], min: 1, max: 8, "aria-label": "Monster #{i + 1} count" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <label>
+        Or an encounter table, each run rolling its group by weight
+        <%= select_tag "simulation[table]", options_for_select(@world.encounter_tables.order(:name).map { |t| [ t.name, t.slug ] }, sim.table&.slug), include_blank: "(none)" %>
+      </label>
+    </fieldset>
+
+    <fieldset class="panel">
+      <legend>How</legend>
+      <label>Runs <%= number_field_tag "simulation[runs]", sim.runs, min: 1, max: BattleSimulation::MAX_RUNS %></label>
+      <div class="checks">
+        <label>
+          <%= radio_button_tag "simulation[tactics]", "full", sim.tactics == "full" %>
+          Full: heal the badly hurt, raise the fallen, and spend <%= mp %> on the hardest-hitting move
+        </label>
+        <label>
+          <%= radio_button_tag "simulation[tactics]", "floor", sim.tactics == "floor" %>
+          Floor: heal and raise, and otherwise just attack (the battle form's forecast)
+        </label>
+      </div>
+    </fieldset>
+    <%= submit_tag "Play it out", name: nil, class: "button button--primary" %>
+  <% end %>
+
+  <% if (result = sim.result) %>
+    <% runs = result["report"]["battles"] %>
+    <section class="simulation__result">
+      <h2>How it tends to go</h2>
+      <p class="simulation__summary">
+        Won <strong><%= result["wins"] %> of <%= result["runs"] %></strong> (<%= result["wins"] * 100 / result["runs"] %>%),
+        in about <%= result["rounds"] %> rounds, ending with <strong><%= result["hp_left"] %>%</strong> of the party's <%= hp %>
+        and <strong><%= result["mp_left"] %>%</strong> of its <%= mp %>, <%= result["downed"] %> down on average.
+      </p>
+      <p class="hint">
+        A sensible party, not a clever one: no buffs, statuses or items. Real players usually do better<%= " than this floor" if sim.tactics == "floor" %>.
+      </p>
+    </section>
+
+    <details class="simulation__runs" <%= "open" if runs.size <= 20 %>>
+      <summary>Each run</summary>
+      <table class="book-table book-table--plain">
+        <thead>
+          <tr><th>Run</th><th>Result</th><th class="num">Rounds</th><th class="num">Party dealt</th><th class="num">Party took</th>
+              <th class="num">Party healed</th><th class="num">Party down</th><th>Against</th></tr>
+        </thead>
+        <tbody>
+          <% runs.each do |run| %>
+            <tr>
+              <th scope="row"><%= run["id"] %></th>
+              <td><%= run["result"] == "input" ? "Still going" : run["result"].humanize %></td>
+              <td class="num"><%= run["rounds"] %></td>
+              <td class="num"><%= run["party_dealt"] %></td>
+              <td class="num"><%= run["party_taken"] %></td>
+              <td class="num"><%= run["party_healed"] %></td>
+              <td class="num"><%= run["party_downed"] %></td>
+              <td><%= run["foes"].map { |name, count| count > 1 ? "#{count} × #{name}" : name }.join(", ") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </details>
+
+    <%= render "campaigns/battle_reports/across", across: result["report"], each: "run", mp: mp %>
+  <% elsif request.query_string.present? %>
+    <p class="empty">Pick who fights, and some monsters or an encounter table, to play it out.</p>
+  <% end %>
+</div>

@@ -21,6 +21,34 @@ RSpec.describe Battle::Forecast do
     expect(described_class.sensible(hurt, "bartz")).to be_nil # nothing to mend with
   end
 
+  it "with full tactics, spends MP on the hardest-hitting move: on all the foes when there are several, else the weakest" do
+    many = build_battle(seed: 1, enemies: BattleFixtures.goblins(3))
+    expect(described_class.sensible(many, "vivi")).to be_nil # the floor just attacks
+    move = described_class.sensible(many, "vivi", tactics: "full")
+    expect(many["abilities"][move["ability"]]["target"]).to eq("all_enemies")
+    expect(move).not_to have_key("target")
+
+    one = build_battle(seed: 1, enemies: BattleFixtures.goblins(1))
+    single = described_class.sensible(one, "vivi", tactics: "full")
+    expect(one["abilities"][single["ability"]]["target"]).to eq("single_enemy")
+    expect(single["target"]).to eq(one["units"].find { |u| u["side"] == "enemy" }["id"])
+    expect(described_class.sensible(with_unit(one, "vivi", mp: 0), "vivi", tactics: "full")).to be_nil # nothing to spend: attack
+    expect(described_class.sensible(with_unit(one, "bartz", hp: 10), "rosa", tactics: "full")["ability"]).to eq("cure") # mending still comes first
+  end
+
+  it "says what MP is left, and with report: true, what every run came to" do
+    states = (1..6).map { |seed| build_battle(seed: seed, enemies: BattleFixtures.goblins(3)) }
+    floor = described_class.run(states)
+    full = described_class.run(states, tactics: "full", report: true)
+
+    expect(floor).not_to have_key("report")
+    expect(full["mp_left"]).to be < floor["mp_left"]
+    expect(full["rounds"]).to be <= floor["rounds"]
+    expect(full["report"]["battles"].map { |b| b["name"] }).to eq((1..6).map { |i| "Run #{i}" })
+    expect(full["report"]["battles"].map { |b| b["result"] }.count("victory")).to eq(full["wins"])
+    expect(full["report"]["moves"].select { |m| m["side"] == "party" }.map { |m| m["name"] }).to include("Fira")
+  end
+
   it "is the same every time for the same states" do
     states = (1..4).map { |seed| build_battle(seed: seed) }
     expect(described_class.run(states)).to eq(described_class.run(states))

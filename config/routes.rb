@@ -114,6 +114,8 @@ Rails.application.routes.draw do
       resource :prep, only: :show
       # Every battle's numbers together, for the GM balancing the game (Battle::Report.across).
       resource :battle_report, only: :show
+      # A fight played out many times before anyone plays it (BattleSimulation).
+      resource :simulation, only: :show
       resources :flags, only: %i[create update destroy] do
         resources :bumps, only: :create, module: :flags
       end
