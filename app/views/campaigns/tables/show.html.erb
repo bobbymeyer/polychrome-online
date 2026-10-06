@@ -28,9 +28,9 @@
 
   <% if view == "stage" %>
     <%# Nothing but the Stage, for a TV or a stream: the lines still land here, unseen, so the moments they
-        cue (a check landing, an awakening, an arrival) play on it. %>
+        cue (a check landing, an awakening, an arrival) play on it; a refresh leaves them be (data-turbo-permanent). %>
     <%= render "campaigns/tables/stage", campaign: @campaign, gm: false, last_dialogue: @last_dialogue, caption: false %>
-    <div hidden><%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %></div>
+    <div id="stage_log" data-turbo-permanent hidden><%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %></div>
     <%= link_to "Leave the stage", campaign_table_path(@campaign, view: "off"), class: "stage-leave" %>
   <% else %>
   <% unless view %>
