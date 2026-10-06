@@ -35,9 +35,11 @@
         picks one. Wider, the strip is hidden and all three show (stage.css). %>
     <% content_for :table_views do %>
       <nav class="table-views" aria-label="Table views" data-controller="table-views" data-table-views-key-value="<%= @campaign.id %>">
-        <% { "party" => (@seat.character? ? "You & party" : "Party"), "stage" => "Stage", "log" => "Log" }.each do |key, label| %>
-          <%= tag.button type: "button", class: "table-views__tab", aria: { current: "false" }, data: { table_views_target: "tab", key: key, action: "table-views#pick" } do %>
-            <%= label %><% if key == "log" %> <span class="table-views__badge" data-table-views-target="badge" hidden></span><% end %>
+        <%# Icons (RPG Awesome): a player for the party, the spawn point for the stage, speech bubbles for the log; the name is the title. %>
+        <% { "party" => [ (@seat.character? ? "You & party" : "Party"), "ra-player" ], "stage" => [ "Stage", "ra-spawn-node" ], "log" => [ "Log", "ra-speech-bubbles" ] }.each do |key, (label, icon)| %>
+          <%= tag.button type: "button", class: "table-views__tab", title: label, aria: { current: "false", label: label },
+                         data: { table_views_target: "tab", key: key, action: "table-views#pick" } do %>
+            <i class="ra <%= icon %>" aria-hidden="true"></i><% if key == "log" %> <span class="table-views__badge" data-table-views-target="badge" hidden></span><% end %>
           <% end %>
         <% end %>
       </nav>

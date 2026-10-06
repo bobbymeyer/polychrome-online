@@ -204,7 +204,7 @@ RSpec.describe "The live table", type: :system do
       page.driver.browser.manage.window.resize_to(390, 844)
       visit campaign_table_path(campaign)
       expect(page).to have_css(".topbar .table-views", visible: true)
-      expect(page).to have_css(".table-views__tab[aria-current=page]", text: "Stage") # the stage first
+      expect(page).to have_css(".table-views__tab[aria-current=page][title=Stage]") # the stage first
       expect(page).to have_css("#stage", visible: true)
       expect(page).to have_no_css("#table_party li.is-you", visible: true)
       expect(page).to have_no_css(".log-drawer__tab", visible: true) # the log is a view here, not a drawer
@@ -231,7 +231,7 @@ RSpec.describe "The live table", type: :system do
       expect(page).to have_css("#chat_log li", text: "The bridge is out.", visible: true)
 
       visit current_path # the view you were on is kept
-      expect(page).to have_css(".table-views__tab[aria-current=page]", text: "Log")
+      expect(page).to have_css(".table-views__tab[aria-current=page][title=Log]")
       page.driver.browser.manage.window.resize_to(1400, 1000)
     end
   end
