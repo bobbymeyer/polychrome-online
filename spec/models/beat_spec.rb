@@ -68,6 +68,11 @@ RSpec.describe Beat do
     expect(scene.beats.new(kind: "sprite", action: "leave", figures: [ { type: "Npc", id: cid.id } ])).to be_valid
     expect(scene.beats.new(kind: "music", music: "polka")).not_to be_valid
     expect(scene.beats.new(kind: "music", music: "follow")).to be_valid
+    # One of the world's tracks by name, a linked one included; not a track that isn't there.
+    tavern = campaign.world.tracks.create!(name: "Tavern night", source: "link", url: "https://youtu.be/dQw4w9WgXcQ")
+    expect(scene.beats.new(kind: "music", music: "track:#{tavern.id}")).to be_valid
+    expect(scene.beats.new(kind: "music", music: "track:#{tavern.id}").describe).to eq("Music: Tavern night")
+    expect(scene.beats.new(kind: "music", music: "track:999999")).not_to be_valid
     expect(scene.beats.new(kind: "fx")).not_to be_valid
     expect(scene.beats.new(kind: "fx", fx: "fade")).to be_valid
     expect(scene.beats.new(kind: "backdrop", backdrop: "black", transition: "slide")).not_to be_valid # a backdrop can't slide

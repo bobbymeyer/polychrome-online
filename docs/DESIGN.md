@@ -830,6 +830,8 @@ Phones are where most players are, so every page is checked at 390×844, 360×64
   the bar folds its links behind Menu as a phone's does, to make room. The log's tab goes away
   on this page: the log is the third view, in the page, and the count of lines you haven't seen
   sits on its name in the strip. The view you were on is kept for the session.
+- **A scene's music step can name a track**: the Music book's tracks called by name, a YouTube or
+  Spotify link among them, sit in the step's select after the kinds of scene, as on the stage's switch.
 - **The log reads newest first.** A new line lands on top, and opening the log shows the top, so
   the latest is always at hand without scrolling; the battle's own section still grows downward
   as a fight plays. A search box sits in the log's sticky head: typing narrows the lines to the

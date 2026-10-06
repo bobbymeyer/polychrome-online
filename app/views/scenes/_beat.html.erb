@@ -54,7 +54,8 @@
       </div>
     <% when "music" %>
       <div class="beat__stage">
-        <%= f.select :music, options_for_select([ [ "Follow the place", "follow" ] ] + Campaign::MUSIC_CHOICES.map { |c| [ c.capitalize, c ] }, beat.music), {}, "aria-label": "Music" %>
+        <%# A kind of scene's track, one of the world's by name (a linked YouTube or Spotify track too), silence, or back to the place's. %>
+        <%= f.select :music, options_for_select([ [ "Follow the place", "follow" ] ] + Campaign::MUSIC_CHOICES.map { |c| [ c.capitalize, c ] } + beat.scene.campaign.world.named_music_choices, beat.music), {}, "aria-label": "Music" %>
       </div>
     <% when "fx" %>
       <div class="beat__stage">

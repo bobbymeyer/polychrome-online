@@ -162,6 +162,13 @@ class Beat < ApplicationRecord
     { "speaker" => speaker, "expression" => expression, "text" => text }
   end
 
+  # A music step's track, named: a kind of scene, silence, or one of the world's by name.
+  def music_name
+    return music unless campaign.world.music_track_choice?(music)
+
+    campaign.world.tracks.find { |track| "track:#{track.id}" == music }&.name || music
+  end
+
   # One line for the sequencer and the summary.
   def describe
     case kind
@@ -169,7 +176,7 @@ class Beat < ApplicationRecord
     when "choice" then "The party decides: #{options.join(' / ')}"
     when "backdrop" then { "place" => "Backdrop: #{map_node&.name || 'a place'}", "panel" => "Backdrop: a panel", "black" => "Backdrop: black" }[backdrop] + how
     when "sprite" then "#{who&.name || 'Someone'} #{action == 'leave' ? 'leaves' : "#{action == 'enter' ? 'enters' : 'turns'} #{figure&.dig('side')}, #{figure&.dig('expression')}"}#{how}"
-    when "music" then "Music: #{music == 'follow' ? 'follow the place' : music}#{how}"
+    when "music" then "Music: #{music == 'follow' ? 'follow the place' : music_name}#{how}"
     when "fx" then "Effect: #{fx}"
     end
   end
@@ -221,7 +228,7 @@ class Beat < ApplicationRecord
     when "sprite"
       errors.add(:action, "must be enter, change or leave") unless ACTIONS.include?(action)
       errors.add(:figures, "needs someone from the cast or the party") if who.nil?
-    when "music" then errors.add(:music, "must be one of the table's tracks, silence, or follow") unless (Campaign::MUSIC_CHOICES + %w[follow]).include?(music)
+    when "music" then errors.add(:music, "must be one of the table's tracks, silence, or follow") unless (Campaign::MUSIC_CHOICES + %w[follow]).include?(music) || campaign.world.music_track_choice?(music)
     when "fx" then errors.add(:fx, "needs a name") if fx.blank?
     end
     if changes_stage? && !transitions.key?(transition)
