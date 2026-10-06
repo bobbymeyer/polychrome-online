@@ -662,9 +662,8 @@ under the frame.
   waiting encounter, and travel is the table's (the Travel control, the map on the stage).
 - **Setting up is the lobby's, playing is the table's.** Playing around one screen (the shared
   screen, the QR code and the controller link) is set up on the campaign page beside the invite,
-  before play. The music is on the stage: one small select in the frame's bottom-left corner
-  (where the map's "Ask the table: anywhere" button was; asking is done from a place pressed on
-  the map, and from Move), the GM's, since what the table hears belongs with what it sees. GM
+  before play. The music is on the stage: one small select in the frame's top-left corner,
+  just under where the party is, the GM's, since what the table hears belongs with what it sees. GM
   tools' More is grants only.
 - **"Fast animations"**, not "Fast": the toggle says what it speeds up. It's a setting for this
   device, so it sits in the account menu beside Sound on every page, and a battle already

@@ -1,15 +1,14 @@
 <%# The Stage (docs/DESIGN.md, "The Stage"): one 16:9 frame in the middle of every screen at the table, the
     same for everyone, where the game is shown: the scene on it (a beat's backdrop and figures), else the
     place the party is in when it has a picture, or the map when the GM puts it there (a player can browse
-    other maps in it alone); the date and the part of the day in its corner; the GM's music switch in the other; and what's being said along
-    its bottom. Nothing else is on it. Each part is replaced live (Campaign::Broadcasts), so every screen shows the same
+    other maps in it alone); the date and the part of the day in its corner; where the party is in the other, the GM's music switch under it; and
+    what's being said along its bottom. Nothing else is on it. Each part is replaced live (Campaign::Broadcasts), so every screen shows the same
     stage; a battle plays on the same frame, on its own page. %>
 <section class="stage stage--table" id="stage" aria-label="Stage" data-controller="stage-fit" data-stage-fit-below-value="<%= local_assigns.fetch(:caption, true) ? 160 : 0 %>">
   <div class="stage__frame">
     <%= render "campaigns/tables/scene", campaign: campaign %>
     <%= render "campaigns/tables/map", campaign: campaign, gm: gm %>
     <%= render "campaigns/tables/dialogue_box", campaign: campaign, last_dialogue: last_dialogue, extra: "dialogue--stage" %>
-    <%= render "campaigns/tables/music", campaign: campaign, gm: gm %>
   </div>
   <div class="stage__hud"><%= render "campaigns/tables/time", campaign: campaign, gm: gm %></div>
 </section>

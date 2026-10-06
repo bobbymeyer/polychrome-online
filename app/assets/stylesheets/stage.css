@@ -613,11 +613,10 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .boss-line::before { content: "\201C"; } .boss-line::after { content: "\201D"; }
 
 /* Sound: the GM's music switch on the stage, the world's Music book, and a linked track's player. */
-/* The music, in the frame's bottom-left corner (where the map's modes line sits too): one small select, the GM's. */
-.stage-music { position: absolute; left: 1.2cqw; bottom: 1.2cqw; z-index: 7; max-width: 46cqw; }
+/* The music, in the frame's top-left corner under where the party is (.table-time__corner): one small select, the GM's. */
+.stage-music { max-width: 100%; }
 .music-switch { display: inline-block; margin: 0; vertical-align: middle; }
 .music-switch select { width: auto; max-width: 100%; min-height: 0; padding: 0 20px 0 6px; font-size: clamp(9px, 1.1cqw, 11px); line-height: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-width: 2px; background-color: var(--paper); }
-.stage:has(.stage-music:not([hidden])) .map-sheet .map-canvas__modes { bottom: 36px; }
 /* A YouTube or Spotify track plays in its own small player (sound.js), kept across pages, in the page's corner. */
 .music-embed { position: fixed; right: 16px; bottom: 16px; z-index: 40; width: 300px; border: 3px solid var(--ink); background: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
 .music-embed iframe { display: block; width: 100%; height: 169px; border: 0; }
@@ -1533,8 +1532,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 }
 .dialogue__close:hover, .dialogue__close:focus-visible { color: var(--ink); }
 /* When, in the frame's top-right corner: one small line (the clock, the part of the day, the day), straight
-   on the picture with no plate round it, the days left under it. Where, a tag in the top-left corner.
-   Neither takes the eye off the stage. */
+   on the picture with no plate round it, the days left under it. Where, a tag in the top-left corner, the GM's
+   music under it. Neither takes the eye off the stage. */
 .stage__hud .table-time { position: static; margin: 0; }
 .stage__hud .table-time__plate { position: absolute; top: 1.2cqw; right: 1.2cqw; z-index: 7; max-width: 40cqw; text-align: right; }
 .stage__hud .table-time__clock { --clock: clamp(24px, 3.4cqw, 34px); display: flex; justify-content: flex-end; filter: drop-shadow(4px 4px 0 var(--ink)); }
@@ -1546,9 +1545,12 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .stage__hud .table-time__deadlines li:not(.is-tomorrow) {
   display: table; margin: 4px 0 0 auto; padding: 1px 8px; background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
 }
+.stage__hud .table-time__corner {
+  position: absolute; left: 1.2cqw; top: 1.2cqw; z-index: 8; max-width: 40cqw; display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+}
 .stage__hud .table-time__where {
-  position: absolute; left: 1.2cqw; top: 1.2cqw; z-index: 8; margin: 0; padding: clamp(2px, .5cqw, 4px) clamp(6px, 1cqw, 10px);
-  max-width: 40cqw; font-size: clamp(11px, 1.4cqw, 14px); line-height: 1.3; background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+  margin: 0; padding: clamp(2px, .5cqw, 4px) clamp(6px, 1cqw, 10px);
+  max-width: 100%; font-size: clamp(11px, 1.4cqw, 14px); line-height: 1.3; background: var(--paper); border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
 }
 @media (max-width: 640px) {
   .stage { width: 100%; min-width: 0; }
@@ -1556,6 +1558,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .stage__frame { aspect-ratio: 4 / 3; }
   /* On a phone, under the frame: the line, then where. */
   .stage__hud .table-time { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 8px 0; margin-top: 8px; border-bottom: 3px solid var(--ink); }
+  .stage__hud .table-time__corner { position: static; max-width: none; }
   .stage__hud .table-time__plate, .stage__hud .table-time__where { position: static; max-width: none; text-align: left; box-shadow: none; border: 0; padding: 0; }
   .stage__hud .table-time__clock { filter: none; }
   .stage__hud .table-time__deadlines li:not(.is-tomorrow) { display: list-item; margin: 0; padding: 0; background: none; border: 0; box-shadow: none; }
@@ -1634,7 +1637,7 @@ body[data-view="stage"] .page { max-width: none; min-height: 100vh; min-height: 
 body[data-view="stage"] .stage { width: min(100%, calc(100vh * 16 / 9)); min-width: 0; margin: 0 auto; }
 body[data-view="stage"] .stage__frame { border: 0; box-shadow: none; aspect-ratio: 16 / 9; container-type: size; overflow: hidden; }
 body[data-view="stage"] .stage__hud .table-time__plate { top: 16px; right: 16px; }
-body[data-view="stage"] .stage__hud .table-time__where { left: 16px; top: 16px; }
+body[data-view="stage"] .stage__hud .table-time__corner { left: 16px; top: 16px; }
 body[data-view="stage"] .table, body[data-view="stage"] .battle { width: 100%; display: block; padding: 0; }
 .stage-leave {
   position: fixed; top: 12px; left: 12px; z-index: 90; padding: 6px 12px; background: var(--paper); color: var(--ink);
