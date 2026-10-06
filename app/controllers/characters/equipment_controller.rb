@@ -21,7 +21,5 @@ class Characters::EquipmentController < ApplicationController
       changes.each { |slot, id| id.blank? ? @character.unequip!(slot) : @character.equip!(items[id]) }
     end
     redirect_to character_path(@character), notice: "Equipment updated.", status: :see_other
-  rescue ActiveRecord::RecordInvalid => e
-    sheet_error(e.record.errors.full_messages.to_sentence)
   end
 end

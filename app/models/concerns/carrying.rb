@@ -28,18 +28,9 @@ module Carrying
     bag.select { |row| row.item.consumable? && Battle::Field.usable?(row.item.to_engine(row.quantity)) }
   end
 
-  # Take up to n out (the rows may have changed since).
-  def use_items!(item, n)
-    row = carried.find_by(item: item)
-    row&.update!(quantity: [ row.quantity - n, 0 ].max)
-  end
-
   def take_item!(item, count = 1)
     row = carried.find_by(item: item)
-    unless row && row.quantity >= count
-      errors.add(:base, "#{item.name} is not in #{bag_name}")
-      raise ActiveRecord::RecordInvalid, self
-    end
+    raise Refusal, "#{item.name} is not in #{bag_name}" unless row && row.quantity >= count
 
     row.update!(quantity: row.quantity - count)
   end

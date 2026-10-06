@@ -68,7 +68,7 @@ class Character < ApplicationRecord
   validates :starting_job_level, numericality: { in: 0..Stats::Growth::MAX_JOB_LEVEL }, allow_nil: true, on: :create
   validate :job_from_the_campaign_world
   validate :from_the_setting
-  validate :job_open_in_the_campaign, on: :create
+  validate :job_open_in_the_campaign, if: :will_save_change_to_job_id?
 
   delegate :world, to: :campaign
 

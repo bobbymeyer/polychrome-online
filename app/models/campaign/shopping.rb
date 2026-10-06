@@ -30,10 +30,10 @@ module Campaign::Shopping
     refuse_if_shunned!(at)
     holder = from || self
     transaction do
-      row = holder.carried.find_by(item: item)
-      raise Refusal, "#{holder.bag_name.upcase_first} has #{row&.quantity.to_i} × #{item.name}" if row.nil? || row.quantity < quantity
+      have = holder.quantity_of(item)
+      raise Refusal, "#{holder.bag_name.upcase_first} has #{have} × #{item.name}" if have < quantity
 
-      row.update!(quantity: row.quantity - quantity)
+      holder.take_item!(item, quantity)
       earned = at.resale_price_of(item) * quantity
       update!(gil: gil + earned)
       narrate("#{by} sold #{quantity} × #{item.name} in #{at.name} for #{money(earned)}.")
