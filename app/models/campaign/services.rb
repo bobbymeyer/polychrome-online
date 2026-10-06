@@ -15,9 +15,6 @@ module Campaign::Services
     Pastime.new(name: "Make camp", takes: 0, outcomes: [ Outcome.of("rest", CAMP_MP) ], service: "camp")
   end
 
-  # Making camp where the party is, as a way (Campaign::Ways), if it can.
-  def camp_here = pastimes_here.find { |way| way["service"] == "camp" }
-
   # The inn where the party is, if it's in a town with one open.
   def inn_here = current_node&.location&.inn
 
@@ -26,7 +23,7 @@ module Campaign::Services
   # share of MP, and the KO'd stay down. Field abilities come back, the
   # rest happens (Campaign::Happenings) and the night passes. Returns what the table heard.
   def sleep!(bed: false, mp_share: CAMP_MP)
-    standing, fallen = characters.order(:created_at).partition(&:conscious?)
+    standing, fallen = characters.reload.partition(&:conscious?) # as they are now, not as this instance last saw them
     if bed
       characters.each { |c| c.update!(hp: nil, mp: nil, field_used: false) }
     else
@@ -41,8 +38,7 @@ module Campaign::Services
     said += " The day has only begun: a rest, not a night." if until_the_day_begins.zero?
     line = narrate(said).body
     happen!("rest", bed: bed) # the day's work pays off, the rest clocks tick
-    pass_time!(rest_time, announce: :new_day)
-    table_changed # everyone's HP back
+    pass_time!(rest_time, announce: :new_day) # the table hears of the time, and of everyone's HP back (TableFacts)
     line
   end
 

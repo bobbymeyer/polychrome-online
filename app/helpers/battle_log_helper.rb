@@ -136,9 +136,7 @@ module BattleLogHelper
   end
 
   # "a Potion", "an Antidote", "an Echo Screen".
-  def item_phrase(name)
-    "#{name.to_s.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{name}"
-  end
+  def item_phrase(name) = Wording.a_or_an(name)
 
   # The d100 behind an outcome, for the log: " (rolled 3, needed 11 or over)"; a check's
   # modifiers in turn: " (rolled 43 +12 Agi +15 Stealth = 70, needed 66 or over)".

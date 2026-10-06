@@ -25,6 +25,9 @@ class Scene < ApplicationRecord
   NAME_WORDS = 3
 
   include CampaignPages
+  # The table's stage follows the scene on it: where it is, whether it plays on, and when it ended (TableFacts).
+  include TableFacts
+  table_facts(%w[cursor auto played_at]) { |changed| campaign.table_changed if changed }
 
   belongs_to :campaign
   belongs_to :map_node, optional: true
@@ -142,7 +145,6 @@ class Scene < ApplicationRecord
       campaign.update!(staged_scene: self)
       run_to!(0)
     end
-    campaign.table_changed
   end
 
   # The next line (the changes on the way to it made), or, past the last
@@ -153,7 +155,6 @@ class Scene < ApplicationRecord
     return finish! if last_beat?
 
     transaction { run_to!(cursor + 1) }
-    campaign.table_changed
     nil
   end
 
@@ -164,18 +165,15 @@ class Scene < ApplicationRecord
 
     update!(auto: true)
     schedule_step!
-    campaign.table_changed
   end
 
   def pause!
     update!(auto: false)
-    campaign.table_changed
   end
 
   # Off the stage without its ending; what was said stays said.
   def stop!
     transaction { take_down! }
-    campaign.table_changed
   end
 
   # The whole scene at once: every beat, then the ending (how a scene used
@@ -263,7 +261,6 @@ class Scene < ApplicationRecord
       take_down!
       update!(played_at: Time.current)
     end
-    campaign.table_changed
     return unless ending == "battle"
 
     outcome.apply!(campaign, by: name)

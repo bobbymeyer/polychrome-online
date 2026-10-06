@@ -13,8 +13,11 @@ module Campaign::Defeat
 
   RECOVERIES = %w[retreat get_up game_over].freeze
 
+  # Read as the party is now (a battle just put them down through its own
+  # records), not as this instance last saw them.
   def wiped_out?
-    characters.any? && characters.none?(&:conscious?)
+    party = characters.reload
+    party.any? && party.none?(&:conscious?)
   end
 
   # The town the party wakes up in: the nearest by road from where they
@@ -39,8 +42,7 @@ module Campaign::Defeat
     Message.choice(self, options: moves.keys).tap do |ask|
       ask.body = "Everyone is KO'd. What happens now? #{moves.keys.to_sentence(two_words_connector: ' or ', last_word_connector: ', or ')}."
       ask.data = { "moves" => moves, "recovery" => true }
-      ask.save!
-      ask.broadcast_choice
+      ask.save! # the table's choice panel follows (Message::Choice)
     end
   end
 

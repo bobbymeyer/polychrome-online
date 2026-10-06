@@ -21,26 +21,23 @@ module Campaign::Moves
   Want = Data.define(:who, :place, :wish, :wants)
 
   # The soft move and the hard move that fit the moment best, either nil:
-  # { "soft" => line, "hard" => line } (Story::Matcher's lines).
-  def moves_now
-    rows = story_rows("complications")
-    soft, hard = rows.partition { |row| row["does"].blank? }
-    hard = hard.select { |row| (outcome = Outcome.parse(row["does"])) && outcome.bites?(self) }
-    facts = moment
+  # { "soft" => line, "hard" => line } (Story::Matcher's lines). facts: the
+  # moment (Campaign::Moment), when the caller has read it already.
+  def moves_now(facts: moment)
+    soft, hard = complication_rows
     state = Battle::Rng.seed_state(rng ^ 0x2545_F491)
     { "soft" => soft, "hard" => hard }.transform_values do |candidates|
-      state, line = Story::Matcher.best(candidates, facts, state, avoid: every_line + every_veil)
+      state, line = Story::Matcher.best(candidates, facts, state, avoid: story_avoid)
       line
     end
   end
 
   # Running clocks with something to say, fullest first.
-  def dangers
-    facts = moment
+  def dangers(facts: moment)
     clocks.running.order(:id).to_a.select { |clock| clock.impulse || clock.portents }
           .sort_by { |clock| [ -clock.filled.fdiv(clock.segments), clock.id ] }.map do |clock|
       sign = clock.reached_portents.lazy.filter_map do |portent, _|
-        Story::Matcher.best(portent.signs, facts, Battle::Rng.seed_state(rng ^ clock.id), avoid: every_line + every_veil).last
+        Story::Matcher.best(portent.signs, facts, Battle::Rng.seed_state(rng ^ clock.id), avoid: story_avoid).last
       end.first
       Danger.new(clock: clock, sign: sign)
     end

@@ -24,8 +24,6 @@ module MapSheet
     validate :parent_is_not_itself_or_below
   end
 
-  def root? = parent_id.nil?
-
   # Up from here to the root, nearest first.
   def ancestors
     chain = []
@@ -36,8 +34,6 @@ module MapSheet
     end
     chain
   end
-
-  def depth = ancestors.size
 
   # The siblings off each edge: { "n" => [map, ...], ... }, in the order they were linked.
   def neighbours

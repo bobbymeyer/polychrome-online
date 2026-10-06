@@ -4,7 +4,7 @@
 # base world is seed data (db/seeds). A second author's world is just
 # another row (§1, §9.1).
 class World < ApplicationRecord
-  include Vocabulary, Setting, Music, Copying
+  include Vocabulary, Setting, Music, Copying, LineLists
 
   belongs_to :owner, class_name: "User", optional: true
   # In the order they go when the world does: the foreign keys are plain,

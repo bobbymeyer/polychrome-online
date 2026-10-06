@@ -10,8 +10,9 @@ class Campaigns::MovesController < ApplicationController
   before_action :require_table_gm
 
   def show
-    @moves = @campaign.moves_now
-    @dangers = @campaign.dangers
+    facts = @campaign.moment # read once, for the moves and the dangers
+    @moves = @campaign.moves_now(facts: facts)
+    @dangers = @campaign.dangers(facts: facts)
     @wants = @campaign.wants_heard
     @got_away = @campaign.got_away
     @chains = @campaign.chains

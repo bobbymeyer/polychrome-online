@@ -17,7 +17,10 @@ module Message::Choice
     has_many :picks, class_name: "ChoicePick", dependent: :delete_all
 
     validate :choices_have_options
-    after_create_commit :broadcast_choice, if: :choice?
+    # The panel shows the open choice: put to the table, or taken off it
+    # (Campaign::Ways#drop_stale_where_next!). One declaration: a second
+    # after_commit of the same method would replace the first.
+    after_commit :broadcast_choice, on: %i[create destroy], if: :choice?
   end
 
   class_methods do
@@ -69,10 +72,7 @@ module Message::Choice
     transaction do
       update!(settled: option)
       campaign.make_move!(data.dig("moves", option)) if data.dig("moves", option)
-      if flag_key
-        flag = campaign.flags.find_or_initialize_by(key: Flag.new(key: flag_key).key)
-        flag.update!(value: option)
-      end
+      campaign.set_flag!(flag_key, option) if flag_key
       campaign.narrate("The party chose: #{option}.")
       do_what_it_says!(option)
     end
