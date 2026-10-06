@@ -84,9 +84,11 @@ body::before {
   background: var(--ink); color: var(--paper); border-bottom: 4px solid; border-image: var(--spectrum) 1;
 }
 .topbar__brand { justify-self: start; color: var(--paper); font: var(--display); font-size: 18px; line-height: 24px; letter-spacing: -0.04em; }
-/* The logo: the stripe under the bar, every other colour of it, in a 2:1 block (60 by 30) leant into a parallelogram, ///, so every colour is a
-   whole stripe. A skew leaves the layout box upright, so the margin keeps the lean clear of its neighbours. */
-.topbar__logo { display: block; width: 60px; aspect-ratio: 2 / 1; margin: 0 6px; background: var(--logo-stripes); transform: skewX(-20deg); }
+/* The logo: the stripe under the bar, every other colour of it, in a 2:1 block the bar's full height, top to stripe
+   (the negative margin takes back the bar's padding), leant into a parallelogram, ///, so every colour is a whole
+   stripe. A skew leaves the layout box upright, so the side margin keeps the lean clear of its neighbours. */
+.topbar__brand:has(.topbar__logo) { align-self: start; line-height: 0; }
+.topbar__logo { display: block; height: var(--topbar); aspect-ratio: 2 / 1; margin: -4px 10px; background: var(--logo-stripes); transform: skewX(-20deg); }
 .topbar__user > summary { color: var(--paper); }
 .topbar__user-menu a, .topbar__user-menu .link-button { color: var(--ink); }
 .topbar__user-menu a:hover, .topbar__user-menu .link-button:hover { color: var(--signal); }
