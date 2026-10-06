@@ -17,6 +17,8 @@
       <%= @across["results"].map { |result, count| "#{count} #{result == "input" ? "still being fought" : result.humanize.downcase}" }.to_sentence %>.
       What landed counts: damage past a unit's last <%= hp %> and healing past its full <%= hp %> don't.
     </p>
+    <p class="battle-report__download">Download as CSV:
+      <%= safe_join(BattleReportCsv::CAMPAIGN_TABLES.map { |table| link_to table.capitalize, campaign_battle_report_path(@campaign, format: :csv, table: table), data: { turbo: false } }, " · ") %></p>
 
     <section class="battle-report__battles">
       <h2>Battles</h2>

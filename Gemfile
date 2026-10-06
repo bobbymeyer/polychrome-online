@@ -66,3 +66,6 @@ end
 
 # QR codes on the shared screen, so players join local co-op from their phones.
 gem "rqrcode", "~> 3.2"
+
+# The battle reports download as CSV (Battle::Report); csv leaves the standard library in Ruby 3.4.
+gem "csv"
