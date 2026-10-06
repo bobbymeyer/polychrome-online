@@ -52,7 +52,7 @@ RSpec.describe "Scenes", type: :request do
     first, second = scene.beats.to_a
 
     get edit_scene_path(scene)
-    expect(response.body).to include("Steps", "Add lines from a script", "Ready?", "The fog lifts.", "Panel for step 1", "Bartz (party)", "add-step__kind")
+    expect(response.body).to include("Steps", "Add lines from a script", "Ready?", "The fog lifts.", "Bartz (party)", "add-step__kind")
 
     # A line inserted after the first, written for one of the party.
     post scene_beats_path(scene), params: { kind: "say", after_id: first.id }

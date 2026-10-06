@@ -13,7 +13,6 @@ class WorldMap < ApplicationRecord
   has_many :links_in, class_name: "WorldMapLink", foreign_key: :to_map_id, dependent: :destroy, inverse_of: :to_map
   has_many :maps, dependent: :nullify # the campaigns' copies
 
-  include Artwork
   include MapSheet
 
   validates :name, uniqueness: { scope: :world_id }
@@ -21,8 +20,6 @@ class WorldMap < ApplicationRecord
 
   scope :in_order, -> { order(:id) }
 
-  def art_world = world
-  def art_stream = self
   def places = world_places
 
   def nodes_for(_gm = true)

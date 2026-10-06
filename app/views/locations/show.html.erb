@@ -4,7 +4,6 @@
   <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
 <% end %>
 <%= turbo_stream_from @location %>
-<%= turbo_stream_from @location, :art if @gm %>
 <%= render "shared/stage_stream", campaign: @campaign %>
 <% view = @location.view %>
 
@@ -86,4 +85,4 @@
 <% end %>
 
 <%# Pictures come last: the place itself is what the GM needs first. %>
-<%= render "art_batches/mode_art", location: @location if @gm && @location.map_node&.modes&.any? %>
+<%= render "locations/mode_pictures", location: @location if @gm && @location.map_node&.modes&.any? %>

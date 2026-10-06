@@ -38,7 +38,7 @@ RSpec.describe "Deleting" do
     Message.choice(campaign, options: %w[Stay Go]).tap(&:save!).picks.create!(character: hero, option: "Go")
     battle = start_battle(campaign: campaign, goblins: 1)
     battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
-    ArtBatch.start!(world.monsters.find_by!(slug: "goblin"), count: 1)
+    town.mode_arts.create!(mode: mode).image.attach(io: file_fixture("goblin.png").open, filename: "burning.png")
     campaign
   end
 
@@ -49,8 +49,7 @@ RSpec.describe "Deleting" do
     expect(campaign.messages.where.not(battle_id: nil)).to exist
 
     campaign.destroy!
-    world_art = %w[art_batches art_candidates art_types] # the goblin's art is the world's
-    expect(rows.except(*world_art)).to eq(before.except(*world_art))
+    expect(rows).to eq(before)
   end
 
   it "takes a world: its books, canon, history, campaigns and art" do

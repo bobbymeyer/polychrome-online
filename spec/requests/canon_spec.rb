@@ -57,7 +57,7 @@ RSpec.describe "A setting's canon: atlas, cast and codex", type: :request do
     marches = world.world_maps.create!(name: "The Marches", parent: root, x: 1000, y: 500, description: "Wet.")
     north = world.world_maps.create!(name: "The North")
     world.world_map_links.create!(from_map: root, to_map: north, direction: "n")
-    marches.image.attach(io: StringIO.new(FakeComfy.png), filename: "marches.png", content_type: "image/png")
+    marches.image.attach(io: file_fixture("goblin.png").open, filename: "marches.png", content_type: "image/png")
     lighthouse.update!(world_map: marches)
     road.update!(waypoints: [ [ 300, 200 ] ])
 

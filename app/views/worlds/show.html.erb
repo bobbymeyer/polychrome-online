@@ -15,7 +15,6 @@
     <%= link_to "Types", world_types_path(@world), class: "button button--quiet" %>
     <%= link_to "Skills", world_skills_path(@world), class: "button button--quiet" %>
     <%= link_to "Origins", world_origins_path(@world), class: "button button--quiet" %>
-    <% if admin? %><%= link_to "Art direction", world_art_direction_path(@world), class: "button button--quiet" %><% end %>
     <% if can_edit_world? %><%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %><% end %>
   </div>
 </div>

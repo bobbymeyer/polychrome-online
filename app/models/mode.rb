@@ -17,7 +17,7 @@ class Mode < ApplicationRecord
   has_many :scenes, dependent: :nullify
 
   normalizes :name, with: ->(name) { name.to_s.strip }
-  normalizes :line, :description, :art, :activities, with: ->(text) { text.to_s.strip.presence }
+  normalizes :line, :description, :activities, with: ->(text) { text.to_s.strip.presence }
   normalizes :music, with: ->(music) { music.presence }
 
   before_validation { self.key = name.parameterize(separator: "_") if key.blank? && name.present? }

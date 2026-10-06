@@ -2,14 +2,14 @@
 
 require "net/http"
 
-# Talking to the services the app leans on, over HTTP: ComfyUI (Comfy) and
-# the language model (Llm). Each is somewhere else, and may be local, on a LAN or tailnet, or behind a proxy that wants
-# a bearer token, basic auth (in the URL) or headers of its own.
+# Talking to a service the app leans on, over HTTP: the language model
+# (Llm). It is somewhere else, and may be local, on a LAN or tailnet, or
+# behind a proxy that wants a bearer token, basic auth (in the URL) or
+# headers of its own.
 #
-# Each service has its own Error, and an Unreachable one for when nothing
-# answered at all (asleep, restarting, off the network). Those all carry
-# Remote::Unreachable, so a job can wait for any of them the same way
-# (ApplicationJob.waits_for_services).
+# A service has its own Error, and an Unreachable one for when nothing
+# answered at all (asleep, restarting, off the network). That carries
+# Remote::Unreachable, so a job can wait for it (ApplicationJob.waits_for_services).
 module Remote
   # Marks a service's "couldn't reach it": worth trying again later.
   module Unreachable; end
@@ -18,7 +18,7 @@ module Remote
 
   # One service's address, credentials and timeouts, and requests to it.
   # service: the module whose Error and Unreachable it raises; name: what
-  # to call it in a message ("ComfyUI"); rejection: what to make of a
+  # to call it in a message ("The language model"); rejection: what to make of a
   # response that isn't a success, if the service explains itself.
   class Connection
     # The address, without any credentials in it: safe to show.
@@ -38,21 +38,11 @@ module Remote
       @timeout = timeout.to_i.positive? ? timeout.to_i : 30
       @open_timeout = [ @timeout, open_timeout ].min
       @http = http
-      @injected = !http.nil?
     end
-
-    def get(path) = request(Net::HTTP::Get.new(path(path), @headers))
 
     def post_json(path, payload)
       req = Net::HTTP::Post.new(path(path), @headers.merge("Content-Type" => "application/json"))
       req.body = JSON.generate(payload)
-      request(req)
-    end
-
-    # A multipart form: [[name, value], [name, io, { filename:, content_type: }]].
-    def post_form(path, fields)
-      req = Net::HTTP::Post.new(path(path), @headers)
-      req.set_form(fields, "multipart/form-data")
       request(req)
     end
 
@@ -73,16 +63,6 @@ module Remote
       JSON.parse(response.body.to_s)
     rescue JSON::ParserError
       raise @service::Error, "#{@name} sent something that isn't JSON"
-    end
-
-    # One connection for a run of requests, when the connection is ours.
-    def session
-      return yield if @http
-
-      @http = connection
-      @http.start { yield }
-    ensure
-      @http = nil unless @injected
     end
 
     def unreachable(error)

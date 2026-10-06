@@ -4,7 +4,6 @@
 # `effects` is stored in exactly the shape Battle::Resolver reads.
 class Ability < ApplicationRecord
   include BookEntry
-  include Artwork
 
   # field: a move outside battle (FieldUse), a skill check with an outcome;
   # never in battle.

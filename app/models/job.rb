@@ -4,7 +4,6 @@
 # item category, innate passives, and a learn table of job levels.
 class Job < ApplicationRecord
   include BookEntry
-  include Artwork
   include Colourable
 
   has_many :job_levels, -> { order(:level) }, dependent: :destroy, inverse_of: :job

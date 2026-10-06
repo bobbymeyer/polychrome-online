@@ -49,33 +49,14 @@ RSpec.describe "Sound", type: :request do
     expect(world.tracks.exists?(tavern.id)).to be(false)
   end
 
-  it "makes a track in ComfyUI with ACE-Step, and the book's page follows" do
-    comfy = FakeComfy.new(capabilities: FakeComfy.capabilities(checkpoints: [ "ace_step_v1_3.5b.safetensors" ]))
-    post world_tracks_path(world), params: { track: { name: "The long road", source: "generated", prompt: "medieval folk, lute, slow", seconds: 30 } }
-    track = world.tracks.find_by!(name: "The long road")
-    expect(track.status).to eq("queued")
-    expect(TrackJob).to have_been_enqueued.with(track)
+  it "only takes music that is uploaded or linked: it makes none" do
+    post world_tracks_path(world), params: { track: { name: "The long road", source: "generated" } }
+    expect(response).to have_http_status(:unprocessable_content)
+    expect(world.tracks).to be_empty
 
-    TrackJob.perform_now(track, client: comfy)
-    graph = comfy.submitted.last
-    nodes = graph.values.map { |n| n["class_type"] }
-    expect(nodes).to include("CheckpointLoaderSimple", "EmptyAceStepLatentAudio", "TextEncodeAceStepAudio", "KSampler", "VAEDecodeAudio", "SaveAudioMP3")
-    expect(graph.values.find { |n| n["class_type"] == "TextEncodeAceStepAudio" }["inputs"]).to include("tags" => "medieval folk, lute, slow", "lyrics" => "[instrumental]")
-    expect(graph.values.find { |n| n["class_type"] == "EmptyAceStepLatentAudio" }["inputs"]["seconds"]).to eq(30.0)
-    expect(track.reload.status).to eq("running")
-
-    comfy.finish!("prompt-1")
-    expect { TrackJob.perform_now(track, client: comfy) }
-      .to have_broadcasted_to(stream(world, :music)).with(a_string_including('action="reload_frame"', 'target="music_book"')).at_least(:once)
-    expect(track.reload).to have_attributes(status: "done")
-    expect(track.audio).to be_attached
-    expect(track.audio.filename.to_s).to eq("the-long-road.mp3")
-
-    # Without the checkpoint, ComfyUI can't, and the track says why.
-    bare = FakeComfy.new
-    post world_track_generation_path(world, track)
-    TrackJob.perform_now(track.reload, client: bare)
-    expect(track.reload).to have_attributes(status: "failed", error: a_string_including("ace_step_v1_3.5b.safetensors isn't on ComfyUI"))
+    get new_world_track_path(world)
+    expect(response.body).to include("A file", "YouTube or Spotify")
+    expect(response.body).not_to include("ComfyUI")
   end
 
   it "has each game page ask for its scene's track, and a battle keep its own" do

@@ -41,9 +41,7 @@ module Polychrome
     # Don't generate system test files.
     config.generators.system_tests = nil
 
-    # The asset pipeline's ComfyUI settings (config/comfy.yml).
-    config.x.comfy = config_for(:comfy)
-    # An optional language model for writing prompts (config/llm.yml).
+    # An optional language model for drafts and suggestions (config/llm.yml).
     config.x.llm = config_for(:llm)
   end
 end

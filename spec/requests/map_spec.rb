@@ -109,7 +109,7 @@ RSpec.describe "Maps", type: :request do
     end
 
     it "shows the picture under the places when the map has one" do
-      root.image.attach(io: StringIO.new(FakeComfy.png), filename: "world.png", content_type: "image/png")
+      root.image.attach(io: file_fixture("goblin.png").open, filename: "world.png", content_type: "image/png")
       campaign.show_map!
       at_the_table(campaign, as: bartz)
       expect(page.at(".map-sheet--pictured")).to be_present
@@ -125,7 +125,7 @@ RSpec.describe "Maps", type: :request do
 
       sit(campaign, "gm")
       get campaign_maps_path(campaign)
-      expect(response.body).to include("Secret Ruins", "New map on #{world.name}", "Generate the picture", "Put it on the stage")
+      expect(response.body).to include("Secret Ruins", "New map on #{world.name}", "Its picture (16:9)", "Put it on the stage")
       expect(page.at(".is-hidden")).to be_present
       expect(page.at("[data-controller~=map-editor]")).to be_present
       expect(page.at("#map_panel")).to be_present

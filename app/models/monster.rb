@@ -7,7 +7,6 @@
 # instances of it.
 class Monster < ApplicationRecord
   include BookEntry
-  include Artwork
   include Colourable
 
   validates :level, numericality: { only_integer: true, greater_than: 0 }

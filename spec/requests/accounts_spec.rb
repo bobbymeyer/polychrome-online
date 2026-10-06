@@ -60,15 +60,14 @@ RSpec.describe "Accounts", type: :request do
     it "reads the books but can't write them, or the world's art" do
       get world_bestiary_monster_path(world, goblin)
       expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include(">Edit<", "The prompt, in layers")
+      expect(response.body).not_to include(">Edit<")
 
       patch world_bestiary_monster_path(world, goblin), params: { monster: { name: "Hobgoblin" } }
       expect(response).to redirect_to(root_path)
       expect(goblin.reload.name).to eq("Goblin")
 
-      get world_art_direction_path(world)
-      expect(response).to redirect_to(root_path)
-      expect { post world_art_batches_path(world), params: { entry_type: "monster", entry_slug: "goblin" } }.not_to change(ArtBatch, :count)
+      patch world_bestiary_monster_path(world, goblin), params: { monster: { image: fixture_file_upload("goblin.png", "image/png") } }
+      expect(goblin.reload.image).not_to be_attached
       get world_path(world)
       expect(response.body).to include("Copy this world")
       expect(response.body).not_to include("Edit world")
@@ -180,10 +179,11 @@ RSpec.describe "Accounts", type: :request do
       expect(campaign.reload.name).to eq("The Void")
 
       cid = campaign.npcs.create!(name: "Cid")
-      expect {
-        post world_art_batches_path(world), params: { entry_type: "portrait", owner_type: "npc", owner_id: cid.id, expression: "neutral", count: 1 }
-      }.to change(ArtBatch, :count).by(1)
-      expect { post world_art_batches_path(world), params: { entry_type: "monster", entry_slug: "goblin" } }.not_to change(ArtBatch, :count)
+      patch npc_path(cid), params: { npc: { name: "Cid" }, portraits: { images: { "neutral" => fixture_file_upload("goblin.png", "image/png") } } }
+      expect(cid.portraits.find_by(expression: "neutral").image).to be_attached
+      goblin = world.monsters.find_by!(slug: "goblin")
+      patch world_bestiary_monster_path(world, goblin), params: { monster: { image: fixture_file_upload("goblin.png", "image/png") } }
+      expect(goblin.reload.image).not_to be_attached
 
       other = world.campaigns.create!(name: "Someone else's")
       patch campaign_path(other), params: { campaign: { name: "Mine now" } }

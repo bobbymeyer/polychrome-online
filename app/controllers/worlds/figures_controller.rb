@@ -51,7 +51,7 @@ class Worlds::FiguresController < ApplicationController
   end
 
   def figure_params
-    fields = params.expect(world_figure: %i[name title blurb description art_notes colour monster_id world_place_id])
+    fields = params.expect(world_figure: %i[name title blurb description colour monster_id world_place_id])
     fields.merge(monster: fields[:monster_id].presence && @world.monsters.find_by(id: fields[:monster_id]),
                  world_place: fields[:world_place_id].presence && @world.world_places.find_by(id: fields[:world_place_id]))
           .except(:monster_id, :world_place_id)

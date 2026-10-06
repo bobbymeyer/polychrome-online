@@ -13,7 +13,6 @@ class World < ApplicationRecord
   # points into the books), then the books themselves.
   has_many :campaigns, dependent: :destroy
   has_many :battles, class_name: "BattleRecord", dependent: :destroy
-  has_many :art_batches, dependent: :destroy
   has_many :world_fronts, dependent: :destroy # at places and figures
   has_many :world_figures, dependent: :destroy # at places and monsters
   has_many :world_routes, dependent: :destroy # at places and encounter tables
@@ -28,7 +27,6 @@ class World < ApplicationRecord
   has_many :location_templates, dependent: :destroy # at encounter tables
   has_many :encounter_tables, dependent: :destroy
   has_many :generator_tables, dependent: :destroy
-  has_many :art_types, dependent: :destroy
 
   before_validation(on: :create) { self.slug = name.to_s.parameterize(separator: "_") if slug.blank? }
 
@@ -58,10 +56,6 @@ class World < ApplicationRecord
     slug_in_database || slug
   end
 
-  def art_loras=(value)
-    super(ArtDirection.loras(value))
-  end
-
   # The surnames its generator tables offer (families of a place's past).
   # What its histories and the pasts of its places are made of (Generators::Lore), from its lore tables.
   def lore
@@ -78,16 +72,9 @@ class World < ApplicationRecord
     @family_names ||= generator_tables.of_kind("families").flat_map { |t| t.entries.filter_map { |e| e["text"] } }
   end
 
-  # A content type's framing (§8), made from config/comfy.yml the first time.
   # The map everything starts on: the first one, made the first time it's asked for.
   def root_map
     world_maps.in_order.first || world_maps.create!(name: name)
-  end
-
-  def art_type(kind)
-    art_types.find_by(kind: kind) || art_types.create!(kind: kind, **ArtType.defaults_for(kind).symbolize_keys)
-  rescue ActiveRecord::RecordNotUnique
-    art_types.find_by!(kind: kind)
   end
 
   # The creatures the Grimoire's summons call, as engine unit specs.

@@ -26,7 +26,6 @@ class BookEntriesController < ApplicationController
 
   def create
     @entry = scope.new(entry_params)
-    forget_generation(@entry)
     if @entry.save
       redirect_to entry_path(@entry), notice: "#{@entry.name} was added to the #{book_title}."
     else
@@ -36,7 +35,6 @@ class BookEntriesController < ApplicationController
 
   def update
     @entry.assign_attributes(entry_params.except(:slug))
-    forget_generation(@entry)
     if @entry.save
       redirect_to entry_path(@entry), notice: "#{@entry.name} was updated."
     else
@@ -80,16 +78,7 @@ class BookEntriesController < ApplicationController
     [ "primitive", *Battle::PRIMITIVE_PARAMS.values.flat_map { |spec| spec[:required] + spec[:optional] }.uniq ]
   end
 
-  # An uploaded image wasn't generated: drop the seed and recipe of the old one.
-  def forget_generation(entry)
-    return unless entry.attachment_changes.key?("image")
-
-    entry.image_seed = nil
-    entry.image_prompt = nil
-    entry.image_recipe = nil
-  end
-
-  # Art fields every book entry shares (§3.3, §8).
+  # Art fields every book entry shares (§3.3).
   def art_params
     colour = entry_class.column_names.include?("colour") ? [ :colour ] : []
     [ :image, *colour, { variant: %i[hue scale flip] } ]

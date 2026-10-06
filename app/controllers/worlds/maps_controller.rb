@@ -49,8 +49,8 @@ class Worlds::MapsController < ApplicationController
   end
 
   def map_params
-    fields = params.expect(world_map: [ :name, :parent_id, :x, :y, :description, :image, :art_notes ])
+    fields = params.expect(world_map: [ :name, :parent_id, :x, :y, :description, :image ])
     fields[:parent_id] = fields[:parent_id].presence && @world.world_maps.find_by(id: fields[:parent_id])&.id if fields.key?(:parent_id)
-    fields.compact_blank.merge(fields.slice(:parent_id, :description, :art_notes))
+    fields.compact_blank.merge(fields.slice(:parent_id, :description))
   end
 end

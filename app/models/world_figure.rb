@@ -9,7 +9,6 @@
 class WorldFigure < ApplicationRecord
   include Portrayed
   include Colourable
-  include Drawn
 
   belongs_to :world
   belongs_to :monster, optional: true

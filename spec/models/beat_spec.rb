@@ -48,10 +48,7 @@ RSpec.describe Beat do
 
     panel = scene.beats.create!(kind: "backdrop", backdrop: "panel", position: 3)
     scene.beats.reload.each { |s| s.update_columns(position: [ enter, place, a, panel, b, c, black, leave, fx, last ].index(s)) }
-    expect(panel.panel_template).to eq(node.location.location_template) # the place set before it is the subject
-    expect(panel.art_layers.map { |l| l["role"] }).to eq(%w[World Type Subject Detail])
-    expect(panel.art_layers.last["prompt"]).to eq("The airship won't hold.") # the line before it, until words are given
-    expect(panel.art_title).to eq("The airship falls, step 4")
+    expect(panel.describe).to eq("Backdrop: a panel")
     expect(scene.summary).to eq("4 lines, 6 changes")
   end
 

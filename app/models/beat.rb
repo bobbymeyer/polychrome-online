@@ -4,7 +4,7 @@
 # order: a line said (by someone from the cast, one of the party, or the
 # narrator, with an expression and maybe a jingle); a choice put to the
 # table; a change of backdrop (a place on the map as it is now, a panel
-# made for this step, or black); a sprite change (someone enters the stage
+# uploaded for this step, or black); a sprite change (someone enters the stage
 # on a side with a face, changes it, or leaves); a change of music; or an
 # effect (a name for now: the stage carries it, nothing plays it yet). The
 # stage at any step is folded from the steps before it (Scene#stage_at).
@@ -26,10 +26,7 @@ class Beat < ApplicationRecord
   belongs_to :scene
   belongs_to :speaker, polymorphic: true, optional: true
   belongs_to :map_node, optional: true
-  has_one_attached :image
-
-  # Its panel (§8): generated and picked like any entry's image.
-  include Artwork
+  has_one_attached :image # its panel, uploaded (a backdrop step set to a panel)
 
   normalizes :text, with: ->(text) { text.to_s.strip }
   normalizes :expression, :cue, :music, :flag_key, :action, :fx, with: ->(value) { value.to_s.strip.presence }
@@ -193,39 +190,7 @@ class Beat < ApplicationRecord
   # ", slow fade" and the like after a change; a quick fade goes without saying.
   def how = transition == "fade" ? "" : ", #{TRANSITIONS.fetch(transition, transition).downcase}"
 
-  # --- the panel (Artwork) -----------------------------------------------------
-  # The place behind the step is the subject, as a mode's picture has the
-  # place; this step's words are the layer after it. Without a place, the
-  # words are the subject.
-
-  def art_kind = "beat"
-  def art_title = "#{scene.name}, step #{position + 1}"
-  def art_world = campaign.world
-  def art_stream = scene
-  def art_filename(seed) = "#{scene.name.parameterize}-#{position + 1}-#{seed}.png"
-  def art_subject_label = panel_template&.name || scene.name
-  def art_subject = panel_template ? panel_template.art_subject : ArtDirection.join_prompt(scene.name, panel_words)
-  def art_subject_loras = panel_template ? panel_template.art_loras : art_loras
-  def art_subject_model = panel_template ? panel_template.art_model : art_model
-  def art_detail = (panel_template ? { label: "This step", prompt: panel_words } : nil)
-  def art_seed_hint = panel_template&.image_seed
-
-  # What the panel shows, in the GM's words (art_notes), else the line before it, else the scene's name.
-  def panel_words = art_notes.presence || last_step_before(&:says?)&.text.presence || scene.name
-
-  # The place this step stands in: the last place set on or before it.
-  def panel_template
-    behind = last_step_before { |b| b.kind == "backdrop" && b.backdrop == "place" && b.map_node }
-    behind&.map_node&.location&.location_template
-  end
-
   private
-
-  # The last of the scene's steps, this one included, that the block takes: read from the
-  # steps the scene has loaded (in order, as Scene#stage_at reads them).
-  def last_step_before(&block)
-    scene.beats.to_a.select { |b| b.position <= position && block.call(b) }.max_by { |b| [ b.position, b.id ] }
-  end
 
   def everyone_is_at_this_table
     errors.add(:speaker, "isn't in this campaign") if speaker && speaker.campaign_id != campaign.id

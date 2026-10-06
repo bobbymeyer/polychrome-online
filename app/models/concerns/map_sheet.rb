@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
 # What a map is, at either level (WorldMap for a setting, Map for a
-# campaign; docs/HANDOFF.md §7, "Maps"): a 16:9 picture (uploaded, or made
-# like a place's picture: Artwork) with a parent it sits on at x, y like a
-# place does, children that sit on it, and siblings off its edges by
+# campaign; docs/HANDOFF.md §7, "Maps"): a 16:9 picture with a parent it
+# sits on at x, y like a place does, children that sit on it, and siblings off its edges by
 # direction (MapLinks: "B is east of A" is one link, read both ways).
 # Everything drawn on a map is in MapNode::WIDTH × MapNode::HEIGHT.
 module MapSheet
@@ -13,7 +12,6 @@ module MapSheet
   OPPOSITE = { "n" => "s", "s" => "n", "e" => "w", "w" => "e" }.freeze
   COMPASS = { "n" => "North", "e" => "East", "s" => "South", "w" => "West" }.freeze
 
-  # Included after Artwork (whose hooks these override): a picture that can be made.
   included do
     has_one_attached :image
 
@@ -49,13 +47,6 @@ module MapSheet
     parts.unshift("On #{parent.name}") if parent
     parts.join(" · ")
   end
-
-  # --- art (Artwork): a painted map of this land --------------------------------
-  def art_kind = "map"
-  def art_title = "the map of #{name}"
-  def art_subject_label = name
-  def art_subject = ArtDirection.join_prompt(name, art_notes.presence || description)
-  def art_filename(seed) = "map-#{name.parameterize}-#{seed}.png"
 
   private
 

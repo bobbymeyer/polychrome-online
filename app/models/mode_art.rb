@@ -1,10 +1,7 @@
 # frozen_string_literal: true
 
-# A location mode's picture (§8). Made like a portrait's expression: the
-# place's Gazetteer entry is the subject, and the mode's art words are one
-# more layer after it ("on fire, thick smoke, ash falling"). The first
-# candidate starts from the entry's own seed, so the burning city is still
-# recognisably the city.
+# A location mode's picture (§8), uploaded by the GM: while the mode lasts,
+# the table sees it instead of the place's Gazetteer image (Location#picture).
 class ModeArt < ApplicationRecord
   belongs_to :location
   belongs_to :mode
@@ -12,24 +9,5 @@ class ModeArt < ApplicationRecord
 
   validates :mode, uniqueness: true
 
-  include Artwork
-
   delegate :key, to: :mode, prefix: :mode
-
-  def template = location.location_template
-
-  def art_kind = "location_template"
-  def art_title = "#{location.name} (#{mode.name})"
-  def art_world = location.campaign.world
-  def art_stream = location
-  def art_filename(seed) = "#{location.name.parameterize}-#{mode_key.dasherize}-#{seed}.png"
-  def art_subject_label = template.name
-  def art_subject = template.art_subject
-  def art_subject_loras = template.art_loras
-  def art_subject_model = template.art_model
-  def art_seed_hint = template.image_seed
-
-  def art_detail
-    { label: mode.name, prompt: mode.art.presence || mode.name.downcase }
-  end
 end

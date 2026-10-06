@@ -47,7 +47,7 @@ module MapNode::Modes
   def mode_music = modes_on.find(&:music)&.music
 
   # Prepares a mode. attrs: "name", "line", "description", "closed",
-  # "music", "art", "times" (when it comes on by itself), "activities"
+  # "music", "times" (when it comes on by itself), "activities"
   # (things to do while it's on), and "encounters" (an encounter table's slug).
   def add_mode!(attrs)
     attrs = attrs.to_h.stringify_keys
@@ -56,7 +56,7 @@ module MapNode::Modes
     raise Refusal, "#{name} already has a mode called #{name}" if modes.exists?(key: name.parameterize(separator: "_"))
 
     table = attrs["encounters"].presence && campaign.world.encounter_tables.find_by(slug: attrs["encounters"])
-    modes.create!(attrs.slice("line", "description", "closed", "music", "art", "times", "activities").merge("name" => name, "encounter_table" => table))
+    modes.create!(attrs.slice("line", "description", "closed", "music", "times", "activities").merge("name" => name, "encounter_table" => table))
   end
 
   def remove_mode!(key)

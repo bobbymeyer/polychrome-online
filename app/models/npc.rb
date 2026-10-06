@@ -11,7 +11,6 @@
 # boss room (Location::Exploration).
 class Npc < ApplicationRecord
   include Portrayed
-  include ArtSubject
   include Colourable
 
   # Stronger by this percent for every time they've got away.

@@ -57,7 +57,7 @@ module World::Music
 
   def copy_music_from!(source)
     source.tracks.each do |track|
-      copy = tracks.create!(track.attributes.except("id", "world_id", "created_at", "updated_at", "prompt_id", "started_at"))
+      copy = tracks.create!(track.attributes.except("id", "world_id", "created_at", "updated_at"))
       copy.audio.attach(track.audio.blob) if track.audio.attached?
     end
   end

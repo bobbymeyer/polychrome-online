@@ -5,7 +5,6 @@
   <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
 <% end %>
 <%= turbo_stream_from @campaign, :pages %>
-<%= turbo_stream_from @map, :art %>
 <%= render "shared/stage_stream", campaign: @campaign %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= link_to "Prep", campaign_prep_path(@campaign) %> / Maps</div>
 <div class="book-header">
@@ -45,6 +44,5 @@
       <%= render "maps/form", map: @map, maps: @maps.to_a, urls: { param: "map", update: campaign_map_path(@campaign, @map), destroy: campaign_map_path(@campaign, @map),
                                                                  link: campaign_map_map_links_path(@campaign, @map), unlink: ->(link) { campaign_map_map_link_path(@campaign, @map, link) } } %>
     </section>
-    <%= render "art_batches/map_art", map: @map %>
   </div>
 </div>

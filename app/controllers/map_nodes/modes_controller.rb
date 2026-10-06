@@ -5,7 +5,7 @@ class MapNodes::ModesController < ApplicationController
   include PlaceScoped
 
   def create
-    fields = params.expect(mode: [ :name, :line, :description, :music, :encounters, :art, :activities, { closed: [], times: [] } ])
+    fields = params.expect(mode: [ :name, :line, :description, :music, :encounters, :activities, { closed: [], times: [] } ])
     @node.add_mode!(fields.to_h)
     back "#{fields[:name]} is ready to set off."
   rescue ActiveRecord::RecordInvalid => e

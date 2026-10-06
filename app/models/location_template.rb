@@ -4,7 +4,6 @@
 # settings its generator uses. Campaign locations are rolled from these.
 class LocationTemplate < ApplicationRecord
   include BookEntry
-  include Artwork
 
   KINDS = %w[town dungeon].freeze
   RANGES = { "town" => %w[npcs stock buildings], "dungeon" => %w[rooms] }.freeze

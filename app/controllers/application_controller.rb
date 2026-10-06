@@ -9,8 +9,6 @@ class ApplicationController < ActionController::Base
   # Changes to the importmap will invalidate the etag for HTML responses
   stale_when_importmap_changes
 
-  helper_method :entry_page
-
   # The game said no: tell whoever asked, back where they were (else at the
   # table, when there is one). Controllers that know a better place to say
   # it (a prep anchor, the map's panel) rescue it themselves.
@@ -18,24 +16,6 @@ class ApplicationController < ActionController::Base
     respond_to do |format|
       format.html { redirect_back_or_to(@campaign ? campaign_table_path(@campaign) : root_path, alert: refusal.message, status: :see_other) }
       format.any { head :unprocessable_content }
-    end
-  end
-
-  private
-
-  # Where something with generated art is edited, from the thing alone (the
-  # asset pipeline, §8): a book entry's page, a speaker's edit page, or the
-  # location a mode's picture belongs to.
-  def entry_page(entry, **options)
-    case entry
-    # A character's look is on their sheet, under Look; the cast's is on their edit page.
-    when Portrait, Sprite
-      entry.owner.is_a?(Character) ? character_path(entry.owner, **options, anchor: "look") : polymorphic_path([ :edit, entry.owner ], **options)
-    when ModeArt then location_path(entry.location, **options)
-    when Beat then edit_scene_path(entry.scene, beat: entry.id, **options)
-    when Map then campaign_maps_path(entry.campaign, map: entry.id, **options)
-    when WorldMap then world_world_places_path(entry.world, map: entry.id, **options)
-    else polymorphic_path([ entry.world, ArtDirection::BOOKS.fetch(entry.art_kind), entry ], **options)
     end
   end
 end

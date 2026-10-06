@@ -1,7 +1,6 @@
 <% content_for :title, @character.name %>
 <% content_for :head, music_meta(@character.campaign, @character.campaign&.scene) %>
 <%= render "shared/stage_stream", campaign: @character.campaign %>
-<%= turbo_stream_from @character, :art if can_portray?(@character) %>
 <div class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> / <%= @character.name %></div>
 
 <article class="book-page character-sheet" data-controller="sheet-tabs" data-sheet-tabs-key-value="sheet-<%= @character.id %>">

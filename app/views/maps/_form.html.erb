@@ -18,7 +18,7 @@
       <label class="checks"><%= check_box_tag "#{param}[remove_image]", "1", false, id: "#{param}_remove_image" %> Remove</label>
     <% end %>
     <%= f.file_field :image, accept: "image/*" %>
-    <p class="hint">A painted map, 16:9 like the stage; the places and roads are drawn over it. Upload one, or generate one below.</p>
+    <p class="hint">A painted map, 16:9 like the stage; the places and roads are drawn over it.</p>
   </div>
   <div class="actions">
     <%= f.submit "Save", class: "button" %>

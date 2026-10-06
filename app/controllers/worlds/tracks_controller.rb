@@ -2,8 +2,8 @@
 
 # A world's Music book (Track): what each kind of scene plays, and the
 # tracks the GM calls by name from the stage. Anyone who can see the world
-# can read it; its editors change it. A track is uploaded, linked (YouTube,
-# Spotify) or made in ComfyUI with ACE-Step (Worlds::Tracks::GenerationsController).
+# can read it; its editors change it. A track is uploaded or linked
+# (YouTube, Spotify).
 class Worlds::TracksController < ApplicationController
   include WorldScoped
   before_action :require_world_editor, except: :index
@@ -20,8 +20,7 @@ class Worlds::TracksController < ApplicationController
   def create
     @track = @world.tracks.new(track_params)
     if @track.save
-      @track.generate! if @track.generated?
-      redirect_to world_tracks_path(@world), notice: "#{@track.name} is in the book#{'; ComfyUI is making it' if @track.generated?}.", status: :see_other
+      redirect_to world_tracks_path(@world), notice: "#{@track.name} is in the book.", status: :see_other
     else
       render :new, status: :unprocessable_content
     end
@@ -49,6 +48,6 @@ class Worlds::TracksController < ApplicationController
   end
 
   def track_params
-    params.expect(track: %i[name scene source url prompt lyrics seconds audio position])
+    params.expect(track: %i[name scene source url audio position])
   end
 end
