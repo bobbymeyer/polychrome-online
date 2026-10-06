@@ -2,6 +2,8 @@
     closed by default. A tab (or L) slides it open; while it's closed the tab counts new lines.
     dockable: it can be pinned open as a column beside the page (open from the start on a wide screen). %>
 <%# wide: a player's screen, where the log is a column from 1100px (pinned there unless unpinned). %>
+<%# The layout marks <body> has-log-drawer, so the top bar makes room for the tab on a phone (stage.css). %>
+<% content_for :log_drawer, "rendered" %>
 <div class="log-drawer" data-controller="log-drawer" <%= tag.attributes(data: { log_drawer_self_value: local_assigns[:self_name], log_drawer_dockable_value: (local_assigns[:dockable] || local_assigns[:wide]) || nil,
                                                                               log_drawer_pin_from_value: (1100 if local_assigns[:wide]) }) %>
      data-action="keydown@window->log-drawer#key:capture table-views:changed@window->log-drawer#view">

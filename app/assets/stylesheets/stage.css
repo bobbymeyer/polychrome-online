@@ -83,10 +83,7 @@ body::before {
 .topbar__user-menu a, .topbar__user-menu .link-button { color: var(--ink); }
 .topbar__user-menu a:hover, .topbar__user-menu .link-button:hover { color: var(--signal); }
 .topbar__user-menu .muted { color: var(--grey); }
-/* Wherever the bar folds (application.css: a phone, a landscape phone, the table up to a tablet's width), the
-   account's menu is part of the dark list, so its links are light. */
-@media (max-width: 640px), (max-height: 500px) and (orientation: landscape) { .topbar__user-menu a, .topbar__user-menu .link-button { color: #bdbdbd; } .topbar__user-menu .muted { color: #8a8a8a; } }
-@media (max-width: 1099px) { body.has-table-views .topbar__user-menu a, body.has-table-views .topbar__user-menu .link-button { color: #bdbdbd; } body.has-table-views .topbar__user-menu .muted { color: #8a8a8a; } }
+/* Where the bar folds, the account's menu is part of the dark list and its links go light: with the fold, in application.css. */
 .topbar a, .topbar .link-button { color: #bdbdbd; }
 .topbar a:hover, .topbar .link-button:hover { color: var(--paper); text-decoration: none; }
 .topbar__world { color: var(--paper) !important; font-style: italic; font-weight: 800; }
@@ -367,9 +364,10 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
   clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
 .dialogue__name:empty { display: none; }
-/* Narration is a voice, not a face: the words take the whole box. */
-.dialogue.is-narration { grid-template-columns: 1fr; }
+/* Narration is a voice, not a face: the words take the whole box, which is only as tall as they are. */
+.dialogue.is-narration { grid-template-columns: 1fr; min-height: 0; }
 .dialogue.is-narration .dialogue__portrait { display: none; }
+.dialogue.is-narration .dialogue__text { min-height: 88px; }
 /* On a phone the speaker's face sits beside their words, small: the words are the scene. */
 @media (max-width: 640px) {
   .dialogue { grid-template-columns: 64px 1fr; gap: 12px; }
@@ -384,7 +382,6 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
   clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); width: fit-content; max-width: 100%; }
 .chat-line__tag { font-style: italic; }
 .chat-log li:first-child { animation: menu-in .3s var(--snap) both; } /* the newest, on top */
-.chat-log li[hidden] { display: none; }
 /* The log's head stays put while the lines scroll under it: the title and the search. */
 .chat-log__head { position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 10px 0 6px; display: flex; align-items: center; gap: 12px; }
 .chat-log__head h3 { position: static; padding: 0; margin: 0; }
@@ -545,7 +542,6 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 }
 .deadline-card__line { margin: 0; font: var(--display); font-size: clamp(32px, 6vw, 64px); line-height: 1.05; letter-spacing: -0.03em; text-shadow: 4px 4px 0 var(--ink); }
 .deadline-card__place { margin: 0; padding: 4px 12px; border: 3px solid #fff; font-weight: 900; }
-.deadline-card__place[hidden] { display: none; }
 
 /* Someone awakens: their face comes up and turns over; the job is on the
    other side. Black and yellow, like the name tags: it's their moment. */
@@ -574,13 +570,11 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .awakening-card__who { margin: 0; font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 14px; }
 .awakening-card__who:empty { display: none; }
 .awakening-card__line { margin: 0; font-style: italic; color: var(--sun-yellow); }
-.awakening-card__line[hidden] { display: none; }
 .awakening-card__job { margin: 0; font: var(--display); font-size: clamp(40px, 9vw, 72px); line-height: 1; letter-spacing: -0.04em; text-shadow: 5px 5px 0 var(--wine-red); }
 .awakening-card__description { margin: 0; font-size: 16px; line-height: 24px; }
 @media (prefers-reduced-motion: reduce) { .awakening-card { transition: none; } }
 
 .boss-intro { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; overflow: hidden; background: rgb(0 0 0 / .55); cursor: pointer; }
-.boss-intro[hidden] { display: none; }
 .boss-card {
   width: 120vw; padding: 28px 12vw 34px; transform: skewX(-8deg); rotate: -5deg;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -610,13 +604,11 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 /* Sound: the GM's music switch on the stage, the world's Music book, and a linked track's player. */
 /* The music, in the frame's bottom-left corner (where the map's modes line sits too): one small select, the GM's. */
 .stage-music { position: absolute; left: 1.2cqw; bottom: 1.2cqw; z-index: 7; max-width: 46cqw; }
-.stage-music[hidden] { display: none; }
 .music-switch { display: inline-block; margin: 0; vertical-align: middle; }
 .music-switch select { width: auto; max-width: 100%; min-height: 0; padding: 0 20px 0 6px; font-size: clamp(9px, 1.1cqw, 11px); line-height: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; border-width: 2px; background-color: var(--paper); }
 .stage:has(.stage-music:not([hidden])) .map-sheet .map-canvas__modes { bottom: 36px; }
 /* A YouTube or Spotify track plays in its own small player (sound.js), kept across pages, in the page's corner. */
 .music-embed { position: fixed; right: 16px; bottom: 16px; z-index: 40; width: 300px; border: 3px solid var(--ink); background: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
-.music-embed[hidden] { display: none; }
 .music-embed iframe { display: block; width: 100%; height: 169px; border: 0; }
 .music-embed--spotify iframe { height: 80px; }
 @media (max-width: 699px) { .music-embed { right: 8px; bottom: 8px; width: 200px; } .music-embed iframe { height: 113px; } .music-embed--spotify iframe { height: 80px; } }
@@ -626,8 +618,6 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .music-book td { vertical-align: middle; }
 .music-book audio { max-width: 260px; height: 32px; }
 .music-book__acts { text-align: right; }
-.music-fields__current { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.music-fields legend { padding: 2px calc(12px + var(--slant)) 2px 10px; background: var(--accent); color: var(--accent-ink); font-style: italic; font-weight: 900; clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%); }
 .music-fields__current { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 4px 0; }
 .music-fields__current audio { height: 32px; max-width: 100%; }
 
@@ -635,16 +625,13 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .filter__input { width: 100%; margin: 0 0 8px; }
 /* The battle's monsters: one row, "+" to add one, "−" on the added. */
 .grid-form__act { width: 1%; white-space: nowrap; }
-.rows__add, .rows__remove { min-height: 32px; width: 32px; padding: 0; clip-path: none; font: 900 18px/32px var(--font); text-align: center; background: var(--control-fill); border: 0; }
+.rows__add, .rows__remove { min-height: 32px; width: 32px; padding: 0; font: 900 18px/32px var(--font); text-align: center; background: var(--control-fill); border: 0; }
 .rows__add:hover, .rows__remove:hover { translate: none; background: var(--ink); color: var(--paper); }
 .scene-list { list-style: none; margin: 0; padding: 0; border-top: 3px solid var(--ink); }
 .scene-list__item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding: 10px 0; border-bottom: 1px solid var(--light-grey); }
 .scene-list__item strong { font-style: italic; font-weight: 900; font-size: 18px; margin-right: 8px; }
 .scene-list__item.is-played strong { color: var(--grey); }
 .scene-list__actions { display: flex; gap: 8px; align-items: center; }
-.table-scenes { margin-top: 12px; }
-.table-scenes summary { cursor: pointer; font-style: italic; font-weight: 900; font-size: 18px; }
-.table-scenes[open] > summary { margin-bottom: 8px; }
 .script-paste { margin-bottom: 16px; }
 .script-paste > summary { display: inline-block; margin-bottom: 8px; }
 .scene-settings { margin-top: 32px; padding-top: 16px; border-top: 3px solid var(--ink); }
@@ -689,7 +676,6 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .recap__last blockquote p { margin: 0; font-size: 18px; line-height: 26px; }
 .recap__speaker { font-style: italic; font-weight: 900; font-size: 14px !important; }
 .recap .actions { margin-top: 16px; justify-content: flex-end; }
-.recap-link { margin-top: 4px; font-style: italic; }
 
 /* A guest on the party's side: a small tag by their name. */
 .roster__guest { margin-left: 6px; padding: 0 6px; background: var(--ink); color: var(--paper); font-size: 11px; font-style: normal; letter-spacing: .08em; text-transform: uppercase; vertical-align: 2px; }
@@ -702,7 +688,6 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 /* A choice for the table: big red options, like a game's own prompt. Players see the picks,
    the GM sees "Settle", everyone sees who picked what. */
 .choice { border-top: 4px solid var(--signal); }
-.choice[hidden] { display: none; }
 .choice:not([hidden]) { animation: slash-in .3s var(--snap) both; }
 .choice h2 { margin: 0 0 10px; font: var(--display); font-size: 28px; }
 .choice__pick-form, .choice__settle-form { margin: 0; }
@@ -725,8 +710,8 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 .choice__option.is-mine .bar__fill--vote { background: var(--paper); }
 .choice__mine { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; margin-left: 10px; }
 .choice__mine::before { content: "✓ "; }
-.choice__mine[hidden] { display: none; }
-.choice__tally { display: block; width: 100%; max-width: 160px; margin-top: 4px; }
+/* The vote's share so far, as a thin bar under the option (its fill, below with the chips). */
+.choice__tally { display: block; width: 100%; max-width: 160px; flex-basis: 100%; height: 4px; margin: 0; }
 .pick-row__who { width: 1%; min-width: 120px; }
 
 /* A choice as a table (docs/DESIGN.md, "Players steer"): one option a row, tight and even, the whole row the
@@ -748,13 +733,14 @@ a.pick-row__act { text-decoration: none; }
 .pick-row__note { display: block; margin-top: -4px; padding-bottom: 6px; font-size: 13px; color: var(--grey); }
 .pick-row__cost { white-space: nowrap; text-align: right; color: var(--grey); font-size: 13px; font-variant-numeric: tabular-nums; }
 .pick-row .link-button.pick-row__act { font-size: 13px; font-style: normal; font-weight: 700; color: var(--ink); }
-/* Hover and focus light the row, red for game moves (the row is the slab now). */
-.pick-table.play .pick-row:hover, .pick-table.play .pick-row:has(.pick-row__act:focus-visible) { background: var(--signal); color: var(--paper); }
-.pick-table:not(.play) .pick-row:hover, .pick-table:not(.play) .pick-row:has(.pick-row__act:focus-visible) { background: var(--control-fill); }
-.pick-row:hover :is(.pick-row__act, .pick-row__note, .pick-row__cost, .choice__who, .link-button), .pick-row:has(.pick-row__act:focus-visible) :is(.pick-row__act, .pick-row__note, .pick-row__cost, .choice__who, .link-button) { color: inherit; }
+/* Hover and focus light the row, red for game moves (the row is the slab now). The :where() keeps the pair at
+   :hover's weight, so the rows that stay unlit on hover (a status, a disabled move, below and above) keep winning. */
+.pick-table.play .pick-row:is(:hover, :where(:has(.pick-row__act:focus-visible))) { background: var(--signal); color: var(--paper); }
+.pick-table:not(.play) .pick-row:is(:hover, :where(:has(.pick-row__act:focus-visible))) { background: var(--control-fill); }
+.pick-row:is(:hover, :where(:has(.pick-row__act:focus-visible))) :is(.pick-row__act, .pick-row__note, .pick-row__cost, .choice__who, .link-button) { color: inherit; }
 .pick-table.play .pick-row:has(.pick-row__act:focus-visible) td { box-shadow: inset 0 0 0 2px var(--ink); }
-.pick-table.play .pick-row:hover .choice__tally, .pick-table.play .pick-row:has(.pick-row__act:focus-visible) .choice__tally { background: color-mix(in srgb, var(--paper) 40%, transparent); }
-.pick-table.play .pick-row:hover .bar__fill--vote, .pick-table.play .pick-row:has(.pick-row__act:focus-visible) .bar__fill--vote { background: var(--paper); }
+.pick-table.play .pick-row:is(:hover, :where(:has(.pick-row__act:focus-visible))) .choice__tally { background: color-mix(in srgb, var(--paper) 40%, transparent); }
+.pick-table.play .pick-row:is(:hover, :where(:has(.pick-row__act:focus-visible))) .bar__fill--vote { background: var(--paper); }
 .pick-row:has(.pick-row__act:disabled:only-of-type) { cursor: not-allowed; }
 .pick-table.play .pick-row:has(.pick-row__act:disabled):hover { background: transparent; color: inherit; }
 .table:not([data-seat="player"]) .choice__pick-form, .table:not([data-seat="player"]) .choice__hint--player,
@@ -1012,6 +998,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .battle-ticker:empty { display: none; }
 /* The normal view has the stage in sight on a wide screen: the ticker is for phones and the controller. */
 .battle:not(.battle--controller) .battle-ticker { display: none; }
+/* The streams' elements are empty: kept out of the battle's grids (a phone on its side, a desktop), where they'd be rows. */
+.battle > turbo-cable-stream-source, .table > turbo-cable-stream-source { display: none; }
 /* Skip keeps its place while hidden, so the field doesn't jump when a round starts playing. */
 .battle__controls > [data-battle-player-target="skip"][hidden] { display: inline-flex; visibility: hidden; }
 /* The party at a glance, in a phone's pinned panel. */
@@ -1030,49 +1018,53 @@ body[data-view="controller"] .page { padding-top: 16px; }
  * abreast; and your commands stay pinned under your thumb while the fight
  * plays above them.
  * ------------------------------------------------------------------------- */
-@media (max-width: 640px) {
-  body:has(.log-drawer) .topbar { padding-right: 96px; }
-  /* In the top bar's right end, never over what you're reading. */
+/* The log's tab on a phone either way up: in the top bar's right end, never over what you're reading. The bar makes
+   room for it (body.has-log-drawer, set by the layout where the drawer is rendered). */
+@media (max-width: 640px), (max-height: 500px) and (orientation: landscape) {
+  body.has-log-drawer .topbar { padding-right: 96px; }
   .log-drawer__tab { position: fixed; top: 6px; bottom: auto; right: 12px; z-index: 45; writing-mode: horizontal-tb; padding: 6px 12px; clip-path: none; box-shadow: inset 0 -3px 0 var(--ink); }
   .log-drawer__tab:hover { translate: 0 0; }
   .log-drawer__count { margin: 0 0 0 6px; }
   @keyframes tab-pulse { 40% { translate: 0 4px; } }
-
+}
+/* .battle--play is the battle as a player or the GM sees it (battles/show): not a co-op screen or controller, not the
+   stage alone. */
+@media (max-width: 640px) {
   .battle .battle__header h1 { font-size: 28px; line-height: 32px; }
   .battlefield { --sprite: 76px; --sprite-min: 76px; --sprite-party: 48px; min-height: 0; padding: 12px; gap: 8px; }
   .battlefield__side--enemy { gap: 8px 12px; }
   .unit__label { font-size: 14px; }
   .label { font-size: 12px; }
 
-  .battle:not(.battle--controller):not(.battle--screen) { padding-bottom: 50vh; }
-  .battle:not(.battle--controller):not(.battle--screen) .battle__dock {
+  .battle--play { padding-bottom: 50vh; }
+  .battle--play .battle__dock {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 50vh; display: flex; flex-direction: column;
     padding: 8px 16px 12px; background: var(--paper); border-top: 3px solid var(--ink); box-shadow: 0 -6px 0 var(--accent);
   }
-  .battle:not(.battle--controller):not(.battle--screen) .battle__dock .battle-ticker:not(:empty) { display: block; flex: none; margin-bottom: 4px; font-size: 13px; line-height: 18px; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame .window { margin: 0; border-top: 0; padding-top: 0; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame .pick-table { margin: 6px 0 8px; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame .pick-table td { height: 48px; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame .link-button { min-height: 44px; display: inline-flex; align-items: center; }
+  .battle--play .battle__dock .battle-ticker:not(:empty) { display: block; flex: none; margin-bottom: 4px; font-size: 13px; line-height: 18px; }
+  .battle--play .command-frame { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .battle--play .command-frame .window { margin: 0; border-top: 0; padding-top: 0; }
+  .battle--play .command-frame .pick-table { margin: 6px 0 8px; }
+  .battle--play .command-frame .pick-table td { height: 48px; }
+  .battle--play .command-frame .link-button { min-height: 44px; display: inline-flex; align-items: center; }
   /* Results, and saying what you try, need the room: the panel lets go of the bottom edge. */
   .battle:has(.command-panel--over, .try-form) { padding-bottom: 0 !important; }
-  .battle:not(.battle--controller):not(.battle--screen) .battle__dock:has(.command-panel--over, .try-form) { position: static; max-height: none; box-shadow: none; padding: 8px 0 0; }
+  .battle--play .battle__dock:has(.command-panel--over, .try-form) { position: static; max-height: none; box-shadow: none; padding: 8px 0 0; }
   /* Let go of the edge, the results' title sits below the last line of the fight, not over it. */
   .battle__dock .command-panel--over > h2:first-child { margin-top: 12px; }
   /* Nobody hurt, nothing to watch: the strip comes in with the first hit. */
   .party-strip:has(.is-hurt, .is-ko) { display: grid; }
   /* The end of a fight lands in the part of the screen the pinned panel leaves open. */
-  .battle:not(.battle--controller):not(.battle--screen) :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down, .banner--all-out) {
+  .battle--play :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down, .banner--all-out) {
     position: fixed; top: 22vh; z-index: 35; font-size: 56px;
   }
   /* One More too: above the pinned menu, not under it, across the whole width. */
-  .battle:not(.battle--controller):not(.battle--screen) .banner--one-more {
+  .battle--play .banner--one-more {
     position: fixed; top: 28vh; left: -8px; right: -8px; z-index: 35; font-size: 56px; text-align: center; box-shadow: 0 6px 0 var(--ink);
   }
   /* A battle is a game screen: the title and the way back step aside for the fight. */
   .battle .battle__header { margin-bottom: 8px; }
-  .battle:not(.battle--controller):not(.battle--screen) .battle__header > div:first-child { display: none; }
+  .battle--play .battle__header > div:first-child { display: none; }
   .unit--enemy { --sprite: clamp(56px, min(calc(100cqi / min(var(--count, 1), 3) - 24px), 18vh), 160px); }
 }
 
@@ -1082,25 +1074,20 @@ body[data-view="controller"] .page { padding-top: 16px; }
  * own beside a field that stays put.
  * ------------------------------------------------------------------------- */
 @media (max-height: 500px) and (orientation: landscape) {
-  body:has(.log-drawer) .topbar { padding-right: 96px; }
-  .log-drawer__tab { position: fixed; top: 6px; bottom: auto; right: 8px; z-index: 45; writing-mode: horizontal-tb; padding: 6px 12px; clip-path: none; box-shadow: inset 0 -3px 0 var(--ink); }
-  .log-drawer__tab:hover { translate: 0 0; }
-  .log-drawer__count { margin: 0 0 0 6px; }
-  .page:has(.battle) { padding-top: 12px; }
-  .battle:not(.battle--controller):not(.battle--screen) {
+  [data-page="battle"] .page { padding-top: 12px; }
+  .battle--play {
     display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 42%); column-gap: 16px; align-items: start;
   }
-  .battle:not(.battle--controller):not(.battle--screen) > * { grid-column: 1 / -1; }
-  .battle > turbo-cable-stream-source { display: none; }
-  .battle:not(.battle--controller):not(.battle--screen) > .battle__header { grid-column: 1; grid-row: 1; }
-  .battle:not(.battle--controller):not(.battle--screen) > .battle__header > div:first-child { display: none; }
-  .battle:not(.battle--controller):not(.battle--screen) > .stage { grid-column: 1; grid-row: 2; }
-  .battle:not(.battle--controller):not(.battle--screen) > .battle__lower {
+  .battle--play > * { grid-column: 1 / -1; }
+  .battle--play > .battle__header { grid-column: 1; grid-row: 1; }
+  .battle--play > .battle__header > div:first-child { display: none; }
+  .battle--play > .stage { grid-column: 1; grid-row: 2; }
+  .battle--play > .battle__lower {
     grid-column: 2; grid-row: 1 / span 2; display: block; margin-top: 0;
     position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow-y: auto;
   }
-  .battle:not(.battle--controller):not(.battle--screen) .battle-ticker:not(:empty) { display: block; font-size: 13px; line-height: 18px; }
-  .battle:not(.battle--controller):not(.battle--screen) .command-frame .pick-table td { height: 44px; }
+  .battle--play .battle-ticker:not(:empty) { display: block; font-size: 13px; line-height: 18px; }
+  .battle--play .command-frame .pick-table td { height: 44px; }
   .battlefield { --sprite: 64px; --sprite-min: 56px; --sprite-party: 44px; min-height: 0; padding: 10px; gap: 6px; }
   .unit--enemy { --sprite: clamp(56px, min(calc(100cqi / min(var(--count, 1), 4) - 24px), 26vh), 120px); }
   .unit__label { font-size: 14px; }
@@ -1160,8 +1147,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* Inside a dungeon, the table's map is its floorplan (campaigns/tables/_floorplan). */
 .table-floorplan:empty { display: none; }
 .table-floorplan__title { margin: 0 0 8px; font-size: 14px; }
-/* A button that fits a table row (the battle's GM panel: auto every round). */
-.button--small { padding: 2px 10px; min-height: 0; font-size: 13px; }
 
 /* Who already plays an archetype, on its card (characters/_job_picker). */
 .job-picker__party { margin: 0 0 8px; }
@@ -1169,10 +1154,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* Now: one line for what the table is doing and whose move it is, under the header. A battle
    holds everything else, so the line goes red and the open choice waits, greyed, until it's over. */
-.table-now { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 20px; padding: 10px 0; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--rule); }
+.table-now { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 20px; padding: 10px 0; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--rule);
+             position: relative; overflow: hidden; /* the band's wipe, below, stays in it */ }
 .table-now__label { margin: 0; padding: 2px 10px; background: var(--ink); color: var(--paper); font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; }
 .table-now__what { margin: 0; flex: 1 1 20em; }
-.table-now__who { display: block; color: var(--grey); font-size: 14px; }
 .table-now--battle { border-top-color: var(--signal); }
 .table-now--battle .table-now__label { background: var(--signal); }
 .table-now #table_battle:empty { display: none; }
@@ -1191,13 +1176,11 @@ body[data-view="controller"] .page { padding-top: 16px; }
 
 /* A player's moves, together under one tag; and who they are, up top. */
 .your-moves__tag { display: inline-block; margin: 0 0 4px; padding: 2px 10px; background: var(--signal); color: var(--paper); font-weight: 900; text-transform: uppercase; letter-spacing: .12em; font-size: 13px; }
-.your-moves__hint { margin: 0 0 12px; }
 /* Your own row in the party (you_controller): first, with "You" on it, the name bigger. */
 .coop-party__list li.is-you { padding: 8px 0 10px; border-bottom: 2px solid var(--ink); }
 .coop-party__list li.is-you .coop-party__name { font: var(--display); font-size: 22px; }
 .coop-party__list li.is-you .coop-party__name::before { content: "You"; display: inline-block; margin-right: 8px; padding: 1px 6px; background: var(--ink); color: var(--paper); font: 900 11px/16px var(--font); text-transform: uppercase; letter-spacing: .12em; vertical-align: 4px; }
 .coop-party__motive { margin: 2px 0 4px; }
-.composer__to-hint { margin: 6px 0 0; }
 /* Who speaks, and who hears: chips, the pressed one ink (the GM's speaker follows the scene). */
 .composer__as { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
 .composer__as-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--grey); margin-right: 2px; }
@@ -1205,7 +1188,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .composer__chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .composer__chip:hover { translate: none; }
 .composer__whispering { flex-basis: 100%; margin: 0; padding: 6px 10px; background: var(--tint); font-size: 14px; }
-.composer__whispering[hidden] { display: none; }
 .coop-party__whisper { align-self: flex-start; font-size: 13px; white-space: nowrap; }
 
 /* The battle's round, what its clock is for, and (for the GM) who it's waiting on. */
@@ -1242,14 +1224,15 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .controls-call { display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 0; margin-right: 0; }
 .controls-call form { flex: 1 1 auto; display: flex; }
 .controls-call .button { flex: 1 1 auto; text-align: center; }
-.table-now__do:has(.controls-call) { gap: 0; }
-/* The strip hugs the top of the column under the stage, edge to edge: one rule above it, between the stage and the
-   actions; nothing below it (what follows draws its own top). */
-.table-now:has(.controls-call) { margin: 0; padding: 0; gap: 0; border: 0; border-top: 3px solid var(--ink); }
-.table-now:has(.controls-call) > * { margin: 0; }
+/* The Now line with the controls in it (.table-now--controls, campaigns/tables/_now): the strip hugs the top of the
+   column under the stage, edge to edge: one rule above it, between the stage and the actions; nothing below it (what
+   follows draws its own top). */
+.table-now--controls .table-now__do { gap: 0; }
+.table-now--controls { margin: 0; padding: 0; gap: 0; border: 0; border-top: 3px solid var(--ink); }
+.table-now--controls > * { margin: 0; }
 .table__under:has(.controls-call) { padding-top: 0; }
-.controls-call .button {
-  clip-path: none; margin: 0; padding: 3px 12px; border: 0; font: 700 13px/20px var(--font); font-style: normal;
+.controls-call .button { /* [data-kind] keeps them out of the parallelogram rule */
+  margin: 0; padding: 3px 12px; border: 0; font: 700 13px/20px var(--font); font-style: normal;
   background: var(--tone, var(--wash)); color: var(--tone-ink, var(--ink));
 }
 .controls-call .button:hover:not(:disabled) { translate: none; background: var(--tone); color: var(--tone-ink); filter: brightness(.88); }
@@ -1265,22 +1248,14 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .controls-call [data-kind="tools"] { --tone: var(--steel-grey); --tone-ink: var(--paper); }
 .table-ways--straight { padding-top: 8px; }
 .table-ways__straight { margin: 0 0 4px; font-size: 13px; }
-.table-ways--straight .table-ways__group { font-size: 13px; margin: 6px 0 0; }
-
-/* The GM's vote: each option a row, with who picked it and Settle beside it. */
-
-/* Narration has no portrait to make room for: the box is only as tall as its words. */
-.dialogue.is-narration { min-height: 0; }
-.dialogue.is-narration .dialogue__text { min-height: 88px; }
-
 
 .location-gm { margin-top: 24px; }
 
 /* A service's card says what it's for and what it costs before it's opened. */
 .pick-row:hover .service__offer { color: inherit; }
 
-/* A long sheet keeps its section links at the top of the screen; on a phone they scroll sideways on one line. */
-.sheet-nav { position: sticky; top: 0; z-index: 20; background: var(--paper); border-bottom: 2px solid var(--ink); padding: 0 0 0; }
+/* A long sheet keeps its section links at the top of the screen (.sheet-nav, application.css); on a phone they scroll
+   sideways on one line (below). */
 /* The links are tabs: once the script is in, only the section pressed shows; the pressed link is ink. */
 .character-sheet.is-tabbed .sheet-panel:not(.is-shown) { display: none; }
 .sheet-nav a.is-current { background: var(--ink); color: var(--paper); padding: 0 10px; text-decoration: none; }
@@ -1312,7 +1287,11 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table:has(#table_now[data-state="battle"]) :is(.your-moves, .gm-tools) { display: none; } /* the fight is on its own page */
 .table[data-seat="player"]:has(#table_now[data-state="encounter"]) #field_ability,
 .table[data-seat="player"]:has(#table_now[data-state="choice"]) #field_ability,
-.table:has(#table_now[data-state="scene"]) #table_ways, .table[data-seat="player"]:has(#table_now[data-state="scene"]) #field_ability { display: none; } /* the scene plays; the director's hand is on the stage's corner tag */
+.table:has(#table_now[data-state="scene"]) #table_ways, .table[data-seat="player"]:has(#table_now[data-state="scene"]) #field_ability,
+.table:has(#table_now[data-state="scene"]) #table_called { display: none; } /* the scene plays; the director's hand is on the stage's corner tag */
+/* The GM's talk box and whisper are Talk's: under any other control they're away (Campaign::Controls). A player's
+   box is always there: talking needs nobody's say-so (in a battle it's an action, on the battle page). */
+.table[data-seat="gm"]:has(#table_now:not([data-controls="talk"])) :is(.table-talk, .coop-party__whisper) { display: none; }
 /* Talk is a button until it's wanted. */
 .talk { margin: 12px 0; }
 .talk > summary { list-style: none; display: inline-flex; cursor: pointer; }
@@ -1333,15 +1312,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .table-now__do { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
 .table-now__do form { margin: 0; }
 
-#table_called[hidden] { display: none; }
 /* A battle set up under the stage (battles/_setup): the fieldsets tight, the rest behind More. */
 .battle-setup .panel { margin: 0 0 12px; }
 .battle-setup__more { margin: 0 0 12px; }
 .battle-setup .actions { margin-top: 0; }
-.table:has(#table_now[data-state="scene"]) #table_called { display: none; } /* the scene plays; the director's hand is on the stage's corner tag */
-/* The GM's talk box and whisper are Talk's: under any other control they're away (Campaign::Controls). A player's
-   box is always there: talking needs nobody's say-so (in a battle it's an action, on the battle page). */
-.table[data-seat="gm"]:has(#table_now:not([data-controls="talk"])) :is(.table-talk, .coop-party__whisper) { display: none; }
 
 /* ---------------------------------------------------------------------------
  * Motion with meaning (docs/DESIGN.md): motion only ever says one of four
@@ -1360,7 +1334,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 [data-change~="number"].is-up { animation: change-up var(--t-change) ease-out; }
 @keyframes change-down { from { background: var(--mark-down); box-shadow: 0 0 0 3px var(--mark-down); } }
 @keyframes change-up { from { background: var(--mark-up); box-shadow: 0 0 0 3px var(--mark-up); } }
-.bar { position: relative; }
 .bar .bar__fill { position: relative; z-index: 1; transition: width var(--t-change) ease-out; }
 .bar .bar__ghost { position: absolute; inset: 0 auto 0 0; background: var(--ink); opacity: .3; transition: width var(--t-change) ease-in; }
 .clock-dial i.is-new { animation: box-pop .4s var(--snap) both; }
@@ -1414,7 +1387,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .popup--buff-down { background: var(--bright-red); color: var(--paper); }
 
 /* Worn on the sprite: a guard's bracket before the party, a charge's glow, a barrier's ring, a doom's edge. */
-.unit { position: relative; }
 .unit.is-guarding .sprite::before {
   content: ""; position: absolute; top: -6px; bottom: -6px; left: -14px; width: 8px; border: 3px solid var(--ink); border-right: 0; pointer-events: none;
 }
@@ -1468,11 +1440,10 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .arrival-card__kind { font-size: 13px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; color: var(--grey); }
 .arrival-card__place { font: var(--display); font-size: clamp(36px, 7vw, 72px); line-height: 1; letter-spacing: -0.04em; }
 .arrival-card__modes { margin-top: 8px; font-weight: 900; font-style: italic; color: var(--signal); }
-.arrival-card__modes:empty, .arrival-card__modes[hidden] { display: none; }
+.arrival-card__modes:empty { display: none; }
 .arrival-card__line { margin-top: 10px; font-size: 16px; line-height: 22px; max-width: 48em; }
 
-/* The table's state changed: the band wipes across in the new state's colour. */
-.table-now { position: relative; overflow: hidden; }
+/* The table's state changed: the band wipes across in the new state's colour (.table-now clips it). */
 .table-now.is-restated::before {
   content: ""; position: absolute; inset: 0; background: var(--ink); opacity: .9; pointer-events: none;
   animation: band-wipe .9s var(--snap) both;
@@ -1491,7 +1462,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .choice__chip { display: inline-flex; width: 22px; height: 22px; align-items: center; justify-content: center; font: var(--display); font-size: 13px; background: var(--ink); color: var(--paper); clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
 .choice__chip.is-new { animation: chip-pop .4s var(--snap) both; }
 @keyframes chip-pop { 0% { scale: .3; } 60% { scale: 1.3; } }
-.choice__tally { flex-basis: 100%; height: 4px; margin: 0; }
 .bar .bar__fill--vote { background: var(--signal); }
 @media (prefers-reduced-motion: reduce) {
   .table-now.is-restated::before { animation: none; display: none; }
@@ -1513,7 +1483,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* At the table the Controls under the frame keep at least two fifths of the screen, so what there is to do
    is above the fold more often than not; what still doesn't fit scrolls (.table__under). */
 .stage--table { width: min(100%, calc((100vh - var(--stage-top, 220px) - max(var(--stage-below, 48px), 40vh)) * 16 / 9)); }
-.stage__frame, .battle .stage {
+/* The frame: the table's is a child of its .stage (campaigns/tables/_stage); the battle's .stage is the frame itself
+   (battles/show gives it both classes). */
+.stage__frame {
   position: relative; aspect-ratio: 16 / 9; overflow: hidden; container-type: size;
   border: 3px solid var(--ink); background: var(--paper);
 }
@@ -1523,25 +1495,26 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* What's said plays along the bottom of the frame, in one compact box as tall as the speaker's face, which
    sits inside it hugging its left edge. Words that don't fit go in pages (dialogue_controller), never a
    scroll. Sized to the frame (container units), so a small frame keeps a small box. */
-.stage__frame .dialogue, .battle .stage .dialogue--battle {
+.stage__frame .dialogue {
   --face: clamp(52px, 16cqh, 96px);
   position: absolute; left: 0; right: 0; bottom: 2.5cqh; z-index: 6; width: min(96cqw, 860px); margin: 0 auto; min-height: 0;
   grid-template-columns: var(--face) minmax(0, 1fr); gap: 0; align-items: stretch; padding: 0;
   border: 3px solid var(--ink); background: var(--paper); box-shadow: 6px 6px 0 var(--ink);
 }
-.stage__frame .dialogue.is-narration, .battle .stage .dialogue--battle.is-narration { grid-template-columns: minmax(0, 1fr); }
-.stage__frame .dialogue__text, .battle .stage .dialogue__text {
+.stage__frame .dialogue.is-narration { grid-template-columns: minmax(0, 1fr); }
+.stage__frame .dialogue__text {
   display: flex; flex-direction: column; height: var(--face); min-height: 0; border: 0; box-shadow: none; background: none;
   padding: clamp(6px, 1.6cqh, 12px) clamp(28px, 4cqw, 40px) clamp(6px, 1.6cqh, 12px) clamp(10px, 1.6cqw, 16px);
 }
-.stage__frame .speaker-portrait--large, .battle .stage .speaker-portrait--large { display: grid; width: var(--face); height: var(--face); clip-path: none; }
-.stage__frame .speaker-portrait--large.speaker-portrait--plate, .battle .stage .speaker-portrait--large.speaker-portrait--plate { font-size: calc(var(--face) * .6); }
+.stage__frame .speaker-portrait--large { display: grid; width: var(--face); height: var(--face); clip-path: none; }
+.stage__frame .speaker-portrait--large.speaker-portrait--plate { font-size: calc(var(--face) * .6); }
 /* The name is a tab on the box's top edge, clear of the words. */
-.stage__frame .dialogue__name, .battle .stage .dialogue__name { top: auto; bottom: calc(100% + 3px); left: -3px; font-size: clamp(10px, 2.2cqh, 13px); }
+.stage__frame .dialogue__name { top: auto; bottom: calc(100% + 3px); left: -3px; font-size: clamp(10px, 2.2cqh, 13px); }
 /* Narration has no face to match: as tall as its words, up to the same height. */
-.stage__frame .dialogue.is-narration .dialogue__text, .battle .stage .dialogue--battle.is-narration .dialogue__text { height: auto; min-height: 0; max-height: var(--face); }
-.stage__frame .dialogue__body, .battle .stage .dialogue__body { flex: 1; min-height: 0; overflow: hidden; font-size: clamp(13px, 3.4cqh, 19px); line-height: 1.35; max-width: none; }
-.stage__frame .dialogue__more, .battle .stage .dialogue__more { width: clamp(8px, 2cqh, 12px); height: clamp(8px, 2cqh, 12px); right: 10px; bottom: 8px; }
+.stage__frame .dialogue.is-narration .dialogue__text { height: auto; min-height: 0; max-height: var(--face); }
+/* (The extra .dialogue outweighs the co-op screen's bigger type, which the frame sizes instead.) */
+.stage__frame .dialogue .dialogue__body { flex: 1; min-height: 0; overflow: hidden; font-size: clamp(13px, 3.4cqh, 19px); line-height: 1.35; max-width: none; }
+.stage__frame .dialogue__more { width: clamp(8px, 2cqh, 12px); height: clamp(8px, 2cqh, 12px); right: 10px; bottom: 8px; }
 /* Put away until the next thing is said. */
 .dialogue__close {
   position: absolute; top: 4px; right: 4px; z-index: 1; width: 22px; height: 22px; padding: 0; border: 0; background: none;
@@ -1575,8 +1548,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .stage__hud .table-time__plate, .stage__hud .table-time__where { position: static; max-width: none; text-align: left; box-shadow: none; border: 0; padding: 0; }
   .stage__hud .table-time__clock { filter: none; }
   .stage__hud .table-time__deadlines li:not(.is-tomorrow) { display: list-item; margin: 0; padding: 0; background: none; border: 0; box-shadow: none; }
-  .stage__frame .dialogue { --face: 72px; width: auto; left: 6px; right: 6px; bottom: 6px; box-shadow: 4px 4px 0 var(--ink); }
-  .stage__frame .dialogue__body { font-size: 14px; line-height: 19px; }
+  /* Not the battle's box: its stage is unframed flow on a phone (below) and its box keeps the frame's sizes. */
+  .stage__frame .dialogue:not(.dialogue--battle) { --face: 72px; width: auto; left: 6px; right: 6px; bottom: 6px; box-shadow: 4px 4px 0 var(--ink); }
+  .stage__frame .dialogue:not(.dialogue--battle) .dialogue__body { font-size: 14px; line-height: 19px; }
 }
 
 /* A battle on the frame: the field fills it, the party's roster is a band along its bottom, the
@@ -1604,12 +1578,12 @@ body[data-view="controller"] .page { padding-top: 16px; }
    the screen (you, or the GM's tools, on the left; the log on the right), the stage between them. */
 @media (min-width: 1100px) {
   .topbar, .page { max-width: none; }
-  .page:has(> .table), .page:has(> .battle) { padding: 16px 0 96px; }
-  html:not(.log-docked) .page:has(> .table), html:not(.log-docked) .page:has(> .battle) { padding-right: 32px; } /* clear of the log's tab */
-  .table > turbo-cable-stream-source { display: none; }
+  /* The layout names the two game pages on <body> (data-page): the table's page scrolls inside its columns, a battle's as a page. */
+  [data-page="table"] .page { padding: 16px 0 0; }
+  [data-page="battle"] .page { padding: 16px 0 96px; }
+  html:not(.log-docked) [data-page] .page { padding-right: 32px; } /* clear of the log's tab */
 
   /* The GM's table and the shared screen. */
-  .page:has(> .table) { padding-bottom: 0; }
   .table__main { grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); grid-template-areas: "side stage"; column-gap: var(--gutter); padding-right: var(--gutter); }
   .table:not(.table--controller) .table__side { grid-area: side; height: calc(100vh - var(--stage-top, 112px)); overflow-y: auto; padding: 0 16px 24px; border-right: 3px solid var(--ink); }
   /* A controller (a phone's view) opened on a wide screen is one column, as on the phone. */
@@ -1625,19 +1599,18 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .table--screen .table__side { position: static; max-height: none; border: 0; padding: 0; }
 
   /* A battle: its head and the talk box in the left column, the frame and the commands in the middle. */
-  .battle:not(.battle--controller):not(.battle--screen):not(.battle--stage) {
+  .battle--play {
     display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); column-gap: var(--gutter); align-items: start; padding-right: var(--gutter);
   }
-  .battle:not(.battle--controller):not(.battle--screen) > * { grid-column: 2; }
-  .battle > turbo-cable-stream-source { display: none; }
+  .battle--play > * { grid-column: 2; }
   /* The head spans the rows the middle takes (the spare ones are empty); the talk box comes under it. */
-  .battle:not(.battle--controller):not(.battle--screen) > .battle__header {
+  .battle--play > .battle__header {
     grid-column: 1; grid-row: 1 / span 12; position: sticky; top: 0; margin: 0; padding: 0 16px 16px;
     flex-direction: column; align-items: stretch; border-right: 3px solid var(--ink); min-height: 40vh;
   }
-  .battle:not(.battle--controller):not(.battle--screen) > .battle__header .battle__controls { flex-wrap: wrap; }
-  .battle:not(.battle--controller):not(.battle--screen) > .battle-composer { grid-column: 1; grid-row: 13; margin: 0; padding: 12px 16px 0; }
-  .battle:not(.battle--controller):not(.battle--screen) > .battle__lower { margin-top: 24px; }
+  .battle--play > .battle__header .battle__controls { flex-wrap: wrap; }
+  .battle--play > .battle-composer { grid-column: 1; grid-row: 13; margin: 0; padding: 12px 16px 0; }
+  .battle--play > .battle__lower { margin-top: 24px; }
   .battle--screen { padding: 0 var(--gutter); }
 }
 
@@ -1648,7 +1621,7 @@ body[data-view="stage"] { padding-top: 0; }
 body[data-view="stage"] .topbar, body[data-view="stage"] .flashes { display: none; }
 body[data-view="stage"] .page { max-width: none; min-height: 100vh; min-height: 100dvh; margin: 0; padding: 0 !important; display: grid; place-items: center; }
 body[data-view="stage"] .stage { width: min(100%, calc(100vh * 16 / 9)); min-width: 0; margin: 0 auto; }
-body[data-view="stage"] .stage__frame, body[data-view="stage"] .battle .stage { border: 0; box-shadow: none; aspect-ratio: 16 / 9; container-type: size; overflow: hidden; }
+body[data-view="stage"] .stage__frame { border: 0; box-shadow: none; aspect-ratio: 16 / 9; container-type: size; overflow: hidden; }
 body[data-view="stage"] .stage__hud .table-time__plate { top: 16px; right: 16px; }
 body[data-view="stage"] .stage__hud .table-time__where { left: 16px; top: 16px; }
 body[data-view="stage"] .table, body[data-view="stage"] .battle { width: 100%; display: block; padding: 0; }
@@ -1744,7 +1717,6 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .beat__text { min-height: 56px; }
 .beat--choice .beat__speaker, .beat--choice .beat__expression { visibility: hidden; }
 .beat__stage { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
-.beat__stage span[hidden] { display: none; }
 .beat__panel-words input { min-width: 260px; }
 .beat__body { min-width: 0; }
 .beat__kind { display: inline-block; margin: 0 0 6px; padding: 1px 8px; font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; background: var(--ink); color: var(--paper); }
@@ -1813,7 +1785,6 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   .table-views__tab:hover { translate: none; color: var(--paper); background: var(--ink); }
   .table-views__tab[aria-current="page"] { color: var(--ink); background: var(--paper); }
   .table-views__badge { display: inline-block; min-width: 18px; padding: 0 4px; margin-left: 2px; background: var(--sun-yellow); color: var(--ink); font-size: 11px; line-height: 16px; text-align: center; }
-  .table-views__badge[hidden] { display: none; }
   .table[data-table-view="stage"] .table__side > *, .table[data-table-view="log"] .table__side > * { display: none; }
   .table[data-table-view="party"] .table__stage, .table[data-table-view="log"] .table__stage { display: none; }
   .table[data-table-view] .log-drawer__tab { display: none; }
@@ -1824,7 +1795,7 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   .table[data-table-view="log"] .log-drawer__head { display: none; }
   .table[data-table-view="log"] .log-drawer__section { overflow: visible; flex: none; }
   .table[data-table-view="log"] .chat-log__head { top: var(--topbar, 44px); }
-  body:has(.table[data-table-view]) .topbar { padding-right: 0; }
+  body.has-table-views .topbar { padding-right: 0; } /* the views, not the log's tab, take the bar's right end */
 }
 @media (max-width: 640px) {
   .table-views__tab { padding: 0 8px; font-size: 12px; }
@@ -1837,7 +1808,6 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
  * the top-left corner. The same sheet in the editors, taller and with handles.
  * ------------------------------------------------------------------------- */
 .table-map { position: absolute; inset: 0; z-index: 1; display: block; }
-.table-map[hidden] { display: none; }
 .map-sheet { position: relative; width: 100%; height: 100%; line-height: 0; background: var(--paper); overflow: hidden; }
 .map-sheet > svg.map { display: block; width: 100%; height: 100%; }
 .map-sheet .map__ground { fill: transparent; }
@@ -1898,7 +1868,6 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   position: absolute; z-index: 9; min-width: 220px; max-width: 280px; padding: 10px 12px; background: var(--paper); border: 3px solid var(--ink);
   box-shadow: 4px 4px 0 var(--ink); line-height: 1.3; font-size: 14px;
 }
-.map-ask[hidden] { display: none; }
 .map-ask__name { margin: 0 0 6px; font-size: 16px; }
 .map-ask__journey { color: var(--grey); font-size: 13px; }
 .map-ask__acts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
@@ -1914,4 +1883,3 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .table-time__scene .table-time__view { margin-left: 2px; white-space: nowrap; }
 .table-time__view--play { background: var(--signal); }
 .table-time__beat { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--grey); }
-.checks-row { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 8px; }
