@@ -1,3 +1,19 @@
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="red"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -20.460 70.919 70.919" width="512" height="512">
+  <!-- The logo (stage.css, .topbar__logo): the palette's stripe in a 2:1 block, leant 20deg into a parallelogram. -->
+  <g transform="translate(10.919 0) skewX(-20)">
+    <rect x="0.000" width="4.346" height="30" fill="#FCC010"/>
+    <rect x="4.286" width="4.346" height="30" fill="#F4971B"/>
+    <rect x="8.571" width="4.346" height="30" fill="#E9473A"/>
+    <rect x="12.857" width="4.346" height="30" fill="#CD2E55"/>
+    <rect x="17.143" width="4.346" height="30" fill="#F6BCD0"/>
+    <rect x="21.429" width="4.346" height="30" fill="#9DBFAE"/>
+    <rect x="25.714" width="4.346" height="30" fill="#8DC04E"/>
+    <rect x="30.000" width="4.346" height="30" fill="#13955F"/>
+    <rect x="34.286" width="4.346" height="30" fill="#335F4B"/>
+    <rect x="38.571" width="4.346" height="30" fill="#627E8B"/>
+    <rect x="42.857" width="4.346" height="30" fill="#4153A1"/>
+    <rect x="47.143" width="4.346" height="30" fill="#438ECC"/>
+    <rect x="51.429" width="4.346" height="30" fill="#1EB8D1"/>
+    <rect x="55.714" width="4.286" height="30" fill="#088EA7"/>
+  </g>
 </svg>
