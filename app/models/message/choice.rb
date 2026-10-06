@@ -73,7 +73,8 @@ module Message::Choice
       update!(settled: option)
       campaign.make_move!(data.dig("moves", option)) if data.dig("moves", option)
       campaign.set_flag!(flag_key, option) if flag_key
-      campaign.narrate("The party chose: #{option}.")
+      # Said with a card, so the whole table sees it land (campaigns/tables/_cards).
+      campaign.narrate("The party chose: #{option}.", cue: "chosen", data: { "option" => option })
       do_what_it_says!(option)
     end
     broadcast_choice

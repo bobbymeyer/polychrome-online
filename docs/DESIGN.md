@@ -283,7 +283,8 @@ seen of its types, never more. At the table, a way says what it sets off under i
 to do its outcomes in the world's words, a night the clocks it ticks, a road the clocks a journey
 ticks. A clock shows the box it's about to fill by itself as a dashed one. **Arriving** somewhere
 is a card over the table: the place's kind, its name at display size, the modes it's in and its
-line, held for a few seconds (`arrival` cue). **The Now band** wipes across in the new state's
+line, held for a few seconds (`arrival` cue). **Settling a choice** is the same card: "The party
+chose" and the option at display size (`chosen` cue). **The Now band** wipes across in the new state's
 colour when the table's state changes (ink, red for a fight, blue for a choice), and the party's
 marker on the map hops to where it went rather than reappearing. **Pressing** anything presses
 it: the lift on hover, a push on press, a red slab of focus; the vote's options wear the pickers

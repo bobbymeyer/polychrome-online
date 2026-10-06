@@ -37,7 +37,7 @@ class Beat < ApplicationRecord
   validates :kind, inclusion: { in: KINDS }
   validates :speaker_type, inclusion: { in: SPEAKER_TYPES }, allow_nil: true
   validates :expression, inclusion: { in: Portrait::EXPRESSIONS }, allow_nil: true
-  validates :cue, inclusion: { in: Message::CUES }, allow_nil: true
+  validates :cue, inclusion: { in: Message::BEAT_CUES }, allow_nil: true
   validates :text, length: { maximum: 2000 }
   validate :everyone_is_at_this_table
   validate :whole_of_its_kind
