@@ -16,11 +16,12 @@
   --grey: #6b6b6b; --light-grey: #DEDCDD; --greyish-green: #9DBFAE; --green: #8DC04E; --forest-green: #13955F;
   --dark-green: #335F4B; --steel-grey: #627E8B; --dark-blue: #4153A1; --blue: #438ECC; --turquoise: #1EB8D1;
   --lake-green: #088EA7;
-  --spectrum: linear-gradient(90deg,
+  --spectrum-stops:
     var(--sun-yellow) 0 7.14%, var(--orange) 0 14.28%, var(--bright-red) 0 21.42%, var(--wine-red) 0 28.56%,
     var(--pink) 0 35.7%, var(--greyish-green) 0 42.84%, var(--green) 0 49.98%, var(--forest-green) 0 57.12%,
     var(--dark-green) 0 64.26%, var(--steel-grey) 0 71.4%, var(--dark-blue) 0 78.54%, var(--blue) 0 85.68%,
-    var(--turquoise) 0 92.82%, var(--lake-green) 0 100%);
+    var(--turquoise) 0 92.82%, var(--lake-green) 0 100%;
+  --spectrum: linear-gradient(90deg, var(--spectrum-stops));
 
   /* The base's tokens, in palette colours. */
   --signal: var(--bright-red);
@@ -79,6 +80,8 @@ body::before {
   background: var(--ink); color: var(--paper); border-bottom: 4px solid; border-image: var(--spectrum) 1;
 }
 .topbar__brand { justify-self: start; color: var(--paper); font: var(--display); font-size: 18px; line-height: 24px; letter-spacing: -0.04em; }
+/* The logo: the stripe under the bar, stood up in a 2:3 block and leaning like ///. */
+.topbar__logo { display: block; width: 20px; aspect-ratio: 2 / 3; background: linear-gradient(115deg, var(--spectrum-stops)); }
 .topbar__user > summary { color: var(--paper); }
 .topbar__user-menu a, .topbar__user-menu .link-button { color: var(--ink); }
 .topbar__user-menu a:hover, .topbar__user-menu .link-button:hover { color: var(--signal); }
