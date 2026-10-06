@@ -11,7 +11,5 @@ class Characters::AbilitySlotsController < ApplicationController
     abilities = @world.abilities.where(id: ids).index_by(&:id)
     @character.set_ability_slots!(ids.map { |id| abilities[id.to_i] })
     redirect_to character_path(@character), notice: "Abilities set.", status: :see_other
-  rescue ActiveRecord::RecordInvalid => e
-    sheet_error(e.record.errors.full_messages.to_sentence)
   end
 end

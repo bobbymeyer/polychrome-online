@@ -81,34 +81,26 @@ module Character::Abilities
                      .slice("str", "mag")
   end
 
-  # Switch job. Gear the new job can't use goes back to the bag; ability
-  # slots beyond the new job's count are cleared.
+  # Switch job (the validations say which jobs are open to them). Gear the
+  # new job can't use goes back to the bag; ability slots beyond the new
+  # job's count are cleared.
   def change_job!(new_job)
-    unless new_job.world_id == world.id
-      errors.add(:job, "must come from #{world.name}")
-      raise ActiveRecord::RecordInvalid, self
-    end
-    unless campaign.job_open?(new_job)
-      errors.add(:job, "#{new_job.name} isn't open in #{campaign.name} yet")
-      raise ActiveRecord::RecordInvalid, self
-    end
-
     transaction do
-      character_job(new_job)
       update!(job: new_job)
+      character_job(new_job)
       equipment_slots.includes(:item).each { |slot| unequip!(slot.slot) unless new_job.equips?(slot.item) }
       ability_slots.where(position: new_job.ability_slots..).destroy_all
     end
   end
 
   def set_ability_slots!(abilities)
-    errors.clear
     abilities = abilities.compact_blank
     learned = learned_abilities
     unlearned = abilities.reject { |a| learned.include?(a) }
-    errors.add(:base, "#{unlearned.map(&:name).to_sentence} not learned yet") if unlearned.any?
-    errors.add(:base, "#{job.name} has #{job.ability_slots} ability slot(s)") if abilities.size > job.ability_slots
-    raise ActiveRecord::RecordInvalid, self if errors.any?
+    problems = []
+    problems << "#{unlearned.map(&:name).to_sentence} not learned yet" if unlearned.any?
+    problems << "#{job.name} has #{job.ability_slots} ability slot(s)" if abilities.size > job.ability_slots
+    raise Refusal, problems.to_sentence if problems.any?
 
     transaction do
       ability_slots.destroy_all
