@@ -80,8 +80,9 @@ body::before {
   background: var(--ink); color: var(--paper); border-bottom: 4px solid; border-image: var(--spectrum) 1;
 }
 .topbar__brand { justify-self: start; color: var(--paper); font: var(--display); font-size: 18px; line-height: 24px; letter-spacing: -0.04em; }
-/* The logo: the stripe under the bar, stood up in a 2:3 block and leaning like ///. */
-.topbar__logo { display: block; width: 20px; aspect-ratio: 2 / 3; background: linear-gradient(115deg, var(--spectrum-stops)); }
+/* The logo: the stripe under the bar, stood up in a 2:3 block and leant into a parallelogram, ///, so every colour is a
+   whole stripe. A skew leaves the layout box upright, so the margin keeps the lean clear of its neighbours. */
+.topbar__logo { display: block; width: 20px; aspect-ratio: 2 / 3; margin: 0 6px; background: var(--spectrum); transform: skewX(-20deg); }
 .topbar__user > summary { color: var(--paper); }
 .topbar__user-menu a, .topbar__user-menu .link-button { color: var(--ink); }
 .topbar__user-menu a:hover, .topbar__user-menu .link-button:hover { color: var(--signal); }
