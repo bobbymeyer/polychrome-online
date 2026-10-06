@@ -1,6 +1,6 @@
 <%# No headings: the control pressed on the strip (Scene, Check, Battle) is the title. What the GM called (Campaign::Controls), when it's a tool rather than a list of ways: the scenes to put on
-    the stage, the check form, or a battle to set up. Only the GM has these; a player's panel is empty. Replaced
-    live with the table's panels, so calling it puts it here for the GM on every screen. %>
+    the stage, the check form, or a battle to set up. Only the GM has these; a player's panel is empty. Refreshed
+    with the table, so calling it puts it here for the GM on every screen. %>
 <section id="table_called" class="window table-called" aria-label="What the GM called" <%= "hidden" unless gm && %w[scene check battle tools].include?(campaign.controls) %>>
   <% if gm && campaign.controls == "scene" %>
     <%# A live search over the scenes (filter_controller), then the list, played ones ticked. %>

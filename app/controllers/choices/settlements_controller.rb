@@ -8,7 +8,7 @@ class Choices::SettlementsController < ApplicationController
 
   def create
     @choice.settle!(params[:option])
-    head :no_content
+    redirect_back_or_to campaign_table_path(@campaign), status: :see_other
   rescue Refusal => e
     forbid(e.message)
   end

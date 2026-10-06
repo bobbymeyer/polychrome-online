@@ -513,8 +513,8 @@ under the frame.
 - **A whisper is done to a person.** The GM's "To" select is gone: beside each played character
   in the party panel is "Whisper", and the talk box then says "Whispering to Rook, and nobody
   else hears" with Everyone a press away. The whisper is one line; the next goes to everyone.
-- **You, on the left.** Your own row heads the party list, with "You" on it; the panel is
-  replaced live for everyone alike, so the row is marked again on each render (you_controller).
+- **You, on the left.** Your own row heads the party list, with "You" on it; the table is
+  refreshed in place as the game moves, so the row is marked again after each refresh (you_controller).
 - **A service is a row**: its name, under it its kind, keeper and what it does, and in the cost
   column what it offers and costs ("Rest the night · 75 yen", "Buy and sell", "Shut"). The inn,
   the temple and the guild link to the table, where they're done; the shop opens under the list;

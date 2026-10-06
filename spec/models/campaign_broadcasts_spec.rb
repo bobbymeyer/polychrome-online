@@ -12,10 +12,17 @@ RSpec.describe Campaign::Broadcasts do
     have_enqueued_job(Turbo::Streams::BroadcastStreamJob).with(stream(campaign, :pages), content: a_string_including("refresh")).at_least(:once)
   end
 
+  def refresh_the_table
+    have_broadcasted_to(stream(campaign, :table_refresh)).with(a_string_including('action="refresh"'))
+  end
+
+  def enqueue_a_table_refresh
+    have_enqueued_job(Turbo::Streams::BroadcastStreamJob).with(stream(campaign, :table_refresh), content: a_string_including("refresh"))
+  end
+
   it "refreshes the players' table when a secret comes out, and the log carries what it was" do
     secret = campaign.secrets.create!(body: "The king is a fake.")
-    expect { refreshing_the_table { secret.reveal! } }
-      .to have_broadcasted_to(stream(campaign, :players)).with(a_string_including("party_knows"))
+    expect { refreshing_the_table { secret.reveal! } }.to refresh_the_table
     expect(campaign.messages.last.body).to eq("The party learns: The king is a fake.")
   end
 
@@ -35,13 +42,15 @@ RSpec.describe Campaign::Broadcasts do
     expect { battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm") }.to refresh_pages
   end
 
-  it "renders the table's panels once for a burst of changes, from the models' own commits" do
+  it "refreshes the table once for a burst of changes, from the models' own commits" do
     node = campaign.map_nodes.create!(name: "Tule", kind: "town", x: 1, y: 1, visible: true)
     clear_enqueued_jobs
-    expect { campaign.update!(current_node: node) }.to have_enqueued_job(TableRefreshJob).with(campaign)
-    expect { campaign.update!(name: "Renamed") }.not_to have_enqueued_job(TableRefreshJob)
-    streams = capture_turbo_stream_broadcasts([ campaign, :players ]) { campaign.broadcast_table }
-    expect(streams.map { |s| s["target"] }).to match_array(Campaign::TABLE_PANELS.keys)
+    expect { campaign.update!(current_node: node) }.to enqueue_a_table_refresh
+    expect { campaign.update!(name: "Renamed") }.not_to enqueue_a_table_refresh
+    # One refresh, with nothing in it: each table fetches its own page, as its own seat.
+    streams = capture_turbo_stream_broadcasts([ campaign, :table_refresh ]) { perform_enqueued_jobs(only: Turbo::Streams::BroadcastStreamJob) }
+    expect(streams.map { |s| s["action"] }).to eq([ "refresh" ])
+    expect(streams.first.inner_html.strip).to be_empty
   end
 
   it "still refreshes the table when the campaign is saved again in the same transaction, after the change that matters" do
@@ -49,14 +58,14 @@ RSpec.describe Campaign::Broadcasts do
     campaign.update!(time_of_day: "night")
     clear_enqueued_jobs
     # A new day rolls the world on (Campaign#overnight!), saving the RNG state after the time: the time still reaches the table.
-    expect { campaign.pass_time!(1) }.to have_enqueued_job(TableRefreshJob).with(campaign)
+    expect { campaign.pass_time!(1) }.to enqueue_a_table_refresh
     expect(campaign.reload.day).to eq(2)
 
     clear_enqueued_jobs
     expect { campaign.transaction { campaign.update!(gil: campaign.gil + 10); campaign.update!(name: "Renamed") } }
-      .to have_enqueued_job(TableRefreshJob).with(campaign)
+      .to enqueue_a_table_refresh
     clear_enqueued_jobs
-    expect { campaign.transaction { campaign.update!(name: "Renamed again"); raise ActiveRecord::Rollback } }.not_to have_enqueued_job(TableRefreshJob)
-    expect { campaign.update!(name: "And again") }.not_to have_enqueued_job(TableRefreshJob)
+    expect { campaign.transaction { campaign.update!(name: "Renamed again"); raise ActiveRecord::Rollback } }.not_to enqueue_a_table_refresh
+    expect { campaign.update!(name: "And again") }.not_to enqueue_a_table_refresh
   end
 end

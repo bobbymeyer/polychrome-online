@@ -10,6 +10,8 @@ class Choices::PicksController < ApplicationController
 
     pick = @choice.picks.find_or_initialize_by(character: seat.character)
     pick.option = params[:option]
-    pick.save ? head(:no_content) : forbid(pick.errors.full_messages.to_sentence)
+    return forbid(pick.errors.full_messages.to_sentence) unless pick.save
+
+    redirect_back_or_to campaign_table_path(@campaign), status: :see_other
   end
 end

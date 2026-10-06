@@ -2,6 +2,8 @@
 <% content_for :head, music_meta(@campaign, @campaign.scene) %>
 <% content_for :head do %>
   <meta name="turbo-cache-control" content="no-cache">
+  <%# When something the table shows changes, the page fetches itself again and is morphed in place (Campaign::Broadcasts). %>
+  <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
 <% end %>
 
 <% view = coop_view %>
@@ -15,12 +17,13 @@
     card) and the party, what it knows. Middle, the Stage, and under it the Controls: the Now line, then what
     this seat can do (a player's moves; the GM's tools in their place). Right, the log. On a phone, one column:
     you, the stage, the controls, the party. %>
-<div id="table" class="table<%= " table--#{view}" if view %>" data-controller="dialogue recap moment whisper-toast<%= " heartbeat" if @seat.character? %>" <%= tag.attributes(data: { heartbeat_url_value: (campaign_presence_path(@campaign) if @seat.character?), whisper_toast_seat_value: @seat.character&.name }) %> <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive chat-line:arrived->whisper-toast#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
+<div id="table" class="table<%= " table--#{view}" if view %>" data-morph-keep="data-table-view" data-controller="dialogue recap moment whisper-toast<%= " heartbeat" if @seat.character? %>" <%= tag.attributes(data: { heartbeat_url_value: (campaign_presence_path(@campaign) if @seat.character?), whisper_toast_seat_value: @seat.character&.name }) %> <%= tag.attributes(data: { seat: (@seat.gm? ? "gm" : ("player" if @seat.character?)), seat_character: @seat.character&.id }) %> data-action="chat-line:arrived->dialogue#arrive chat-line:arrived->moment#arrive chat-line:arrived->whisper-toast#arrive turbo:before-stream-render@document->dialogue#streamed keydown@window->dialogue#key"
      data-recap-campaign-value="<%= @campaign.id %>" data-recap-auto-value="<%= @recap&.ended? || false %>" data-recap-asked-value="<%= params[:recap].present? %>">
   <%= render "campaigns/tables/recap", recap: @recap if @recap %>
   <%= render "campaigns/tables/cards" %>
   <%# Streams are signed per seat: whispers only reach the GM and the character involved. %>
   <%= seat_streams_from @seat, @campaign %>
+  <%= turbo_stream_from @campaign, :table_refresh %>
   <%= render "shared/stage_stream", campaign: @campaign %>
 
   <% if view == "stage" %>
@@ -39,8 +42,8 @@
         <%# Icons (RPG Awesome): a player for the party, the spawn point for the stage, speech bubbles for the log; the name is the title. %>
         <% { "party" => [ (@seat.character? ? "You & party" : "Party"), "ra-player" ], "stage" => [ "Stage", "ra-spawn-node" ], "log" => [ "Log", "ra-speech-bubbles" ] }.each do |key, (label, icon)| %>
           <%= tag.button type: "button", class: "table-views__tab", title: label, aria: { current: "false", label: label },
-                         data: { table_views_target: "tab", key: key, action: "table-views#pick" } do %>
-            <i class="ra <%= icon %>" aria-hidden="true"></i><% if key == "log" %> <span class="table-views__badge" data-table-views-target="badge" hidden></span><% end %>
+                         data: { table_views_target: "tab", key: key, action: "table-views#pick", morph_keep: "aria-current" } do %>
+            <i class="ra <%= icon %>" aria-hidden="true"></i><% if key == "log" %> <span class="table-views__badge" data-table-views-target="badge" data-morph-keep="hidden" hidden></span><% end %>
           <% end %>
         <% end %>
       </nav>
@@ -62,11 +65,11 @@
           <div class="drawers__tabs" role="group" aria-label="Look up">
             <% { "party" => "Party", "knows" => (@seat.gm? ? "What they know" : "What we know") }.each do |key, label| %>
               <%= tag.button label, type: "button", class: "drawers__tab drawers__tab--#{key}", aria: { expanded: false, controls: "drawer_#{key}" },
-                                    data: { drawers_target: "tab", key: key, action: "drawers#toggle" } %>
+                                    data: { drawers_target: "tab", key: key, action: "drawers#toggle", morph_keep: "aria-expanded" } %>
             <% end %>
           </div>
-          <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party"><%= render "campaigns/tables/party", campaign: @campaign, gm: @seat.gm?, you: @seat.character %></div>
-          <div id="drawer_knows" class="drawers__panel" hidden data-drawers-target="panel" data-key="knows"><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? %><%= render "campaigns/tables/limits", campaign: @campaign %></div>
+          <div id="drawer_party" class="drawers__panel" hidden data-drawers-target="panel" data-key="party" data-morph-keep="hidden"><%= render "campaigns/tables/party", campaign: @campaign, gm: @seat.gm?, you: @seat.character %></div>
+          <div id="drawer_knows" class="drawers__panel" hidden data-drawers-target="panel" data-key="knows" data-morph-keep="hidden"><%= render "campaigns/tables/party_knows", campaign: @campaign, gm: @seat.gm? %><%= render "campaigns/tables/limits", campaign: @campaign %></div>
         </div>
       <% end %>
     </aside>
@@ -110,13 +113,13 @@
             <%# The talk box: a player's always; the GM's only while they've called Talk (#table_now data-controls, stage.css). %>
             <div class="table-talk">
               <% if @seat.gm? %>
-                <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign), data: { home: campaign_composer_path(@campaign) } do %>
+                <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign), data: { home: campaign_composer_path(@campaign), turbo_permanent: true } do %>
                   <div class="window"><p class="muted">Loading…</p></div>
                 <% end %>
               <% else %>
                 <details class="talk">
                   <summary class="button button--quiet">Say something</summary>
-                  <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign), data: { home: campaign_composer_path(@campaign) } do %>
+                  <%= turbo_frame_tag "composer", src: campaign_composer_path(@campaign), data: { home: campaign_composer_path(@campaign), turbo_permanent: true } do %>
                     <div class="window"><p class="muted">Loading…</p></div>
                   <% end %>
                 </details>

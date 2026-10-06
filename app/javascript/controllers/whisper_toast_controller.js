@@ -21,6 +21,7 @@ export default class extends Controller {
     said.textContent = (li.querySelector(".chat-line__body") || li).textContent.trim()
     el.append(who, said)
     el.addEventListener("click", () => el.remove())
+    el.dataset.turboPermanent = "" // a refresh leaves it be (motion/keep)
     document.body.append(el)
     setTimeout(() => el.remove(), TOAST_MS)
   }

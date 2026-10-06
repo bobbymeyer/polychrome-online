@@ -9,6 +9,15 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["body", "speaker", "whisperTo", "chip", "whispering", "whisperName"]
 
+  connect() {
+    this.beat = this.stagedBeat
+  }
+
+  // Which beat is on the stage (campaigns/tables/_scene), if any.
+  get stagedBeat() {
+    return document.getElementById("table_scene")?.dataset.beat || ""
+  }
+
   key(event) {
     if (event.key !== "Enter" || event.shiftKey || event.isComposing || event.target !== this.bodyTarget) return
 
@@ -46,11 +55,12 @@ export default class extends Controller {
     this.bodyTarget.focus()
   }
 
-  // The stage's scene changed: with nothing typed, fetch the box again for the speaker it has now.
-  // From its home (data-home): after a line is sent the frame's src is the URL it was posted to,
-  // which can't be fetched.
-  staged(event) {
-    if (event.detail?.newStream?.target !== "table_scene") return
+  // The table refreshed (turbo:morph) and the stage's scene moved on: with nothing typed, fetch the
+  // box again for the speaker it has now. From its home (data-home): after a line is sent the
+  // frame's src is the URL it was posted to, which can't be fetched.
+  staged() {
+    if (this.stagedBeat === this.beat) return
+    this.beat = this.stagedBeat
     if (this.bodyTarget.value.trim()) return
     const frame = this.element.closest("turbo-frame")
     const home = frame?.dataset.home

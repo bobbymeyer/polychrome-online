@@ -50,6 +50,7 @@ export default class extends Controller {
         <span class="timing-meter__needle"></span>
       </div>
       <p class="timing-meter__result" aria-live="assertive"></p>`
+    overlay.dataset.turboPermanent = "" // a refresh leaves it be (motion/keep)
     document.body.append(overlay)
     const needle = overlay.querySelector(".timing-meter__needle")
     const started = performance.now()

@@ -2,19 +2,20 @@
 
 # Everything a campaign pushes to the pages open on it, in one place.
 #
-# The table and the map are live pages where people are typing and the
-# dialogue box is mid-line, so they get targeted streams: one element
-# replaced, rendered once for the GM and once for the players, so what's
-# hidden never reaches a player's browser (the :players and :gm streams;
-# Seat#streams says who listens on what).
+# Pages refresh: each viewer fetches their own page again, as their own
+# seat, and it's morphed in place, so what's hidden never reaches a player's
+# browser. Whoever made the change sees it through their own action, which
+# redirects back (or, for a line sent from the talk box, says to refresh). The table listens on [campaign, :table_refresh] (only the table:
+# a battle page hears [campaign, :table] too, and mustn't reload mid-fight);
+# what's alive on it, the dialogue box mid-line, the log, a half-typed line,
+# is kept through the morph (data-turbo-permanent). The documents (the
+# campaign page, prep, legends) listen on [campaign, :pages].
 #
-# Everything else is a document (the campaign page, prep, legends): it
-# listens on [campaign, :pages] and refreshes, each viewer fetching their
-# own page, morphed in place (CampaignPages).
+# Lines said, whispers and what only the GM is asked (the :table, :gm and
+# :whispers streams; Seat#streams says who listens on what) still arrive as
+# targeted streams: they're added to the log as they come.
 module Campaign::Broadcasts
   extend ActiveSupport::Concern
-
-  AUDIENCES = { false => :players, true => :gm }.freeze
 
   # What the table shows of the campaign itself: a change to any of these
   # renders its panels again.
@@ -45,32 +46,13 @@ module Campaign::Broadcasts
     changed
   end
 
-  # The table's live panels, each rendered once for the GM and once for the
-  # players: the party's HP, where next, what the GM called (scenes, a
-  # check), the time and where the party is, what
-  # the party knows, its lines and veils, a dungeon's floorplan while the
-  # party is in one, the stage's scene and map (players' without hidden
-  # places), the GM's music switch. Not the dialogue box, the log or the composer.
-  TABLE_PANELS = {
-    "table_party" => "campaigns/tables/party",
-    "table_ways" => "campaigns/tables/ways", "table_called" => "campaigns/tables/called", "table_time" => "campaigns/tables/time", "party_knows" => "campaigns/tables/party_knows",
-    "table_floorplan" => "campaigns/tables/floorplan", "table_now" => "campaigns/tables/now", "table_scene" => "campaigns/tables/scene",
-    "table_map" => "campaigns/tables/map", "table_limits" => "campaigns/tables/limits", "stage_music" => "campaigns/tables/music"
-  }.freeze
-
-  # Something the table shows changed: its panels render again, once for a
-  # burst of changes (debounced, like refresh_pages), in a job. The models
-  # that matter call this from their commits; callers never pick panels.
+  # Something the table shows changed: every table open on the campaign
+  # fetches itself again, once for a burst of changes (debounced). The
+  # browser whose request made the change already has it (the action
+  # redirects back to the table, morphed the same way), so this refresh
+  # carries that request's id and that browser lets it go.
   def table_changed
-    Turbo::ThreadDebouncer.for("campaign-table-#{id}").debounce { TableRefreshJob.perform_later(self) }
-  end
-
-  def broadcast_table
-    AUDIENCES.each do |gm, stream|
-      TABLE_PANELS.each do |target, partial|
-        broadcast_replace_to self, stream, target: target, partial: partial, locals: { campaign: self, gm: gm }
-      end
-    end
+    broadcast_refresh_later_to self, :table_refresh
   end
 
   # Every game page of the campaign changes track with the GM (stage.js);

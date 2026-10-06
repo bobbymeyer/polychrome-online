@@ -193,6 +193,40 @@ RSpec.describe "The live table", type: :system do
       expect(page).to have_css("#stage .dialogue", text: "Off with you")
     end
   end
+  it "refreshes in place: a line mid-way, the log, a card that's up, a view picked and the menu open all stay" do
+    marga = campaign.npcs.create!(name: "Old Marga")
+    seat(player, rook)
+    refresh = -> { campaign.table_changed; sleep 1 } # the table fetches itself again and is morphed (Campaign::Broadcasts)
+
+    as(player) do
+      page.driver.browser.manage.window.resize_to(1400, 1000)
+      page.execute_script("window.stillHere = true") # gone if the page were loaded again rather than morphed
+      width = -> { page.evaluate_script(%(document.querySelector("#stage").getBoundingClientRect().width)) }
+      fitted = width.()
+
+      campaign.messages.create!(body: "Hold on! #{"The bridge is out past the mill. " * 8}", speaker: marga)
+      expect(page).to have_css("#stage .dialogue .dialogue__body", text: /\AHold on!/)
+      drawer = -> { find(".log-drawer", visible: :all)[:class] }
+      expect(drawer.()).to include("is-docked") # a player's log is a column on a wide screen
+      page.execute_script(%(document.getElementById("card_arrival").showModal()))
+      refresh.()
+      expect(page.evaluate_script("window.stillHere")).to be(true)
+      expect(page).to have_css("#stage .dialogue .dialogue__body", text: /Hold on!/) # the box goes on with its line
+      expect(width.()).to eq(fitted) # the stage keeps its fitted size
+      expect(drawer.()).to include("is-docked")
+      expect(page.evaluate_script(%(document.getElementById("card_arrival").open))).to be(true)
+      page.execute_script(%(document.getElementById("card_arrival").close()))
+
+      # A phone: the view picked and the menu opened stay as they were.
+      page.driver.browser.manage.window.resize_to(390, 844)
+      find(".table-views__tab[title='Stage']").click
+      find(".topbar__toggle").click
+      refresh.()
+      expect(find("#table")["data-table-view"]).to eq("stage")
+      expect(page).to have_css(".topbar.is-open .topbar__menu", visible: true)
+    end
+  end
+
   it "is three views on a phone or a tablet: you and the party, the stage, the log, picked from a strip in the top bar" do
     marga = campaign.npcs.create!(name: "Old Marga")
     seat(player, rook)

@@ -3,7 +3,7 @@
     choice_panel_controller marks the pick that's the seat's own. %>
 <div id="table_choice" data-controller="choice-panel">
   <% if choice %>
-    <section class="window choice" aria-label="A choice for the party" data-choice-panel-target="panel" hidden>
+    <section class="window choice" aria-label="A choice for the party" data-choice-panel-target="panel" data-morph-keep="hidden" hidden>
       <h2>What will the party do?</h2>
       <p class="choice__hold">On hold until the battle is over.</p>
       <%# One option a row (pick_table_controller): a player's row presses their pick, the GM's row settles. %>

@@ -3,6 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "Choices for the table" do
+  include ActiveJob::TestHelper
   let(:campaign) { create_campaign }
   let!(:bartz) { create_character(campaign, name: "Bartz") }
   let!(:lenna) { create_character(campaign, name: "Lenna") }
@@ -20,8 +21,8 @@ RSpec.describe "Choices for the table" do
     expect(choice).not_to be_dialogue
     expect(campaign.open_choice).to eq(choice)
 
-    expect { choice.picks.create!(character: bartz, option: "Refuse") }
-      .to have_broadcasted_to(stream(campaign, :table)).with(a_string_including("table_choice", "Bartz"))
+    expect { refreshing_the_table { choice.picks.create!(character: bartz, option: "Refuse") } }
+      .to have_broadcasted_to(stream(campaign, :table_refresh)).with(a_string_including('action="refresh"'))
     choice.picks.find_by(character: bartz).update!(option: "Trust Cid")
     choice.picks.create!(character: lenna, option: "Trust Cid")
     expect(choice.tally).to eq("Trust Cid" => %w[Bartz Lenna], "Refuse" => [])

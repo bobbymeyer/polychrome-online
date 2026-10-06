@@ -11,10 +11,14 @@ export default class extends Controller {
   connect() {
     this.check()
     this.timer = setInterval(() => this.check(), 15000)
+    // A refresh by morphing puts the server's words back.
+    this.onMorph = () => this.check()
+    document.addEventListener("turbo:morph", this.onMorph)
   }
 
   disconnect() {
     clearInterval(this.timer)
+    document.removeEventListener("turbo:morph", this.onMorph)
   }
 
   whoTargetConnected() {

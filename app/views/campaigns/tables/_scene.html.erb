@@ -1,9 +1,10 @@
 <%# What's behind the party on the stage: while a scene is on it (Campaign#staged_scene), its beat (the
     backdrop and who stands there); else the place the party is in, as a picture (Location#picture: its
-    mode's, or its template's). Replaced live with the table's panels as the beats and the party move. %>
+    mode's, or its template's). Refreshed with the table as the beats and the party move; data-beat says which
+    beat is on, for the GM's talk box to follow (composer_controller). %>
 <% beat = campaign.staged_beat %>
 <% picture = campaign.current_node&.location&.picture unless beat || campaign.map_on_stage? %>
-<figure id="table_scene" class="table-scene<%= ' is-scene' if beat %>" <%= "hidden" unless beat || picture %>>
+<figure id="table_scene" class="table-scene<%= ' is-scene' if beat %>" data-beat="<%= beat&.id %>" <%= "hidden" unless beat || picture %>>
   <% if beat %>
     <%= render "campaigns/tables/beat_stage", beat: beat %>
   <% elsif picture %>

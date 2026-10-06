@@ -53,6 +53,7 @@ function show(queue) {
   el.querySelector(".check-moment__who").textContent = `${result.name} · ${result.skill || result.stat?.toUpperCase()} · ${result.difficulty}`
   el.querySelector(".check-moment__why").textContent = result.move || (result.reason ? `to ${result.reason}` : "")
   el.querySelector(".check-moment__odds").textContent = `needs ${result.needed} or over`
+  el.dataset.turboPermanent = "" // a refresh leaves it be (motion/keep)
   document.body.append(el)
 
   const number = el.querySelector(".check-moment__roll")

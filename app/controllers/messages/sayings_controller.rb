@@ -9,10 +9,7 @@ class Messages::SayingsController < ApplicationController
   def create
     @campaign.say_offer!(@note)
     @note.broadcast_replace_to(@campaign, :gm, partial: "messages/message", locals: { message: @note })
-    respond_to do |format|
-      format.turbo_stream { head :no_content }
-      format.html { redirect_back_or_to campaign_table_path(@campaign), status: :see_other }
-    end
+    redirect_back_or_to campaign_table_path(@campaign), status: :see_other
   end
 
   private

@@ -1,7 +1,7 @@
-<%# The party at a glance, on every view of the table but a phone controller (which shows its own). Replaced live
-    (Campaign#table_changed). A player's own row comes first, marked "You" (you: on the first render; you_controller
-    after each replace, since the panel is rendered for everyone alike). %>
-<% @world ||= campaign.world # broadcast (Campaign#broadcast_table): the world's words %>
+<%# The party at a glance, on every view of the table but a phone controller (which shows its own). Refreshed
+    with the table (Campaign#table_changed). A player's own row comes first, marked "You" (you: on the first render;
+    you_controller after each refresh). %>
+<% @world ||= campaign.world # the world's words %>
 <% you = local_assigns[:you] %>
 <section class="window coop-party" id="table_party" aria-label="The party" data-controller="here party-whisper you">
   <h2>Party</h2>

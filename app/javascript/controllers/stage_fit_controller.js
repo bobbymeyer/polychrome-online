@@ -15,7 +15,7 @@ export default class extends Controller {
     // changes the page's height too: the page is watched, and the frame measured again.
     this.observer = new ResizeObserver(this.fit)
     for (const el of [ document.body, document.querySelector(".topbar"), this.element.closest(".page"), this.element.parentElement ]) if (el) this.observer.observe(el)
-    // And anything put in or taken out of the page (a notice, a panel replaced live): measured again next frame.
+    // And anything put in or taken out of the page (a notice, a part of the table refreshed): measured again next frame.
     this.mutations = new MutationObserver(() => { cancelAnimationFrame(this.raf); this.raf = requestAnimationFrame(this.fit) })
     this.mutations.observe(document.body, { childList: true, subtree: true })
     this.measure()

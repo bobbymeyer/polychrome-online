@@ -1,6 +1,6 @@
 <%# The table stops for a moment (moment_controller): each card comes up when a line with its cue arrives,
-    filled from the line. Modal dialogs, so they come up over anything else open (the recap). %>
-<dialog class="awakening-stage" data-moment-cue="awakening" data-moment-hold="9500" data-moment-music="hold"
+    filled from the line. Kept whole through a refresh (data-turbo-permanent), so one that's up stays up. Modal dialogs, so they come up over anything else open (the recap). %>
+<dialog class="awakening-stage" id="card_awakening" data-turbo-permanent data-moment-cue="awakening" data-moment-hold="9500" data-moment-music="hold"
         data-action="click->moment#dismiss" aria-label="An awakening">
   <div class="awakening-wrap" data-moment-enter="pop">
   <%# Someone awakens: their face turns over, and their new archetype is on the other side. %>
@@ -19,7 +19,7 @@
   </div>
 </dialog>
 <%# The party arrives somewhere: its name across the table, the way a game names a place. %>
-<dialog class="arrival-stage" data-moment-cue="arrival" data-moment-hold="3400" data-action="click->moment#dismiss" aria-label="The party arrives">
+<dialog class="arrival-stage" id="card_arrival" data-turbo-permanent data-moment-cue="arrival" data-moment-hold="3400" data-action="click->moment#dismiss" aria-label="The party arrives">
   <div class="arrival-card">
     <p class="arrival-card__kind" data-moment-field="kind" data-moment-enter="slide"></p>
     <p class="arrival-card__place" data-moment-field="place" data-moment-enter="slam" data-moment-delay="120"></p>
@@ -27,7 +27,7 @@
     <p class="arrival-card__line" data-moment-field="line" data-moment-enter="slide" data-moment-delay="600"></p>
   </div>
 </dialog>
-<dialog class="deadline-stage" data-moment-cue="deadline" data-moment-hold="4200" data-action="click->moment#dismiss" aria-label="A deadline has passed">
+<dialog class="deadline-stage" id="card_deadline" data-turbo-permanent data-moment-cue="deadline" data-moment-hold="4200" data-action="click->moment#dismiss" aria-label="A deadline has passed">
   <div class="deadline-card">
     <p class="deadline-card__date" data-moment-field="date" data-moment-enter="drop"></p>
     <p class="deadline-card__line" data-moment-field="line" data-moment-enter="slam" data-moment-delay="220"></p>
@@ -35,7 +35,7 @@
   </div>
 </dialog>
 <%# A choice is settled (Message#settle!): what the party chose, across the table, as an arrival is named. %>
-<dialog class="arrival-stage" data-moment-cue="chosen" data-moment-hold="3400" data-action="click->moment#dismiss" aria-label="The party chose">
+<dialog class="arrival-stage" id="card_chosen" data-turbo-permanent data-moment-cue="chosen" data-moment-hold="3400" data-action="click->moment#dismiss" aria-label="The party chose">
   <div class="arrival-card">
     <p class="arrival-card__kind" data-moment-enter="slide">The party chose</p>
     <p class="arrival-card__place" data-moment-field="option" data-moment-enter="slam" data-moment-delay="120"></p>
