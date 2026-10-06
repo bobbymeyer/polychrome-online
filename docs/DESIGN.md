@@ -136,6 +136,14 @@ then the boss track starts.
 Nothing sounds until the viewer has clicked or pressed a key (browsers insist), and "Sound
 on/off" in the top bar mutes this device.
 
+## Icons
+
+RPG Awesome (Daniela Howe and Ivan Montiel; font under the SIL OFL 1.1, CSS under MIT), vendored in
+`app/assets` with its licence: a glyph font of game things, drawn as one-colour marks, so an icon reads
+at the size of a word and takes the text's colour. Used where a word would crowd: the table's three
+views in the top bar are a player (party), the spawn point (stage) and speech bubbles (log), each
+titled with its name for the pointer and the screen reader. An icon never stands where a word is clearer.
+
 ## Paper and type
 
 - White paper with black type. There is no dark theme, and no rounded corners. (The stage adds hard

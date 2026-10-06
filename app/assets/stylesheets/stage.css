@@ -1803,9 +1803,10 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   /* In the ink of the top bar, at its right end: grey names, the one shown on paper; no border. */
   .table-views { display: flex; justify-self: end; gap: 2px; }
   .table-views__tab {
-    flex: 0 1 auto; min-height: 28px; padding: 0 12px; border: 0; background: var(--ink); box-shadow: none; clip-path: none;
-    font: 800 13px/28px var(--font); letter-spacing: .02em; color: #bdbdbd; text-align: center; white-space: nowrap;
+    flex: 0 1 auto; min-height: 32px; min-width: 40px; padding: 0 10px; border: 0; background: var(--ink); box-shadow: none; clip-path: none;
+    font: 800 13px/32px var(--font); color: #bdbdbd; text-align: center; white-space: nowrap;
   }
+  .table-views__tab .ra { font-size: 20px; line-height: 32px; vertical-align: top; }
   .table-views__tab:hover { translate: none; color: var(--paper); background: var(--ink); }
   .table-views__tab[aria-current="page"] { color: var(--ink); background: var(--paper); }
   .table-views__badge { display: inline-block; min-width: 18px; padding: 0 4px; margin-left: 2px; background: var(--sun-yellow); color: var(--ink); font-size: 11px; line-height: 16px; text-align: center; }
