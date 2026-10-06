@@ -1,6 +1,6 @@
 <% state = @battle.state %>
 <% command = state["inputs"][unit["id"]] %>
-<div data-controller="menu timing-meter" data-action="submit->timing-meter#intercept" data-menu-primary-value="true" data-menu-autofocus-value="true" data-menu-you-value="<%= unit['id'] %>">
+<div data-controller="menu timing-meter battle-talk" data-action="submit->timing-meter#intercept" data-menu-primary-value="true" data-menu-autofocus-value="true" data-menu-you-value="<%= unit['id'] %>">
 <%# Your HP and MP are on the roster above (and in the party strip below on a phone): the head is your name and the clock. %>
 <div class="command-panel__head">
   <h2><%= unit["name"] %></h2>
@@ -155,7 +155,13 @@
         <td class="pick-row__cost"></td>
       </tr>
     <% end %>
-    <%# Talk, and let the fight run: the last row is Auto, its state in the cost column. Picking a command yourself takes you off it. %>
+    <%# Talk is an action here: the row opens the composer under the field (battle_talk_controller). %>
+    <tr class="pick-row">
+      <td class="pick-row__what"><button type="button" class="pick-row__act" data-action="battle-talk#open" data-menu-key="Talk" data-menu-forget="true"
+                                         data-help="Say something to the table, as <%= unit['name'] %>: a cry across the field. Your command stands.">Talk</button></td>
+      <td class="pick-row__cost"></td>
+    </tr>
+    <%# Let the fight run: the last row is Auto, its state in the cost column. Picking a command yourself takes you off it. %>
     <% on = @battle.auto?(unit["id"]) %>
     <% everyone = on && (@battle.party.select { |u| u["hp"].positive? }.map { |u| u["id"] } - @battle.auto_units).empty? %>
     <tr class="pick-row auto-row<%= ' is-on' if on %>">

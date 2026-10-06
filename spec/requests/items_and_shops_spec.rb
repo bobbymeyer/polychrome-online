@@ -25,7 +25,7 @@ RSpec.describe "Items and shops", type: :request do
 
       post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
       get battle_panel_path(battle)
-      expect(response.body).to include(">Item</a>", "<td class=\"pick-row__cost\">×7</td>")
+      expect(response.body).to include(">Item</a>", "<td class=\"pick-row__cost\">×7</td>", 'data-menu-key="Talk"') # talk is an action here
       get battle_panel_path(battle, items: 1)
       expect(response.body).to include("Potion", "Single ally · Restore HP, power 30 · 7 left")
       get battle_panel_path(battle, item: "potion")

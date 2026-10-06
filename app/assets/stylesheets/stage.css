@@ -1336,8 +1336,9 @@ body[data-view="controller"] .page { padding-top: 16px; }
 .battle-setup__more { margin: 0 0 12px; }
 .battle-setup .actions { margin-top: 0; }
 .table:has(#table_now[data-state="scene"]) #table_called { display: none; } /* the scene plays; the director's hand is on the stage's corner tag */
-/* The talk box, and the GM's whisper to someone, are Talk's: under any other control they're away (Campaign::Controls). */
-.table:has(#table_now:not([data-controls="talk"])) :is(.table-talk, .coop-party__whisper) { display: none; }
+/* The GM's talk box and whisper are Talk's: under any other control they're away (Campaign::Controls). A player's
+   box is always there: talking needs nobody's say-so (in a battle it's an action, on the battle page). */
+.table[data-seat="gm"]:has(#table_now:not([data-controls="talk"])) :is(.table-talk, .coop-party__whisper) { display: none; }
 
 /* ---------------------------------------------------------------------------
  * Motion with meaning (docs/DESIGN.md): motion only ever says one of four

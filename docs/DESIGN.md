@@ -559,9 +559,11 @@ under the frame.
   (the ways, the things to do, the scenes, the check, the battle setup) have no heading of their
   own: the pressed control is the title. A divergence from the slabs, kept to this one row.
 - **What the GM calls is the GM's moves.** The controls row on the Now line is the one switch:
-  Talk puts the talk box under the stage (the GM's composer, a player's "Say something", and the
-  GM's Whisper beside each character); under any other control it's away, so what's under the
-  stage is only what the moment is for. Travel and Things to do here put the ways there for
+  Talk puts the GM's talk box under the stage (their composer, and Whisper beside each character);
+  under any other control it's away, so what's under the stage is only what the moment is for. A
+  player's "Say something" is always there: talking needs nobody's say-so. Only a battle manages
+  it, where Talk is a row of the command menu that opens the composer under the field, so saying
+  something is one press like any command, and the command chosen stands. Travel and Things to do here put the ways there for
   everyone; Scene puts the scene list there and Check the check form, for the GM, in the same place a player's moves go,
   so there is one spot to look at whoever you are. There is no tab strip for these. What's left
   (Moves, and More: an archetype to grant, EXP and ABP to grant) is one more control on the

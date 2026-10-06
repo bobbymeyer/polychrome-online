@@ -36,6 +36,7 @@ RSpec.describe "Battle screen", type: :request do
     post campaign_table_seat_path(battle.campaign), params: { seat: "gm" }
     get battle_path(battle)
     expect(response.body).to include("battle-composer", campaign_composer_path(battle.campaign), 'data-retract="all"')
+    expect(response.body).not_to include('data-menu-key="Talk"') # the GM's panel has no commands
   end
 
   it "tells the GM how a fight is likely to go, as they set it up" do
@@ -346,7 +347,7 @@ RSpec.describe "Battle screen", type: :request do
       battle.update!(state: state)
 
       get battle_panel_path(battle)
-      expect(response.body).to include(%(data-controller="menu timing-meter"), %(data-menu-you-value="#{bartz}"), "Single enemy · Physical")
+      expect(response.body).to include(%(data-controller="menu timing-meter battle-talk"), %(data-menu-you-value="#{bartz}"), "Single enemy · Physical")
       expect(response.body).to match(/aria-disabled="true" data-help="Not enough MP[^"]*"[^>]*>Cure/)
 
       get battle_panel_path(battle, ability: "attack")
