@@ -23,7 +23,7 @@
       <button type="button" class="topbar__toggle" data-action="topbar#toggle" data-topbar-target="toggle" aria-expanded="false" aria-controls="topbar_menu" aria-label="Menu" title="Menu">
         <span class="topbar__burger" aria-hidden="true"></span>
       </button>
-      <%= link_to "Polychrome", root_path, class: "topbar__brand" %>
+      <%= link_to root_path, class: "topbar__brand", aria: { label: "Polychrome" }, title: "Polychrome" do %><span class="topbar__logo" aria-hidden="true"></span><% end %>
       <%# The table's three views, up to a tablet's width, at the bar's right end (campaigns/tables/show). %>
       <%= yield :table_views %>
       <div class="topbar__menu" id="topbar_menu">

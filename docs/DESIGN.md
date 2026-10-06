@@ -22,7 +22,8 @@ deliberate divergence from much of what follows, and where the two disagree the 
   italic, tracked tight. A page title carries a grey echo, offset 4px.
 - **Tabs.** A section's heading is a tab in the page's accent colour, hanging from its 3px rule.
 - **The masthead** is a thin black band fixed to the top of the screen, full bleed, with the
-  palette as a stripe under it: the brand small and heavy, the way around the game, and one
+  palette as a stripe under it: the brand a logo, that stripe stood up in a 2:3 block and leant
+  into a parallelogram, ///, the way around the game, and one
   item for you (your name; under it How to play, Sound, Accounts and Settings for an admin, and
   Sign out), or Sign in.
 - **Ground.** A halftone falls from the top right of every page and fills the enemies' side of the
