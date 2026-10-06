@@ -2,7 +2,7 @@
 
 # A battle's numbers, for the GM balancing it (Battle::Report): what each
 # unit dealt, took and used, round by round. The GM's, since it shows the
-# enemies' HP.
+# enemies' HP. As CSV, a table a file (BattleReportCsv).
 class Battles::ReportsController < ApplicationController
   include BattleSeat
 
@@ -12,5 +12,12 @@ class Battles::ReportsController < ApplicationController
     return forbid unless battle_gm?
 
     @report = @battle.report
+    respond_to do |format|
+      format.html
+      format.csv do
+        table = BattleReportCsv::BATTLE_TABLES.include?(params[:table]) ? params[:table] : BattleReportCsv::BATTLE_TABLES.first
+        send_data BattleReportCsv.battle(@report, @world, table: table), type: :csv, filename: "#{@battle.name.parameterize}-#{table}.csv"
+      end
+    end
   end
 end

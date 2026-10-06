@@ -46,9 +46,25 @@ RSpec.describe "Battle screen", type: :request do
     expect(bartz_row.text).to include("Attack ×1")
     expect(page.at(".battle-report__rounds tbody tr th").text).to eq("1")
 
+    # A table a file, for a spreadsheet.
+    expect(page.css(".battle-report__download a").map(&:text)).to eq(%w[Fighters Rounds Moves])
+    get battle_report_path(battle, format: :csv, table: "fighters")
+    expect(response.media_type).to eq("text/csv")
+    expect(response.headers["Content-Disposition"]).to include("test-battle-fighters.csv")
+    fighters = CSV.parse(response.body, headers: true)
+    expect(fighters.headers).to include("Side", "Who", "Kind", "Dealt", "HP left", "Used")
+    expect(fighters.find { |r| r["Who"] == "Bartz" }.to_h).to include("Side" => "Party", "Dealt" => report["units"].find { |r| r["id"] == bartz }["dealt"].to_s)
+    expect(fighters.find { |r| r["Who"] == "Goblin A" }["Kind"]).to eq("Goblin")
+    get battle_report_path(battle, format: :csv, table: "rounds")
+    expect(CSV.parse(response.body)).to eq([ [ "Round", "The party dealt", "The enemies dealt" ], *report["by_round"].map { |r| r.values_at("round", "party", "enemy").map(&:to_s) } ])
+    get battle_report_path(battle, format: :csv, table: "nonsense")
+    expect(CSV.parse(response.body).first.first).to eq("Side") # the fighters, for a table it doesn't know
+
     sign_in_as(make_user("Player"))
     get battle_report_path(battle)
     expect(response).to redirect_to(root_path)
+    get battle_report_path(battle, format: :csv)
+    expect(response).to have_http_status(:forbidden)
   end
 
   it "puts the campaign's battles together for the GM, from Prep" do
@@ -68,6 +84,16 @@ RSpec.describe "Battle screen", type: :request do
     goblins = page.css(".battle-report__side").last.css("tbody tr").find { |tr| tr.at("th").text == "Goblin" }
     expect(goblins.css("td").first(2).map(&:text)).to eq(%w[2 3]) # in both battles, three of them faced
     expect(page.at(".battle-report__moves tbody").text).to include("Attack")
+
+    get campaign_battle_report_path(campaign, format: :csv)
+    expect(response.headers["Content-Disposition"]).to include("#{campaign.name.parameterize}-battles.csv")
+    battles = CSV.parse(response.body, headers: true)
+    expect(battles.map { |r| r["Result"] }).to eq([ "Under way", "Under way" ])
+    expect(battles.to_a.last.last).to eq("2 × Goblin")
+    get campaign_battle_report_path(campaign, format: :csv, table: "fighters")
+    expect(CSV.parse(response.body, headers: true).find { |r| r["Who"] == "Goblin" }.to_h).to include("Side" => "Enemy", "Battles" => "2", "Faced" => "3")
+    get campaign_battle_report_path(campaign, format: :csv, table: "moves")
+    expect(CSV.parse(response.body, headers: true).map { |r| r["Move"] }).to include("Attack")
 
     sign_in_as(make_user("Player"))
     get campaign_battle_report_path(campaign)
