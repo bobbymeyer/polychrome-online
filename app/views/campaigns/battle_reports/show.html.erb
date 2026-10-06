@@ -1,0 +1,103 @@
+<% content_for :title, "#{@campaign.name} · Battle report" %>
+<%# Every battle the campaign has fought, its numbers together, for the GM balancing the game (Battle::Report.across):
+    each fight in a line, then each kind of fighter and each move over every battle it was in. Plain tables, so they
+    paste into a spreadsheet as they are; each battle's own report has the rest. %>
+<% hp, mp = @world.word("hp"), @world.word("mp") %>
+<% sides = { "party" => "The party", "enemy" => "The enemies" } %>
+<% battles = @across["battles"] %>
+<div class="battle-report">
+  <p class="crumbs"><%= link_to @campaign.name, campaign_path(@campaign) %> · <%= link_to "Prep", campaign_prep_path(@campaign) %> · Battle report</p>
+  <h1>Battle report</h1>
+
+  <% if battles.empty? %>
+    <p class="empty">No battles yet. Each one fought shows here, with its numbers.</p>
+  <% else %>
+    <p>
+      <%= pluralize(battles.size, "battle") %>:
+      <%= @across["results"].map { |result, count| "#{count} #{result == "input" ? "still being fought" : result.humanize.downcase}" }.to_sentence %>.
+      What landed counts: damage past a unit's last <%= hp %> and healing past its full <%= hp %> don't.
+    </p>
+
+    <section class="battle-report__battles">
+      <h2>Battles</h2>
+      <table class="book-table book-table--plain">
+        <thead>
+          <tr>
+            <th>Battle</th><th>Fought</th><th>Result</th><th class="num">Rounds</th><th class="num">Party dealt</th>
+            <th class="num">Party took</th><th class="num">Party healed</th><th class="num">Party down</th><th>Against</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% battles.each do |battle| %>
+            <tr>
+              <th scope="row"><%= link_to battle["name"], battle_report_path(battle["id"]) %><%= " (boss)" if battle["boss"] %></th>
+              <td><%= l(battle["fought_on"], format: :short) %></td>
+              <td><%= battle["result"] == "input" ? "Under way" : battle["result"].humanize %></td>
+              <td class="num"><%= battle["rounds"] %></td>
+              <td class="num"><%= battle["party_dealt"] %></td>
+              <td class="num"><%= battle["party_taken"] %></td>
+              <td class="num"><%= battle["party_healed"] %></td>
+              <td class="num"><%= battle["party_downed"] %></td>
+              <td><%= battle["foes"].map { |name, count| count > 1 ? "#{count} × #{name}" : name }.join(", ") %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+
+    <% sides.each do |side, title| %>
+      <% fighters = @across["fighters"].select { |fighter| fighter["side"] == side } %>
+      <% next if fighters.empty? %>
+      <section class="battle-report__side">
+        <h2><%= title %>, over every battle</h2>
+        <table class="book-table book-table--plain">
+          <thead>
+            <tr>
+              <th>Who</th><th class="num">Battles</th><% if side == "enemy" %><th class="num">Faced</th><% end %>
+              <th class="num">Dealt</th><th class="num">A battle</th><th class="num">An action</th><th class="num">Taken</th>
+              <th class="num">Healed</th><th class="num">KOs</th><th class="num">Went down</th><th class="num">Actions</th>
+              <th class="num">Misses</th><th class="num">Crits</th><th class="num"><%= mp %> spent</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% fighters.each do |fighter| %>
+              <tr>
+                <th scope="row"><%= fighter["name"] %></th>
+                <td class="num"><%= fighter["battles"] %></td>
+                <% if side == "enemy" %><td class="num"><%= fighter["units"] %></td><% end %>
+                <td class="num"><%= fighter["dealt"] %></td>
+                <td class="num"><%= fighter["dealt_per_battle"] || "—" %></td>
+                <td class="num"><%= fighter["dealt_per_action"] || "—" %></td>
+                <% %w[taken healed kos downed actions misses crits mp_spent].each do |key| %>
+                  <td class="num"><%= fighter[key] %></td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </section>
+    <% end %>
+
+    <% sides.each do |side, title| %>
+      <% moves = @across["moves"].select { |move| move["side"] == side } %>
+      <% next if moves.empty? %>
+      <section class="battle-report__moves">
+        <h2><%= side == "party" ? "The party's moves" : "The enemies' moves" %></h2>
+        <table class="book-table book-table--plain">
+          <thead><tr><th>Move</th><th class="num">Uses</th><th class="num">Dealt</th><th class="num">A use</th><th class="num">Healed</th></tr></thead>
+          <tbody>
+            <% moves.each do |move| %>
+              <tr>
+                <th scope="row"><%= move["name"] %></th>
+                <td class="num"><%= move["uses"] %></td>
+                <td class="num"><%= move["dealt"] %></td>
+                <td class="num"><%= move["dealt_per_use"] || "—" %></td>
+                <td class="num"><%= move["healed"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </section>
+    <% end %>
+  <% end %>
+</div>

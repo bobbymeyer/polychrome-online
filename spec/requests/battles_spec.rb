@@ -51,6 +51,29 @@ RSpec.describe "Battle screen", type: :request do
     expect(response).to redirect_to(root_path)
   end
 
+  it "puts the campaign's battles together for the GM, from Prep" do
+    goblin = battle.state["units"].find { |u| u["side"] == "enemy" }["id"]
+    battle.apply!({ "type" => "command", "actor" => bartz, "command" => { "kind" => "ability", "ability" => "attack", "target" => goblin } }, actor: "gm")
+    battle.apply!({ "type" => "command", "actor" => faris, "command" => { "kind" => "ability", "ability" => "attack", "target" => goblin } }, actor: "gm")
+    campaign = battle.campaign
+    second = start_battle(campaign: campaign, goblins: 1)
+
+    get campaign_prep_path(campaign)
+    expect(page.at("a[href='#{campaign_battle_report_path(campaign)}']").text).to eq("Battle report")
+    get campaign_battle_report_path(campaign)
+    expect(response).to have_http_status(:ok)
+    rows = page.css(".battle-report__battles tbody tr")
+    expect(rows.map { |tr| tr.at("th a")[:href] }).to eq([ battle_report_path(second), battle_report_path(battle) ]) # newest first
+    expect(rows.last.text).to include("2 × Goblin")
+    goblins = page.css(".battle-report__side").last.css("tbody tr").find { |tr| tr.at("th").text == "Goblin" }
+    expect(goblins.css("td").first(2).map(&:text)).to eq(%w[2 3]) # in both battles, three of them faced
+    expect(page.at(".battle-report__moves tbody").text).to include("Attack")
+
+    sign_in_as(make_user("Player"))
+    get campaign_battle_report_path(campaign)
+    expect(response).to redirect_to(root_path)
+  end
+
   it "lets the seated speak from the battle, and takes back lines there too" do
     sit(battle.campaign, "gm")
     get battle_path(battle)
