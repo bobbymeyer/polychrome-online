@@ -8,7 +8,8 @@ module Battle
   # What lands counts, not what was rolled: damage past a unit's last HP
   # (overkill) and healing past its full HP don't, so the totals are what
   # the fight cost each side. Damage a status deals (poison, doom) is the
-  # status's, not anyone's.
+  # status's, not anyone's; so is healing no move did (a regen passive, an
+  # element a unit absorbs, which heals it, not whoever cast it).
   #
   #   Battle::Report.build(initial_state, events, final_state)
   #   # => { "result" => "victory", "rounds" => 5 (played), "turns" => 16,
@@ -18,7 +19,8 @@ module Battle
   #   #                     "mp_spent", "hp", "max_hp" } ],
   #   #      "moves" => [ { "side", "name", "uses", "dealt", "healed" } ],
   #   #      "by_round" => [ { "round" => 1, "party" => 24, "enemy" => 16 } ],
-  #   #      "by_status" => { "poison" => 9 }, "sides" => { "party" => {...}, "enemy" => {...} } }
+  #   #      "by_status" => { "poison" => 9 }, "healed_by" => { "regen" => 12, "absorbed" => 20 },
+  #   #      "sides" => { "party" => {...}, "enemy" => {...} } }
   module Report
     # What a side's rows add up to.
     TOTALS = %w[dealt taken healed kos downed actions misses crits mp_spent].freeze
@@ -35,6 +37,7 @@ module Battle
       side = units.to_h { |unit| [ unit["id"], unit["side"] ] }
       by_round = Hash.new { |rounds, round| rounds[round] = { "round" => round, "party" => 0, "enemy" => 0 } }
       by_status = Hash.new(0)
+      healed_by = Hash.new(0)
       round = initial_state["round"] || 1
       actor = nil
       turns = 0
@@ -92,11 +95,13 @@ module Battle
           landed = event["hp"] - hp.fetch(target, event["hp"])
           hp[target] = event["hp"]
           source = event["actor"] || actor
-          if rows[source] && landed.positive?
+          if event["regen"] || event["absorbed"]
+            healed_by[event["regen"] ? "regen" : "absorbed"] += landed if landed.positive?
+          elsif rows[source] && landed.positive?
             rows[source]["healed"] += landed
             moves[[ side[source], using[source] ]]["healed"] += landed if using[source]
           end
-        when "revive"
+        when "revive", "second_wind"
           hp[event["target"]] = event["hp"] if event.key?("hp")
         when "ko"
           killer = last_hit[event["target"]]
@@ -125,6 +130,7 @@ module Battle
         "units" => units,
         "by_round" => by_round.values.sort_by { |r| r["round"] },
         "by_status" => by_status,
+        "healed_by" => healed_by,
         "moves" => moves.values.sort_by { |move| [ move["side"] == "party" ? 0 : 1, -move["uses"], move["name"].to_s ] },
         "sides" => %w[party enemy].to_h { |name| [ name, totals(units.select { |row| row["side"] == name }) ] }
       }

@@ -63,6 +63,9 @@
         <% end %>
       </tbody>
     </table>
+    <% if @report["healed_by"]&.any? %>
+      <p>Healing no move did: <%= @report["healed_by"].map { |how, amount| "#{how == "regen" ? "regen" : "elements absorbed"} #{amount}" }.to_sentence %>.</p>
+    <% end %>
     <% if @report["by_status"].any? %>
       <p>From statuses, not anyone's hand: <%= @report["by_status"].map { |status, amount| "#{@world.word("status.#{status}")} #{amount}" }.to_sentence %>.</p>
     <% end %>

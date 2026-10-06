@@ -125,6 +125,48 @@ RSpec.describe Battle::Report do
     end
   end
 
+  describe "healing nobody's move did, and getting back up" do
+    let(:initial) do
+      { "round" => 1, "abilities" => { "fire" => { "id" => "fire", "name" => "Fire" } },
+        "units" => [ unit("rosa", "Rosa", "party", 50, 100), unit("vivi", "Vivi", "party", 30, 30), unit("bomb", "Bomb", "enemy", 40, 60) ] }
+    end
+    let(:events) do
+      [
+        { "type" => "round_start", "round" => 1 },
+        { "type" => "turn_start", "unit" => "vivi" },
+        { "type" => "cast", "actor" => "vivi", "ability" => "fire", "targets" => [ "bomb" ], "mp_cost" => 4 },
+        { "type" => "heal", "target" => "bomb", "amount" => 30, "hp" => 60, "actor" => "vivi", "absorbed" => true }, # the bomb drinks it: 20 lands
+        { "type" => "turn_end", "unit" => "vivi" },
+        { "type" => "turn_start", "unit" => "rosa" },
+        { "type" => "attack", "actor" => "rosa", "ability" => "attack", "targets" => [ "bomb" ], "mp_cost" => 0 },
+        { "type" => "damage", "target" => "bomb", "amount" => 5, "hp" => 55, "actor" => "rosa" },
+        { "type" => "heal", "target" => "rosa", "amount" => 10, "hp" => 60, "regen" => true }, # her passive, at her turn's end
+        { "type" => "turn_end", "unit" => "rosa" },
+        { "type" => "turn_start", "unit" => "bomb" },
+        { "type" => "attack", "actor" => "bomb", "ability" => "attack", "targets" => [ "vivi" ], "mp_cost" => 0 },
+        { "type" => "damage", "target" => "vivi", "amount" => 40, "hp" => 0, "actor" => "bomb" },
+        { "type" => "second_wind", "target" => "vivi", "hp" => 15 }, # back up, once
+        { "type" => "turn_end", "unit" => "bomb" },
+        { "type" => "turn_start", "unit" => "bomb" },
+        { "type" => "attack", "actor" => "bomb", "ability" => "attack", "targets" => [ "vivi" ], "mp_cost" => 0 },
+        { "type" => "damage", "target" => "vivi", "amount" => 8, "hp" => 7, "actor" => "bomb" },
+        { "type" => "turn_end", "unit" => "bomb" }
+      ]
+    end
+    let(:report) { described_class.build(initial, events, initial.merge("status" => "input")) }
+
+    it "keeps regen and an absorbed element apart from anyone's healing" do
+      expect(report["healed_by"]).to eq("regen" => 10, "absorbed" => 20)
+      expect(report["units"].sum { |r| r["healed"] }).to eq(0)
+      expect(report["moves"].sum { |m| m["healed"] }).to eq(0)
+    end
+
+    it "follows a unit back up, so what it takes after counts" do
+      expect(row(report, "vivi")["taken"]).to eq(30 + 8) # all 30 it had, then 8 of its second wind
+      expect(row(report, "bomb")["dealt"]).to eq(38)
+    end
+  end
+
   describe "from battles the resolver plays out" do
     def play_out(seed)
       state = build_battle(seed: seed)
