@@ -144,15 +144,9 @@ a.play:hover { color: var(--signal-dark); }
 /* The links sit in the grid as if the menu weren't there; on a phone they fold behind it. */
 .topbar__menu { display: contents; }
 .topbar__toggle { display: none; }
-/* The hamburger: three bars of the bar's own colour; an open menu crosses them. */
-.topbar__burger, .topbar__burger::before, .topbar__burger::after { display: block; width: 20px; height: 2px; background: currentColor; transition: transform var(--quick, .15s), opacity var(--quick, .15s); }
-.topbar__burger { position: relative; }
-.topbar__burger::before, .topbar__burger::after { content: ""; position: absolute; left: 0; }
-.topbar__burger::before { top: -6px; }
-.topbar__burger::after { top: 6px; }
-.topbar.is-open .topbar__burger { background: transparent; }
-.topbar.is-open .topbar__burger::before { transform: translateY(6px) rotate(45deg); }
-.topbar.is-open .topbar__burger::after { transform: translateY(-6px) rotate(-45deg); }
+/* The menu is the trigram ☰ in the bar's own colour; an open menu turns it a quarter. */
+.topbar__trigram { display: block; font-size: 22px; line-height: 1; transition: transform var(--quick, .15s); }
+.topbar.is-open .topbar__trigram { transform: rotate(90deg); }
 
 .page { max-width: var(--measure); margin: 0 auto; padding: 40px var(--gutter) 96px; }
 @media (max-width: 640px) {

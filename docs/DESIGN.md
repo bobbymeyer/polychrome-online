@@ -841,9 +841,9 @@ Phones are where most players are, so every page is checked at 390×844, 360×64
   the bar folds its links behind Menu as a phone's does, to make room. The log's tab goes away
   on this page: the log is the third view, in the page, and the count of lines you haven't seen
   sits on its name in the strip. The view you were on is kept for the session.
-- **Menu is a hamburger**, before the wordmark, wherever the links fold (a phone, and the table up to
-  a tablet's width); the table's three views sit at the bar's right end, plain names with no border,
-  the one shown on paper.
+- **Menu is the trigram ☰**, before the wordmark, turned a quarter while open, wherever the links
+  fold (a phone, and the table up to a tablet's width); the table's three views sit at the bar's
+  right end, plain names with no border, the one shown on paper.
 - **A sheet is its player's and the GM's.** Nobody else opens a character's sheet (gear, items,
   archetypes and all): on the campaign page their card is a card, not a link, and the table's party
   panel names them. The GM opens every sheet.
