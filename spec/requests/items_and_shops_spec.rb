@@ -16,18 +16,18 @@ RSpec.describe "Items and shops", type: :request do
       bartz.add_item!(potion, 1)
       faris.add_item!(potion, 1) # what each carries goes in together
       bartz.add_item!(world.items.find_by!(slug: "broadsword")) # gear never comes into battle
-      campaign.add_item!(potion, 5) # the chest stays behind
+      campaign.add_item!(potion, 5) # the chest comes too, flattened in with the bags
     end
 
-    it "brings what the party carries, offers it as a command, and takes used ones out of their bags after" do
+    it "brings everything the party has, bags and chest as one count, offers it as a command, and takes used ones out of their bags first" do
       battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 3 }, seed: 3)
       expect(battle.state["items"].keys).to eq([ "potion" ])
 
       post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
       get battle_panel_path(battle)
-      expect(response.body).to include(">Item</a>", "<td class=\"pick-row__cost\">×2</td>")
+      expect(response.body).to include(">Item</a>", "<td class=\"pick-row__cost\">×7</td>")
       get battle_panel_path(battle, items: 1)
-      expect(response.body).to include("Potion", "Single ally · Restore HP, power 30 · 2 left")
+      expect(response.body).to include("Potion", "Single ally · Restore HP, power 30 · 7 left")
       get battle_panel_path(battle, item: "potion")
       expect(response.body).to include("<strong>Potion</strong>: choose a target.")
 
@@ -38,7 +38,7 @@ RSpec.describe "Items and shops", type: :request do
 
       post battle_seat_path(battle), params: { seat: "gm" }
       post battle_actions_path(battle), params: { gm: { op: "execute_round" } }
-      expect(battle.reload.state["items"]["potion"]["count"]).to eq(1)
+      expect(battle.reload.state["items"]["potion"]["count"]).to eq(6)
       expect(battle.battle_events.map(&:payload)).to include(a_hash_including("type" => "item_used", "item" => "potion"))
 
       post battle_actions_path(battle), params: { gm: { op: "end_battle", result: "fled" } }
@@ -47,8 +47,8 @@ RSpec.describe "Items and shops", type: :request do
       expect(campaign.messages.last.body).to include("Used 1 × Potion.")
     end
 
-    it "leaves the Item command out when the party carries nothing usable" do
-      campaign.use_items!(potion, 2) # out of their bags, not the chest
+    it "leaves the Item command out when the party has nothing usable" do
+      campaign.use_items!(potion, 7) # their bags first, then the chest
       battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 1 }, seed: 3)
       post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
       get battle_panel_path(battle)

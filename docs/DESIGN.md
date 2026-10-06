@@ -841,11 +841,11 @@ Phones are where most players are, so every page is checked at 390×844, 360×64
 - **Items are each adventurer's own, and the party has a chest.** What a character carries is in
   their own bag: it goes into battle with them, is what they wear from, use outside battle and sell
   at a shop; what they buy goes into their bag. The chest is the party's: what's found, dropped or
-  stolen goes into it, it stays behind in a fight, and anyone takes from it or puts into it from
+  stolen goes into it, and anyone takes from it or puts into it from
   their sheet's Gear tab, which shows their bag beside the chest. Leaving the party leaves gear and
   bag in the chest. A wish or a "give" takes from the chest first, then from whoever carries it.
-  In battle, what the members carry is pooled for the Item command (the engine shares the party's
-  items), and used ones come out of their bags in turn, oldest member first.
+  In battle everything the party has, bags and chest, is one flat count for the Item command (the
+  engine shares the party's items); used ones come out of their own bags first, then the chest.
 - **A scene's music step can name a track**: the Music book's tracks called by name, a YouTube or
   Spotify link among them, sit in the step's select after the kinds of scene, as on the stage's switch.
 - **The log reads newest first.** A new line lands on top, and opening the log shows the top, so

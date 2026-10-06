@@ -40,7 +40,7 @@
         <table class="book-table book-table--plain shop-table">
           <tbody>
             <% chest.each do |row| %>
-              <tr data-help="Shared: anyone takes from the chest, and what's in it stays behind in a fight.">
+              <tr data-help="Shared: anyone takes from the chest, and in a fight it's in the party's Item menu with everyone's bags.">
                 <td><%= row.item.name %> <span class="muted">×<%= row.quantity %></span> <span class="muted"><%= term(row.item.category).downcase %></span></td>
                 <td class="shop-table__buy">
                   <% if manage %>

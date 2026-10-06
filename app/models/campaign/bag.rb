@@ -67,12 +67,12 @@ module Campaign::Bag
     raise Refusal, e.message
   end
 
-  # The consumables a battle can use, as the engine wants them: what the
-  # party members carry between them (the chest stays behind).
+  # The consumables a battle can use, as the engine wants them: everything
+  # the party has, the chest and every bag, flattened into one count each.
   def battle_items
     counts = Hash.new(0)
     items = {}
-    inventories.includes(:item).where.not(character_id: nil).where("quantity > 0").each do |row|
+    inventories.includes(:item).where("quantity > 0").each do |row|
       next unless row.item.consumable? && row.item.effects.any?
 
       counts[row.item.slug] += row.quantity
@@ -82,7 +82,7 @@ module Campaign::Bag
   end
 
   # Take up to n out of the party's bags, whoever carries it first, then the
-  # chest (a battle's used items, BattleRecord::Settlement).
+  # chest (a battle's used items, BattleRecord::Settlement): their own before the shared.
   def use_items!(item, n)
     (characters.order(:created_at).to_a + [ self ]).each do |holder|
       break unless n.positive?
