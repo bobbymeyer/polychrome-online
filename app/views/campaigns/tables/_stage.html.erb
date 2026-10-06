@@ -2,9 +2,9 @@
     same for everyone, where the game is shown: the scene on it (a beat's backdrop and figures), else the
     place the party is in when it has a picture, or the map when the GM puts it there (a player can browse
     other maps in it alone); the date and the part of the day in its corner; where the party is in the other, the GM's music switch under it; and
-    what's being said along its bottom. Nothing else is on it. Each part is replaced live (Campaign::Broadcasts), so every screen shows the same
+    what's being said along its bottom. Nothing else is on it. It's refreshed with the table (Campaign::Broadcasts), so every screen shows the same
     stage; a battle plays on the same frame, on its own page. %>
-<section class="stage stage--table" id="stage" aria-label="Stage" data-controller="stage-fit" data-stage-fit-below-value="<%= local_assigns.fetch(:caption, true) ? 160 : 0 %>">
+<section class="stage stage--table" id="stage" aria-label="Stage" data-morph-keep="style" data-controller="stage-fit" data-stage-fit-below-value="<%= local_assigns.fetch(:caption, true) ? 160 : 0 %>">
   <div class="stage__frame">
     <%= render "campaigns/tables/scene", campaign: campaign %>
     <%= render "campaigns/tables/map", campaign: campaign, gm: gm %>

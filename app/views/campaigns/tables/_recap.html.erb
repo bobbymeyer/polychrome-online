@@ -1,6 +1,6 @@
 <%# "Previously on…" (Recap): shown by itself when someone comes back to the table after a
     break, and any time from the link under the title. %>
-<dialog class="recap" data-recap-target="dialog" aria-labelledby="recap_title">
+<dialog class="recap" id="recap" data-turbo-permanent data-recap-target="dialog" aria-labelledby="recap_title">
   <p class="eyebrow">Last session · <time datetime="<%= recap.ended_at.iso8601 %>"><%= recap.ended_on || recap.ended_at.strftime("%-d %B") %></time></p>
   <h2 id="recap_title">Previously on <%= recap.campaign.name %>…</h2>
 

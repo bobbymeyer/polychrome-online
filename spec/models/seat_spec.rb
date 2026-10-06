@@ -9,10 +9,10 @@ RSpec.describe Seat do
 
   def line(**attrs) = campaign.messages.create!(body: "Hello.", **attrs)
 
-  it "listens on the table, its audience's copy, and its own whispers" do
+  it "listens on the table, the GM on its own stream, and a character on its whispers" do
     expect(described_class.gm.streams(campaign)).to eq([ [ campaign, :table ], [ campaign, :gm ] ])
-    expect(described_class.of(bartz).streams(campaign)).to eq([ [ campaign, :table ], [ campaign, :players ], [ bartz, :whispers ] ])
-    expect(described_class.nobody.streams(campaign)).to eq([ [ campaign, :table ], [ campaign, :players ] ])
+    expect(described_class.of(bartz).streams(campaign)).to eq([ [ campaign, :table ], [ bartz, :whispers ] ])
+    expect(described_class.nobody.streams(campaign)).to eq([ [ campaign, :table ] ])
   end
 
   it "lets the GM take back any line said, a player only their own, and nobody what the game logged" do

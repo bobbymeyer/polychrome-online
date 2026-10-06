@@ -1,9 +1,9 @@
 <%# The dialogue box (§7): GM and NPC lines, typed out beside the speaker's portrait, a page at a time
     when they don't fit. At the table it shows the last line said; in battle it starts empty and appears
     when someone speaks. The × puts it away until the next line, on this browser even across a reload (it
-    carries its campaign and the last line's id to know which). %>
+    carries its campaign and the last line's id to know which). A refresh leaves it as it is (data-turbo-permanent). %>
 <% last = local_assigns[:last_dialogue] %>
-<section class="<%= [ "dialogue window", local_assigns[:extra], ("is-narration" if last && !last.speaker) ].compact.join(" ") %>" data-dialogue-target="box" data-action="click->dialogue#advance"
+<section id="dialogue_box" data-turbo-permanent class="<%= [ "dialogue window", local_assigns[:extra], ("is-narration" if last && !last.speaker) ].compact.join(" ") %>" data-dialogue-target="box" data-action="click->dialogue#advance"
          <%= tag.attributes(data: { dialogue_campaign: local_assigns[:campaign]&.id, dialogue_last_id: last&.id }) %>
          aria-label="Dialogue" <%= "hidden" unless last %>>
   <div class="dialogue__portrait" data-dialogue-target="portrait">

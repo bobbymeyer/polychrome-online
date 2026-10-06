@@ -18,9 +18,9 @@
   <% body_classes = [ ("has-table-views" if content_for?(:table_views)), ("has-log-drawer" if content_for?(:log_drawer)) ].compact %>
   <% game_page = { "campaigns/tables" => "table", "battles" => "battle" }[controller_path] if action_name == "show" %>
   <body data-book="<%= current_book %>" class="<%= body_classes.join(" ") %>" style="<%= accent_style %>" <%= tag.attributes(data: { view: coop_view(@campaign || @battle&.campaign), page: game_page }) %>>
-    <header class="topbar" data-controller="topbar" data-action="click@window->topbar#outside keydown@window->topbar#escape">
+    <header class="topbar" data-morph-keep="class" data-controller="topbar" data-action="click@window->topbar#outside keydown@window->topbar#escape">
       <%# On a phone (and the table page up to a tablet's width) the links fold behind one button: a hamburger, before the wordmark. %>
-      <button type="button" class="topbar__toggle" data-action="topbar#toggle" data-topbar-target="toggle" aria-expanded="false" aria-controls="topbar_menu" aria-label="Menu" title="Menu">
+      <button type="button" class="topbar__toggle" data-action="topbar#toggle" data-topbar-target="toggle" data-morph-keep="aria-expanded" aria-expanded="false" aria-controls="topbar_menu" aria-label="Menu" title="Menu">
         <span class="topbar__burger" aria-hidden="true"></span>
       </button>
       <%= link_to root_path, class: "topbar__brand", aria: { label: "Polychrome" }, title: "Polychrome" do %><span class="topbar__logo" aria-hidden="true"></span><% end %>

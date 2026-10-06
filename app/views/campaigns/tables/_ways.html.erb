@@ -3,7 +3,7 @@
     the things to do here this part of the day; "talk" offers nothing. Then everyone sees the same ways:
     a player suggests one (it goes to the "Where next?" vote with their pick in it); the GM puts it to
     the table, asks wider, or just goes. A waiting encounter is called here too, and treasure picked up,
-    whatever the controls. Replaced live, for each audience. %>
+    whatever the controls. Refreshed with the table, each seat rendering its own. %>
 <% choice = campaign.open_choice %>
 <%# A rolled encounter waits for the GM's call before anyone goes on (Campaign::Ways#take_way!). %>
 <% ways = campaign.battle_on? || campaign.pending_encounter.present? ? [] : campaign.ways_offered %>

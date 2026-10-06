@@ -1,7 +1,7 @@
 <%# When and where (Timekeeping), as one line: the day clock, the part of the day it points at in that
     part's colour (the clock's slice runs into the label), and the day; under it the days left on the
     public clocks that only a new day ticks. Where the party is (inside a dungeon, the room too) is its own
-    tag: on the stage, the frame's bottom-left corner. Replaced live as time passes. %>
+    tag: on the stage, the frame's top-left corner. Refreshed with the table as time passes. %>
 <% deadlines = campaign.clocks.running.shown_to_players.select { |clock| clock.triggers == [ "dawn" ] && clock.times.empty? }
                        .map { |clock| [ clock.segments - clock.filled, clock ] }.sort_by(&:first).first(3) %>
 <section id="table_time" class="table-time time--<%= campaign.daylight %>" aria-label="The date">

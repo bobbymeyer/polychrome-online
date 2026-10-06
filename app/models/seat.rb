@@ -22,14 +22,14 @@ Seat = Data.define(:gm, :character, :unit_id) do
 
   def name = gm? ? "GM" : character&.name
 
-  # What a page at this seat listens on (Campaign::Broadcasts):
-  #   [campaign, :table]    what everyone at the table sees
-  #   [campaign, :gm]       the GM's own copy of the map, clocks, secrets and
-  #                         requests, and every GM note and whisper
-  #   [campaign, :players]  the players' copy (what's hidden left out)
+  # What a page at this seat listens on (Campaign::Broadcasts), besides the
+  # table's refreshes, which carry nothing and are the same for everyone:
+  #   [campaign, :table]     lines everyone at the table hears
+  #   [campaign, :gm]        the GM's clocks, secrets and requests, and every
+  #                          GM note and whisper
   #   [character, :whispers] a character's whispers
   def streams(campaign)
-    [ [ campaign, :table ], [ campaign, gm? ? :gm : :players ], ([ character, :whispers ] if character?) ].compact
+    [ [ campaign, :table ], ([ campaign, :gm ] if gm?), ([ character, :whispers ] if character?) ].compact
   end
 
   def sees?(message)

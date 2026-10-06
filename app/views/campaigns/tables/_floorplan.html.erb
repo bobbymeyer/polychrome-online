@@ -1,6 +1,6 @@
 <%# The dungeon the party is inside, at the table: its floorplan in the map's place, with the room
     they're in. The GM's shows every room and what waits there; the players', what they've seen.
-    Replaced live, for each audience (Campaign::Broadcasts). %>
+    Refreshed with the table, each seat rendering its own (Campaign::Broadcasts). %>
 <% dungeon = campaign.dungeon_in_progress %>
 <div id="table_floorplan" class="table-floorplan">
   <% if dungeon %>

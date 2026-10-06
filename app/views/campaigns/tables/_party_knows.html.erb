@@ -1,6 +1,6 @@
 <%# What moves, of what the party knows: the public clocks still running, and the questions it's asking (a
     secret's clues found so far). What it has found out for good is Legends' ("What they found out"), and the
-    log said it as it came out; neither needs a panel at the table. Replaced live (Campaign#table_changed). %>
+    log said it as it came out; neither needs a panel at the table. Refreshed with the table (Campaign#table_changed). %>
 <% clocks = campaign.clocks.shown_to_players.where(stopped_at: nil).order(:full_at, :id) %>
 <% asking = campaign.secrets.kept.where("found > 0").order(:id) %>
 <section class="window party-knows" id="party_knows" aria-label="What the party knows" data-controller="help" <%= "hidden" if clocks.none? && asking.none? %>>

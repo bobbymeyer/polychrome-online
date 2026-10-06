@@ -84,7 +84,6 @@ module Message::Choice
   # The table's choice panel shows the open choice, if there is one; the
   # ways on wait while the table decides something else.
   def broadcast_choice
-    broadcast_replace_to(campaign, :table, target: "table_choice", partial: "choices/panel", locals: { choice: campaign.open_choice })
     campaign.table_changed
   end
 

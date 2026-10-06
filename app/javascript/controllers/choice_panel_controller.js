@@ -8,6 +8,12 @@ import { reducedMotion } from "screen"
 export default class extends Controller {
   static targets = ["panel", "option"]
 
+  connect() {
+    // A refresh by morphing keeps the rows and puts the server's marks back: mark the seat's own again.
+    this.onMorph = () => this.optionTargets.forEach((option) => this.optionTargetConnected(option))
+    document.addEventListener("turbo:morph", this.onMorph)
+  }
+
   optionTargetConnected(option) {
     const mine = this.element.closest(".table")?.dataset.seatCharacter
     const picked = Boolean(mine) && option.dataset.pickedBy.split(" ").includes(mine)
@@ -28,5 +34,6 @@ export default class extends Controller {
 
   disconnect() {
     clearTimeout(this.timer)
+    document.removeEventListener("turbo:morph", this.onMorph)
   }
 }

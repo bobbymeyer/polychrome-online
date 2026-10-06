@@ -20,7 +20,9 @@ class MessagesController < ApplicationController
       @message = Message.choice(@campaign, **choice)
     end
 
-    if @message.save
+    # The box answers only for itself, so what a line changes on the table (a choice put to it) refreshes
+    # the GM's own table too: no request id on the refresh (Campaign::Broadcasts).
+    if Turbo.with_request_id(nil) { @message.save }
       @refocus = true
       # Keep who's speaking and how; a whisper is one line, so it goes back
       # to everyone rather than silently staying private. The Narrator, once
@@ -40,7 +42,7 @@ class MessagesController < ApplicationController
     @campaign = @message.campaign
     return forbid("That line isn't yours to take back.") unless table_seat.may_retract?(@message)
 
-    @message.destroy!
+    Turbo.with_request_id(nil) { @message.destroy! } # a choice taken back leaves everyone's table, this one's too
     respond_to do |format|
       format.turbo_stream { head :no_content }
       format.html { redirect_back_or_to campaign_table_path(@campaign), status: :see_other }

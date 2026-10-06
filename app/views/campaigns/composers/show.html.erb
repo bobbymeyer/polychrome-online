@@ -10,7 +10,7 @@
     <% chips = ([ speaker ] + on_stage).compact.uniq %>
   <% end %>
   <%= form_with model: @message, url: campaign_messages_path(@campaign), class: "window composer",
-                data: { controller: "composer help", action: "keydown->composer#key composer:whisper@window->composer#whisper turbo:before-stream-render@document->composer#staged" } do |f| %>
+                data: { controller: "composer help", action: "keydown->composer#key composer:whisper@window->composer#whisper turbo:morph@document->composer#staged" } do |f| %>
     <%= render "book_entries/errors", entry: @message %>
     <%# The box first; under it, on one line: who it's said as (or to), the face, Send. The help line says the rest. %>
     <div class="composer__row">

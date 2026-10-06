@@ -115,9 +115,12 @@ RSpec.describe "Clocks and secrets", type: :request do
 
     it "sends players only public clocks when one changes" do
       hidden = campaign.clocks.create!(name: "The traitor acts", segments: 4)
-      streams = capture_turbo_stream_broadcasts([ campaign, :players ]) { refreshing_the_table { hidden.tick! } }
-      expect(streams.map { |s| s["target"] }).to include("party_knows")
+      # A refresh carries nothing: each seat fetches its own table again, and a player's has no hidden clock.
+      streams = capture_turbo_stream_broadcasts([ campaign, :table_refresh ]) { refreshing_the_table { hidden.tick! } }
+      expect(streams.map { |s| s["action"] }).to eq([ "refresh" ])
       expect(streams.map(&:to_html).join).not_to include("The traitor acts")
+      at_the_table(campaign, as: hero)
+      expect(response.body).not_to include("The traitor acts")
     end
 
     it "is the GM's account's: a player is turned away, and the GM seated as a player is not" do

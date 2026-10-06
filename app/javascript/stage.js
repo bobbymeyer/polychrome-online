@@ -69,6 +69,7 @@ function wipe(direction, boss) {
     slab.style.setProperty("--i", i)
     el.append(slab)
   }
+  el.dataset.turboPermanent = "" // a refresh leaves it be (motion/keep)
   document.body.append(el)
   return el
 }

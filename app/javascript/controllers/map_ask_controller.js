@@ -6,9 +6,9 @@ import { Controller } from "@hotwired/stimulus"
 // and there); the card's page link is the place's page. Esc, a press
 // elsewhere or Close puts it away.
 //
-// The sheet is replaced live with the table's panels (Campaign::Broadcasts),
-// so a card that's open is remembered across the replace and opened again on
-// the new sheet, where it was.
+// The sheet is refreshed with the table (Campaign::Broadcasts), so a card
+// that's open is remembered across a refresh and opened again where it was:
+// on a new sheet when it's connected, on the same one when it's morphed.
 let opened = null // { nodeId, x, y } while a card is open on this page
 
 export default class extends Controller {
@@ -17,18 +17,24 @@ export default class extends Controller {
   connect() {
     this.onKey = (e) => { if (e.key === "Escape") this.close() }
     this.onDown = (e) => { if (!this.cardTarget.hidden && !this.cardTarget.contains(e.target) && !e.target.closest(".map-node__ask")) this.close() }
+    this.onMorph = () => this.reopen()
     document.addEventListener("keydown", this.onKey)
     document.addEventListener("pointerdown", this.onDown)
-    if (opened) {
-      const link = this.element.querySelector(`.map-node__ask[data-node-id="${CSS.escape(opened.nodeId)}"]`)
-      if (link) this.show(link, opened.x, opened.y, { focus: false })
-      else opened = null
-    }
+    document.addEventListener("turbo:morph", this.onMorph)
+    this.reopen()
   }
 
   disconnect() {
     document.removeEventListener("keydown", this.onKey)
     document.removeEventListener("pointerdown", this.onDown)
+    document.removeEventListener("turbo:morph", this.onMorph)
+  }
+
+  reopen() {
+    if (!opened) return
+    const link = this.element.querySelector(`.map-node__ask[data-node-id="${CSS.escape(opened.nodeId)}"]`)
+    if (link) this.show(link, opened.x, opened.y, { focus: false })
+    else opened = null
   }
 
   open(event) {
