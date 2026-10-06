@@ -6,14 +6,14 @@ RSpec.describe "Pictures for location modes (§8)", type: :request do
   include ActiveJob::TestHelper
 
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
   let!(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true, location: town) }
   let(:comfy) { FakeComfy.new }
 
   before do
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     post map_node_modes_path(town.map_node), params: { mode: { name: "Burning", art: "on fire, thick smoke" } }
   end
 

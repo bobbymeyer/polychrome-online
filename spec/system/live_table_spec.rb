@@ -5,10 +5,7 @@ require "rails_helper"
 # The table as several people see it at once, each in their own browser:
 # what reaches whom, live, without a reload.
 RSpec.describe "The live table", type: :system do
-  let(:gm) { make_user("Gamemaster") }
-  let(:player) { make_user("Player") }
-  let(:campaign) { create_campaign.tap { |c| c.update!(gm_id: gm.id) } }
-  let!(:rook) { create_character(campaign, name: "Rook", user: player) }
+  include_context "a GM's table"
 
   it "tells the players what the party is asking, and what it found out goes to the log and Legends" do
     seat(player, rook)

@@ -8,19 +8,13 @@ RSpec.describe "The table", type: :request do
   let!(:lenna) { create_character(campaign, name: "Lenna") }
   let!(:cid) { campaign.npcs.create!(name: "Cid", title: "Engineer") }
 
-  def sit(seat)
-    post campaign_table_seat_path(campaign), params: { seat: seat }
-  end
+  def selected(id) = page.at("##{id} option[selected]")&.[]("value")
 
-  def selected(id)
-    Nokogiri::HTML(response.body).at("##{id} option[selected]")&.[]("value")
-  end
+  def field(id) = page.at("##{id}")&.[]("value")
 
-  def field(id) = Nokogiri::HTML(response.body).at("##{id}")&.[]("value")
+  def pressed = page.css(".composer__chip[aria-pressed=true]").map(&:text)
 
-  def pressed = Nokogiri::HTML(response.body).css(".composer__chip[aria-pressed=true]").map(&:text)
-
-  def now = Nokogiri::HTML(response.body).at("#table_now").text.squish
+  def now = page.at("#table_now").text.squish
 
   def say(fields)
     post campaign_messages_path(campaign), params: { message: fields }
@@ -29,21 +23,20 @@ RSpec.describe "The table", type: :request do
   it "offers seats, then subscribes each seat to its own streams only" do
     get campaign_table_path(campaign)
     expect(response.body).to include("Take a seat", "Game Master", "Bartz", "Lenna")
-    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(3) # table + players' map + the stage
+    expect(page.css("turbo-cable-stream-source").size).to eq(3) # table + players' map + the stage
 
-    sit(bartz.id)
-    get campaign_table_path(campaign)
-    expect(response.body.scan("<turbo-cable-stream-source").size).to eq(4) # + Bartz's whispers
-    expect(Nokogiri::HTML(response.body).at("#table_party li.is-you").text).to include("Bartz")
+    at_the_table(campaign, as: bartz)
+    expect(page.css("turbo-cable-stream-source").size).to eq(4) # + Bartz's whispers
+    expect(page.at("#table_party li.is-you").text).to include("Bartz")
     # The day clock: a slice per part of the day, turned so the part it is now is at the top.
     parts = campaign.almanac.periods
-    expect(response.body).to include('class="day-clock"', %(data-day-clock-turn-value="#{-(campaign.parts_gone * 360.0 / parts.size)}"))
-    expect(response.body.scan("day-clock__part--").size).to eq(parts.size)
-    expect(response.body).to include("day-clock__ring") # one outline with the label beside it
+    expect(page.at(".day-clock")["data-day-clock-turn-value"]).to eq((-(campaign.parts_gone * 360.0 / parts.size)).to_s)
+    expect(page.css(".day-clock [class*='day-clock__part--']").size).to eq(parts.size)
+    expect(page.at(".day-clock__ring")).to be_present # one outline with the label beside it
   end
 
   describe "the GM" do
-    before { sit("gm") }
+    before { sit(campaign, "gm") }
 
     it "speaks as an NPC, with an expression, and keeps that speaker for the next line" do
       say(body: "Hold on!", speaker: "npc:#{cid.id}", expression: "surprised", whisper_to: "")
@@ -69,7 +62,7 @@ RSpec.describe "The table", type: :request do
       scene = campaign.scenes.create!(name: "Ambush", script: "Cid (angry): Behind you!\nNarrator: Silence.")
       get campaign_composer_path(campaign)
       expect(pressed).to eq([ "Narrator" ]) # no scene: the narrator
-      expect(response.body).not_to include("message_speaker\" value=\"npc") # no select of every NPC
+      expect(page.at("#message_speaker")&.[]("value").to_s).not_to start_with("npc") # no select of every NPC
       scene.reload.start!
       get campaign_composer_path(campaign)
       expect(pressed).to eq([ "Cid" ]) # the line on the stage is Cid's
@@ -77,7 +70,7 @@ RSpec.describe "The table", type: :request do
       say(body: "Narrator: The lamp gutters.", speaker: "npc:#{cid.id}")
       expect(campaign.messages.last.speaker).to be_nil
       expect(pressed).to eq([ "Narrator" ]) # chosen over the scene, it stays
-      expect(Nokogiri::HTML(response.body).css(".composer__chip").map(&:text)).to eq(%w[Narrator Cid]) # Cid is a press away
+      expect(page.css(".composer__chip").map(&:text)).to eq(%w[Narrator Cid]) # Cid is a press away
     end
 
     it "narrates" do
@@ -87,9 +80,10 @@ RSpec.describe "The table", type: :request do
 
     it "whispers to one player from the party panel, then goes back to speaking to everyone" do
       get campaign_table_path(campaign)
-      whispers = Nokogiri::HTML(response.body).css("#table_party .coop-party__whisper")
+      whispers = page.css("#table_party .coop-party__whisper")
       expect(whispers.map { |b| b["data-character-name"] }).to eq(%w[Bartz Lenna]) # the GM's, beside each played character
-      expect(response.body).not_to include("message_whisper_to\" value=\"", "Whisper to Bartz</option>") # no select
+      expect(page.css("select#message_whisper_to")).to be_empty # no select
+      expect(page.css("option").map(&:text)).not_to include("Whisper to Bartz")
       say(body: "Psst.", speaker: "narrator", whisper_to: bartz.id)
       expect(campaign.messages.last).to have_attributes(scope: "whisper", recipient: bartz)
       expect(field("message_whisper_to").to_s).to eq("") # back to everyone
@@ -109,12 +103,11 @@ RSpec.describe "The table", type: :request do
   end
 
   describe "a player" do
-    before { sit(bartz.id) }
+    before { sit(campaign, bartz) }
 
     it "has their moves together, themselves up top, and says who hears what they say" do
       bartz.update!(motive: "My sister's debt is mine now.")
       get campaign_table_path(campaign)
-      page = Nokogiri::HTML(response.body)
       moves = page.at("section.your-moves")
       expect(moves.text).to include("Your moves")
       expect(moves.at("#table_choice")).to be_present
@@ -141,7 +134,6 @@ RSpec.describe "The table", type: :request do
 
     it "shows what they can do now, and keeps the rest a tap away" do
       get campaign_table_path(campaign)
-      page = Nokogiri::HTML(response.body)
       expect(page.at("#table_now")["data-state"]).to eq("free")
       expect(page.at("details.talk summary").text).to eq("Say something") # talk is a button until it's wanted
       expect(page.at("details.talk #composer")).to be_present
@@ -155,19 +147,16 @@ RSpec.describe "The table", type: :request do
 
       Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
       get campaign_table_path(campaign)
-      expect(Nokogiri::HTML(response.body).at("#table_now")["data-state"]).to eq("choice")
+      expect(page.at("#table_now")["data-state"]).to eq("choice")
     end
 
     it "says which controls are called on the Now line, and a player keeps the talk box whatever is called" do
-      sit(bartz)
-      get campaign_table_path(campaign)
-      page = Nokogiri::HTML(response.body)
+      at_the_table(campaign, as: bartz)
       expect(page.at("#table_now")["data-controls"]).to eq("talk")
       expect(page.at(".table-talk #composer")).to be_present
 
       campaign.call_controls!("travel")
       get campaign_table_path(campaign)
-      page = Nokogiri::HTML(response.body)
       expect(page.at("#table_now")["data-controls"]).to eq("travel") # stage.css hides the GM's .table-talk and whispers under it; a player's stays (data-seat)
       expect(page.at(".table[data-seat=player] .table-talk #composer")).to be_present
     end
@@ -179,7 +168,7 @@ RSpec.describe "The table", type: :request do
 
     it "whispers only to the GM, from two chips, and has no Whisper beside the party" do
       get campaign_table_path(campaign)
-      expect(Nokogiri::HTML(response.body).css("#table_party .coop-party__whisper")).to be_empty
+      expect(page.css("#table_party .coop-party__whisper")).to be_empty
       say(body: "I pocket it.", whisper_to: "gm")
       expect(campaign.messages.last).to have_attributes(scope: "whisper", speaker: bartz, recipient: nil)
       say(body: "Hey Lenna", whisper_to: lenna.id)
@@ -211,12 +200,14 @@ RSpec.describe "The table", type: :request do
     campaign.messages.create!(body: "The road is long.", speaker: cid)
     campaign.messages.create!(body: "And the night is cold.", speaker: cid)
     get campaign_table_path(campaign)
-    drawer = response.body[/<div class="log-drawer".*?<\/aside>/m]
-    expect(drawer).to include('id="chat_log"', "The road is long.", "inert", 'aria-expanded="false"')
-    log = Nokogiri::HTML(drawer).at("#chat_log")
+    drawer = page.at(".log-drawer")
+    expect(drawer.at(".log-drawer__tab")["aria-expanded"]).to eq("false")
+    expect(drawer.at("aside[inert] #chat_log")).to be_present # closed: nothing in it can be reached
+    log = drawer.at("#chat_log")
+    expect(log.text).to include("The road is long.")
     expect(log["data-newest"]).to eq("first")
     expect(log.css("li .chat-line__body").map { |b| b.text.squish }.first(2)).to eq([ "And the night is cold.", "The road is long." ])
-    expect(Nokogiri::HTML(drawer).at(".chat-log__head input[type=search][data-filter-target=input]")).to be_present
+    expect(drawer.at(".chat-log__head input[type=search][data-filter-target=input]")).to be_present
     expect(log.css("li[data-filter-target=item]").size).to eq(log.css("li").size)
   end
 
@@ -229,31 +220,33 @@ RSpec.describe "The table", type: :request do
     campaign.messages.create!(body: "Old news.", speaker: cid)
     campaign.messages.create!(body: "Player chatter.", speaker: bartz)
     get campaign_table_path(campaign)
-    box = response.body[/<section class="dialogue window dialogue--stage".*?<\/section>/m]
-    expect(box).to include("Cid", "Old news.")
-    expect(box).not_to include("Player chatter.")
+    box = page.at("section.dialogue.dialogue--stage")
+    expect(box.text).to include("Cid", "Old news.")
+    expect(box.text).not_to include("Player chatter.")
 
     # Once the party has moved on, it was said somewhere else: the box doesn't keep it up.
     campaign.place_party!(campaign.map_nodes.create!(name: "Walse", kind: "town", x: 5, y: 5, visible: true))
     get campaign_table_path(campaign)
-    box = response.body[/<section class="dialogue window.*?<\/section>/m]
-    expect(box).to include("hidden")
-    expect(box).not_to include("Old news.")
-    expect(response.body).to include("data-moved") # and a page that's open puts it away as the move arrives
+    box = page.at("section.dialogue")
+    expect(box.key?("hidden")).to be(true)
+    expect(box.text).not_to include("Old news.")
+    expect(page.at("[data-moved]")).to be_present # and a page that's open puts it away as the move arrives
   end
 
   it "gives the narrator the whole box, and a speaker's name tag their colour" do
     campaign.messages.create!(body: "Rain on the roofs.")
     get campaign_table_path(campaign)
-    box = response.body[/<section class="dialogue window.*?<\/section>/m]
-    expect(box).to include("is-narration", "Rain on the roofs.")
-    expect(box).not_to include("speaker-portrait")
+    box = page.at("section.dialogue")
+    expect(box.classes).to include("is-narration")
+    expect(box.text).to include("Rain on the roofs.")
+    expect(box.at(".speaker-portrait")).to be_nil
 
     campaign.messages.create!(body: "Hm.", speaker: cid)
     get campaign_table_path(campaign)
-    box = response.body[/<section class="dialogue window.*?<\/section>/m]
-    expect(box).not_to include("is-narration")
-    expect(box).to include("speaker-portrait", 'class="dialogue__name" data-dialogue-target="name" style="--plate: ')
+    box = page.at("section.dialogue")
+    expect(box.classes).not_to include("is-narration")
+    expect(box.at(".speaker-portrait")).to be_present
+    expect(box.at(".dialogue__name[data-dialogue-target=name]")["style"]).to start_with("--plate: ")
   end
 
   it "puts the date on the stage, with the days left on the clocks a new day ticks, and story time in the log" do
@@ -263,16 +256,22 @@ RSpec.describe "The table", type: :request do
     campaign.clocks.create!(name: "The guard grows wary", segments: 4, triggers: %w[rest dawn], public: true)
     campaign.messages.create!(body: "Lanterns.", speaker: cid)
     get campaign_table_path(campaign)
-    header = response.body[/<div class="stage__hud">.*?<\/section>/m] # the date, in the stage's corner
-    expect(header).to include("Day 3", "time--dusk", "5 days</strong> until The spring tide comes in")
-    expect(header).not_to include("The count schemes", "The guard grows wary")
+    header = page.at(".stage__hud") # the date, in the stage's corner
+    expect(header.text.squish).to include("Day 3", "5 days until The spring tide comes in")
+    expect(header.at("[class*='time--dusk']")).to be_present
+    expect(header.text).not_to include("The count schemes", "The guard grows wary")
     campaign.update!(current_node: campaign.map_nodes.create!(name: "Varn", x: 10, y: 10, visible: true))
     get campaign_table_path(campaign)
-    expect(Nokogiri::HTML(response.body).at("#table_time .table-time__where").text.squish).to eq("Varn") # where, beside when
+    expect(page.at("#table_time .table-time__where").text.squish).to eq("Varn") # where, beside when
     campaign.clocks.find_by!(name: "The spring tide comes in").update!(filled: 5)
     get campaign_table_path(campaign)
-    expect(response.body).to include(%(<li class="is-tomorrow"><strong>Tomorrow</strong> it happens: The spring tide comes in</li>))
-    expect(response.body).to match(%r{<time class="muted" datetime="[^"]+" title="Day 3 · [^"]+">Dusk</time>})
+    tomorrow = page.at("li.is-tomorrow")
+    expect(tomorrow.text.squish).to eq("Tomorrow it happens: The spring tide comes in")
+    expect(tomorrow.at("strong").text).to eq("Tomorrow")
+    story_time = page.at("#chat_log time.muted")
+    expect(story_time.text).to eq("Dusk")
+    expect(story_time["title"]).to start_with("Day 3 · ")
+    expect(story_time["datetime"]).to be_present
   end
 
   describe "battles" do
@@ -284,14 +283,13 @@ RSpec.describe "The table", type: :request do
       battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
       expect(campaign.messages.last.body).to start_with("Test battle: Victory! 10 gil.")
 
-      sit(lenna.id)
-      get campaign_table_path(campaign)
+      at_the_table(campaign, as: lenna)
       expect(response.body).to include("See the battle")
     end
 
     it "carry the table seat over, until the player leaves the battle seat" do
       battle = start_battle(campaign: campaign)
-      sit(lenna.id)
+      sit(campaign, lenna)
       get battle_panel_path(battle)
       expect(response.body).to include("Seated as <strong>Lenna</strong>")
 
@@ -332,23 +330,26 @@ RSpec.describe "The table", type: :request do
 
     campaign.messages.create!(speaker: cid, body: "The crystal is cracking.", created_at: 2.days.ago)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap moment whisper-toast"', "The crystal is cracking.",
-                                     'data-recap-auto-value="true"')
+    expect(response.body).to include("Previously on The Crystal Road…", "The crystal is cracking.")
+    recap = page.at("[data-recap-auto-value]")
+    expect(recap["data-controller"].split).to include("dialogue", "recap", "moment", "whisper-toast")
+    expect(recap["data-recap-auto-value"]).to eq("true")
   end
 
   it "keeps the recap of the session still going to its link, never popping up by itself" do
     campaign.messages.create!(speaker: cid, body: "The crystal is cracking.", created_at: 10.minutes.ago)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Previously on The Crystal Road…", 'data-recap-auto-value="false"')
+    expect(response.body).to include("Previously on The Crystal Road…")
+    expect(page.at("[data-recap-auto-value]")["data-recap-auto-value"]).to eq("false")
   end
 
   describe "taking a line back" do
     it "lets the GM take back any line said, for everyone, but not what the game logged" do
-      sit("gm")
       line = campaign.messages.create!(speaker: cid, body: "Typo'd lnie")
       logged = campaign.messages.create!(kind: "system", body: "The party rests.")
-      get campaign_table_path(campaign)
-      expect(response.body).to include('data-retract="all"', "Take back")
+      at_the_table(campaign, as: "gm")
+      expect(page.at("[data-retract=all]")).to be_present
+      expect(response.body).to include("Take back")
 
       expect { delete message_path(line) }.to have_broadcasted_to(stream(campaign, :table)).with(a_string_including('action="remove"', "message_#{line.id}"))
       expect(Message.exists?(line.id)).to be(false)
@@ -357,11 +358,10 @@ RSpec.describe "The table", type: :request do
     end
 
     it "lets a player take back only their own lines" do
-      sit(bartz.id)
       mine = campaign.messages.create!(speaker: bartz, body: "Oops")
       theirs = campaign.messages.create!(speaker: lenna, body: "Mine")
-      get campaign_table_path(campaign)
-      expect(response.body).to include("data-retract=\"Character:#{bartz.id}\"")
+      at_the_table(campaign, as: bartz)
+      expect(page.at("[data-retract='Character:#{bartz.id}']")).to be_present
       delete message_path(theirs)
       expect(Message.exists?(theirs.id)).to be(true)
       delete message_path(mine)
@@ -371,23 +371,24 @@ RSpec.describe "The table", type: :request do
 
   describe "choices" do
     it "are put to the table by the GM, picked by players as themselves, and settled by the GM" do
-      sit("gm")
+      sit(campaign, "gm")
       post campaign_messages_path(campaign), params: { message: { body: "? Trust Cid | Refuse -> trusted_cid", speaker: "narrator" } }
       choice = campaign.open_choice
       expect(choice.options).to eq([ "Trust Cid", "Refuse" ])
       get campaign_table_path(campaign)
-      expect(response.body).to include('data-seat="gm"', "What will the party do?", "Settle on this")
+      expect(page.at("[data-seat=gm]")).to be_present
+      expect(response.body).to include("What will the party do?", "Settle on this")
 
       post choice_picks_path(choice), params: { option: "Refuse" }
       expect(choice.picks).to be_empty # the GM doesn't pick
 
-      sit(bartz.id)
+      sit(campaign, bartz)
       post choice_picks_path(choice), params: { option: "Refuse" }
       expect(choice.reload.tally["Refuse"]).to eq([ "Bartz" ])
       post choice_settlement_path(choice), params: { option: "Refuse" }
       expect(choice.reload.settled).to be_nil # players don't settle
 
-      sit("gm")
+      sit(campaign, "gm")
       post choice_settlement_path(choice), params: { option: "Refuse" }
       expect(choice.reload.settled).to eq("Refuse")
       expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Refuse")
@@ -396,7 +397,7 @@ RSpec.describe "The table", type: :request do
 
   describe "the Now line" do
     it "says what the table is doing and whose move it is, to the GM and to the players" do
-      sit("gm")
+      sit(campaign, "gm")
       get campaign_table_path(campaign)
       expect(now).not_to include("The table is yours.", "Now") # in free play the GM's line is the controls row alone
       expect(now).to eq("Talk Move Do Scene Check Fight GM") # GM is a control like the others
@@ -405,20 +406,20 @@ RSpec.describe "The table", type: :request do
       get campaign_table_path(campaign)
       expect(now).to include("The party is choosing.", "Settle it when you're ready.")
       expect(now).not_to include("Nobody has picked yet.") # who has picked is the vote's own footer
-      expect(Nokogiri::HTML(response.body).at("#table_choice .choice__footer").text.squish).to eq("Nobody has picked yet. Nobody plays Bartz and Lenna: no pick from them.")
+      expect(page.at("#table_choice .choice__footer").text.squish).to eq("Nobody has picked yet. Nobody plays Bartz and Lenna: no pick from them.")
 
-      sit(bartz.id)
+      sit(campaign, bartz)
       post choice_picks_path(campaign.open_choice), params: { option: "Refuse" }
       get campaign_table_path(campaign)
       expect(now).to include("Pick below; the GM settles it.")
-      expect(Nokogiri::HTML(response.body).at("#table_choice .choice__footer").text.squish).to eq("Picked: Bartz. Nobody plays Lenna: no pick from them.")
+      expect(page.at("#table_choice .choice__footer").text.squish).to eq("Picked: Bartz. Nobody plays Lenna: no pick from them.")
     end
 
     it "puts a battle first: the choice waits, and can't be settled until it's over" do
       choice = Message.choice(campaign, options: [ "Trust Cid", "Refuse" ])
       choice.save!
       battle = start_battle(campaign: campaign)
-      sit("gm")
+      sit(campaign, "gm")
       get campaign_table_path(campaign)
       expect(now).to include("A battle is on: #{battle.name}.", "The choice waits until it's over.", "Go to the battle")
       expect(response.body).to include("On hold until the battle is over.")
@@ -429,15 +430,14 @@ RSpec.describe "The table", type: :request do
   end
 
   describe "who is at the table" do
-    def party = Nokogiri::HTML(response.body).at("#table_party").text.squish
+    def party = page.at("#table_party").text.squish
 
     it "says who nobody plays, and who is here or away, from a heartbeat the table and battles send" do
       bartz.update!(user: make_user("Kim"))
       get campaign_table_path(campaign)
       expect(party).to include("Kim away", "unplayed")
 
-      sit(bartz.id)
-      get campaign_table_path(campaign)
+      at_the_table(campaign, as: bartz)
       expect(response.body).to include("heartbeat", campaign_presence_path(campaign))
       patch campaign_presence_path(campaign)
       expect(response).to have_http_status(:no_content)
@@ -450,24 +450,20 @@ RSpec.describe "The table", type: :request do
     end
 
     it "gives the GM no player's tag or You line, and says who hears a whisper" do
-      sit("gm")
-      get campaign_table_path(campaign)
+      at_the_table(campaign, as: "gm")
       expect(response.body).not_to include("your-moves__tag", "table-you")
       get campaign_composer_path(campaign)
       expect(response.body).to include("Everyone hears it. Start a line with a name and a colon to speak as them", "Whisper from the party panel.") # the Send button's help
     end
 
     it "gives the GM the moves for what's happening, in the Now line, with the rest of the tools behind Tools" do
-      sit("gm")
-      get campaign_table_path(campaign)
-      page = Nokogiri::HTML(response.body)
+      at_the_table(campaign, as: "gm")
       expect(page.css("#table_now .controls-call button").map(&:text)).to eq([ "Talk", "Move", "Do", "Scene", "Check", "Fight", "GM" ])
       expect(page.at("#table_now .table-now__do").text).not_to include("Call a check", "Play a scene") # no second way in
       expect(page.at(".gm-tools")).to be_nil # the rest of the tools are a control: called, they replace what's under the stage
       expect(page.at("#table_called").key?("hidden")).to be(true) # nothing called
       campaign.call_controls!("tools")
       get campaign_table_path(campaign)
-      page = Nokogiri::HTML(response.body)
       expect(page.css("#table_called .gm-tools [role=tab]").map { |t| t.text.strip }).to eq(%w[Moves More]) # the rest is called, or Prep's
       expect(page.at("#table_now .controls-call button[aria-pressed=true]").text).to eq("GM")
       expect(page.at("#table_ways").key?("hidden")).to be(true) # nothing else under the stage
@@ -478,38 +474,37 @@ RSpec.describe "The table", type: :request do
 
       Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).save!
       get campaign_table_path(campaign)
-      expect(Nokogiri::HTML(response.body).at("#table_now .table-now__do a[href='#table_choice']").text).to eq("Settle it ↓")
+      expect(page.at("#table_now .table-now__do a[href='#table_choice']").text).to eq("Settle it ↓")
     end
 
     it "marks what only the GM sees" do
       campaign.map_nodes.create!(name: "Secret Grotto", x: 5, y: 5, visible: false)
       campaign.clocks.create!(name: "The tide", segments: 4, public: true)
-      sit("gm")
-      get campaign_table_path(campaign)
+      at_the_table(campaign, as: "gm")
       campaign.call_controls!("tools")
       get campaign_table_path(campaign)
-      expect(response.body).to include("GM</button>", "gm_tab_more", "Grant an archetype", "Music for the table")
+      expect(page.css("#table_now .controls-call button").map(&:text)).to include("GM")
+      expect(page.at("#gm_tab_more")).to be_present
+      expect(response.body).to include("Grant an archetype", "Music for the table")
       campaign.call_controls!("talk")
       expect(response.body).not_to include("only you see these") # the button's name says who sees them
       get campaign_maps_path(campaign)
       expect(response.body).to include("Secret Grotto", "Hidden from the players") # the maps page, the GM's
-      sit(bartz.id)
-      get campaign_table_path(campaign)
+      at_the_table(campaign, as: bartz)
       expect(response.body).not_to include("only you see", "Everyone at the table sees this.")
     end
   end
 
   describe "checks" do
     it "are called by the GM: each character rolls from the campaign's RNG, and the table sees it land" do
-      sit("gm")
-      get campaign_table_path(campaign)
+      at_the_table(campaign, as: "gm")
       expect(response.body).not_to include("Who tries") # until Check is called
       campaign.call_controls!("check")
       get campaign_table_path(campaign)
-      called = Nokogiri::HTML(response.body).at("#table_called")
+      called = page.at("#table_called")
       expect(called.key?("hidden")).to be(false)
       expect(called.text).to include("Who tries", "Everyone standing")
-      expect(called.to_html).to include('data-controller="check-all"')
+      expect(called.at("[data-controller~=check-all]")).to be_present
 
       rng = campaign.rng
       post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id, lenna.id ], stat: "agi", difficulty: "hard", reason: "scale the wall" } }
@@ -519,9 +514,9 @@ RSpec.describe "The table", type: :request do
       expect(campaign.reload.rng).not_to eq(rng)
 
       get campaign_table_path(campaign)
-      expect(response.body).to include("check-roll", "data-check-roll-result-value")
+      expect(page.at("[data-controller~=check-roll][data-check-roll-result-value]")).to be_present
 
-      sit(bartz.id)
+      sit(campaign, bartz)
       expect { post campaign_checks_path(campaign), params: { check: { characters: [ bartz.id ], stat: "agi", difficulty: "easy" } } }
         .not_to(change { campaign.messages.count })
     end

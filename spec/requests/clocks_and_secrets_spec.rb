@@ -8,20 +8,17 @@ RSpec.describe "Clocks and secrets", type: :request do
   include Turbo::Broadcastable::TestHelper
 
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
   let!(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true, location: town) }
   let(:road) { campaign.map_nodes.create!(name: "Road", kind: "field", x: 300, y: 100, visible: true) }
   let(:burning) { town.map_node.modes.find_by!(key: "burning") }
-  let(:hero) { campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), starting_level: 10) }
+  let(:hero) { base_character(campaign, name: "Rook", starting_level: 10) }
 
-  def sit(seat)
-    post campaign_table_seat_path(campaign), params: { seat: seat.respond_to?(:id) ? seat.id : seat }
-  end
 
   before do
-    sit("gm")
+    sit(campaign, "gm")
     town.map_node.add_mode!("name" => "Burning", "line" => "Smoke over the rooftops: Tule is burning.")
   end
 
@@ -29,8 +26,9 @@ RSpec.describe "Clocks and secrets", type: :request do
     it "offers the modes a clock can set off by place, and not those that follow the hours" do
       town.map_node.add_mode!("name" => "By night", "times" => %w[night])
       get campaign_prep_path(campaign)
-      expect(response.body).to include(%(>Tule: Burning</option>))
-      expect(response.body).not_to include(%(>Tule: By night</option>))
+      options = page.css("option").map(&:text)
+      expect(options).to include("Tule: Burning")
+      expect(options).not_to include("Tule: By night")
     end
 
     it "fills on what the party does, and a full clock sets a place burning" do
@@ -58,8 +56,9 @@ RSpec.describe "Clocks and secrets", type: :request do
                                                                   "line" => "The Syndicate torches Tule: it has happened.",
                                                                   "place" => "Tule: Burning" })
       get campaign_table_path(campaign)
-      expect(response.body).to include('data-controller="dialogue recap moment whisper-toast"', 'class="deadline-stage" data-moment-cue="deadline"',
-                                       "data-chat-line-cue-value=\"deadline\"", "data-chat-line-card-value=")
+      expect(page.at("[data-controller~=moment][data-controller~=whisper-toast][data-controller~=recap][data-controller~=dialogue]")).to be_present
+      expect(page.at(".deadline-stage")["data-moment-cue"]).to eq("deadline")
+      expect(page.at("[data-chat-line-cue-value=deadline]")["data-chat-line-card-value"]).to be_present
 
       rest_the_night(campaign)
       expect(clock.reload.filled).to eq(3) # a full clock stays full
@@ -70,7 +69,7 @@ RSpec.describe "Clocks and secrets", type: :request do
     end
 
     it "lets a check the GM calls make something happen on a success, once, whoever made it" do
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      sit(campaign, "gm")
       campaign.call_controls!("check") # the form comes to the table once Check is called
       get campaign_table_path(campaign)
       expect(response.body).to include("On a success")
@@ -108,9 +107,9 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(response.body).to include("Storm rolls in") # the public one, in what the party knows
       expect(response.body).not_to include("Set the clock")
 
-      sit(hero)
-      get campaign_table_path(campaign)
-      expect(response.body).to include("Storm rolls in", 'aria-label="2 of 4"')
+      at_the_table(campaign, as: hero)
+      expect(response.body).to include("Storm rolls in")
+      expect(page.at("[aria-label='2 of 4']")).to be_present
       expect(response.body).not_to include("The traitor acts")
     end
 
@@ -122,7 +121,7 @@ RSpec.describe "Clocks and secrets", type: :request do
     end
 
     it "is the GM's account's: a player is turned away, and the GM seated as a player is not" do
-      sit(hero) # the GM, playing a character for a moment: Prep is still theirs
+      sit(campaign, hero) # the GM, playing a character for a moment: Prep is still theirs
       post campaign_clocks_path(campaign), params: { clock: { name: "Mine", segments: 4 } }
       expect(campaign.clocks.find_by(name: "Mine")).to be_present
 
@@ -148,7 +147,7 @@ RSpec.describe "Clocks and secrets", type: :request do
     expect(response.body).not_to include("Let time pass") # not until the day's doings are called
     campaign.call_controls!("doing")
     get campaign_table_path(campaign)
-    ways = Nokogiri::HTML(response.body).at("#table_ways")
+    ways = page.at("#table_ways")
     expect(ways.key?("hidden")).to be(false)
     expect(ways.css(".pick-row").last.text).to include("Let time pass", "a part of the day") # the last row of the things to do
     expect(ways.text).not_to include("Until #{campaign.almanac.periods.first}") # one press, one part of the day
@@ -156,9 +155,9 @@ RSpec.describe "Clocks and secrets", type: :request do
     expect(campaign.reload.time_of_day).to eq("dusk")
     patch campaign_time_path(campaign), params: { until: "the_day" }
     expect(campaign.reload).to have_attributes(day: 2, time_of_day: "dawn")
-    sit(hero)
-    get campaign_table_path(campaign)
-    expect(response.body).to include(%(<p class="table-time__date">Day 2</p>), %(<p class="table-time__part">dawn</p>))
+    at_the_table(campaign, as: hero)
+    expect(page.at("p.table-time__date").text).to eq("Day 2")
+    expect(page.at("p.table-time__part").text).to eq("dawn")
     patch campaign_time_path(campaign), params: { parts: 1 }
     expect(response).to have_http_status(:see_other) # the GM seat's
   end
@@ -168,12 +167,11 @@ RSpec.describe "Clocks and secrets", type: :request do
     campaign.clocks.create!(name: "The count schemes", segments: 6, filled: 1)
     get campaign_table_path(campaign)
     expect(response.body).not_to include("gm_clocks", "gm_secrets", "gm_tab_clocks", "gm_tab_secrets")
-    expect(Nokogiri::HTML(response.body).at("#table_now .table-now__clock").text.squish).to eq("The tide is one tick from full · Clocks")
+    expect(page.at("#table_now .table-now__clock").text.squish).to eq("The tide is one tick from full · Clocks")
     expect(response.body).to include(campaign_prep_path(campaign, anchor: "clocks"))
     get campaign_prep_path(campaign)
     expect(response.body).to include("gm_clocks", "gm_secrets", "The tide", "The count schemes")
-    sit(hero)
-    get campaign_table_path(campaign)
+    at_the_table(campaign, as: hero)
     expect(response.body).not_to include("table-now__clock", "one tick from full")
   end
 
@@ -185,25 +183,23 @@ RSpec.describe "Clocks and secrets", type: :request do
       get campaign_prep_path(campaign)
       expect(response.body).to include("The mayor pays the goblins.", "Reveal")
 
-      sit(hero)
-      get campaign_table_path(campaign)
+      at_the_table(campaign, as: hero)
       expect(response.body).not_to include("The mayor pays the goblins.")
 
-      sit("gm")
+      sit(campaign, "gm")
       post campaign_secret_revelation_path(campaign, secret)
       expect(secret.reload).to be_revealed
       expect(campaign.messages.last.body).to eq("The party learns: The mayor pays the goblins.")
 
-      sit(hero)
-      get campaign_table_path(campaign)
+      at_the_table(campaign, as: hero)
       expect(response.body).to include("The party learns: The mayor pays the goblins.") # the log said it
-      expect(Nokogiri::HTML(response.body).at("#party_knows").key?("hidden")).to be(true) # nothing moving: the panel waits
-      expect(Nokogiri::HTML(response.body).at("#party_knows").text).not_to include("The mayor pays the goblins.")
+      expect(page.at("#party_knows").key?("hidden")).to be(true) # nothing moving: the panel waits
+      expect(page.at("#party_knows").text).not_to include("The mayor pays the goblins.")
       get campaign_legends_path(campaign)
       expect(response.body).to include("What they found out", "The mayor pays the goblins.")
       expect(Recap.for(campaign).learned).to include("The mayor pays the goblins.")
 
-      sit("gm")
+      sit(campaign, "gm")
       delete campaign_secret_revelation_path(campaign, secret)
       expect(secret.reload).not_to be_revealed
     end

@@ -4,14 +4,14 @@ require "rails_helper"
 
 RSpec.describe "Location modes", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
   let!(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true, location: town) }
   let(:road) { campaign.map_nodes.create!(name: "Road", kind: "field", x: 300, y: 100, visible: true) }
-  let(:hero) { campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), starting_level: 10) }
+  let(:hero) { base_character(campaign, name: "Rook", starting_level: 10) }
 
-  before { post campaign_table_seat_path(campaign), params: { seat: "gm" } }
+  before { sit(campaign, "gm") }
 
   def prepare_burning
     post map_node_modes_path(town.map_node), params: { mode: { name: "Burning", line: "Smoke over the rooftops: Tule is burning.",
@@ -66,6 +66,7 @@ RSpec.describe "Location modes", type: :request do
   it "comes on when the calendar says, several at once, with things to do of their own" do
     world.update!(calendar: { periods: "Morning, Evening, Late night", dark: "Late night", weekdays: "Weekday, Market day",
                               months: "Thaw (2, Spring)\nFrost (2, Winter)" })
+    campaign.world.reload # the calendar changed under it
     campaign.update!(current_node: node, time_of_day: "Morning")
     campaign.map_nodes.find(node.id).update!(activities: "Browse the stalls (market day)\nSkate the millpond (winter): Round and round.")
     town.map_node.add_mode!("name" => "Snowbound", "line" => "Snow to the sills.", "times" => %w[winter], "closed" => %w[pastimes],
@@ -148,15 +149,16 @@ RSpec.describe "Location modes", type: :request do
     places = %w[Ash Birch Cedar].map.with_index { |name, i| campaign.map_nodes.create!(name: name, x: 100 + (i * 200), y: 300, visible: true) }
     places.each { |place| place.switch_mode!(place.modes.create!(name: "By night").key) }
     get campaign_maps_path(campaign)
-    expect(response.body).to include('<p class="map-canvas__modes">By night: across the map.</p>')
-    expect(response.body).not_to include('class="map-node__mode"')
+    expect(page.at("p.map-canvas__modes").text).to eq("By night: across the map.")
+    expect(page.at(".map-node__mode")).to be_nil
   end
 
   it "shows a in_mode place on the map" do
     prepare_burning
     town.map_node.reload.switch_mode!("burning")
     get campaign_maps_path(campaign)
-    expect(response.body).to include("has-mode", "map-node__mode")
+    expect(page.at(".has-mode")).to be_present
+    expect(page.at(".map-node__mode")).to be_present
   end
 
   it "gives any place modes, a landmark too: prepared and set off from the map" do
@@ -172,7 +174,7 @@ RSpec.describe "Location modes", type: :request do
     expect(shrine.pastimes.reject(&:service).map(&:name)).to eq([ "Catch a goldfish" ])
 
     get campaign_maps_path(campaign)
-    expect(response.body).to include('class="map-node__mode"', "Festival")
+    expect(page.css(".map-node__mode").map(&:text)).to include("Festival")
     delete map_node_current_mode_path(shrine)
     expect(shrine.reload.current_mode).to be_nil
   end

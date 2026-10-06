@@ -26,7 +26,7 @@ RSpec.describe "A setting's own words (Vocabulary)", type: :request do
 
   it "uses them at the table and in towns, and leaves out services the setting doesn't have" do
     set_words
-    hero = campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), starting_level: 5)
+    hero = base_character(campaign, name: "Rook", starting_level: 5)
     get campaign_path(campaign)
     expect(response.body).to include("500 crowns", "Grit #{hero.current_hp}", "Nerve")
     campaign.sleep!
@@ -48,7 +48,7 @@ RSpec.describe "A setting's own words (Vocabulary)", type: :request do
     battle = start_battle(campaign: campaign)
     expect { battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => battle.party.first["id"], "value" => 5 }, actor: "gm") }
       .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("sets Rook&#39;s Grit to 5."))
-    post battle_seat_path(battle), params: { seat: "gm" }
+    sit_in_battle(battle, "gm")
     get battle_panel_path(battle)
     expect(response.body).to include(">Rust-lock<")
     expect(response.body).not_to include(">Poison<")

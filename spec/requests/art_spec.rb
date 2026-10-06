@@ -25,25 +25,27 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
   it "only offers Generate while ComfyUI answers" do
     allow(Comfy).to receive(:capabilities).and_return(Comfy::Capabilities.unreachable)
     get world_bestiary_monster_path(world, goblin)
-    expect(response.body).to match(/<input[^>]*value="Generate"[^>]*disabled/).and include("Nothing can be generated")
+    expect(page.at("input[value=Generate]").key?("disabled")).to be(true)
+    expect(response.body).to include("Nothing can be generated")
 
     allow(Comfy).to receive(:capabilities).and_return(FakeComfy.capabilities)
     get world_bestiary_monster_path(world, goblin)
-    expect(response.body).not_to match(/<input[^>]*value="Generate"[^>]*disabled/)
+    expect(page.at("input[value=Generate]").key?("disabled")).to be(false)
   end
 
   it "shows the layers and the composed prompt on the entry's page" do
     world.update!(art_style: "16-bit pixel art")
     get world_bestiary_monster_path(world, goblin)
-    expect(response.body).to include("The prompt, in layers", "16-bit pixel art", world.art_type("monster").prompt,
-                                      "turbo-cable-stream-source")
-    expect(response.body).to match(/<turbo-frame [^>]*id="art_panel"/)
+    expect(response.body).to include("The prompt, in layers", "16-bit pixel art", world.art_type("monster").prompt)
+    expect(page.at("turbo-cable-stream-source")).to be_present
+    expect(page.at("turbo-frame#art_panel")).to be_present
   end
 
   it "serves the art section alone for its frame to reload, and tells watchers to reload it as images land" do
     get world_art_panel_path(world, entry_type: "monster", entry_slug: "goblin")
-    expect(response.body).to match(/\A<turbo-frame [^>]*id="art_panel"/)
-    expect(response.body).not_to include("<html")
+    expect(response.body).to start_with("<turbo-frame ")
+    expect(page.at("turbo-frame#art_panel")).to be_present
+    expect(page.at("body").element_children.map(&:name)).to eq([ "turbo-frame" ]) # not a whole page
 
     generate
     streams = capture_turbo_stream_broadcasts([ goblin, :art ]) { goblin.art_batch.update!(status: "running") }
@@ -81,7 +83,8 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
     expect(ArtBatch.exists?(batch.id)).to be(false)
 
     follow_redirect!
-    expect(response.body).to include("Generated, seed <strong>#{winner.seed}</strong>")
+    expect(page.text).to include("Generated, seed #{winner.seed}")
+    expect(page.css("strong").map(&:text)).to include(winner.seed.to_s)
   end
 
   it "replaces the previous batch when generating again, and can discard one" do
@@ -146,7 +149,6 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
     ))
     world.update!(art_model: "retired.safetensors")
     get world_art_direction_path(world)
-    page = Nokogiri::HTML(response.body)
     picker = page.at_css("select#world_art_model")
     groups = picker.css("optgroup").to_h { |g| [ g["label"], g.css("option").map(&:text) ] }
     expect(groups).to eq("Anima" => [ "anima-preview.safetensors" ], "Krea 2 Turbo" => [ "krea2_turbo_bf16.safetensors" ],
@@ -161,7 +163,7 @@ RSpec.describe "The asset pipeline (§8)", type: :request do
 
     allow(Comfy).to receive(:capabilities).and_return(Comfy::Capabilities.unreachable)
     get world_art_direction_path(world)
-    expect(Nokogiri::HTML(response.body).at_css("input#world_art_model")["value"]).to eq("retired.safetensors")
+    expect(page.at_css("input#world_art_model")["value"]).to eq("retired.safetensors")
   end
 
   it "rejects a size ComfyUI can't use" do
@@ -173,9 +175,9 @@ end
 
 RSpec.describe "Generated portraits (§8)", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
+  let(:campaign) { base_campaign }
   let(:cid) { campaign.npcs.create!(name: "Cid", title: "Engineer", description: "An old airship engineer") }
-  let(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight")) }
+  let(:bartz) { base_character(campaign, name: "Bartz") }
   let(:comfy) { FakeComfy.new }
 
   def generate(owner, expression, notes: "white beard, goggles")
@@ -274,16 +276,16 @@ RSpec.describe "Generated portraits (§8)", type: :request do
     scene = campaign.scenes.create!(name: "The quay", script: "Cid: Ready?")
     scene.beats.create!(kind: "sprite", action: "enter", figures: [ { type: "Character", id: bartz.id, side: "left" } ], position: 0)
     scene.beats.first.update_columns(position: 1)
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     scene.start!
     get campaign_table_path(campaign)
-    expect(response.body).to include("beat-stage__figure--sprite is-speaking", "beat-stage__sprite")
-    expect(response.body).to include("beat-stage__figure--portrait") # Bartz: the Knight has no image in the base world
+    expect(page.at(".beat-stage__figure--sprite.is-speaking .beat-stage__sprite")).to be_present
+    expect(page.at(".beat-stage__figure--portrait")).to be_present # Bartz: the Knight has no image in the base world
     expect(bartz.sprite_image).to be_nil
   end
 
   it "paints a map: the GM a campaign's, a world editor the setting's, from the map framing and the map's own words" do
-    campaign = world.campaigns.create!(name: "Crystal Road", gm: @admin)
+    campaign = base_campaign(gm: @admin)
     map = campaign.maps.create!(name: "The Marches", description: "Wet moors under a white sky")
     post world_art_batches_path(world), params: { entry_type: "map", map_type: "campaign", map_id: map.id, count: 1, entry: { art_notes: "a river splitting it" } }
     expect(response).to redirect_to(campaign_maps_path(campaign, map: map.id, anchor: "art"))
@@ -315,9 +317,9 @@ end
 
 RSpec.describe "A player's look, in a chain (§8)", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: make_user("GM")) }
+  let(:campaign) { base_campaign(gm: make_user("GM")) }
   let(:player) { make_user("Lenna's player") }
-  let(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "knight"), user: player) }
+  let(:lenna) { base_character(campaign, name: "Lenna", user: player) }
   let(:comfy) { FakeComfy.new }
 
   before { sign_in_as(player) }
@@ -338,8 +340,9 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
 
   it "is theirs to make: the sprite, the portrait from its head, then every expression from the portrait" do
     get character_path(lenna) # on the sheet, under Look; not on the edit form
-    expect(response.body).to include(">Look</a>", "Make their look", "1. The sprite", "2. The Neutral portrait, from the sprite", "3. Every other expression")
-    expect(response.body).not_to include("entry_art_model") # the model and LoRAs are the GM's
+    expect(page.css("a").map(&:text)).to include("Look")
+    expect(response.body).to include("Make their look", "1. The sprite", "2. The Neutral portrait, from the sprite", "3. Every other expression")
+    expect(page.at("#entry_art_model, [name='entry[art_model]']")).to be_nil # the model and LoRAs are the GM's
     get edit_character_path(lenna)
     expect(response.body).not_to include("Make their look", "portraits_sprite")
 
@@ -401,7 +404,7 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
   end
 
   it "is only theirs: not another player's character, nor the cast" do
-    other = campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "knight"), user: make_user("Other"))
+    other = base_character(campaign, name: "Faris", user: make_user("Other"))
     post world_art_batches_path(world), params: { entry_type: "sprite", **speaker(other), count: 1 }
     expect(ArtBatch.count).to eq(0)
     cid = campaign.npcs.create!(name: "Cid", title: "Engineer")
@@ -412,6 +415,7 @@ RSpec.describe "A player's look, in a chain (§8)", type: :request do
     get edit_character_path(other)
     expect(response).to redirect_to(root_path)
     get character_path(other)
-    expect(response.body).not_to include(">Look</a>", "Make their look") # another's sheet, without the Look section
+    expect(page.css("a").map(&:text)).not_to include("Look") # another's sheet, without the Look section
+    expect(response.body).not_to include("Make their look")
   end
 end

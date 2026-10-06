@@ -6,7 +6,7 @@ RSpec.describe "Refusals", type: :request do
   let!(:world) { base_world }
   let(:campaign) { world.campaigns.create!(name: "Rust", gm: @admin) }
 
-  before { post campaign_table_seat_path(campaign), params: { seat: "gm" } }
+  before { sit(campaign, "gm") }
 
   it "tells whoever asked why the game said no, back where they were" do
     post campaign_checks_path(campaign), params: { check: { stat: "str", difficulty: "hard", characters: [ "" ] } },

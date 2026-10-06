@@ -4,16 +4,13 @@ require "rails_helper"
 
 RSpec.describe "Locations", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
-  let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight")) }
+  let(:campaign) { base_campaign }
+  let!(:bartz) { base_character(campaign, name: "Bartz") }
   let(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100) }
 
-  def sit(seat)
-    post campaign_table_seat_path(campaign), params: { seat: seat }
-  end
 
   def generate(template_slug, on: node)
-    sit("gm")
+    sit(campaign, "gm")
     post map_node_location_path(on), params: { location_template_id: world.location_templates.find_by!(slug: template_slug).id }
     on.reload.location
   end
@@ -28,7 +25,7 @@ RSpec.describe "Locations", type: :request do
 
   it "hides a location from players until its place is revealed, and hides GM secrets" do
     town = generate("village")
-    sit(bartz.id)
+    sit(campaign, bartz)
     get location_path(town)
     expect(response).to have_http_status(:not_found)
 
@@ -39,13 +36,13 @@ RSpec.describe "Locations", type: :request do
     expect(response.body).not_to include(*hooks.map { |h| ERB::Util.html_escape(h) })
     # Townsfolk couplets are everyone's: their memory and their wish.
     folk = town.townsfolk.first
-    expect(response.body).to include('class="couplet"', ERB::Util.html_escape(town.fill_in(folk["memory"])), ERB::Util.html_escape(town.fill_in(folk["wish"])))
+    expect(page.css(".couplet").map(&:text).join).to include(town.fill_in(folk["memory"]), town.fill_in(folk["wish"]))
     expect(response.body).not_to include("Reroll", "seed")
   end
 
   it "keeps the GM controls to the GM" do
     town = generate("village")
-    sit(bartz.id)
+    sit(campaign, bartz)
     post location_reroll_path(town)
     expect(response).to have_http_status(:see_other) # the GM seat's: turned back with a word
     post location_pins_path(town), params: { key: "npc-0" }
@@ -138,7 +135,7 @@ RSpec.describe "Locations", type: :request do
       boss_name = cave.room(cave.view["boss"])["name"]
       campaign.update!(current_node: cave_node)
       post location_entry_path(cave)
-      sit(bartz.id)
+      sit(campaign, bartz)
       get location_path(cave)
       expect(response.body).to include("Entrance")
       expect(response.body).not_to include(ERB::Util.html_escape(boss_name)) unless cave.seen_by_players?(cave.view["boss"])
@@ -153,7 +150,8 @@ RSpec.describe "Locations", type: :request do
       expect(response.body).to include("skyline", "seed=8", "People", "For sale")
       village = Generators::Town.generate(seed: 7, template: world.location_templates.find_by!(slug: "village").settings,
                                           tables: world.location_templates.find_by!(slug: "village").table_entries)
-      expect(response.body).to include(ERB::Util.html_escape(village["npcs"].first["hook"]), 'class="couplet"')
+      expect(page.text).to include(village["npcs"].first["hook"])
+      expect(page.at(".couplet")).to be_present
     end
 
     it "reports what a template makes over a hundred rolls" do

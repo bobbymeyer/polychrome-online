@@ -92,7 +92,7 @@ RSpec.describe "A setting's pocket history (Chronicle) and where things came fro
 
     post world_campaigns_path(world), params: { campaign: { name: "Rust" } }
     campaign = world.campaigns.find_by!(name: "Rust")
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     dungeon = campaign.locations.find { |l| l.dungeon? }
     view = dungeon.view
     boss = view["rooms"].find { |r| r["key"] == view["boss"] }

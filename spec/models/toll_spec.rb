@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Toll do
   let(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
+  let(:campaign) { base_campaign }
   let(:cave) { world.location_templates.find_by!(slug: "goblin_cave") }
   let(:dungeon) do
     campaign.locations.create!(location_template: cave, seed: 11).tap do |d|

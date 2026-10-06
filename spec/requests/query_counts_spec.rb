@@ -9,7 +9,7 @@ require "rails_helper"
 # must ask the same number of questions of both.
 RSpec.describe "Queries per page", type: :request do
   let(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
+  let(:campaign) { base_campaign(gm: @admin) }
 
   def add_places(count)
     village = world.location_templates.find_by!(slug: "village")

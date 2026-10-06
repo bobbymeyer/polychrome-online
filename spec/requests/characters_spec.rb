@@ -4,9 +4,9 @@ require "rails_helper"
 
 RSpec.describe "Campaigns and characters", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
+  let(:campaign) { base_campaign }
   let(:knight) { world.jobs.find_by!(slug: "knight") }
-  let(:bartz) { campaign.characters.create!(name: "Bartz", player_name: "Sam", job: knight, starting_level: 5, starting_job_level: 1, starting_gear: false) }
+  let(:bartz) { base_character(campaign, name: "Bartz", player_name: "Sam", starting_level: 5, starting_job_level: 1, starting_gear: false) }
   let(:item) { ->(slug) { world.items.find_by!(slug: slug) } }
 
   describe "campaigns" do
@@ -15,13 +15,15 @@ RSpec.describe "Campaigns and characters", type: :request do
       campaign = Campaign.find_by!(name: "Second Run")
       expect(response).to redirect_to(campaign_path(campaign))
 
-      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"))
+      base_character(campaign, name: "Lenna", job: "white_mage")
       campaign.add_item!(item.("potion"), 3)
       get campaign_path(campaign)
       expect(response.body).to include("Lenna", "White Mage")
       expect(response.body).not_to include("New battle", "Potion", ">Bag<") # the lobby: a battle is called at the table, the chest is stocked in Prep
       get campaign_prep_path(campaign)
-      expect(response.body).to include("Potion", 'id="prep_bag"', "Add to chest", "The chest", "Lenna&#39;s bag")
+      expect(page.at("#prep_bag")).to be_present
+      expect(response.body).to include("Potion", "Add to chest", "The chest")
+      expect(page.text).to include("Lenna's bag")
 
       get world_path(world)
       expect(response.body).to include("Second Run")
@@ -35,13 +37,14 @@ RSpec.describe "Campaigns and characters", type: :request do
       get campaign_path(campaign)
       expect(response.body).to include("motive--card", "My sister is out there.")
       get character_path(faris)
-      expect(response.body).to include('class="motive"', "My sister is out there.")
+      expect(page.at(".motive").text).to include("My sister is out there.")
       get world_compendium_job_path(world, knight)
       expect(response.body).to include("Desperation", "Unbroken Line")
 
       battle = BattleRecord.start!(campaign: campaign, characters: [ faris ], name: "Test", encounter: { "goblin" => 1 })
       get battle_path(battle)
-      expect(response.body).to include("data-battle-player-cries-value=\"{&quot;#{faris.battle_unit_id}&quot;:&quot;My sister is out there.&quot;}\"")
+      cries = JSON.parse(page.at("[data-battle-player-cries-value]")["data-battle-player-cries-value"])
+      expect(cries).to eq(faris.battle_unit_id => "My sister is out there.")
     end
 
     it "lets the GM stock the bag and adjust gil" do
@@ -55,12 +58,12 @@ RSpec.describe "Campaigns and characters", type: :request do
     it "makes camp at the table, under Things to do here, and says so there, but not mid-battle" do
       bartz.update!(hp: 1, mp: 0)
       campaign.update!(time_of_day: "dusk", current_node: campaign.map_nodes.create!(name: "The Road", kind: "field", x: 1, y: 1, visible: true))
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      sit(campaign, "gm")
       get campaign_path(campaign)
       expect(response.body).not_to include("Make camp") # the lobby does nothing the party does
       campaign.call_controls!("doing")
       get campaign_table_path(campaign)
-      expect(Nokogiri::HTML(response.body).at("#table_ways").text).to include("Make camp")
+      expect(page.at("#table_ways").text).to include("Make camp")
       post campaign_ways_path(campaign), params: { way: "Make camp (overnight)", go: 1 }
       expect(bartz.reload.current_hp).to eq(bartz.stats["max_hp"])
       expect(bartz.current_mp).to eq(bartz.stats["max_mp"] / 2) # a bed brings the rest
@@ -80,9 +83,8 @@ RSpec.describe "Campaigns and characters", type: :request do
       campaign.place_party!(varn)
       bartz # the party
       campaign.call_controls!("doing")
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
-      get campaign_table_path(campaign)
-      ways = Nokogiri::HTML(response.body).at("#table_ways").text
+      at_the_table(campaign, as: "gm")
+      ways = page.at("#table_ways").text
       expect(ways).to include("Rooms at #{campaign.reload.inn_here['name']}")
       expect(ways).not_to include("Make camp")
     end
@@ -166,10 +168,11 @@ RSpec.describe "Campaigns and characters", type: :request do
     end
 
     it "lets the GM grant EXP and ABP, from GM tools at the table" do
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      sit(campaign, "gm")
       campaign.call_controls!("tools") # GM tools is a control on the strip
       get campaign_table_path(campaign)
-      expect(response.body).to include("Grant EXP and ABP", 'id="grant_character_id"', "The party (everyone)")
+      expect(response.body).to include("Grant EXP and ABP", "The party (everyone)")
+      expect(page.at("#grant_character_id")).to be_present
       post campaign_grants_path(campaign), params: { character_id: bartz.id, grant: { exp: "1000", abp: "20" } }
       follow_redirect!
       expect(response.body).to include("Bartz gains 1000 EXP and 20 ABP.", "Level 11!", "Learned Armor Break.")
@@ -200,7 +203,8 @@ RSpec.describe "Campaigns and characters", type: :request do
     it "takes from the party's chest and puts back, from the sheet; the chest shows on everyone's sheet" do
       campaign.add_item!(item.("potion"), 3)
       get character_path(bartz)
-      expect(response.body).to include('id="chest"', "The party's chest", "Potion", 'value="Take"')
+      expect(page.at("#chest").text).to include("The party's chest", "Potion")
+      expect(page.at("#chest input[value=Take]")).to be_present
 
       patch character_chest_path(bartz), params: { item_id: item.("potion").id, quantity: 2, direction: "take" }
       expect(bartz.quantity_of(item.("potion"))).to eq(2)
@@ -224,7 +228,7 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(response).to redirect_to(root_path)
       get campaign_path(campaign)
       expect(response.body).to include("Bartz")
-      expect(response.body).not_to include("href=\"#{character_path(bartz)}\"") # the card, not the sheet
+      expect(page.at("a[href='#{character_path(bartz)}']")).to be_nil # the card, not the sheet
     end
   end
 
@@ -237,7 +241,7 @@ RSpec.describe "Campaigns and characters", type: :request do
       battle = BattleRecord.last
       expect(battle.party.sole).to include("hp" => 50, "stats" => bartz.stats)
 
-      post battle_seat_path(battle), params: { seat: "gm" }
+      sit_in_battle(battle, "gm")
       post battle_actions_path(battle), params: { gm: { op: "end_battle", result: "victory" } }
       get battle_panel_path(battle)
       expect(response.body).to include("Victory!", "Bartz</strong>: 30 EXP, 2 ABP", "Back to the table")

@@ -18,7 +18,6 @@ RSpec.describe "A story table's coverage (StoryCoverage)", type: :request do
 
     get world_generation_generator_table_coverage_path(world, table)
     expect(response).to have_http_status(:ok)
-    page = Nokogiri::HTML(response.body)
     expect(page.at("h2:contains('Where it')").parent.text.squish).to match(/Nothing fits \d+% of the moments/)
     expect(page.css("tr.is-thin td:first-child").map(&:text)).to include(a_string_starting_with("Dungeon"), "3. Never at all.")
     never = page.css("tr").find { |tr| tr.text.include?("3. Never at all.") }
@@ -27,7 +26,7 @@ RSpec.describe "A story table's coverage (StoryCoverage)", type: :request do
     expect(smoke.css("td.num").map(&:text)).not_to include("never") # a flag the rows ask about is set in some moments
 
     get world_generation_generator_table_coverage_path(world, table, place: "town", period: "night", facts: "smoke_seen")
-    tried = Nokogiri::HTML(response.body).css(".coverage-try li").map { |li| li.text.squish }
+    tried = page.css(".coverage-try li").map { |li| li.text.squish }
     expect(tried.first).to start_with("A town by night.").or start_with("The smoke again.")
     expect(tried.size).to eq(3)
     expect(response.body).to include("The first 2 tie")

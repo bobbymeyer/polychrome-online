@@ -10,10 +10,6 @@ RSpec.describe "Battle screen", type: :request do
   let(:bartz) { battle.party.first["id"] }
   let(:faris) { battle.party.second["id"] }
 
-  def sit(seat)
-    post battle_seat_path(battle), params: { seat: seat }
-  end
-
   def command!(params)
     post battle_actions_path(battle), params: { command: params }
   end
@@ -26,17 +22,19 @@ RSpec.describe "Battle screen", type: :request do
     cid = battle.campaign.npcs.create!(name: "Cid", title: "Engineer")
     battle.campaign.messages.create!(body: "Hold the line!", speaker: cid)
     get battle_path(battle)
-    drawer = response.body[/<div class="log-drawer".*?<\/aside>/m]
-    expect(drawer).to include("Battle", 'id="chat_log"', "Hold the line!")
-    expect(response.body).to match(/<section class="dialogue window dialogue--battle".*?aria-label="Dialogue"\s+hidden>/m) # nothing said yet in this battle
+    drawer = page.at(".log-drawer")
+    expect(drawer.at("#chat_log")).to be_present
+    expect(drawer.text).to include("Battle", "Hold the line!")
+    expect(page.at("section.dialogue.dialogue--battle[aria-label=Dialogue]").key?("hidden")).to be(true) # nothing said yet in this battle
     expect(response.body).to include(Turbo::StreamsChannel.signed_stream_name([ battle.campaign, :table ]))
   end
 
   it "lets the seated speak from the battle, and takes back lines there too" do
-    post campaign_table_seat_path(battle.campaign), params: { seat: "gm" }
+    sit(battle.campaign, "gm")
     get battle_path(battle)
-    expect(response.body).to include("battle-composer", campaign_composer_path(battle.campaign), 'data-retract="all"')
-    expect(response.body).not_to include('data-menu-key="Talk"') # the GM's panel has no commands
+    expect(response.body).to include("battle-composer", campaign_composer_path(battle.campaign))
+    expect(page.at("[data-retract=all]")).to be_present
+    expect(page.at("[data-menu-key=Talk]")).to be_nil # the GM's panel has no commands
   end
 
   it "tells the GM how a fight is likely to go, as they set it up" do
@@ -45,12 +43,12 @@ RSpec.describe "Battle screen", type: :request do
     get new_campaign_battle_path(campaign) # the old page's address calls Battle at the table
     expect(response).to redirect_to(campaign_table_path(campaign))
     expect(campaign.reload.controls).to eq("battle")
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    get campaign_table_path(campaign)
-    setup = Nokogiri::HTML(response.body).at("#table_called .battle-setup")
-    expect(setup.to_html).to include('data-controller="forecast help"', 'id="forecast"')
-    expect(setup.to_html).to match(/>Goblin \(\d+ HP\)</) # how tough, not the book's level
-    expect(setup.to_html).not_to include("(Lv ")
+    at_the_table(campaign, as: "gm")
+    setup = page.at("#table_called .battle-setup")
+    expect(setup["data-controller"].split).to include("forecast", "help")
+    expect(setup.at("#forecast")).to be_present
+    expect(setup.css("option").map(&:text)).to include(match(/\AGoblin \(\d+ HP\)\z/)) # how tough, not the book's level
+    expect(setup.text).not_to include("(Lv ")
     expect(setup.css("fieldset legend").map(&:text)).to eq([ "What they face", "Who fights" ])
     expect(setup.at("details.battle-setup__more").text).to include("Input timer", "Seed", "Can flee") # the rest, behind More
 
@@ -63,7 +61,7 @@ RSpec.describe "Battle screen", type: :request do
   end
 
   it "lets a player put themselves on auto, and only themselves" do
-    sit(bartz)
+    sit_in_battle(battle, bartz)
     battle.set_auto!(bartz, false) # unclaimed characters start on auto
     get battle_panel_path(battle)
     expect(response.body).to include("Go on auto")
@@ -78,7 +76,7 @@ RSpec.describe "Battle screen", type: :request do
   it "tells a player the round, and what the clock does if they don't choose" do
     timed = start_battle(input_seconds: 30)
     me = timed.party.first["id"]
-    post battle_seat_path(timed), params: { seat: me }
+    sit_in_battle(timed, me)
     get battle_panel_path(timed)
     expect(response.body).to include("Round 1", "Choose before the clock runs out, or you Attack.")
     post battle_actions_path(timed), params: { command: { kind: "defend" }, actor: me }
@@ -89,62 +87,71 @@ RSpec.describe "Battle screen", type: :request do
   it "tells the GM who the round waits on, one line a unit, with one button when it matters" do
     battle.set_auto!(bartz, false)
     battle.set_auto!(faris, true)
-    sit("gm")
+    sit_in_battle(battle, "gm")
     get battle_panel_path(battle)
     expect(response.body).to include("Waiting on Bartz.")
-    rows = Nokogiri::HTML(response.body).css(".gm-rows[aria-label='The party'] .gm-row")
+    rows = page.css(".gm-rows[aria-label='The party'] .gm-row")
     expect(rows.map { |r| r.at(".gm-row__name").text }).to eq(%w[Bartz Faris])
     expect(rows[0].at(".gm-row__who").text.squish).to eq("Waiting on their player Auto") # one button: put them on auto
     expect(rows[1].at(".gm-row__who").text.squish).to eq("Auto Hand back") # one button: take them off it
-    expect(response.body).not_to include("Auto this round", "Auto every round", "Who chooses", "<table") # no table, no two autos
+    expect(response.body).not_to include("Auto this round", "Auto every round", "Who chooses") # no two autos
+    expect(page.at("table")).to be_nil # no table
 
     get battle_path(battle)
     expect(response.body).to include("Fast animations")
   end
 
   it "shows only the battle: overrides, reinforcements and pacing behind GM controls, Fast animations in the Menu" do
-    sit("gm")
+    sit_in_battle(battle, "gm")
     get battle_panel_path(battle)
-    folded = response.body[/<details class="gm-controls">.*?\n<\/details>/m]
-    expect(folded).to include("GM controls", "Someone joins", "Override", "Pacing")
-    expect(response.body.sub(folded, "")).to include("Run the round now", "End the battle", "Call it off")
-    expect(response.body.sub(folded, "")).not_to include("Apply override", "Bring them in")
+    folded = page.at("details.gm-controls")
+    expect(folded.text).to include("GM controls", "Someone joins", "Override", "Pacing")
+    folded.remove
+    expect(page.text).to include("Run the round now", "End the battle", "Call it off")
+    expect(page.text).not_to include("Apply override", "Bring them in")
 
     get battle_path(battle)
-    menu = response.body[/<div class="topbar__user-menu">.*?<\/details>/m]
-    expect(menu).to include("data-battle-fast", "Fast animations", "Sound on", "data-timing-meter", "Timing meter") # device settings, beside Sound
-    expect(response.body[/<header class="battle__header">.*?<\/header>/m]).not_to include("Fast animations")
-    expect(response.body[/<nav class="topbar__books".*?<\/nav>/m]).not_to include("Fast animations")
+    menu = page.at(".topbar__user-menu")
+    expect(menu.text).to include("Fast animations", "Sound on", "Timing meter") # device settings, beside Sound
+    expect(menu.at("[data-battle-fast]")).to be_present
+    expect(menu.at("[data-timing-meter]")).to be_present
+    expect(page.at("header.battle__header").text).not_to include("Fast animations")
+    expect(page.css("nav.topbar__books").map(&:text).join).not_to include("Fast animations")
   end
 
   it "marks the hurt in the party strip, which only shows once someone is" do
-    sit(bartz)
+    sit_in_battle(battle, bartz)
     get battle_panel_path(battle)
-    expect(response.body[/<ol class="party-strip".*?<\/ol>/m]).not_to include("is-hurt", "is-ko")
+    expect(page.at("ol.party-strip .is-hurt, ol.party-strip .is-ko")).to be_nil
     battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => faris, "value" => 1 }, actor: "gm")
     get battle_panel_path(battle)
-    expect(response.body[/<ol class="party-strip".*?<\/ol>/m]).to include("is-hurt")
+    expect(page.at("ol.party-strip .is-hurt")).to be_present
   end
 
   it "shows each party member's plan on the board, and what lasts on a unit with its count" do
-    sit(bartz)
+    sit_in_battle(battle, bartz)
     command!(kind: "ability", ability: "attack", target: "goblin_a")
     get battle_path(battle)
-    expect(response.body).to include(%(<span class="intent" data-intent>Attack → Goblin A</span>))
-    expect(response.body.scan(/data-intent/).size).to eq(2) # on the unit, and in the roster
+    expect(page.css("[data-intent]").map(&:text)).to eq([ "Attack → Goblin A" ] * 2) # on the unit, and in the roster
+    expect(page.at("span.intent[data-intent]")).to be_present
 
-    sit("gm")
+    sit_in_battle(battle, "gm")
     gm!(op: "add_status", unit: "goblin_a", status: "poison", turns: 3)
     get battle_path(battle)
-    expect(response.body).to match(/data-status="poison" data-turns="3"[^>]*>\s*Poison\s*<b>3<\/b>/)
-    expect(response.body).to include("turn-rail", "round-tally")
+    poison = page.at("[data-status=poison][data-turns='3']")
+    expect(poison.text.squish).to eq("Poison 3")
+    expect(poison.at("b").text).to eq("3")
+    expect(page.at(".turn-rail")).to be_present
+    expect(page.at(".round-tally")).to be_present
   end
 
   it "says what a move would reach, and what the party knows a target is weak to" do
-    sit(bartz)
+    sit_in_battle(battle, bartz)
     get battle_panel_path(battle)
-    expect(response.body).to include('data-menu-key="Attack" data-reach="single_enemy"', 'data-menu-key="Cure" data-reach="single_ally"')
-    expect(response.body).to include(%(data-help="Halve the damage you take this round." data-reach="self"))
+    expect(page.at("[data-menu-key=Attack]")["data-reach"]).to eq("single_enemy")
+    expect(page.at("[data-menu-key=Cure]")["data-reach"]).to eq("single_ally")
+    defend = page.at("[data-help='Halve the damage you take this round.']")
+    expect(defend["data-reach"]).to eq("self")
 
     # The party has seen the goblin take fire: a fire-typed blow says "Weak!" before it's chosen.
     battle.campaign.update!(known_affinities: { "goblin" => { "types" => %w[normal], "fire" => "weak" } })
@@ -160,7 +167,7 @@ RSpec.describe "Battle screen", type: :request do
   end
 
   it "takes a Perfect from the timing meter with a player's move" do
-    sit(bartz)
+    sit_in_battle(battle, bartz)
     get battle_panel_path(battle)
     expect(response.body).to include("timing-meter")
     expect(response.body).not_to include("Timing meter") # the setting is in the account menu
@@ -169,7 +176,7 @@ RSpec.describe "Battle screen", type: :request do
   end
 
   it "lets a player try something off the menu, which the GM rules on and the dice decide" do
-    sit(bartz)
+    sit_in_battle(battle, bartz)
     get battle_panel_path(battle)
     expect(response.body).to include("Try something")
     get battle_panel_path(battle, custom: 1)
@@ -177,7 +184,7 @@ RSpec.describe "Battle screen", type: :request do
     command!(kind: "custom", text: "Kick the brazier onto them", target: "goblin_a")
     expect(battle.reload.state["inputs"][bartz]).to include("kind" => "custom", "text" => "Kick the brazier onto them")
 
-    sit("gm")
+    sit_in_battle(battle, "gm")
     get battle_panel_path(battle)
     expect(response.body).to include("Ideas to rule on", "Kick the brazier onto them")
     battle.set_auto!(faris, true)
@@ -191,11 +198,11 @@ RSpec.describe "Battle screen", type: :request do
 
   it "lets the GM rule an idea as a skill check, with the character's job bonus" do
     battle.world.jobs.find_by!(slug: "knight").update!(skills: %w[athletics])
-    sit(bartz)
+    sit_in_battle(battle, bartz)
     command!(kind: "custom", text: "Vault the barricade")
-    sit("gm")
+    sit_in_battle(battle, "gm")
     get battle_panel_path(battle)
-    expect(response.body).to include('value="skill:athletics"')
+    expect(page.at("[value='skill:athletics']")).to be_present
     gm!(op: "rule", unit: bartz, stat: "skill:athletics", difficulty: "normal", effect: "none", success: "Over!", failure: "Not quite.")
     expect(battle.reload.state["inputs"][bartz]["ruling"]).to include("stat" => "str", "skill" => "Athletics", "bonus" => 15)
   end
@@ -209,15 +216,14 @@ RSpec.describe "Battle screen", type: :request do
 
   describe "setting up" do
     let!(:world) { base_world }
-    let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
-    let!(:bartz_character) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5) }
-    let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5) }
+    let(:campaign) { base_campaign }
+    let!(:bartz_character) { base_character(campaign, name: "Bartz", starting_level: 5) }
+    let!(:lenna) { base_character(campaign, name: "Lenna", job: "white_mage", starting_level: 5) }
 
     it "starts a battle for the chosen characters and seats the creator as GM" do
       campaign.call_controls!("battle")
-      post campaign_table_seat_path(campaign), params: { seat: "gm" } # the setup is the GM's
-      get campaign_table_path(campaign)
-      expect(Nokogiri::HTML(response.body).at("#table_called").text).to include("Bartz", "Lenna")
+      at_the_table(campaign, as: "gm") # the setup is the GM's
+      expect(page.at("#table_called").text).to include("Bartz", "Lenna")
 
       post campaign_battles_path(campaign), params: { battle: {
         name: "Ambush", seed: "42", escapable: "1", input_seconds: "60", characters: [ "", lenna.id.to_s ],
@@ -259,8 +265,11 @@ RSpec.describe "Battle screen", type: :request do
     it "renders the board from the current state, with a lazily loaded command panel" do
       get battle_path(battle)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('data-controller="battle-player dialogue heartbeat recap"', "turbo-cable-stream-source",
-                                        'data-unit="goblin_a"', %(data-roster="#{bartz}"), 'id="command_panel"')
+      expect(page.at("[data-controller~=battle-player]")["data-controller"].split).to include("dialogue", "heartbeat", "recap")
+      expect(page.at("turbo-cable-stream-source")).to be_present
+      expect(page.at("[data-unit=goblin_a]")).to be_present
+      expect(page.at("[data-roster='#{bartz}']")).to be_present
+      expect(page.at("#command_panel")).to be_present
     end
 
     it "shows the log so far to a late joiner, without replaying anything" do
@@ -275,17 +284,22 @@ RSpec.describe "Battle screen", type: :request do
       campaign.world.monsters.find_by!(slug: "goblin").update!(boss: true, boss_line: "You dare?")
       boss_battle = start_battle(campaign: campaign)
       get battle_path(boss_battle)
-      expect(response.body).to include("battle--boss", 'data-boss-down="Goblin falls!"', 'data-controller="boss-intro"',
-                                        'data-boss-intro-line-value="You dare?"', 'data-boss-intro-fresh-value="true"')
+      expect(page.at(".battle--boss")).to be_present
+      expect(page.at("[data-boss-down]")["data-boss-down"]).to eq("Goblin falls!")
+      intro = page.at("[data-controller~=boss-intro]")
+      expect(intro["data-boss-intro-line-value"]).to eq("You dare?")
+      expect(intro["data-boss-intro-fresh-value"]).to eq("true")
 
       get battle_path(plain)
-      expect(response.body).not_to include("boss-intro", "battle--boss")
+      expect(page.at("[data-controller~=boss-intro], .battle--boss")).to be_nil
     end
 
     it "never shows enemy HP on the shared board" do
       get battle_path(battle)
-      board = response.body[/<div class="board"[^>]*>.*?<ol class="roster/m]
-      expect(board).not_to include("data-hp")
+      board = page.at("div.board")
+      board.css("ol.roster").each(&:remove)
+      expect(board.at("[data-hp]")).to be_nil
+      expect(board.to_html).not_to include("data-hp")
     end
   end
 
@@ -294,19 +308,20 @@ RSpec.describe "Battle screen", type: :request do
       get battle_panel_path(battle)
       expect(response.body).to include("Take a seat", "Game Master", "Bartz", "Faris")
 
-      sit(bartz)
+      sit_in_battle(battle, bartz)
       get battle_panel_path(battle)
-      expect(response.body).to include("Seated as <strong>Bartz</strong>", "Attack", "Cure", "Defend")
+      expect(page.text).to include("Seated as Bartz", "Attack", "Cure", "Defend")
+      expect(page.css("strong").map(&:text)).to include("Bartz")
     end
 
     it "ignores seats that aren't party members" do
-      sit("goblin_a")
+      sit_in_battle(battle, "goblin_a")
       get battle_panel_path(battle)
       expect(response.body).to include("Take a seat")
     end
 
     it "can be left" do
-      sit("gm")
+      sit_in_battle(battle, "gm")
       delete battle_seat_path(battle)
       follow_redirect!
       expect(response.body).to include("Take a seat")
@@ -314,29 +329,32 @@ RSpec.describe "Battle screen", type: :request do
   end
 
   describe "players" do
-    before { sit(bartz) }
+    before { sit_in_battle(battle, bartz) }
 
     it "find their way around the campaign from the battle, their sheet included" do
       battle.campaign.characters.find_by!(name: "Bartz").update!(user: @admin)
       get battle_path(battle)
-      nav = response.body[%r{<nav class="topbar__books" aria-label="Campaign">.*?</nav>}m]
-      expect(nav).to include(">Table<", ">My sheet<")
+      nav = page.at("nav.topbar__books[aria-label=Campaign]")
+      expect(nav.css("a").map(&:text)).to include("Table", "My sheet")
     end
 
     it "see who was down at the end of a win, and that they earned nothing" do
       battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => faris, "value" => 0 }, actor: "gm")
       battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
       get battle_panel_path(battle)
-      expect(response.body).to include("<strong>Faris</strong>: <span class=\"muted\">down at the end, so no EXP or ABP.</span>")
+      down = page.css("li, p").find { |n| n.text.include?("down at the end, so no EXP or ABP.") }
+      expect(down.at("strong").text).to eq("Faris")
+      expect(down.at("span.muted").text).to eq("down at the end, so no EXP or ABP.")
     end
 
     it "pick a target, then submit, and get a placeholder that holds no battle state" do
       get battle_panel_path(battle, ability: "attack")
-      expect(response.body).to include("data-choosing", "Goblin A", "Goblin B")
+      expect(page.at("[data-choosing]")).to be_present
+      expect(response.body).to include("Goblin A", "Goblin B")
 
       command!(kind: "ability", ability: "attack", target: "goblin_b")
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("data-resolving")
+      expect(page.at("[data-resolving]")).to be_present
       expect(response.body).not_to include("Goblin", "Round", "HP")
       expect(battle.reload.state["inputs"][bartz]).to include("target" => "goblin_b")
     end
@@ -347,11 +365,16 @@ RSpec.describe "Battle screen", type: :request do
       battle.update!(state: state)
 
       get battle_panel_path(battle)
-      expect(response.body).to include(%(data-controller="menu timing-meter battle-talk"), %(data-menu-you-value="#{bartz}"), "Single enemy · Physical")
-      expect(response.body).to match(/aria-disabled="true" data-help="Not enough MP[^"]*"[^>]*>Cure/)
+      menu = page.at("[data-controller~=menu]")
+      expect(menu["data-controller"].split).to include("timing-meter", "battle-talk")
+      expect(menu["data-menu-you-value"]).to eq(bartz)
+      expect(response.body).to include("Single enemy · Physical")
+      cure = page.css("[aria-disabled=true]").find { |n| n.text.strip == "Cure" }
+      expect(cure["data-help"]).to start_with("Not enough MP")
 
       get battle_panel_path(battle, ability: "attack")
-      expect(response.body).to include('data-unit-id="goblin_a"', 'data-menu-back="true"')
+      expect(page.at("[data-unit-id=goblin_a]")).to be_present
+      expect(page.at("[data-menu-back=true]")).to be_present
     end
 
     it "always act as their own seat, whatever the params say" do
@@ -363,7 +386,8 @@ RSpec.describe "Battle screen", type: :request do
     it "see the waiting state after submitting, and can change their command" do
       command!(kind: "defend")
       get battle_panel_path(battle)
-      expect(response.body).to include("Ready: <strong>Defend</strong>", "Waiting for Faris", "Change command")
+      expect(page.text).to include("Ready: Defend", "Waiting for Faris", "Change command")
+      expect(page.css("strong").map(&:text)).to include("Defend")
       get battle_panel_path(battle, change: 1)
       expect(response.body).to include("Attack")
     end
@@ -388,7 +412,7 @@ RSpec.describe "Battle screen", type: :request do
 
   describe "the GM" do
     it "brings in reinforcements and a guest from the Bestiary, and sends an enemy off" do
-      post battle_seat_path(battle), params: { seat: "gm" }
+      sit_in_battle(battle, "gm")
       gm!(op: "add_unit", side: "enemy", monster: "goblin", note: "More!")
       expect(battle.reload.enemies.map { |u| u["id"] }).to include("goblin_c")
 
@@ -403,15 +427,15 @@ RSpec.describe "Battle screen", type: :request do
       gm!(op: "dismiss", unit: "goblin_c")
       expect(battle.reload.unit("goblin_c")["gone"]).to be(true)
       get battle_path(battle)
-      expect(response.body).not_to include('data-unit="goblin_c"')
+      expect(page.at("[data-unit=goblin_c]")).to be_nil
       expect(response.body).to include("Goblin C leaves the field.", "GM sends Goblin C off.")
     end
-    before { sit("gm") }
+    before { sit_in_battle(battle, "gm") }
 
     it "sees every unit's HP and who the round is waiting on" do
       get battle_panel_path(battle)
       expect(response.body).to include("The party", "Run the round now", "The other side")
-      expect(Nokogiri::HTML(response.body).at(".gm-rows[aria-label='The other side']").text.squish).to include("Goblin A HP 50/50")
+      expect(page.at(".gm-rows[aria-label='The other side']").text.squish).to include("Goblin A HP 50/50")
       expect(response.body).to include("Waiting on") # by the round's clock, as well as in the rows
       expect(response.body).not_to include("On auto every round")
     end
@@ -461,27 +485,28 @@ RSpec.describe "Battle screen", type: :request do
     end
 
     it "is the player saying they're ready, never what loading the page does" do
-      sit(bartz)
+      sit_in_battle(battle, bartz)
       get battle_path(battle)
-      expect(response.body).to include('id="battle_ready"', battle_arrival_path(battle), "Ready", "is ready")
+      expect(page.at("#battle_ready")).to be_present
+      expect(response.body).to include(battle_arrival_path(battle), "Ready", "is ready")
       get battle_panel_path(battle)
       expect(battle.reload.arrived_units).to be_empty
 
       post battle_arrival_path(battle), as: :turbo_stream
-      expect(response.body).to include('action="remove"', "battle_ready")
+      expect(page.at("turbo-stream[action=remove]")["target"]).to eq("battle_ready")
       expect(battle.reload.arrived_units).to eq([ bartz ])
       get battle_path(battle)
-      expect(response.body).not_to include('id="battle_ready"')
+      expect(page.at("#battle_ready")).to be_nil
     end
 
     it "counts choosing a first move as being ready" do
-      sit(bartz)
+      sit_in_battle(battle, bartz)
       get battle_path(battle)
       expect(response.body).to include("Choosing your first move counts too.")
       post battle_actions_path(battle), params: { command: { kind: "defend" } }
       expect(battle.reload.arrived_units).to eq([ bartz ])
       get battle_panel_path(battle)
-      expect(response.body).to include("data-chosen")
+      expect(page.at("[data-chosen]")).to be_present
     end
 
     it "takes everyone's Ready button away once the clock runs, or the fight is over" do
@@ -500,7 +525,7 @@ RSpec.describe "Battle screen", type: :request do
     end
 
     it "keeps the clock going while someone has the battle open, and says when it's held" do
-      sit(bartz)
+      sit_in_battle(battle, bartz)
       get battle_path(battle)
       expect(response.body).to include("heartbeat", battle_watch_path(battle))
 

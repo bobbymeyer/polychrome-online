@@ -6,7 +6,7 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
   include ActiveJob::TestHelper
 
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
   let!(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true, location: town) }
@@ -14,7 +14,7 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
 
   before do
     allow(Llm).to receive(:enabled?).and_return(true)
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
   end
 
   # Ask, then let the job run against a scripted model. Returns the draft.
@@ -123,7 +123,7 @@ RSpec.describe "Suggestions from the language model (Draft)", type: :request do
                       root: "Frost", shape: "caster", type: "ice")
       keep(draft)
       follow_redirect!
-      expect(response.body).to include('value="Frostra"', 'value="Winter itself."')
+      expect(page.css("input").map { |i| i["value"] }).to include("Frostra", "Winter itself.")
       post world_grimoire_families_path(world), params: { family: { root: "Frost", shape: "caster", type: "ice",
                                                                     tiers: { "0" => { name: "Frost", description: "A bite of cold." } } } }
       expect(world.abilities.find_by!(name: "Frost").description).to eq("A bite of cold.")

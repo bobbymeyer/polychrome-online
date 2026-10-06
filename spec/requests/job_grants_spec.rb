@@ -31,13 +31,13 @@ RSpec.describe "Jobs as story rewards", type: :request do
     expect(response).to have_http_status(:unprocessable_content)
     expect(response.body).to include("Knight isn&#39;t open in Shards yet")
 
-    butz = campaign.characters.create!(name: "Butz", job: world.jobs.find_by!(slug: "freelancer"))
+    butz = base_character(campaign, name: "Butz", job: "freelancer")
     expect { butz.change_job!(world.jobs.find_by!(slug: "monk")) }.to raise_error(ActiveRecord::RecordInvalid, /isn't open/)
   end
 
   it "lets the GM grant an archetype to the party at the table, with a line and a card" do
     campaign = start(%w[freelancer])
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     campaign.call_controls!("tools") # GM tools is a control on the strip
     get campaign_table_path(campaign)
     expect(response.body).to include("Grant an archetype", "Knight", "Freelancer (open)")
@@ -56,10 +56,11 @@ RSpec.describe "Jobs as story rewards", type: :request do
   it "awakens one character: the job opens, they take it up, and the table stops for it" do
     campaign = start(%w[freelancer])
     yui = create_character(campaign, name: "Yui", job: world.jobs.find_by!(slug: "freelancer"))
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     campaign.call_controls!("tools") # GM tools is a control on the strip
     get campaign_table_path(campaign)
-    expect(response.body).to include("Grant an archetype", 'class="awakening-stage" data-moment-cue="awakening"', "moment#arrive")
+    expect(response.body).to include("Grant an archetype", "moment#arrive")
+    expect(page.at(".awakening-stage")["data-moment-cue"]).to eq("awakening")
 
     post campaign_job_grants_path(campaign), params: { character_id: yui.id, job: "monk", line: "I am thou, thou art I." }
     expect(yui.reload.job.slug).to eq("monk")
@@ -69,7 +70,7 @@ RSpec.describe "Jobs as story rewards", type: :request do
     expect(line.data).to include("character" => yui.id, "name" => "Yui", "job" => "Monk", "line" => "I am thou, thou art I.")
 
     get campaign_table_path(campaign)
-    card = JSON.parse(CGI.unescapeHTML(response.body[/data-chat-line-card-value="([^"]+)"/, 1]))
+    card = JSON.parse(page.at("[data-chat-line-card-value]")["data-chat-line-card-value"])
     expect(card).to include("name" => "Yui", "job" => "Monk", "portrait" => "")
     expect(card["plate"]).to start_with("--plate:")
 

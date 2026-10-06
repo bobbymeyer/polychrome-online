@@ -4,13 +4,13 @@ require "rails_helper"
 
 RSpec.describe "Items and shops", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin, gil: 200) }
+  let(:campaign) { base_campaign(gm: @admin, gil: 200) }
   let(:potion) { world.items.find_by!(slug: "potion") }
   let(:antidote) { world.items.find_by!(slug: "antidote") }
 
   describe "in battle" do
-    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5, starting_gear: false) }
-    let!(:faris) { campaign.characters.create!(name: "Faris", job: world.jobs.find_by!(slug: "monk"), starting_level: 5, starting_gear: false) }
+    let!(:bartz) { base_character(campaign, name: "Bartz", starting_level: 5, starting_gear: false) }
+    let!(:faris) { base_character(campaign, name: "Faris", job: "monk", starting_level: 5, starting_gear: false) }
 
     before do
       bartz.add_item!(potion, 1)
@@ -23,20 +23,23 @@ RSpec.describe "Items and shops", type: :request do
       battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 3 }, seed: 3)
       expect(battle.state["items"].keys).to eq([ "potion" ])
 
-      post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
+      sit_in_battle(battle, bartz.battle_unit_id)
       get battle_panel_path(battle)
-      expect(response.body).to include(">Item</a>", "<td class=\"pick-row__cost\">×7</td>", 'data-menu-key="Talk"') # talk is an action here
+      expect(page.css("a").map(&:text)).to include("Item")
+      expect(page.css("td.pick-row__cost").map(&:text)).to include("×7")
+      expect(page.at("[data-menu-key=Talk]")).to be_present # talk is an action here
       get battle_panel_path(battle, items: 1)
       expect(response.body).to include("Potion", "Single ally · Restore HP, power 30 · 7 left")
       get battle_panel_path(battle, item: "potion")
-      expect(response.body).to include("<strong>Potion</strong>: choose a target.")
+      expect(page.text).to include("Potion: choose a target.")
+      expect(page.css("strong").map(&:text)).to include("Potion")
 
       post battle_actions_path(battle), params: { command: { kind: "item", item: "potion", target: faris.battle_unit_id } }
       expect(battle.reload.state["inputs"][bartz.battle_unit_id]).to include("kind" => "item", "item" => "potion")
       get battle_panel_path(battle)
-      expect(response.body).to include("Ready: <strong>Potion</strong>")
+      expect(page.text).to include("Ready: Potion")
 
-      post battle_seat_path(battle), params: { seat: "gm" }
+      sit_in_battle(battle, "gm")
       post battle_actions_path(battle), params: { gm: { op: "execute_round" } }
       expect(battle.reload.state["items"]["potion"]["count"]).to eq(6)
       expect(battle.battle_events.map(&:payload)).to include(a_hash_including("type" => "item_used", "item" => "potion"))
@@ -50,23 +53,23 @@ RSpec.describe "Items and shops", type: :request do
     it "leaves the Item command out when the party has nothing usable" do
       campaign.use_items!(potion, 7) # their bags first, then the chest
       battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 1 }, seed: 3)
-      post battle_seat_path(battle), params: { seat: bartz.battle_unit_id }
+      sit_in_battle(battle, bartz.battle_unit_id)
       get battle_panel_path(battle)
-      expect(response.body).not_to include("data-menu-key=\"Item\"")
+      expect(page.at("[data-menu-key=Item]")).to be_nil
     end
   end
 
   describe "shops" do
     let(:node) { campaign.map_nodes.create!(name: "Port", kind: "town", x: 100, y: 100, visible: true) }
     let(:town) do
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      sit(campaign, "gm")
       post map_node_location_path(node), params: { location_template_id: world.location_templates.find_by!(slug: "port_town").id }
       node.reload.location.tap { |l| l.set_stock!(%w[potion antidote]) }
     end
     let!(:lenna) { make_user("Lenna") }
 
     before do
-      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), user: lenna, starting_gear: false)
+      base_character(campaign, name: "Lenna", job: "white_mage", user: lenna, starting_gear: false)
       campaign.update!(current_node: node)
       town
       sign_in_as(lenna)
@@ -76,7 +79,8 @@ RSpec.describe "Items and shops", type: :request do
       character = campaign.characters.find_by!(name: "Lenna")
       campaign.add_item!(potion) # one in the chest
       get location_path(town)
-      expect(response.body).to include("The party has <strong>200 gil</strong>", "Antidote", 'value="Buy"')
+      expect(page.text).to include("The party has 200 gil", "Antidote")
+      expect(page.at("input[value=Buy]")).to be_present
 
       post location_purchases_path(town), params: { item: "potion", quantity: 3 }
       expect(campaign.reload.gil).to eq(80)
@@ -111,11 +115,14 @@ RSpec.describe "Items and shops", type: :request do
       price = town.service_price("inn", lenna_character)
       label = "Rooms at #{inn['name']} (#{price} gil, overnight)"
       get location_path(town)
-      expect(response.body).to include('id="service-inn"', 'id="service-shop"', 'class="pick-row service service--inn"', "Done at the table, under Do")
+      expect(page.at("#service-inn")).to be_present
+      expect(page.at("#service-shop")).to be_present
+      expect(page.at(".pick-row.service.service--inn")).to be_present
+      expect(response.body).to include("Done at the table, under Do")
       expect(response.body).not_to include("suggest", "Rooms at", campaign_ways_path(campaign)) # one home for doing it: the table
       # What each is for, and what it costs, before it's opened.
-      expect(response.body).to match(%r{<td class="pick-row__cost service__offer">Rest the night · \d+ gil</td>})
-      expect(response.body).to include('<td class="pick-row__cost service__offer">Buy and sell</td>')
+      offers = page.css("td.pick-row__cost.service__offer").map(&:text)
+      expect(offers).to include(match(/\ARest the night · \d+ gil\z/), "Buy and sell")
 
       post campaign_ways_path(campaign), params: { way: label }
       expect(response).to have_http_status(:forbidden) # not while the table is talking
@@ -125,13 +132,13 @@ RSpec.describe "Items and shops", type: :request do
       get location_path(town)
       expect(response.body).not_to include("suggest", campaign_ways_path(campaign)) # still not here, called or not
       get campaign_table_path(campaign)
-      expect(Nokogiri::HTML(response.body).at("#table_ways").text).to include("Rooms at #{inn['name']}", "suggest") # here
+      expect(page.at("#table_ways").text).to include("Rooms at #{inn['name']}", "suggest") # here
       post campaign_ways_path(campaign), params: { way: label }
       expect(campaign.open_choice.tally[label]).to eq([ "Lenna" ])
 
       sign_out
       sign_in_as(@admin)
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      sit(campaign, "gm")
       post campaign_ways_path(campaign), params: { way: label, go: 1 }
       expect(campaign.reload.gil).to eq(200 - price)
       expect(lenna_character.reload.current_hp).to eq(lenna_character.stats["max_hp"])
@@ -142,7 +149,7 @@ RSpec.describe "Items and shops", type: :request do
       campaign.update!(current_node: campaign.map_nodes.create!(name: "Elsewhere", kind: "field", x: 300, y: 300, visible: true))
       get location_path(town)
       expect(response.body).to include("The party has to be here to use them.")
-      expect(response.body).not_to include('value="Buy"')
+      expect(page.at("input[value=Buy]")).to be_nil
       post location_purchases_path(town), params: { item: "potion" }
       expect(flash[:alert]).to eq("You can only shop in the town where the party is.")
 
@@ -153,8 +160,8 @@ RSpec.describe "Items and shops", type: :request do
   end
 
   describe "outside battle" do
-    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_level: 5, starting_gear: false) }
-    let!(:lenna) { campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), starting_level: 5, starting_gear: false) }
+    let!(:bartz) { base_character(campaign, name: "Bartz", starting_level: 5, starting_gear: false) }
+    let!(:lenna) { base_character(campaign, name: "Lenna", job: "white_mage", starting_level: 5, starting_gear: false) }
 
     before do
       lenna.add_item!(potion, 2)
@@ -164,8 +171,10 @@ RSpec.describe "Items and shops", type: :request do
 
     it "uses a healing item from their own bag on a party member, through the engine's formula" do
       get character_path(lenna)
-      expect(response.body).to include('id="items"', 'data-key="gear"', "Potion", "Bartz (HP 20/")
-      usable = Nokogiri::HTML(response.body).at("#items").text
+      expect(page.at("#items")).to be_present
+      expect(page.at("[data-key=gear]")).to be_present
+      expect(response.body).to include("Potion", "Bartz (HP 20/")
+      usable = page.at("#items").text
       expect(usable).not_to include("Antidote") # cures only work in battle (it's in the bag, above)
       expect(usable).not_to include("Lenna (HP") # unhurt: nothing to heal
 
@@ -205,12 +214,12 @@ RSpec.describe "Items and shops", type: :request do
   describe "selling worn gear" do
     let(:node) { campaign.map_nodes.create!(name: "Port", kind: "town", x: 100, y: 100, visible: true) }
     let(:town) do
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      sit(campaign, "gm")
       post map_node_location_path(node), params: { location_template_id: world.location_templates.find_by!(slug: "port_town").id }
       node.reload.location
     end
     let(:broadsword) { world.items.find_by!(slug: "broadsword") }
-    let!(:bartz) { campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"), starting_gear: false) }
+    let!(:bartz) { base_character(campaign, name: "Bartz", starting_gear: false) }
 
     before do
       campaign.update!(current_node: node)
@@ -232,7 +241,7 @@ RSpec.describe "Items and shops", type: :request do
       town
       bartz.update!(user: make_user("Someone"))
       lenna = make_user("Lenna")
-      campaign.characters.create!(name: "Lenna", job: world.jobs.find_by!(slug: "white_mage"), user: lenna, starting_gear: false)
+      base_character(campaign, name: "Lenna", job: "white_mage", user: lenna, starting_gear: false)
       sign_in_as(lenna)
       get location_path(town)
       expect(response.body).not_to include("Sell what the party is wearing")
