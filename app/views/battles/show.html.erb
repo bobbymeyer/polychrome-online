@@ -64,7 +64,7 @@
     <p class="round-tally" data-battle-player-target="tally" aria-live="polite" hidden></p>
     <div class="fx" data-battle-player-target="fx" aria-hidden="true"></div>
     <%# What's said plays on the stage, along its bottom, as at the table. %>
-    <%= render "campaigns/tables/dialogue_box", extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
+    <%= render "campaigns/tables/dialogue_box", campaign: @battle.campaign, extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
   </div>
 
   <% unless view == "stage" %>

@@ -18,8 +18,8 @@
     data-chat-line-expression-value="<%= message.expression || 'neutral' %>"
     data-chat-line-portrait-value="<%= speaker_portrait_url(message.speaker, message.expression) %>"
     data-chat-line-plate-value="<%= plate_style(message.speaker.name, message.speaker.try(:colour)) if message.speaker %>"
-    <%# A card's line carries what the card shows (moment_controller): a deadline's date and place, an arrival's place and kind. %>
-    <%= tag.attributes("data-chat-line-card-value": message.data.to_json) if %w[deadline arrival].include?(message.cue) %>
+    <%# A card's line carries what the card shows (moment_controller): a deadline's date and place, an arrival's place and kind, a choice's outcome. %>
+    <%= tag.attributes("data-chat-line-card-value": message.data.to_json) if %w[deadline arrival chosen].include?(message.cue) %>
     <%= tag.attributes("data-chat-line-card-value": awakening_card(message).to_json) if message.cue == "awakening" %>>
   <% if message.choice? %>
     <%# What they chose is its own line next ("The party chose: …"), not said twice here. %>

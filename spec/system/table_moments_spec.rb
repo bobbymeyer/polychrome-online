@@ -35,8 +35,42 @@ RSpec.describe "Moments at the table", type: :system do
       end
     end
 
-    as(player) { expect(page).to have_no_css("#table_choice .choice") }
+    as(player) do
+      expect(page).to have_no_css("#table_choice .choice")
+      # What they chose lands on everyone's table as a card.
+      expect(page).to have_css("dialog[data-moment-cue=chosen][open]", text: /The party chose\s*Trust Cid/i)
+    end
+    as(gm) { expect(page).to have_css("dialog[data-moment-cue=chosen][open]", text: /Trust Cid/) }
     expect(campaign.flags.find_by!(key: "trusted_cid").value).to eq("Trust Cid")
+  end
+
+  it "keeps the GM's talk box working after it puts a choice to the table" do
+    seat(gm, "gm")
+    seat(player, rook)
+
+    as(gm) do
+      within("#table_now") { click_on "Talk", exact: true }
+      composer = find("#composer", visible: true, match: :first)
+      expect(composer).to have_css(".composer__chip[aria-pressed=true]", text: "Narrator")
+      wait_for_streams
+      within(composer) do
+        fill_in "message_body", with: "? North | South"
+        find("textarea").send_keys(:enter)
+      end
+      expect(page).to have_css("#table_choice .choice", visible: true)
+    end
+    # A pick redraws the stage; the GM's empty box fetches itself again, from its own address rather than
+    # the one the choice was posted to (which has nothing to show: "Content missing").
+    as(player) { find(".choice__option", text: "South").find("td.pick-row__cost").click }
+    as(gm) do
+      expect(page).to have_css(".choice__option", text: /South.*R/m)
+      expect(page).to have_css("#composer form textarea", visible: true)
+      expect(page).to have_no_text(/content missing|routing error/i)
+      accept_confirm { find(".choice__option", text: "South").click_on("Settle on this") }
+      expect(page).to have_css("dialog[data-moment-cue=chosen][open]", text: "South")
+      expect(page).to have_no_text(/content missing|routing error/i)
+      expect(page).to have_css("#composer form textarea", visible: :all)
+    end
   end
 
   it "shows a player what they can do now: tabs for what they look up, and a battle takes their moves" do

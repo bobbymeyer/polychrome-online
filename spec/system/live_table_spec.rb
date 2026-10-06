@@ -160,7 +160,7 @@ RSpec.describe "The live table", type: :system do
     expect(second.reload.deadline_at).to be_present
   end
 
-  it "plays a long line on the stage in pages, and puts the box away when dismissed" do
+  it "plays a long line on the stage in pages, and puts the box away when dismissed, for good" do
     marga = campaign.npcs.create!(name: "Old Marga")
     seat(player, rook)
     long = "Hold on! The bridge is out past the mill, and the river's up. You'll want the ford at Ashby, two days east, " \
@@ -178,7 +178,18 @@ RSpec.describe "The live table", type: :system do
 
       find("#stage .dialogue__close").click
       expect(page).to have_no_css("#stage .dialogue")
+      # Put away stays away: a reload, or going elsewhere and coming back, doesn't bring the line back.
+      visit current_path
+      expect(page).to have_css("#stage .dialogue[hidden]", visible: :all)
+      expect(page).to have_no_css("#stage .dialogue")
+      visit campaign_path(campaign)
+      visit campaign_table_path(campaign)
+      expect(page).to have_css("#stage .dialogue[hidden]", visible: :all)
+      wait_for_streams
+
       campaign.messages.create!(body: "Well? Off with you.")
+      expect(page).to have_css("#stage .dialogue", text: "Off with you")
+      visit current_path # a line not put away is still there on a fresh page
       expect(page).to have_css("#stage .dialogue", text: "Off with you")
     end
   end

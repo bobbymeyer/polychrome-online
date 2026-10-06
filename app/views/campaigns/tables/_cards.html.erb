@@ -34,3 +34,10 @@
     <p class="deadline-card__place" data-moment-field="place" data-moment-enter="slide" data-moment-delay="620" hidden></p>
   </div>
 </dialog>
+<%# A choice is settled (Message#settle!): what the party chose, across the table, as an arrival is named. %>
+<dialog class="arrival-stage" data-moment-cue="chosen" data-moment-hold="3400" data-action="click->moment#dismiss" aria-label="The party chose">
+  <div class="arrival-card">
+    <p class="arrival-card__kind" data-moment-enter="slide">The party chose</p>
+    <p class="arrival-card__place" data-moment-field="option" data-moment-enter="slam" data-moment-delay="120"></p>
+  </div>
+</dialog>
