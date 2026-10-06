@@ -4,6 +4,8 @@
 // the other side. Where you came from is remembered, so the battle can send
 // you back.
 import { play, holdMusic } from "sound"
+import { get, getJSON, set, remove } from "storage"
+import { reducedMotion } from "screen"
 
 const RETURN_KEY = "polychrome.returnTo"
 const ARRIVE_KEY = "polychrome.arriving"
@@ -14,8 +16,8 @@ const DIALOGUE_WAIT_MS = 20000
 // order: give the lines a moment to land before asking if anyone's talking.
 const SETTLE_MS = 600
 
-const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
-const store = (fn) => { try { return fn(window.sessionStorage) } catch { return null } }
+// Where you came from is this tab's business (session: true), not the device's.
+const TAB = { session: true }
 
 export function toBattle(url, { boss = false } = {}) {
   const root = document.documentElement
@@ -28,7 +30,7 @@ export function toBattle(url, { boss = false } = {}) {
   // From one battle's results into the next, the way back stays where the
   // first one was called from.
   if (!document.querySelector(".battle")) {
-    store((s) => s.setItem(RETURN_KEY, JSON.stringify({ url: window.location.href, title: document.title.replace(/ · Polychrome$/, "") })))
+    set(RETURN_KEY, JSON.stringify({ url: window.location.href, title: document.title.replace(/ · Polychrome$/, "") }), TAB)
   }
   // Nobody is pulled away mid-sentence: a scene's lines finish first.
   setTimeout(() => whenDialogueIdle(() => {
@@ -38,7 +40,7 @@ export function toBattle(url, { boss = false } = {}) {
 
     wipe("in", boss)
     setTimeout(() => {
-      store((s) => s.setItem(ARRIVE_KEY, boss ? "boss" : "battle"))
+      set(ARRIVE_KEY, boss ? "boss" : "battle", TAB)
       window.Turbo.visit(url)
     }, COVER_MS)
   }), SETTLE_MS)
@@ -46,14 +48,11 @@ export function toBattle(url, { boss = false } = {}) {
 
 // Where the battle should send you back to, if you were pulled in.
 export function takeReturn() {
-  return store((s) => {
-    const saved = JSON.parse(s.getItem(RETURN_KEY) || "null")
-    return saved
-  })
+  return getJSON(RETURN_KEY, null, TAB)
 }
 
 export function forgetReturn() {
-  store((s) => s.removeItem(RETURN_KEY))
+  remove(RETURN_KEY, TAB)
 }
 
 function whenDialogueIdle(fn, waited = 0) {
@@ -76,7 +75,8 @@ function wipe(direction, boss) {
 
 document.addEventListener("turbo:load", () => {
   delete document.documentElement.dataset.leaving
-  const arriving = store((s) => { const v = s.getItem(ARRIVE_KEY); s.removeItem(ARRIVE_KEY); return v })
+  const arriving = get(ARRIVE_KEY, TAB)
+  remove(ARRIVE_KEY, TAB)
   if (!arriving || reducedMotion()) return
 
   const el = wipe("out", arriving === "boss")

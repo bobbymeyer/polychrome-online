@@ -10,7 +10,7 @@
     <input type="search" class="filter__input chat-log__search" placeholder="Search the log…" aria-label="Search the log" autocomplete="off"
            data-filter-target="input" data-action="input->filter#apply">
   </div>
-  <ol id="chat_log" data-dialogue-target="log" data-log-drawer-target="list" data-newest="first">
+  <ol id="chat_log" data-log-drawer-target="list" data-newest="first">
     <% messages.reverse_each do |message| %>
       <%= render "messages/message", message: message %>
     <% end %>

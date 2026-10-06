@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { play } from "sound"
+import { seen, markSeen } from "storage"
 
 // Plays a jingle when it appears (a level up on the result panel). With a
 // once key, only the first time on this device, so a reload stays quiet.
@@ -20,14 +21,10 @@ export default class extends Controller {
   }
 
   get played() {
-    try { return JSON.parse(window.sessionStorage.getItem(PLAYED_KEY) || "[]").includes(this.onceValue) } catch { return false }
+    return seen(PLAYED_KEY, this.onceValue, { session: true })
   }
 
   set played(_) {
-    if (!this.onceValue) return
-    try {
-      const played = JSON.parse(window.sessionStorage.getItem(PLAYED_KEY) || "[]")
-      window.sessionStorage.setItem(PLAYED_KEY, JSON.stringify([ ...played, this.onceValue ].slice(-50)))
-    } catch { /* no storage: it plays again */ }
+    if (this.onceValue) markSeen(PLAYED_KEY, this.onceValue, { cap: 50, session: true }) // no storage: it plays again
   }
 }

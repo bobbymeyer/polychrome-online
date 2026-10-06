@@ -1,6 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 import { animate } from "animejs"
 import { holdMusic, releaseMusic } from "sound"
+import { seen, markSeen } from "storage"
+import { reducedMotion } from "screen"
 
 // The table stops for a moment: a line with a card cue (a deadline passing,
 // someone awakening) brings up that cue's card over everything, the recap
@@ -25,17 +27,7 @@ const ENTRANCES = {
   pop: { scale: [0.6, 1], opacity: [0, 1], duration: 420, ease: "outBack" }
 }
 
-// Each browser shows a card once, live or replayed.
-function seen(id) {
-  try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "[]").includes(id) } catch { return false }
-}
-
-function markSeen(id) {
-  try {
-    const ids = JSON.parse(localStorage.getItem(SEEN_KEY) || "[]").filter((i) => i !== id).slice(-30)
-    localStorage.setItem(SEEN_KEY, JSON.stringify([ ...ids, id ]))
-  } catch { /* private window: it may show again, no harm */ }
-}
+// Each browser shows a card once, live or replayed (storage.js; in a private window it may show again, no harm).
 
 export default class extends Controller {
   connect() {
@@ -48,7 +40,7 @@ export default class extends Controller {
     if (!last) return
 
     const id = Number(last.dataset.chatLineIdValue)
-    if (!(Date.now() - Date.parse(last.dataset.saidAt || "") < REPLAY_MS) || seen(id)) return
+    if (!(Date.now() - Date.parse(last.dataset.saidAt || "") < REPLAY_MS) || seen(SEEN_KEY, id)) return
     let data = {}
     try { data = JSON.parse(last.dataset.chatLineCardValue || "{}") } catch { /* the line's words will do */ }
     this.present(last.dataset.chatLineCueValue, id, data, last.querySelector(".chat-line__body")?.innerText.trim() || "")
@@ -68,7 +60,7 @@ export default class extends Controller {
     const dialog = this.shown
     if (!dialog) return
 
-    if (this.shownId) markSeen(this.shownId) // seen once it's been up and put away (a page torn down mid-card shows it again)
+    if (this.shownId) markSeen(SEEN_KEY, this.shownId, { cap: 30 }) // seen once it's been up and put away (a page torn down mid-card shows it again)
     clearTimeout(this.timer)
     clearTimeout(this.turnTimer)
     if (dialog.open) dialog.close()
@@ -96,7 +88,7 @@ export default class extends Controller {
     dialog.querySelector("[data-moment-turn]")?.classList.remove("is-turned")
     if (!dialog.open) dialog.showModal()
     if (dialog.dataset.momentMusic === "hold") holdMusic()
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    const still = reducedMotion()
     if (!still) {
       dialog.querySelectorAll("[data-moment-enter]").forEach((el) => {
         animate(el, { ...ENTRANCES[el.dataset.momentEnter], delay: Number(el.dataset.momentDelay || 0) })

@@ -69,11 +69,11 @@
               <%= link_to "How to play", how_to_play_path %>
               <button type="button" class="link-button" data-controller="mute" data-action="mute#toggle" aria-pressed="false"
                       title="Sound on this device">Sound on</button>
-              <%# A setting for this device, beside Sound: battles play twice as fast (fast_toggle_controller). %>
-              <button type="button" class="link-button" data-controller="fast-toggle" data-action="fast-toggle#toggle" data-battle-fast aria-pressed="false"
+              <%# A setting for this device, beside Sound: battles play twice as fast (setting_controller; the battle player reads the key). %>
+              <button type="button" class="link-button" data-controller="setting" data-setting-key-value="polychrome.fastBattles" data-action="setting#toggle" data-battle-fast aria-pressed="false"
                       title="Play battles twice as fast on this device">Fast animations</button>
-              <%# The timing meter, too: a device setting (meter_toggle_controller), not a move. %>
-              <button type="button" class="link-button" data-controller="meter-toggle" data-action="meter-toggle#toggle" data-timing-meter aria-pressed="false"
+              <%# The timing meter, too: a device setting, not a move; on by default unless motion is reduced (timing_meter_controller reads the key). %>
+              <button type="button" class="link-button" data-controller="setting" data-setting-key-value="polychrome.meter" data-setting-default-value="motion" data-action="setting#toggle" data-timing-meter aria-pressed="false"
                       title="On each move in a battle, stop the needle on the mark for a Perfect: it lands a quarter harder">Timing meter</button>
               <% if admin? %><%= link_to "Accounts", users_path %> <%= link_to "Settings", settings_path %><% end %>
               <%= button_to "Sign out", session_path, method: :delete, class: "link-button topbar__sign-out", form: { class: "inline" } %>
