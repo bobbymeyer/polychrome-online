@@ -121,10 +121,16 @@ RSpec.describe "Clocks and secrets", type: :request do
       expect(streams.map(&:to_html).join).not_to include("The traitor acts")
     end
 
-    it "is the GM's alone" do
-      sit(hero)
+    it "is the GM's account's: a player is turned away, and the GM seated as a player is not" do
+      sit(hero) # the GM, playing a character for a moment: Prep is still theirs
       post campaign_clocks_path(campaign), params: { clock: { name: "Mine", segments: 4 } }
-      expect(response).to have_http_status(:forbidden)
+      expect(campaign.clocks.find_by(name: "Mine")).to be_present
+
+      sign_in_as(make_user("Player"))
+      post campaign_clocks_path(campaign), params: { clock: { name: "Theirs", segments: 4 } }
+      expect(response).to have_http_status(:see_other)
+      expect(flash[:alert]).to include("not yours")
+      expect(campaign.clocks.find_by(name: "Theirs")).to be_nil
     end
 
     it "only switches one of the campaign's own places, whatever the form sends" do

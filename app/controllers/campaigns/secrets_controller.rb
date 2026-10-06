@@ -6,7 +6,7 @@ class Campaigns::SecretsController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
-  before_action :require_table_gm
+  before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
   before_action :set_secret, only: %i[update destroy]
 
   def create

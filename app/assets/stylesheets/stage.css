@@ -83,7 +83,10 @@ body::before {
 .topbar__user-menu a, .topbar__user-menu .link-button { color: var(--ink); }
 .topbar__user-menu a:hover, .topbar__user-menu .link-button:hover { color: var(--signal); }
 .topbar__user-menu .muted { color: var(--grey); }
-@media (max-width: 640px) { .topbar__user-menu a, .topbar__user-menu .link-button { color: #bdbdbd; } .topbar__user-menu .muted { color: #8a8a8a; } }
+/* Wherever the bar folds (application.css: a phone, a landscape phone, the table up to a tablet's width), the
+   account's menu is part of the dark list, so its links are light. */
+@media (max-width: 640px), (max-height: 500px) and (orientation: landscape) { .topbar__user-menu a, .topbar__user-menu .link-button { color: #bdbdbd; } .topbar__user-menu .muted { color: #8a8a8a; } }
+@media (max-width: 1099px) { body.has-table-views .topbar__user-menu a, body.has-table-views .topbar__user-menu .link-button { color: #bdbdbd; } body.has-table-views .topbar__user-menu .muted { color: #8a8a8a; } }
 .topbar a, .topbar .link-button { color: #bdbdbd; }
 .topbar a:hover, .topbar .link-button:hover { color: var(--paper); text-decoration: none; }
 .topbar__world { color: var(--paper) !important; font-style: italic; font-weight: 800; }

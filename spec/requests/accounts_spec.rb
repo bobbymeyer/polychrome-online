@@ -136,8 +136,11 @@ RSpec.describe "Accounts", type: :request do
       get campaign_table_path(campaign)
       expect(Nokogiri::HTML(response.body).at("#table_party li.is-you").text).to include("Galuf")
 
-      # A GM power, tried by hand, is refused.
+      # A GM power, tried by hand, is refused: Prep's is the GM's account's (turned back with a word), the table's is the GM seat's.
       post campaign_flags_path(campaign), params: { flag: { key: "cheat", value: "1" } }
+      expect(response).to have_http_status(:see_other)
+      expect(campaign.flags.find_by(key: "cheat")).to be_nil
+      patch campaign_time_path(campaign), params: { parts: 1 }
       expect(response).to have_http_status(:forbidden)
     end
 

@@ -7,7 +7,7 @@ class Campaigns::Secrets::CluesController < ApplicationController
   include TableSeat
 
   before_action :set_campaign
-  before_action :require_table_gm
+  before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
 
   def create
     @campaign.secrets.find(params[:secret_id]).find_clue!

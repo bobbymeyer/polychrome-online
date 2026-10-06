@@ -379,20 +379,47 @@ module Battle
       item["count"] - queued
     end
 
-    # Unit ids a player may pick as the target, or nil when the ability's
-    # targeting needs no choice (self, all, random).
-    def target_options(state, unit, ability)
-      living = ->(u) { u["hp"].positive? }
-      present = state["units"].reject { |u| u["gone"] } # left the field: nobody's target, not even a Raise's
+    # The one rule for who a single-target move may be aimed at, for the
+    # menu (target_options), the input check (Resolver#validate_target) and
+    # the blow itself (Resolver#resolve_targets): why not, in a few words,
+    # or nil when it may. Offence takes a living enemy in reach; support an
+    # ally on the field, living (or fallen, for a revive); and a healing move
+    # can be turned on a living enemy in reach, as in the games (it hurts the
+    # undead, Battle::Effects#heal).
+    def target_problem(unit, ability, target)
+      enemy = target["side"] != unit["side"]
       case ability["target"]
       when "single_enemy"
-        present.select { |u| u["side"] != unit["side"] && living.(u) }.map { |u| u["id"] }
+        return "is not an enemy" unless enemy
+        return "is down" unless target["hp"].positive? && !target["gone"]
+        return "is out of reach" if out_of_reach?(target)
       when "single_ally"
-        allies = present.select { |u| u["side"] == unit["side"] }
-        ids = allies.select { |u| revives?(ability) ? !living.(u) : living.(u) }.map { |u| u["id"] }
-        # Then the enemies, last: healing turned on the undead.
-        ids + (heals?(ability) ? present.select { |u| u["side"] != unit["side"] && living.(u) }.map { |u| u["id"] } : [])
+        if enemy
+          return "is not an ally" unless heals?(ability)
+          return "is down" unless target["hp"].positive? && !target["gone"]
+          return "is out of reach" if out_of_reach?(target)
+        else
+          return "has left the field" if target["gone"]
+          return "is down" if revives?(ability) ? target["hp"].positive? : !target["hp"].positive?
+        end
       end
+      nil
+    end
+
+    def valid_target?(unit, ability, target) = target_problem(unit, ability, target).nil?
+
+    def out_of_reach?(unit)
+      unit["statuses"].any? { |s| OUT_OF_REACH_STATUSES.include?(s["kind"]) }
+    end
+
+    # The targets a single-target move may be aimed at: allies first, then
+    # the enemies a healing move can be turned on. Nil for moves that pick
+    # their own targets.
+    def target_options(state, unit, ability)
+      return unless %w[single_enemy single_ally].include?(ability["target"])
+
+      allies, enemies = state["units"].partition { |u| u["side"] == unit["side"] }
+      (allies + enemies).select { |u| valid_target?(unit, ability, u) }.map { |u| u["id"] }
     end
 
     def validate_ability!(ability, known = TYPES)

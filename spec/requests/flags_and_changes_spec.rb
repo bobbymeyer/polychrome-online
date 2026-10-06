@@ -50,10 +50,11 @@ RSpec.describe "Flags and GM changes", type: :request do
     it "are hidden from players: the table shows what the party knows, its secrets" do
       campaign.flags.create!(key: "the_king_is_a_fake", value: "yes")
       campaign.secrets.create!(body: "Met the king.").reveal!
-      sit(bartz.id)
+      sign_in_as(make_user("Player")) # a player's account: Prep's forms are the GM's account's
 
       post campaign_flags_path(campaign), params: { flag: { key: "cheat", value: "1" } }
-      expect(response).to have_http_status(:forbidden)
+      expect(response).to have_http_status(:see_other)
+      expect(campaign.flags.find_by(key: "cheat")).to be_nil
 
       get campaign_path(campaign)
       expect(response.body).not_to include("the_king_is_a_fake")

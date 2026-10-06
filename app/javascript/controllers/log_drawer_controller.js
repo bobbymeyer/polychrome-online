@@ -9,7 +9,7 @@ import { Controller } from "@hotwired/stimulus"
 // column beside the page, and it stays pinned in this browser. On a wide
 // screen (pinFrom) it starts pinned.
 const PINNED_KEY = "polychrome.logPinned"
-const DOCK_WIDTH = 1000 // narrower than this, there's no room beside the page
+const DOCK_WIDTH = 1100 // narrower than this, there's no room beside the page (stage.css docks the log from here too)
 const WIDE = 1400 // a 1440 screen, less its scrollbar
 
 export default class extends Controller {
