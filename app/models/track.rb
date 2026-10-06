@@ -7,10 +7,10 @@
 # link (played in their own small player, since those can't be fetched), or
 # ACE-Step in ComfyUI, made from a description and lyrics (TrackJob).
 class Track < ApplicationRecord
+  include ComfyRun # a generated track's way through ComfyUI (TrackJob)
+
   SOURCES = %w[upload link generated].freeze
   SOURCE_LABELS = { "upload" => "Uploaded", "link" => "Linked", "generated" => "Generated" }.freeze
-  # A generated track's way through ComfyUI; waiting: it couldn't be reached, TrackJob tries again.
-  STATUSES = %w[queued waiting running done failed].freeze
   MAX_BYTES = World::MUSIC_MAX_BYTES
   SECONDS = (10..240)
 
@@ -27,7 +27,7 @@ class Track < ApplicationRecord
   validates :name, presence: true
   validates :scene, inclusion: { in: World::MUSIC }, allow_nil: true
   validates :source, inclusion: { in: SOURCES }
-  validates :status, inclusion: { in: STATUSES }, allow_nil: true
+  validates :status, inclusion: { in: ComfyRun::STATUSES }, allow_nil: true
   validates :seconds, inclusion: { in: SECONDS }
   validates :url, presence: true, if: :link?
   validates :prompt, presence: true, if: :generated?
@@ -94,7 +94,6 @@ class Track < ApplicationRecord
     TrackJob.perform_later(self)
   end
 
-  def finished? = status.in?(%w[done failed])
 
   def submit!(client)
     graph = Comfy::Music.build(self, seed: Random.rand(2**31), capabilities: client.capabilities)
@@ -114,10 +113,8 @@ class Track < ApplicationRecord
     true
   end
 
-  def timed_out? = started_at.present? && started_at < Comfy.config.fetch(:timeout, 900).to_i.seconds.ago
 
-  def fail!(message) = update!(status: "failed", error: message.to_s.truncate(500))
-  def wait!(message) = update!(status: "waiting", error: message.to_s.truncate(500))
+  def comfy_started_at = started_at
 
   private
 
