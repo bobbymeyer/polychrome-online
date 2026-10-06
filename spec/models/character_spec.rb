@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Character do
   let(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
+  let(:campaign) { base_campaign }
   let(:job) { ->(slug) { world.jobs.find_by!(slug: slug) } }
   let(:item) { ->(slug) { world.items.find_by!(slug: slug) } }
   let(:ability) { ->(slug) { world.abilities.find_by!(slug: slug) } }

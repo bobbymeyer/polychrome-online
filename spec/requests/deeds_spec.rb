@@ -5,18 +5,18 @@ require "rails_helper"
 RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
   let!(:world) { base_world }
   let(:village) { world.location_templates.find_by!(slug: "village") }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin, gil: 1000) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin, gil: 1000) }
   let(:varn_town) { campaign.locations.create!(location_template: village, seed: 11, overrides: { "name" => "Varn" }) }
   let(:tule_town) { campaign.locations.create!(location_template: village, seed: 12, overrides: { "name" => "Tule" }) }
   let!(:varn) { campaign.map_nodes.create!(name: "Varn", kind: "town", x: 100, y: 100, visible: true, location: varn_town) }
   let!(:tule) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 300, y: 100, visible: true, location: tule_town) }
   let!(:road) { campaign.map_edges.create!(from_node: varn, to_node: tule, state: "open") }
-  let!(:hero) { campaign.characters.create!(name: "Rook", job: world.jobs.find_by!(slug: "knight"), user: @admin) }
+  let!(:hero) { base_character(campaign, name: "Rook", user: @admin) }
   let(:potion) { world.items.find_by!(slug: "potion") }
 
   before do
     campaign.update!(current_node: varn)
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
   end
 
   it "records a deed, and the towns the story reaches think better of the party, and sell cheaper" do
@@ -38,7 +38,8 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     expect(tule_town.price_of(potion)).to eq((potion.price * 0.9).round)
 
     get location_path(tule_town)
-    expect(response.body).to include("Tule sees the party as <strong>welcome</strong>")
+    expect(page.text).to include("Tule sees the party as welcome")
+    expect(page.css("strong").map(&:text)).to include("welcome")
     get campaign_prep_path(campaign)
     expect(response.body).to include("Deeds", "Rook pulled the miller&#39;s child from the weir.", "Tule: Welcome (+2)")
 
@@ -82,7 +83,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
 
     get campaign_prep_path(campaign)
     expect(response.body).to include("The miller pays the goblins.", "Heard in Varn")
-    expect(response.body).not_to include("Reveal</button>")
+    expect(page.css("button").map { |b| b.text.strip }).not_to include("Reveal")
   end
 
   it "tells the legends: the history the party can know, and their story since; the GM sees the rest" do
@@ -100,7 +101,7 @@ RSpec.describe "Deeds, reputation, leaks and legends", type: :request do
     fresh.record_deed!("Rook climbed the old tower.", at: varnhold, sway: 1)
     fresh.start_rumour!("The abbey bells rang at midnight.", at: varnhold).update!(heard: true, heard_day: 1, heard_at: varnhold)
 
-    post campaign_table_seat_path(fresh), params: { seat: "gm" }
+    sit(fresh, "gm")
     get campaign_legends_path(fresh)
     expect(response.body).to include("The party's story", "Rook climbed the old tower.", "Long ago", about_known["text"].split(".").first,
                                       about_unknown["text"].split(".").first, "the party doesn't know this yet")

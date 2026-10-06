@@ -205,12 +205,8 @@ module BattleHelpers
 
   # Submit the same kind of command for every party member awaiting input.
   def full_round(state, ability = "attack")
-    awaiting = state["units"].select do |u|
-      u["side"] == "party" && u["hp"].positive? && !u["guest"] && !u["gone"] &&
-        u["statuses"].none? { |s| Battle::NO_INPUT_STATUSES.include?(s["kind"]) }
-    end
-    awaiting.reduce([ state, [] ]) do |(s, log), u|
-      action = %w[defend flee].include?(ability) ? command(u["id"], kind: ability) : command(u["id"], ability)
+    Battle::State.able_to_act(state).reduce([ state, [] ]) do |(s, log), id|
+      action = %w[defend flee].include?(ability) ? command(id, kind: ability) : command(id, ability)
       s, events = apply(s, action)
       [ s, log + events ]
     end

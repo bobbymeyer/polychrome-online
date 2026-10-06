@@ -5,7 +5,7 @@ require "rails_helper"
 # Players steer when asked: "Where next?" is a vote the GM opens and settles, or the GM just goes.
 RSpec.describe "Where next", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
+  let(:campaign) { base_campaign(gm: @admin) }
   let(:kim) { make_user("Kim") }
   let!(:rook) { create_character(campaign, name: "Rook", user: kim) }
   let(:tule) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 0, y: 0, visible: true) }
@@ -27,11 +27,11 @@ RSpec.describe "Where next", type: :request do
     campaign.map_nodes.create!(name: "Unknown", kind: "wilds", x: 600, y: 600, visible: false)
 
     sign_in_as(@admin)
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     campaign.call_controls!("travel")
     expect(campaign.reload).to be_map_on_stage # calling travel puts the map on the stage: the asking is done from it
     get campaign_table_path(campaign)
-    sheet = Nokogiri::HTML(response.body).at("#table_map .map-sheet[data-controller=map-ask]")
+    sheet = page.at("#table_map .map-sheet[data-controller=map-ask]")
     expect(sheet).to be_present
     expect(response.body).not_to include("Ask about somewhere further") # no form under the ways
     expect(sheet.at("a.map-node__ask[data-node-name='Far Hold']")["data-way-label"]).to eq("To Far Hold (3 parts of a day)")
@@ -61,7 +61,7 @@ RSpec.describe "Where next", type: :request do
 
   it "lets the GM put a choice between named places, and refuses a ballot too long to read" do
     sign_in_as(@admin)
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     post campaign_ways_path(campaign), params: { scope: "places", places: [ mere.id, port.id, pass.id ] } # the pass is behind a blocked road
     vote = campaign.open_choice
     expect(vote.options).to eq([ "To Greymere (a part of a day)", "To Port (a part of a day)", "Stay here" ])
@@ -92,14 +92,14 @@ RSpec.describe "Where next", type: :request do
     campaign.update!(pending_encounter: { "monsters" => { "goblin" => 2 }, "table" => "The road" })
     sign_in_as(kim)
     get campaign_table_path(campaign)
-    now = Nokogiri::HTML(response.body).at("#table_now").text.squish
+    now = page.at("#table_now").text.squish
     expect(now).to include("Encounter! 2 × Goblin.", "The GM calls it: fight, or wave it off.")
     expect(response.body).not_to include(%(pick-row__cost">suggest))
     expect { campaign.ask_where_next! }.to raise_error(Refusal, /GM calls it/)
     sign_out
     sign_in_as(@admin)
     get campaign_table_path(campaign)
-    frame = Nokogiri::HTML(response.body).at("turbo-frame#forecast")
+    frame = page.at("turbo-frame#forecast")
     expect(frame["src"]).to include("/forecast") # the odds load with the panel (a lazy frame never asked)
     expect(frame["loading"]).to be_nil
     expect { campaign.take_way!("To Greymere") }.to raise_error(Refusal, /GM calls it/)
@@ -121,7 +121,7 @@ RSpec.describe "Where next", type: :request do
   it "offers nothing until the GM calls travel; then everyone has the ways, and a player's suggestion opens the vote" do
     sign_in_as(kim)
     get campaign_table_path(campaign)
-    expect(Nokogiri::HTML(response.body).at("#table_ways").key?("hidden")).to be(true) # talk: nothing to pick
+    expect(page.at("#table_ways").key?("hidden")).to be(true) # talk: nothing to pick
     expect(response.body).to include("The GM has the floor.")
     expect(response.body).not_to include("To Greymere", %(pick-row__cost">suggest))
     post campaign_ways_path(campaign), params: { way: "To Greymere" }
@@ -134,8 +134,8 @@ RSpec.describe "Where next", type: :request do
 
     sign_in_as(@admin)
     get campaign_table_path(campaign)
-    expect(Nokogiri::HTML(response.body).at("#table_ways").key?("hidden")).to be(true) # the GM has no menu either
-    controls = Nokogiri::HTML(response.body).css("#table_now .controls-call button")
+    expect(page.at("#table_ways").key?("hidden")).to be(true) # the GM has no menu either
+    controls = page.css("#table_now .controls-call button")
     expect(controls.map(&:text)).to eq([ "Talk", "Move", "Do", "Scene", "Check", "Fight", "GM" ])
     expect(controls.map { |b| b["aria-pressed"] }).to eq(%w[true false false false false false false])
     expect(controls.map { |b| b["disabled"] }).to all(be_nil) # there's always the night to make camp
@@ -143,7 +143,7 @@ RSpec.describe "Where next", type: :request do
     expect(campaign.reload).to be_travelling
     get campaign_table_path(campaign)
     expect(response.body).to include("To Greymere", "To Port", "Put it to the table")
-    expect(response.body[/<section class="window table-ways.*?<\/section>/m]).not_to include("<h2") # the pressed control is the title
+    expect(page.at("section.table-ways h2")).to be_nil # the pressed control is the title
     expect(response.body).not_to include("To The Pass") # blocked
     patch campaign_controls_path(campaign), params: { kind: "dance" }
     expect(flash[:alert]).to eq("There's no such thing to call at the table")
@@ -152,7 +152,7 @@ RSpec.describe "Where next", type: :request do
     sign_in_as(kim)
     get campaign_table_path(campaign)
     expect(response.body).to include("Where next?", "Say where you'd go", "To Greymere", "To Port", %(pick-row__cost">suggest))
-    rows = Nokogiri::HTML(response.body).css("#table_ways table.pick-table[data-controller=pick-table] tr.pick-row")
+    rows = page.css("#table_ways table.pick-table[data-controller=pick-table] tr.pick-row")
     expect(rows.map { |row| row.at(".pick-row__act").text }).to eq([ "To Greymere", "To Port" ]) # one way a row, the row the control
     post campaign_ways_path(campaign), params: { way: "To Greymere" }
     vote = campaign.open_choice
@@ -170,7 +170,7 @@ RSpec.describe "Where next", type: :request do
     sign_in_as(@admin)
     # The GM has the vote, and under it a small way straight there instead of a second Where next.
     get campaign_table_path(campaign)
-    ways = Nokogiri::HTML(response.body).at("#table_ways")
+    ways = page.at("#table_ways")
     expect(ways.text).to include("Or go straight there, without the vote", "To Greymere", "Going now ends the vote.")
     expect(ways.text).not_to include("Where next?", "Put it to the table")
     post choice_settlement_path(vote), params: { option: "To Greymere" }
@@ -210,7 +210,7 @@ RSpec.describe "Where next", type: :request do
       get campaign_table_path(campaign)
       expect(response.body).to include("Attend class (until night)", "Work a shift (until dusk)", "What will you do here?")
       expect(response.body).not_to include("The Undertow", "To Greymere") # not now; not the roads
-      expect(Nokogiri::HTML(response.body).css("#table_ways .pick-table .pick-row").size).to eq(3) # one a row: class, the shift, camp
+      expect(page.css("#table_ways .pick-table .pick-row").size).to eq(3) # one a row: class, the shift, camp
 
       post campaign_ways_path(campaign), params: { way: "Attend class (until night)" }
       vote = campaign.open_choice
@@ -263,7 +263,7 @@ RSpec.describe "Where next", type: :request do
       campaign.call_controls!("doing")
       sign_in_as(kim)
       get campaign_table_path(campaign)
-      ways = Nokogiri::HTML(response.body).at("#table_ways").text
+      ways = page.at("#table_ways").text
       expect(ways).to include("Work a shift (until night)")
       expect(ways).not_to include("The good tea") # not offered to players while the purse can't pay
 
@@ -285,7 +285,7 @@ RSpec.describe "Where next", type: :request do
     end
 
     it "is written by the GM on the map and by the world's author in the atlas" do
-      post campaign_table_seat_path(campaign), params: { seat: "gm" }
+      sit(campaign, "gm")
       get edit_map_node_path(tule)
       expect(response.body).to include("Things to do here", "The setting's, too: Attend class and The Undertow")
       patch map_node_path(tule), params: { map_node: { name: "Tule", kind: "town", activities: "Attend class (day): Cancelled: a free period." } }
@@ -361,23 +361,22 @@ RSpec.describe "Where next", type: :request do
     cave.enter!
     key = cave.add_room!(name: "Vault of the Old Kings", connect: cave.view["entrance"], decision: { "kind" => "treasure", "gil" => 40 })
 
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     campaign.call_controls!("travel")
     get campaign_maps_path(campaign)
-    floorplan = response.body[/<div id="table_floorplan".*?<\/svg>/m]
+    floorplan = page.at("#table_floorplan").text
     expect(floorplan).to include(cave.name, "Vault of", "the Old", "Kings") # every room, names on as many lines as they need
     get campaign_table_path(campaign)
-    expect(response.body).to include('id="table_floorplan"') # calling travel put the map on the stage: inside, the floorplan
-    ways = response.body[/<section class="window table-ways".*?<\/section>/m]
-    expect(ways).to include(%(<td class="pick-row__cost">treasure</td>))
+    expect(page.at("#table_floorplan")).to be_present # calling travel put the map on the stage: inside, the floorplan
+    expect(page.css("section.table-ways td.pick-row__cost").map(&:text)).to include("treasure")
 
     campaign.show_map! # inside a dungeon, the stage's map view is its floorplan
     sign_in_as(kim)
     get campaign_table_path(campaign)
-    theirs = response.body[/<div id="table_floorplan".*?<\/svg>/m]
+    theirs = page.at("#table_floorplan").text
     expect(theirs).to include(cave.name)
     expect(theirs).not_to include("Vault of") # not been in: an unexplored way at most
-    expect(response.body).not_to include(%(<td class="pick-row__cost">treasure</td>))
+    expect(page.css("td.pick-row__cost").map(&:text)).not_to include("treasure")
     expect(cave.room(key)["name"]).to eq("Vault of the Old Kings")
   end
 
@@ -395,7 +394,8 @@ RSpec.describe "Where next", type: :request do
 
     cave.move_to!(key)
     get campaign_table_path(campaign)
-    expect(response.body).to include("There's treasure in Vault", ">Take it<")
+    expect(response.body).to include("There's treasure in Vault")
+    expect(page.css("button, input[type=submit]").map { |b| b["value"] || b.text.strip }).to include("Take it")
     expect { post location_treasures_path(cave), params: { room: key, return_to: "table" } }.to change { campaign.reload.gil }.by(40)
     expect(response).to redirect_to(campaign_table_path(campaign))
     expect(flash[:notice]).to eq("Found 40 gil in Vault.")

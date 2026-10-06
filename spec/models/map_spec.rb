@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe "The pointcrawl map" do
   include ActiveJob::TestHelper
   let(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
+  let(:campaign) { base_campaign }
   let(:tule) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true) }
   let(:ruins) { campaign.map_nodes.create!(name: "Ruins", kind: "dungeon", x: 400, y: 300) }
   let(:grasslands) { world.encounter_tables.find_by!(slug: "grasslands") }
@@ -83,7 +83,7 @@ RSpec.describe "The pointcrawl map" do
     end
 
     it "starts the pending encounter as a battle for the party, the fallen KO'd, or lets the GM wave it off" do
-      bartz = campaign.characters.create!(name: "Bartz", job: world.jobs.find_by!(slug: "knight"))
+      bartz = base_character(campaign, name: "Bartz")
       campaign.characters.create!(name: "Down", job: world.jobs.first, hp: 0)
       connect(tule, ruins, state: "dangerous", encounter_table: grasslands)
       campaign.travel!(tule.edges.first)

@@ -6,14 +6,14 @@ RSpec.describe "Panels for a scene's beats (§8)", type: :request do
   include ActiveJob::TestHelper
 
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Pulp", gm: @admin) }
+  let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 11) }
   let!(:node) { campaign.map_nodes.create!(name: "Tule", kind: "town", x: 100, y: 100, visible: true, location: town) }
   let(:scene) { campaign.scenes.create!(name: "The quay", script: "Narrator: The fog lifts off the harbour.\nNarrator: A sail.") }
   let(:comfy) { FakeComfy.new }
 
-  before { post campaign_table_seat_path(campaign), params: { seat: "gm" } }
+  before { sit(campaign, "gm") }
 
   def finish(batch)
     ArtBatchJob.new.perform(batch.reload, client: comfy)
@@ -47,7 +47,8 @@ RSpec.describe "Panels for a scene's beats (§8)", type: :request do
     scene.advance! # to the last line, past the panel
     expect(scene.reload.cursor).to eq(3)
     get campaign_table_path(campaign)
-    expect(response.body).to include('class="table-scene is-scene"', "beat-stage--panel", "beat-stage__backdrop")
+    expect(page.at(".table-scene.is-scene")).to be_present
+    expect(page.at(".beat-stage--panel .beat-stage__backdrop")).to be_present
 
     scene.destroy!
     expect(ArtBatch.where(id: batch.id)).to be_empty

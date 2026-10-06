@@ -11,7 +11,7 @@ RSpec.describe "The table's motion", type: :request do
 
   before do
     sign_in_as(gm)
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     campaign.set_out!(from_the_setting: true)
   end
 
@@ -21,7 +21,7 @@ RSpec.describe "The table's motion", type: :request do
     campaign.current_node.world_place.update!(activities: "Sweep the yard (any, money 5): Dust.")
     campaign.call_controls!("doing") # the things to do here, with what each sets off
     get campaign_table_path(campaign)
-    expect(response.body).to include(%(<span class="pick-row__note">5 gil for the party</span>))
+    expect(page.css("span.pick-row__note").map(&:text)).to include("5 gil for the party")
     expect(response.body).to include("the night passes · ticks The count schemes")
     campaign.call_controls!("travel") # the roads, with their clocks
     get campaign_table_path(campaign)
@@ -33,9 +33,9 @@ RSpec.describe "The table's motion", type: :request do
     expect(clock.next_tick).to eq("new day")
     get campaign_prep_path(campaign)
     expect(response.body).to include("A dashed box fills by itself")
-    expect(response.body).to match(/clock-#{clock.id}".*?<i class=" is-next">/m)
+    expect(page.at("[data-change-key='clock-#{clock.id}'] i.is-next")).to be_present
     get campaign_table_path(campaign)
-    expect(response.body).to match(/clock-#{clock.id}".*?<i class=" is-next">/m)
+    expect(page.at("[data-change-key='clock-#{clock.id}'] i.is-next")).to be_present
   end
 
   it "arrives on a card: the travel line carries the cue and the place" do
@@ -44,27 +44,35 @@ RSpec.describe "The table's motion", type: :request do
     line = campaign.messages.where(cue: "arrival").last
     expect(line.data).to include("moved" => true, "place" => campaign.current_node.name, "kind" => campaign.current_node.kind.humanize)
     get campaign_table_path(campaign)
-    expect(response.body).to include('data-moment-cue="arrival"')
+    expect(page.at("[data-moment-cue=arrival]")).to be_present
     # The line carries what the card shows, so the card isn't blank (moment_controller fills it from the line).
-    card = Nokogiri::HTML(response.body).at("##{ActionView::RecordIdentifier.dom_id(line)}")["data-chat-line-card-value"]
+    card = page.at("##{ActionView::RecordIdentifier.dom_id(line)}")["data-chat-line-card-value"]
     expect(JSON.parse(card)).to include("place" => campaign.current_node.name, "kind" => campaign.current_node.kind.humanize)
   end
 
   it "marks the Now band's state and, on the stage's map, the party's marker, so a change wipes and hops" do
     get campaign_table_path(campaign)
-    expect(response.body).to include('data-state="free" data-controls="talk" data-change="state"')
+    now = page.at("[data-change=state]")
+    expect(now["data-state"]).to eq("free")
+    expect(now["data-controls"]).to eq("talk")
     campaign.show_map!
     get campaign_table_path(campaign)
-    expect(response.body).to include('class="map-party" transform=', 'data-change="marker" data-change-key="party"')
+    marker = page.at(".map-party")
+    expect(marker["transform"]).to be_present
+    expect(marker["data-change"]).to eq("marker")
+    expect(marker["data-change-key"]).to eq("party")
   end
 
   it "shows the vote filling: pickers as chips, each option's share as a bar" do
     choice = Message.choice(campaign, options: [ "Left", "Right" ]).tap(&:save!)
     choice.picks.create!(character: rook, option: "Left")
     get campaign_table_path(campaign)
-    expect(response.body).to include(%(<i class="choice__chip" data-change-key="Rook" aria-hidden="true">R</i>))
-    expect(response.body).to include(%(data-change="bar" style="width: 100%"))
-    expect(response.body).to include(%(<p class="choice__footer" data-change="text">)) # who has picked, as the vote's footer, changing as they do
-    expect(Nokogiri::HTML(response.body).at(".choice__footer").text.squish).to eq("Picked: Rook.")
+    chip = page.at("i.choice__chip[data-change-key=Rook]")
+    expect(chip.text).to eq("R")
+    expect(chip["aria-hidden"]).to eq("true")
+    expect(page.at("[data-change=bar]")["style"]).to eq("width: 100%")
+    footer = page.at("p.choice__footer") # who has picked, as the vote's footer, changing as they do
+    expect(footer["data-change"]).to eq("text")
+    expect(footer.text.squish).to eq("Picked: Rook.")
   end
 end

@@ -6,10 +6,7 @@ require "rails_helper"
 # to the party, a check the GM calls, the road on the map, and the table
 # played around one shared screen with phones as controllers.
 RSpec.describe "Moments at the table", type: :system do
-  let(:gm) { make_user("Gamemaster") }
-  let(:player) { make_user("Player") }
-  let(:campaign) { create_campaign.tap { |c| c.update!(gm_id: gm.id) } }
-  let!(:rook) { create_character(campaign, name: "Rook", user: player) }
+  include_context "a GM's table"
 
   it "puts a choice to the party: the player picks, the GM sees it and settles it" do
     seat(gm, "gm")

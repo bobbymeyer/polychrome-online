@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "The GM's moves: complications on a failed check, and what a hard move takes" do
   let(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gil: 80) }
+  let(:campaign) { base_campaign(gil: 80) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let!(:hollin) do
     campaign.map_nodes.create!(name: "Hollin", kind: "town", x: 5, y: 5, visible: true, location: campaign.locations.create!(location_template: village, seed: 3))

@@ -23,8 +23,7 @@ RSpec.describe "Scenes", type: :request do
     expect(response.body).to include("Ambush", "1 line, then a battle")
 
     create_character(campaign, name: "Bartz")
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
-    get campaign_table_path(campaign)
+    at_the_table(campaign, as: "gm")
     expect(response.body).not_to include(scene_play_path(scene)) # until the GM calls Scene (Campaign::Controls)
     campaign.call_controls!("scene")
     get campaign_table_path(campaign)
@@ -36,9 +35,10 @@ RSpec.describe "Scenes", type: :request do
     expect(campaign.reload.staged_scene).to eq(scene)
     get campaign_table_path(campaign)
     expect(response.body).not_to include("A scene is on the stage") # no title card: the stage is the scene
-    corner = Nokogiri::HTML(response.body).at("#table_time .table-time__scene")
+    corner = page.at("#table_time .table-time__scene")
     expect(corner.text.squish).to include("1/1", "Finish, then the battle")
-    expect(response.body).to include('class="table-scene is-scene"', 'data-state="scene"')
+    expect(page.at(".table-scene.is-scene")).to be_present
+    expect(page.at("[data-state=scene]")).to be_present
 
     patch scene_play_path(scene), params: { go: "next" }
     expect(campaign.battles.last.name).to eq("Ambush")
@@ -85,16 +85,27 @@ RSpec.describe "Scenes", type: :request do
     expect(inserted.effective_backdrop).to eq("kind" => "black")
 
     get edit_scene_path(scene, beat: inserted.id)
-    expect(response.body).to include("Step 6 of 7", "Bartz: Always.", "beat-stage--black", "is-speaking", 'data-fx="shake"', "Effect on: shake")
-    expect(response.body).not_to include("data-arrive=") # the changes played on the line before this one
+    expect(response.body).to include("Step 6 of 7", "Bartz: Always.", "Effect on: shake")
+    expect(page.at(".beat-stage--black")).to be_present
+    expect(page.at(".is-speaking")).to be_present
+    expect(page.at("[data-fx=shake]")).to be_present
+    expect(page.at("[data-arrive]")).to be_nil # the changes played on the line before this one
     # The changes come on with the first line after them: Cid slides in, the black backdrop fades; the form says how.
     first_line = scene.beats.in_order[4]
     get edit_scene_path(scene, beat: first_line.id)
-    expect(response.body).to include('data-arrive="slide"', %(data-arrive-key="#{first_line.id}:Npc:#{cid.id}"), 'data-arrive="fade"', "Comes on with", "Slide in")
+    expect(page.at("[data-arrive=slide]")["data-arrive-key"]).to eq("#{first_line.id}:Npc:#{cid.id}")
+    expect(page.at("[data-arrive=fade]")).to be_present
+    expect(response.body).to include("Comes on with", "Slide in")
     # Run through from here: the next step rides a frame load, playing on at reading pace until the choice.
-    expect(response.body).to include("Play from here", 'data-scene-preview-playing-value="false"', 'data-scene-preview-stops-value="false"')
+    expect(response.body).to include("Play from here")
+    preview = page.at("[data-scene-preview-playing-value]")
+    expect(preview["data-scene-preview-playing-value"]).to eq("false")
+    expect(preview["data-scene-preview-stops-value"]).to eq("false")
     get edit_scene_path(scene, beat: scene.beats.in_order[5].id, playing: 1)
-    expect(response.body).to include("Pause", 'data-scene-preview-playing-value="true"', 'data-scene-preview-seconds-value="3.6"')
+    expect(response.body).to include("Pause")
+    preview = page.at("[data-scene-preview-playing-value]")
+    expect(preview["data-scene-preview-playing-value"]).to eq("true")
+    expect(preview["data-scene-preview-seconds-value"]).to eq("3.6")
 
     post beat_copy_path(inserted)
     expect(scene.beats.reload.map(&:text).compact_blank).to eq([ "Ready?", "Always.", "Always.", "The fog lifts." ])
@@ -104,7 +115,8 @@ RSpec.describe "Scenes", type: :request do
     # A choice is written as its line.
     patch beat_path(scene.beats.last), params: { beat: { speaker: "", text: "? Fight | Flee -> quay" } }
     get edit_scene_path(scene, beat: scene.beats.last.id)
-    expect(response.body).to include("The table decides here: playing on stops.", "Play from the start", 'data-scene-preview-stops-value="true"')
+    expect(response.body).to include("The table decides here: playing on stops.", "Play from the start")
+    expect(page.at("[data-scene-preview-stops-value]")["data-scene-preview-stops-value"]).to eq("true")
     expect(scene.beats.last.reload).to have_attributes(kind: "choice", options: %w[Fight Flee], flag_key: "quay")
     expect(scene.reload.summary).to eq("2 lines, 4 changes, then a choice: Fight / Flee")
   end

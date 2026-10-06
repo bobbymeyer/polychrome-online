@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Location::Wishes do
   let(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
+  let(:campaign) { base_campaign }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:town) { campaign.locations.create!(location_template: village, seed: 5) }
   let!(:hollin) { campaign.map_nodes.create!(name: "Hollin", kind: "town", x: 1, y: 1, visible: true, location: town) }

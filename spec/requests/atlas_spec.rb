@@ -14,7 +14,9 @@ RSpec.describe "The atlas's maps", type: :request do
     expect(root.name).to eq(world.name)
     expect(varn.world_map).to eq(root)
     get world_world_places_path(world)
-    expect(response.body).to include("map-sheet--editor", 'data-controller="map-editor"', "New map on #{world.name}", "Generate the picture", "Varn", "The Old Light")
+    expect(page.at(".map-sheet--editor")).to be_present
+    expect(page.at("[data-controller~=map-editor]")).to be_present
+    expect(response.body).to include("New map on #{world.name}", "Generate the picture", "Varn", "The Old Light")
   end
 
   it "makes maps on maps and beside them, moves them and the places, bends the roads, and keeps it to editors" do
@@ -32,7 +34,8 @@ RSpec.describe "The atlas's maps", type: :request do
     expect(marches.reload.neighbours["e"]).to eq([ root ])
 
     get new_world_world_place_path(world, world_map_id: marches.id, x: 700, y: 9999)
-    expect(response.body).to include('value="700"', 'value="900"', %(<option selected="selected" value="#{marches.id}">The Marches</option>))
+    expect(page.css("input").map { |i| i["value"] }).to include("700", "900")
+    expect(page.at("option[selected][value='#{marches.id}']").text).to eq("The Marches")
     post world_world_places_path(world), params: { world_place: { name: "Fen", kind: "wilds", x: 700, y: 800, world_map_id: marches.id, known: "1" } }
     fen = world.world_places.find_by!(name: "Fen")
     expect(fen.world_map).to eq(marches)
@@ -48,7 +51,6 @@ RSpec.describe "The atlas's maps", type: :request do
     expect(road.reload).to have_attributes(state: "dangerous", duration: 2, waypoints: [ [ 350, 120 ] ])
 
     get world_world_places_path(world, map: marches.id)
-    page = Nokogiri::HTML(response.body)
     expect(page.at(".map-sheet__up").text).to eq("↑ #{world.name}")
     expect(page.at(".map-sheet__edge--e a").text).to eq(world.name)
     expect(page.css(".map-node text.map-node__label").map(&:text)).to eq([ "Fen" ])

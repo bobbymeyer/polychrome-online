@@ -67,23 +67,27 @@ RSpec.describe "Books", type: :request do
 
   it "shows the type chart, and each monster's type and what that makes it weak to" do
     get world_types_path(world)
-    expect(response.body).to include("Types", ">Ghost</span>", "is-zero")
+    expect(response.body).to include("Types")
+    expect(page.css("span").map(&:text)).to include("Ghost")
+    expect(page.at(".is-zero")).to be_present
     expect(response.body).not_to include("Fairy", "Dragon")
 
     monster = create_monster(world, slug: "skeleton", base_type: "dark", affinities: { fire: "weak" })
     get world_bestiary_monster_path(world, monster)
-    expect(response.body).to include(">Dark</span>", "Weak to", ">Fighting</span>", ">Bug</span>", "Breaks the chart: weak fire")
+    expect(page.css("span").map(&:text)).to include("Dark", "Fighting", "Bug")
+    expect(response.body).to include("Weak to", "Breaks the chart: weak fire")
     get world_bestiary_monsters_path(world)
     expect(response.body).to include("Type chart", "Fighting, Bug, Fire").or include("Fire, Fighting, Bug")
   end
 
   it "explains the game's words where they're used, and all together on How to play" do
     get how_to_play_path
-    expect(response.body).to include("How to play", "Ability points", "(D&amp;D: Dex)", 'class="gloss"')
+    expect(page.text).to include("How to play", "Ability points", "(D&D: Dex)")
+    expect(page.at(".gloss")).to be_present
 
     monster = create_monster(world)
     get world_bestiary_monster_path(world, monster)
-    expect(response.body).to include('data-gloss="Agility. Who acts first')
+    expect(page.css("[data-gloss]").map { |n| n["data-gloss"] }).to include(start_with("Agility. Who acts first"))
   end
 
   describe "Grimoire" do

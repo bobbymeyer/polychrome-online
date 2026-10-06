@@ -72,7 +72,7 @@ RSpec.describe "Authoring fixes", type: :request do
     gm = make_user("GM")
     campaign.update!(gm: gm)
     sign_in_as(gm)
-    post campaign_table_seat_path(campaign), params: { seat: "gm" }
+    sit(campaign, "gm")
     expect(response).to have_http_status(:redirect)
     campaign.set_out!(from_the_setting: true)
     tule = campaign.map_nodes.find_by!(name: "Tule").location

@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Camp and road events: offered to the GM, put to the table, settled" do
   let(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gil: 100) }
+  let(:campaign) { base_campaign(gil: 100) }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let!(:crossing) { campaign.map_nodes.create!(name: "Crossing", kind: "field", x: 1, y: 1, visible: true) }
   let!(:hollin) do

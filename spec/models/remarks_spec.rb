@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Campaign::Remarks do
   let(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road") }
+  let(:campaign) { base_campaign }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:crossing) { campaign.map_nodes.create!(name: "Crossing", kind: "field", x: 1, y: 1, visible: true) }
   let(:hollin) do

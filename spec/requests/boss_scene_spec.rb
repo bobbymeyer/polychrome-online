@@ -5,7 +5,7 @@ require "rails_helper"
 # A dungeon's boss as a scene: words before the fight, and a fanfare after.
 RSpec.describe "The boss and the victory", type: :request do
   let!(:world) { base_world }
-  let(:campaign) { world.campaigns.create!(name: "Crystal Road", gm: @admin) }
+  let(:campaign) { base_campaign(gm: @admin) }
   let!(:bartz) { create_character(campaign, name: "Bartz", job: world.jobs.find_by!(slug: "knight")) }
   let(:cave_node) { campaign.map_nodes.create!(name: "Goblin Hollow", kind: "dungeon", x: 300, y: 300, visible: true) }
   let(:cave) do
