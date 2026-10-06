@@ -95,4 +95,11 @@ module Campaign::Timekeeping
   def rest_time
     [ until_the_day_begins, 1 ].max
   end
+
+  # The public clocks only a new day ticks, soonest first, as
+  # [days left, clock]: what the party sees counting down under the date.
+  def deadlines(limit = 3)
+    clocks.running.shown_to_players.select { |clock| clock.triggers == [ "dawn" ] && clock.times.empty? }
+          .map { |clock| [ clock.segments - clock.filled, clock ] }.sort_by(&:first).first(limit)
+  end
 end

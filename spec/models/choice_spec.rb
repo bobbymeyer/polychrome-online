@@ -16,6 +16,17 @@ RSpec.describe "Choices for the table" do
     expect(Message.parse_choice("Who goes there?")).to be_nil
   end
 
+  it "says who picked what, who is still to pick, and whom nobody plays" do
+    lenna.update!(user: User.create!(name: "Lenna's player", email_address: "lenna@example.com", password: "secret-password-1"))
+    faris = create_character(campaign, name: "Faris", user: User.create!(name: "Faris's player", email_address: "faris@example.com", password: "secret-password-1"))
+    choice = Message.choice(campaign, options: [ "Trust Cid", "Refuse" ]).tap(&:save!)
+    choice.picks.create!(character: lenna, option: "Refuse")
+
+    expect(choice.pickers).to eq("Refuse" => [ lenna.id ])
+    expect(choice.picked_names).to eq([ "Lenna" ])
+    expect(choice.yet_to_pick).to eq([ [ faris.name ], [ bartz.name ] ]) # Faris's player is still to pick; nobody plays Bartz
+  end
+
   it "lets each character pick, and change their mind, until the GM settles it and sets the flag" do
     choice = Message.choice(campaign, options: [ "Trust Cid", "Refuse" ], flag: "trusted_cid").tap(&:save!)
     expect(choice).not_to be_dialogue

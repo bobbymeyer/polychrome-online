@@ -56,6 +56,24 @@ module Message::Choice
   # "Everyone is KO'd. What happens now?" (Campaign::Defeat#ask_what_now!).
   def what_now? = choice? && recovery.present?
 
+  # { option => [character ids] }: which characters picked each option.
+  def pickers
+    picks.group_by(&:option).transform_values { |ps| ps.map(&:character_id) }
+  end
+
+  # Who has picked, by name.
+  def picked_names
+    picks.includes(:character).map { |pick| pick.character.name }
+  end
+
+  # The characters yet to pick, by name, as [still to pick, nobody plays]:
+  # a character without a player gives no pick.
+  def yet_to_pick
+    picked = picked_names
+    campaign.characters.order(:created_at).reject { |c| picked.include?(c.name) }
+            .partition { |c| c.user_id.present? }.map { |cs| cs.map(&:name) }
+  end
+
   # { option => [character names] }, in the options' order.
   def tally
     names = picks.includes(:character).group_by(&:option).transform_values { |ps| ps.map { |p| p.character.name } }

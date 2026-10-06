@@ -163,7 +163,7 @@
     </tr>
     <%# Let the fight run: the last row is Auto, its state in the cost column. Picking a command yourself takes you off it. %>
     <% on = @battle.auto?(unit["id"]) %>
-    <% everyone = on && (@battle.party.select { |u| u["hp"].positive? }.map { |u| u["id"] } - @battle.auto_units).empty? %>
+    <% everyone = on && @battle.everyone_on_auto? %>
     <tr class="pick-row auto-row<%= ' is-on' if on %>">
       <td class="pick-row__what"><%= button_to "Auto", battle_auto_path(@battle), method: :patch, params: { unit: unit["id"], on: on ? "0" : "1" }, class: "pick-row__act",
                                               aria: { pressed: on }, data: { menu_forget: true, menu_key: "Auto",

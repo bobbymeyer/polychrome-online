@@ -43,6 +43,8 @@ class Clock < ApplicationRecord
 
   scope :running, -> { where(full_at: nil, stopped_at: nil) }
   scope :shown_to_players, -> { where(public: true) }
+  # One box from full: the one thing the table needs to know about a clock.
+  scope :nearly_full, -> { where("segments - filled = 1") }
 
   after_commit :broadcast
 

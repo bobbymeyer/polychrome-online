@@ -27,8 +27,7 @@ module BattleRecord::Rounds
   def auto_fill!
     return if over?
 
-    standing = party.select { |u| u["hp"].positive? }.map { |u| u["id"] }
-    return if (standing - auto_units).empty?
+    return if everyone_on_auto?
 
     units = awaiting_input & auto_units
     return if units.empty?
@@ -47,6 +46,13 @@ module BattleRecord::Rounds
   end
 
   def auto?(unit_id) = auto_units.include?(unit_id)
+
+  # The party's units still standing, by id.
+  def standing_ids = party.select { |u| u["hp"].positive? }.map { |u| u["id"] }
+
+  # Everyone still standing is on auto: then the round waits for the GM or
+  # the timer (auto_fill!), so a fight never plays itself out.
+  def everyone_on_auto? = (standing_ids - auto_units).empty?
 
   # Start the input timer for the current round, if this battle has one.
   # The first round's waits for everyone to arrive (#arrive!).
@@ -71,7 +77,7 @@ module BattleRecord::Rounds
   # The players the first round's clock is waiting for: in the fight and
   # standing, not on auto, and not ready yet.
   def still_coming
-    party.select { |u| u["hp"].positive? }.map { |u| u["id"] } - auto_units - arrived_units
+    standing_ids - auto_units - arrived_units
   end
 
   # Everyone's here: the first round's clock starts, on every screen.

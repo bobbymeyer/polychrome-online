@@ -213,6 +213,16 @@ module Campaign::Travelling
     monsters.map { |slug, count| "#{count} × #{names[slug]&.name || slug}" }.to_sentence
   end
 
+  # Who waits in the rolled encounter: its antagonists by name, then its
+  # monsters ("Garland and 2 × Goblin").
+  def encounter_foes(encounter = pending_encounter)
+    return [] if encounter.blank?
+
+    names = npcs.where(id: encounter.fetch("antagonists", [])).map(&:name)
+    names << describe_encounter(encounter["monsters"]) if encounter["monsters"].present?
+    names
+  end
+
   # The dungeon the party is inside right now, if any.
   def dungeon_in_progress
     location = current_node&.location

@@ -25,6 +25,19 @@ module Location::Exploration
     progress.fetch("resolved", []).include?(key)
   end
 
+  # Treasure in the party's room that nobody has picked up yet.
+  def treasure_waiting?
+    room = current_room
+    room.present? && room.dig("decision", "kind") == "treasure" && !resolved?(room["key"])
+  end
+
+  # What waits in a room, for the GM: its decision's kind, or "done" once
+  # it's dealt with. Nil for no such room.
+  def ahead(key)
+    room = room(key) or return
+    resolved?(room["key"]) ? "done" : room.dig("decision", "kind")
+  end
+
   # The master's room: where the boss waits, or an antagonist who lives here.
   def master_room
     view.fetch("rooms", []).find { |r| r.dig("decision", "kind") == "boss" }
