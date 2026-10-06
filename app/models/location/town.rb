@@ -89,6 +89,27 @@ module Location::Town
     price_here([ per_level * character&.level.to_i, floor ].max)
   end
 
+  # What each service offers, in a few words on its row; any other kind is
+  # the GM's to play.
+  SERVICE_OFFERS = { "inn" => "Rest the night", "temple" => "Raise the fallen", "guild" => "Hear what's being said", "shop" => "Buy and sell" }.freeze
+
+  def service_offer(kind) = SERVICE_OFFERS.fetch(kind, "The GM plays what happens")
+
+  # What a service done at the table does (services_for): nil for the shop
+  # (it opens on the town's page) and anything the GM plays.
+  def service_outcome(kind)
+    case kind
+    when "inn" then Outcome.of("rest", 100)
+    when "temple" then Outcome.of("raise")
+    when "guild" then Outcome.of("rumour")
+    end
+  end
+
+  # Who keeps each service, from the rolled townsfolk: { "inn" => "Bram", ... }.
+  def keepers
+    roster.filter_map { |slot| (generated = slot["generated"]) && generated["service"] && [ generated["service"], generated["name"] ] }.to_h
+  end
+
   # The inn, temple and guild, as things to do here (Pastime) with a price
   # and an outcome (Outcome): rooms for the whole party at the inn, a
   # raising at the temple for whoever is KO'd, a rumour at the guild. None
@@ -100,15 +121,15 @@ module Location::Town
       case service["kind"]
       when "inn"
         Pastime.new(name: "Rooms at #{service['name']}", takes: 0, price: party.sum { |c| service_price("inn", c) },
-                    outcomes: [ Outcome.of("rest", 100) ], service: "inn")
+                    outcomes: [ service_outcome("inn") ], service: "inn")
       when "temple"
         fallen = party.reject(&:conscious?)
         next if fallen.empty?
 
         Pastime.new(name: "A raising at #{service['name']}", takes: 0, price: fallen.sum { |c| service_price("temple", c) },
-                    outcomes: [ Outcome.of("raise") ], service: "temple")
+                    outcomes: [ service_outcome("temple") ], service: "temple")
       when "guild"
-        Pastime.new(name: "Rumours at #{service['name']}", takes: 0, price: service_price("guild"), outcomes: [ Outcome.of("rumour") ], service: "guild")
+        Pastime.new(name: "Rumours at #{service['name']}", takes: 0, price: service_price("guild"), outcomes: [ service_outcome("guild") ], service: "guild")
       end
     end
   end

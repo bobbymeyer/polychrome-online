@@ -36,7 +36,27 @@ class MapScope
     end
   end
 
-  def steer_url(map) = campaign_map_view_path(owner, map: map.id)
+  # How a link to another map goes: at the table the GM's steers the stage
+  # (PATCH) and a player's browses their own frame; elsewhere it's a page.
+  def link_data
+    return { turbo_frame: "_top" } unless table?
+
+    gm? ? { turbo_method: :patch } : { turbo_frame: "table_map" }
+  end
+
+  # Whether the GM asks from this sheet (map_ask_controller): at the table,
+  # with the party somewhere on the map and not inside a dungeon.
+  def asking?
+    table? && gm? && campaign? && owner.current_node.present? && !owner.dungeon_in_progress
+  end
+
+  # Modes on at three places or more: said once, across the map, rather than
+  # under each place.
+  def shared_modes(nodes)
+    return [] unless campaign?
+
+    nodes.flat_map { |node| node.modes_on.map(&:name).uniq }.tally.select { |_, count| count >= 3 }.keys
+  end
 
   def new_place_url(map, x, y)
     world? ? new_world_world_place_path(owner, world_map_id: map.id, x: x, y: y) : new_campaign_map_node_path(owner, map_id: map.id, x: x, y: y)

@@ -9,7 +9,7 @@
       <%# One option a row (pick_table_controller): a player's row presses their pick, the GM's row settles. %>
       <table class="pick-table play choice__options" data-controller="pick-table">
         <tbody>
-        <% pickers = choice.picks.group_by(&:option).transform_values { |ps| ps.map(&:character_id) } %>
+        <% pickers = choice.pickers %>
         <% voters = [ choice.picks.size, 1 ].max %>
         <% choice.tally.each do |option, names| %>
           <tr class="pick-row choice__option" data-choice-panel-target="option" data-picked-by="<%= Array(pickers[option]).join(" ") %>">
@@ -36,8 +36,8 @@
         </tbody>
       </table>
       <%# Who has picked, under the options where the picks are: the vote's own footer, for everyone. %>
-      <% picked = choice.picks.includes(:character).map { |pick| pick.character.name } %>
-      <% unplayed, waiting = choice.campaign.characters.order(:created_at).reject { |c| picked.include?(c.name) }.partition { |c| c.user_id.nil? }.map { |cs| cs.map(&:name) } %>
+      <% picked = choice.picked_names %>
+      <% waiting, unplayed = choice.yet_to_pick %>
       <p class="choice__footer" data-change="text">
         <span class="choice__who-picked"><%= picked.any? ? "Picked: #{picked.to_sentence}." : "Nobody has picked yet." %></span>
         <%= "Still to pick: #{waiting.to_sentence}." if picked.any? && waiting.any? %>

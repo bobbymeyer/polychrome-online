@@ -11,10 +11,10 @@
 <% party = scope.campaign? ? nodes.find { |n| n.id == scope.owner.current_node_id } : nil %>
 <% sides = map.neighbours %>
 <% labels = map_label_offsets(nodes) %>
-<% shared_modes = scope.campaign? ? nodes.flat_map { |n| n.modes_on.map(&:name).uniq }.tally.select { |_, count| count >= 3 }.keys : [] %>
+<% shared_modes = scope.shared_modes(nodes) %>
 <%# The GM asks from the map (map_ask_controller): each place they press offers Go and Ask the table, with the
     journey by road from here (Campaign::Ways#ask_where_next!). %>
-<% asking = scope.table? && scope.gm? && scope.campaign? && scope.owner.current_node && !scope.owner.dungeon_in_progress %>
+<% asking = scope.asking? %>
 <% asks = asking ? scope.owner.ways_to(nodes.select { |n| n.visible? }).index_by { |way| way.dig("move", "to") } : {} %>
 <div class="map-sheet <%= 'map-sheet--editor' if scope.editor? %> <%= 'map-sheet--pictured' if map.image.attached? %>" data-map-id="<%= map.id %>" <%= tag.attributes(data: { controller: ("map-ask" if asking) }) %>>
   <svg viewBox="0 0 <%= MapNode::WIDTH %> <%= MapNode::HEIGHT %>" class="map" role="img"
@@ -48,16 +48,15 @@
     <g class="map__maps">
       <% children.each do |child| %>
         <% next unless child.x && child.y %>
-        <% href = scope.editor? ? scope.map_url(child) : (scope.gm? ? scope.steer_url(child) : scope.map_url(child)) %>
         <g class="map-child" transform="translate(<%= child.x %> <%= child.y %>)"
            <% if scope.editor? %>data-map-child data-edit-url="<%= scope.map_url(child) %>" data-update-url="<%= scope.update_map_url(child) %>" tabindex="0" role="button"<% end %>>
           <title>The map of <%= child.name %></title>
-          <a href="<%= href %>" class="map-child__link" <%= scope.table? ? (scope.gm? ? 'data-turbo-method="patch"' : 'data-turbo-frame="table_map"') : 'data-turbo-frame="_top"' %>>
+          <%= tag.a href: scope.map_url(child), class: "map-child__link", data: scope.link_data do %>
             <circle class="map-child__target" r="44" />
             <path class="map-child__sheet" d="M-18,-14 H10 L18,-6 V14 H-18 Z" />
             <path class="map-child__fold" d="M10,-14 V-6 H18" />
             <text class="map-node__label" y="38" text-anchor="middle"><%= child.name %></text>
-          </a>
+          <% end %>
         </g>
       <% end %>
     </g>
@@ -110,16 +109,12 @@
     <% next if maps.empty? %>
     <div class="map-sheet__edge map-sheet__edge--<%= direction %>" aria-label="<%= MapSheet::COMPASS[direction] %>">
       <% maps.each do |other| %>
-        <% href = scope.editor? ? scope.map_url(other) : (scope.gm? ? scope.steer_url(other) : scope.map_url(other)) %>
-        <%= link_to other.name, href, class: "map-sheet__beside", title: "#{MapSheet::COMPASS[direction]}: #{other.name}",
-                    data: (scope.table? ? (scope.gm? ? { turbo_method: :patch } : { turbo_frame: "table_map" }) : { turbo_frame: "_top" }) %>
+        <%= link_to other.name, scope.map_url(other), class: "map-sheet__beside", title: "#{MapSheet::COMPASS[direction]}: #{other.name}", data: scope.link_data %>
       <% end %>
     </div>
   <% end %>
   <% if map.parent %>
-    <% href = scope.editor? ? scope.map_url(map.parent) : (scope.gm? ? scope.steer_url(map.parent) : scope.map_url(map.parent)) %>
-    <%= link_to "↑ #{map.parent.name}", href, class: "map-sheet__up", title: "Up to #{map.parent.name}",
-                data: (scope.table? ? (scope.gm? ? { turbo_method: :patch } : { turbo_frame: "table_map" }) : { turbo_frame: "_top" }) %>
+    <%= link_to "↑ #{map.parent.name}", scope.map_url(map.parent), class: "map-sheet__up", title: "Up to #{map.parent.name}", data: scope.link_data %>
   <% end %>
   <p class="map-sheet__name"><%= map.name %></p>
   <% if asking %>

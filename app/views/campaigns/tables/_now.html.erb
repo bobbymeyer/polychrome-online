@@ -3,11 +3,9 @@
     Refreshed with the table, each seat rendering its own. %>
 <% battle = campaign.current_battle %>
 <% choice = campaign.open_choice %>
-<% scene = campaign.staged_scene %>
-<% beat = scene&.current_beat %>
 <%# data-state says which: a player's moves follow it (stage.css, "What you can do now"); data-controls what the GM
     has called (Campaign::Controls): the talk box is there only under Talk. %>
-<% state = battle ? "battle" : campaign.pending_encounter.present? ? "encounter" : choice ? "choice" : (scene && beat) ? "scene" : "free" %>
+<% state = campaign.table_state %>
 <%# table-now--controls: the GM's controls strip is in the line (below), and the line is that strip (stage.css, "The controls"). %>
 <% controls = gm && !battle && !state.in?(%w[encounter choice]) %>
 <section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %><%= " table-now--controls" if controls %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>" data-controls="<%= campaign.controls %>" data-change="state" data-change-key="table-now">
@@ -16,7 +14,7 @@
       (campaigns/tables/_time). %>
   <% if (gm && state.in?(%w[free scene])) || (!gm && state == "scene") %>
     <%# Clocks live in Prep; the one thing the table needs to know is when one is about to fill. %>
-    <% nearly = campaign.clocks.running.select { |clock| clock.segments - clock.filled == 1 } %>
+    <% nearly = campaign.clocks.running.nearly_full.to_a %>
     <% if nearly.any? %>
       <p class="table-now__clock"><%= nearly.map(&:name).to_sentence %> <%= nearly.one? ? "is" : "are" %> one tick from full · <%= link_to "Clocks", campaign_prep_path(campaign, anchor: "clocks") %></p>
     <% end %>
@@ -28,8 +26,7 @@
       <%= gm ? "You run it from the battle page." : "Everyone at the table fights it." %>
       <%= "The choice waits until it's over." if choice %>
     <% elsif (encounter = campaign.pending_encounter).present? %>
-      <% foes = (campaign.npcs.where(id: encounter.fetch("antagonists", [])).map(&:name) + [ (campaign.describe_encounter(encounter["monsters"]) if encounter["monsters"].present?) ]).compact %>
-      <strong>Encounter! <%= foes.to_sentence %>.</strong>
+      <strong>Encounter! <%= campaign.encounter_foes(encounter).to_sentence %>.</strong>
       <%= gm ? "It's your call." : "The GM calls it: fight, or wave it off." %>
     <% elsif choice %>
       <%# Who has picked is the vote's own footer (choices/_panel), under the options where the picks are. %>

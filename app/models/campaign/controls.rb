@@ -49,4 +49,24 @@ module Campaign::Controls
     else []
     end
   end
+
+  # What the table is doing right now, the first that holds: a battle holds
+  # everything else, then a rolled encounter waiting for the GM's call, an
+  # open choice, a scene on the stage, else free play. A player's moves
+  # follow it (campaigns/tables/_now, stage.css).
+  def table_state
+    if battle_on? then "battle"
+    elsif pending_encounter.present? then "encounter"
+    elsif open_choice then "choice"
+    elsif staged_scene&.current_beat then "scene"
+    else "free"
+    end
+  end
+
+  # The ways the party can pay for: a pastime here that costs more than the
+  # purse holds is left out.
+  def affordable(ways)
+    prices = current_node ? current_node.pastimes.to_h { |pastime| [ pastime.name, pastime.price ] } : {}
+    ways.reject { |way| (doing = way.dig("move", "pastime")) && prices[doing].to_i > gil }
+  end
 end

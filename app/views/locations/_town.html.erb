@@ -10,8 +10,8 @@
       <p class="empty">Nothing here for travellers.</p>
     <% else %>
       <% shopping = may_shop?(location) %>
-      <% keepers = location.roster.filter_map { |slot| (g = slot["generated"]) && g["service"] && [ g["service"], g["name"] ] }.to_h %>
-      <% here = @campaign.current_node&.location_id == location.id %>
+      <% keepers = location.keepers %>
+      <% here = location.party_here? %>
       <% pastimes = here ? @campaign.current_node.pastimes.index_by(&:service) : {} %>
       <% if location.reputation.nonzero? %>
         <p class="standing standing--<%= location.reputation.positive? ? 'good' : 'bad' %>">
@@ -31,8 +31,8 @@
           <% kind = service["kind"] %>
           <% shut = location.shut_by(kind) %>
           <% pastime = pastimes[kind] %>
-          <% outcome = { "inn" => Outcome.of("rest", 100), "temple" => Outcome.of("raise"), "guild" => Outcome.of("rumour") }[kind] %>
-          <% offer = shut ? "Shut" : { "inn" => "Rest the night", "temple" => "Raise the fallen", "guild" => "Hear what's being said", "shop" => "Buy and sell" }.fetch(kind, "The GM plays what happens") %>
+          <% outcome = location.service_outcome(kind) %>
+          <% offer = shut ? "Shut" : location.service_offer(kind) %>
           <% price = !shut && pastime&.price %>
           <% shop = service if kind == "shop" && !shut %>
           <tr class="pick-row service service--<%= kind %>" id="service-<%= kind %>"
