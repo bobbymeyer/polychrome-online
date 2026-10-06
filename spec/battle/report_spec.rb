@@ -67,6 +67,64 @@ RSpec.describe Battle::Report do
     end
   end
 
+  describe "moves, kinds and many battles" do
+    let(:initial) do
+      { "round" => 1, "abilities" => { "fire" => { "id" => "fire", "name" => "Fire" } },
+        "units" => [ unit("bartz", "Bartz", "party", 100), unit("goblin_a", "Goblin A", "enemy", 20), unit("goblin_b", "Goblin B", "enemy", 20) ] }
+    end
+    let(:events) do
+      [
+        { "type" => "round_start", "round" => 1 },
+        { "type" => "turn_start", "unit" => "bartz" },
+        { "type" => "cast", "actor" => "bartz", "ability" => "fire", "targets" => %w[goblin_a goblin_b], "mp_cost" => 8 },
+        { "type" => "damage", "target" => "goblin_a", "amount" => 25, "hp" => 0, "actor" => "bartz" },
+        { "type" => "ko", "target" => "goblin_a" },
+        { "type" => "damage", "target" => "goblin_b", "amount" => 12, "hp" => 8, "actor" => "bartz" },
+        { "type" => "turn_end", "unit" => "bartz" },
+        { "type" => "turn_start", "unit" => "goblin_b" },
+        { "type" => "attack", "actor" => "goblin_b", "ability" => "attack", "targets" => [ "bartz" ], "mp_cost" => 0 },
+        { "type" => "damage", "target" => "bartz", "amount" => 6, "hp" => 94, "actor" => "goblin_b" },
+        { "type" => "counter", "actor" => "bartz", "target" => "goblin_b" },
+        { "type" => "damage", "target" => "goblin_b", "amount" => 9, "hp" => 0, "actor" => "bartz" },
+        { "type" => "ko", "target" => "goblin_b" },
+        { "type" => "turn_end", "unit" => "goblin_b" },
+        { "type" => "victory" }
+      ]
+    end
+    let(:final) do
+      initial.merge("status" => "victory", "units" => [ unit("bartz", "Bartz", "party", 94, 100), unit("goblin_a", "Goblin A", "enemy", 0, 20), unit("goblin_b", "Goblin B", "enemy", 0, 20) ])
+    end
+    let(:report) { described_class.build(initial, events, final) }
+
+    it "knows a lettered enemy as its kind, and who went down" do
+      expect(row(report, "goblin_b")).to include("kind" => "goblin", "kind_name" => "Goblin", "downed" => 1, "dealt" => 6)
+      expect(row(report, "bartz")).to include("kind" => "bartz", "kind_name" => "Bartz", "kos" => 2, "downed" => 0)
+      expect(described_class.kind_of("id" => "goblin", "name" => "Goblin")).to eq(%w[goblin Goblin])
+      expect(described_class.kind_of("id" => "ghost_a", "name" => "Ghost A")).to eq(%w[ghost Ghost])
+      expect(described_class.kind_of("id" => "lich_x", "name" => "The Lich")).to eq([ "lich_x", "The Lich" ]) # not a letter it was given
+    end
+
+    it "credits each move with what it did, a counter as a counter" do
+      expect(report["moves"]).to eq([
+        { "side" => "party", "name" => "Counter", "uses" => 1, "dealt" => 8, "healed" => 0 },
+        { "side" => "party", "name" => "Fire", "uses" => 1, "dealt" => 32, "healed" => 0 },
+        { "side" => "enemy", "name" => "attack", "uses" => 1, "dealt" => 6, "healed" => 0 }
+      ])
+    end
+
+    it "puts many battles together: each in a line, each kind of fighter and each move over all of them" do
+      across = described_class.across([ { "battle" => { "id" => 2, "name" => "Second" }, "report" => report },
+                                        { "battle" => { "id" => 1, "name" => "First" }, "report" => report } ])
+      expect(across["results"]).to eq("victory" => 2)
+      expect(across["battles"].first).to include("id" => 2, "name" => "Second", "result" => "victory", "party_dealt" => 40, "party_taken" => 6,
+                                                 "enemies_downed" => 2, "foes" => { "Goblin" => 2 })
+      goblins = across["fighters"].find { |f| f["kind"] == "goblin" }
+      expect(goblins).to include("name" => "Goblin", "battles" => 2, "units" => 4, "dealt" => 12, "downed" => 4, "dealt_per_battle" => 6.0, "dealt_per_action" => 6.0)
+      expect(across["moves"].find { |m| m["name"] == "Fire" }).to include("uses" => 2, "dealt" => 64, "dealt_per_use" => 32.0)
+      expect(described_class.across([])).to include("battles" => [], "fighters" => [], "moves" => [])
+    end
+  end
+
   describe "from battles the resolver plays out" do
     def play_out(seed)
       state = build_battle(seed: seed)
