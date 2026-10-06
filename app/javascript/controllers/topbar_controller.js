@@ -1,29 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
 // The top bar: on a phone its links open from a Menu button; the account's
-// menu (your name) closes on a click elsewhere or Esc. The page starts under
-// the bar, whatever height it comes to (--topbar), and the stage is told.
+// menu (your name) closes on a click elsewhere or Esc. It sticks to the top in
+// the page's flow (application.css), so nothing measures it.
 export default class extends Controller {
   static targets = ["toggle"]
-
-  connect() {
-    this.observer = new ResizeObserver(() => this.measure())
-    this.observer.observe(this.element)
-    this.measure()
-  }
-
-  disconnect() {
-    this.observer?.disconnect()
-  }
-
-  measure() {
-    if (this.element.classList.contains("is-open")) return // a phone's open Menu lies over the page, not above it
-    const height = Math.round(this.element.getBoundingClientRect().height)
-    if (!height || this.height === height) return
-    this.height = height
-    document.documentElement.style.setProperty("--topbar", `${height}px`)
-    window.dispatchEvent(new CustomEvent("layout:changed"))
-  }
 
   toggle() {
     const open = !this.element.classList.contains("is-open")

@@ -11,7 +11,6 @@ export default class extends Controller {
   connect() {
     this.fit = () => this.measure()
     window.addEventListener("resize", this.fit)
-    window.addEventListener("layout:changed", this.fit) // the top bar's height, measured
     // Anything that moves the frame's top (the top bar settling, a notice coming and going, fonts arriving)
     // changes the page's height too: the page is watched, and the frame measured again.
     this.observer = new ResizeObserver(this.fit)
@@ -27,7 +26,6 @@ export default class extends Controller {
 
   disconnect() {
     window.removeEventListener("resize", this.fit)
-    window.removeEventListener("layout:changed", this.fit)
     this.observer?.disconnect()
     this.mutations?.disconnect()
     cancelAnimationFrame(this.raf)

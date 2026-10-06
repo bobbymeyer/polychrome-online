@@ -83,6 +83,8 @@ body::before {
 .topbar {
   background: var(--ink); color: var(--paper); border-bottom: 4px solid; border-image: var(--spectrum) 1;
 }
+/* A phone's open menu hangs under the stripe, not over it (application.css puts it under the bar). */
+.topbar.is-open .topbar__menu { margin-top: 4px; }
 .topbar__brand { justify-self: start; color: var(--paper); font: var(--display); font-size: 18px; line-height: 24px; letter-spacing: -0.04em; }
 /* The logo: the stripe under the bar, every other colour of it, the bar's full height, top to stripe: the brand
    stretches over its row and takes back the bar's padding, and the logo fills it. It has no height of its own, so it
@@ -1631,7 +1633,6 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* Stage only (docs/DESIGN.md, "The Stage"): for a TV at the table or a stream, nothing but the frame,
    on black, as big as the screen allows. The way out shows when the mouse goes looking for it. */
 body[data-view="stage"] { background: var(--ink); }
-body[data-view="stage"] { padding-top: 0; }
 body[data-view="stage"] .topbar, body[data-view="stage"] .flashes { display: none; }
 body[data-view="stage"] .page { max-width: none; min-height: 100vh; min-height: 100dvh; margin: 0; padding: 0 !important; display: grid; place-items: center; }
 body[data-view="stage"] .stage { width: min(100%, calc(100vh * 16 / 9)); min-width: 0; margin: 0 auto; }
