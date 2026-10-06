@@ -1,0 +1,68 @@
+<% content_for :title, "#{@battle.name} · Report" %>
+<%# A battle's numbers, for the GM balancing it (Battle::Report): what landed, by whom, round by round. Plain tables,
+    so they paste into a spreadsheet as they are. %>
+<% hp, mp = @world.word("hp"), @world.word("mp") %>
+<% sides = { "party" => "The party", "enemy" => "The enemies" } %>
+<div class="battle-report">
+  <p class="crumbs"><%= link_to @battle.name, battle_path(@battle) %> · Report</p>
+  <h1><%= @battle.name %></h1>
+  <p>
+    <%= @battle.over? ? @battle.status.humanize : "Still being fought" %> after
+    <%= pluralize(@report["rounds"], "round") %> and <%= pluralize(@report["turns"], "turn") %>.
+    What landed counts: damage past a unit's last <%= hp %> and healing past its full <%= hp %> don't.
+  </p>
+
+  <% sides.each do |side, title| %>
+    <% rows = @report["units"].select { |row| row["side"] == side } %>
+    <% next if rows.empty? %>
+    <section class="battle-report__side">
+      <h2><%= title %></h2>
+      <table class="book-table book-table--plain">
+        <thead>
+          <tr>
+            <th>Who</th><th class="num">Dealt</th><th class="num">Taken</th><th class="num">Healed</th><th class="num">KOs</th>
+            <th class="num">Actions</th><th class="num">Misses</th><th class="num">Crits</th><th class="num"><%= mp %> spent</th>
+            <th class="num"><%= hp %> left</th><th>Used</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.each do |row| %>
+            <tr>
+              <th scope="row"><%= row["name"] %></th>
+              <% %w[dealt taken healed kos actions misses crits mp_spent].each do |key| %>
+                <td class="num"><%= row[key] %></td>
+              <% end %>
+              <td class="num"><%= row["hp"] %><%= " / #{row['max_hp']}" if row["max_hp"] %></td>
+              <td><%= row["abilities"].map { |name, count| "#{name} ×#{count}" }.join(", ").presence || "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <% total = @report["sides"][side] %>
+          <tr>
+            <th scope="row">All</th>
+            <% %w[dealt taken healed kos actions misses crits mp_spent].each do |key| %>
+              <td class="num"><strong><%= total[key] %></strong></td>
+            <% end %>
+            <td></td><td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+  <% end %>
+
+  <section class="battle-report__rounds">
+    <h2>Round by round</h2>
+    <table class="book-table book-table--plain">
+      <thead><tr><th>Round</th><th class="num">The party dealt</th><th class="num">The enemies dealt</th></tr></thead>
+      <tbody>
+        <% @report["by_round"].each do |round| %>
+          <tr><th scope="row"><%= round["round"] %></th><td class="num"><%= round["party"] %></td><td class="num"><%= round["enemy"] %></td></tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @report["by_status"].any? %>
+      <p>From statuses, not anyone's hand: <%= @report["by_status"].map { |status, amount| "#{@world.word("status.#{status}")} #{amount}" }.to_sentence %>.</p>
+    <% end %>
+  </section>
+</div>

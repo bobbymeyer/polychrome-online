@@ -46,6 +46,7 @@
       <h1><%= @battle.name %></h1>
     </div>
     <div class="battle__controls">
+      <%= link_to "Report", battle_report_path(@battle), class: "button button--quiet", title: "The battle's numbers, for balancing it" if battle_gm? %>
       <%= render "battles/playback", battle: @battle %>
       <button type="button" class="button button--quiet" data-battle-player-target="skip"
               data-action="battle-player#skip" title="Or press Enter, Space or Esc" hidden>Skip</button>

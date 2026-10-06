@@ -248,6 +248,8 @@ Rails.application.routes.draw do
       resource :arrival, only: :create
       # Someone has the battle open: its clock runs (BattleRecord#watch!).
       resource :watch, only: :update
+      # Its numbers, for the GM balancing it (Battle::Report).
+      resource :report, only: :show
     end
   end
 end
