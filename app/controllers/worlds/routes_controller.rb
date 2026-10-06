@@ -2,7 +2,7 @@
 
 # The roads on a setting's atlas (WorldRoute).
 class Worlds::RoutesController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_world_editor
 
   def create
@@ -47,11 +47,5 @@ class Worlds::RoutesController < ApplicationController
     route = @world.world_routes.find(params[:id])
     route.destroy!
     redirect_to world_world_places_path(@world, anchor: "routes"), notice: "The road #{route.label} is gone.", status: :see_other
-  end
-
-  private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
   end
 end

@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
 # Map editing is the GM's (§7): only the table's GM seat may
-# (TableSeat#require_table_gm), and it answers in the map's panel.
+# (TableSeat#require_table_gm, on every controller), and it answers in the map's panel.
 module MapGm
   extend ActiveSupport::Concern
-  include TableSeat
 
   private
 

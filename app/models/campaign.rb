@@ -9,6 +9,7 @@ class Campaign < ApplicationRecord
   include Timekeeping
   include Mapping
   include Controls
+  include LineLists
 
   belongs_to :world
   belongs_to :gm, class_name: "User", optional: true
@@ -34,8 +35,15 @@ class Campaign < ApplicationRecord
   has_many :rumours, dependent: :destroy # at places and secrets
   has_many :flags, dependent: :delete_all
   has_many :inventories, dependent: :delete_all
-  has_many :battles, class_name: "BattleRecord", dependent: :destroy
-  has_many :characters, dependent: :destroy # at places (home)
+  has_many :battles, class_name: "BattleRecord", dependent: :destroy do
+    # Those still being fought.
+    def under_way = where(status: "input")
+  end
+  # The party, in the order it was made: everything that lists it keeps to that.
+  has_many :characters, -> { order(:created_at) }, dependent: :destroy do # at places (home)
+    # With what their stats need loaded (Character#stats).
+    def with_stats = includes(:job, :character_jobs, equipment_slots: :item)
+  end
   has_many :npcs, dependent: :destroy # at places
   has_many :map_edges, dependent: :destroy
   has_many :map_nodes, dependent: :destroy # at locations
@@ -86,13 +94,11 @@ class Campaign < ApplicationRecord
     messages.create!(kind: "system", body: body, **details)
   end
 
-  def battle_on?
-    battles.where(status: "input").exists?
-  end
+  def battle_on? = current_battle.present?
 
   # The battle the table points at: the newest one still being fought.
   def current_battle
-    battles.where(status: "input").order(created_at: :desc, id: :desc).first
+    battles.under_way.order(created_at: :desc, id: :desc).first
   end
 
   # The kind of scene the party is in, for its music: a dungeon being
@@ -139,7 +145,7 @@ class Campaign < ApplicationRecord
 
   # Those still on their feet, in the party's order, with what their stats need.
   def conscious_characters
-    characters.includes(:job, :character_jobs, equipment_slots: :item).order(:created_at).select(&:conscious?)
+    characters.with_stats.select(&:conscious?)
   end
 
   # The choice the table is deciding, if any (Message#settle!).
@@ -147,11 +153,25 @@ class Campaign < ApplicationRecord
     messages.where(kind: "choice", settled: nil).order(:id).last
   end
 
+  # Sets a flag (Flag), making it if it's new: set_flag!("met_the_king", "yes").
+  # With a block, the new value is made from the old (nil for a new flag).
+  def set_flag!(key, value = nil)
+    flag = flags.find_or_initialize_by(key: key)
+    flag.update!(value: block_given? ? yield(flag.value) : value)
+    flag
+  end
+
+  # What's remembered for a request is forgotten with the record's state.
+  def reload(*)
+    @story_avoid = nil
+    super
+  end
+
   # An amount in the world's money: "150 gil", "150 crowns".
   delegate :money, to: :world
 
   def music_is_heard
-    return if MUSIC_CHOICES.include?(music) || world.music_track_choice?(music)
+    return if world.music_choice?(music)
 
     errors.add(:music, "isn't one of the world's tracks")
   end

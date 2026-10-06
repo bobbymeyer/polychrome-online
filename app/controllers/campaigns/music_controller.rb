@@ -4,10 +4,7 @@
 # track, one of the world's tracks by name ("track:12"), silence, or nothing
 # chosen (each page plays its own scene). Every game page of the campaign
 # follows the change (Campaign#broadcast_music).
-class Campaigns::MusicController < ApplicationController
-  include CampaignScoped
-
-  before_action :set_campaign
+class Campaigns::MusicController < Campaigns::BaseController
   before_action :require_campaign_gm
 
   def update

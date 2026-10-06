@@ -19,7 +19,5 @@ class Characters::ChestsController < ApplicationController
       notice = "#{@character.name} puts #{count} × #{item.name} in the chest."
     end
     redirect_to character_path(@character, anchor: "chest"), notice: notice, status: :see_other
-  rescue ActiveRecord::RecordInvalid => e
-    sheet_error(e.record.errors.full_messages.to_sentence)
   end
 end

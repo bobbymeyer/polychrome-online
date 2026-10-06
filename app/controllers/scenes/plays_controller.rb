@@ -3,6 +3,8 @@
 # A scene on the stage (Scene#start!): the GM puts it there, steps it beat
 # by beat, lets it play on or pauses it, and takes it down.
 class Scenes::PlaysController < ApplicationController
+  include CampaignScoped
+
   before_action :set_scene
   before_action :require_campaign_gm
 
@@ -28,13 +30,5 @@ class Scenes::PlaysController < ApplicationController
   def destroy
     @scene.stop!
     redirect_back_or_to campaign_table_path(@campaign), status: :see_other
-  end
-
-  private
-
-  def set_scene
-    @scene = Scene.find(params[:scene_id])
-    @campaign = @scene.campaign
-    @world = @campaign.world
   end
 end

@@ -4,7 +4,7 @@
 # for whoever may change the world. A save goes through TypeChange, which
 # sends a removed type's uses where the author says.
 class Worlds::TypesController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_world_editor, only: %i[edit update]
 
   def show
@@ -27,10 +27,6 @@ class Worlds::TypesController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
 
   # The posted rows, in the form's order ("0", "1", …).
   def type_params

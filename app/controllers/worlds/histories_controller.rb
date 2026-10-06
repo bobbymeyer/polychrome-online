@@ -4,7 +4,7 @@
 # until it's right, and written into the codex, cast, atlas and fronts. Its
 # GMs can read it; its editors roll and write it.
 class Worlds::HistoriesController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_lore, only: :show
   before_action :require_world_editor, except: :show
 
@@ -46,11 +46,5 @@ class Worlds::HistoriesController < ApplicationController
   def destroy
     Chronicle.new(@world).take_out!
     redirect_to world_history_path(@world), notice: "Taken out of the canon. Whatever you'd changed stays.", status: :see_other
-  end
-
-  private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
   end
 end

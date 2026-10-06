@@ -6,7 +6,7 @@
 # outside battle through the engine's own formulas.
 module Campaign::Bag
   extend ActiveSupport::Concern
-  include Carrying # under this module, so the party-wide use_items! below wins
+  include Carrying
 
   def carried = inventories.where(character_id: nil)
   def carry_row(item) = inventories.find_or_create_by!(item: item, character_id: nil)
@@ -33,12 +33,13 @@ module Campaign::Bag
 
   # One of it, from the chest first, else from whoever carries it.
   def take_from_party!(item)
-    holder = ([ self ] + characters.order(:created_at).to_a).find { |h| h.quantity_of(item).positive? }
-    unless holder
-      errors.add(:base, "#{item.name} is not in the chest or anyone's bag")
-      raise ActiveRecord::RecordInvalid, self
-    end
-    holder.take_item!(item)
+    raise Refusal, "#{item.name} is not in the chest or anyone's bag" if take_up_to!(item, 1, chest_first: true).zero?
+  end
+
+  # Take up to n out of the party's bags, whoever carries it first, then the
+  # chest (a battle's used items, BattleRecord::Settlement): their own before the shared.
+  def use_items!(item, n)
+    take_up_to!(item, n, chest_first: false)
   end
 
   # One party member uses an item from their own bag on another (or
@@ -70,29 +71,31 @@ module Campaign::Bag
   # The consumables a battle can use, as the engine wants them: everything
   # the party has, the chest and every bag, flattened into one count each.
   def battle_items
-    counts = Hash.new(0)
-    items = {}
-    inventories.includes(:item).where("quantity > 0").each do |row|
-      next unless row.item.consumable? && row.item.effects.any?
-
-      counts[row.item.slug] += row.quantity
-      items[row.item.slug] = row.item
-    end
-    items.to_h { |slug, item| [ slug, item.to_engine(counts[slug]) ] }
+    party_holdings.filter_map do |slug, (item, count)|
+      [ slug, item.to_engine(count) ] if item.consumable? && item.effects.any?
+    end.to_h
   end
 
-  # Take up to n out of the party's bags, whoever carries it first, then the
-  # chest (a battle's used items, BattleRecord::Settlement): their own before the shared.
-  def use_items!(item, n)
-    (characters.order(:created_at).to_a + [ self ]).each do |holder|
-      break unless n.positive?
+  private
 
-      have = holder.quantity_of(item)
-      next unless have.positive?
+  # The chest and every member, in the order to take from.
+  def holders(chest_first:)
+    members = characters.order(:created_at).to_a
+    chest_first ? [ self ] + members : members + [ self ]
+  end
 
-      taken = [ have, n ].min
-      holder.carried.find_by(item: item).update!(quantity: have - taken)
-      n -= taken
+  # Take up to n of it from the holders in turn; how many came out.
+  def take_up_to!(item, n, chest_first:)
+    taken = 0
+    holders(chest_first: chest_first).each do |holder|
+      break unless taken < n
+
+      count = [ holder.quantity_of(item), n - taken ].min
+      next unless count.positive?
+
+      holder.take_item!(item, count)
+      taken += count
     end
+    taken
   end
 end

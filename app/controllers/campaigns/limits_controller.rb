@@ -3,12 +3,7 @@
 # A line or a veil for this table (Campaign::Limits), from any seat, with no
 # name on it: whoever plays here may draw one, from the table or the
 # campaign's page.
-class Campaigns::LimitsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
-
+class Campaigns::LimitsController < Campaigns::BaseController
   def create
     return head(:forbidden) unless plays_here?
 

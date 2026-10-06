@@ -2,12 +2,8 @@
 
 # The next of a secret's clues comes out because the GM says so
 # (Secret#find_clue!): from their secrets, or the moves panel.
-class Campaigns::Secrets::CluesController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
-  before_action :require_table_gm
+class Campaigns::Secrets::CluesController < Campaigns::BaseController
+  before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
 
   def create
     @campaign.secrets.find(params[:secret_id]).find_clue!

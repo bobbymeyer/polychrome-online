@@ -7,10 +7,10 @@
 # link (played in their own small player, since those can't be fetched), or
 # ACE-Step in ComfyUI, made from a description and lyrics (TrackJob).
 class Track < ApplicationRecord
+  include ComfyRun # a generated track's way through ComfyUI (TrackJob)
+
   SOURCES = %w[upload link generated].freeze
   SOURCE_LABELS = { "upload" => "Uploaded", "link" => "Linked", "generated" => "Generated" }.freeze
-  # A generated track's way through ComfyUI; waiting: it couldn't be reached, TrackJob tries again.
-  STATUSES = %w[queued waiting running done failed].freeze
   MAX_BYTES = World::MUSIC_MAX_BYTES
   SECONDS = (10..240)
 
@@ -27,7 +27,7 @@ class Track < ApplicationRecord
   validates :name, presence: true
   validates :scene, inclusion: { in: World::MUSIC }, allow_nil: true
   validates :source, inclusion: { in: SOURCES }
-  validates :status, inclusion: { in: STATUSES }, allow_nil: true
+  validates :status, inclusion: { in: ComfyRun::STATUSES }, allow_nil: true
   validates :seconds, inclusion: { in: SECONDS }
   validates :url, presence: true, if: :link?
   validates :prompt, presence: true, if: :generated?
@@ -56,29 +56,25 @@ class Track < ApplicationRecord
   # YouTube and Spotify play in their own small player: an embed of the link,
   # on repeat where the player allows it.
   def embed_url
-    return unless link? && url
+    return unless link?
 
-    if (m = url.match(YOUTUBE))
-      "https://www.youtube-nocookie.com/embed/#{m[1]}?autoplay=1&loop=1&playlist=#{m[1]}&rel=0"
-    elsif (m = url.match(SPOTIFY))
-      "https://open.spotify.com/embed/#{m[1]}/#{m[2]}"
+    case parsed_link
+    in [ "YouTube", _, id ] then "https://www.youtube-nocookie.com/embed/#{id}?autoplay=1&loop=1&playlist=#{id}&rel=0"
+    in [ "Spotify", kind, id ] then "https://open.spotify.com/embed/#{kind}/#{id}"
+    in nil then nil
     end
   end
 
-  def service
-    return "YouTube" if url&.match?(YOUTUBE)
-
-    "Spotify" if url&.match?(SPOTIFY)
-  end
+  def service = parsed_link&.first
 
   # The link as the service writes it, from what was pasted: safe to put in a page.
   def link_href
-    return unless link? && url
+    return unless link?
 
-    if (m = url.match(YOUTUBE))
-      "https://www.youtube.com/watch?v=#{m[1]}"
-    elsif (m = url.match(SPOTIFY))
-      "https://open.spotify.com/#{m[1]}/#{m[2]}"
+    case parsed_link
+    in [ "YouTube", _, id ] then "https://www.youtube.com/watch?v=#{id}"
+    in [ "Spotify", kind, id ] then "https://open.spotify.com/#{kind}/#{id}"
+    in nil then nil
     end
   end
 
@@ -98,7 +94,6 @@ class Track < ApplicationRecord
     TrackJob.perform_later(self)
   end
 
-  def finished? = status.in?(%w[done failed])
 
   def submit!(client)
     graph = Comfy::Music.build(self, seed: Random.rand(2**31), capabilities: client.capabilities)
@@ -118,12 +113,22 @@ class Track < ApplicationRecord
     true
   end
 
-  def timed_out? = started_at.present? && started_at < Comfy.config.fetch(:timeout, 900).to_i.seconds.ago
 
-  def fail!(message) = update!(status: "failed", error: message.to_s.truncate(500))
-  def wait!(message) = update!(status: "waiting", error: message.to_s.truncate(500))
+  def comfy_started_at = started_at
 
   private
+
+  # The pasted link read: [service, kind, id] ("YouTube", "video", the video's id; "Spotify", "track" /
+  # "album" / "playlist" / "episode", its id), or nil for a link neither plays.
+  def parsed_link
+    return unless url
+
+    if (m = url.match(YOUTUBE))
+      [ "YouTube", "video", m[1] ]
+    elsif (m = url.match(SPOTIFY))
+      [ "Spotify", m[1], m[2] ]
+    end
+  end
 
   def link_plays
     errors.add(:url, "must be a YouTube or Spotify link") if url && embed_url.nil?

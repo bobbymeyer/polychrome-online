@@ -40,8 +40,9 @@ module Campaign::Happenings
     case event
     when "arrive"
       arrive_among_their_own!(at)
-      offer_arrival_line!(at)
-      offer_sign!(at)
+      facts = moment(at: at) # read once, for the line and the sign
+      offer_arrival_line!(at, facts: facts)
+      offer_sign!(at, facts: facts)
       offer_clue_at!(at)
       count_visit!(at)
     when "rest"

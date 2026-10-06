@@ -3,7 +3,7 @@
 # Where characters in a setting can come from (World#origins): each a name,
 # a line, and optionally a skill they're better at.
 class Worlds::OriginsController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_world_editor, except: :show
 
   def show; end
@@ -20,10 +20,6 @@ class Worlds::OriginsController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
 
   # Kept and added origins, in the form's order. A new one's id comes from its name.
   def posted_rows

@@ -2,16 +2,13 @@
 
 # The GM's moves panel (Campaign::Moves): what's live, shown in the GM's
 # tools when they open it, and a line from it made so. GM seat only.
-class Campaigns::MovesController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::MovesController < Campaigns::BaseController
   before_action :require_table_gm
 
   def show
-    @moves = @campaign.moves_now
-    @dangers = @campaign.dangers
+    facts = @campaign.moment # read once, for the moves and the dangers
+    @moves = @campaign.moves_now(facts: facts)
+    @dangers = @campaign.dangers(facts: facts)
     @wants = @campaign.wants_heard
     @got_away = @campaign.got_away
     @chains = @campaign.chains

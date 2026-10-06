@@ -2,11 +2,10 @@
 
 # One round of generation for a book entry (docs/HANDOFF.md §8): the composed
 # recipe, frozen when the batch starts, and its candidates. Each candidate is
-# its own ComfyUI prompt with its own seed. ArtBatchJob submits and collects;
-# every change refreshes the pages watching the entry.
+# its own ComfyUI prompt with its own seed. ArtBatchJob submits and collects
+# (ComfyRun); every change refreshes the pages watching the entry.
 class ArtBatch < ApplicationRecord
-  # waiting: ComfyUI couldn't be reached; ArtBatchJob tries again later.
-  STATUSES = %w[queued waiting running done failed].freeze
+  include ComfyRun
 
   belongs_to :world
   belongs_to :entry, polymorphic: true
@@ -129,14 +128,6 @@ class ArtBatch < ApplicationRecord
     end
   end
 
-  def finished?
-    status.in?(%w[done failed])
-  end
-
-  def pending_count
-    candidates.count { |c| !c.finished? }
-  end
-
   # Before anything is queued: the language model's go at the subject, when
   # asked for. Every candidate then shares one prompt, so an image model
   # that caches its text encodings only encodes it once.
@@ -179,21 +170,14 @@ class ArtBatch < ApplicationRecord
     true
   end
 
-  # ComfyUI couldn't be reached: say so, and keep everything for the retry.
-  def wait!(message)
-    update!(status: "waiting", error: message)
-  end
-
+  # The batch fails with its candidates still out (ComfyRun).
   def fail!(message)
-    update!(status: "failed", error: message)
+    super
     candidates.reject(&:finished?).each { |c| c.update!(status: "failed", error: message) }
   end
 
-  # Rendering has taken too long (counted from when ComfyUI took it: a
-  # batch waiting for ComfyUI to come back isn't timing out).
-  def timed_out?
-    (submitted_at || created_at) < Comfy.config.fetch(:timeout, 900).to_i.seconds.ago
-  end
+  # When ComfyUI took it; a batch made before ComfyUI could be reached counts from when it was made.
+  def comfy_started_at = submitted_at || created_at
 
   # Only the art section reloads (app/javascript/stream_actions.js), so a
   # form being typed into elsewhere on the page is left alone.

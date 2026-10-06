@@ -2,7 +2,7 @@
 
 # A setting's map put beside another, by direction (WorldMapLink).
 class Worlds::Maps::LinksController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_world_editor
 
   def create
@@ -20,11 +20,5 @@ class Worlds::Maps::LinksController < ApplicationController
     link = @world.world_map_links.find(params[:id])
     link.destroy!
     redirect_to world_world_places_path(@world, map: params[:world_map_id]), notice: "#{link.to_map.name} and #{link.from_map.name} are no longer side by side.", status: :see_other
-  end
-
-  private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
   end
 end

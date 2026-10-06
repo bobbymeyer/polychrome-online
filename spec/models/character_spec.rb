@@ -196,7 +196,7 @@ RSpec.describe Character do
       expect(bartz.equipped["weapon"].item.slug).to eq("broadsword")
 
       bartz.add_item!(item.("dagger")) # knights can't use knives
-      expect { bartz.equip!(item.("dagger")) }.to raise_error(ActiveRecord::RecordInvalid, /can't equip Dagger/)
+      expect { bartz.equip!(item.("dagger")) }.to raise_error(Refusal, /can't equip Dagger/)
 
       bartz.unequip!("weapon")
       expect(bartz.quantity_of(item.("broadsword"))).to eq(1)
@@ -213,7 +213,7 @@ RSpec.describe Character do
 
     it "can't equip what isn't in their bag (the chest doesn't count), and changes nothing if it fails" do
       campaign.add_item!(item.("broadsword"))
-      expect { bartz.equip!(item.("broadsword")) }.to raise_error(ActiveRecord::RecordInvalid, /not in .*bag/)
+      expect { bartz.equip!(item.("broadsword")) }.to raise_error(Refusal, /not in .*bag/)
       expect(bartz.equipped).to be_empty
     end
 
@@ -223,12 +223,12 @@ RSpec.describe Character do
       expect([ bartz.quantity_of(item.("potion")), campaign.quantity_of(item.("potion")) ]).to eq([ 2, 1 ])
       bartz.put_in_chest!(item.("potion"), 2)
       expect([ bartz.quantity_of(item.("potion")), campaign.quantity_of(item.("potion")) ]).to eq([ 0, 3 ])
-      expect { bartz.take_from_chest!(item.("potion"), 4) }.to raise_error(ActiveRecord::RecordInvalid, /not in the chest/)
+      expect { bartz.take_from_chest!(item.("potion"), 4) }.to raise_error(Refusal, /not in the chest/)
     end
 
     it "never takes a consumable" do
       bartz.add_item!(item.("potion"))
-      expect { bartz.equip!(item.("potion")) }.to raise_error(ActiveRecord::RecordInvalid)
+      expect { bartz.equip!(item.("potion")) }.to raise_error(Refusal)
     end
   end
 
@@ -240,9 +240,9 @@ RSpec.describe Character do
       expect(bartz.battle_spec["abilities"]).to eq(%w[armor_break mug]) # and the Thief's own command
 
       expect { bartz.set_ability_slots!([ ability.("war_cry"), ability.("armor_break") ]) }
-        .to raise_error(ActiveRecord::RecordInvalid, /1 ability slot/)
+        .to raise_error(Refusal, /1 ability slot/)
       expect { bartz.set_ability_slots!([ ability.("fire") ]) }
-        .to raise_error(ActiveRecord::RecordInvalid, /Fire not learned/)
+        .to raise_error(Refusal, /Fire not learned/)
       expect(bartz.slotted_abilities.map(&:slug)).to eq(%w[armor_break])
     end
   end

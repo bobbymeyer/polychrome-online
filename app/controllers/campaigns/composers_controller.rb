@@ -2,12 +2,7 @@
 
 # The message composer, served into a Turbo Frame so it keeps the GM's
 # chosen speaker and expression between lines.
-class Campaigns::ComposersController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
-
+class Campaigns::ComposersController < Campaigns::BaseController
   def show
     @message = @campaign.messages.new(expression: "neutral")
     render layout: false

@@ -106,22 +106,18 @@ class RandomTable
     cmd(u, command)
   end
 
+  # A target the engine offers (State.target_options: the menu's own list), a cure aimed at whoever
+  # needs it first; sometimes none at all, leaving it to the engine.
   def target_for(state, u, ability)
-    state = state.merge("units" => state["units"].reject { |o| o["gone"] })
-    revive = ability["effects"].any? { |e| e["primitive"] == "revive" }
     if ability["effects"].any? { |e| e["primitive"] == "cleanse" } # a player cures whoever needs it
-      sick = state["units"].select { |o| o["side"] == u["side"] && o["hp"].positive? && o["statuses"].any? }
+      sick = state["units"].select { |o| o["side"] == u["side"] && o["hp"].positive? && !o["gone"] && o["statuses"].any? }
       return sick.sample(random: @chooser)["id"] if sick.any?
     end
-    pool = case ability["target"]
-    when "single_enemy" then state["units"].select { |o| o["side"] != u["side"] && o["hp"].positive? }
-    when "single_ally"
-             state["units"].select { |o| o["side"] == u["side"] && (revive ? o["hp"].zero? : o["hp"].positive?) }
-    else []
-    end
+    pool = Battle::State.target_options(state, u, ability) || []
+    pool = pool.select { |id| state["units"].find { |o| o["id"] == id }["side"] == u["side"] } if ability["target"] == "single_ally" # support stays on the party
     return nil if pool.empty? || @chooser.rand(5).zero? # sometimes leave it to the engine
 
-    pool.sample(random: @chooser)["id"]
+    pool.sample(random: @chooser)
   end
 
   def cmd(u, command)

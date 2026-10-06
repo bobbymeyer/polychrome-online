@@ -626,7 +626,9 @@ RSpec.describe Battle::Resolver do
 
         expect(of_type(events, :away).sole).to include("unit" => "brute", "turns" => 2)
         expect(of_type(events, :turn_skipped).map { |e| [ e["unit"], e["reason"] ] }).to include([ "brute", "away" ])
-        _, events = round(state, "knight" => { kind: "ability", ability: "attack", target: "brute" })
+        # Nobody may aim at it while it's away (the menu doesn't offer it either): a blow at whoever is there finds nobody.
+        expect { apply(state, command("knight", "attack", "brute")) }.to raise_error(Battle::InvalidAction, /brute is out of reach/)
+        _, events = round(state, "knight" => { kind: "ability", ability: "attack" })
         expect(of_type(events, :miss)).to include(a_hash_including("actor" => "knight", "reason" => "no_target"))
         expect(of_type(events, :back).sole).to include("unit" => "brute")
         expect(of_type(events, :damage).select { |e| e["actor"] == "brute" }).to be_empty # coming back was its turn

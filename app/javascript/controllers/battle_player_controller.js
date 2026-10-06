@@ -2,6 +2,8 @@ import { Controller } from "@hotwired/stimulus"
 import { createTimeline } from "animejs"
 import { Board } from "battle/board"
 import { choreograph } from "battle/choreography"
+import { setting } from "storage"
+import { phone, reducedMotion } from "screen"
 
 // The event player (docs/HANDOFF.md §6).
 //
@@ -32,31 +34,18 @@ export default class extends Controller {
   connect() {
     this.queue = []
     this.current = null
-    this.fast = this.readFast()
+    this.fast = setting(FAST_KEY, false)
     this.board = new Board({ element: this.element, container: this.boardContainerTarget, stage: this.stageTarget, fx: this.fxTarget,
                              rail: this.hasRailTarget ? this.railTarget : null, tally: this.hasTallyTarget ? this.tallyTarget : null,
                              words: this.hasWordsValue ? this.wordsValue : {}, cries: this.criesValue })
-    this.showFast()
-    this.scrollLog()
   }
 
   // Each viewer's own choice, on top of the GM's pacing for everyone: the toggle is in the account menu
-  // (fast_toggle_controller), outside this element, and says when it changes.
-  syncFast() {
-    this.fast = this.readFast()
-    this.showFast()
+  // (setting_controller), outside this element, and says when it changes (setting:changed).
+  syncFast(event) {
+    if (event.detail.key !== FAST_KEY) return
+    this.fast = event.detail.on
     if (this.current) this.current.timeline.speed = this.speed
-  }
-
-  readFast() {
-    try { return localStorage.getItem(FAST_KEY) === "1" } catch { return false }
-  }
-
-  showFast() {
-    document.querySelectorAll("[data-battle-fast]").forEach(button => {
-      button.setAttribute("aria-pressed", String(this.fast))
-      button.classList.toggle("is-current", this.fast)
-    })
   }
 
   disconnect() {
@@ -97,7 +86,7 @@ export default class extends Controller {
   get speed() {
     const gm = Number(this.hasPlaybackTarget ? this.playbackTarget.dataset.speed : 1) || 1
     const backlog = this.queue.length >= 2 ? BACKLOG_SPEEDUP : 1
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? REDUCED_MOTION_SPEED : 1
+    const reduced = reducedMotion() ? REDUCED_MOTION_SPEED : 1
     return gm * backlog * reduced * (this.fast ? FAST_SPEED : 1)
   }
 
@@ -159,19 +148,15 @@ export default class extends Controller {
     this.boardContainerTarget.replaceChildren(template.content.cloneNode(true))
   }
 
+  // The line goes to the battle's log (the log drawer watches the list and keeps its newest line in view).
   appendLog(line) {
     this.logTarget.append(line.cloneNode(true))
     while (this.logTarget.children.length > 60) this.logTarget.firstElementChild.remove()
-    this.scrollLog()
     // A phone may not show the stage: the last lines say what happened.
     if (this.hasTickerTarget) {
       this.tickerTarget.append(line.cloneNode(true))
       while (this.tickerTarget.children.length > 1) this.tickerTarget.firstElementChild.remove()
     }
-  }
-
-  scrollLog() {
-    this.logTarget.parentElement.scrollTop = this.logTarget.parentElement.scrollHeight
   }
 
   // --- the per-seat command panel ---
@@ -189,7 +174,7 @@ export default class extends Controller {
     if (this.panelTarget.querySelector("[data-chosen]")) document.getElementById("battle_ready")?.remove()
     // The results let go of a phone's bottom edge: bring them into view.
     const over = this.panelTarget.querySelector(".command-panel--over")
-    if (over && !this.shownOver && window.matchMedia("(max-width: 640px)").matches) {
+    if (over && !this.shownOver && phone()) {
       this.shownOver = true
       over.scrollIntoView({ block: "start" })
     }

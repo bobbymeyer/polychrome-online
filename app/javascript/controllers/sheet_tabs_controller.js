@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { get, set } from "storage"
 
 // A character's sheet, one section at a time (characters/show): the links
 // along the top are tabs, and only the section pressed is shown. The
@@ -55,11 +56,7 @@ export default class extends Controller {
   }
 
   remember(key) {
-    try {
-      if (key) sessionStorage.setItem(this.keyValue, key)
-      return sessionStorage.getItem(this.keyValue)
-    } catch {
-      return null
-    }
+    if (key) set(this.keyValue, key, { session: true })
+    return get(this.keyValue, { session: true }) ?? null
   }
 }

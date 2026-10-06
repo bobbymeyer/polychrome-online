@@ -1,12 +1,8 @@
 # frozen_string_literal: true
 
 # The GM's clocks (Clock): made in prep or at the table, ticked by hand.
-class Campaigns::ClocksController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
-  before_action :require_table_gm
+class Campaigns::ClocksController < Campaigns::BaseController
+  before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
   before_action :set_clock, only: %i[update destroy]
 
   def create
@@ -24,7 +20,6 @@ class Campaigns::ClocksController < ApplicationController
   end
 
   private
-
 
   def set_clock
     @clock = @campaign.clocks.find(params[:id])

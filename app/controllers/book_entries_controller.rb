@@ -4,9 +4,9 @@
 # that names its model, its title and its permitted params; views live in
 # the book's own folder, with shared shells in app/views/book_entries.
 class BookEntriesController < ApplicationController
+  include WorldScoped
   class_attribute :entry_class, :book_title, :book_key
 
-  before_action :set_world
   before_action :require_world_editor, except: %i[index show]
   before_action :set_entry, only: %i[show edit update destroy]
 
@@ -53,10 +53,6 @@ class BookEntriesController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
 
   def set_entry
     @entry = scope.find_by!(slug: params[:slug])

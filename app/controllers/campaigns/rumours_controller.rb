@@ -1,12 +1,8 @@
 # frozen_string_literal: true
 
 # The GM's rumours (Rumour): started by hand at a place, or hushed.
-class Campaigns::RumoursController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
-  before_action :require_table_gm
+class Campaigns::RumoursController < Campaigns::BaseController
+  before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
 
   def create
     fields = params.expect(rumour: %i[body origin_id about_id])

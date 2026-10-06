@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { reducedMotion } from "screen"
 
 // A command menu played like a game (docs/DESIGN.md, "Play"): a cursor that
 // follows the arrow keys and the mouse, Enter/Space/Z to choose, Esc/X/
@@ -61,8 +62,7 @@ export default class extends Controller {
   bringIntoView() {
     const box = this.element.querySelector(".pick-table")?.getBoundingClientRect()
     if (!box || (box.top >= 0 && box.bottom <= window.innerHeight)) return
-    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    this.element.scrollIntoView({ block: "nearest", behavior: smooth ? "smooth" : "auto" })
+    this.element.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" })
   }
 
   disconnect() {

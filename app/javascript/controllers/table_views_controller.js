@@ -1,76 +1,58 @@
 import { Controller } from "@hotwired/stimulus"
+import { get, set } from "storage"
 
 // The table on a phone or a tablet (docs/DESIGN.md, "Phones"): the three
 // columns (you and the party; the stage and what you can do; the log) are
 // three views, picked from a strip in the top bar (this element). This sets
-// which on the table (data-table-view, stage.css shows one), remembers it for
-// this campaign in this tab, and wires the log view to the log drawer:
-// inline, awake, scrolled to its newest line, with the drawer's count of new
-// lines on the strip. Wider than a tablet the strip is hidden and the
-// attribute changes nothing.
-const NARROW = "(max-width: 1099px)"
-
+// which on the table (#table's data-table-view, stage.css shows one) and
+// remembers it for this campaign in this tab. Wider than a tablet the strip
+// is hidden and the attribute changes nothing.
+//
+// It talks to the table by events, never by its controllers: each change
+// goes out as table-views:changed on window (detail: { key }), and the log
+// drawer and the drawers answer for themselves (log_drawer_controller#view,
+// drawers_controller#view). The log drawer says how many lines are unread
+// (log-drawer:unread, detail: { count }) and the strip wears that on its Log
+// tab. Anything on the table can ask for a view with table-views:show
+// (detail: { key }).
 export default class extends Controller {
   static targets = ["tab", "badge"]
   static values = { key: String }
 
   connect() {
-    this.table = document.querySelector(".table")
+    this.table = document.getElementById("table")
     if (!this.table) return
     this.show(this.remembered() || "stage", { remember: false })
+    // The drawer says its count as it connects; whichever of us came second, the badge is right.
     const count = this.table.querySelector(".log-drawer__count")
-    if (count) {
-      this.observer = new MutationObserver(() => this.mirror(count))
-      this.observer.observe(count, { childList: true, characterData: true, attributes: true, subtree: true })
-      this.mirror(count)
-    }
-  }
-
-  disconnect() {
-    this.observer?.disconnect()
+    if (count) this.showBadge(count.hidden ? 0 : Number(count.textContent) || 0)
   }
 
   pick(event) {
     this.show(event.currentTarget.dataset.key)
   }
 
+  // Something on the table asks for a view (a whisper takes the GM to the talk box on the stage).
+  go(event) {
+    this.show(event.detail.key)
+  }
+
   show(key, { remember = true } = {}) {
     if (!this.tabTargets.some((tab) => tab.dataset.key === key)) key = "stage"
     this.table.dataset.tableView = key
     this.tabTargets.forEach((tab) => tab.setAttribute("aria-current", tab.dataset.key === key ? "page" : "false"))
-    this.wakeLog(key === "log")
-    if (key === "party") this.openParty()
+    window.dispatchEvent(new CustomEvent("table-views:changed", { detail: { key } }))
     if (remember) this.rememberView(key)
   }
 
-  // The party view starts on the party, not on two closed tabs: the drawers open it unless one is open already.
-  openParty() {
-    if (!this.phone()) return
-    const drawers = this.table.querySelector(".drawers")
-    const controller = drawers && this.application.getControllerForElementAndIdentifier(drawers, "drawers")
-    if (controller && !drawers.querySelector("[aria-expanded=true]")) controller.show("party")
+  unread(event) {
+    this.showBadge(event.detail.count)
   }
 
-  // The log drawer's panel is inert while the drawer is closed; as a view it has to take touches and focus,
-  // so the view opens the drawer (which also scrolls it to its newest line and clears its count) and closes
-  // it on leaving. Wider than a tablet the drawer is its own, and this leaves it alone.
-  wakeLog(on) {
-    if (!this.phone()) return
-    const drawer = this.table.querySelector(".log-drawer")
-    const controller = drawer && this.application.getControllerForElementAndIdentifier(drawer, "log-drawer")
-    if (!controller) return
-    if (on) controller.open({ focus: false })
-    else if (drawer.classList.contains("is-open")) controller.close()
-  }
-
-  phone() {
-    return window.matchMedia(NARROW).matches
-  }
-
-  mirror(count) {
+  showBadge(count) {
     if (!this.hasBadgeTarget) return
-    this.badgeTarget.textContent = count.textContent
-    this.badgeTarget.hidden = count.hidden || !count.textContent.trim()
+    this.badgeTarget.textContent = count > 99 ? "99+" : String(count)
+    this.badgeTarget.hidden = count === 0
   }
 
   get storageKey() {
@@ -78,10 +60,10 @@ export default class extends Controller {
   }
 
   remembered() {
-    try { return sessionStorage.getItem(this.storageKey) } catch { return null }
+    return get(this.storageKey, { session: true })
   }
 
   rememberView(key) {
-    try { sessionStorage.setItem(this.storageKey, key) } catch { /* no storage: the stage it is, next time */ }
+    set(this.storageKey, key, { session: true }) // no storage: the stage it is, next time
   }
 }

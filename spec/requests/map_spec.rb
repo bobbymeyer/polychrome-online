@@ -90,7 +90,7 @@ RSpec.describe "Maps", type: :request do
       expect(page.at(".map-sheet__up")["data-turbo-frame"]).to eq("table_map")
       expect(campaign.reload.map_shown).to eq(far) # nobody else moved
       patch campaign_map_view_path(campaign), params: { map: region.id }
-      expect(response).to have_http_status(:forbidden)
+      expect(response).to have_http_status(:see_other) # the GM seat's
     end
 
     it "splits an edge between the maps that share it, and draws a road through its bends" do
@@ -122,7 +122,7 @@ RSpec.describe "Maps", type: :request do
     it "is the GM's alone, with the editor, every map, and hidden places marked" do
       sit(bartz.id)
       get campaign_maps_path(campaign)
-      expect(response).to have_http_status(:forbidden)
+      expect(response).to have_http_status(:see_other) # the GM seat's: turned back with a word
 
       sit("gm")
       get campaign_maps_path(campaign)
@@ -193,9 +193,9 @@ RSpec.describe "Maps", type: :request do
     it "keeps the editing to the GM" do
       sit(bartz.id)
       get campaign_map_panel_path(campaign)
-      expect(response).to have_http_status(:forbidden)
+      expect(response).to have_http_status(:see_other)
       post campaign_map_nodes_path(campaign), params: { map_node: { name: "X", kind: "field", x: 1, y: 1 } }
-      expect(response).to have_http_status(:forbidden)
+      expect(response).to have_http_status(:see_other)
       patch map_node_path(tule, format: :json), params: { map_node: { x: 5, y: 5 } }, as: :json
       expect(response).to have_http_status(:forbidden)
       expect(tule.reload.x).to eq(100)

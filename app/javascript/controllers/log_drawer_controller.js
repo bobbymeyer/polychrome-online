@@ -1,4 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
+import { get, set } from "storage"
+import { atLeast, narrow } from "screen"
 
 // The game log in a drawer on the right edge (app/views/shared/_log_drawer).
 // Closed by default; the tab or L slides it open, and Esc or L closes it.
@@ -7,9 +9,11 @@ import { Controller } from "@hotwired/stimulus"
 //
 // Dockable (the GM's seat, and a player's screen): Pin keeps it open as a
 // column beside the page, and it stays pinned in this browser. On a wide
-// screen (pinFrom) it starts pinned.
+// screen (pinFrom) it starts pinned. Narrower than a tablet's fold
+// (screen.js) there's no room beside the page, and the log is a view of the
+// table instead (table_views_controller): it hears which view is up and
+// opens itself inline for "log".
 const PINNED_KEY = "polychrome.logPinned"
-const DOCK_WIDTH = 1000 // narrower than this, there's no room beside the page
 const WIDE = 1400 // a 1440 screen, less its scrollbar
 
 export default class extends Controller {
@@ -21,7 +25,19 @@ export default class extends Controller {
     this.unread = 0
     this.observer = new MutationObserver((mutations) => this.arrived(mutations))
     this.listTargets.forEach((list) => this.observer.observe(list, { childList: true }))
-    if (this.dockableValue && window.innerWidth >= DOCK_WIDTH && this.pinned()) this.dock()
+    this.showCount() // the strip's badge hears it, whichever of us connected first
+    if (this.dockableValue && !narrow() && this.pinned()) this.dock()
+    // The table may have picked its view before this connected: the attribute says which.
+    this.view({ detail: { key: this.element.closest("[data-table-view]")?.dataset.tableView } })
+  }
+
+  // A view of the table was picked (table-views:changed). The panel is inert while the drawer is closed;
+  // as a view it has to take touches and focus, so "log" opens the drawer (which also scrolls it to its
+  // newest line and clears its count), and leaving closes it. Wider than a tablet the drawer is its own.
+  view(event) {
+    if (!narrow() || !event.detail.key) return
+    if (event.detail.key === "log") this.open({ focus: false })
+    else if (this.isOpen) this.close()
   }
 
   disconnect() {
@@ -62,14 +78,12 @@ export default class extends Controller {
   }
 
   pinned() {
-    try {
-      const stored = localStorage.getItem(PINNED_KEY)
-      return stored === null ? window.innerWidth >= this.pinFromValue : stored === "1"
-    } catch { return window.innerWidth >= this.pinFromValue }
+    const stored = get(PINNED_KEY)
+    return stored == null ? atLeast(this.pinFromValue) : stored === "1"
   }
 
   remember(pinned) {
-    try { localStorage.setItem(PINNED_KEY, pinned ? "1" : "0") } catch { /* private window: pinned for now */ }
+    set(PINNED_KEY, pinned ? "1" : "0") // private window: pinned for now
   }
 
   get isOpen() {
@@ -137,6 +151,7 @@ export default class extends Controller {
   showCount() {
     this.countTarget.hidden = this.unread === 0
     this.countTarget.textContent = this.unread > 99 ? "99+" : String(this.unread)
+    window.dispatchEvent(new CustomEvent("log-drawer:unread", { detail: { count: this.unread } }))
   }
 
   // The table's log keeps its newest line on top (data-newest="first"); a battle's log grows downward.

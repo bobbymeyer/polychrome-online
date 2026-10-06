@@ -27,11 +27,7 @@ module World::Music
   def music_path(choice)
     return if choice.blank? || choice.to_s == "silence"
 
-    if (id = choice.to_s.delete_prefix("track:")) != choice.to_s
-      tracks.find { |track| track.id == id.to_i }&.play_url
-    else
-      music_track(choice)&.play_url
-    end
+    (named_track(choice) || music_track(choice))&.play_url
   end
 
   # The tracks the GM calls by name (not a kind of scene's), as choices for a
@@ -40,10 +36,23 @@ module World::Music
     tracks.select { |track| track.scene.nil? && track.playable? }.map { |track| [ "♪ #{track.name}", "track:#{track.id}" ] }
   end
 
-  # Whether a choice of music names one of this world's tracks ("track:12").
-  def music_track_choice?(choice)
+  # The track a choice of music names ("track:12"), or nil: not that form, or
+  # not one of this world's.
+  def named_track(choice)
     id = choice.to_s.delete_prefix("track:")
-    id != choice.to_s && tracks.any? { |track| track.id == id.to_i }
+    return if id == choice.to_s
+
+    tracks.find { |track| track.id == id.to_i }
+  end
+
+  # Whether a choice of music names one of this world's tracks ("track:12").
+  def music_track_choice?(choice) = named_track(choice).present?
+
+  # Whether a choice of music is one the table can play: a kind of scene or
+  # silence (Campaign::MUSIC_CHOICES), one of the extras the caller allows
+  # ("follow" in a scene's music step), or one of this world's tracks by name.
+  def music_choice?(choice, extra: [])
+    Campaign::MUSIC_CHOICES.include?(choice) || extra.include?(choice) || music_track_choice?(choice)
   end
 
   def copy_music_from!(source)

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# Loads the campaign (and its world, for the book navigation) from either a
-# nested campaign route or a character route.
+# Loads the campaign (and its world, for the book navigation) from a nested
+# campaign route, or from the character, scene or beat the route names.
 module CampaignScoped
   extend ActiveSupport::Concern
 
@@ -15,6 +15,19 @@ module CampaignScoped
   def set_character
     @character = Character.find(params[:character_id] || params[:id])
     @campaign = @character.campaign
+    @world = @campaign.world
+  end
+
+  def set_scene
+    @scene = Scene.find(params[:scene_id] || params[:id])
+    @campaign = @scene.campaign
+    @world = @campaign.world
+  end
+
+  def set_beat
+    @beat = Beat.find(params[:beat_id] || params[:id])
+    @scene = @beat.scene
+    @campaign = @scene.campaign
     @world = @campaign.world
   end
 

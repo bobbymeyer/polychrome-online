@@ -10,7 +10,8 @@
 // the page's corner (#music_embed, kept across visits too).
 //
 // Browsers only allow sound after the viewer has done something, so nothing
-// plays until the first click or key. Muting is per device.
+// plays until the first click or key. Muting is per device (storage.js).
+import { setting, setSetting } from "storage"
 
 const MUTE_KEY = "polychrome.muted"
 const MUSIC_VOLUME = 0.5
@@ -19,11 +20,11 @@ const FADE_MS = 600
 // --- mute ------------------------------------------------------------------
 
 export function muted() {
-  try { return window.localStorage.getItem(MUTE_KEY) === "true" } catch { return false }
+  return setting(MUTE_KEY, false)
 }
 
 export function setMuted(value) {
-  try { window.localStorage.setItem(MUTE_KEY, String(value)) } catch { /* no storage: this page only */ }
+  setSetting(MUTE_KEY, value)
   if (master) master.gain.value = value ? 0 : JINGLE_VOLUME
   music.muted = value
   apply() // a linked track's player comes and goes with the mute

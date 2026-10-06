@@ -1,11 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
 import { animate } from "animejs"
 import { GESTURES } from "motion/gestures"
+import { reducedMotion } from "screen"
 
 // The dialogue box (docs/HANDOFF.md §7, §9.5): GM and NPC lines play here one
 // at a time, typed out beside the speaker's portrait. Player lines go
 // straight to the log. A dialogue line only appears in the log once the box
-// has finished typing it.
+// has finished typing it (the log drawer keeps the newest line in view).
 //
 // A line too long for the box goes in pages, each typed out in turn: the box
 // stays the speaker's height and never scrolls.
@@ -27,7 +28,7 @@ const HOLD_PER_CHAR_MS = 35
 const EXPRESSION_GESTURES = { happy: "bounce", angry: "shake", surprised: "pop", worried: "float", sad: "float", determined: "bounce" }
 
 export default class extends Controller {
-  static targets = ["box", "portrait", "name", "text", "more", "log", "live"]
+  static targets = ["box", "portrait", "name", "text", "more", "live"]
   static values = { autoHide: Boolean }
 
   connect() {
@@ -35,7 +36,6 @@ export default class extends Controller {
     this.current = null
     this.speakerKey = null
     this.pages = []
-    this.scrollLog()
     // The last line said, as the page came: in pages too, once the box has its size.
     if (this.hasBoxTarget && !this.boxTarget.hidden && this.textTarget.textContent.trim()) {
       requestAnimationFrame(() => {
@@ -72,7 +72,7 @@ export default class extends Controller {
       // The party moved on: what was last said was said somewhere else, so
       // the box puts it away (unless it's still typing something out).
       if (line.element.dataset.moved && this.hasBoxTarget && !this.current && this.queue.length === 0) this.boxTarget.hidden = true
-      return this.scrollLog()
+      return
     }
 
     this.queue.push(line)
@@ -147,7 +147,6 @@ export default class extends Controller {
     this.current = null
     this.boxTarget.hidden = true
     this.busy = false
-    this.scrollLog()
   }
 
   // Escape works anywhere, even mid-sentence in the composer. Enter, Space and
@@ -187,7 +186,6 @@ export default class extends Controller {
 
   finished(line) {
     line.element.classList.remove("is-pending")
-    this.scrollLog()
     if (this.queue.length) {
       this.moreTarget.hidden = false
       this.scheduleNext()
@@ -236,7 +234,7 @@ export default class extends Controller {
     }
     this.portraitTarget.replaceChildren(portrait)
 
-    if (this.reducedMotion) return
+    if (reducedMotion()) return
     const name = speakerChanged ? "pop" : EXPRESSION_GESTURES[line.expressionValue]
     if (name) animate(portrait, GESTURES[name](1))
   }
@@ -312,7 +310,7 @@ export default class extends Controller {
 
   type(text, done) {
     this.stopTyping()
-    if (this.reducedMotion) {
+    if (reducedMotion()) {
       this.textTarget.textContent = text
       return done()
     }
@@ -341,14 +339,4 @@ export default class extends Controller {
     this.typing = null
   }
 
-  get reducedMotion() {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  }
-
-  // To the newest line: on top (campaigns/tables/_chat_log), unless the list grows downward.
-  scrollLog() {
-    if (!this.hasLogTarget) return
-    const scroller = this.logTarget.parentElement
-    scroller.scrollTop = this.logTarget.dataset.newest === "first" ? 0 : scroller.scrollHeight
-  }
 }

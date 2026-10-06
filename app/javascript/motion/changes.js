@@ -13,12 +13,13 @@
 // the classes) and skips the movement. Also used by the battle board for
 // its HP bars (battle/board.js).
 
+import { reducedMotion as reduced } from "screen"
+
 const MARK = "[data-change]"
 const COUNT_MS = 500
 const SETTLE_MS = 600
 const ENTER_MS = 300
 
-const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
 const kinds = (el) => el.dataset.change.split(/\s+/)
 const keyOf = (el, index) => el.dataset.changeKey || el.id || `${el.dataset.change}:${index}`
 const childKey = (child, index) => child.dataset.changeKey || child.id || child.textContent.trim() || String(index)

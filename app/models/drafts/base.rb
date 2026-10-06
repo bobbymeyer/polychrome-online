@@ -31,7 +31,7 @@ module Drafts
     # and veils of the world and, for a campaign, its table's too
     # (Campaign::Limits).
     def voice
-      lines, veils = campaign ? [ campaign.every_line, campaign.every_veil ] : [ world.lines, world.veils ].map { |t| t.to_s.lines.map(&:strip).compact_blank }
+      lines, veils = campaign ? [ campaign.every_line, campaign.every_veil ] : [ world.line_list(:lines), world.line_list(:veils) ]
       [ "The setting's voice: #{world.voice.presence&.squish || VOICE}", RULES,
         ("Avoid: #{world.avoid.squish}." if world.avoid.present?),
         ("Never include, in any form: #{lines.join('; ')}." if lines.any?),

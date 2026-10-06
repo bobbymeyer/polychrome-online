@@ -4,7 +4,7 @@
 # pages; the GM-only ones, and every page's GM notes, are for its editors
 # and GMs.
 class Worlds::CodexEntriesController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_world_editor, except: %i[index show]
   before_action :set_entry, only: %i[show edit update destroy]
 
@@ -37,10 +37,6 @@ class Worlds::CodexEntriesController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
 
   def set_entry
     @entry = @world.codex_entries.find(params[:id])

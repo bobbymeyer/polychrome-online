@@ -1,5 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { play } from "sound"
+import { setting } from "storage"
+import { reducedMotion } from "screen"
 
 // The timing meter (Mario RPG's timed hits): when you confirm a move, a
 // needle sweeps a bar. Stop it on the mark (tap, Space, Enter or Z) for a
@@ -7,7 +9,7 @@ import { play } from "sound"
 // Missing it costs nothing. It gives up after a few seconds, as a normal hit.
 //
 // A setting for this device, turned on and off in the account menu beside
-// Sound and Fast animations (meter_toggle_controller, the same key); off by
+// Sound and Fast animations (setting_controller, the same key); off by
 // default for reduced motion.
 const SETTING_KEY = "polychrome.meter"
 const SWEEP_MS = 900
@@ -16,10 +18,7 @@ const ZONE = [ 0.84, 0.97 ] // the mark, as a share of the bar
 
 export default class extends Controller {
   get enabled() {
-    let saved = null
-    try { saved = window.localStorage.getItem(SETTING_KEY) } catch { /* no storage */ }
-    if (saved) return saved === "on"
-    return !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    return setting(SETTING_KEY, !reducedMotion())
   }
 
   // A move's form is about to go: run the meter first.

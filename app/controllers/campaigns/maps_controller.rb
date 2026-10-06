@@ -3,11 +3,9 @@
 # The GM's maps (Map; docs/HANDOFF.md §7, "Maps"): the editor page (show,
 # with ?map= the one open), and making, changing (a form, or x, y alone
 # from dragging on the parent map) and removing them.
-class Campaigns::MapsController < ApplicationController
-  include CampaignScoped
+class Campaigns::MapsController < Campaigns::BaseController
   include MapGm
 
-  before_action :set_campaign
   before_action :require_table_gm
   before_action :set_map, only: %i[edit update destroy]
 

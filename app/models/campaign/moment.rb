@@ -52,8 +52,10 @@ module Campaign::Moment
     update!(visits: visits.to_h.merge(node.id.to_s => visits_to(node) + 1))
   end
 
+  # A word as a fact's key: written as a flag's key is (Flag), and starting
+  # with a letter ("Market day" is market_day; "42" is n_42).
   def self.key(word)
-    key = word.to_s.downcase.gsub(/[^a-z0-9]+/, "_").gsub(/\A_+|_+\z/, "")
+    key = Flag.normalize_value_for(:key, word.to_s)
     key.match?(/\A[a-z]/) ? key : (key.empty? ? nil : "n_#{key}")
   end
 
@@ -87,7 +89,7 @@ module Campaign::Moment
   end
 
   def party_facts(node)
-    everyone = characters.includes(:job, :character_jobs, equipment_slots: :item).to_a
+    everyone = characters.with_stats.to_a
     standing = everyone.select(&:conscious?)
     home = node ? everyone.select { |c| c.home_node_id == node.id }.map(&:name) : []
     hurt = standing.select { |c| c.current_hp * 2 < c.stats["max_hp"] }

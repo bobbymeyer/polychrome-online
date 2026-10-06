@@ -24,11 +24,7 @@ module Character::Equipment
 
   # Put an item from their bag into its slot; whatever was there goes back.
   def equip!(item)
-    errors.clear
-    unless item.equipment? && job.equips?(item)
-      errors.add(:base, "#{job.name} can't equip #{item.name}")
-      raise ActiveRecord::RecordInvalid, self
-    end
+    raise Refusal, "#{job.name} can't equip #{item.name}" unless item.equipment? && job.equips?(item)
 
     transaction do
       unequip!(item.slot)

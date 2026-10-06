@@ -121,7 +121,7 @@ class Outcome
     shown = %w[money lose].include?(kind) ? "#{amount} #{world.word('currency')}" : amount
     rest = amount.to_i >= 100 ? "a bed, and everyone rested (the KO'd too)" : "camp, full #{world.word('hp')} for those standing and #{amount}% of #{world.word('mp')}"
     item = (world.items.find_by(slug: target["item"])&.name || target["item"].to_s.tr("_", " ") if kind == "give")
-    { amount: shown, hp: world.word("hp"), mp: world.word("mp"), rest: rest, item: (item && "#{item.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{item}") }
+    { amount: shown, hp: world.word("hp"), mp: world.word("mp"), rest: rest, item: (item && Wording.a_or_an(item)) }
       .reduce(template) { |text, (key, value)| text.gsub("%{#{key}}", value.to_s) }
   end
 
@@ -213,7 +213,7 @@ class Outcome
   end
 
   def raise!(campaign, **)
-    fallen = campaign.characters.order(:created_at).reject(&:conscious?)
+    fallen = campaign.characters.reload.reject(&:conscious?)
     fallen.each { |c| c.update!(hp: nil, mp: nil) }
     "#{fallen.map(&:name).to_sentence} #{fallen.one? ? 'is' : 'are'} raised, whole again."
   end
@@ -241,7 +241,7 @@ class Outcome
 
     item = campaign.roll { |dice| finds[dice.int(finds.size)] }
     campaign.add_item!(item)
-    "#{by} finds #{item.name.start_with?(/[AEIOU]/i) ? 'an' : 'a'} #{item.name}."
+    "#{by} finds #{Wording.a_or_an(item.name)}."
   end
 
   # A named thing found (a dungeon's treasure), whatever it's worth.
@@ -338,7 +338,7 @@ class Outcome
     return "#{by} has nothing like that to give." unless item && campaign.party_quantity_of(item).positive?
 
     campaign.take_from_party!(item)
-    "#{by} gives up #{item.name.match?(/\A[aeiou]/i) ? 'an' : 'a'} #{item.name}."
+    "#{by} gives up #{Wording.a_or_an(item.name)}."
   end
 
   def time!(campaign, **)

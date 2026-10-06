@@ -3,7 +3,7 @@
 # A setting's atlas (WorldPlace, WorldRoute): its places and roads, written
 # once for every campaign in the world. Its editors write it; its GMs read it.
 class Worlds::PlacesController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_lore, only: :index
   before_action :require_world_editor, except: :index
   before_action :set_place, only: %i[edit update destroy]
@@ -45,11 +45,6 @@ class Worlds::PlacesController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
-
 
   def set_place
     @place = @world.world_places.find(params[:id])

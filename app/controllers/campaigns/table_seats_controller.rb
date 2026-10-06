@@ -1,11 +1,6 @@
 # frozen_string_literal: true
 
-class Campaigns::TableSeatsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
-
+class Campaigns::TableSeatsController < Campaigns::BaseController
   def create
     claim_table_seat(@campaign, params.expect(:seat))
     redirect_to campaign_table_path(@campaign), status: :see_other

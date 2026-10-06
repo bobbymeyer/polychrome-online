@@ -133,21 +133,10 @@ module Battle
       { "kind" => "item", "item" => item["id"], "target" => target }
     end
 
+    # The one rule (State.target_problem), with its reason as the error.
     def validate_target(unit, ability, target_id)
-      target = ctx.unit(target_id)
-      case ability["target"]
-      when "single_enemy"
-        raise InvalidAction, "#{target_id} is not an enemy" if target["side"] == unit["side"]
-        raise InvalidAction, "#{target_id} is down" unless ctx.alive?(target)
-      when "single_ally"
-        # A healing move can be turned on an enemy, as in the games: it
-        # hurts the undead (Battle::Effects#heal).
-        return if target["side"] != unit["side"] && State.heals?(ability) && ctx.alive?(target)
-
-        raise InvalidAction, "#{target_id} is not an ally" unless target["side"] == unit["side"]
-        raise InvalidAction, "#{target_id} has left the field" if target["gone"]
-        raise InvalidAction, "#{target_id} is down" unless ctx.alive?(target) || ctx.revives?(ability)
-      end
+      problem = State.target_problem(unit, ability, ctx.unit(target_id))
+      raise InvalidAction, "#{target_id} #{problem}" if problem
     end
 
     def default_command(unit)
@@ -888,13 +877,11 @@ module Battle
       case ability["target"]
       when "self" then [ unit ]
       when "single_enemy"
-        chosen = nil unless chosen && ctx.opponents(unit).include?(chosen)
+        chosen = nil unless chosen && State.valid_target?(unit, ability, chosen)
         [ covered(chosen || ctx.rng.pick(ctx.opponents(unit))) ].compact
       when "single_ally"
         fallen = ctx.allies(unit, alive: false).reject { |a| ctx.alive?(a) }
-        valid = chosen && chosen["side"] == unit["side"] && !chosen["gone"] && (revive ? !ctx.alive?(chosen) : ctx.alive?(chosen))
-        return [ chosen ] if valid
-        return [ chosen ] if chosen && chosen["side"] != unit["side"] && State.heals?(ability) && ctx.alive?(chosen) && !ctx.out_of_reach?(chosen)
+        return [ chosen ] if chosen && State.valid_target?(unit, ability, chosen)
         return [ ctx.rng.pick(fallen) ].compact if revive
 
         [ ctx.allies(unit).min_by { |a| [ ctx.hp_percent(a), a["hp"] ] } ]

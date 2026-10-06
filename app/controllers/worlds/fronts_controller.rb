@@ -4,7 +4,7 @@
 # written once and dealt into campaigns. Its editors write them; its GMs
 # read them.
 class Worlds::FrontsController < ApplicationController
-  before_action :set_world
+  include WorldScoped
   before_action :require_lore, only: :index
   before_action :require_world_editor, except: :index
   before_action :set_front, only: %i[edit update destroy]
@@ -34,11 +34,6 @@ class Worlds::FrontsController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
-
 
   def set_front
     @front = @world.world_fronts.find(params[:id])

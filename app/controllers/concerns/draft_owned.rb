@@ -6,8 +6,6 @@ module DraftOwned
   extend ActiveSupport::Concern
 
   included do
-    include TableSeat
-
     before_action :set_owner
   end
 
@@ -16,7 +14,7 @@ module DraftOwned
   def set_owner
     if params[:campaign_id]
       @owner = Campaign.find(params[:campaign_id])
-      head :forbidden unless table_gm?(@owner)
+      head :forbidden unless can_gm?(@owner) # prep is the account's, seated or not (TableSeat)
     else
       @owner = World.find_by!(slug: params[:world_slug])
       head :forbidden unless can_edit_world?(@owner)

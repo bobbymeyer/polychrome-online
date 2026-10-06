@@ -38,7 +38,7 @@ RSpec.describe "Story rows: arrival lines, the facts page and the moment", type:
 
     sign_in_as(player)
     post message_saying_path(note)
-    expect(response).to have_http_status(:forbidden)
+    expect(response).to have_http_status(:see_other) # the GM seat's: turned back with a word
 
     sign_in_as(@admin)
     post campaign_table_seat_path(campaign), params: { seat: "gm" }

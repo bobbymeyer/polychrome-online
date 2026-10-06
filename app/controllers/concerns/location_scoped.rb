@@ -7,8 +7,6 @@ module LocationScoped
   extend ActiveSupport::Concern
 
   included do
-    include TableSeat
-
     before_action :set_location
 
     rescue_from Refusal do |refusal|
@@ -23,7 +21,6 @@ module LocationScoped
     @campaign = @location.campaign
     @world = @campaign.world
   end
-
 
   # Only in the town where the party is (the GM shops anywhere).
   def require_party_in_town

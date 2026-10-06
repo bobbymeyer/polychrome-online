@@ -12,7 +12,12 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body data-book="<%= current_book %>" class="<%= "has-table-views" if content_for?(:table_views) %>" style="<%= accent_style %>" <%= tag.attributes(data: { view: coop_view(@campaign || @battle&.campaign) }) %>>
+  <%# What the stylesheets need to know about the page before its content: whether the table's views strip and the log's
+      drawer are on it (has-table-views, has-log-drawer), and which of the two game pages it is (data-page: table or
+      battle), whose layouts are their own (stage.css). %>
+  <% body_classes = [ ("has-table-views" if content_for?(:table_views)), ("has-log-drawer" if content_for?(:log_drawer)) ].compact %>
+  <% game_page = { "campaigns/tables" => "table", "battles" => "battle" }[controller_path] if action_name == "show" %>
+  <body data-book="<%= current_book %>" class="<%= body_classes.join(" ") %>" style="<%= accent_style %>" <%= tag.attributes(data: { view: coop_view(@campaign || @battle&.campaign), page: game_page }) %>>
     <header class="topbar" data-controller="topbar" data-action="click@window->topbar#outside keydown@window->topbar#escape">
       <%# On a phone (and the table page up to a tablet's width) the links fold behind one button: a hamburger, before the wordmark. %>
       <button type="button" class="topbar__toggle" data-action="topbar#toggle" data-topbar-target="toggle" aria-expanded="false" aria-controls="topbar_menu" aria-label="Menu" title="Menu">
@@ -69,11 +74,11 @@
               <%= link_to "How to play", how_to_play_path %>
               <button type="button" class="link-button" data-controller="mute" data-action="mute#toggle" aria-pressed="false"
                       title="Sound on this device">Sound on</button>
-              <%# A setting for this device, beside Sound: battles play twice as fast (fast_toggle_controller). %>
-              <button type="button" class="link-button" data-controller="fast-toggle" data-action="fast-toggle#toggle" data-battle-fast aria-pressed="false"
+              <%# A setting for this device, beside Sound: battles play twice as fast (setting_controller; the battle player reads the key). %>
+              <button type="button" class="link-button" data-controller="setting" data-setting-key-value="polychrome.fastBattles" data-action="setting#toggle" data-battle-fast aria-pressed="false"
                       title="Play battles twice as fast on this device">Fast animations</button>
-              <%# The timing meter, too: a device setting (meter_toggle_controller), not a move. %>
-              <button type="button" class="link-button" data-controller="meter-toggle" data-action="meter-toggle#toggle" data-timing-meter aria-pressed="false"
+              <%# The timing meter, too: a device setting, not a move; on by default unless motion is reduced (timing_meter_controller reads the key). %>
+              <button type="button" class="link-button" data-controller="setting" data-setting-key-value="polychrome.meter" data-setting-default-value="motion" data-action="setting#toggle" data-timing-meter aria-pressed="false"
                       title="On each move in a battle, stop the needle on the mark for a Perfect: it lands a quarter harder">Timing meter</button>
               <% if admin? %><%= link_to "Accounts", users_path %> <%= link_to "Settings", settings_path %><% end %>
               <%= button_to "Sign out", session_path, method: :delete, class: "link-button topbar__sign-out", form: { class: "inline" } %>

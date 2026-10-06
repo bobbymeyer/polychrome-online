@@ -2,11 +2,10 @@
 
 # The GM's call on a rolled encounter: fight it, or wave it off (logged at
 # the table either way).
-class Campaigns::EncountersController < ApplicationController
-  include CampaignScoped
+class Campaigns::EncountersController < Campaigns::BaseController
   include MapGm
 
-  before_action :set_campaign, :require_table_gm
+  before_action :require_table_gm
 
   def create
     seconds = params[:input_seconds].presence&.to_i

@@ -2,12 +2,8 @@
 
 # A secret the party has learned: revealed at the table, or put back when
 # the GM revealed it by mistake (Secret#reveal!, #conceal!).
-class Campaigns::Secrets::RevelationsController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
-  before_action :require_table_gm
+class Campaigns::Secrets::RevelationsController < Campaigns::BaseController
+  before_action :require_campaign_gm # Prep is the GM's account's, seated or not (TableSeat)
   before_action :set_secret
 
   def create

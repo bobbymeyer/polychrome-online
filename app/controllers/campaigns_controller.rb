@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class CampaignsController < ApplicationController
-  include TableSeat
-
   before_action :set_campaign, only: %i[show edit update]
   before_action :require_campaign_gm, only: %i[edit update]
   before_action :require_account, only: %i[new create]

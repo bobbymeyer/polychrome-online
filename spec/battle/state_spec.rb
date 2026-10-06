@@ -119,6 +119,12 @@ RSpec.describe Battle::State do
       expect(described_class.target_options(state, rosa, state["abilities"]["attack"])).to eq(%w[goblin_a goblin_b goblin_c])
       expect(described_class.target_options(state, rosa, state["abilities"]["cura"])).to be_nil
 
+      # An enemy out of reach (airborne, away) is offered to nobody: not to a blow, not to a cure turned on it.
+      unit(state, "goblin_b")["statuses"] << { "kind" => "airborne" }
+      expect(described_class.target_options(state, rosa, state["abilities"]["attack"])).to eq(%w[goblin_a goblin_c])
+      expect(described_class.target_options(state, rosa, state["abilities"]["cure"])).to eq(%w[vivi rosa locke goblin_a goblin_c])
+      expect(described_class.target_problem(rosa, state["abilities"]["attack"], unit(state, "goblin_b"))).to eq("is out of reach")
+
       # every offered target is accepted by the resolver
       %w[cure raise attack].each do |ability|
         described_class.target_options(state, rosa, state["abilities"][ability]).each do |target|

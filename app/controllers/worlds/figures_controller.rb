@@ -3,9 +3,9 @@
 # A setting's cast (WorldFigure): its people, written once, brought into
 # each campaign as NPCs. Its editors write it; its GMs read it.
 class Worlds::FiguresController < ApplicationController
+  include WorldScoped
   include PortraitUploads
 
-  before_action :set_world
   before_action :require_lore, only: :index
   before_action :require_world_editor, except: :index
   before_action :set_figure, only: %i[edit update destroy]
@@ -45,11 +45,6 @@ class Worlds::FiguresController < ApplicationController
   end
 
   private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
-  end
-
 
   def set_figure
     @figure = @world.world_figures.find(params[:id])

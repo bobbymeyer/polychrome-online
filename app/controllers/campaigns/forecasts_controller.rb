@@ -2,12 +2,9 @@
 
 # How a fight the GM is setting up is likely to go (Battle::Forecast): the
 # battle form and the scene form ask as their fields change.
-class Campaigns::ForecastsController < ApplicationController
-  include CampaignScoped
-
+class Campaigns::ForecastsController < Campaigns::BaseController
   RUNS = 20
 
-  before_action :set_campaign
   before_action :require_campaign_gm
 
   def show

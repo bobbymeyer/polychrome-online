@@ -2,11 +2,7 @@
 
 # Field abilities at the table (FieldUse): a player asks as their own
 # character (or the GM for anyone), and the GM approves or vetoes.
-class Campaigns::FieldUsesController < ApplicationController
-  include CampaignScoped
-  include TableSeat
-
-  before_action :set_campaign
+class Campaigns::FieldUsesController < Campaigns::BaseController
   before_action :require_table_gm, only: :update
 
   def create

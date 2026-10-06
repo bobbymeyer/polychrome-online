@@ -9,8 +9,6 @@
 # From the shared screen's QR code (?view=controller), this device becomes
 # a controller; from an invite, it opens the table.
 class JoinsController < ApplicationController
-  include TableSeat
-
   allow_unauthenticated_access
   before_action :resume_session
   before_action :set_campaign

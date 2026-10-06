@@ -49,7 +49,7 @@ deliberate divergence from much of what follows, and where the two disagree the 
   the play area. A tab in the page's colour (or L) slides it open over the page; Esc or L
   closes it. While it's closed the tab counts new lines and gives a pulse. At the table it
   holds the table's log; in battle, the battle's log with the table's beneath it. The GM can pin
-  it (on a screen at least 1000px wide): it stays open as a column beside the page, and the
+  it (on a screen at least 1100px wide, where the three columns are): it stays open as a column beside the page, and the
   page makes room for it. On a screen 1440px or wider it starts pinned for the GM. Closing it
   unpins it.
 - **Dialogue in battle.** What's said at the table reaches the battle: a GM or NPC line appears

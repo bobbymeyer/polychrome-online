@@ -5,7 +5,6 @@
 # seat can narrate or speak as an NPC (possession, §7).
 class MessagesController < ApplicationController
   include CampaignScoped
-  include TableSeat
 
   before_action :set_campaign, only: :create
 

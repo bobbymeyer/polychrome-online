@@ -4,13 +4,12 @@
 # starts from, and the framing for each content type. Both layers can name a
 # model and stack LoRAs. The entry's own layer is edited on its page.
 class ArtDirectionsController < ApplicationController
+  include WorldScoped
   before_action :require_admin
-  before_action :set_world
 
   def show
     @types = ArtDirection::KINDS.map { |kind| @world.art_type(kind) }
   end
-
 
   def update
     ArtType.transaction do
@@ -26,11 +25,5 @@ class ArtDirectionsController < ApplicationController
     @types = ArtDirection::KINDS.map { |kind| @world.art_type(kind) }
     flash.now[:alert] = e.record.errors.full_messages.to_sentence
     render :show, status: :unprocessable_content
-  end
-
-  private
-
-  def set_world
-    @world = World.find_by!(slug: params[:world_slug])
   end
 end

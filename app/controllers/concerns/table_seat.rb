@@ -67,10 +67,15 @@ module TableSeat
     table_seat(campaign).gm?
   end
 
-  # The GM's controls at a campaign's table: only the GM seat may.
+  # Which GM a controller asks for, in one line: the table's controls (the
+  # strip, ways, time, checks, encounters, moves, the map on the stage, a
+  # place's GM tools) are the GM seat's, so a GM who stood up plays as a
+  # player; Prep (clocks, flags, secrets, rumours, deeds, fronts, the chest,
+  # scenes, drafts) is the GM's account's, seated or not, since it's done
+  # between sessions as much as at the table (Authorization#require_campaign_gm).
   #   before_action :require_table_gm
   def require_table_gm
-    head :forbidden unless table_gm?
+    forbid("Sit as the GM to do that.") unless table_gm?
   end
 
   def take_table_seat(campaign, seat)
