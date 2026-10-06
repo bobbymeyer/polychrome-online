@@ -207,11 +207,22 @@ RSpec.describe "The table", type: :request do
     expect(response).to have_http_status(:forbidden)
   end
 
-  it "keeps the log in a drawer, closed until it's opened" do
+  it "keeps the log in a drawer, closed until it's opened, newest line first, with a search over it" do
     campaign.messages.create!(body: "The road is long.", speaker: cid)
+    campaign.messages.create!(body: "And the night is cold.", speaker: cid)
     get campaign_table_path(campaign)
     drawer = response.body[/<div class="log-drawer".*?<\/aside>/m]
     expect(drawer).to include('id="chat_log"', "The road is long.", "inert", 'aria-expanded="false"')
+    log = Nokogiri::HTML(drawer).at("#chat_log")
+    expect(log["data-newest"]).to eq("first")
+    expect(log.css("li .chat-line__body").map { |b| b.text.squish }.first(2)).to eq([ "And the night is cold.", "The road is long." ])
+    expect(Nokogiri::HTML(drawer).at(".chat-log__head input[type=search][data-filter-target=input]")).to be_present
+    expect(log.css("li[data-filter-target=item]").size).to eq(log.css("li").size)
+  end
+
+  it "puts a new line on top of the log" do
+    expect { campaign.narrate("Night falls.") }
+      .to have_broadcasted_to(stream(campaign, :table)).with(a_string_including('action="prepend"', 'target="chat_log"'))
   end
 
   it "shows the last GM line in the dialogue box on arrival, without replaying anything" do
@@ -321,7 +332,7 @@ RSpec.describe "The table", type: :request do
 
     campaign.messages.create!(speaker: cid, body: "The crystal is cracking.", created_at: 2.days.ago)
     get campaign_table_path(campaign)
-    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap moment whisper-toast table-views"', "The crystal is cracking.",
+    expect(response.body).to include("Previously on The Crystal Road…", 'data-controller="dialogue recap moment whisper-toast"', "The crystal is cracking.",
                                      'data-recap-auto-value="true"')
   end
 

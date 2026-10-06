@@ -86,7 +86,7 @@ export default class extends Controller {
     this.tabTarget.setAttribute("aria-expanded", "true")
     this.unread = 0
     this.showCount()
-    this.scrollToEnd()
+    this.scrollToNewest()
     if (focus) this.panelTarget.querySelector("button")?.focus({ preventScroll: true })
   }
 
@@ -121,7 +121,7 @@ export default class extends Controller {
   arrived(mutations) {
     const added = mutations.reduce((n, m) => n + [...m.addedNodes].filter((node) => node.nodeType === Node.ELEMENT_NODE && !this.mine(node)).length, 0)
     if (!added) return
-    if (this.isOpen) return this.scrollToEnd()
+    if (this.isOpen) return this.scrollToNewest()
 
     this.unread += added
     this.showCount()
@@ -139,7 +139,8 @@ export default class extends Controller {
     this.countTarget.textContent = this.unread > 99 ? "99+" : String(this.unread)
   }
 
-  scrollToEnd() {
-    this.listTargets.forEach((list) => { list.parentElement.scrollTop = list.parentElement.scrollHeight })
+  // The table's log keeps its newest line on top (data-newest="first"); a battle's log grows downward.
+  scrollToNewest() {
+    this.listTargets.forEach((list) => { list.parentElement.scrollTop = list.dataset.newest === "first" ? 0 : list.parentElement.scrollHeight })
   }
 }

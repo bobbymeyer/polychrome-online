@@ -823,11 +823,17 @@ Phones are where most players are, so every page is checked at 390×844, 360×64
 - **The top bar is one line**: the name, a Menu button, and the log's tab. The links open from
   Menu at 44px, with Sign out set apart at the end, where a guest won't tap it by mistake. The
   log's tab scrolls away with the bar instead of floating over what you're reading.
-- **The table is three views.** Its three columns (you and the party; the stage and what you can
-  do; the log) are too much for one phone screen stacked, so a thin strip under the top bar picks
-  one: "You & party", "Stage", "Log", the one shown in ink, the Stage first. The log's tab goes
-  away on this page: the log is the third view, in the page, and the count of lines you haven't
-  seen sits on its name in the strip. The view you were on is kept for the session.
+- **The table is three views, on a phone and on a tablet alike** (up to 1099px). Its three
+  columns (you and the party; the stage and what you can do; the log) are too much for one
+  screen stacked, so a strip in the top bar, between the brand and Menu, picks one: "You &
+  party", "Stage", "Log", the one shown on paper in the bar's ink, the Stage first. On a tablet
+  the bar folds its links behind Menu as a phone's does, to make room. The log's tab goes away
+  on this page: the log is the third view, in the page, and the count of lines you haven't seen
+  sits on its name in the strip. The view you were on is kept for the session.
+- **The log reads newest first.** A new line lands on top, and opening the log shows the top, so
+  the latest is always at hand without scrolling; the battle's own section still grows downward
+  as a fight plays. A search box sits in the log's sticky head: typing narrows the lines to the
+  ones with those words, new lines included, and clearing it shows all.
 - **In battle, the commands are pinned to the bottom** while the fight plays above them. The
   pinned panel carries a strip of everyone's HP and, above it, the last lines of what just
   happened, so nobody has to open the log mid-fight. The page title steps aside and enemies size

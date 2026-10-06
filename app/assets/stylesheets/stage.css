@@ -380,7 +380,12 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 .chat-line--system .chat-line__body { border-left: 0; padding: 2px 18px 2px 10px; background: var(--tint); font-style: italic;
   clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); width: fit-content; max-width: 100%; }
 .chat-line__tag { font-style: italic; }
-.chat-log li:last-child { animation: menu-in .3s var(--snap) both; }
+.chat-log li:first-child { animation: menu-in .3s var(--snap) both; } /* the newest, on top */
+.chat-log li[hidden] { display: none; }
+/* The log's head stays put while the lines scroll under it: the title and the search. */
+.chat-log__head { position: sticky; top: 0; z-index: 1; background: var(--paper); padding: 10px 0 6px; display: flex; align-items: center; gap: 12px; }
+.chat-log__head h3 { position: static; padding: 0; margin: 0; }
+.chat-log__search { flex: 1 1 0; min-width: 0; min-height: 32px; padding: 0 8px; font-size: 14px; }
 
 /* ---------------------------------------------------------------------------
  * Map and places
@@ -1139,8 +1144,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
 /* The log pinned open (the GM's seat): a column beside the page, not over it. */
 .log-drawer__actions { display: flex; gap: 8px; }
 .log-drawer__pin[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
-@media (max-width: 999px) { .log-drawer__pin { display: none; } }
-@media (min-width: 1000px) {
+@media (max-width: 1099px) { .log-drawer__pin { display: none; } }
+@media (min-width: 1100px) {
   html.log-docked body { padding-right: min(440px, 36vw); }
   html.log-docked .topbar { right: min(440px, 36vw); } /* the bar ends where the log begins, so your name stays in view */
   .log-drawer.is-docked .log-drawer__panel { width: min(440px, 36vw); box-shadow: none; transition: none; z-index: 30; }
@@ -1786,21 +1791,19 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   .table__stage { order: 0; }
 }
 
-/* On a phone the table is three views (table_views_controller): you and the party, the stage and what you can
-   do, the log; a thin strip under the top bar picks one, the one shown in ink. The log, a drawer elsewhere,
-   sits in the page as the third view, its tab and its own head put away. */
+/* Up to a tablet's width the table is three views (table_views_controller): you and the party, the stage and what
+   you can do, the log; a strip in the top bar picks one, the one shown in ink. The log, a drawer elsewhere, sits in
+   the page as the third view, its tab and its own head put away. */
 .table-views { display: none; }
-@media (max-width: 640px) {
-  .table-views {
-    display: flex; position: sticky; top: var(--topbar, 44px); z-index: 35; margin: -24px -16px 12px; padding: 0 16px;
-    background: var(--paper); border-bottom: 2px solid var(--ink);
-  }
+@media (max-width: 1099px) {
+  /* In the ink of the top bar: grey names, the one shown on paper. */
+  .table-views { display: flex; justify-self: center; gap: 0; border: 2px solid var(--paper); }
   .table-views__tab {
-    flex: 1 1 0; min-height: 36px; padding: 0 4px; border: 0; background: transparent; box-shadow: none; clip-path: none;
-    font: 800 13px/36px var(--font); letter-spacing: .02em; color: var(--grey); text-align: center;
+    flex: 0 1 auto; min-height: 28px; padding: 0 12px; border: 0; background: var(--ink); box-shadow: none; clip-path: none;
+    font: 800 13px/28px var(--font); letter-spacing: .02em; color: #bdbdbd; text-align: center; white-space: nowrap;
   }
-  .table-views__tab:hover { translate: none; color: var(--ink); background: transparent; }
-  .table-views__tab[aria-current="page"] { color: var(--paper); background: var(--ink); }
+  .table-views__tab:hover { translate: none; color: var(--paper); background: var(--ink); }
+  .table-views__tab[aria-current="page"] { color: var(--ink); background: var(--paper); }
   .table-views__badge { display: inline-block; min-width: 18px; padding: 0 4px; margin-left: 2px; background: var(--sun-yellow); color: var(--ink); font-size: 11px; line-height: 16px; text-align: center; }
   .table-views__badge[hidden] { display: none; }
   .table[data-table-view="stage"] .table__side > *, .table[data-table-view="log"] .table__side > * { display: none; }
@@ -1812,7 +1815,11 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
   }
   .table[data-table-view="log"] .log-drawer__head { display: none; }
   .table[data-table-view="log"] .log-drawer__section { overflow: visible; flex: none; }
+  .table[data-table-view="log"] .chat-log__head { top: var(--topbar, 44px); }
   body:has(.table[data-table-view]) .topbar { padding-right: 0; }
+}
+@media (max-width: 640px) {
+  .table-views__tab { padding: 0 8px; font-size: 12px; }
 }
 
 /* ---------------------------------------------------------------------------

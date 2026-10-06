@@ -149,7 +149,13 @@ body { padding-top: var(--topbar); }
 @media (max-width: 640px) {
   .page { padding: 24px 16px 64px; }
 }
-/* A phone either way up: the top bar is one line with a Menu. */
+/* The table's three views sit in the bar's middle up to a tablet's width (stage.css): brand, views, Menu. */
+@media (max-width: 1099px) {
+  body.has-table-views .topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+  body.has-table-views .topbar__brand { grid-column: 1; }
+  body.has-table-views .topbar__toggle { grid-column: 3; }
+}
+/* A phone either way up (and the table page up to a tablet's width): the top bar is one line with a Menu. */
 @media (max-width: 640px), (max-height: 500px) and (orientation: landscape) {
   .topbar { padding: 4px 16px; grid-template-columns: 1fr auto; align-items: center; }
   .topbar__brand { grid-column: 1; }
@@ -166,6 +172,22 @@ body { padding-top: var(--topbar); }
   /* Signing out is a long way back for a guest: it sits apart, last. */
   .topbar__sign-out { margin-top: 16px; }
   .topbar.is-open .topbar__book { display: flex; }
+}
+/* The table page, up to a tablet's width, keeps the same folded bar (the same rules, for that page). */
+@media (min-width: 641px) and (max-width: 1099px) {
+  body.has-table-views .topbar { padding: 4px 16px; align-items: center; }
+  body.has-table-views .topbar__toggle { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; font-size: 14px;
+                                         border: 2px solid currentColor; background: none; color: inherit; font: inherit; font-weight: 800; cursor: pointer; }
+  body.has-table-views .topbar__menu { display: none; grid-column: 1 / -1; max-height: calc(100vh - var(--topbar)); overflow-y: auto; padding-bottom: 12px; }
+  body.has-table-views .topbar.is-open .topbar__menu { display: block; }
+  body.has-table-views .topbar__user-menu { position: static; border: 0; padding: 0 0 0 16px; background: none; color: inherit; }
+  body.has-table-views .topbar__user > summary { min-height: 44px; display: flex; align-items: center; font-size: 16px; }
+  body.has-table-views .topbar__books, body.has-table-views .topbar__account { flex-direction: column; align-items: stretch; margin-top: var(--unit); font-size: 16px; }
+  body.has-table-views .topbar__books a, body.has-table-views .topbar__account a, body.has-table-views .topbar__account .link-button,
+  body.has-table-views .topbar__account > span { display: flex; align-items: center; min-height: 44px; }
+  body.has-table-views .topbar__account form { display: block; }
+  body.has-table-views .topbar__sign-out { margin-top: 16px; }
+  body.has-table-views .topbar.is-open .topbar__book { display: flex; }
 }
 
 .crumbs { font-size: 13px; line-height: 16px; font-weight: 600; color: var(--grey); margin-bottom: 16px; }
