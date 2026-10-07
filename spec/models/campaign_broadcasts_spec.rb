@@ -57,7 +57,7 @@ RSpec.describe Campaign::Broadcasts do
     campaign.set_out!(from_the_setting: true)
     campaign.update!(time_of_day: "night")
     clear_enqueued_jobs
-    # A new day rolls the world on (Campaign#overnight!), saving the RNG state after the time: the time still reaches the table.
+    # A new day rolls the world on (Campaign::Night), saving the RNG state after the time: the time still reaches the table.
     expect { campaign.pass_time!(1) }.to enqueue_a_table_refresh
     expect(campaign.reload.day).to eq(2)
 
