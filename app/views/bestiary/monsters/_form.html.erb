@@ -23,6 +23,12 @@
     <%= f.label :boss_line, "What it says before the fight" %>
     <%= f.text_area :boss_line, rows: 2, placeholder: "You came for the ledger. So did the last ones." %>
   </div>
+  <div class="field">
+    <%= f.label :music, "Its own music" %>
+    <%# One of the world's tracks by name (World::Music); a form of a boss with its own changes the music as it takes over. %>
+    <%= f.select :music, options_for_select(@world.named_music_choices, entry.music), include_blank: "The boss music (or the battle's, if it isn't one)" %>
+    <p class="hint">A track from the world's Music book, called by name there. A second form with its own changes the music as it comes.</p>
+  </div>
 
   <fieldset class="panel">
     <legend>Stat block</legend>

@@ -329,6 +329,19 @@ export class Board {
     })
   }
 
+  // A unit's line, said in the stage's dialogue box as a beat of its own (dialogue_controller#say):
+  // its name, its face from the field (the sprite's image, else its plate's colour).
+  speak(id, line, name = null) {
+    const sprite = this.sprite(id)
+    const plate = sprite?.querySelector(".sprite__plate")
+    window.dispatchEvent(new CustomEvent("dialogue:say", {
+      detail: {
+        speaker: name || this.unitEl(id)?.querySelector(".unit__label")?.textContent || id,
+        text: line, plate: plate?.getAttribute("style") || "", portrait: sprite?.querySelector("img")?.src || "", expression: "angry"
+      }
+    }))
+  }
+
   banner(tl, text, at, kind = "round") {
     const el = document.createElement("div")
     el.className = `banner banner--${kind}`

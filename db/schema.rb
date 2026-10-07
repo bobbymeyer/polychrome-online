@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_07_214554) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_225001) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -620,6 +620,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_07_214554) do
     t.string "base_type", default: "normal", null: false
     t.boolean "undead", default: false, null: false
     t.json "phases", default: [], null: false
+    t.string "music"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end

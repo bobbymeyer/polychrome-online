@@ -1,5 +1,5 @@
 import { gesture } from "motion/gestures"
-import { play } from "sound"
+import { play, setMusic } from "sound"
 import { humanize } from "battle/board"
 
 // How each of the resolver's events plays on the board (docs/HANDOFF.md §6):
@@ -121,19 +121,22 @@ const STEPS = {
     gesture(tl, b.sprite(e.actor), "shake", at)
     return 500
   },
-  // A creature says a line as its rule fires: the telegraph before the blow, read on the stage.
+  // A creature says a line as its rule fires: the telegraph before the blow, said in the stage's
+  // dialogue box as a beat of its own (dialogue_controller#say), with its face from the field.
   says(b, tl, e, at) {
     gesture(tl, b.sprite(e.actor), "pop", at)
-    b.caption(tl, `“${e.line}”`, at, "says")
-    return 1100
+    tl.call(() => b.speak(e.actor, e.line), at)
+    return 900
   },
-  // A boss becomes its next form: the board after the beat has it; here, the slab and its line.
+  // A boss becomes its next form: the board after the beat has it; here, the slab, its line in the
+  // box, and its own music if the form brings any.
   phase(b, tl, e, at) {
     gesture(tl, b.sprite(e.actor), "flash", at)
     gesture(tl, b.sprite(e.actor), "shake", at + 200)
     b.banner(tl, `${e.name}!`, at + 300, "phase")
-    if (e.line) b.caption(tl, `“${e.line}”`, at + 1500, "says")
-    return e.line ? 2600 : 1700
+    if (e.music) tl.call(() => setMusic(e.music, { cut: true }), at + 300)
+    if (e.line) tl.call(() => b.speak(e.actor, e.line, e.name), at + 1500)
+    return 1700
   },
   unit_joined(b, tl, e, at) {
     // The board after the beat has them; here, the entrance.

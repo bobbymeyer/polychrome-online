@@ -79,6 +79,17 @@ RSpec.describe "Sound", type: :request do
     get battle_path(start_battle(campaign: campaign))
     expect(music_meta["content"]).to include("battle.wav")
     expect(music_meta["data-fixed"]).to eq("true")
+
+    # A boss with music of its own plays it; one without, the boss track; a villain's entry counts.
+    track("boss")
+    own = world.tracks.create!(name: "The Wyrm Wakes", source: "link", url: "https://youtu.be/dQw4w9WgXcQ")
+    create_monster(world, slug: "wyrm", name: "Wyrm", boss: true, music: "track:#{own.id}")
+    create_monster(world, slug: "ogre", name: "Ogre", boss: true)
+    party = campaign.characters.to_a
+    get battle_path(BattleRecord.start!(campaign: campaign, characters: party, name: "The Wyrm", encounter: { "wyrm" => 1 }))
+    expect(music_meta["content"]).to eq(own.play_url)
+    get battle_path(BattleRecord.start!(campaign: campaign, characters: party, name: "The Ogre", encounter: { "ogre" => 1 }))
+    expect(music_meta["content"]).to include("boss.wav")
   end
 
   it "lets the GM switch the table's music from the stage, by scene or by name, and every page hears about it" do

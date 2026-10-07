@@ -486,7 +486,7 @@ RSpec.describe Battle::Resolver do
       form = { name: "Brute Unbound", stats: stats(max_hp: 800, max_mp: 0, str: 14, atk: 12, agi: 10, def: 3, mdef: 2), types: %w[fire],
                abilities: %w[goblin_punch], ai: [ { use: "goblin_punch" } ], rewards: { exp: 60, gil: 120 }, boss: true,
                image: { book: "monsters", slug: "brute_unbound" } }
-      last = form.merge(name: "Brute, Last Breath", stats: stats(max_hp: 300, max_mp: 0, str: 20, atk: 20, agi: 12, def: 1, mdef: 1))
+      last = form.merge(name: "Brute, Last Breath", stats: stats(max_hp: 300, max_mp: 0, str: 20, atk: 20, agi: 12, def: 1, mdef: 1), music: "/music/last.mp3")
       state = build_battle(enemies: [ brute(phases: [ { hp_below: 50, becomes: form, say: "You wake what slept.", restore: 10 },
                                                       { hp_below: 25, becomes: last } ]) ])
       expect(unit(state, "brute")["phases"].map { |p| p["becomes"]["name"] }).to eq([ "Brute Unbound", "Brute, Last Breath" ])
@@ -503,7 +503,7 @@ RSpec.describe Battle::Resolver do
       expect(state["status"]).to eq("input")
 
       state, events = apply(state, gm("set_hp", unit: "brute", value: 150)) # under 25% of 800: the last form, with 150 of its 300
-      expect(of_type(events, :phase).first).to include("name" => "Brute, Last Breath", "restore" => 0)
+      expect(of_type(events, :phase).first).to include("name" => "Brute, Last Breath", "restore" => 0, "music" => "/music/last.mp3") # the form's own, for the stage
       expect(unit(state, "brute")).to include("hp" => 150, "phases" => [])
       expect(unit(state, "brute")["stats"]["max_hp"]).to eq(300)
     end

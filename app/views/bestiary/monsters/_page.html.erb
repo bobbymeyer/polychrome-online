@@ -17,6 +17,9 @@
 <% if entry.boss_line.present? %>
   <blockquote class="boss-line"><%= entry.boss_line %></blockquote>
 <% end %>
+<% if (track = @world.named_track(entry.music)) %>
+  <p class="hint">Its own music: <%= link_to "♪ #{track.name}", world_tracks_path(@world) %>.</p>
+<% end %>
 
 <section class="window">
   <h2>Stat block</h2>

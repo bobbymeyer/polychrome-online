@@ -149,6 +149,14 @@ class BattleRecord < ApplicationRecord
 
   # The bosses in this fight, for their entrance: the monsters marked as
   # bosses, or, in a dungeon's boss room, the strongest there.
+  # The boss's own music, if it has any (Monster#music): the first boss in the fight with a track of its
+  # own, an antagonist's entry counted. Else the boss slot, or the battle's.
+  def music_choice
+    villains = enemies.filter_map { |u| u.npc_id && campaign&.npcs&.find_by(id: u.npc_id)&.monster }
+    own = (villains + boss_monsters.to_a).find { |monster| monster.music.present? }
+    own&.music || (boss? ? "boss" : "battle")
+  end
+
   def boss_monsters
     return Monster.none unless boss?
 
