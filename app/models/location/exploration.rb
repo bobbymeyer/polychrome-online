@@ -43,7 +43,7 @@ module Location::Exploration
     view.fetch("rooms", []).find { |r| r.dig("decision", "kind") == "boss" }
   end
 
-  # Somewhere an antagonist can be met (Campaign::Overnight moves them only here).
+  # Somewhere an antagonist can be met (Campaign::Night moves them only here).
   def lair? = !master_room.nil?
 
   # Its master has been beaten (in any master's room the GM added, too). A

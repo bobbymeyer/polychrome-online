@@ -70,7 +70,7 @@ module Location::Town
 
   # What anything costs here today, the shop's stock and the inn, temple
   # and guild alike: dearer after a caravan is lost on
-  # the road, easing back day by day (Campaign::Overnight), and cheaper for
+  # the road, easing back day by day (Campaign::Night), and cheaper for
   # friends.
   def price_here(base) = (base * (100 + prices - (REPUTATION_PRICE * reputation)).clamp(10, 300) / 100.0).round
 

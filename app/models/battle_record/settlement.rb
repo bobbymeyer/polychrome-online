@@ -81,7 +81,7 @@ module BattleRecord::Settlement
       else "remains"
       end
       if %w[escaped slipped_away].include?(fate)
-        # Gone from here, to turn up somewhere near (Campaign::Overnight).
+        # Gone from here, to turn up somewhere near (Campaign::Night).
         npc.update!(escapes: npc.escapes + 1, location: campaign.current_node&.location || npc.location)
       end
       npc.update!(defeated_at: Time.current) if fate == "defeated"

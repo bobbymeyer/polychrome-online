@@ -11,7 +11,7 @@
 #   hours         places change with the calendar (a mode with times); what
 #                 people are saying where the party is (unless a day began)
 #   dawn          new-day clocks; the world moves on overnight
-#                 (Campaign::Overnight), which ticks the now-and-then clocks
+#                 (Campaign::Night), which ticks the now-and-then clocks
 #   arrive        the party gets somewhere (at:): whoever is from there is
 #                 home, and ties to people there come up (Campaign::Belonging);
 #                 the world's arrival line that fits best goes to the GM
@@ -56,7 +56,7 @@ module Campaign::Happenings
       hear_rumours! unless new_day
     when "dawn"
       tick_clocks!("dawn", day: day, period: period)
-      overnight!
+      Campaign::Night.new(self).pass!
     when "travel"
       tick_clocks!("travel", day: day, period: period)
       offer_event!("travel")

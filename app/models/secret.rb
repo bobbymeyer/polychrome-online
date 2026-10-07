@@ -20,7 +20,7 @@ class Secret < ApplicationRecord
   belongs_to :world_front, optional: true
   belongs_to :location, optional: true
   belongs_to :npc, optional: true
-  # Going around as a rumour, if it got out (Campaign::Overnight).
+  # Going around as a rumour, if it got out (Campaign::Night).
   has_one :rumour, dependent: :nullify
 
   normalizes :body, with: ->(body) { body.to_s.strip }

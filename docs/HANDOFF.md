@@ -158,7 +158,7 @@ Every generated place carries where it came from (`Generators::Provenance`):
 
 The GM keeps families through rerolls and edits a place's past on the atlas; an edited past, like an edited page, is theirs, and the history won't write over it.
 
-**The world moves overnight.** Each new day, a pure step over the campaign's map (`Pointcrawl::Overnight`, RNG in state like the resolver) decides what moved: clocks that tick now and then, rumours travelling a road a day, antagonists who got away wandering, caravans lost on dangerous roads and the prices that follow. The campaign applies it (`Campaign::Overnight`). The GM gets a private note; players only learn what reaches them as rumours. Kept secrets about a place sometimes leak there as rumours.
+**The world moves overnight.** Each new day, a pure step over the campaign's map (`Pointcrawl::Overnight`, RNG in state like the resolver) decides what moved: clocks that tick now and then, rumours travelling a road a day, antagonists who got away wandering, caravans lost on dangerous roads and the prices that follow. The campaign applies it (`Campaign::Night`). The GM gets a private note; players only learn what reaches them as rumours. Kept secrets about a place sometimes leak there as rumours.
 
 **Deeds and legends.** What the party does is history too. A deed (recorded by itself for an antagonist beaten or a dungeon cleared, or by the GM) starts a rumour carrying its sway, and each town the story reaches moves its view of the party, which sets its prices and, far enough down, whether it trades with them at all. The legends page puts the written history the party can know together with their own story.
 
