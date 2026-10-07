@@ -58,11 +58,15 @@ export default class extends Controller {
     if (take) this.bringIntoView()
   }
 
-  // On a short screen your turn can start below the fold: scroll just enough to show the menu.
+  // On a short screen your turn can start below the fold: scroll just enough to show the menu's
+  // rows. Never while the stage is speaking (a boss's entrance, a line in its box): what's said
+  // comes first, and the menu waits where it is until the player comes to it.
   bringIntoView() {
-    const box = this.element.querySelector(".pick-table")?.getBoundingClientRect()
+    const table = this.element.querySelector(".pick-table")
+    const box = table?.getBoundingClientRect()
     if (!box || (box.top >= 0 && box.bottom <= window.innerHeight)) return
-    this.element.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" })
+    if (document.querySelector(".boss-intro:not([hidden]), .stage .dialogue")) return
+    table.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" })
   }
 
   disconnect() {

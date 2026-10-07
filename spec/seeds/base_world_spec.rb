@@ -55,7 +55,7 @@ RSpec.describe Seeds::BaseWorld do
     goblin.update!(name: "Bog Goblin", exp: 99)
     knight = world.jobs.find_by!(slug: "knight")
     knight.job_levels.last.destroy!
-    world.monsters.find_by!(slug: "ogre").destroy!
+    world.monsters.find_by!(slug: "ogre").delete # gone missing (a GM can't delete one the tables still roll)
 
     described_class.run
     expect(goblin.reload).to have_attributes(name: "Bog Goblin", exp: 99)

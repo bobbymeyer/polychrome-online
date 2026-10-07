@@ -58,7 +58,9 @@
   <% end %>
 
   <%# The battle's stage is the frame itself (stage.css, "The Stage"): the field fills it, the roster along its bottom. %>
-  <div class="stage stage__frame" data-battle-player-target="stage" data-controller="stage-fit" data-stage-fit-below-value="24">
+  <%# Room under the frame for the commands (stage_fit_controller): a short screen shrinks the frame rather than
+      scrolling it away when the menu takes focus (menu_controller#bringIntoView). %>
+  <div class="stage stage__frame" data-battle-player-target="stage" data-controller="stage-fit" data-stage-fit-below-value="280">
     <%# This round's order, as it plays: who has gone, who's up, who's still to come (battle/board.js). %>
     <ol class="turn-rail" data-battle-player-target="rail" aria-label="This round" hidden></ol>
     <div data-battle-player-target="boardContainer">

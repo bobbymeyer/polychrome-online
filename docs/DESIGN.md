@@ -67,7 +67,14 @@ deliberate divergence from much of what follows, and where the two disagree the 
   "Goblin Chief falls!". A boss sent off the field hasn't fallen: the second slab is the Turquoise
   Escaped one, "Goblin Chief got away!", and a fight nobody fell in ends on "They got away!" with
   no fanfare and no hop. A fight the GM calls off ends on an ink "Called off" slab, on every seat's
-  screen at once: the results panel follows it as it follows Victory or Defeat.
+  screen at once: the results panel follows it as it follows Victory or Defeat. The slabs are thrown
+  over everything on the frame, the round's rail included.
+- **The field fits its frame.** Enemies share one row of the frame, sized to the room the row has:
+  a lone boss towers, five share the width, and a name wraps under its sprite rather than widening
+  the row. With the log pinned beside the fight on an ordinary desktop, the battle's head sits over
+  the frame instead of beside it, so the frame keeps its width. On a phone up to five stand abreast.
+  The frame leaves room under it for the commands, and the menu never scrolls the stage away while
+  the stage is speaking (a boss's entrance, a line in its box).
 - **Desperation.** When a character's desperation move comes, the stage stops for them: a slab
   in their colour cuts across the field with their sprite held large, their line in quotes and
   the move's name in heavy italic, white with a black outline. A power chord plays under it.
