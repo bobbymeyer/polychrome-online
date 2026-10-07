@@ -69,7 +69,8 @@
   <fieldset class="panel">
     <legend>AI script</legend>
     <p class="hint">First matching rule wins; all filled conditions must hold. With no rule matching, it attacks. Leave "Use" blank to remove a row.</p>
-    <% abilities = [["Attack", "attack"]] + @world.abilities.order(:name).map { |a| [a.name, a.slug] } %>
+    <%# Battle abilities: a field ability is a move outside battle (FieldUse), never in one. %>
+    <% abilities = [["Attack", "attack"]] + @world.abilities.in_battle.order(:name).map { |a| [a.name, a.slug] } %>
     <table class="grid-form">
       <thead>
         <tr><th>Own HP &lt; %</th><th>Ally HP &lt; %</th><th>Ally down</th><th>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th></tr>

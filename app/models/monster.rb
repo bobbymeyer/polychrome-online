@@ -18,6 +18,9 @@ class Monster < ApplicationRecord
   validate :status_immunities_are_statuses
   validate :ai_script_is_valid
   validate :drops_are_items
+  # Every battle takes the whole Grimoire and every table may roll it: an entry something still
+  # names can't go, or the summon, the table and the lair would all break (Battle::State.build).
+  before_destroy :still_needed
 
   def stats=(values)
     super((values || {}).to_h.stringify_keys.transform_values { |v| JsonCasting.integer(v) }.compact)
@@ -69,6 +72,24 @@ class Monster < ApplicationRecord
     world.items.where(slug: drops.map { |d| d["item"] }).index_by(&:slug)
   end
 
+  # Cross-references (§7): the abilities that summon it, the encounter tables that roll it, the
+  # location templates whose boss it is, and the NPCs and cast who fight as it.
+  def summoned_by
+    world.abilities.alphabetical.select { |a| Array(a.effects).any? { |e| e["primitive"] == "summon" && e["creature"] == slug } }
+  end
+
+  def rolled_by
+    world.encounter_tables.alphabetical.select { |t| t.entries.any? { |e| e["monsters"].key?(slug) } }
+  end
+
+  def boss_of
+    world.location_templates.alphabetical.select { |t| t.config.dig("boss", slug) }
+  end
+
+  def fought_as_by
+    Npc.where(monster_id: id).order(:name).pluck(:name) + world.world_figures.where(monster_id: id).order(:name).pluck(:name)
+  end
+
   def rewards
     { "exp" => exp, "gil" => gil, "abp" => abp }
   end
@@ -114,12 +135,31 @@ class Monster < ApplicationRecord
     errors.add(:status_immune, "has unknown statuses: #{unknown.join(', ')}") if unknown.any?
   end
 
+  def still_needed
+    return if destroyed_by_association # the whole world is going, books and all
+
+    needs = []
+    needs << "#{summoned_by.map(&:name).to_sentence} #{summoned_by.one? ? 'summons' : 'summon'} it" if summoned_by.any?
+    needs << "#{rolled_by.map(&:name).to_sentence} #{rolled_by.one? ? 'rolls' : 'roll'} it" if rolled_by.any?
+    needs << "it is the boss of #{boss_of.map(&:name).to_sentence}" if boss_of.any?
+    needs << "#{fought_as_by.to_sentence} #{fought_as_by.one? ? 'fights' : 'fight'} as it" if fought_as_by.any?
+    return if needs.empty?
+
+    errors.add(:base, "#{name} is still needed: #{needs.to_sentence}. Change those first.")
+    throw :abort
+  end
+
   def ai_script_is_valid
-    known = world ? world.abilities.where(slug: ability_slugs).pluck(:slug) : []
+    known = world ? world.abilities.in_battle.where(slug: ability_slugs).pluck(:slug) : []
+    field = world ? world.abilities.field.where(slug: ability_slugs).pluck(:slug) : []
     ai_script.each_with_index do |rule, i|
       label = "rule #{i + 1}"
       use = rule["use"]
-      errors.add(:ai_script, "#{label} uses #{use}, which is not in the Grimoire") unless use == "attack" || known.include?(use)
+      if field.include?(use)
+        errors.add(:ai_script, "#{label} uses #{use}, a field ability, which can't be used in battle")
+      elsif !(use == "attack" || known.include?(use))
+        errors.add(:ai_script, "#{label} uses #{use}, which is not in the Grimoire")
+      end
       if rule["target"] && !Battle::AI::STRATEGIES.include?(rule["target"])
         errors.add(:ai_script, "#{label} has unknown target #{rule['target']}")
       end
@@ -127,7 +167,9 @@ class Monster < ApplicationRecord
         next errors.add(:ai_script, "#{label} has unknown condition #{name}") unless Battle::AI::CONDITIONS.include?(name)
         next if name == "ally_ko"
 
-        errors.add(:ai_script, "#{label} #{name} must be a positive whole number") unless JsonCasting.integer?(value) && value.positive?
+        next errors.add(:ai_script, "#{label} #{name} must be a positive whole number") unless JsonCasting.integer?(value) && value.positive?
+
+        errors.add(:ai_script, "#{label} chance must be 1 to 100") if name == "chance" && value > 100
       end
     end
   end

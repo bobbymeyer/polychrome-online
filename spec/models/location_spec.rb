@@ -140,6 +140,12 @@ RSpec.describe Location do
       boss_room = dungeon.room(dungeon.view["boss"])
       expect(boss_room["decision"]).to include("kind" => "boss", "monsters" => { "ogre" => 2 })
 
+      # One of the Bestiary's, one to eight of them, and only where there's a boss room.
+      expect { dungeon.place_boss!("nonexistent_thing" => 1) }.to raise_error(Refusal, "nonexistent_thing isn't in the Bestiary.")
+      dungeon.place_boss!("ogre" => 99)
+      expect(dungeon.room(dungeon.view["boss"])["decision"]["monsters"]).to eq("ogre" => 8)
+      expect { town.place_boss!("ogre" => 1) }.to raise_error(Refusal, /has no boss room/)
+
       key = dungeon.add_room!(name: "Secret Library", connect: entrance, decision: { "kind" => "treasure", "item" => "power_ring" })
       expect(dungeon.neighbours(entrance)).to include(key)
       expect { dungeon.add_room!(name: "X", connect: entrance, decision: { "kind" => "encounter", "monsters" => { "dragon" => 1 } }) }

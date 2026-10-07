@@ -121,6 +121,14 @@ RSpec.describe "Scenes", type: :request do
     expect(scene.reload.summary).to eq("2 lines, 4 changes, then a choice: Fight / Flee")
   end
 
+  it "has a backdrop step wait for its place or panel before it saves itself" do
+    scene = campaign.scenes.create!(name: "The quay")
+    backdrop = scene.beats.create!(kind: "backdrop", backdrop: "black", position: 0)
+    get edit_scene_path(scene, beat: backdrop.id)
+    # Choosing "A place" shows the place select; it's the place that submits (autosubmit_controller).
+    expect(page.at("#beat_#{backdrop.id} select[aria-label='Behind them']")["data-autosubmit-needs"]).to eq({ place: "beat[map_node_id]", panel: "beat[image]" }.to_json)
+  end
+
   it "starts from a name alone, built step by step after" do
     post campaign_scenes_path(campaign), params: { scene: { name: "Blank", script: "", ending: "none" } }
     scene = campaign.scenes.last

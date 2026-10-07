@@ -14,14 +14,15 @@
         <% name = ->(key) { json_field_name(f, :effects, i, key) } %>
         <tr>
           <td><%= select_tag name.(:primitive), options_for_select(Battle::PRIMITIVES.map { |p| [term(p), p] }, effect["primitive"]), include_blank: true, "aria-label": "Primitive #{i + 1}" %></td>
-          <td><%= number_field_tag name.(:power), effect["power"], "aria-label": "Power #{i + 1}" %></td>
+          <td><%= number_field_tag name.(:power), effect["power"], min: 1, "aria-label": "Power #{i + 1}" %></td>
           <td><%= number_field_tag name.(:hits), effect["hits"], min: 1, "aria-label": "Hits #{i + 1}" %></td>
           <% if types_matter? %>
             <td><%= select_tag name.(:type), options_for_select(type_options, effect["type"]), include_blank: true, "aria-label": "Type #{i + 1}" %></td>
           <% elsif effect["type"] %>
             <%= hidden_field_tag name.(:type), effect["type"], id: nil %>
           <% end %>
-          <td><%= select_tag name.(:kind), options_for_select(Battle::STATUSES.map { |s| [term(s), s] }, effect["kind"]), include_blank: true, "aria-label": "Status #{i + 1}" %></td>
+          <%# The statuses a Status effect can give: those with a primitive of their own (charging, shield…) come from it. %>
+          <td><%= select_tag name.(:kind), options_for_select((Battle::STATUSES - Battle::PRIMITIVE_STATUSES).map { |s| [term(s), s] }, effect["kind"]), include_blank: true, "aria-label": "Status #{i + 1}" %></td>
           <td><%= number_field_tag name.(:chance), effect["chance"], min: 0, max: 100, "aria-label": "Chance #{i + 1}" %></td>
           <td><%= number_field_tag name.(:duration), effect["duration"], min: 1, "aria-label": "Duration #{i + 1}" %></td>
           <td><%= select_tag name.(:stat), options_for_select(Stats::MODIFIABLE.map { |s| [stat_label(s), s] }, effect["stat"]), include_blank: true, "aria-label": "Stat #{i + 1}" %></td>

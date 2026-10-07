@@ -56,7 +56,12 @@ module Location::Tailoring
   # Who waits in the boss room ({} for as rolled). Placing one sets the room
   # waiting again, even if the party has been through it.
   def place_boss!(monsters)
-    monsters = monsters.to_h.reject { |slug, count| slug.blank? || count.to_i < 1 }.transform_values(&:to_i)
+    raise Refusal, "#{name} has no boss room." unless view["boss"]
+
+    monsters = monsters.to_h.reject { |slug, count| slug.blank? || count.to_i < 1 }.transform_values { |count| count.to_i.clamp(1, 8) }
+    unknown = monsters.keys - campaign.world.monsters.where(slug: monsters.keys).pluck(:slug)
+    raise Refusal, "#{unknown.to_sentence} #{unknown.one? ? "isn't" : "aren't"} in the Bestiary." if unknown.any?
+
     transaction do
       update!(overrides: monsters.empty? ? overrides.except("boss") : overrides.merge("boss" => monsters))
       reopen_room!(view["boss"]) unless campaign.pending_encounter&.dig("room") == view["boss"]

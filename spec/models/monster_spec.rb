@@ -59,6 +59,42 @@ RSpec.describe Monster do
     end
   end
 
+  it "stays in the Bestiary while an ability summons it, a table rolls it, a template makes it a boss or someone fights as it" do
+    sprite = create_monster(world, slug: "sprite")
+    expect(sprite.destroy).to be_truthy # nothing names it yet
+
+    rat = create_monster(world, slug: "rat")
+    create_ability(world, slug: "call_rat", target: "self", effects: [ { primitive: "summon", creature: "rat", duration: 2 } ])
+    world.encounter_tables.create!(name: "Sewers", slug: "sewers", terrain: "cave", tier: 1, entries: [ { weight: 1, monsters: { "rat" => 2 } } ])
+    expect(rat.destroy).to be(false)
+    expect(rat.errors.full_messages.to_sentence).to eq("Rat is still needed: Call rat summons it and Sewers rolls it. Change those first.")
+    expect(world.monsters.where(slug: "rat")).to exist
+
+    boss = create_monster(world, slug: "rat_king")
+    world.location_templates.create!(name: "Nest", slug: "nest", kind: "dungeon", config: { "boss" => { "rat_king" => 1 } })
+    expect(boss.destroy).to be(false)
+    expect(boss.errors.full_messages.to_sentence).to include("it is the boss of Nest")
+  end
+
+  it "takes only battle abilities in its script: a field ability is a move outside battle" do
+    appraise = base_world.abilities.field.first # the base world has field abilities, with its skills
+    monster = base_world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { use: appraise.slug } ])
+    expect(monster).not_to be_valid
+    expect(monster.errors[:ai_script]).to include("rule 1 uses #{appraise.slug}, a field ability, which can't be used in battle")
+  end
+
+  it "takes only battle abilities in its script (an unknown one is refused too)" do
+    monster = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { use: "appraise" } ])
+    expect(monster).not_to be_valid
+    expect(monster.errors[:ai_script]).to include("rule 1 uses appraise, which is not in the Grimoire")
+  end
+
+  it "keeps a rule's chance a percentage" do
+    monster = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { if: { chance: 150 }, use: "attack" } ])
+    expect(monster).not_to be_valid
+    expect(monster.errors[:ai_script]).to include("rule 1 chance must be 1 to 100")
+  end
+
   it "validates drops against the Armory" do
     create_item(world, slug: "potion", category: "consumable", stats: {}, target: "single_ally",
                        effects: [ { primitive: "heal", power: 30 } ])

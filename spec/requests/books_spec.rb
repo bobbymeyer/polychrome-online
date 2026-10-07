@@ -101,6 +101,10 @@ RSpec.describe "Books", type: :request do
     it "runs the full CRUD cycle" do
       get new_world_grimoire_ability_path(world)
       expect(response).to have_http_status(:ok)
+      # A Status effect offers the statuses it can give; those with a primitive of their own (charging, shield) come from it.
+      statuses = page.css("select[aria-label='Status 1'] option").map { |o| o["value"] }
+      expect(statuses).to include("poison", "doom", "haste")
+      expect(statuses).not_to include("charging", "shield", "down")
 
       post world_grimoire_abilities_path(world), params: { ability: form }
       ability = world.abilities.find_by!(slug: "bio")

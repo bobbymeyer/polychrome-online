@@ -455,6 +455,7 @@ module Battle
           raise ArgumentError, "#{id}: away lasts 1 to #{MAX_AWAY_TURNS} turns" if effect["duration"] && !effect["duration"].between?(1, MAX_AWAY_TURNS)
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !(known.include?(effect["type"]) || effect["type"] == "terrain")
         when "elemental", "physical", "jump"
+          raise ArgumentError, "#{id}: power must be a positive number" if effect["power"] && effect["power"] < 1
           if effect["against"]
             against_ok = STATUSES.include?(effect["against"]) || known.include?(effect["against"]) || AGAINST_TRAITS.include?(effect["against"])
             raise ArgumentError, "#{id}: a bonus can't be against #{effect['against']}" unless against_ok
@@ -477,6 +478,8 @@ module Battle
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" if effect["kind"] && !STATUSES.include?(effect["kind"])
         when "buff", "debuff"
           raise ArgumentError, "#{id}: cannot modify #{effect['stat']}" unless Stats::MODIFIABLE.include?(effect["stat"])
+        when "heal", "drain", "shield"
+          raise ArgumentError, "#{id}: power must be a positive number" if effect["power"] && effect["power"] < 1
         end
       end
     end

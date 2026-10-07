@@ -13,6 +13,8 @@ class Ability < ApplicationRecord
 
   has_many :job_levels, dependent: :restrict_with_error
   has_many :jobs, -> { distinct }, through: :job_levels
+  # A monster's script that uses it would break every battle it's in (Battle::State.build).
+  before_destroy :not_in_a_script
 
   normalizes :gesture, with: ->(value) { value.presence }
   # A field ability aims at no one in battle; the column wants something.
@@ -82,6 +84,16 @@ class Ability < ApplicationRecord
   end
 
   private
+
+  def not_in_a_script
+    return if destroyed_by_association # the whole world is going, books and all
+
+    users = monsters_using
+    return if users.empty?
+
+    errors.add(:base, "#{name} is still used by #{users.map(&:name).to_sentence}. Change their scripts first.")
+    throw :abort
+  end
 
   def summons_are_in_the_bestiary
     creatures = Array(effects).filter_map { |e| e["creature"] if e["primitive"] == "summon" }

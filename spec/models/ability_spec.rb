@@ -84,6 +84,23 @@ RSpec.describe Ability do
     expect(ability.monsters_using).to eq([ user ])
   end
 
+  it "cannot be deleted while a monster's script uses it" do
+    ability = create_ability(world)
+    create_monster(world, slug: "imp", ai_script: [ { use: "fire" } ])
+    expect(ability.destroy).to be(false)
+    expect(ability.errors.full_messages.to_sentence).to eq("Fire is still used by Imp. Change their scripts first.")
+    expect(world.abilities.where(slug: "fire")).to exist
+  end
+
+  it "wants a positive power on damage, healing, draining and shields" do
+    ability = world.abilities.new(name: "Neg", kind: "magic", target: "single_enemy", effects: [ { primitive: "physical", power: -50 } ])
+    expect(ability).not_to be_valid
+    expect(ability.errors[:effects]).to include("power must be a positive number")
+    ability.effects = [ { primitive: "heal", power: 0 } ]
+    expect(ability).not_to be_valid
+    expect(ability.errors[:effects]).to include("power must be a positive number")
+  end
+
   it "cannot be deleted while a job teaches it" do
     ability = create_ability(world)
     job = create_job(world)
