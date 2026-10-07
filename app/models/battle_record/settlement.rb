@@ -99,16 +99,16 @@ module BattleRecord::Settlement
 
   # Items used in battle come out of the bag. Returns { "Potion" => 2 }.
   def use_up_items!
-    carried = initial_state.fetch("items", {})
+    carried = BattleState.new(initial_state).items
     return {} if carried.empty?
 
     items = world.items.where(slug: carried.keys).index_by(&:slug)
     carried.each_with_object({}) do |(slug, item), used|
-      n = item["count"] - state.dig("items", slug, "count").to_i
+      n = item.count - (field.item(slug)&.count).to_i
       next unless n.positive? && items[slug]
 
       campaign.use_items!(items[slug], n)
-      used[item["name"]] = n
+      used[item.name] = n
     end
   end
 

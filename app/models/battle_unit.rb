@@ -56,9 +56,9 @@ class BattleUnit
   def status_kinds = statuses.map { |status| status["kind"] }
   def status(kind) = statuses.find { |status| status["kind"] == kind }
 
-  # Its commands' ids, and what it did last (the default when its clock runs out).
+  # Its abilities' ids (BattleState#abilities_of has them), and what it did last (the default when its clock runs out).
   def abilities = @data["abilities"]
-  def last_command = @data["last_command"]
+  def last_command = (command = @data["last_command"]) && BattleCommand.new(command)
   def signature = @data["signature"]
   def attack_type = @data["attack_type"]
 

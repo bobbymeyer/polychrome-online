@@ -19,7 +19,7 @@
       <%= form_with url: battle_actions_path(@battle), scope: :gm, class: "book-form ruling" do |f| %>
         <%= f.hidden_field :op, value: "rule" %>
         <%= f.hidden_field :unit, value: id %>
-        <p class="ruling__idea"><strong><%= field.unit_name(id) %></strong> tries: “<%= idea["text"] %>”<%= " at #{field.unit_name(idea['target'])}" if idea["target"] %></p>
+        <p class="ruling__idea"><strong><%= field.unit_name(id) %></strong> tries: “<%= idea.text %>”<%= " at #{field.unit_name(idea.target)}" if idea.target %></p>
         <%# Three things decide most rulings: what they roll, how hard it is, what happens if it works. The rest
             (how much, a type, a status, on whom, the two lines) waits behind More with its usual answers. %>
         <div class="field-row ruling__three">
@@ -41,7 +41,7 @@
             <div class="field"><%= f.label :status, "Status", for: "rule_status_#{id}" %><%= f.select :status, Battle::STATUSES.map { |st| [ term(st), st ] }, { include_blank: true }, id: "rule_status_#{id}" %></div>
             <div class="field">
               <%= f.label :aim, "On", for: "rule_aim_#{id}" %>
-              <%= f.select :aim, [ [ idea["target"] ? "Their target" : "One enemy", "single_enemy" ], [ "Every enemy", "all_enemies" ], [ "One ally", "single_ally" ], [ "The whole party", "all_allies" ], [ "Themselves", "self" ] ], {}, id: "rule_aim_#{id}" %>
+              <%= f.select :aim, [ [ idea.target ? "Their target" : "One enemy", "single_enemy" ], [ "Every enemy", "all_enemies" ], [ "One ally", "single_ally" ], [ "The whole party", "all_allies" ], [ "Themselves", "self" ] ], {}, id: "rule_aim_#{id}" %>
             </div>
           </div>
           <div class="field-row">

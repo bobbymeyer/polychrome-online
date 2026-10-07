@@ -29,7 +29,8 @@ RSpec.describe BattleState do
     after, = apply(state, command("bartz", "attack", "goblin_a"))
     after, = apply(after, { type: "command", actor: "vivi", command: { kind: "custom", text: "Kick the brazier" } })
     field = described_class.new(after)
-    expect(field.command_for(field.unit("bartz"))).to include("ability" => "attack", "target" => "goblin_a")
+    expect(field.command_for(field.unit("bartz"))).to have_attributes(ability?: true, ability: "attack", target: "goblin_a", custom?: false)
+    expect(field.command_for("vivi")).to have_attributes(custom?: true, text: "Kick the brazier", ruled?: false, awaiting_ruling?: true)
     expect(field.chosen?(field.unit("rosa"))).to be(false)
     expect(field.ideas_awaiting_ruling.keys).to eq([ "vivi" ])
     expect(field.awaiting_input).not_to include("bartz", "vivi")
@@ -42,5 +43,22 @@ RSpec.describe BattleState do
     expect(field.target_options(vivi, fire)).to include("goblin_a")
     vivi.to_h["mp"] = 0
     expect(field.usable?(vivi, fire)).to be(false)
+  end
+
+  it "reads what the battle copied in from the books: a unit's abilities in its order, and the party's items" do
+    field = described_class.new(build_battle(items: { "potion" => { "id" => "potion", "name" => "Potion", "target" => "single_ally", "count" => 2,
+                                                                    "effects" => [ { "primitive" => "heal", "power" => 30 } ] } }))
+    vivi = field.unit("vivi")
+    expect(field.abilities_of(vivi).map(&:id)).to eq(vivi.abilities)
+    expect(field.ability("fire")).to have_attributes(name: "Fire", ability?: true, item?: false, magic?: true, target: "single_enemy")
+    expect(field.item("potion")).to have_attributes(name: "Potion", item?: true, count: 2, target: "single_ally")
+    expect(field.target_options(vivi, field.item("potion"))).to include("bartz", "vivi")
+    expect(field.item_name("elixir")).to eq("Elixir")
+  end
+
+  it "reads a unit's last command, its default when the clock runs out" do
+    expect(field.unit("bartz").last_command).to be_nil
+    finished, = apply(state, { type: "timeout" })
+    expect(described_class.new(finished).unit("bartz").last_command).to have_attributes(ability?: true, ability: "attack")
   end
 end

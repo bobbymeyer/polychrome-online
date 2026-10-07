@@ -228,9 +228,9 @@ RSpec.describe "Battle screen", type: :request do
     battle.campaign.update!(known_affinities: { "goblin" => { "types" => %w[normal], "fire" => "weak" } })
     knight = battle.unit(bartz)
     goblin = battle.unit("goblin_a")
-    fire = battle.state["abilities"]["fire"] || { "effects" => [ { "primitive" => "elemental", "type" => "fire" } ] }
+    fire = battle.field.ability("fire") || BattleMove.new({ "effects" => [ { "primitive" => "elemental", "type" => "fire" } ] })
     expect(helper_edge_note(battle, knight, fire, goblin)).to eq("Weak!")
-    expect(helper_edge_note(battle, knight, { "effects" => [ { "primitive" => "elemental", "type" => "water" } ] }, goblin)).to be_nil # not seen
+    expect(helper_edge_note(battle, knight, BattleMove.new({ "effects" => [ { "primitive" => "elemental", "type" => "water" } ] }), goblin)).to be_nil # not seen
   end
 
   def helper_edge_note(battle, actor, move, target)

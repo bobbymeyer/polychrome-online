@@ -33,7 +33,7 @@ module BattleLogHelper
     when "mp_restored" then "#{name.('target')} recovers #{event['amount']} #{word('mp')}."
     when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
     when "cast"
-      verb = field.ability(event["ability"])&.dig("kind") == "magic" ? "casts" : "uses"
+      verb = field.ability(event["ability"])&.magic? ? "casts" : "uses"
       "#{name.('actor')} #{verb} #{field.ability_name(event['ability'])}."
     when "item_used" then "#{name.('actor')} uses #{item_phrase(event['name'])}."
     when "crit" then "Critical hit!#{dice_note(event)}"

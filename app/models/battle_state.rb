@@ -34,26 +34,30 @@ class BattleState
 
   def unit_name(id) = unit(id)&.name || id.to_s.humanize
 
-  # The round's commands so far, by unit id: { "kind", "ability", "target", ... }.
-  def commands = @data["inputs"] || {}
+  # The round's commands so far, by unit id (BattleCommand).
+  def commands = @commands ||= (@data["inputs"] || {}).transform_values { |command| BattleCommand.new(command) }
   def command_for(unit) = commands[unit.is_a?(BattleUnit) ? unit.id : unit]
   def chosen?(unit) = commands.key?(unit.id)
 
-  # Players' ideas ("Try something") the GM hasn't ruled on: the round, and its clock, wait for them.
-  def ideas_awaiting_ruling = commands.select { |_, command| command["kind"] == "custom" && !command["ruling"] }
+  # Players' ideas ("Try something") the GM hasn't ruled on, by unit id: the round, and its clock, wait for them.
+  def ideas_awaiting_ruling = commands.select { |_, command| command.awaiting_ruling? }
 
-  # The books' entries the battle copied in, by id.
-  def abilities = @data["abilities"]
+  # What the battle copied in from the books (BattleMove): its abilities, and the party's items.
+  def abilities = @abilities ||= @data["abilities"].transform_values { |ability| BattleMove.new(ability) }
   def ability(id) = abilities[id]
-  def items = @data.fetch("items", {})
+  def items = @items ||= @data.fetch("items", {}).transform_values { |item| BattleMove.new(item, item: true) }
+  def item(id) = items[id]
 
-  def ability_name(id) = ability(id)&.dig("name") || id.to_s.humanize
-  def item_name(id) = items.dig(id, "name") || id.to_s.humanize
+  def ability_name(id) = ability(id)&.name || id.to_s.humanize
+  def item_name(id) = item(id)&.name || id.to_s.humanize
+
+  # A unit's own abilities, in its order.
+  def abilities_of(unit) = unit.abilities.filter_map { |id| ability(id) }
 
   # The engine's answers (Battle::State), asked of this state.
   def awaiting_input = Battle::State.awaiting_input(@data)
   def able_to_act?(unit) = Battle::State.able_to_act(@data).include?(unit.id)
-  def usable?(unit, ability) = Battle::State.usable?(unit.to_h, ability)
-  def target_options(unit, move) = Battle::State.target_options(@data, unit.to_h, move)
+  def usable?(unit, ability) = Battle::State.usable?(unit.to_h, ability.to_h)
+  def target_options(unit, move) = Battle::State.target_options(@data, unit.to_h, move.to_h)
   def items_left(item_id, except: nil) = Battle::State.items_left(@data, item_id, except: except)
 end

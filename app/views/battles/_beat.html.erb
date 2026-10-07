@@ -4,7 +4,7 @@
 <% @world ||= battle.world # broadcast, so the log speaks the world's words (VocabularyHelper) %>
 <div data-controller="battle-beat" data-battle-beat-position-value="<%= position %>"
      data-battle-beat-events-value="<%= events.to_json %>"
-     data-battle-beat-abilities-value="<%= battle.field.abilities.transform_values { |a| a.slice('name', 'gesture', 'kind') }.to_json %>">
+     data-battle-beat-abilities-value="<%= battle.field.abilities.transform_values { |a| a.to_h.slice('name', 'gesture', 'kind') }.to_json %>">
   <template data-battle-beat-target="before"><%= render "battles/board", battle: battle, field: BattleState.new(before) %></template>
   <template data-battle-beat-target="after"><%= render "battles/board", battle: battle, field: battle.field %></template>
   <template data-battle-beat-target="log"><% field = battle.field %><% events.each do |event| %><li><%= battle_log_line(event, field) %></li><% end %></template>

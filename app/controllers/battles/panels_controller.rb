@@ -11,7 +11,7 @@ class Battles::PanelsController < ApplicationController
   def show
     field = @battle.field
     @choosing = field.ability(params[:ability]) if params[:ability]
-    @choosing = field.items[params[:item]]&.merge("kind" => "item") if params[:item]
+    @choosing = field.item(params[:item]) if params[:item]
     @item_menu = params[:items].present?
     @trying = params[:custom].present?
     render layout: false
