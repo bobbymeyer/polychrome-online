@@ -114,7 +114,7 @@ Battle::Resolver.apply(state, action) -> [new_state, events]
 ```
 
 - `state` is a plain hash/struct: parties, enemies, turn order, statuses, RNG state.
-- RNG is `Random.new(seed)` stored on the battle; RNG state advances deterministically so replays are exact.
+- The RNG is seeded and its whole state lives in the battle state (`Battle::Rng`, a 32-bit mulberry32 whose state is one integer, `state["rng"]`: Ruby's `Random` can't hand its state over as data). It advances deterministically, so a battle resumes exactly from any saved state and replays are exact.
 - `events` are the contract with the view: `attack`, `damage`, `miss`, `crit`, `cast`, `heal`, `status_applied`, `status_expired`, `ko`, `turn_start`, `turn_end`, `flee`, `victory`, `defeat`, `gm_override`.
 - Enemy AI: per-monster ordered condition/action lists evaluated by the resolver (FF-style: "if HP < 30% use X, else attack").
 - GM override is an action type the resolver accepts and logs. It goes into the replay, never around it.
