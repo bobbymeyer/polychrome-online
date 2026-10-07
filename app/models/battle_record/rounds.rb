@@ -25,16 +25,19 @@ module BattleRecord::Rounds
   # If everyone still standing is on auto, nothing is filled: the round
   # waits for the GM or the timer, so a battle never plays itself out.
   def auto_fill!
-    return if over?
+    command = auto_command or return
 
-    return if everyone_on_auto?
-
-    units = awaiting_input & auto_units
-    return if units.empty?
-
-    apply!({ "type" => "gm_override", "op" => "auto", "units" => units }, actor: "gm", if_round: round)
+    apply!(command, actor: "gm", if_round: round)
   rescue Battle::InvalidAction
     nil # someone sat down and chose for one of them first; the timer or the GM covers the rest
+  end
+
+  # The GM's auto override for the units on auto still to choose this round, or nil.
+  def auto_command
+    return if over? || everyone_on_auto?
+
+    units = awaiting_input & auto_units
+    { "type" => "gm_override", "op" => "auto", "units" => units } if units.any?
   end
 
   def set_auto!(unit_id, on)

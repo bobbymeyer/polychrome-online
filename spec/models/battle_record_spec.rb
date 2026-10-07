@@ -200,6 +200,27 @@ RSpec.describe BattleRecord do
     expect(battle.over? || battle.awaiting_input.any?).to be(true)
   end
 
+  it "stops running rounds by itself after QUIET_ROUNDS, one beat broadcast for each, when nobody can ever choose" do
+    battle = start_battle(goblins: 1, input_seconds: 30)
+    battle.party.each do |unit|
+      battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => unit.id, "value" => 9999 }, actor: "gm")
+      battle.apply!({ "type" => "gm_override", "op" => "add_status", "unit" => unit.id, "status" => "stop", "turns" => 99 }, actor: "gm")
+    end
+    goblin = battle.enemies.sole.id
+    battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => goblin, "value" => 9999 }, actor: "gm")
+    battle.apply!({ "type" => "gm_override", "op" => "add_status", "unit" => goblin, "status" => "stop", "turns" => 99 }, actor: "gm")
+    round = battle.round
+    actions = battle.battle_actions.count
+
+    expect { battle.apply!({ "type" => "gm_override", "op" => "execute_round" }, actor: "gm") }
+      .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_beats")).exactly(BattleRecord::QUIET_ROUNDS + 1).times
+    expect(battle.reload.round).to eq(round + 1 + BattleRecord::QUIET_ROUNDS)
+    expect(battle.battle_actions.count - actions).to eq(1 + BattleRecord::QUIET_ROUNDS)
+    expect(battle.battle_actions.last.payload).to include("type" => "timeout")
+    expect(battle).not_to be_over
+    expect(battle.awaiting_input).to be_empty # the round waits for the timer, or the GM
+  end
+
   describe "bosses" do
     it "calls everyone at the table into the battle when it starts" do
       campaign = create_campaign

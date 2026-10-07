@@ -125,52 +125,21 @@ class BattleRecord < ApplicationRecord
   end
 
   # Apply one action through the resolver, persist it with its events, and
-  # broadcast the beat. Raises Battle::InvalidAction (nothing is saved).
+  # broadcast the beat; then play on with whatever the battle does by
+  # itself (#play_on!). Raises Battle::InvalidAction (nothing is saved).
   # `if_round` makes the action a no-op (returns nil) if the battle has
   # moved on, which is how a stale input timer is ignored.
+  # Returns the state before the action and its events.
   def apply!(action, actor:, if_round: nil)
-    before = events = record = nil
-    with_lock do
-      return nil if if_round && (round != if_round || over?)
-
-      before = state
-      after, events = Battle::Resolver.apply(before, action)
-      record = battle_actions.create!(position: next_position(:battle_actions), actor: actor,
-                                      payload: Battle::State.normalize(action))
-      log_events(record, events)
-      self.state = after
-      self.status = after["status"]
-      self.round = after["round"]
-      self.deadline_at = nil if over?
-      save!
-      settle!(events) if over?
-    end
-    campaign&.learn_from!(events, state)
-    # Settling saves again, so by the commit the status change isn't the last one (refresh_table_header's
-    # condition misses it): the table and the Ready buttons hear it's over from here.
-    refresh_table_header if over? && before["status"] == "input"
-    new_round = !over? && round != before["round"]
-    new_round ? open_round! : resume_clock!
-    broadcast_beat(before, events, record.position)
-    if new_round
-      auto_fill!
-      run_if_nobody_can_choose!
-    end
-    [ before, events ]
+    played = play!(action, actor: actor, if_round: if_round) or return nil
+    play_on! if opened_round?(played)
+    played
   end
 
   # A round nobody can choose anything in (everyone asleep, confused or
   # stopped) runs at once, not after the timer, and so on until someone
-  # can choose again (each run is a new round, which comes back here).
-  # Bounded, in case a battle never lets anyone.
+  # can choose again. Bounded, in case a battle never lets anyone.
   QUIET_ROUNDS = 10
-
-  def run_if_nobody_can_choose!
-    return @quiet_rounds = 0 if over? || awaiting_input.any?
-
-    @quiet_rounds = @quiet_rounds.to_i + 1
-    apply!({ "type" => "timeout" }, actor: "gm", if_round: round) if @quiet_rounds <= QUIET_ROUNDS
-  end
 
   # The bosses in this fight, for their entrance: the monsters marked as
   # bosses, or, in a dungeon's boss room, the strongest there.
@@ -211,6 +180,58 @@ class BattleRecord < ApplicationRecord
   end
 
   private
+
+  # One beat: the action through the resolver inside the lock, its events
+  # logged, the clock moved on, and the beat broadcast. Returns [before,
+  # events], or nil if `if_round` says the battle has moved on.
+  def play!(action, actor:, if_round: nil)
+    before = events = record = nil
+    with_lock do
+      return nil if if_round && (round != if_round || over?)
+
+      before = state
+      after, events = Battle::Resolver.apply(before, action)
+      record = battle_actions.create!(position: next_position(:battle_actions), actor: actor,
+                                      payload: Battle::State.normalize(action))
+      log_events(record, events)
+      self.state = after
+      self.status = after["status"]
+      self.round = after["round"]
+      self.deadline_at = nil if over?
+      save!
+      settle!(events) if over?
+    end
+    campaign&.learn_from!(events, state)
+    # Settling saves again, so by the commit the status change isn't the last one (refresh_table_header's
+    # condition misses it): the table and the Ready buttons hear it's over from here.
+    refresh_table_header if over? && before["status"] == "input"
+    opened_round?([ before, events ]) ? open_round! : resume_clock!
+    broadcast_beat(before, events, record.position)
+    [ before, events ]
+  end
+
+  # Whether a beat ([before, events]) opened a new round of a battle still on.
+  def opened_round?((before, _events)) = !over? && round != before["round"]
+
+  # What the battle does by itself once a round opens, beat by beat: the
+  # units on auto choose (#auto_command), and a round nobody can choose in
+  # runs at once. Each can open another round, which goes round again.
+  def play_on!
+    quiet = 0
+    loop do
+      auto = auto_command
+      played = begin
+        play!(auto, actor: "gm", if_round: round) if auto
+      rescue Battle::InvalidAction
+        nil # someone sat down and chose for one of them first; the timer or the GM covers the rest
+      end
+      next if played && opened_round?(played)
+      break if over? || awaiting_input.any? || (quiet += 1) > QUIET_ROUNDS
+
+      played = play!({ "type" => "timeout" }, actor: "gm", if_round: round)
+      break unless played && opened_round?(played)
+    end
+  end
 
   # The table's "… is on" button follows the current battle for everyone,
   # and the campaign's documents list it. Only when it starts or ends: a
