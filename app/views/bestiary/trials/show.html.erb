@@ -27,6 +27,9 @@
 <% else %>
   <p class="muted">Nothing: it never got a turn.</p>
 <% end %>
+<% if @trial.became.any? %>
+  <p>Became <%= @trial.became.map { |name, round| "#{name} in round #{round}" }.to_sentence %>.</p>
+<% end %>
 <% if @trial.fallen.any? %>
   <p>Fell: <%= @trial.fallen.map { |name, round| "#{name} in round #{round}" }.to_sentence %>.</p>
 <% end %>

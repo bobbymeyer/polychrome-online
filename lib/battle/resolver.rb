@@ -509,7 +509,8 @@ module Battle
       elsif ctx.status?(unit, "berserk")
         use_ability(unit, own(unit, ctx.ability("attack")), nil)
       elsif unit["side"] == "enemy" || unit["guest"]
-        ability, target = AI.choose(ctx, unit)
+        ability, target, rule = AI.choose(ctx, unit)
+        AI.fire(ctx, unit, rule)
         use_ability(unit, own(unit, ability), target)
       elsif cmd.nil?
         ctx.emit(:turn_skipped, unit: unit["id"], reason: "no_command")
@@ -627,7 +628,9 @@ module Battle
       return unless ability && ability.fetch("charge", 0).zero? && ability["effects"].none? { |e| SINGLE_GO.include?(e["primitive"]) }
 
       ctx.emit(:turn_start, unit: unit["id"], quick: true, **(reason ? { reason: reason } : {}))
-      if chosen then use_ability(unit, own(unit, ability), chosen.last)
+      if chosen
+        AI.fire(ctx, unit, chosen[2])
+        use_ability(unit, own(unit, ability), chosen[1])
       elsif ctx.status?(unit, "berserk") then use_ability(unit, own(unit, ability), nil)
       else perform(unit, cmd)
       end
@@ -811,7 +814,8 @@ module Battle
       while (creature = ctx.arrivals.shift)
         break if ctx.over?
 
-        ability, target = AI.choose(ctx, creature)
+        ability, target, rule = AI.choose(ctx, creature)
+        AI.fire(ctx, creature, rule)
         use_ability(creature, own(creature, ability), target)
         ctx.check_end
         count_down_summon(creature)

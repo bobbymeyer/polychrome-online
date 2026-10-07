@@ -31,6 +31,8 @@ module BattleLogHelper
     when "counter" then "#{name.('actor')} strikes back!#{dice_note(event)}"
     when "second_wind" then "#{name.('target')} gets back up! (Second Wind)"
     when "mp_restored" then "#{name.('target')} recovers #{event['amount']} #{word('mp')}."
+    when "says" then "#{name.('actor')}: “#{event['line']}”"
+    when "phase" then "#{event['was']} becomes #{event['name']}!#{" “#{event['line']}”" if event['line'].present?}"
     when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
     when "cast"
       verb = field.ability(event["ability"])&.magic? ? "casts" : "uses"

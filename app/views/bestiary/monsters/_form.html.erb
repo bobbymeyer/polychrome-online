@@ -68,12 +68,14 @@
 
   <fieldset class="panel">
     <legend>AI script</legend>
-    <p class="hint">First matching rule wins; all filled conditions must hold. With no rule matching, it attacks. Leave "Use" blank to remove a row.</p>
+    <p class="hint">First matching rule wins; all filled conditions must hold. With no rule matching, it attacks. Leave "Use" blank to remove a row.
+      "Once" fires a rule one time a battle (a self-buff that isn't recast, a move it has one of). "Says" is a line said as the rule fires:
+      written on the rule that uses a charged move, it's the warning before the blow.</p>
     <%# Battle abilities: a field ability is a move outside battle (FieldUse), never in one. %>
     <% abilities = [["Attack", "attack"]] + @world.abilities.in_battle.order(:name).map { |a| [a.name, a.slug] } %>
     <table class="grid-form" data-controller="rows">
       <thead>
-        <tr><th>Own HP &lt; %</th><th>Ally HP &lt; %</th><th>Ally down</th><th>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th></tr>
+        <tr><th>Own HP &lt; %</th><th>Ally HP &lt; %</th><th>Ally down</th><th>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th><th>Once</th><th>Says</th></tr>
       </thead>
       <tbody data-rows-target="body">
         <% rows_with_blanks(entry.ai_script).each_with_index do |rule, i| %>
@@ -90,10 +92,37 @@
             <td><%= number_field_tag name.(:chance), c["chance"], min: 1, max: 100, "aria-label": "Chance, rule #{i + 1}" %></td>
             <td><%= select_tag name.(:use), options_for_select(abilities, rule["use"]), include_blank: true, "aria-label": "Use, rule #{i + 1}" %></td>
             <td><%= select_tag name.(:target), options_for_select(Battle::AI::STRATEGIES.map { |s| [term(s), s] }, rule["target"]), include_blank: "Default", "aria-label": "Target, rule #{i + 1}" %></td>
+            <td>
+              <%= hidden_field_tag name.(:once), "0", id: nil %>
+              <%= check_box_tag name.(:once), "1", rule["once"], id: nil, "aria-label": "Once, rule #{i + 1}" %>
+            </td>
+            <td><%= text_field_tag name.(:say), rule["say"], maxlength: 200, placeholder: "Its throat fills with light…", "aria-label": "Says, rule #{i + 1}" %></td>
           </tr>
         <% end %>
       </tbody>
-      <tfoot><tr><td colspan="7"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
+      <tfoot><tr><td colspan="9"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
+    </table>
+  </fieldset>
+
+  <fieldset class="panel">
+    <legend>Phases</legend>
+    <p class="hint">Below that share of its HP it becomes the entry named: that entry's name, look, stats and script, with the HP it has left
+      (plus what the phase restores). In order, each line below the last. The entry it becomes is written as any other: a second form is
+      its own Bestiary page. Leave "Becomes" blank to remove a row.</p>
+    <table class="grid-form" data-controller="rows">
+      <thead><tr><th>HP below %</th><th>Becomes</th><th>Says</th><th>Restores % HP</th></tr></thead>
+      <tbody data-rows-target="body">
+        <% rows_with_blanks(entry.phases, blanks: 1).each_with_index do |phase, i| %>
+          <% name = ->(key) { json_field_name(f, :phases, i, key) } %>
+          <tr>
+            <td><%= number_field_tag name.(:hp_below), phase["hp_below"], min: 1, max: 99, "aria-label": "HP below, phase #{i + 1}" %></td>
+            <td><%= select_tag name.(:becomes), options_for_select(monster_options(@world.monsters.where.not(id: entry.id)), phase["becomes"]), include_blank: true, "aria-label": "Becomes, phase #{i + 1}" %></td>
+            <td><%= text_field_tag name.(:say), phase["say"], maxlength: 200, placeholder: "You wake what slept. So be it.", "aria-label": "Says, phase #{i + 1}" %></td>
+            <td><%= number_field_tag name.(:restore), phase["restore"] || 0, min: 0, max: 100, "aria-label": "Restores, phase #{i + 1}" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot><tr><td colspan="4"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
     </table>
   </fieldset>
 

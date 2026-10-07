@@ -81,15 +81,28 @@ module Seeds
                           { if: { round_multiple: 4 }, use: "war_cry" }, { use: "attack", target: "lowest_hp" } ],
               drops: [ { item: "bronze_armor", chance: 50 }, { item: "power_ring", chance: 5 } ],
               description: "Guards the pass. A boss for a party of about level 8. Every third round it puts its whole weight into one blow: be ready." },
+      # The wyrm's second form (Monster#phases), seeded first, since the wyrm names it: the fight's last half, with the HP it had left and a tenth back.
+      crystal_wyrm_unbound: { boss: true, name: "Crystal Wyrm, Unbound", level: 10,
+                              stats: stats(max_hp: 1600, max_mp: 200, str: 38, mag: 36, spr: 20, atk: 36, agi: 18, def: 14, mdef: 14),
+                              base_type: "rock", affinities: { electric: "weak" },
+                              status_immune: %w[sleep paralyze silence poison slow], exp: 1680, gil: 2500, abp: 16,
+                              ai_script: [ { if: { self_hp_below: 20, chance: 50 }, use: "cura", once: true, say: "Not yet. Not to you." },
+                                          { if: { round_multiple: 3 }, use: "shard_storm", say: "Shards crawl up its throat." },
+                                          { if: { chance: 40 }, use: "thundara" },
+                                          { use: "attack" } ],
+                              drops: [ { item: "power_ring", chance: 100 } ],
+                              description: "The wyrm with the crystal cracked open: faster, harder, and done healing. What the first form becomes." },
       crystal_wyrm: { boss: true, boss_line: "I have slept on this fire for a thousand years. You will not take it from me.", name: "Crystal Wyrm", level: 10,
                       stats: stats(max_hp: 1600, max_mp: 200, str: 32, mag: 30, spr: 20, atk: 30, agi: 14, def: 16, mdef: 16),
                       base_type: "rock", affinities: { electric: "weak" },
                       status_immune: %w[sleep paralyze silence poison], exp: 1680, gil: 2500, abp: 16,
-                      ai_script: [ { if: { self_hp_below: 25, chance: 50 }, use: "cura" },
-                                  { if: { round_multiple: 4 }, use: "crystal_breath" }, { if: { chance: 30 }, use: "thunder" },
+                      ai_script: [ { if: { round_multiple: 4 }, use: "crystal_breath", say: "The wyrm's throat fills with light." },
+                                  { if: { chance: 30 }, use: "thunder" },
                                   { use: "attack" } ],
+                      phases: [ { hp_below: 50, becomes: "crystal_wyrm_unbound", say: "You wake what slept. So be it.", restore: 10 } ],
                       drops: [ { item: "power_ring", chance: 100 } ],
-                      description: "Grew around a shard of the fire crystal. The first real boss." }
+                      description: "Grew around a shard of the fire crystal. The first real boss: it says when its breath is coming, and at half its " \
+                                   "strength it comes unbound." }
     }.freeze
   end
 end

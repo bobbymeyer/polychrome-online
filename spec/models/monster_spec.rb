@@ -95,6 +95,37 @@ RSpec.describe Monster do
     expect(monster.errors[:ai_script]).to include("rule 1 chance must be 1 to 100")
   end
 
+  describe "phases" do
+    let!(:second) { create_monster(world, slug: "goblin_king", name: "Goblin King", boss: true) }
+
+    it "takes form rows, checks them against the Bestiary and keeps them in order, and exports each form for the engine" do
+      create_ability(world)
+      monster = create_monster(world, ai_script: [ { use: "fire", once: "1", say: " Burn. " }, { use: "attack" } ],
+                                      phases: [ { hp_below: "50", becomes: "goblin_king", say: "Now you see.", restore: "10" }, { becomes: "" } ])
+      expect(monster.ai_script.first).to eq("use" => "fire", "once" => true, "say" => "Burn.")
+      expect(monster.phases).to eq([ { "hp_below" => 50, "becomes" => "goblin_king", "say" => "Now you see.", "restore" => 10 } ])
+      expect(monster.forms).to eq([ second ])
+      expect(second.form_of).to eq([ monster ])
+
+      spec = monster.to_engine
+      expect(spec["phases"].first).to include("hp_below" => 50, "say" => "Now you see.", "restore" => 10)
+      expect(spec["phases"].first["becomes"]).to include("name" => "Goblin King", "boss" => true, "image" => { "book" => "monsters", "slug" => "goblin_king" })
+      state = world.battle(seed: 1, party: [ { id: "hero", stats: monster_stats(max_hp: 200) } ], monsters: { "goblin" => 1 })
+      expect(state["units"].last["phases"].first["becomes"]["name"]).to eq("Goblin King")
+
+      bad = world.monsters.new(name: "Blob", stats: monster_stats, phases: [ { hp_below: 50, becomes: "nobody" }, { hp_below: 60, becomes: "goblin_king", restore: 500 } ])
+      expect(bad).not_to be_valid
+      expect(bad.errors[:phases]).to include(/phase 1 becomes nobody, which is not in the Bestiary/, /phase 2 restore must be 0 to 100/, /in order/)
+      expect(world.monsters.new(name: "Self", slug: "self", stats: monster_stats, phases: [ { hp_below: 50, becomes: "self" } ])).not_to be_valid
+    end
+
+    it "keeps a form in the Bestiary while something becomes it" do
+      create_monster(world, phases: [ { hp_below: 50, becomes: "goblin_king" } ])
+      expect(second.destroy).to be(false)
+      expect(second.errors.full_messages.to_sentence).to include("it is a form of Goblin")
+    end
+  end
+
   it "validates drops against the Armory" do
     create_item(world, slug: "potion", category: "consumable", stats: {}, target: "single_ally",
                        effects: [ { primitive: "heal", power: 30 } ])

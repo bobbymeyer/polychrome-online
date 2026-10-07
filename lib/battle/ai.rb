@@ -13,15 +13,23 @@ module Battle
   # ally_ko (true), round_multiple (n), chance (percent).
   # Target strategies: random (default for opponents), lowest_hp (default
   # for allies), highest_hp, self.
+  #
+  # A rule can be "once" => true (it fires once a battle: a self-buff that
+  # isn't recast every turn, a one-time move) and "say" => "…" (a line the
+  # creature says as the rule fires: the telegraph before a charged blow,
+  # the taunt at low HP). The resolver marks fired rules on the unit
+  # ("fired", by index) and emits the line; choosing changes nothing.
   module AI
     CONDITIONS = %w[self_hp_below ally_hp_below ally_ko round_multiple chance].freeze
     STRATEGIES = %w[random lowest_hp highest_hp self].freeze
 
     module_function
 
-    # Returns [ability, target_id_or_nil]. Falls back to Attack.
+    # Returns [ability, target_id_or_nil, rule_index_or_nil]. Falls back to Attack.
     def choose(ctx, unit)
-      unit["ai"].each do |rule|
+      unit["ai"].each_with_index do |rule, index|
+        next if rule["once"] && unit.fetch("fired", []).include?(index)
+
         ability = ctx.state["abilities"][rule["use"]]
         next unless ability && ctx.usable?(unit, ability)
         next unless conditions_met?(ctx, unit, rule.fetch("if", {}))
@@ -29,10 +37,17 @@ module Battle
         target = pick_target(ctx, unit, ability, rule["target"])
         next if target == :none
 
-        return [ ability, target ]
+        return [ ability, target, index ]
       end
 
-      [ ctx.ability("attack"), nil ]
+      [ ctx.ability("attack"), nil, nil ]
+    end
+
+    # The rule chosen is used: one that fires once is spent, and what it says is said.
+    def fire(ctx, unit, index)
+      rule = index && unit["ai"][index] or return
+      (unit["fired"] ||= []) << index if rule["once"]
+      ctx.emit(:says, actor: unit["id"], line: rule["say"]) unless rule["say"].to_s.empty?
     end
 
     def conditions_met?(ctx, unit, conditions)

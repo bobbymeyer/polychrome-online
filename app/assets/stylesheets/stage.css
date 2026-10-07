@@ -600,6 +600,14 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
 }
 .boss-card__name { font: var(--display); font-size: clamp(48px, 11vw, 136px); letter-spacing: -0.05em; text-align: center; text-shadow: 6px 6px 0 var(--ink); }
 
+/* A boss's next form: the boss-down slab's colour, thrown the other way. */
+.banner--phase {
+  left: -4%; right: -4%; padding: 10px 8%; rotate: -3deg; top: 30%;
+  background: var(--wine-red); color: var(--paper); font-size: clamp(32px, 7vw, 84px);
+  box-shadow: 0 -6px 0 var(--ink), 0 10px 0 var(--ink);
+}
+/* What a creature says as its rule fires: an ink plate, read like a line. */
+.caption--says { background: var(--ink); color: var(--paper); font-style: italic; border-bottom-color: var(--wine-red); }
 .banner--boss-down {
   left: -4%; right: -4%; padding: 10px 8%; rotate: 3deg; top: 62%;
   background: var(--wine-red); color: var(--paper); font-size: clamp(32px, 7vw, 84px);
@@ -1067,7 +1075,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
   /* Nobody hurt, nothing to watch: the strip comes in with the first hit. */
   .party-strip:has(.is-hurt, .is-ko) { display: grid; }
   /* The end of a fight lands in the part of the screen the pinned panel leaves open. */
-  .battle--play :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down, .banner--all-out) {
+  .battle--play :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down, .banner--all-out, .banner--phase) {
     position: fixed; top: 22vh; z-index: 35; font-size: 56px;
   }
   /* One More too: above the pinned menu, not under it, across the whole width. */

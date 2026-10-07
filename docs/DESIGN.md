@@ -75,6 +75,12 @@ deliberate divergence from much of what follows, and where the two disagree the 
   the frame instead of beside it, so the frame keeps its width. On a phone up to five stand abreast.
   The frame leaves room under it for the commands, and the menu never scrolls the stage away while
   the stage is speaking (a boss's entrance, a line in its box).
+- **Phases and telegraphs.** What a creature says as its rule fires is an ink plate on the stage,
+  in quotes, with a pop of its sprite: the warning before the gathered blow, read where the blow
+  will land. A boss becoming its next form is a wine-red slab thrown the other way from the
+  boss-down one, its new name across the stage, its line after; the board that follows wears the
+  new form. The Bestiary page lists a creature's phases under its script, and a form says what it
+  is a form of.
 - **The battle's log reads like the table's:** newest line on top, the newest tinted. The player at
   the end of their rope is told so before it happens: a line under the round says an Attack may become
   their desperation move. The GM's folded controls stay as they were left through the panel's reloads,
