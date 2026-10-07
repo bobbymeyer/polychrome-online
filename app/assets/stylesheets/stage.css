@@ -606,8 +606,6 @@ svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-widt
   background: var(--wine-red); color: var(--paper); font-size: clamp(32px, 7vw, 84px);
   box-shadow: 0 -6px 0 var(--ink), 0 10px 0 var(--ink);
 }
-/* What a creature says as its rule fires: an ink plate, read like a line. */
-.caption--says { background: var(--ink); color: var(--paper); font-style: italic; border-bottom-color: var(--wine-red); }
 .banner--boss-down {
   left: -4%; right: -4%; padding: 10px 8%; rotate: 3deg; top: 62%;
   background: var(--wine-red); color: var(--paper); font-size: clamp(32px, 7vw, 84px);

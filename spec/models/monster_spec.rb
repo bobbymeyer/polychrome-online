@@ -136,6 +136,17 @@ RSpec.describe Monster do
     end
   end
 
+  it "plays its own music, one of its world's tracks by name, and carries where it plays from into the engine" do
+    track = world.tracks.create!(name: "Doom march", source: "link", url: "https://youtu.be/dQw4w9WgXcQ")
+    monster = create_monster(world, boss: true, music: "track:#{track.id}")
+    expect(monster.music_path).to eq(track.play_url)
+    expect(monster.to_engine["music"]).to eq(track.play_url)
+    expect(world.monsters.new(name: "Quiet", stats: monster_stats, music: "")).to be_valid # blank: the world's boss track
+    bad = world.monsters.new(name: "Loud", stats: monster_stats, music: "track:999")
+    expect(bad).not_to be_valid
+    expect(bad.errors[:music]).to include(/isn't one of Testland's tracks/)
+  end
+
   it "validates drops against the Armory" do
     create_item(world, slug: "potion", category: "consumable", stats: {}, target: "single_ally",
                        effects: [ { primitive: "heal", power: 30 } ])

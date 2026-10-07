@@ -279,6 +279,7 @@ module Battle
         "last_command" => nil
       }.merge(spec["desperation"] ? { "desperation" => spec["desperation"].to_s } : {})
        .merge(spec["phases"].is_a?(Array) && !spec["phases"].empty? ? { "phases" => phases(id, spec["phases"], side, known) } : {})
+       .merge(spec["music"] ? { "music" => spec["music"].to_s } : {}) # where its own music plays from, for the stage
        .merge(spec["level"] ? { "level" => Integer(spec["level"]) } : {})
        .merge(spec["undead"] ? { "undead" => true } : {})
        .merge(spec["boss"] ? { "boss" => true } : {})

@@ -19,6 +19,9 @@ class Monster < ApplicationRecord
   validate :ai_script_is_valid
   validate :drops_are_items
   validate :phases_are_forms
+  # Its own music: one of its world's tracks by name ("track:12"); blank, the world's boss track.
+  normalizes :music, with: ->(choice) { choice.presence }
+  validate :music_is_a_track
   # Every battle takes the whole Grimoire and every table may roll it: an entry something still
   # names can't go, or the summon, the table and the lair would all break (Battle::State.build).
   before_destroy :still_needed
@@ -121,6 +124,9 @@ class Monster < ApplicationRecord
     { "exp" => exp, "gil" => gil, "abp" => abp }
   end
 
+  # Where its own music is heard from (World::Music#music_path), or nil.
+  def music_path = music && world.music_path(music)
+
   # Enemy spec for Battle::State.build.
   def to_engine(count: 1, depth: 0)
     {
@@ -137,6 +143,7 @@ class Monster < ApplicationRecord
       "drops" => (names = drop_items.transform_values(&:name); drops.map { |d| d.merge("name" => names[d["item"]]).compact }),
       "image" => { "book" => "monsters", "slug" => slug }
     }.merge(undead? ? { "undead" => true } : {}).merge(boss? ? { "boss" => true } : {}).merge(engine_phases(depth))
+     .merge(music_path ? { "music" => music_path } : {}) # so a form can bring its own
   end
 
   # Its phases as the engine takes them: each becomes the other entry's spec. A form's own
@@ -218,6 +225,10 @@ class Monster < ApplicationRecord
         errors.add(:ai_script, "#{label} chance must be 1 to 100") if name == "chance" && value > 100
       end
     end
+  end
+
+  def music_is_a_track
+    errors.add(:music, "isn't one of #{world&.name}'s tracks") if music && !world&.music_track_choice?(music)
   end
 
   def phases_are_forms

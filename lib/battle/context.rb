@@ -253,7 +253,7 @@ module Battle
         restored = form["stats"]["max_hp"] * phase["restore"] / 100
         u["hp"] = (u["hp"] + restored).clamp(1, form["stats"]["max_hp"])
         u["mp"] = u["mp"].clamp(0, form["stats"]["max_mp"])
-        emit(:phase, actor: u["id"], was: was, name: u["name"], line: phase["say"], restore: restored)
+        emit(:phase, actor: u["id"], was: was, name: u["name"], line: phase["say"], restore: restored, music: form["music"])
       end
     end
 
