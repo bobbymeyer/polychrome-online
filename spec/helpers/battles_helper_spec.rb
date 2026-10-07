@@ -9,12 +9,12 @@ RSpec.describe BattlesHelper, type: :helper do
     let(:fire) { field.ability("fire") }
 
     it "says what an ability hits, does and costs" do
-      expect(helper.ability_help(vivi, fire)).to eq("Single enemy · Fire damage, power #{fire['effects'].first['power']} · #{Battle::State.ability_cost(fire)} MP")
+      expect(helper.ability_help(vivi, fire)).to eq("Single enemy · Fire damage, power #{fire.effects.first['power']} · #{fire.mp_cost} MP")
     end
 
     it "says why an ability can't be used" do
       vivi.to_h["mp"] = 0
-      expect(helper.ability_help(vivi, fire)).to eq("Not enough MP (needs #{Battle::State.ability_cost(fire)}, you have 0).")
+      expect(helper.ability_help(vivi, fire)).to eq("Not enough MP (needs #{fire.mp_cost}, you have 0).")
       vivi.statuses << { "kind" => "silence", "turns" => 2 }
       expect(helper.ability_help(vivi, fire)).to start_with("Silenced")
     end

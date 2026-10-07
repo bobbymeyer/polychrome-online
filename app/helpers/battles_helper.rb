@@ -28,23 +28,23 @@ module BattlesHelper
   # The help line for a command (docs/DESIGN.md, "Play"): what it hits, what it
   # does, what it costs; or why it can't be used right now.
   def ability_help(unit, ability)
-    cost = Battle::State.ability_cost(ability)
-    unless Battle::State.usable?(unit.to_h, ability)
-      silenced = ability["kind"] == "magic" && unit.status("silence")
+    cost = ability.mp_cost
+    unless Battle::State.usable?(unit.to_h, ability.to_h)
+      silenced = ability.magic? && unit.status("silence")
       return silenced ? "Silenced: no magic until it wears off." : "Not enough MP (needs #{cost}, you have #{unit.mp})."
     end
 
-    parts = [ term(ability["target"]) ]
-    parts.concat(ability["effects"].map { |e| describe_effect(e) })
+    parts = [ term(ability.target) ]
+    parts.concat(ability.effects.map { |e| describe_effect(e) })
     parts << "#{cost} MP" if cost.positive?
     parts.join(" · ")
   end
 
   # The help line for an item: what it hits and does, and how many are left.
   def item_help(item, left)
-    return "None left: the party has used or spoken for every #{item['name']}." unless left.positive?
+    return "None left: the party has used or spoken for every #{item.name}." unless left.positive?
 
-    [ term(item["target"]), *item["effects"].map { |e| describe_effect(e) }, "#{left} left" ].join(" · ")
+    [ term(item.target), *item.effects.map { |e| describe_effect(e) }, "#{left} left" ].join(" · ")
   end
 
   AFFINITY_LABELS = { "weak" => "Weak to", "resist" => "Resists", "immune" => "Immune to", "absorb" => "Absorbs" }.freeze
@@ -122,12 +122,12 @@ module BattlesHelper
   # The type a move deals damage with, as the resolver will: its own, or
   # for Attack and the signature, the unit's (Battle::Resolver#own).
   def move_type(field, actor, move)
-    effect = move.fetch("effects", []).find { |e| %w[physical elemental jump].include?(e["primitive"]) } or return
+    effect = move.effects.find { |e| %w[physical elemental jump].include?(e["primitive"]) } or return
     return (effect["type"] == "terrain" ? field.terrain : effect["type"]) if effect["type"]
-    return unless move["id"] == "attack" || move["id"] == actor.signature
+    return unless move.id == "attack" || move.id == actor.signature
     return if effect["primitive"] == "elemental"
 
-    imbued = actor.status("imbued")&.dig("type") if move["id"] == "attack"
+    imbued = actor.status("imbued")&.dig("type") if move.id == "attack"
     imbued || actor.attack_type
   end
 
@@ -136,16 +136,19 @@ module BattlesHelper
   # for a unit on nobody's side of the plan (an enemy, the KO'd).
   def intent_label(field, unit)
     command = field.command_for(unit)
-    return if command.blank? || !unit.party? || unit.ko?
+    return if command.nil? || !unit.party? || unit.ko?
 
-    what = case command["kind"]
-    when "ability" then field.ability_name(command["ability"])
-    when "item" then field.item_name(command["item"])
-    when "custom" then "“#{command['text'].to_s.truncate(24)}”"
-    else command["kind"].to_s.humanize
-    end
-    target = command["target"] && command["target"] != unit.id ? " → #{field.unit_name(command['target'])}" : ""
+    what = command.custom? ? "“#{command.text.to_s.truncate(24)}”" : command_name(field, command)
+    target = command.target && command.target != unit.id ? " → #{field.unit_name(command.target)}" : ""
     "#{what}#{target}"
+  end
+
+  # What a command uses, by name: "Fire", "Potion", or its kind ("Defend").
+  def command_name(field, command)
+    if command.ability? then field.ability_name(command.ability)
+    elsif command.item? then field.item_name(command.item)
+    else command.kind.to_s.humanize
+    end
   end
 
   # What lasts on a unit, in words, for the GM's rows: "Poison (2), Str +20%".
@@ -167,8 +170,8 @@ module BattlesHelper
   # still works, else Attack. Said as the panel's warning.
   def timeout_command(field, unit)
     last = unit.last_command
-    return "Attack" unless last&.dig("kind") == "ability" && last["ability"] != "attack"
+    return "Attack" unless last&.ability? && last.ability != "attack"
 
-    "#{field.ability_name(last['ability'])} again (or Attack, if it can't)"
+    "#{field.ability_name(last.ability)} again (or Attack, if it can't)"
   end
 end
