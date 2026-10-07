@@ -19,4 +19,8 @@ RSpec.configure do |config|
   Kernel.srand config.seed
 
   config.include BattleHelpers
+
+  # Parts of the suite that bin/rspec-quick leaves out: the seeders (spec/seeds) rebuild whole worlds,
+  # and system specs (spec/system) drive browsers.
+  config.define_derived_metadata(file_path: %r{/spec/seeds/}) { |meta| meta[:seeds] = true }
 end

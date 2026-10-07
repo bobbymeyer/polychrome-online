@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# The suite without its slow parts: no browsers (spec/system) and no rebuilding the seeded worlds
+# (spec/seeds). About half the whole suite's time. Run bin/rspec, the whole suite, before a change is done.
+exec "$(dirname "$0")/rspec" --tag ~type:system --tag ~seeds "$@"
