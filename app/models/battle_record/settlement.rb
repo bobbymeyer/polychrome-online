@@ -23,7 +23,7 @@ module BattleRecord::Settlement
 
     characters = characters_by_unit
     party.each do |unit|
-      characters[unit["id"]]&.update!(hp: unit["hp"], mp: unit["mp"])
+      characters[unit.id]&.update!(hp: unit.hp, mp: unit.mp)
     end
 
     summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items!,
@@ -31,7 +31,7 @@ module BattleRecord::Settlement
     victory = events.find { |e| e["type"] == "victory" }
     if victory
       rewards = victory["rewards"]
-      standing = party.select { |u| u["hp"].positive? }.filter_map { |u| characters[u["id"]] }
+      standing = party.select(&:standing?).filter_map { |u| characters[u.id] }
       exp_share = standing.empty? ? 0 : rewards["exp"].to_i / standing.size
       standing.each do |character|
         summary["members"] << { "name" => character.name }.merge(character.gain!(exp: exp_share, abp: rewards["abp"].to_i))
@@ -71,13 +71,13 @@ module BattleRecord::Settlement
   # Antagonists who got away come back stronger; the fallen are finished.
   # Returns [{ "name", "fate" }] for the settlement, or nil if none fought.
   def settle_antagonists!
-    fates = state["units"].filter_map do |unit|
-      npc = (id = Npc.from_battle_unit(unit["id"])) && campaign.npcs.find_by(id: id)
+    fates = units.filter_map do |unit|
+      npc = unit.npc_id && campaign.npcs.find_by(id: unit.npc_id)
       next unless npc
 
-      fate = if unit["gone"] then "escaped"
-      elsif unit["hp"].zero? && first_meeting?(npc) then "slipped_away"
-      elsif unit["hp"].zero? then "defeated"
+      fate = if unit.gone? then "escaped"
+      elsif unit.ko? && first_meeting?(npc) then "slipped_away"
+      elsif unit.ko? then "defeated"
       else "remains"
       end
       if %w[escaped slipped_away].include?(fate)

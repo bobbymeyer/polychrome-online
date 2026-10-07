@@ -8,22 +8,23 @@ module Campaign::MonsterNotes
   # it; a status it shrugs off shows it's immune, one that sticks that it
   # isn't; a scan shows everything. Kept per monster, across battles.
   def learn_from!(events, state)
-    units = state["units"].index_by { |u| u["id"] }
+    field = BattleState.new(state)
+    units = field.units.index_by(&:id)
     learned = known_affinities.deep_dup
     events.each do |event|
       target = units[event["target"]]
-      slug = target && target["side"] == "enemy" && target.dig("image", "slug")
+      slug = target&.enemy? && target.image_slug
       next unless slug
 
       notes = (learned[slug] ||= {})
       if event["type"] == "scan"
-        notes["types"] = target.fetch("types", [])
-        Battle::Types.list(state["types"] || Battle::Types::DEFAULT).each { |type| notes[type] = target.fetch("affinities", {}).fetch(type, "none") }
-        Battle::STATUSES.each { |kind| notes[kind] = target["status_immune"].include?(kind) ? "immune" : "none" }
+        notes["types"] = target.types
+        Battle::Types.list(field.types).each { |type| notes[type] = target.affinities.fetch(type, "none") }
+        Battle::STATUSES.each { |kind| notes[kind] = target.status_immune.include?(kind) ? "immune" : "none" }
       elsif event["damage_type"]
         # Seeing a type land shows what the monster is: its types, and how it took this one.
-        notes["types"] = target.fetch("types", [])
-        notes[event["damage_type"]] = target.fetch("affinities", {}).fetch(event["damage_type"], "none")
+        notes["types"] = target.types
+        notes[event["damage_type"]] = target.affinities.fetch(event["damage_type"], "none")
       elsif event["type"] == "miss" && event["reason"] == "immune" && event["status"]
         notes[event["status"]] = "immune"
       elsif event["type"] == "status_applied"

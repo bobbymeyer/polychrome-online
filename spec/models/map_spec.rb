@@ -90,7 +90,7 @@ RSpec.describe "The pointcrawl map" do
 
       battle = campaign.start_pending_encounter!
       expect(battle.name).to eq("Grasslands")
-      expect(battle.party.map { |u| [ u["name"], u["hp"].zero? ] }).to eq([ [ bartz.name, false ], [ "Down", true ] ])
+      expect(battle.party.map { |u| [ u.name, u.ko? ] }).to eq([ [ bartz.name, false ], [ "Down", true ] ])
       expect(campaign.reload.pending_encounter).to be_nil
 
       campaign.update!(pending_encounter: { "table" => "X", "monsters" => { "goblin" => 1 } })

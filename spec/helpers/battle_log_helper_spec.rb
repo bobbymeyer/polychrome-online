@@ -13,7 +13,7 @@ RSpec.describe BattleLogHelper, type: :helper do
     silent = %w[command_accepted turn_order turn_start turn_end round_end]
     steps.each do |_, _, after, events|
       events.each do |event|
-        line = helper.battle_log_line(event, after)
+        line = helper.battle_log_line(event, BattleState.new(after))
         if silent.include?(event["type"])
           expect(line).to be_nil
         elsif event["type"] != "status_expired" && event["type"] != "timeout"
@@ -26,11 +26,11 @@ RSpec.describe BattleLogHelper, type: :helper do
   it "always writes a line for a GM override (§12)" do
     overrides = steps.flat_map { |_, _, after, events| events.select { |e| e["type"] == "gm_override" }.map { |e| [ e, after ] } }
     expect(overrides).not_to be_empty
-    overrides.each { |event, state| expect(helper.battle_log_line(event, state)).to start_with("GM ") }
+    overrides.each { |event, state| expect(helper.battle_log_line(event, BattleState.new(state))).to start_with("GM ") }
   end
 
   it "names units and abilities" do
-    state = build_battle
+    state = BattleState.new(build_battle)
     expect(helper.battle_log_line({ "type" => "cast", "actor" => "vivi", "ability" => "fire" }, state)).to eq("Vivi casts Fire.")
     expect(helper.battle_log_line({ "type" => "timeout", "defaulted" => [ "bartz" ] }, state)).to eq("Time's up! Bartz acts on reflex.")
     expect(helper.battle_log_line({ "type" => "timeout", "defaulted" => %w[bartz vivi] }, state)).to eq("Time's up! Bartz and Vivi act on reflex.")

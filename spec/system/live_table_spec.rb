@@ -111,7 +111,7 @@ RSpec.describe "The live table", type: :system do
       wait_for_streams
     end
 
-    goblin = battle.units.find { |u| u["side"] == "enemy" }["id"]
+    goblin = battle.enemies.first.id
     battle.apply!({ "type" => "command", "actor" => rook.battle_unit_id, "command" => { "kind" => "ability", "ability" => "attack", "target" => goblin } },
                   actor: rook.battle_unit_id)
     as(gm) { expect(page).to have_css("[data-battle-player-target=log]", text: /Rook attacks/, visible: :all, wait: 15) }

@@ -18,7 +18,7 @@
 
     <% if current_seat.seated? && coop_view(@battle.campaign) != "screen" %>
       <footer class="command-panel__footer">
-        Seated as <strong><%= gm_seat? ? "GM" : seat_unit["name"] %></strong>
+        Seated as <strong><%= gm_seat? ? "GM" : seat_unit.name %></strong>
         <%= button_to "Change seat", battle_seat_path(@battle), method: :delete, class: "link-button" %>
       </footer>
     <% end %>

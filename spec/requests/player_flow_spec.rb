@@ -129,7 +129,7 @@ RSpec.describe "The player's way through", type: :request do
   it "shows a monster's weaknesses only once the party has found them, and remembers" do
     bartz = campaign.characters.create!(name: "Bartz", job: knight)
     battle = battle_with(bartz)
-    help = -> { ApplicationController.helpers.target_help(battle.reload, battle.state, "goblin") }
+    help = -> { ApplicationController.helpers.target_help(battle.reload, battle.field, "goblin") }
     expect(help.()).to include("Weaknesses unknown").and(satisfy { |h| !h.include?("Weak to Fire") })
 
     campaign.learn_from!([ { "type" => "damage", "target" => "goblin", "damage_type" => "fire", "amount" => 9 } ], battle.state)
@@ -147,9 +147,9 @@ RSpec.describe "The player's way through", type: :request do
     lenna.update!(hp: 0)
     campaign.update!(pending_encounter: { "table" => "Road", "monsters" => { "goblin" => 1 } })
     battle = campaign.start_pending_encounter!
-    expect(battle.party.map { |u| [ u["name"], u["hp"] ] }).to include([ "Lenna", 0 ])
+    expect(battle.party.map { |u| [ u.name, u.hp ] }).to include([ "Lenna", 0 ])
     expect(battle.still_coming).not_to include(lenna.battle_unit_id) # the clock doesn't wait for someone who can't act
-    expect(Battle::State.target_options(battle.state, battle.unit(bartz.battle_unit_id), battle.state["abilities"]["attack"])).not_to include(lenna.battle_unit_id)
+    expect(battle.field.target_options(battle.unit(bartz.battle_unit_id), battle.field.ability("attack"))).not_to include(lenna.battle_unit_id)
 
     sign_in_as(krile)
     sit_in_battle(battle, lenna.battle_unit_id)

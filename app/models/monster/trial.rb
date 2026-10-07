@@ -25,8 +25,8 @@ class Monster::Trial
 
   def outcome = state["status"]
   def rounds = state["round"]
-  def standing = state["units"].select { |u| u["side"] == "party" }
-  def enemies = state["units"].select { |u| u["side"] == "enemy" }
+  def standing = BattleState.new(state).units.select(&:party?)
+  def enemies = BattleState.new(state).units.select(&:enemy?)
 
   private
 

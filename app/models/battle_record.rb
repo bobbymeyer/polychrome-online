@@ -109,26 +109,19 @@ class BattleRecord < ApplicationRecord
     announce!("#{name} was called off.")
   end
 
-  def units
-    state["units"]
-  end
+  # The state as the app reads it (BattleState): a fresh one each time, since the state moves on.
+  def field = BattleState.new(state)
 
-  def unit(id)
-    units.find { |u| u["id"] == id }
-  end
+  delegate :units, :unit, :awaiting_input, to: :field
 
   # The party's own: the characters. Guests fight beside them (Battle
   # "add_unit") but take no seat and share no rewards.
   def party
-    units.select { |u| u["side"] == "party" && !u["guest"] }
+    units.select { |u| u.party? && !u.guest? }
   end
 
   def enemies
-    units.select { |u| u["side"] == "enemy" }
-  end
-
-  def awaiting_input
-    Battle::State.awaiting_input(state)
+    units.select(&:enemy?)
   end
 
   # Apply one action through the resolver, persist it with its events, and
@@ -184,7 +177,7 @@ class BattleRecord < ApplicationRecord
   def boss_monsters
     return Monster.none unless boss?
 
-    slugs = enemies.map { |u| u.dig("image", "slug") }.uniq
+    slugs = enemies.map(&:image_slug).uniq
     marked = world.monsters.where(slug: slugs, boss: true)
     marked.exists? ? marked : world.monsters.where(slug: slugs).order(level: :desc).limit(1)
   end
@@ -193,12 +186,12 @@ class BattleRecord < ApplicationRecord
   # named boss (Roz Tennant, who never came out) by their own name, not
   # their kind's.
   def boss_names
-    villains = enemies.select { |u| Npc.from_battle_unit(u["id"]) }
-    return villains.map { |u| u["name"] } if villains.any?
+    villains = enemies.select(&:npc_id)
+    return villains.map(&:name) if villains.any?
 
     boss_monsters.map do |monster|
-      units = enemies.select { |u| u.dig("image", "slug") == monster.slug }
-      units.map { |u| u["name"] }.find { |name| !name.start_with?(monster.name) } || monster.name
+      units = enemies.select { |u| u.image_slug == monster.slug }
+      units.map(&:name).find { |name| !name.start_with?(monster.name) } || monster.name
     end
   end
 
@@ -208,7 +201,7 @@ class BattleRecord < ApplicationRecord
 
   # Characters in this battle, keyed by unit id.
   def characters_by_unit
-    ids = party.filter_map { |u| Character.from_battle_unit(u["id"]) }
+    ids = party.filter_map(&:character_id)
     campaign.characters.where(id: ids).index_by(&:battle_unit_id)
   end
 

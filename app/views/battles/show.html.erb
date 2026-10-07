@@ -5,9 +5,10 @@
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
+<% field = @battle.field %>
 <% boss_names = @battle.boss? ? @battle.boss_names : [] %>
 <%# An antagonist's entrance was their own lines, said before the fight: the card is for a dungeon's monster. %>
-<% villains = @battle.enemies.any? { |u| Npc.from_battle_unit(u["id"]) } %>
+<% villains = @battle.enemies.any?(&:npc_id) %>
 <% bosses = villains ? [] : @battle.boss_monsters.to_a %>
 <% view = @battle.campaign && coop_view(@battle.campaign) %>
 <%# A setting for this device, not a move: in the Menu with the rest of the way around (DESIGN.md, "Only the battle"). %>
@@ -59,7 +60,7 @@
     <%# This round's order, as it plays: who has gone, who's up, who's still to come (battle/board.js). %>
     <ol class="turn-rail" data-battle-player-target="rail" aria-label="This round" hidden></ol>
     <div data-battle-player-target="boardContainer">
-      <%= render "battles/board", battle: @battle, state: @battle.state %>
+      <%= render "battles/board", battle: @battle, field: field %>
     </div>
     <%# What the round came to, once it's played, until the next one starts. %>
     <p class="round-tally" data-battle-player-target="tally" aria-live="polite" hidden></p>
@@ -80,7 +81,7 @@
       <div class="battle__dock">
         <ol class="battle-ticker" data-battle-player-target="ticker" aria-label="What just happened">
           <% @log.last(1).each do |event| %>
-            <% line = battle_log_line(event.payload, @battle.state) %>
+            <% line = battle_log_line(event.payload, field) %>
             <% if line %><li><%= line %></li><% end %>
           <% end %>
         </ol>
@@ -111,7 +112,7 @@
       <h3>Battle</h3>
       <ol data-battle-player-target="log" data-log-drawer-target="list" aria-live="polite">
         <% @log.each do |event| %>
-          <% line = battle_log_line(event.payload, @battle.state) %>
+          <% line = battle_log_line(event.payload, field) %>
           <% if line %><li><%= line %></li><% end %>
         <% end %>
       </ol>

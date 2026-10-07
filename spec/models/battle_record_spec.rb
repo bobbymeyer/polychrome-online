@@ -7,8 +7,8 @@ RSpec.describe BattleRecord do
   include ActiveJob::TestHelper
 
   let(:battle) { start_battle }
-  let(:bartz) { battle.party.first["id"] }
-  let(:faris) { battle.party.second["id"] }
+  let(:bartz) { battle.party.first.id }
+  let(:faris) { battle.party.second.id }
 
   def command(actor, kind: "ability", ability: "attack", target: nil)
     { "type" => "command", "actor" => actor, "command" => { "kind" => kind, "ability" => ability, "target" => target }.compact }
@@ -22,13 +22,13 @@ RSpec.describe BattleRecord do
     expect(battle).to be_persisted
     expect(battle.model_name.param_key).to eq("battle")
     expect(battle.initial_state).to eq(battle.state)
-    expect(battle.units.map { |u| u["id"] }).to eq([ bartz, faris, "goblin_a", "goblin_b" ])
+    expect(battle.units.map(&:id)).to eq([ bartz, faris, "goblin_a", "goblin_b" ])
     bartz_character = battle.campaign.characters.find_by!(name: "Bartz")
     expect(bartz).to eq("character_#{bartz_character.id}")
-    expect(battle.party.first).to include("name" => "Bartz", "abilities" => [ "attack", "cure" ],
+    expect(battle.party.first.to_h).to include("name" => "Bartz", "abilities" => [ "attack", "cure" ],
                                           "image" => { "book" => "jobs", "slug" => "knight" },
                                           "stats" => bartz_character.stats)
-    expect(battle.unit("goblin_a")["image"]).to eq("book" => "monsters", "slug" => "goblin")
+    expect(battle.unit("goblin_a").image).to eq("book" => "monsters", "slug" => "goblin")
   end
 
   describe "#gm_override" do
@@ -95,7 +95,7 @@ RSpec.describe BattleRecord do
 
   it "gives the first of a kind a name of its own: who the place's past says waits there" do
     named = start_battle(names: { "goblin" => "Sten Pike" })
-    expect(named.enemies.map { |u| u["name"] }).to eq([ "Sten Pike", "Goblin B" ])
+    expect(named.enemies.map(&:name)).to eq([ "Sten Pike", "Goblin B" ])
   end
 
   describe "input timer" do
@@ -190,7 +190,7 @@ RSpec.describe BattleRecord do
 
   it "runs a round nobody can choose in at once, until someone can" do
     battle = start_battle(goblins: 1, input_seconds: 30)
-    bartz, faris = battle.party.map { |u| u["id"] }
+    bartz, faris = battle.party.map(&:id)
     [ bartz, faris ].each do |id|
       battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => id, "value" => 999 }, actor: "gm")
       battle.apply!({ "type" => "gm_override", "op" => "add_status", "unit" => id, "status" => "stop", "turns" => 3 }, actor: "gm")
