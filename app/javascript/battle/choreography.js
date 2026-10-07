@@ -114,6 +114,13 @@ const STEPS = {
   desperation(b, tl, e, at) {
     return b.cutIn(tl, e, at)
   },
+  // A reaction: a script's "when" rule fires out of turn (a counter, a last breath).
+  reacts(b, tl, e, at) {
+    const word = { hit: "COUNTER!", ally_falls: "VENGEANCE!", falls: "LAST BREATH!" }[e.trigger] || "REACTS!"
+    b.popup(tl, e.actor, word, "crit", at)
+    gesture(tl, b.sprite(e.actor), "shake", at)
+    return 500
+  },
   // A creature says a line as its rule fires: the telegraph before the blow, read on the stage.
   says(b, tl, e, at) {
     gesture(tl, b.sprite(e.actor), "pop", at)

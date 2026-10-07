@@ -70,18 +70,23 @@
     <legend>AI script</legend>
     <p class="hint">First matching rule wins; all filled conditions must hold. With no rule matching, it attacks. Leave "Use" blank to remove a row.
       "Once" fires a rule one time a battle (a self-buff that isn't recast, a move it has one of). "Says" is a line said as the rule fires:
-      written on the rule that uses a charged move, it's the warning before the blow.</p>
+      written on the rule that uses a charged move, it's the warning before the blow. "When" makes a rule a reaction, never taken on its
+      turn: when hit (by blows of one type, if "By" says), when one of its side falls, or with its last breath as it falls. A reaction comes
+      at once, free of its charge, and never sets off another. A summon that stays "0" turns stays while its summoner stands, and goes
+      down with it: the adds are the boss's.</p>
     <%# Battle abilities: a field ability is a move outside battle (FieldUse), never in one. %>
     <% abilities = [["Attack", "attack"]] + @world.abilities.in_battle.order(:name).map { |a| [a.name, a.slug] } %>
     <table class="grid-form" data-controller="rows">
       <thead>
-        <tr><th>Own HP &lt; %</th><th>Ally HP &lt; %</th><th>Ally down</th><th>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th><th>Once</th><th>Says</th></tr>
+        <tr><th>When</th><th>By</th><th>Own HP &lt; %</th><th>Ally HP &lt; %</th><th>Ally down</th><th>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th><th>Once</th><th>Says</th></tr>
       </thead>
       <tbody data-rows-target="body">
         <% rows_with_blanks(entry.ai_script).each_with_index do |rule, i| %>
           <% c = rule.fetch("if", {}) %>
           <% name = ->(key) { json_field_name(f, :ai_script, i, key) } %>
           <tr>
+            <td><%= select_tag name.(:when), options_for_select([ [ "On its turn", "" ], [ "When hit", "hit" ], [ "When an ally falls", "ally_falls" ], [ "As it falls", "falls" ] ], rule["when"]), "aria-label": "When, rule #{i + 1}" %></td>
+            <td><%= select_tag name.(:by), options_for_select(type_options, rule["by"]), include_blank: "Any blow", "aria-label": "By, rule #{i + 1}" %></td>
             <td><%= number_field_tag name.(:self_hp_below), c["self_hp_below"], min: 1, max: 100, "aria-label": "Own HP below, rule #{i + 1}" %></td>
             <td><%= number_field_tag name.(:ally_hp_below), c["ally_hp_below"], min: 1, max: 100, "aria-label": "Ally HP below, rule #{i + 1}" %></td>
             <td>
@@ -100,7 +105,7 @@
           </tr>
         <% end %>
       </tbody>
-      <tfoot><tr><td colspan="9"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
+      <tfoot><tr><td colspan="11"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
     </table>
   </fieldset>
 

@@ -176,6 +176,15 @@ module BooksHelper
     type == "terrain" ? "Terrain" : type_name(type)
   end
 
+  # A reaction's moment (Battle::AI::TRIGGERS), or nil for a rule taken on the creature's turn.
+  def describe_moment(trigger, by = nil)
+    case trigger
+    when "hit" then by ? "When hit by #{term(by)}" : "When hit"
+    when "ally_falls" then "When one of its own falls"
+    when "falls" then "With its last breath"
+    end
+  end
+
   def describe_condition(name, value)
     case name
     when "self_hp_below" then "own HP below #{value}%"

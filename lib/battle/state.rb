@@ -492,7 +492,8 @@ module Battle
         when "imbue"
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" unless known.include?(effect["type"])
         when "summon"
-          raise ArgumentError, "#{id}: summon stays 1 to #{MAX_SUMMON_TURNS} turns" if effect["duration"] && !effect["duration"].between?(1, MAX_SUMMON_TURNS)
+          # 0: for no set time, while its summoner stands (Resolver#count_down_summon).
+          raise ArgumentError, "#{id}: summon stays 1 to #{MAX_SUMMON_TURNS} turns, or 0 while its summoner stands" if effect["duration"] && !effect["duration"].between?(0, MAX_SUMMON_TURNS)
           raise ArgumentError, "#{id}: summon power must be 1 to #{MAX_BONUS}" if effect["power"] && !effect["power"].between?(1, MAX_BONUS)
         when "cleanse"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" if effect["kind"] && !STATUSES.include?(effect["kind"])

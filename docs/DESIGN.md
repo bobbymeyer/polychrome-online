@@ -75,6 +75,9 @@ deliberate divergence from much of what follows, and where the two disagree the 
   the frame instead of beside it, so the frame keeps its width. On a phone up to five stand abreast.
   The frame leaves room under it for the commands, and the menu never scrolls the stage away while
   the stage is speaking (a boss's entrance, a line in its box).
+- **Reactions.** A script's "when" rule fires out of turn with a word popped on the creature in the
+  critical-hit style (COUNTER!, VENGEANCE!, LAST BREATH!) and a shake, then the move as any other.
+  A summon called for no set time goes down with its summoner: the adds are the boss's.
 - **Phases and telegraphs.** What a creature says as its rule fires is an ink plate on the stage,
   in quotes, with a pop of its sprite: the warning before the gathered blow, read where the blow
   will land. A boss becoming its next form is a wine-red slab thrown the other way from the

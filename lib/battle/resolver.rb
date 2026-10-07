@@ -49,6 +49,7 @@ module Battle
       else raise InvalidAction, "unknown action type #{action['type'].inspect}"
       end
 
+      react # what a GM's stroke or a status's (poison, doom) called for, with no move to resolve them after
       ctx.finish
     end
 
@@ -235,7 +236,7 @@ module Battle
       else
         ctx.revive(unit, value)
       end
-      ctx.check_end
+      settle
     end
 
     def gm_set_mp(action)
@@ -333,7 +334,7 @@ module Battle
       unit["statuses"] = []
       unit["buffs"] = []
       ctx.emit(:unit_left, unit: unit["id"], name: unit["name"])
-      ctx.check_end
+      settle
     end
 
     # The GM rules on a player's idea ("Try something"): which stat, how hard,
@@ -419,7 +420,7 @@ module Battle
 
         mark = ctx.events.size
         take_turn(ctx.unit(id), inputs[id])
-        ctx.check_end
+        settle
         next unless state.dig("rules", "one_more") && !ctx.over?
 
         one_more(ctx.unit(id), inputs[id], mark)
@@ -431,7 +432,7 @@ module Battle
         break if ctx.over?
 
         quick_turn(ctx.unit(id), inputs[id])
-        ctx.check_end
+        settle
       end
 
       close_round(inputs)
@@ -551,7 +552,7 @@ module Battle
       ctx.emit(:one_more, actor: unit["id"], downed: downed, **(cmd && cmd["target"] ? { target: cmd["target"] } : {}))
       mark = ctx.events.size
       extra_go(unit, cmd, reason: "one_more", repeat: used)
-      ctx.check_end
+      settle
       knock_down(unit, ctx.events[mark..]) unless ctx.over?
     end
 
@@ -594,7 +595,7 @@ module Battle
         break if ctx.over?
 
         apply_effects(ally, own(ally, ctx.ability("attack")), ctx.opponents(ally)) if ctx.alive?(ally)
-        ctx.check_end
+        settle
       end
       ctx.opponents(unit).each { |foe| ctx.remove_status(foe, "down", reason: "all_out") } unless ctx.over?
       true
@@ -817,22 +818,54 @@ module Battle
         ability, target, rule = AI.choose(ctx, creature)
         AI.fire(ctx, creature, rule)
         use_ability(creature, own(creature, ability), target)
-        ctx.check_end
+        settle
         count_down_summon(creature)
       end
     end
 
-    # A summoned creature leaves once its turns are up (or it's down).
+    # A summoned creature leaves once its turns are up (or it's down). One
+    # called for no set time (duration 0) stays while its summoner stands.
     def count_down_summon(unit)
       return unless unit["summoned"] && !unit["gone"]
+      return if unit["summoned"]["left"].zero? && ctx.alive?(unit)
 
       unit["summoned"]["left"] -= 1
       return if unit["summoned"]["left"].positive? && ctx.alive?(unit)
 
-      unit["gone"] = true
-      unit["statuses"] = []
-      unit["buffs"] = []
-      ctx.emit(:unit_left, unit: unit["id"], name: unit["name"], summoned: true)
+      ctx.send_home(unit)
+      settle
+    end
+
+    # What the move just resolved called for: the reactions (a script's "when"
+    # rules), each at once, free of its charge, and never setting off another.
+    # A hit's reaction aims at the striker unless the rule says otherwise;
+    # a fallen creature's last breath comes from the ground.
+    def react
+      return if ctx.reacting # a reaction's own move resolves inside the loop below: it drains the rest
+
+      while (reaction = ctx.reactions.shift)
+        break if ctx.over?
+
+        unit = ctx.unit(reaction["unit"])
+        rule = unit["ai"][reaction["rule"]]
+        ability = ctx.state["abilities"][rule["use"]] or next
+        next unless ctx.alive?(unit) || reaction["trigger"] == "falls"
+        next if ctx.alive?(unit) && ctx.disabled?(unit)
+
+        target = rule["target"] ? AI.pick_target(ctx, unit, ability, rule["target"]) : reaction["target"]
+        target = nil if target == :none
+        ctx.emit(:reacts, actor: unit["id"], trigger: reaction["trigger"], ability: ability["id"], name: ability["name"])
+        AI.fire(ctx, unit, reaction["rule"])
+        ctx.reacting = true
+        use_ability(unit, own(unit, ability).merge("released" => true), target)
+        ctx.reacting = false
+        ctx.check_end
+      end
+    end
+
+    # Before the end is decided, what the stroke called for comes: a last breath lands before the victory.
+    def settle
+      react
       ctx.check_end
     end
 
@@ -850,6 +883,7 @@ module Battle
         end
       end
       arrive
+      react
     end
 
     def announce(unit, ability, targets, cost)
@@ -871,6 +905,7 @@ module Battle
         end
       end
       arrive
+      react
     end
 
     def hits(effect)
