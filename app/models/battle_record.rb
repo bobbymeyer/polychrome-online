@@ -11,12 +11,12 @@
 # rules live in Battle::Resolver: this class only persists, times and
 # broadcasts what the resolver decides.
 #
-# Its rounds and timers, and what it writes back when it ends, are slices
-# (app/models/battle_record/).
+# Its rounds and timers, what it writes back when it ends, and the GM's
+# overrides in engine terms are slices (app/models/battle_record/).
 class BattleRecord < ApplicationRecord
   self.table_name = "battles"
 
-  include Rounds, Settlement
+  include Rounds, Settlement, Overrides
 
   SPEEDS = [ 1, 2, 4 ].freeze
   INPUT_TIMERS = [ nil, 30, 60, 120 ].freeze

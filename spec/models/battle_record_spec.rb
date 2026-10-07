@@ -31,6 +31,27 @@ RSpec.describe BattleRecord do
     expect(battle.unit("goblin_a")["image"]).to eq("book" => "monsters", "slug" => "goblin")
   end
 
+  describe "#gm_override" do
+    it "turns a ruling's quick choices into engine effects" do
+      action = battle.gm_override("op" => "rule", "unit" => bartz, "effect" => "damage", "strength" => "heavy", "type" => "fire", "value" => "3")
+      expect(action).to include("type" => "gm_override", "actor" => "gm", "op" => "rule", "value" => 3,
+                                "effects" => [ { "primitive" => "elemental", "type" => "fire", "power" => 40 } ])
+      expect(action).not_to include("strength", "type" => "fire")
+      expect(battle.gm_override("op" => "rule", "unit" => bartz, "effect" => "status")["effects"]).to eq([])
+    end
+
+    it "refuses a skill or a monster the world hasn't got" do
+      expect { battle.gm_override("op" => "rule", "unit" => bartz, "stat" => "skill:juggling") }.to raise_error(Battle::InvalidAction, /juggling|skill/)
+      expect { battle.gm_override("op" => "add_unit", "side" => "enemy", "monster" => "nobody") }.to raise_error(Battle::InvalidAction)
+    end
+
+    it "brings a guest from the Bestiary under the GM's name for them, earning and dropping nothing" do
+      action = battle.gm_override("op" => "add_unit", "side" => "party", "monster" => "goblin", "name" => "Cid")
+      expect(action["unit"]).to include("name" => "Cid", "id" => "cid", "rewards" => {}, "drops" => [])
+      expect(action).not_to have_key("monster")
+    end
+  end
+
   describe "#apply!" do
     it "persists the action and its events in order and advances the state" do
       before, events = battle.apply!(command(bartz), actor: bartz)
