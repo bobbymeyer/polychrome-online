@@ -20,6 +20,12 @@ module Battle
   # A missing command defaults to the unit's last command if it is still
   # usable (never an item: nobody spends the party's items by default),
   # otherwise Attack on a random target.
+  #
+  # Events are hashes with a "type" (Context#emit), the only contract with
+  # the view (§12): every one that changes HP carries the resulting "hp", so
+  # the view never computes an outcome. BattleLogHelper#battle_log_line
+  # writes a line for each, and its spec checks every type the property
+  # battles emit.
   class Resolver
     GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle add_unit dismiss rule].freeze
     END_RESULTS = %w[victory defeat fled].freeze
