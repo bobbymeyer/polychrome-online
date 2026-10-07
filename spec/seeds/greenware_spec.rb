@@ -6,9 +6,15 @@ require Rails.root.join("db/seeds/greenware")
 # The second seeded setting: everything the Base World doesn't lean on, this
 # one does, so it's the proof that another author can build their own.
 RSpec.describe Seeds::Greenware do
-  before { World.where(slug: "greenware").destroy_all }
+  # Seeded once for the file, outside the examples' transactions (so what an example changes rolls
+  # back), and taken down after: the suite keeps only the base world.
+  before(:all) do
+    World.where(slug: "greenware").destroy_all
+    described_class.run
+  end
+  after(:all) { World.where(slug: "greenware").destroy_all }
 
-  let!(:world) { described_class.run }
+  let(:world) { World.find_by!(slug: "greenware") }
 
   def gm(name) = User.create!(name: name, email_address: "#{name.parameterize}@example.com", password: "a-long-enough-password")
 

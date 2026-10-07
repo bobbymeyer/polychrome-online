@@ -134,7 +134,7 @@ RSpec.describe "The GM's tools at the table", type: :system do
       end
       settled = ->(dx, dy) { dx.abs < 2 && dy.between?(-40, 0) } # its tip on the place's line, a little above it, bobbing
       dx, dy = mark.call
-      10.times { break if settled.call(dx, dy); sleep 0.3; dx, dy = mark.call }
+      30.times { break if settled.call(dx, dy); sleep 0.1; dx, dy = mark.call }
       expect(settled.call(dx, dy)).to be(true), "the flag sits #{dx.round(1)}px across and #{dy.round(1)}px above the place"
 
       find("a.map-node__ask[data-node-name='Far Hold']").click
