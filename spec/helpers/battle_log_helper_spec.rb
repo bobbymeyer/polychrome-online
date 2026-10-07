@@ -42,5 +42,7 @@ RSpec.describe BattleLogHelper, type: :helper do
     expect(helper.battle_log_line({ "type" => "damage", "target" => "goblin_a", "amount" => 9, "weak" => true }, state))
       .to eq("Goblin A takes 9 damage. It's super effective!")
     expect(helper.battle_log_line({ "type" => "victory", "rewards" => { "exp" => 18, "gil" => 36 } }, state)).to eq("Victory! 18 EXP and 36 gil.")
+    expect(helper.battle_log_line({ "type" => "victory", "rewards" => {}, "fell" => false }, state)).to eq("They got away.")
+    expect(helper.battle_log_line({ "type" => "abandoned" }, state)).to eq("Called off.")
   end
 end

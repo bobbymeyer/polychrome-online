@@ -148,10 +148,11 @@ export default class extends Controller {
     this.boardContainerTarget.replaceChildren(template.content.cloneNode(true))
   }
 
-  // The line goes to the battle's log (the log drawer watches the list and keeps its newest line in view).
+  // The line goes to the battle's log, newest first like the table's (the log drawer watches the list
+  // and keeps its newest line in view).
   appendLog(line) {
-    this.logTarget.append(line.cloneNode(true))
-    while (this.logTarget.children.length > 60) this.logTarget.firstElementChild.remove()
+    this.logTarget.prepend(line.cloneNode(true))
+    while (this.logTarget.children.length > 60) this.logTarget.lastElementChild.remove()
     // A phone may not show the stage: the last lines say what happened.
     if (this.hasTickerTarget) {
       this.tickerTarget.append(line.cloneNode(true))

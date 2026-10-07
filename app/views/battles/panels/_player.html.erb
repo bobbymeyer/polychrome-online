@@ -13,6 +13,10 @@
     · Choose before the clock runs out, or you <%= timeout_command(field, unit) %>.
   <% end %>
 </p>
+<%# A cue before it happens: at a quarter of their HP, an Attack may become their desperation move (once), so it's no surprise. %>
+<% if unit.desperate? %>
+  <p class="command-panel__desperate"><strong>At the end of your rope:</strong> an Attack may become <%= field.abilities[unit.desperation]&.to_h&.dig("name") || unit.desperation.humanize %>, once, when it counts.</p>
+<% end %>
 <%# Everyone's HP at a glance, for a phone whose pinned panel covers the roster: shown once someone is hurt. %>
 <ol class="party-strip" aria-label="Party">
   <% @battle.party.select(&:on_field?).each do |member| %>

@@ -64,7 +64,21 @@ deliberate divergence from much of what follows, and where the two disagree the 
   wine-dark. The boss's name is slammed across the stage on a slab in its own colour, tagged
   BOSS, then it has the first word in the dialogue box (its line from the Bestiary). This plays
   once per viewer, and only in the first round. On victory a second slab follows "Victory!":
-  "Goblin Chief falls!".
+  "Goblin Chief falls!". A boss sent off the field hasn't fallen: the second slab is the Turquoise
+  Escaped one, "Goblin Chief got away!", and a fight nobody fell in ends on "They got away!" with
+  no fanfare and no hop. A fight the GM calls off ends on an ink "Called off" slab, on every seat's
+  screen at once: the results panel follows it as it follows Victory or Defeat. The slabs are thrown
+  over everything on the frame, the round's rail included.
+- **The field fits its frame.** Enemies share one row of the frame, sized to the room the row has:
+  a lone boss towers, five share the width, and a name wraps under its sprite rather than widening
+  the row. With the log pinned beside the fight on an ordinary desktop, the battle's head sits over
+  the frame instead of beside it, so the frame keeps its width. On a phone up to five stand abreast.
+  The frame leaves room under it for the commands, and the menu never scrolls the stage away while
+  the stage is speaking (a boss's entrance, a line in its box).
+- **The battle's log reads like the table's:** newest line on top, the newest tinted. The player at
+  the end of their rope is told so before it happens: a line under the round says an Attack may become
+  their desperation move. The GM's folded controls stay as they were left through the panel's reloads,
+  and a player who has left the page is "away" in the GM's rows, with Auto beside it.
 - **Desperation.** When a character's desperation move comes, the stage stops for them: a slab
   in their colour cuts across the field with their sprite held large, their line in quotes and
   the move's name in heavy italic, white with a black outline. A power chord plays under it.

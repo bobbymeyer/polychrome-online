@@ -421,7 +421,8 @@ details[open] > summary { margin-bottom: 16px; }
 .playback { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* The stage (.stage) is stage.css's: the 16:9 frame. */
-.fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+/* Over everything on the frame (the rail, the roster, the tally, the box): a slab is thrown across all of it. */
+.fx { position: absolute; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
 
 /* The field: enemies left, party right, standing on one black line. The
    art is the show: enemies big, the party a size down (DESIGN.md). */

@@ -4,8 +4,10 @@
 <%# wide: a player's screen, where the log is a column from 1100px (pinned there unless unpinned). %>
 <%# The layout marks <body> has-log-drawer, so the top bar makes room for the tab on a phone (stage.css). %>
 <% content_for :log_drawer, "rendered" %>
-<%# Kept whole through a refresh (data-turbo-permanent): lines arrive as they're said, and the drawer stays as it was left. %>
-<div class="log-drawer" id="log_drawer_wrap" data-turbo-permanent data-controller="log-drawer" <%= tag.attributes(data: { log_drawer_self_value: local_assigns[:self_name], log_drawer_dockable_value: (local_assigns[:dockable] || local_assigns[:wide]) || nil,
+<%# Kept whole through a refresh (data-turbo-permanent): lines arrive as they're said, and the drawer stays as it was left.
+    Only through a refresh of the same page (scope: the table, or one battle): a permanent element with the same id
+    would ride from the table into a battle, without the battle's own log for the battle player to write to. %>
+<div class="log-drawer" id="log_drawer_wrap_<%= local_assigns.fetch(:scope, "page") %>" data-turbo-permanent data-controller="log-drawer" <%= tag.attributes(data: { log_drawer_self_value: local_assigns[:self_name], log_drawer_dockable_value: (local_assigns[:dockable] || local_assigns[:wide]) || nil,
                                                                               log_drawer_pin_from_value: (1100 if local_assigns[:wide]) }) %>
      data-action="keydown@window->log-drawer#key:capture table-views:changed@window->log-drawer#view">
   <button type="button" class="log-drawer__tab" data-log-drawer-target="tab" data-action="log-drawer#toggle"

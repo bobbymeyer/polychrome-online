@@ -43,6 +43,10 @@ RSpec.describe "Authoring fixes", type: :request do
     expect(response.body).to include("Try it against a level-5 party")
     get world_bestiary_monster_trial_path(world, goblin, count: 3)
     expect(response.body).to include("3 × Goblin", "The party won", "Knight")
+    # The moments, and how it tends to go: what the creature did, who fell, ten more rolls; and the way back to the entry.
+    expect(response.body).to include("What it did", "Attack ×", "Over 10 more rolls:", "the party won", "Edit Goblin")
+    get world_bestiary_monster_trial_path(world, world.monsters.find_by!(slug: "crystal_wyrm"))
+    expect(response.body).to include("1 × Crystal Wyrm") # a boss comes alone
   end
 
   it "warns when the plain type is weak to several others, and talks of arts of the land, not Geomancers" do

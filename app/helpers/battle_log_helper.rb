@@ -62,6 +62,7 @@ module BattleLogHelper
     when "action_failed" then action_failed_line(event, name.("actor"), field)
     when "timeout" then "Time's up! #{event['defaulted'].map { |id| field.unit_name(id) }.to_sentence} #{event['defaulted'].one? ? 'acts' : 'act'} on reflex." if event["defaulted"].any?
     when "victory" then victory_line(event)
+    when "abandoned" then "Called off."
     when "defeat" then "The party has fallen…"
     when "gm_override" then gm_line(event, field)
     end
@@ -168,6 +169,8 @@ module BattleLogHelper
   def victory_line(event)
     rewards = event["rewards"].to_h.slice("exp", "gil", "abp").select { |_, v| v.to_i.positive? }
     spoils = rewards.map { |k, v| "#{v} #{k == 'gil' ? word('currency') : k.upcase}" }.to_sentence
+    return "They got away." if event.key?("fell") && !event["fell"]
+
     spoils.present? ? "Victory! #{spoils}." : "Victory!"
   end
 

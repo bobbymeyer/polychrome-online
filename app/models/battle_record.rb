@@ -60,6 +60,7 @@ class BattleRecord < ApplicationRecord
                      input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id), room: room,
                      boss: boss || antagonists.any? || monsters.each_value.any?(&:boss?))
     battle.open_round!
+    campaign.update!(controls: "talk") if campaign.controls == "battle" # the setup form has done its job
     against = antagonists.map(&:name) + encounter.map { |slug, count| "#{count} × #{monsters[slug]&.name || slug}" }
     battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against #{against.to_sentence}.")
     battle.auto_fill!
@@ -106,8 +107,12 @@ class BattleRecord < ApplicationRecord
   def call_off!
     return if over?
 
+    before = state
     update!(status: "abandoned", deadline_at: nil)
     announce!("#{name} was called off.")
+    # Not a resolver action, but everyone in the fight hears it the same way: one beat, which
+    # takes their command panel to the results (a page that's over doesn't take another beat).
+    broadcast_beat(before, [ { "type" => "abandoned" } ], next_position(:battle_actions))
   end
 
   # The state as the app reads it (BattleState): a fresh one each time, since the state moves on.
@@ -163,6 +168,32 @@ class BattleRecord < ApplicationRecord
       units = enemies.select { |u| u.image_slug == monster.slug }
       units.map(&:name).find { |name| !name.start_with?(monster.name) } || monster.name
     end
+  end
+
+  # The bosses as they stand on the field: the antagonists, or every unit of the boss monsters.
+  def boss_units
+    villains = enemies.select(&:npc_id)
+    return villains if villains.any?
+
+    slugs = boss_monsters.pluck(:slug)
+    enemies.select { |u| slugs.include?(u.image_slug) }
+  end
+
+  # Beating a boss means knocking it out. One that left the field (sent off, or fled) got away:
+  # the fight is won, but the place isn't cleared and the boss hasn't fallen.
+  def bosses_beaten? = boss_units.none?(&:gone?)
+
+  # Whether any enemy fell: a "victory" over enemies who all left is them getting away.
+  def enemies_fell? = enemies.any? { |u| !u.gone? }
+
+  RESULT_LINES = { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away.",
+                   "abandoned" => "Called off. Nothing came of it." }.freeze
+
+  # How it ended, in a line (the results panel, the log).
+  def result_line
+    return "They got away." if status == "victory" && !enemies_fell?
+
+    RESULT_LINES.fetch(status, status.humanize)
   end
 
   def replay

@@ -360,7 +360,7 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 .level-up::before { background: var(--signal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
 .battle-log li { transition: background-color .6s; }
-.battle-log li:last-child { background: var(--tint); font-weight: 600; }
+.battle-log li:first-child { background: var(--tint); font-weight: 600; } /* the newest, on top */
 
 /* ---------------------------------------------------------------------------
  * The table: a speech box with a name tag, and a slanted portrait.
@@ -1044,7 +1044,7 @@ body[data-view="controller"] .page { padding-top: 16px; }
 @media (max-width: 640px) {
   .battle .battle__header h1 { font-size: 28px; line-height: 32px; }
   .battlefield { --sprite: 76px; --sprite-min: 76px; --sprite-party: 48px; min-height: 0; padding: 12px; gap: 8px; }
-  .battlefield__side--enemy { gap: 8px 12px; }
+  .battlefield__side--enemy { gap: 8px 6px; }
   .unit__label { font-size: 14px; }
   .label { font-size: 12px; }
 
@@ -1077,7 +1077,12 @@ body[data-view="controller"] .page { padding-top: 16px; }
   /* A battle is a game screen: the title and the way back step aside for the fight. */
   .battle .battle__header { margin-bottom: 8px; }
   .battle--play .battle__header > div:first-child { display: none; }
-  .unit--enemy { --sprite: clamp(56px, min(calc(100cqi / min(var(--count, 1), 3) - 24px), 18vh), 160px); }
+  /* Up to five abreast before they wrap: a full field stays one row, with the party under it, not pushed out. */
+  .unit--enemy { --sprite: clamp(56px, min(calc(100cqi / min(var(--count, 1), 5) - 12px), 18vh), 160px); }
+  .unit--enemy .unit__label { max-width: calc(var(--sprite) + 6px); white-space: normal; text-align: center; overflow-wrap: anywhere; font-size: 12px; line-height: 14px; }
+  /* The party's row starts at the left edge: their plans hang from their left, the last one's from its right. */
+  .unit--party .intent { left: 0; right: auto; translate: 0 0; max-width: 160px; }
+  .unit--party:last-child .intent { left: auto; right: 0; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1574,7 +1579,15 @@ body[data-view="controller"] .page { padding-top: 16px; }
 @media (min-width: 641px) {
   .battle .stage .board { position: absolute; inset: 0; }
   .battle .stage .battlefield { position: absolute; inset: 0; min-height: 0; padding: 48px 16px 32cqh; border: 0; }
-  .battle .stage .unit--enemy { --sprite: clamp(var(--sprite-min, 140px), calc(100cqi / var(--count, 1) - 40px), min(320px, 40cqh)); }
+  /* Never bigger than the frame: a narrow frame (the log pinned beside it) and a full field scale the sprites
+     down to fit one row, rather than wrapping out of the frame; a lone boss still towers. */
+  .battle .stage .battlefield { --sprite-min: clamp(72px, 24cqh, 140px); --sprite-party: clamp(48px, 18cqh, 96px); grid-template-columns: 1fr minmax(120px, 26%); }
+  /* A name no wider than its sprite's room, wrapping to a second line, so the names don't set the row. */
+  .battle .stage .unit--enemy .unit__label { max-width: calc(var(--sprite) + 40px); white-space: normal; text-align: center; overflow-wrap: anywhere; }
+  .battle .stage .unit--enemy {
+    --natural: calc(100cqi / var(--count, 1) - 40px); /* one row, sharing the width */
+    --sprite: clamp(max(72px, min(var(--sprite-min, 140px), var(--natural))), var(--natural), min(320px, 40cqh));
+  }
   .battle .stage .roster {
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; margin: 0; max-height: 32cqh; overflow-y: auto; padding: 0 12px;
     background: color-mix(in srgb, var(--paper) 94%, transparent); border: 0; border-top: 3px solid var(--ink);
@@ -1629,6 +1642,17 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .battle--play > .battle__lower { margin-top: 24px; }
   .battle--screen { padding: 0 var(--gutter); }
 }
+/* The log pinned beside the fight takes a third of the screen: short of a very wide one, the frame can't spare the
+   head's column too, so the head sits over the frame and the talk box under the commands. */
+@media (min-width: 1100px) and (max-width: 1699px) {
+  html.log-docked .battle--play { grid-template-columns: minmax(0, 1fr); padding-left: var(--gutter); }
+  html.log-docked .battle--play > * { grid-column: 1; }
+  html.log-docked .battle--play > .battle__header {
+    grid-row: auto; position: static; min-height: 0; padding: 0 0 12px; margin-bottom: 12px; border-right: 0;
+    flex-direction: row; align-items: flex-end;
+  }
+  html.log-docked .battle--play > .battle-composer { grid-row: auto; padding: 12px 0 0; }
+}
 
 /* Stage only (docs/DESIGN.md, "The Stage"): for a TV at the table or a stream, nothing but the frame,
    on black, as big as the screen allows. The way out shows when the mouse goes looking for it. */
@@ -1660,6 +1684,7 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 /* Figures stand on the frame's floor: sprites with their feet behind the dialogue box, as on a visual
    novel's stage; portraits (no sprite yet) sit just above it. */
 .beat-stage__figures { position: absolute; left: 2cqw; right: 2cqw; bottom: 0; display: flex; justify-content: space-between; align-items: flex-end; gap: 2cqw; pointer-events: none; }
+.beat-stage__figure { flex: 0 0 auto; } /* never squeezed to a sliver while the other side slides in */
 .beat-stage__figure--portrait { margin-bottom: 22cqh; }
 .beat-stage__sprite {
   display: block; height: 78cqh; width: auto; max-width: 34cqw; object-fit: contain; object-position: bottom;

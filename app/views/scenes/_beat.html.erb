@@ -30,8 +30,10 @@
       <% end %>
     <% when "backdrop" %>
       <div class="beat__stage">
+        <%# A place or a panel needs picking before the step is saved (autosubmit_controller): the choice shows the field, the field submits. %>
         <%= f.select :backdrop, options_for_select([ [ "A place", "place" ], [ "A panel for this step", "panel" ], [ "Black", "black" ] ], beat.backdrop),
-                     {}, "aria-label": "Behind them", data: { kind_switch_target: "select", action: "kind-switch#update" } %>
+                     {}, "aria-label": "Behind them", data: { kind_switch_target: "select", action: "kind-switch#update",
+                                                              autosubmit_needs: { place: "beat[map_node_id]", panel: "beat[image]" }.to_json } %>
         <span data-show-for="place">
           <%= f.select :map_node_id, options_for_select(places.map { |n| [ n.name, n.id ] }, beat.map_node_id), { include_blank: "(which place)" }, "aria-label": "Which place" %>
         </span>

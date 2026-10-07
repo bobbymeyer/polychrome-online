@@ -141,7 +141,7 @@
   </div>
 
   <%# Right: the log. A column on a wide screen (pinned there unless unpinned), a drawer otherwise. %>
-  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name, dockable: @seat&.gm?, wide: @seat.character? && view.nil? } do %>
+  <%= render layout: "shared/log_drawer", locals: { scope: "table", self_name: @seat&.character&.name, dockable: @seat&.gm?, wide: @seat.character? && view.nil? } do %>
     <%= render "campaigns/tables/chat_log", messages: @messages, seat: @seat %>
   <% end %>
   <% end %>

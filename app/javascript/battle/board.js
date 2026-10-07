@@ -16,6 +16,15 @@ export class Board {
     return this.element.dataset.bossDown
   }
 
+  get bossAway() {
+    return this.element.dataset.bossAway
+  }
+
+  // The bosses' unit ids, to tell a boss that fell from one that got away (the victory event says who left).
+  get bossIds() {
+    return JSON.parse(this.element.dataset.bossIds || "[]")
+  }
+
   // --- lookups ---
 
   unitEl(id) {
@@ -216,7 +225,7 @@ export class Board {
     const parts = [
       ...Object.entries(this.tallies.dealt).map(([id, n]) => `${name(id)} dealt ${n}`),
       ...Object.entries(this.tallies.healed).map(([id, n]) => `${name(id)} healed ${n}`),
-      ...(this.tallies.fallen.length ? [`${this.tallies.fallen.map(name).join(", ")} ${this.tallies.fallen.length > 1 ? "fell" : "fell"}`] : []),
+      ...(this.tallies.fallen.length ? [`${[...new Set(this.tallies.fallen)].map(name).join(", ")} fell`] : []), // once each: down, up, down again is one fall
     ]
     this.tally.replaceChildren()
     const label = document.createElement("strong")

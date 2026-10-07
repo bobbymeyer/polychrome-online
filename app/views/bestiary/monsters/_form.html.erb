@@ -69,12 +69,13 @@
   <fieldset class="panel">
     <legend>AI script</legend>
     <p class="hint">First matching rule wins; all filled conditions must hold. With no rule matching, it attacks. Leave "Use" blank to remove a row.</p>
-    <% abilities = [["Attack", "attack"]] + @world.abilities.order(:name).map { |a| [a.name, a.slug] } %>
-    <table class="grid-form">
+    <%# Battle abilities: a field ability is a move outside battle (FieldUse), never in one. %>
+    <% abilities = [["Attack", "attack"]] + @world.abilities.in_battle.order(:name).map { |a| [a.name, a.slug] } %>
+    <table class="grid-form" data-controller="rows">
       <thead>
         <tr><th>Own HP &lt; %</th><th>Ally HP &lt; %</th><th>Ally down</th><th>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th></tr>
       </thead>
-      <tbody>
+      <tbody data-rows-target="body">
         <% rows_with_blanks(entry.ai_script).each_with_index do |rule, i| %>
           <% c = rule.fetch("if", {}) %>
           <% name = ->(key) { json_field_name(f, :ai_script, i, key) } %>
@@ -92,15 +93,16 @@
           </tr>
         <% end %>
       </tbody>
+      <tfoot><tr><td colspan="7"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
     </table>
   </fieldset>
 
   <fieldset class="panel">
     <legend>Drop table</legend>
     <% items = @world.items.order(:name).map { |item| [item.name, item.slug] } %>
-    <table class="grid-form">
+    <table class="grid-form" data-controller="rows">
       <thead><tr><th>Item</th><th>Chance %</th></tr></thead>
-      <tbody>
+      <tbody data-rows-target="body">
         <% rows_with_blanks(entry.drops).each_with_index do |drop, i| %>
           <tr>
             <td><%= select_tag json_field_name(f, :drops, i, :item), options_for_select(items, drop["item"]), include_blank: true, "aria-label": "Drop item #{i + 1}" %></td>
@@ -108,6 +110,7 @@
           </tr>
         <% end %>
       </tbody>
+      <tfoot><tr><td colspan="2"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
     </table>
   </fieldset>
 

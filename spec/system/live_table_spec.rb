@@ -134,7 +134,34 @@ RSpec.describe "The live table", type: :system do
     end
 
     battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
-    as(gm) { expect(page).to have_css("[data-battle-player-target=log]", text: "Victory!", visible: :all, wait: 15) }
+    as(gm) { expect(page).to have_css("[data-battle-player-target=log] li:first-child", text: "Victory!", visible: :all, wait: 15) } # newest first, as the table's
+  end
+
+  it "pulls a player from the table into a battle whose log plays, and brings the table's own log back after" do
+    seat(player, rook)
+    battle = start_battle(campaign: campaign, goblins: 1)
+    as(player) do
+      expect(page).to have_current_path(battle_path(battle), wait: 15)
+      # The log drawer is kept through refreshes of a page, not carried from the table into the fight:
+      # the battle's own section is here for the battle player to write its lines to.
+      expect(page).to have_css("#log_drawer .battle-log [data-battle-player-target=log]", visible: :all)
+      expect(page).to have_no_css("#log_drawer_wrap_table")
+      expect(page).to have_no_css("#dialogue_box_table", visible: :all) # nor the table's box over the board
+    end
+    goblin = battle.enemies.first.id
+    battle.apply!({ "type" => "command", "actor" => rook.battle_unit_id, "command" => { "kind" => "ability", "ability" => "attack", "target" => goblin } },
+                  actor: rook.battle_unit_id)
+    as(player) do
+      expect(page).to have_css("#log_drawer .battle-log li", text: /Rook attacks/, visible: :all, wait: 15)
+      expect(page).to have_no_css(".command-panel.is-resolving", wait: 15) # the panel comes back once the beat has played
+    end
+    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+    as(player) do
+      expect(page).to have_css(".board[data-status=victory]", wait: 15)
+      click_on "Back to the table"
+      expect(page).to have_current_path(campaign_table_path(campaign), wait: 15)
+      expect(page).to have_no_css(".battle-log", visible: :all) # the table's drawer, not the fight's
+    end
   end
 
   it "takes a player from one battle's results into the next, and starts the clock once they're there" do
@@ -152,6 +179,7 @@ RSpec.describe "The live table", type: :system do
     expect(second.deadline_at).to be_nil # Rook isn't ready yet
     as(player) do
       expect(page).to have_current_path(battle_path(second), wait: 15)
+      expect(page).to have_no_css("#log_drawer .battle-log li", text: "Victory!", visible: :all) # a fresh log, not the last fight's
       expect(page).to have_text("The clock starts when Rook is ready", wait: 10)
       click_on "Ready"
       expect(page).to have_css(".countdown[data-controller=countdown]", wait: 10)

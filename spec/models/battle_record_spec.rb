@@ -86,6 +86,20 @@ RSpec.describe BattleRecord do
         .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle-beat", "battle_beats"))
     end
 
+    it "takes the table off the Fight control once the fight is on, so no stale setup form waits under the results" do
+      campaign = battle.campaign
+      campaign.update!(controls: "battle")
+      start_battle(campaign: campaign)
+      expect(campaign.reload.controls).to eq("talk")
+    end
+
+    it "broadcasts calling it off as a beat too, so every seat's panel goes to the results" do
+      expect { battle.call_off! }
+        .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_beats", "abandoned", "Called off."))
+      expect(battle.reload.result_line).to eq("Called off. Nothing came of it.")
+      expect { battle.call_off! }.not_to have_broadcasted_to(turbo_stream_for(battle)) # once
+    end
+
     it "records the battle's end" do
       battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
       expect(battle.reload).to be_over

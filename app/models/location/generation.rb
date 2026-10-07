@@ -34,7 +34,7 @@ module Location::Generation
 
     world = campaign.world
     Generators::Provenance.past_for(seed: seed, name: name, kind: kind,
-                                    given_names: tables.fetch("names", []).filter_map { |e| e["text"] },
+                                    given_names: tables.fetch("names", []).filter_map { |e| e["text"] }.presence || world.given_names,
                                     family_names: overrides["families"] || world.family_names, lore: world.lore)
   end
 

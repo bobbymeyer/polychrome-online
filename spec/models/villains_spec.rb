@@ -36,6 +36,19 @@ RSpec.describe "Villains and what clearing a place changes" do
     battle = campaign.start_pending_encounter!
     expect(battle.enemies.map(&:name)).to include("Morrow")
     expect(battle.boss_names).to eq([ "Morrow" ])
+    expect(battle.field).not_to be_escapable # a boss fight is fought
+  end
+
+  it "makes a scene's fight a boss fight when a boss is in it: its entrance, and no fleeing it" do
+    campaign.update!(current_node: barrow)
+    Outcome.of("battle", target: { "name" => "The Wyrm", "monsters" => { "crystal_wyrm" => 1 } }).apply!(campaign, by: "gm")
+    wyrm = campaign.current_battle
+    expect(wyrm).to be_boss
+    expect(wyrm.field).not_to be_escapable
+    wyrm.call_off!
+    Outcome.of("battle", target: { "name" => "Goblins", "monsters" => { "goblin" => 2 } }).apply!(campaign, by: "gm")
+    expect(campaign.current_battle).not_to be_boss
+    expect(campaign.current_battle.field).to be_escapable
   end
 
   it "keeps a boss waved off in its room, for when the party comes back; placing a boss sets the room waiting again" do
@@ -80,6 +93,24 @@ RSpec.describe "Villains and what clearing a place changes" do
     expect(lair.reload.resolved?(room)).to be(true)
     expect(lair).to be_cleared
     expect(campaign.messages.pluck(:body)).to include("The Old Barrow is cleared!")
+  end
+
+  it "clears nothing when the boss is sent off the field: the room waits, and so does the place" do
+    walk_into_the_throne_room
+    lair = barrow.location
+    room = campaign.pending_encounter["room"]
+    battle = campaign.start_pending_encounter!
+    battle.apply!({ "type" => "gm_override", "op" => "dismiss", "unit" => morrow.battle_unit_id }, actor: "gm")
+    win!(battle.reload) # the goblins he left behind
+    expect(battle.reload.status).to eq("victory")
+    expect(battle.result_line).to eq("Victory!") # over the goblins
+    expect(battle).not_to be_bosses_beaten
+    expect(lair.reload.resolved?(room)).to be(false)
+    expect(lair).not_to be_cleared
+    expect(campaign.messages.pluck(:body)).not_to include("The Old Barrow is cleared!")
+    expect(campaign.messages.last.body).to include("Victory! Morrow got away, and will be back stronger.")
+    expect(campaign.messages.last.body).not_to include("has fallen")
+    expect(morrow.reload).to have_attributes(escapes: 1, location: lair) # still the Barrow's master, stronger for it
   end
 
   it "lets the villain slip away the first time, their trouble still running; the second time, down is down" do

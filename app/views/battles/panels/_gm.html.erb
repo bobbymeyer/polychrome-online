@@ -58,6 +58,7 @@
 <%# Who's fighting, one table a side. The party's rows say, in one column, who chooses each one's
     command this round (their player, or auto) and the buttons to change it, so it's said once. %>
 <% party_ids = @battle.party.map(&:id) %>
+<% characters = @battle.characters_by_unit %>
 <%# Each side as rows, one a unit (gm-rows): name, HP and MP, conditions, and for the party who chooses, with
     one button only when it matters: Auto while a player holds the round up, Hand back while auto is on,
     Send off for a guest. Auto is one thing: the rest of the battle (BattleRecord#set_auto!), this round too. %>
@@ -83,7 +84,9 @@
             <%= button_to "Hand back", battle_auto_path(@battle), method: :patch, params: { unit: u.id, on: "0" },
                           class: "link-button", form: { class: "inline" }, title: "Their player chooses again" %>
           <% elsif awaiting.include?(u.id) %>
-            <strong>Waiting on their player</strong>
+            <%# The table's presence (Character#here?): a player who closed the page is away, and Auto is the way on. %>
+            <% away = party_ids.include?(u.id) && (who = characters[u.id]) && who.user_id && !who.here? %>
+            <strong><%= away ? "Their player is away" : "Waiting on their player" %></strong>
             <% if party_ids.include?(u.id) %>
               <%= button_to "Auto", battle_auto_path(@battle), method: :patch, params: { unit: u.id, on: "1" },
                             class: "link-button", form: { class: "inline" }, title: "Their default command, this round and the rest; Hand back when they're here" %>
@@ -123,9 +126,9 @@
 </section>
 
 <%# What the GM rarely needs mid-fight, folded away: the round and its ending stay in sight. %>
-<details class="gm-controls">
+<details class="gm-controls" data-controller="remember-open" data-remember-open-key-value="battle-<%= @battle.id %>-controls">
   <summary>GM controls <span class="muted">(someone joins, overrides, pacing)</span></summary>
-  <details class="gm-override">
+  <details class="gm-override" data-controller="remember-open" data-remember-open-key-value="battle-<%= @battle.id %>-override-1">
     <summary>Someone joins <span class="muted">(reinforcements, or a guest on the party's side)</span></summary>
     <%= form_with url: battle_actions_path(@battle), scope: :gm, class: "book-form" do |f| %>
       <%= f.hidden_field :op, value: "add_unit" %>
@@ -152,7 +155,7 @@
     <% end %>
   </details>
 
-  <details class="gm-override">
+  <details class="gm-override" data-controller="remember-open" data-remember-open-key-value="battle-<%= @battle.id %>-override-2">
     <summary>Override <span class="muted">(logged for everyone to see)</span></summary>
     <%= form_with url: battle_actions_path(@battle), scope: :gm, class: "book-form" do |f| %>
       <div class="field-row">

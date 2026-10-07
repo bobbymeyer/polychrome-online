@@ -113,6 +113,13 @@ RSpec.describe "Locations", type: :request do
 
       patch location_boss_path(cave), params: { boss: { monster: "ogre", count: "1" } }
       expect(cave.reload.room(cave.view["boss"])["decision"]["monsters"]).to eq("ogre" => 1)
+      expect(flash[:notice]).to eq("Boss placed.")
+      patch location_boss_path(cave), params: { boss: { monster: "ogre", count: "0" } } # none of them: back to the roll
+      expect(flash[:notice]).to eq("The boss is back to what was rolled.")
+      expect(cave.reload.overrides).not_to have_key("boss")
+      patch location_boss_path(cave), params: { boss: { monster: "wyrm_of_nowhere", count: "1" } }
+      follow_redirect!
+      expect(response.body).to include("wyrm_of_nowhere isn&#39;t in the Bestiary.")
 
       post location_rooms_path(cave), params: { room: { name: "Vault", connect: next_room, kind: "treasure", item: "power_ring" } }
       expect(cave.reload.view["rooms"].last).to include("name" => "Vault", "added" => true)

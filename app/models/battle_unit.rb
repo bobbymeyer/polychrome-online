@@ -33,6 +33,10 @@ class BattleUnit
   def ko? = hp.zero?
   def standing? = hp.positive?
   def hurt? = standing? && hp < max_hp
+  # At the end of their rope (Battle::Resolver#desperate): the move an Attack may become, once.
+  def desperation = @data["desperation"]
+  def desperation_used? = @data["desperation_used"] == true
+  def desperate? = desperation.present? && !desperation_used? && standing? && hp_percent <= Battle::Resolver::DESPERATION_HP_PERCENT
 
   def hp_percent = self.class.hp_percent(hp, max_hp)
   def hp_band = self.class.hp_band(hp, max_hp)
