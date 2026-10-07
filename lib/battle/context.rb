@@ -7,16 +7,30 @@ module Battle
   # path (abilities, statuses, GM overrides) reports changes the same way.
   class Context
     attr_reader :state, :rng, :events
-    attr_accessor :countering
+    attr_accessor :countering, :reacting
     # Creatures summoned by the move being resolved: they act once it's done
     # (Battle::Resolver#summon).
     attr_reader :arrivals
+    # Reactions the move being resolved called for (a script's "when" rules): they come once it's done
+    # (Battle::Resolver#react). [{ "unit", "rule", "trigger", "target" }]
+    attr_reader :reactions
 
     def initialize(state, rng: Rng.new(state["rng"]))
       @state = state
       @rng = rng
       @events = []
       @arrivals = []
+      @reactions = []
+    end
+
+    # A moment a script's "when" rule waits for: the first rule for it is queued, once per unit per
+    # move. Never from within a reaction: reactions don't set off reactions.
+    def queue_reaction(unit, trigger, by: nil, target: nil)
+      return if reacting || over? || unit["gone"]
+      return if reactions.any? { |r| r["unit"] == unit["id"] && r["trigger"] == trigger }
+
+      index = AI.reaction(self, unit, trigger, by: by) or return
+      reactions << { "unit" => unit["id"], "rule" => index, "trigger" => trigger, "target" => target }
     end
 
     def finish
@@ -132,6 +146,9 @@ module Battle
 
       target["hp"] = [ target["hp"] - amount, 0 ].max
       emit(:damage, target: target["id"], amount: amount, hp: target["hp"], **extra)
+      # Struck by an opponent: what it does when hit (a counter), once it's standing or not.
+      striker = extra[:actor] && unit(extra[:actor])
+      queue_reaction(target, "hit", by: extra[:damage_type], target: striker["id"]) if striker && striker["side"] != target["side"]
       return unless target["hp"].zero?
 
       knock_out(target)
@@ -175,11 +192,24 @@ module Battle
       target["buffs"] = []
       target["defending"] = false
       emit(:ko, target: target["id"])
+      # Its last breath, and what its side does when one of them falls.
+      queue_reaction(target, "falls")
+      units.each { |ally| queue_reaction(ally, "ally_falls") if ally["side"] == target["side"] && ally != target && alive?(ally) }
+      # What it called to its side goes with it: the adds are the boss's.
+      units.each { |creature| send_home(creature) if creature.dig("summoned", "by") == target["id"] && !creature["gone"] }
       # A summoned creature isn't left lying there to be raised: down, it's gone.
       return unless target["summoned"] && !target["gone"]
 
       target["gone"] = true
       emit(:unit_left, unit: target["id"], name: target["name"], summoned: true)
+    end
+
+    # A summoned creature leaves the field (its turns up, its summoner down).
+    def send_home(creature)
+      creature["gone"] = true
+      creature["statuses"] = []
+      creature["buffs"] = []
+      emit(:unit_left, unit: creature["id"], name: creature["name"], summoned: true)
     end
 
     def revive(target, hp)

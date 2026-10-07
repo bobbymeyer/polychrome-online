@@ -31,6 +31,7 @@ module BattleLogHelper
     when "counter" then "#{name.('actor')} strikes back!#{dice_note(event)}"
     when "second_wind" then "#{name.('target')} gets back up! (Second Wind)"
     when "mp_restored" then "#{name.('target')} recovers #{event['amount']} #{word('mp')}."
+    when "reacts" then reacts_line(event, name.("actor"), field)
     when "says" then "#{name.('actor')}: “#{event['line']}”"
     when "phase" then "#{event['was']} becomes #{event['name']}!#{" “#{event['line']}”" if event['line'].present?}"
     when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
@@ -165,6 +166,17 @@ module BattleLogHelper
     when "down" then "#{unit} is getting back up."
     when "charging" then "#{unit} is still gathering strength."
     else "#{unit} has no orders."
+    end
+  end
+
+  # A script's reaction: what set it off, and what comes.
+  def reacts_line(event, who, field)
+    move = field.ability_name(event["ability"]) || event["name"]
+    case event["trigger"]
+    when "hit" then "#{who} answers the blow: #{move}!"
+    when "ally_falls" then "#{who} sees one of its own fall: #{move}!"
+    when "falls" then "#{who}, with its last breath: #{move}!"
+    else "#{who}: #{move}!"
     end
   end
 

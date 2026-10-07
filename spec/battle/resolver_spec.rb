@@ -516,6 +516,65 @@ RSpec.describe Battle::Resolver do
     end
   end
 
+  describe "reactions: a script's \"when\" rules, and summons bound to their summoner" do
+    def brute(ai, **extra)
+      { id: "brute", name: "Brute", stats: stats(max_hp: 600, max_mp: 20, str: 9, atk: 8, agi: 1, def: 3, mdef: 2), types: %w[normal],
+        rewards: { exp: 6, gil: 12 }, abilities: %w[goblin_punch], ai: ai }.merge(extra)
+    end
+
+    it "answers a blow of the type it waits for at the striker, at once, saying its line; any other blow it lets pass" do
+      state = build_battle(enemies: [ brute([ { when: "hit", by: "fire", use: "goblin_punch", say: "Hot!" }, { use: "attack" } ]) ])
+      state, events = apply(state, { type: "timeout" }) # everyone attacks: plain blows, not the one it waits for
+      expect(types(events)).to include("damage")
+      expect(types(events)).not_to include("reacts")
+
+      state, = apply(state, command("vivi", "fire", "brute"))
+      state, events = apply(state, { type: "timeout" })
+      expect(of_type(events, :reacts).first).to include("actor" => "brute", "trigger" => "hit", "ability" => "goblin_punch")
+      expect(of_type(events, :says).first["line"]).to eq("Hot!")
+      punch = of_type(events, :cast).find { |e| e["ability"] == "goblin_punch" }
+      expect(punch).to include("actor" => "brute", "targets" => [ "vivi" ]) # straight back at who struck
+      fire = of_type(events, :cast).find { |e| e["ability"] == "fire" }
+      expect(events.index(of_type(events, :reacts).first)).to be > events.index(fire) # after the blow lands
+      expect(state["status"]).to eq("input")
+    end
+
+    it "sees one of its own fall, once, and goes down with a last breath before the fight is decided" do
+      avenger = brute([ { when: "ally_falls", once: true, use: "goblin_punch", say: "Cousin!" }, { when: "falls", use: "goblin_punch" }, { use: "attack" } ])
+      state = build_battle(enemies: [ avenger ] + BattleFixtures.goblins(2))
+      state, events = apply(state, gm("set_hp", unit: "goblin_a", value: 0))
+      expect(of_type(events, :reacts).first).to include("actor" => "brute", "trigger" => "ally_falls")
+      expect(of_type(events, :cast).map { |e| e["ability"] }).to include("goblin_punch")
+      state, events = apply(state, gm("set_hp", unit: "goblin_b", value: 0))
+      expect(types(events)).not_to include("reacts") # once
+
+      state, events = apply(state, gm("set_hp", unit: "brute", value: 0))
+      expect(types(events)).to include("ko", "reacts", "cast", "victory")
+      expect(of_type(events, :reacts).first).to include("trigger" => "falls")
+      expect(types(events).index("reacts")).to be_between(types(events).index("ko"), types(events).index("victory")) # from the ground, before the end
+      expect(state["status"]).to eq("victory")
+    end
+
+    it "keeps a summon called for no set time while its summoner stands, and sends it home when they fall" do
+      bound = { call_bound: { name: "Call Bound", kind: "magic", target: "self", cost: { mp: 4 }, effects: [ { primitive: "summon", creature: "eagle", duration: 0 } ] } }
+      caller = brute([ { once: true, use: "call_bound" }, { use: "attack" } ], abilities: %w[call_bound])
+      tough = BattleFixtures.summons.merge(eagle: BattleFixtures.summons[:eagle].merge(stats: stats(max_hp: 900, atk: 10, agi: 30)))
+      state = build_battle(enemies: [ caller ], abilities: BattleFixtures.abilities.merge(bound), summons: tough)
+      3.times { state, = apply(state, { type: "timeout" }) }
+      eagle = unit(state, "eagle_1")
+      expect(eagle).to include("summoned" => { "by" => "brute", "left" => 0 })
+      expect(eagle["gone"]).to be_nil # three rounds on, still here
+      state, events = apply(state, gm("set_hp", unit: "brute", value: 0))
+      expect(of_type(events, :unit_left).first).to include("unit" => "eagle_1", "summoned" => true)
+      expect(state["status"]).to eq("victory") # nobody left standing on their side
+    end
+
+    it "refuses a summon that stays longer than it may, and takes 0 for while its summoner stands" do
+      long = { long: { name: "Long", kind: "magic", target: "self", cost: {}, effects: [ { primitive: "summon", creature: "eagle", duration: 9 } ] } }
+      expect { build_battle(abilities: BattleFixtures.abilities.merge(long)) }.to raise_error(ArgumentError, /0 while its summoner stands/)
+    end
+  end
+
   describe "GM: units joining and leaving" do
     let(:goblin) { Battle::State.normalize(BattleFixtures.goblins(1).first.except(:count)) }
 

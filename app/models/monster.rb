@@ -48,9 +48,11 @@ class Monster < ApplicationRecord
 
         [ name, name == "ally_ko" ? ActiveModel::Type::Boolean.new.cast(value) : JsonCasting.integer(value) ]
       end.to_h
-      # once: the rule fires one time a battle; say: a line said as it fires (the telegraph).
+      # once: the rule fires one time a battle; say: a line said as it fires (the telegraph);
+      # when: a reaction (hit, ally_falls, falls), by: the type of blow a hit reaction answers.
       { "if" => conditions.presence, "use" => row["use"].to_s, "target" => row["target"].presence,
-        "once" => (true if ActiveModel::Type::Boolean.new.cast(row["once"])), "say" => row["say"].to_s.strip.presence }.compact
+        "once" => (true if ActiveModel::Type::Boolean.new.cast(row["once"])), "say" => row["say"].to_s.strip.presence,
+        "when" => row["when"].presence, "by" => (row["by"].presence if row["when"] == "hit") }.compact
     end)
   end
 
@@ -205,6 +207,8 @@ class Monster < ApplicationRecord
         errors.add(:ai_script, "#{label} has unknown target #{rule['target']}")
       end
       errors.add(:ai_script, "#{label} says too much (200 letters at most)") if rule["say"].to_s.length > 200
+      errors.add(:ai_script, "#{label} has unknown moment #{rule['when']}") if rule["when"] && !Battle::AI::TRIGGERS.include?(rule["when"])
+      errors.add(:ai_script, "#{label} answers blows of #{rule['by']}, which isn't one of this world's types") if rule["by"] && !world_types.include?(rule["by"])
       rule.fetch("if", {}).each do |name, value|
         next errors.add(:ai_script, "#{label} has unknown condition #{name}") unless Battle::AI::CONDITIONS.include?(name)
         next if name == "ally_ko"

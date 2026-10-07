@@ -16,7 +16,7 @@ module Bestiary
       params.expect(monster: [
         :name, :slug, :level, :description, :base_type, :exp, :gil, :abp, :boss, :undead, :boss_line, *art_params,
         { stats: Stats::NAMES, affinities: @world.type_chart.slugs, status_immune: [],
-          ai_script: [ [ :use, :target, :once, :say, *Battle::AI::CONDITIONS ] ], drops: [ %i[item chance] ],
+          ai_script: [ [ :use, :target, :once, :say, :when, :by, *Battle::AI::CONDITIONS ] ], drops: [ %i[item chance] ],
           phases: [ %i[hp_below becomes say restore] ] }
       ])
     end

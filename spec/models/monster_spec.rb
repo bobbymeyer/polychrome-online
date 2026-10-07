@@ -51,6 +51,16 @@ RSpec.describe Monster do
       expect(monster.errors[:ai_script]).to include(/meteor, which is not in the Grimoire/)
     end
 
+    it "takes a rule's moment and the type of blow it answers, and checks them" do
+      create_ability(world)
+      monster = create_monster(world, ai_script: [ { when: "hit", by: "fire", use: "fire", say: "Back at you." }, { when: "falls", by: "fire", use: "fire" }, { use: "attack" } ])
+      expect(monster.ai_script.first).to include("when" => "hit", "by" => "fire")
+      expect(monster.ai_script.second).not_to have_key("by") # only a hit is by something
+      bad = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { when: "sneezes", use: "attack" }, { when: "hit", by: "plasma", use: "attack" } ])
+      expect(bad).not_to be_valid
+      expect(bad.errors[:ai_script]).to include(/unknown moment sneezes/, /blows of plasma, which isn't one of this world's types/)
+    end
+
     it "validates conditions and target strategies" do
       monster = world.monsters.new(name: "Blob", stats: monster_stats,
                                    ai_script: [ { if: { moon_phase: 3, chance: -1 }, use: "attack", target: "strongest" } ])

@@ -48,7 +48,9 @@
     <% entry.ai_script.each do |rule| %>
       <li>
         <% conditions = rule.fetch("if", {}) %>
-        <%= conditions.empty? ? "Otherwise" : "If " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") %>:
+        <% moment = describe_moment(rule["when"], rule["by"]) %>
+        <% if moment %><%= moment %><%= ", if " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") if conditions.any? %>:
+        <% else %><%= conditions.empty? ? "Otherwise" : "If " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") %>:<% end %>
         <% ability = abilities[rule["use"]] %>
         <%= ability ? link_to(ability.name, world_grimoire_ability_path(@world, ability)) : "Attack" %>
         <% if rule["target"] %><span class="muted">→ <%= term(rule["target"]) %></span><% end %>

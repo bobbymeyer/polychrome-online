@@ -164,15 +164,16 @@ RSpec.describe "Books", type: :request do
       king = create_monster(world, slug: "goblin_king", name: "Goblin King", boss: true)
       goblin = create_monster(world)
       get edit_world_bestiary_monster_path(world, goblin)
-      expect(response.body).to include("Phases", "Once", "Says", "Becomes")
+      expect(response.body).to include("Phases", "Once", "Says", "Becomes", "When hit", "As it falls", "Any blow")
       patch world_bestiary_monster_path(world, goblin),
-            params: { monster: { ai_script: { "0" => { use: "fire", once: "1", say: "Burn.", chance: "50" }, "1" => { use: "attack", once: "0" } },
+            params: { monster: { ai_script: { "0" => { use: "fire", once: "1", say: "Burn.", chance: "50" }, "1" => { use: "attack", once: "0" },
+                                              "2" => { when: "hit", by: "fire", use: "fire" } },
                                  phases: { "0" => { hp_below: "50", becomes: "goblin_king", say: "Now you see.", restore: "10" } } } }
       expect(response).to redirect_to(world_bestiary_monster_path(world, goblin))
       expect(goblin.reload.phases).to eq([ { "hp_below" => 50, "becomes" => "goblin_king", "say" => "Now you see.", "restore" => 10 } ])
       expect(goblin.ai_script.first).to include("once" => true, "say" => "Burn.")
       get world_bestiary_monster_path(world, goblin)
-      expect(response.body).to include("(once)", "“Burn.”", "Below 50% HP: becomes", "Goblin King", "10% HP back", "“Now you see.”")
+      expect(response.body).to include("(once)", "“Burn.”", "Below 50% HP: becomes", "Goblin King", "10% HP back", "“Now you see.”", "When hit by Fire:")
       get world_bestiary_monster_path(world, king)
       expect(response.body).to include("A form of")
     end
