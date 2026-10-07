@@ -2,14 +2,14 @@
 <fieldset class="panel">
   <legend>Effects</legend>
   <p class="hint">Applied in order to each target. Leave a row's primitive blank to remove it. Cleanse cures the status picked, or every harmful one when none is. Away takes "who" off the field for its duration; with power, they come back striking. Sap takes MP and the user keeps "Keep %" of it. Damage can do "Bonus %" (×2 when blank) against a status, a type, the undead or bosses; "Recoil %" of it hurts the user; "Grudge %" more power comes as the user nears the end of their HP. A Doom status knocks its target out when it runs out. Summon calls a creature from the Bestiary to the user's side: it acts at once and stays for its duration.</p>
-  <table class="grid-form">
+  <table class="grid-form" data-controller="rows">
     <thead>
       <tr>
         <th>Primitive</th><th>Power</th><th>Hits</th><% if types_matter? %><th>Type</th><% end %><th>Status</th><th>Chance %</th>
         <th>Duration</th><th>Stat</th><th>Amount %</th><th>Revive %</th><th>Who</th><th>Keep %</th><th>Against</th><th>Bonus %</th><th>Recoil %</th><th>Grudge %</th><th>Creature</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody data-rows-target="body">
       <% rows_with_blanks(f.object.effects).each_with_index do |effect, i| %>
         <% name = ->(key) { json_field_name(f, :effects, i, key) } %>
         <tr>
@@ -43,5 +43,6 @@
         </tr>
       <% end %>
     </tbody>
+    <tfoot><tr><td colspan="99"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
   </table>
 </fieldset>

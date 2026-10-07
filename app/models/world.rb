@@ -72,6 +72,10 @@ class World < ApplicationRecord
     @family_names ||= generator_tables.of_kind("families").flat_map { |t| t.entries.filter_map { |e| e["text"] } }
   end
 
+  def given_names
+    @given_names ||= generator_tables.of_kind("names").flat_map { |t| t.entries.filter_map { |e| e["text"] } }
+  end
+
   # The map everything starts on: the first one, made the first time it's asked for.
   def root_map
     world_maps.in_order.first || world_maps.create!(name: name)

@@ -360,7 +360,7 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 .level-up::before { background: var(--signal); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
 .battle-log li { transition: background-color .6s; }
-.battle-log li:last-child { background: var(--tint); font-weight: 600; }
+.battle-log li:first-child { background: var(--tint); font-weight: 600; } /* the newest, on top */
 
 /* ---------------------------------------------------------------------------
  * The table: a speech box with a name tag, and a slanted portrait.
@@ -1684,6 +1684,7 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 /* Figures stand on the frame's floor: sprites with their feet behind the dialogue box, as on a visual
    novel's stage; portraits (no sprite yet) sit just above it. */
 .beat-stage__figures { position: absolute; left: 2cqw; right: 2cqw; bottom: 0; display: flex; justify-content: space-between; align-items: flex-end; gap: 2cqw; pointer-events: none; }
+.beat-stage__figure { flex: 0 0 auto; } /* never squeezed to a sliver while the other side slides in */
 .beat-stage__figure--portrait { margin-bottom: 22cqh; }
 .beat-stage__sprite {
   display: block; height: 78cqh; width: auto; max-width: 34cqw; object-fit: contain; object-position: bottom;

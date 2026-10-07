@@ -75,6 +75,10 @@ deliberate divergence from much of what follows, and where the two disagree the 
   the frame instead of beside it, so the frame keeps its width. On a phone up to five stand abreast.
   The frame leaves room under it for the commands, and the menu never scrolls the stage away while
   the stage is speaking (a boss's entrance, a line in its box).
+- **The battle's log reads like the table's:** newest line on top, the newest tinted. The player at
+  the end of their rope is told so before it happens: a line under the round says an Attack may become
+  their desperation move. The GM's folded controls stay as they were left through the panel's reloads,
+  and a player who has left the page is "away" in the GM's rows, with Auto beside it.
 - **Desperation.** When a character's desperation move comes, the stage stops for them: a slab
   in their colour cuts across the field with their sprite held large, their line in quotes and
   the move's name in heavy italic, white with a black outline. A power chord plays under it.

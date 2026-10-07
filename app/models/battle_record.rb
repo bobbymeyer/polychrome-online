@@ -60,6 +60,7 @@ class BattleRecord < ApplicationRecord
                      input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id), room: room,
                      boss: boss || antagonists.any? || monsters.each_value.any?(&:boss?))
     battle.open_round!
+    campaign.update!(controls: "talk") if campaign.controls == "battle" # the setup form has done its job
     against = antagonists.map(&:name) + encounter.map { |slug, count| "#{count} × #{monsters[slug]&.name || slug}" }
     battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against #{against.to_sentence}.")
     battle.auto_fill!

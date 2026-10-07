@@ -5,21 +5,29 @@
 # creature, everyone on their default command, through the engine. What
 # the seed specs do for every monster, on the entry's page for one. Pure
 # over the books: nothing is saved.
+#
+# A boss is a sequence of moments, so the trial keeps them: every move the
+# creature used and how often, who fell and when, what it inflicted. And
+# one roll is one roll: ten more from here say how it tends to go.
 class Monster::Trial
   BASE = { max_hp: 150, max_mp: 30, str: 12, mag: 12, vit: 12, spr: 12, agi: 12 }.freeze
   ROUNDS = 60
+  ROLLS = 10
 
-  attr_reader :monster, :count, :party, :state
+  attr_reader :monster, :count, :party, :state, :events
 
-  def initialize(monster, count: 2, seed: monster.id)
+  def initialize(monster, count: nil, seed: monster.id)
     @monster = monster
-    @count = count
+    @count = count || (monster.boss? ? 1 : 2) # a boss comes alone
     @party = build_party(monster.world)
-    @state = monster.world.battle(seed: seed, party: @party, monsters: { monster.slug => count })
+    @seed = seed
+    @state = battle(seed)
+    @events = []
     ROUNDS.times do
       break unless @state["status"] == "input"
 
-      @state, = Battle::Resolver.apply(@state, { type: "timeout" })
+      @state, happened = Battle::Resolver.apply(@state, { type: "timeout" })
+      @events.concat(happened)
     end
   end
 
@@ -28,7 +36,47 @@ class Monster::Trial
   def standing = BattleState.new(state).units.select(&:party?)
   def enemies = BattleState.new(state).units.select(&:enemy?)
 
+  # Each move the creatures used, with how many times: [["Fire", 3], ["Attack", 2]].
+  def moves
+    enemy = enemy_ids
+    events.filter_map do |e|
+      next unless enemy.include?(e["actor"])
+
+      case e["type"]
+      when "attack" then "Attack"
+      when "cast" then e["name"] || names[e["ability"]] || e["ability"]
+      end
+    end.tally.sort_by { |name, n| [ -n, name ] }
+  end
+
+  # Who fell, and in which round: [["Knight", 7]].
+  def fallen
+    round = 0
+    events.filter_map do |e|
+      round = e["round"] if e["type"] == "round_start"
+      [ unit_name(e["target"]), round ] if e["type"] == "ko" && party_ids.include?(e["target"])
+    end
+  end
+
+  # What the creatures put on the party, with how many times: [["Poison", 2]].
+  def inflicted
+    events.select { |e| e["type"] == "status_applied" && party_ids.include?(e["target"]) }
+          .map { |e| e["status"].to_s.humanize }.tally.sort_by { |name, n| [ -n, name ] }
+  end
+
+  # Ten more rolls from this seed, the same way (Battle::Forecast's floor): how it tends to go.
+  def forecast
+    @forecast ||= Battle::Forecast.run(ROLLS.times.map { |i| battle(@seed + 1 + i) })
+  end
+
   private
+
+  def battle(seed) = monster.world.battle(seed: seed, party: party, monsters: { monster.slug => count })
+
+  def enemy_ids = state["units"].select { |u| u["side"] == "enemy" }.map { |u| u["id"] }
+  def party_ids = state["units"].select { |u| u["side"] == "party" }.map { |u| u["id"] }
+  def unit_name(id) = state["units"].find { |u| u["id"] == id }&.dig("name") || id
+  def names = @names ||= monster.world.abilities.pluck(:slug, :name).to_h
 
   # The first four archetypes with a shape of their own (not the plain,
   # unmodified starter), each in the cheapest piece it can wear per slot.

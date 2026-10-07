@@ -82,7 +82,11 @@
         <ul class="location-list location-list--rooms">
           <% view["rooms"].each do |room| %>
             <li class="<%= 'is-resolved' if location.resolved?(room['key']) %>">
-              <span><strong><%= room["name"] %></strong><%= " (added)" if room["added"] %><br><span class="muted"><%= describe.(room) %></span></span>
+              <span><strong><%= room["name"] %></strong><%= " (added)" if room["added"] %><br><span class="muted"><%= describe.(room) %></span>
+                <% if room.dig("decision", "kind") == "boss" && (villain = location.resident_villain) %>
+                  <%# The antagonist who calls this place home takes the room when the party walks in (Location::Exploration#meet_villain). %>
+                  <br><strong><%= villain.name %> waits here<%= ", as #{villain.monster.name}," if villain.monster %> at the head of it.</strong>
+                <% end %></span>
               <% unless room["added"] %><%= render "locations/pin", location: location, key: room["key"] %><% end %>
             </li>
           <% end %>
@@ -94,7 +98,7 @@
         <%= form_with url: location_boss_path(location), method: :patch, scope: :boss, class: "book-form" do |f| %>
           <% boss = location.overrides["boss"]&.first %>
           <div class="field-row">
-            <div class="field"><%= f.label :monster %><%= f.select :monster, @world.monsters.order(:level, :name).map { |m| [ m.name, m.slug ] }, include_blank: "As rolled", selected: boss&.first %></div>
+            <div class="field"><%= f.label :monster %><%= f.select :monster, monster_options(@world.monsters), include_blank: "As rolled", selected: boss&.first %></div>
             <div class="field"><%= f.label :count %><%= f.number_field :count, value: boss&.last || 1, min: 1, max: 8 %></div>
           </div>
           <%= f.submit "Place boss", class: "button" %>

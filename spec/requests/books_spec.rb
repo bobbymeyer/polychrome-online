@@ -105,6 +105,7 @@ RSpec.describe "Books", type: :request do
       statuses = page.css("select[aria-label='Status 1'] option").map { |o| o["value"] }
       expect(statuses).to include("poison", "doom", "haste")
       expect(statuses).not_to include("charging", "shield", "down")
+      expect(page.at("[data-controller=rows] button[data-action='rows#add']").text).to eq("Add a row") # more than the two blanks
 
       post world_grimoire_abilities_path(world), params: { ability: form }
       ability = world.abilities.find_by!(slug: "bio")

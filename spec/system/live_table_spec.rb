@@ -134,7 +134,7 @@ RSpec.describe "The live table", type: :system do
     end
 
     battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
-    as(gm) { expect(page).to have_css("[data-battle-player-target=log]", text: "Victory!", visible: :all, wait: 15) }
+    as(gm) { expect(page).to have_css("[data-battle-player-target=log] li:first-child", text: "Victory!", visible: :all, wait: 15) } # newest first, as the table's
   end
 
   it "pulls a player from the table into a battle whose log plays, and brings the table's own log back after" do
@@ -146,6 +146,7 @@ RSpec.describe "The live table", type: :system do
       # the battle's own section is here for the battle player to write its lines to.
       expect(page).to have_css("#log_drawer .battle-log [data-battle-player-target=log]", visible: :all)
       expect(page).to have_no_css("#log_drawer_wrap_table")
+      expect(page).to have_no_css("#dialogue_box_table", visible: :all) # nor the table's box over the board
     end
     goblin = battle.enemies.first.id
     battle.apply!({ "type" => "command", "actor" => rook.battle_unit_id, "command" => { "kind" => "ability", "ability" => "attack", "target" => goblin } },

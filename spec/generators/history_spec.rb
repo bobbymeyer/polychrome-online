@@ -19,6 +19,14 @@ RSpec.describe Generators::History do
     described_class.generate(seed: seed, places: places, lore: LORE, given_names: GIVEN, family_names: FAMILIES, **options)
   end
 
+  it "names people by their house alone when the world has no given names, never as Someone" do
+    plain = described_class.generate(seed: 3, places: places, lore: LORE, given_names: [], family_names: FAMILIES)
+    names = plain["families"].flat_map { |f| Array(f["lineage"]).map { |p| p["name"] } } + plain["places"].values.flat_map { |p| Array(p["lost"]) }
+    expect(names).not_to be_empty
+    expect(names).to all(satisfy { |name| FAMILIES.include?(name) })
+    expect(plain.to_json).not_to include("Someone")
+  end
+
   it "is made of the world's own lore: its trades, what its dungeons were, how they fell, what its families fall out over" do
     undertow = { "trades" => { "stationmaster" => %w[lantern whistle], "teacher" => [] },
                  "pasts" => { "station" => { "rooms" => [ "Ticket Hall", "Platform 2" ], "heart" => "The Last Platform", "keeps" => %w[ticket],

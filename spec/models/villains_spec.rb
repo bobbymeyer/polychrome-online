@@ -36,6 +36,19 @@ RSpec.describe "Villains and what clearing a place changes" do
     battle = campaign.start_pending_encounter!
     expect(battle.enemies.map(&:name)).to include("Morrow")
     expect(battle.boss_names).to eq([ "Morrow" ])
+    expect(battle.field).not_to be_escapable # a boss fight is fought
+  end
+
+  it "makes a scene's fight a boss fight when a boss is in it: its entrance, and no fleeing it" do
+    campaign.update!(current_node: barrow)
+    Outcome.of("battle", target: { "name" => "The Wyrm", "monsters" => { "crystal_wyrm" => 1 } }).apply!(campaign, by: "gm")
+    wyrm = campaign.current_battle
+    expect(wyrm).to be_boss
+    expect(wyrm.field).not_to be_escapable
+    wyrm.call_off!
+    Outcome.of("battle", target: { "name" => "Goblins", "monsters" => { "goblin" => 2 } }).apply!(campaign, by: "gm")
+    expect(campaign.current_battle).not_to be_boss
+    expect(campaign.current_battle.field).to be_escapable
   end
 
   it "keeps a boss waved off in its room, for when the party comes back; placing a boss sets the room waiting again" do

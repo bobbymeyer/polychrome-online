@@ -208,6 +208,11 @@ module Location::Exploration
 
   def resolve!(key) = remember_in_progress!("resolved", key)
 
+  # The antagonist who calls this place home and is still at large.
+  def resident_villain
+    campaign.npcs.at_large.where(location_id: id).order(:id).first
+  end
+
   private
 
   # One more thing in one of #progress's lists (once), and whatever else
@@ -303,11 +308,6 @@ module Location::Exploration
                                                                prelude: villain_prelude(target, villain))
     with = monsters.any? ? ", with #{campaign.describe_encounter(monsters)}" : ""
     campaign.narrate("Boss! #{villain.name}#{", #{villain.title}" if villain.title.present?}#{with}.")
-  end
-
-  # The antagonist who calls this place home and is still at large.
-  def resident_villain
-    campaign.npcs.at_large.where(location_id: id).order(:id).first
   end
 
   def villain_prelude(target, villain)

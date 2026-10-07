@@ -20,8 +20,28 @@
     <% end %>
   </tbody>
 </table>
+<%# The moments: what it did, who fell and when, what it put on them. The designer watches the moments. %>
+<h2>What it did</h2>
+<% if @trial.moves.any? %>
+  <p><%= @trial.moves.map { |name, n| "#{name} ×#{n}" }.to_sentence %>.</p>
+<% else %>
+  <p class="muted">Nothing: it never got a turn.</p>
+<% end %>
+<% if @trial.fallen.any? %>
+  <p>Fell: <%= @trial.fallen.map { |name, round| "#{name} in round #{round}" }.to_sentence %>.</p>
+<% end %>
+<% if @trial.inflicted.any? %>
+  <p>Put on the party: <%= @trial.inflicted.map { |name, n| "#{name} ×#{n}" }.to_sentence %>.</p>
+<% end %>
+<%# One roll is one roll: ten more say how it tends to go. %>
+<% forecast = @trial.forecast %>
+<p>
+  <strong>Over <%= Monster::Trial::ROLLS %> more rolls:</strong> the party won <%= forecast["wins"] %> of <%= forecast["runs"] %>,
+  in <%= forecast["rounds"] %> rounds on average, with <%= forecast["downed"] %> of them down at the end
+  and <%= forecast["hp_left"] %>% of their <%= word("hp") %> left.
+</p>
 <p class="hint">
-  Seed <%= @trial.state["seed"] %>. Try
+  Seed <%= @trial.state["seed"] %>. <%= link_to "Edit #{@monster.name}", edit_world_bestiary_monster_path(@world, @monster) %>, or try
   <% [ 1, 2, 3, 4 ].each do |n| %><%= link_to "#{n} of them", world_bestiary_monster_trial_path(@world, @monster, count: n) %><%= ", " unless n == 4 %><% end %>,
   or <%= link_to "another roll", world_bestiary_monster_trial_path(@world, @monster, count: @trial.count, seed: @trial.state["seed"].to_i + 1) %>.
   A first boss should take a party like this six rounds or more and cost it someone; a towpath creature, two or three.

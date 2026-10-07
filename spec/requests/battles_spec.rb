@@ -155,6 +155,18 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).not_to include("Choose before the clock runs out")
   end
 
+  it "warns a player at the end of their rope that an Attack may become their desperation move" do
+    campaign = base_campaign
+    hero = base_character(campaign, name: "Rook")
+    fight = start_battle(campaign: campaign, goblins: 1)
+    sit_in_battle(fight, hero.battle_unit_id)
+    get battle_panel_path(fight)
+    expect(response.body).not_to include("At the end of your rope")
+    fight.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => hero.battle_unit_id, "value" => 10 }, actor: "gm")
+    get battle_panel_path(fight)
+    expect(response.body).to include("At the end of your rope:", "an Attack may become")
+  end
+
   it "tells the GM who the round waits on, one line a unit, with one button when it matters" do
     battle.set_auto!(bartz, false)
     battle.set_auto!(faris, true)
@@ -165,6 +177,15 @@ RSpec.describe "Battle screen", type: :request do
     expect(rows.map { |r| r.at(".gm-row__name").text }).to eq(%w[Bartz Faris])
     expect(rows[0].at(".gm-row__who").text.squish).to eq("Waiting on their player Auto") # one button: put them on auto
     expect(rows[1].at(".gm-row__who").text.squish).to eq("Auto Hand back") # one button: take them off it
+    # A player who isn't with the page (the table's presence) is away, and Auto is the way on; folded controls stay as left.
+    who = battle.characters_by_unit[bartz]
+    who.update!(user: make_user("Bartz's player"))
+    get battle_panel_path(battle)
+    expect(page.css(".gm-rows[aria-label='The party'] .gm-row")[0].at(".gm-row__who").text.squish).to eq("Their player is away Auto")
+    who.seen!
+    get battle_panel_path(battle)
+    expect(page.css(".gm-rows[aria-label='The party'] .gm-row")[0].at(".gm-row__who").text.squish).to eq("Waiting on their player Auto")
+    expect(page.at("details.gm-controls")["data-controller"]).to eq("remember-open")
     expect(response.body).not_to include("Auto this round", "Auto every round", "Who chooses") # no two autos
     expect(page.at("table")).to be_nil # no table
 

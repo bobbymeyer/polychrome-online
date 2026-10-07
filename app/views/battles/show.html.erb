@@ -70,7 +70,7 @@
     <p class="round-tally" data-battle-player-target="tally" aria-live="polite" hidden></p>
     <div class="fx" data-battle-player-target="fx" aria-hidden="true"></div>
     <%# What's said plays on the stage, along its bottom, as at the table. %>
-    <%= render "campaigns/tables/dialogue_box", campaign: @battle.campaign, extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
+    <%= render "campaigns/tables/dialogue_box", campaign: @battle.campaign, extra: "dialogue--battle", scope: "battle_#{@battle.id}" if @battle.campaign && view != "controller" %>
   </div>
 
   <% unless view == "stage" %>
@@ -114,8 +114,8 @@
   <%= render layout: "shared/log_drawer", locals: { scope: "battle_#{@battle.id}", self_name: @seat&.character&.name, dockable: @seat&.gm? } do %>
     <section class="battle-log log-drawer__section" aria-label="Battle">
       <h3>Battle</h3>
-      <ol data-battle-player-target="log" data-log-drawer-target="list" aria-live="polite">
-        <% @log.each do |event| %>
+      <ol data-battle-player-target="log" data-log-drawer-target="list" data-newest="first" aria-live="polite">
+        <% @log.reverse_each do |event| %>
           <% line = battle_log_line(event.payload, field) %>
           <% if line %><li><%= line %></li><% end %>
         <% end %>

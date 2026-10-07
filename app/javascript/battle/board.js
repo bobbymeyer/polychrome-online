@@ -225,7 +225,7 @@ export class Board {
     const parts = [
       ...Object.entries(this.tallies.dealt).map(([id, n]) => `${name(id)} dealt ${n}`),
       ...Object.entries(this.tallies.healed).map(([id, n]) => `${name(id)} healed ${n}`),
-      ...(this.tallies.fallen.length ? [`${this.tallies.fallen.map(name).join(", ")} ${this.tallies.fallen.length > 1 ? "fell" : "fell"}`] : []),
+      ...(this.tallies.fallen.length ? [`${[...new Set(this.tallies.fallen)].map(name).join(", ")} fell`] : []), // once each: down, up, down again is one fall
     ]
     this.tally.replaceChildren()
     const label = document.createElement("strong")
