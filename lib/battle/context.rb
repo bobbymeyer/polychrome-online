@@ -214,7 +214,10 @@ module Battle
         emit(:defeat)
       elsif side("enemy").none? { |u| alive?(u) }
         state["status"] = "victory"
-        emit(:victory, rewards: rewards, drops: roll_drops)
+        # Who left the field rather than fall (sent off, or a summon gone home): a victory over
+        # nobody is the enemy getting away, and a boss that left hasn't been beaten.
+        enemies = units.select { |u| u["side"] == "enemy" } # side() leaves out the gone
+        emit(:victory, rewards: rewards, drops: roll_drops, fell: enemies.any? { |u| !u["gone"] }, gone: enemies.select { |u| u["gone"] }.map { |u| u["id"] })
       end
     end
 

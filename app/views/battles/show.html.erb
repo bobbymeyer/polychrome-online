@@ -14,7 +14,9 @@
 <%# A setting for this device, not a move: in the Menu with the rest of the way around (DESIGN.md, "Only the battle"). %>
 <%# battle--play: the battle as a player or the GM plays it (stage.css lays it out); else the co-op screen, controller or stage view. %>
 <div class="battle battle--<%= view || "play" %><%= " battle--boss" if boss_names.any? %>" data-controller="battle-player dialogue heartbeat<%= " recap" if @battle.campaign %>" data-heartbeat-url-value="<%= battle_watch_path(@battle) %>" <%= tag.attributes(data: { recap_campaign_value: @battle.campaign_id }) if @battle.campaign %>
-     <%= tag.attributes(data: { boss_down: ("#{boss_names.to_sentence} #{boss_names.size > 1 ? 'fall' : 'falls'}!" if boss_names.any?) }) %>
+     <%= tag.attributes(data: { boss_down: ("#{boss_names.to_sentence} #{boss_names.size > 1 ? 'fall' : 'falls'}!" if boss_names.any?),
+                                boss_away: ("#{boss_names.to_sentence} got away!" if boss_names.any?),
+                                boss_ids: (@battle.boss_units.map(&:id).to_json if boss_names.any?) }) %>
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
      data-battle-player-words-value="<%= battle_words(@battle.campaign.world).to_json %>"
      data-battle-player-next-value="<%= @battle.battle_actions.count %>"
@@ -107,7 +109,7 @@
     </details>
   <% end %>
 
-  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name, dockable: @seat&.gm? } do %>
+  <%= render layout: "shared/log_drawer", locals: { scope: "battle_#{@battle.id}", self_name: @seat&.character&.name, dockable: @seat&.gm? } do %>
     <section class="battle-log log-drawer__section" aria-label="Battle">
       <h3>Battle</h3>
       <ol data-battle-player-target="log" data-log-drawer-target="list" aria-live="polite">

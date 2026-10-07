@@ -16,6 +16,15 @@ export class Board {
     return this.element.dataset.bossDown
   }
 
+  get bossAway() {
+    return this.element.dataset.bossAway
+  }
+
+  // The bosses' unit ids, to tell a boss that fell from one that got away (the victory event says who left).
+  get bossIds() {
+    return JSON.parse(this.element.dataset.bossIds || "[]")
+  }
+
   // --- lookups ---
 
   unitEl(id) {

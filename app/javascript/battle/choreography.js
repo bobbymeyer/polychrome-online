@@ -280,16 +280,31 @@ const STEPS = {
     return e.defaulted.length ? 700 : 0
   },
   victory(b, tl, e, at) {
+    // Nobody fell: the enemy got away (sent off the field). No fanfare, no hop.
+    if (e.fell === false) {
+      b.banner(tl, "They got away!", at, "escape")
+      return 1200
+    }
     b.banner(tl, "Victory!", at, "victory")
     tl.call(() => play("victory"), at)
     // The party's victory hop, as in the games.
     b.party().forEach((el, i) => { gesture(tl, el, "bounce", at + 200 + i * 80); gesture(tl, el, "bounce", at + 700 + i * 80) })
-    // A boss gets its epitaph: the victory says what it beat.
+    // A boss gets its epitaph: the victory says what it beat, or that it got away (every boss left the field).
+    const gone = e.gone || []
+    const bossAway = b.bossIds.length && b.bossIds.every((id) => gone.includes(id))
+    if (bossAway && b.bossAway) {
+      b.banner(tl, b.bossAway, at + 1300, "escape")
+      return 2800
+    }
     if (b.bossDown) {
       b.banner(tl, b.bossDown, at + 1300, "boss-down")
       return 2800
     }
     return 1500
+  },
+  abandoned(b, tl, e, at) {
+    b.banner(tl, "Called off", at, "defeat")
+    return 1200
   },
   defeat(b, tl, e, at) {
     b.banner(tl, "Defeat", at, "defeat")

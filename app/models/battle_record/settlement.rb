@@ -50,9 +50,10 @@ module BattleRecord::Settlement
     update!(settlement: summary)
     announce!(settlement_line(summary))
     # The room this fight was for is dealt with now, and only now: lost or
-    # fled, what waits there waits still (Location::Exploration#cleared?).
-    campaign.dungeon_in_progress&.resolve!(room) if victory && room
-    record_deeds!(summary, characters) if victory
+    # fled, what waits there waits still (Location::Exploration#cleared?), and
+    # so does a boss who got away (sent off the field, to come back stronger).
+    campaign.dungeon_in_progress&.resolve!(room) if victory && room && bosses_beaten?
+    record_deeds!(summary, characters) if victory && bosses_beaten?
     # Everyone down: what now is the table's to decide (Campaign::Defeat).
     campaign.ask_what_now! if status == "defeat" && campaign.wiped_out?
   end
@@ -80,10 +81,9 @@ module BattleRecord::Settlement
       elsif unit.ko? then "defeated"
       else "remains"
       end
-      if %w[escaped slipped_away].include?(fate)
-        # Gone from here, to turn up somewhere near (Campaign::Night).
-        npc.update!(escapes: npc.escapes + 1, location: campaign.current_node&.location || npc.location)
-      end
+      # Gone from the field, not from the map: they stay where they were until the night moves them on
+      # (Campaign::Night), as the NPC form says. A villain met in their own lair is still its master.
+      npc.update!(escapes: npc.escapes + 1) if %w[escaped slipped_away].include?(fate)
       npc.update!(defeated_at: Time.current) if fate == "defeated"
       { "name" => npc.name, "fate" => fate }
     end
@@ -113,8 +113,8 @@ module BattleRecord::Settlement
   end
 
   def settlement_line(summary)
-    parts = [ { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." }.fetch(summary["result"], "It's over.") ]
-    if boss? && summary["result"] == "victory" && summary["antagonists"].blank?
+    parts = [ result_line ]
+    if boss? && summary["result"] == "victory" && summary["antagonists"].blank? && bosses_beaten?
       names = boss_names
       parts << "#{names.to_sentence} #{names.size > 1 ? 'have' : 'has'} fallen!"
     end

@@ -64,7 +64,10 @@ deliberate divergence from much of what follows, and where the two disagree the 
   wine-dark. The boss's name is slammed across the stage on a slab in its own colour, tagged
   BOSS, then it has the first word in the dialogue box (its line from the Bestiary). This plays
   once per viewer, and only in the first round. On victory a second slab follows "Victory!":
-  "Goblin Chief falls!".
+  "Goblin Chief falls!". A boss sent off the field hasn't fallen: the second slab is the Turquoise
+  Escaped one, "Goblin Chief got away!", and a fight nobody fell in ends on "They got away!" with
+  no fanfare and no hop. A fight the GM calls off ends on an ink "Called off" slab, on every seat's
+  screen at once: the results panel follows it as it follows Victory or Defeat.
 - **Desperation.** When a character's desperation move comes, the stage stops for them: a slab
   in their colour cuts across the field with their sprite held large, their line in quotes and
   the move's name in heavy italic, white with a black outline. A power chord plays under it.

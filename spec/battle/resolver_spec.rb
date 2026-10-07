@@ -483,7 +483,16 @@ RSpec.describe Battle::Resolver do
       state, events = apply(state, gm("dismiss", unit: "goblin_b", note: "It runs!"))
       expect(types(events)).to include("unit_left", "victory")
       expect(of_type(events, :victory).first["rewards"]).to eq(unit(state, "goblin_a")["rewards"])
+      expect(of_type(events, :victory).first).to include("fell" => true, "gone" => [ "goblin_b" ]) # one fell, one left
       expect(state["status"]).to eq("victory")
+    end
+
+    it "calls a fight nobody fell in the enemy getting away, not a victory over them" do
+      state = build_battle(enemies: BattleFixtures.goblins(2))
+      state, = apply(state, gm("dismiss", unit: "goblin_a"))
+      state, events = apply(state, gm("dismiss", unit: "goblin_b"))
+      expect(state["status"]).to eq("victory")
+      expect(of_type(events, :victory).first).to include("fell" => false, "gone" => %w[goblin_a goblin_b], "rewards" => {}) # nothing to pay out
     end
 
     it "never offers a unit that has left as a target, and refuses it if named" do

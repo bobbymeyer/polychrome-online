@@ -1,6 +1,5 @@
-<% result = { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away.", "abandoned" => "Called off. Nothing came of it." } %>
 <% settlement = @battle.settlement || {} %>
-<h2><%= result.fetch(@battle.status, @battle.status.humanize) %></h2>
+<h2><%= @battle.result_line %></h2>
 
 <%= render "battles/panels/aftermath", battle: @battle %>
 <% if @battle.campaign %>
