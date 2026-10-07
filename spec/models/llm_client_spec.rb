@@ -30,4 +30,13 @@ RSpec.describe Llm::Client do
     expect { described_class.new(url: "http://me:s3cret@llm.test", http: FakeHttp.new({})).chat(system: "s", user: "u") }
       .to raise_error(Llm::Unreachable, /isn't reachable at http:\/\/llm.test/) { |e| expect(e.message).not_to include("s3cret") }
   end
+
+  it "reads a refusal whose error is plain text (Ollama), and gets by with a body that isn't an error at all" do
+    plain = FakeHttp.new("/chat/completions" => [ 404, { "error" => "model 'qwen' not found" } ])
+    expect { described_class.new(url: "http://llm.test", http: plain).chat(system: "s", user: "u") }
+      .to raise_error(Llm::Error, "The language model answered 404: model 'qwen' not found")
+    listed = FakeHttp.new("/chat/completions" => [ 500, [ "oops" ] ])
+    expect { described_class.new(url: "http://llm.test", http: listed).chat(system: "s", user: "u") }
+      .to raise_error(Llm::Error, "The language model answered 500")
+  end
 end

@@ -44,7 +44,11 @@ class ConnectionCheck
 
   def run
     steps = []
-    uri = URI(@url) rescue nil
+    uri = begin
+      URI(@url)
+    rescue URI::InvalidURIError
+      nil
+    end
     return [ Step.new(false, "Address", "#{@url.inspect} isn't a URL") ] unless uri&.host
 
     shown = @url.sub(%r{//[^@/]*@}, "//")

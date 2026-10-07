@@ -43,8 +43,16 @@ module Llm
     private
 
     def rejection(response)
-      detail = (JSON.parse(response.body.to_s).dig("error", "message") rescue nil)
-      [ "The language model answered #{response.code}", detail ].compact.join(": ")
+      [ "The language model answered #{response.code}", error_detail(response.body) ].compact.join(": ")
+    end
+
+    # The error's message, from { "error": { "message": … } } or Ollama's { "error": "…" }; nil for any other body.
+    def error_detail(body)
+      parsed = JSON.parse(body.to_s)
+      error = parsed["error"] if parsed.is_a?(Hash)
+      error.is_a?(Hash) ? error["message"] : error.presence
+    rescue JSON::ParserError
+      nil
     end
   end
 end
