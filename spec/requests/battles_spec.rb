@@ -7,8 +7,8 @@ RSpec.describe "Battle screen", type: :request do
   include Turbo::Broadcastable::TestHelper
 
   let(:battle) { start_battle }
-  let(:bartz) { battle.party.first["id"] }
-  let(:faris) { battle.party.second["id"] }
+  let(:bartz) { battle.party.first.id }
+  let(:faris) { battle.party.second.id }
 
   def command!(params)
     post battle_actions_path(battle), params: { command: params }
@@ -146,7 +146,7 @@ RSpec.describe "Battle screen", type: :request do
 
   it "tells a player the round, and what the clock does if they don't choose" do
     timed = start_battle(input_seconds: 30)
-    me = timed.party.first["id"]
+    me = timed.party.first.id
     sit_in_battle(timed, me)
     get battle_panel_path(timed)
     expect(response.body).to include("Round 1", "Choose before the clock runs out, or you Attack.")
@@ -226,15 +226,15 @@ RSpec.describe "Battle screen", type: :request do
 
     # The party has seen the goblin take fire: a fire-typed blow says "Weak!" before it's chosen.
     battle.campaign.update!(known_affinities: { "goblin" => { "types" => %w[normal], "fire" => "weak" } })
-    knight = battle.state["units"].find { |u| u["id"] == bartz }
-    goblin = battle.state["units"].find { |u| u["id"] == "goblin_a" }
+    knight = battle.unit(bartz)
+    goblin = battle.unit("goblin_a")
     fire = battle.state["abilities"]["fire"] || { "effects" => [ { "primitive" => "elemental", "type" => "fire" } ] }
     expect(helper_edge_note(battle, knight, fire, goblin)).to eq("Weak!")
     expect(helper_edge_note(battle, knight, { "effects" => [ { "primitive" => "elemental", "type" => "water" } ] }, goblin)).to be_nil # not seen
   end
 
   def helper_edge_note(battle, actor, move, target)
-    Class.new { include BattlesHelper, BooksHelper, ApplicationHelper }.new.edge_note(battle, battle.state, actor, move, target)
+    Class.new { include BattlesHelper, BooksHelper, ApplicationHelper }.new.edge_note(battle, battle.field, actor, move, target)
   end
 
   it "takes a Perfect from the timing meter with a player's move" do
@@ -303,7 +303,7 @@ RSpec.describe "Battle screen", type: :request do
       battle = BattleRecord.last
       expect(response).to redirect_to(battle_path(battle))
       expect(battle).to have_attributes(name: "Ambush", seed: 42, input_seconds: 60, campaign: campaign)
-      expect(battle.units.map { |u| u["name"] }).to eq([ "Lenna", "Goblin A", "Goblin B", "Goblin C" ])
+      expect(battle.units.map(&:name)).to eq([ "Lenna", "Goblin A", "Goblin B", "Goblin C" ])
 
       get battle_panel_path(battle)
       expect(response.body).to include("Game Master · Round 1")
@@ -328,7 +328,7 @@ RSpec.describe "Battle screen", type: :request do
       post campaign_battles_path(campaign), params: { battle: {
         name: "X", characters: [ other.id.to_s, lenna.id.to_s ], encounter: { "0" => { monster: "goblin", count: "1" } }
       } }
-      expect(BattleRecord.last.party.map { |u| u["name"] }).to eq([ "Lenna" ])
+      expect(BattleRecord.last.party.map(&:name)).to eq([ "Lenna" ])
     end
   end
 
@@ -485,18 +485,18 @@ RSpec.describe "Battle screen", type: :request do
     it "brings in reinforcements and a guest from the Bestiary, and sends an enemy off" do
       sit_in_battle(battle, "gm")
       gm!(op: "add_unit", side: "enemy", monster: "goblin", note: "More!")
-      expect(battle.reload.enemies.map { |u| u["id"] }).to include("goblin_c")
+      expect(battle.reload.enemies.map(&:id)).to include("goblin_c")
 
       gm!(op: "add_unit", side: "party", monster: "goblin", name: "Cid")
       cid = battle.reload.unit("cid")
-      expect(cid).to include("guest" => true, "name" => "Cid", "rewards" => {}, "drops" => [])
-      expect(battle.party.map { |u| u["id"] }).not_to include("cid")
+      expect(cid.to_h).to include("guest" => true, "name" => "Cid", "rewards" => {}, "drops" => [])
+      expect(battle.party.map(&:id)).not_to include("cid")
 
       get battle_path(battle)
       expect(response.body).to include("roster__guest", "Cid")
 
       gm!(op: "dismiss", unit: "goblin_c")
-      expect(battle.reload.unit("goblin_c")["gone"]).to be(true)
+      expect(battle.reload.unit("goblin_c").gone?).to be(true)
       get battle_path(battle)
       expect(page.at("[data-unit=goblin_c]")).to be_nil
       expect(response.body).to include("Goblin C leaves the field.", "GM sends Goblin C off.")
@@ -524,10 +524,10 @@ RSpec.describe "Battle screen", type: :request do
       gm!(op: "set_hp", unit: "goblin_a", value: "7", note: "an old wound", status: "", turns: "")
       override = battle.reload.battle_events.find_by(kind: "gm_override").payload
       expect(override).to include("op" => "set_hp", "unit" => "goblin_a", "hp" => 7, "note" => "an old wound")
-      expect(battle.unit("goblin_a")["hp"]).to eq(7)
+      expect(battle.unit("goblin_a").hp).to eq(7)
 
       gm!(op: "add_status", unit: "goblin_b", status: "poison", turns: "2")
-      expect(battle.reload.unit("goblin_b")["statuses"]).to eq([ { "kind" => "poison", "turns" => 2 } ])
+      expect(battle.reload.unit("goblin_b").statuses).to eq([ { "kind" => "poison", "turns" => 2 } ])
     end
 
     it "ends the battle" do
@@ -591,7 +591,7 @@ RSpec.describe "Battle screen", type: :request do
       expect(table.find { |s| s["target"] == "table_battle" }.to_html).not_to include("Go to the battle") # won: the table stops pointing at it
 
       other = start_battle(campaign: campaign, input_seconds: 30)
-      streams = capture_turbo_stream_broadcasts(other) { other.party.each { |u| other.arrive!(u["id"]) } }
+      streams = capture_turbo_stream_broadcasts(other) { other.party.each { |u| other.arrive!(u.id) } }
       expect(streams.any? { |s| s["action"] == "remove" && s["target"] == "battle_ready" }).to be(true)
     end
 

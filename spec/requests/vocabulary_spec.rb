@@ -46,7 +46,7 @@ RSpec.describe "A setting's own words (Vocabulary)", type: :request do
     set_words
     create_character(campaign, name: "Rook")
     battle = start_battle(campaign: campaign)
-    expect { battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => battle.party.first["id"], "value" => 5 }, actor: "gm") }
+    expect { battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => battle.party.first.id, "value" => 5 }, actor: "gm") }
       .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("sets Rook&#39;s Grit to 5."))
     sit_in_battle(battle, "gm")
     get battle_panel_path(battle)

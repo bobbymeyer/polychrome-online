@@ -1,5 +1,5 @@
-<% state = @battle.state %>
-<% awaiting = @battle.awaiting_input %>
+<% field = @battle.field %>
+<% awaiting = field.awaiting_input %>
 <div class="command-panel__head">
   <h2>Game Master · Round <%= @battle.round %></h2>
   <%= render "battles/panels/countdown", battle: @battle %>
@@ -7,11 +7,11 @@
 <%# What the round is waiting on, by its clock: the GM shouldn't read the table to find out. %>
 <% unless @battle.over? %>
   <p class="command-panel__waiting">
-    <%= awaiting.any? ? "Waiting on #{awaiting.map { |id| unit_name(state, id) }.to_sentence}." : "Everyone has chosen: the round runs." %>
+    <%= awaiting.any? ? "Waiting on #{awaiting.map { |id| field.unit_name(id) }.to_sentence}." : "Everyone has chosen: the round runs." %>
   </p>
 <% end %>
 
-<% ideas = state["inputs"].select { |_, c| c["kind"] == "custom" && !c["ruling"] } %>
+<% ideas = field.ideas_awaiting_ruling %>
 <% if ideas.any? %>
   <section class="rulings">
     <h3>Ideas to rule on <span class="muted">(the round, and its clock, wait for you)</span></h3>
@@ -19,7 +19,7 @@
       <%= form_with url: battle_actions_path(@battle), scope: :gm, class: "book-form ruling" do |f| %>
         <%= f.hidden_field :op, value: "rule" %>
         <%= f.hidden_field :unit, value: id %>
-        <p class="ruling__idea"><strong><%= unit_name(state, id) %></strong> tries: “<%= idea["text"] %>”<%= " at #{unit_name(state, idea['target'])}" if idea["target"] %></p>
+        <p class="ruling__idea"><strong><%= field.unit_name(id) %></strong> tries: “<%= idea["text"] %>”<%= " at #{field.unit_name(idea['target'])}" if idea["target"] %></p>
         <%# Three things decide most rulings: what they roll, how hard it is, what happens if it works. The rest
             (how much, a type, a status, on whom, the two lines) waits behind More with its usual answers. %>
         <div class="field-row ruling__three">
@@ -34,7 +34,7 @@
           <summary>More</summary>
           <div class="field-row">
             <div class="field"><%= f.label :strength, "How much", for: "rule_strength_#{id}" %><%= f.select :strength, %w[light medium heavy].map { |x| [ x.capitalize, x ] }, { selected: "medium" }, id: "rule_strength_#{id}" %></div>
-            <% battle_types = Battle::Types.list(@battle.state["types"] || Battle::Types::DEFAULT) %>
+            <% battle_types = Battle::Types.list(field.types) %>
             <% if battle_types.size > 1 %>
               <div class="field"><%= f.label :type, "Type", for: "rule_type_#{id}" %><%= f.select :type, battle_types.map { |t| [ type_name(t), t ] }, { include_blank: "None" }, id: "rule_type_#{id}" %></div>
             <% end %>
@@ -57,36 +57,35 @@
 
 <%# Who's fighting, one table a side. The party's rows say, in one column, who chooses each one's
     command this round (their player, or auto) and the buttons to change it, so it's said once. %>
-<% conditions = ->(u) { (u["statuses"].map { |s| "#{term(s['kind'])} (#{s['turns']})" } + u["buffs"].map { |b| "#{stat_label(b['stat'])} #{signed(b['amount'])}%" }).join(", ") } %>
-<% party_ids = @battle.party.map { |u| u["id"] } %>
+<% party_ids = @battle.party.map(&:id) %>
 <%# Each side as rows, one a unit (gm-rows): name, HP and MP, conditions, and for the party who chooses, with
     one button only when it matters: Auto while a player holds the round up, Hand back while auto is on,
     Send off for a guest. Auto is one thing: the rest of the battle (BattleRecord#set_auto!), this round too. %>
 <section>
   <h3>The party</h3>
   <ul class="gm-rows" aria-label="The party">
-    <% state["units"].select { |u| u["side"] == "party" && !u["gone"] }.each do |u| %>
-      <li class="gm-row <%= 'is-ko' if u['hp'].zero? %> <%= 'is-low' if hp_band(u) == 'danger' %>">
-        <span class="gm-row__name"><%= u["name"] %><%= tag.span(" · guest", class: "muted") if u["guest"] %></span>
-        <span class="gm-row__vitals"><span class="label">HP</span> <strong><%= u["hp"] %></strong><span class="muted">/<%= u["stats"]["max_hp"] %></span> <span class="label">MP</span> <%= u["mp"] %><span class="muted">/<%= u["stats"]["max_mp"] %></span></span>
-        <% if (what = conditions.(u)).present? %><span class="gm-row__conditions muted"><%= what %></span><% end %>
+    <% field.on_field("party").each do |u| %>
+      <li class="gm-row <%= 'is-ko' if u.ko? %> <%= 'is-low' if u.hp_band == 'danger' %>">
+        <span class="gm-row__name"><%= u.name %><%= tag.span(" · guest", class: "muted") if u.guest? %></span>
+        <span class="gm-row__vitals"><span class="label">HP</span> <strong><%= u.hp %></strong><span class="muted">/<%= u.max_hp %></span> <span class="label">MP</span> <%= u.mp %><span class="muted">/<%= u.max_mp %></span></span>
+        <% if (what = unit_conditions(u)).present? %><span class="gm-row__conditions muted"><%= what %></span><% end %>
         <span class="gm-row__who">
-          <% if u["guest"] %>
+          <% if u.guest? %>
             <span class="muted">The GM's guest</span>
-            <% if u["hp"].positive? && !@battle.over? %>
-              <%= button_to "Send off", battle_actions_path(@battle), class: "link-button", params: { gm: { op: "dismiss", unit: u["id"] } },
-                            form: { class: "inline", data: { turbo_confirm: "#{u['name']} leaves the fight?" } } %>
+            <% if u.standing? && !@battle.over? %>
+              <%= button_to "Send off", battle_actions_path(@battle), class: "link-button", params: { gm: { op: "dismiss", unit: u.id } },
+                            form: { class: "inline", data: { turbo_confirm: "#{u.name} leaves the fight?" } } %>
             <% end %>
-          <% elsif u["hp"].zero? %>
+          <% elsif u.ko? %>
             <span class="muted">KO'd</span>
-          <% elsif party_ids.include?(u["id"]) && @battle.auto?(u["id"]) %>
+          <% elsif party_ids.include?(u.id) && @battle.auto?(u.id) %>
             <strong>Auto</strong>
-            <%= button_to "Hand back", battle_auto_path(@battle), method: :patch, params: { unit: u["id"], on: "0" },
+            <%= button_to "Hand back", battle_auto_path(@battle), method: :patch, params: { unit: u.id, on: "0" },
                           class: "link-button", form: { class: "inline" }, title: "Their player chooses again" %>
-          <% elsif awaiting.include?(u["id"]) %>
+          <% elsif awaiting.include?(u.id) %>
             <strong>Waiting on their player</strong>
-            <% if party_ids.include?(u["id"]) %>
-              <%= button_to "Auto", battle_auto_path(@battle), method: :patch, params: { unit: u["id"], on: "1" },
+            <% if party_ids.include?(u.id) %>
+              <%= button_to "Auto", battle_auto_path(@battle), method: :patch, params: { unit: u.id, on: "1" },
                             class: "link-button", form: { class: "inline" }, title: "Their default command, this round and the rest; Hand back when they're here" %>
             <% end %>
           <% else %>
@@ -105,16 +104,16 @@
 <section>
   <h3>The other side</h3>
   <ul class="gm-rows" aria-label="The other side">
-    <% state["units"].select { |u| u["side"] == "enemy" && !u["gone"] }.each do |u| %>
-      <li class="gm-row <%= 'is-ko' if u['hp'].zero? %> <%= 'is-low' if hp_band(u) == 'danger' %>">
-        <span class="gm-row__name"><%= u["name"] %></span>
-        <span class="gm-row__vitals"><span class="label">HP</span> <strong><%= u["hp"] %></strong><span class="muted">/<%= u["stats"]["max_hp"] %></span> <span class="label">MP</span> <%= u["mp"] %><span class="muted">/<%= u["stats"]["max_mp"] %></span></span>
-        <% if (what = conditions.(u)).present? %><span class="gm-row__conditions muted"><%= what %></span><% end %>
+    <% field.on_field("enemy").each do |u| %>
+      <li class="gm-row <%= 'is-ko' if u.ko? %> <%= 'is-low' if u.hp_band == 'danger' %>">
+        <span class="gm-row__name"><%= u.name %></span>
+        <span class="gm-row__vitals"><span class="label">HP</span> <strong><%= u.hp %></strong><span class="muted">/<%= u.max_hp %></span> <span class="label">MP</span> <%= u.mp %><span class="muted">/<%= u.max_mp %></span></span>
+        <% if (what = unit_conditions(u)).present? %><span class="gm-row__conditions muted"><%= what %></span><% end %>
         <span class="gm-row__who">
-          <% if u["hp"].positive? && !@battle.over? %>
-            <%= button_to "Make it flee", battle_actions_path(@battle), class: "link-button", params: { gm: { op: "dismiss", unit: u["id"] } },
-                          form: { class: "inline", data: { turbo_confirm: "#{u['name']} runs off? It gives no EXP or drops." } } %>
-          <% elsif u["hp"].zero? %>
+          <% if u.standing? && !@battle.over? %>
+            <%= button_to "Make it flee", battle_actions_path(@battle), class: "link-button", params: { gm: { op: "dismiss", unit: u.id } },
+                          form: { class: "inline", data: { turbo_confirm: "#{u.name} runs off? It gives no EXP or drops." } } %>
+          <% elsif u.ko? %>
             <span class="muted">Down</span>
           <% end %>
         </span>
@@ -163,7 +162,7 @@
         </div>
         <div class="field">
           <%= f.label :unit %>
-          <%= f.select :unit, state["units"].map { |u| [ u["name"], u["id"] ] } %>
+          <%= f.select :unit, field.units.map { |u| [ u.name, u.id ] } %>
         </div>
         <div class="field"><%= f.label :value, "HP / MP" %><%= f.number_field :value, min: 0 %></div>
         <div class="field">

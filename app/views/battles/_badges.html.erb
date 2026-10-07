@@ -1,7 +1,7 @@
 <%# What lasts on a unit, as badges: each status with the turns it has left (a barrier with its points,
     a blade with its type, a Firing with its count), and each buff with its stat and arrow. %>
 <ul class="badges" data-badges>
-  <% unit["statuses"].each do |status| %>
+  <% unit.statuses.each do |status| %>
     <% turns = status["left"] || status["turns"] %>
     <li class="badge badge--<%= status['kind'] %>" data-status="<%= status['kind'] %>" data-turns="<%= turns %>"
         title="<%= term(status['kind'], world) %>: <%= pluralize(turns, 'turn') %> left">
@@ -9,7 +9,7 @@
       <% if status["kind"] == "shield" %><b><%= status["amount"] %></b><% elsif turns.to_i.positive? %><b><%= turns %></b><% end %>
     </li>
   <% end %>
-  <% unit["buffs"].each do |buff| %>
+  <% unit.buffs.each do |buff| %>
     <li class="badge badge--<%= buff['amount'].to_i.positive? ? 'up' : 'down' %>" data-buff="<%= buff['stat'] %>" data-turns="<%= buff['turns'] %>"
         title="<%= stat_label(buff['stat']) %> <%= signed(buff['amount']) %>%: <%= pluralize(buff['turns'], 'turn') %> left">
       <%= stat_label(buff["stat"]) %> <%= buff["amount"].to_i.positive? ? "↑" : "↓" %><b><%= buff["turns"] %></b>

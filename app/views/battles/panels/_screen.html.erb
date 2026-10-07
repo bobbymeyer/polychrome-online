@@ -1,6 +1,5 @@
 <%# The shared screen's part of the fight (LocalCoop): read from across the room. The clock and who it waits on
     while the party chooses; what they won when it's over. Nobody plays from here: the phones do. %>
-<% state = @battle.state %>
 <div class="screen-status">
   <% if @battle.over? %>
     <% settlement = @battle.settlement || {} %>
@@ -18,7 +17,7 @@
   <% else %>
     <h2>Round <%= @battle.round %></h2>
     <%= render "battles/panels/countdown", battle: @battle %>
-    <% waiting = @battle.awaiting_input.map { |id| unit_name(state, id) } %>
+    <% waiting = @battle.awaiting_input.map { |id| @battle.field.unit_name(id) } %>
     <p class="screen-status__waiting"><%= waiting.any? ? "Waiting for #{waiting.to_sentence}" : "Everyone's ready" %></p>
   <% end %>
 </div>

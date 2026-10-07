@@ -10,7 +10,7 @@ class Battles::AutosController < ApplicationController
 
   def update
     unit = params.expect(:unit)
-    return head :forbidden unless gm_seat? || seat_unit&.dig("id") == unit
+    return head :forbidden unless gm_seat? || seat_unit&.id == unit
 
     acted = @battle.battle_actions.count
     @battle.set_auto!(unit, params[:on] == "1")

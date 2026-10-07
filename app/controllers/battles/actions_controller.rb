@@ -32,7 +32,7 @@ class Battles::ActionsController < ApplicationController
       [ @battle.gm_override(params.expect(gm: GM_FIELDS).to_h.compact_blank), "gm" ]
     elsif params[:command] && seat_unit
       command = params.expect(command: %i[kind ability item target timing text]).to_h.compact_blank
-      [ { "type" => "command", "actor" => seat_unit["id"], "command" => command }, seat_unit["id"] ]
+      [ { "type" => "command", "actor" => seat_unit.id, "command" => command }, seat_unit.id ]
     end
   end
 end

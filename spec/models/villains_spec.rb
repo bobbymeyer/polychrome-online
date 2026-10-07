@@ -13,7 +13,7 @@ RSpec.describe "Villains and what clearing a place changes" do
 
   def win!(battle)
     battle.enemies.each do |unit|
-      battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => unit["id"], "value" => 0 }, actor: "gm") unless battle.over?
+      battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => unit.id, "value" => 0 }, actor: "gm") unless battle.over?
     end
   end
 
@@ -34,7 +34,7 @@ RSpec.describe "Villains and what clearing a place changes" do
     expect(campaign.messages.last.body).to eq("Boss! Morrow, The Barrow Lord, with 2 × Goblin.")
 
     battle = campaign.start_pending_encounter!
-    expect(battle.enemies.map { |u| u["name"] }).to include("Morrow")
+    expect(battle.enemies.map(&:name)).to include("Morrow")
     expect(battle.boss_names).to eq([ "Morrow" ])
   end
 
@@ -64,7 +64,7 @@ RSpec.describe "Villains and what clearing a place changes" do
     battle = campaign.start_pending_encounter!
     expect(battle.room).to eq(room)
 
-    battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => battle.party.first["id"], "value" => 0 }, actor: "gm")
+    battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => battle.party.first.id, "value" => 0 }, actor: "gm")
     expect(battle.reload.status).to eq("defeat")
     expect(lair.reload.resolved?(room)).to be(false)
     expect(lair).not_to be_cleared
