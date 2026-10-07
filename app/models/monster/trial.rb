@@ -58,6 +58,15 @@ class Monster::Trial
     end
   end
 
+  # The forms it took, and in which round: [["Crystal Wyrm, Unbound", 6]].
+  def became
+    round = 0
+    events.filter_map do |e|
+      round = e["round"] if e["type"] == "round_start"
+      [ e["name"], round ] if e["type"] == "phase"
+    end
+  end
+
   # What the creatures put on the party, with how many times: [["Poison", 2]].
   def inflicted
     events.select { |e| e["type"] == "status_applied" && party_ids.include?(e["target"]) }

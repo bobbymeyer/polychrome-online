@@ -204,7 +204,7 @@ module Battle
       raise ArgumentError, "duplicate unit id #{duplicate.first}" if duplicate
 
       units.each do |u|
-        missing = u["abilities"] - library.keys
+        missing = (u["abilities"] + u.fetch("phases", []).flat_map { |p| p["becomes"]["abilities"] }).uniq - library.keys
         raise ArgumentError, "#{u['id']} knows unknown abilities: #{missing.join(', ')}" if missing.any?
         if u["desperation"] && !library.key?(u["desperation"])
           raise ArgumentError, "#{u['id']} has an unknown desperation move: #{u['desperation']}"
@@ -278,11 +278,31 @@ module Battle
         "defending" => false,
         "last_command" => nil
       }.merge(spec["desperation"] ? { "desperation" => spec["desperation"].to_s } : {})
+       .merge(spec["phases"].is_a?(Array) && !spec["phases"].empty? ? { "phases" => phases(id, spec["phases"], side, known) } : {})
        .merge(spec["level"] ? { "level" => Integer(spec["level"]) } : {})
        .merge(spec["undead"] ? { "undead" => true } : {})
        .merge(spec["boss"] ? { "boss" => true } : {})
        .merge(passives(id, spec))
        .merge(job_parts(id, spec, known))
+    end
+
+    # A boss's phases, in order: below a share of its HP it becomes another
+    # creature (a built unit: its name, image, stats, script and rewards),
+    # saying a line, with some HP back. Each is entered once, as the HP
+    # crosses the line (Context#enter_phases).
+    def phases(id, phases, side, known)
+      phases.each_with_index.map do |phase, i|
+        label = "#{id} phase #{i + 1}"
+        below = phase["hp_below"]
+        raise ArgumentError, "#{label}: hp_below must be 1 to 99" unless below.is_a?(Integer) && below.between?(1, 99)
+        restore = phase.fetch("restore", 0)
+        raise ArgumentError, "#{label}: restore must be 0 to 100" unless restore.is_a?(Integer) && restore.between?(0, 100)
+        raise ArgumentError, "#{label}: needs a creature to become" unless phase["becomes"].is_a?(Hash)
+
+        form = unit(phase["becomes"].merge("id" => id), side, known).except("hp", "mp", "statuses", "buffs", "defending", "last_command")
+        say = phase["say"].to_s
+        { "hp_below" => below, "restore" => restore, "becomes" => form }.merge(say.empty? ? {} : { "say" => say })
+      end
     end
 
     # What a character's jobs bring (see #build). Only present keys are kept,

@@ -459,6 +459,63 @@ RSpec.describe Battle::Resolver do
     end
   end
 
+  describe "rules that fire once and say a line, and a boss's phases" do
+    def brute(**extra)
+      { id: "brute", name: "Brute", stats: stats(max_hp: 600, max_mp: 0, str: 9, atk: 8, agi: 8, def: 3, mdef: 2), types: %w[normal],
+        rewards: { exp: 6, gil: 12 }, abilities: %w[goblin_punch],
+        ai: [ { once: true, say: "Grr. Have this.", use: "goblin_punch" }, { use: "attack" } ] }.merge(extra)
+    end
+
+    def run_round(state) = apply(state, { type: "timeout" }) # the clock runs out: everyone on their default, the round plays
+
+    it "fires a once rule one time a battle, saying its line as it fires" do
+      state = build_battle(enemies: [ brute ])
+      state, events = run_round(state)
+      expect(of_type(events, :says).first).to include("actor" => "brute", "line" => "Grr. Have this.")
+      expect(of_type(events, :cast).map { |e| e["ability"] }).to eq([ "goblin_punch" ])
+      expect(unit(state, "brute")["fired"]).to eq([ 0 ])
+
+      state, events = run_round(state)
+      expect(types(events)).not_to include("says")
+      expect(of_type(events, :cast)).to be_empty # the once rule is spent: the next rule, Attack
+      expect(types(events)).to include("attack")
+      expect(state["status"]).to eq("input")
+    end
+
+    it "becomes its next form below a share of its HP, with the HP it has left plus what the phase restores, saying its line" do
+      form = { name: "Brute Unbound", stats: stats(max_hp: 800, max_mp: 0, str: 14, atk: 12, agi: 10, def: 3, mdef: 2), types: %w[fire],
+               abilities: %w[goblin_punch], ai: [ { use: "goblin_punch" } ], rewards: { exp: 60, gil: 120 }, boss: true,
+               image: { book: "monsters", slug: "brute_unbound" } }
+      last = form.merge(name: "Brute, Last Breath", stats: stats(max_hp: 300, max_mp: 0, str: 20, atk: 20, agi: 12, def: 1, mdef: 1))
+      state = build_battle(enemies: [ brute(phases: [ { hp_below: 50, becomes: form, say: "You wake what slept.", restore: 10 },
+                                                      { hp_below: 25, becomes: last } ]) ])
+      expect(unit(state, "brute")["phases"].map { |p| p["becomes"]["name"] }).to eq([ "Brute Unbound", "Brute, Last Breath" ])
+
+      state, events = apply(state, gm("set_hp", unit: "brute", value: 240)) # 40% of 600: below the first line
+      phase = of_type(events, :phase).first
+      expect(phase).to include("actor" => "brute", "was" => "Brute", "name" => "Brute Unbound", "line" => "You wake what slept.", "restore" => 80)
+      brute = unit(state, "brute")
+      expect(brute).to include("name" => "Brute Unbound", "hp" => 320, "types" => %w[fire], "boss" => true, "rewards" => { "exp" => 60, "gil" => 120 },
+                               "image" => { "book" => "monsters", "slug" => "brute_unbound" })
+      expect(brute["stats"]["max_hp"]).to eq(800)
+      expect(brute["ai"]).to eq([ { "use" => "goblin_punch" } ])
+      expect(brute["phases"].size).to eq(1) # the next line waits
+      expect(state["status"]).to eq("input")
+
+      state, events = apply(state, gm("set_hp", unit: "brute", value: 150)) # under 25% of 800: the last form, with 150 of its 300
+      expect(of_type(events, :phase).first).to include("name" => "Brute, Last Breath", "restore" => 0)
+      expect(unit(state, "brute")).to include("hp" => 150, "phases" => [])
+      expect(unit(state, "brute")["stats"]["max_hp"]).to eq(300)
+    end
+
+    it "checks a phase's form as it checks any unit, and its moves against the Grimoire" do
+      form = { name: "X", stats: stats(max_hp: 10), types: %w[normal], abilities: %w[xyzzy] }
+      expect { build_battle(enemies: [ brute(phases: [ { hp_below: 50, becomes: form } ]) ]) }.to raise_error(ArgumentError, /brute knows unknown abilities: xyzzy/)
+      expect { build_battle(enemies: [ brute(phases: [ { hp_below: 0, becomes: form.merge(abilities: []) } ]) ]) }.to raise_error(ArgumentError, /hp_below must be 1 to 99/)
+      expect { build_battle(enemies: [ brute(phases: [ { hp_below: 50 } ]) ]) }.to raise_error(ArgumentError, /needs a creature to become/)
+    end
+  end
+
   describe "GM: units joining and leaving" do
     let(:goblin) { Battle::State.normalize(BattleFixtures.goblins(1).first.except(:count)) }
 

@@ -204,11 +204,35 @@ module Battle
       emit(:status_expired, target: target["id"], status: kind, reason: reason)
     end
 
+    # A boss whose HP has crossed one of its lines becomes its next form, in
+    # the order its phases are written: what it was called and looked like,
+    # its script, its stats (the HP it has left carries over, plus what the
+    # phase restores). A new script starts fresh. Checked wherever the end
+    # is, after every stroke; never once the fight is over.
+    def enter_phases
+      side("enemy").each do |u|
+        phases = u["phases"]
+        next unless phases&.any? && alive?(u) && hp_percent(u) < phases.first["hp_below"]
+
+        phase = phases.first
+        form = phase["becomes"]
+        was = u["name"]
+        u.merge!(form.except("id", "side", "phases"))
+        u["phases"] = phases.drop(1)
+        u.delete("fired")
+        restored = form["stats"]["max_hp"] * phase["restore"] / 100
+        u["hp"] = (u["hp"] + restored).clamp(1, form["stats"]["max_hp"])
+        u["mp"] = u["mp"].clamp(0, form["stats"]["max_mp"])
+        emit(:phase, actor: u["id"], was: was, name: u["name"], line: phase["say"], restore: restored)
+      end
+    end
+
     # Decide whether the battle has ended. Defeat is checked first: a party
     # that falls on the same stroke as the last enemy has not won.
     def check_end
       return if over?
 
+      enter_phases
       if side("party").reject { |u| u["guest"] }.none? { |u| alive?(u) }
         state["status"] = "defeat"
         emit(:defeat)

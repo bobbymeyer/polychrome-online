@@ -160,6 +160,23 @@ RSpec.describe "Books", type: :request do
                          effects: [ { primitive: "heal", power: 30 } ])
     end
 
+    it "writes a boss's phases and a rule's once and line on the form, and reads them back on the page" do
+      king = create_monster(world, slug: "goblin_king", name: "Goblin King", boss: true)
+      goblin = create_monster(world)
+      get edit_world_bestiary_monster_path(world, goblin)
+      expect(response.body).to include("Phases", "Once", "Says", "Becomes")
+      patch world_bestiary_monster_path(world, goblin),
+            params: { monster: { ai_script: { "0" => { use: "fire", once: "1", say: "Burn.", chance: "50" }, "1" => { use: "attack", once: "0" } },
+                                 phases: { "0" => { hp_below: "50", becomes: "goblin_king", say: "Now you see.", restore: "10" } } } }
+      expect(response).to redirect_to(world_bestiary_monster_path(world, goblin))
+      expect(goblin.reload.phases).to eq([ { "hp_below" => 50, "becomes" => "goblin_king", "say" => "Now you see.", "restore" => 10 } ])
+      expect(goblin.ai_script.first).to include("once" => true, "say" => "Burn.")
+      get world_bestiary_monster_path(world, goblin)
+      expect(response.body).to include("(once)", "“Burn.”", "Below 50% HP: becomes", "Goblin King", "10% HP back", "“Now you see.”")
+      get world_bestiary_monster_path(world, king)
+      expect(response.body).to include("A form of")
+    end
+
     it "takes a chosen plate colour, or picks one from the name" do
       goblin = create_monster(world)
       get world_bestiary_monster_path(world, goblin)

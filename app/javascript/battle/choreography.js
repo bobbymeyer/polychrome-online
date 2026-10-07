@@ -114,6 +114,20 @@ const STEPS = {
   desperation(b, tl, e, at) {
     return b.cutIn(tl, e, at)
   },
+  // A creature says a line as its rule fires: the telegraph before the blow, read on the stage.
+  says(b, tl, e, at) {
+    gesture(tl, b.sprite(e.actor), "pop", at)
+    b.caption(tl, `“${e.line}”`, at, "says")
+    return 1100
+  },
+  // A boss becomes its next form: the board after the beat has it; here, the slab and its line.
+  phase(b, tl, e, at) {
+    gesture(tl, b.sprite(e.actor), "flash", at)
+    gesture(tl, b.sprite(e.actor), "shake", at + 200)
+    b.banner(tl, `${e.name}!`, at + 300, "phase")
+    if (e.line) b.caption(tl, `“${e.line}”`, at + 1500, "says")
+    return e.line ? 2600 : 1700
+  },
   unit_joined(b, tl, e, at) {
     // The board after the beat has them; here, the entrance.
     b.banner(tl, e.guest ? `${e.name} joins the party!` : `${e.name} appears!`, at, "gm")
