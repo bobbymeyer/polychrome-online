@@ -20,8 +20,10 @@ class Location < ApplicationRecord
   before_validation(on: :create) { self.seed ||= Location.new_seed }
 
   # Rails 8 page refreshes: each viewer re-fetches their own page, so a
-  # player's copy never contains what only the GM may see.
-  after_update_commit :broadcast_refresh
+  # player's copy never contains what only the GM may see. Later and
+  # debounced, as every refresh is (Campaign::Broadcasts): a burst of
+  # changes is one refresh.
+  after_update_commit :broadcast_refresh_later
   # A mode on the map, the party moving room to room.
   after_update_commit -> { campaign.table_changed }
   after_save { @generated = @view = nil }

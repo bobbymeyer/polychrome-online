@@ -125,8 +125,10 @@ RSpec.describe Location do
       expect(town.view["stock"]).to eq(town.generated["stock"])
     end
 
-    it "asks every viewer to refresh when it changes" do
-      expect { town.rename!("Tule") }.to have_broadcasted_to(Turbo::StreamsChannel.send(:stream_name_from, town))
+    it "asks every viewer to refresh when it changes, from a job as every refresh is" do
+      town # made before the change
+      expect { town.rename!("Tule") }.to have_enqueued_job(Turbo::Streams::BroadcastStreamJob)
+        .with(Turbo::StreamsChannel.send(:stream_name_from, town), content: a_string_including('action="refresh"')).exactly(:once)
     end
   end
 
