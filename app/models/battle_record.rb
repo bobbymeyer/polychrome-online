@@ -55,12 +55,13 @@ class BattleRecord < ApplicationRecord
       unit = state["units"].find { |u| u["side"] == "enemy" && u.dig("image", "slug") == slug }
       unit["name"] = named if unit
     end
+    monsters = campaign.world.monsters.where(slug: encounter.keys).index_by(&:slug)
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
                      input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id), room: room,
-                     boss: boss || antagonists.any? || campaign.world.monsters.where(slug: encounter.keys, boss: true).exists?)
+                     boss: boss || antagonists.any? || monsters.each_value.any?(&:boss?))
     battle.open_round!
-    battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against " \
-                     "#{(antagonists.map(&:name) + encounter.map { |slug, count| "#{count} × #{campaign.world.monsters.find_by(slug: slug)&.name || slug}" }).to_sentence}.")
+    against = antagonists.map(&:name) + encounter.map { |slug, count| "#{count} × #{monsters[slug]&.name || slug}" }
+    battle.announce!("#{name} begins: #{characters.map(&:name).to_sentence} against #{against.to_sentence}.")
     battle.auto_fill!
     battle.call_to_arms
     battle
