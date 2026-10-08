@@ -175,16 +175,18 @@ RSpec.describe "Books", type: :request do
       get edit_world_bestiary_monster_path(world, goblin)
       expect(response.body).to include("Phases", "Once", "Says", "Becomes", "When hit", "As it falls", "Any blow")
       patch world_bestiary_monster_path(world, goblin),
-            params: { monster: { ai_script: { "0" => { use: "fire", once: "1", say: "Burn.", chance: "50" }, "1" => { use: "attack", once: "0" },
+            params: { monster: { ai_script: { "0" => { use: "fire", once: "1", say: "Burn." }, "1" => { use: "attack", once: "0" },
                                               "2" => { when: "hit", by: "fire", use: "fire" } },
                                  phases: { "0" => { hp_below: "50", becomes: "goblin_king", say: "Now you see.", restore: "10" } } } }
       expect(response).to redirect_to(world_bestiary_monster_path(world, goblin))
       expect(goblin.reload.phases).to eq([ { "hp_below" => 50, "becomes" => "goblin_king", "say" => "Now you see.", "restore" => 10 } ])
       expect(goblin.ai_script.first).to include("once" => true, "say" => "Burn.")
       get world_bestiary_monster_path(world, goblin)
-      expect(response.body).to include("(once)", "“Burn.”", "Below 50% HP: becomes", "Goblin King", "10% HP back", "“Now you see.”", "When hit by Fire:")
+      expect(response.body).to include("The first chance it gets:", "(once)", "“Burn.”", "Below 50% HP: becomes", "Goblin King", "10% HP back", "“Now you see.”", "When hit by Fire:")
       get world_bestiary_monster_path(world, king)
       expect(response.body).to include("A form of")
+      get world_bestiary_monsters_path(world)
+      expect(page.text.squish).to include("Goblin King · a form of Goblin") # forms marked in the index
     end
 
     it "keeps a boss's own music when its track is given a scene, says whose it is in the Music book, and lets it go when the track does" do
@@ -242,7 +244,7 @@ RSpec.describe "Books", type: :request do
       expect(monster.image).to be_attached
 
       follow_redirect!
-      expect(response.body).to include("25% of the time", "Fire", "Lowest hp", "Potion", "(30%)", "Immune to")
+      expect(response.body).to include("25% of the time", "Fire", "Lowest HP", "Potion", "(30%)", "Immune to")
       expect(response.body).to include("hue-rotate(40deg)", "scaleX(-1)")
     end
 

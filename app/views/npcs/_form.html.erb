@@ -11,7 +11,11 @@
     <p class="hint">
       A recurring antagonist: they can join a battle under their own name and face, as a boss. If you send them off the field in battle,
       they get away and come back <%= Npc::GROWTH %>% stronger each time<%= " (#{npc.strength_percent}% now, after #{pluralize(npc.escapes, 'escape')})" if npc.escapes.positive? %>.
-      Knocked out, they're finished<%= npc.defeated? ? ", as they are now" : "" %>.
+      <% if npc.world_figure_id.present? && npc.escapes.zero? && !npc.defeated? %>
+        One of the setting's villains: knocked out the first time, they slip away to come back stronger; after that, down is down.
+      <% else %>
+        Knocked out, they're finished<%= npc.defeated? ? ", as they are now" : "" %>.
+      <% end %>
     </p>
   </div>
   <% places = @campaign.locations.includes(:map_node).filter_map { |l| [ l.name, l.id ] }.sort %>

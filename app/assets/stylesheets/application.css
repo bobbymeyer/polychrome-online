@@ -372,6 +372,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink); outli
 .grid-form { width: 100%; border-collapse: collapse; }
 .grid-form th { text-align: left; padding: 0 8px 4px 0; white-space: nowrap; }
 .grid-form td { padding: 0 8px 8px 0; }
+.grid-scroll { overflow-x: auto; }
+.grid-form--wide { min-width: 1280px; }
+.grid-form--wide select { min-width: 120px; }
+.grid-form--wide input[type="text"] { min-width: 260px; }
 .panel { overflow-x: auto; }
 .art-fields { display: flex; gap: var(--gutter); align-items: flex-start; flex-wrap: wrap; }
 .art-fields > div { flex: 1 1 280px; }

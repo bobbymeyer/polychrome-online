@@ -38,6 +38,16 @@ RSpec.describe "The table", type: :request do
   describe "the GM" do
     before { sit(campaign, "gm") }
 
+    it "puts the box away after a fight: the line before it was its lead-in" do
+      say(body: "You'll never take the ledger.", speaker: "npc:#{cid.id}", whisper_to: "")
+      get campaign_table_path(campaign)
+      expect(page.at("#dialogue_box_table .dialogue__body").text).to include("never take the ledger")
+      fight = start_battle(campaign: campaign, goblins: 1)
+      fight.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+      get campaign_table_path(campaign)
+      expect(page.at("#dialogue_box_table")["hidden"]).not_to be_nil
+    end
+
     it "speaks as an NPC, with an expression, and keeps that speaker for the next line" do
       say(body: "Hold on!", speaker: "npc:#{cid.id}", expression: "surprised", whisper_to: "")
       line = campaign.messages.last

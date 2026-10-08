@@ -75,7 +75,7 @@ module ApplicationHelper
     return word("service.#{token}", world) if World::Vocabulary::SERVICES.include?(token)
     return "Things to do" if token == "pastimes" # a mode can shut them (Mode)
 
-    token.humanize
+    token.humanize.sub(/\bhp\b/i) { word("hp", world) } # "Lowest HP", in the world's word
   end
 
   # What a check can be made with: the world's skills first, then the bare

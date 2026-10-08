@@ -1,10 +1,12 @@
 <table class="book-table">
   <thead><tr><th class="num">Lv</th><th>Name</th><th class="num">HP</th><% if types_matter? %><th>Type</th><th>Weak to</th><% end %><th class="num">EXP</th><th class="num"><%= word("currency").upcase_first %></th></tr></thead>
   <tbody>
+    <%# Which entries are another's later form (Monster#phases): they come by its phases, and pay with it. %>
+    <% form_of = entries.each_with_object({}) { |m, of| m.phases.each { |p| of[p["becomes"]] = m } } %>
     <% entries.each do |monster| %>
       <tr>
         <td class="num"><%= monster.level %></td>
-        <td><%= link_to monster.name, entry_path(monster) %></td>
+        <td><%= link_to monster.name, entry_path(monster) %><%= tag.span(" · a form of #{form_of[monster.slug].name}", class: "muted") if form_of[monster.slug] %></td>
         <td class="num"><%= number_with_delimiter(monster.stats["max_hp"]) %></td>
         <% if types_matter? %>
           <td><%= type_tag(monster.base_type) %></td>

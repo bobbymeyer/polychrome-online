@@ -145,7 +145,9 @@ module BooksHelper
     when "shield" then "A barrier against the next #{e['power']}-power worth of damage (#{e.fetch('duration', 3)} turns)"
     when "imbue" then "Attack strikes as #{effect_type(e['type']).downcase} (#{e.fetch('duration', 3)} turns)"
     when "percent" then "#{e['power']}% of current #{word('hp')}#{" (#{e['chance']}%)" if e['chance']}; never the last of it"
-    when "summon" then "Call #{@world&.monsters&.find_by(slug: e['creature'])&.name || e['creature'].to_s.humanize} (acts at once, stays #{pluralize(e.fetch('duration', 1), 'turn')}#{", #{e['power']}% strength" if e['power']})"
+    when "summon"
+      stays = e.fetch("duration", 1).zero? ? "stays while its summoner stands" : "stays #{pluralize(e.fetch('duration', 1), 'turn')}"
+      "Call #{@world&.monsters&.find_by(slug: e['creature'])&.name || e['creature'].to_s.humanize} (acts at once, #{stays}#{", #{e['power']}% strength" if e['power']})"
     when "sap" then "Take #{word('mp')}, power #{e['power']}#{", keep #{e['keep']}%" if e['keep'].to_i.positive?}"
     else e["primitive"].to_s.humanize
     end

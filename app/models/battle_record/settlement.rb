@@ -114,9 +114,9 @@ module BattleRecord::Settlement
 
   def settlement_line(summary)
     parts = [ result_line ]
-    if boss? && summary["result"] == "victory" && summary["antagonists"].blank? && bosses_beaten?
+    if boss? && summary["result"] == "victory" && summary["antagonists"].blank?
       names = boss_names
-      parts << "#{names.to_sentence} #{names.size > 1 ? 'have' : 'has'} fallen!"
+      parts << (bosses_beaten? ? "#{names.to_sentence} #{names.size > 1 ? 'have' : 'has'} fallen!" : "#{names.to_sentence} got away.")
     end
     Array(summary["antagonists"]).each do |antagonist|
       case antagonist["fate"]

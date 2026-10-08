@@ -55,7 +55,7 @@ class Monster < ApplicationRecord
       # when: a reaction (hit, ally_falls, falls), by: the type of blow a hit reaction answers.
       { "if" => conditions.presence, "use" => row["use"].to_s, "target" => row["target"].presence,
         "once" => (true if ActiveModel::Type::Boolean.new.cast(row["once"])), "say" => row["say"].to_s.strip.presence,
-        "when" => row["when"].presence, "by" => (row["by"].presence if row["when"] == "hit") }.compact
+        "when" => row["when"].presence, "by" => row["by"].presence }.compact
     end)
   end
 
@@ -215,6 +215,7 @@ class Monster < ApplicationRecord
       end
       errors.add(:ai_script, "#{label} says too much (200 letters at most)") if rule["say"].to_s.length > 200
       errors.add(:ai_script, "#{label} has unknown moment #{rule['when']}") if rule["when"] && !Battle::AI::TRIGGERS.include?(rule["when"])
+      errors.add(:ai_script, "#{label} answers blows of #{rule['by']}, but only a rule for when it's hit answers blows") if rule["by"] && rule["when"] != "hit"
       errors.add(:ai_script, "#{label} answers blows of #{rule['by']}, which isn't one of this world's types") if rule["by"] && !world_types.include?(rule["by"])
       rule.fetch("if", {}).each do |name, value|
         next errors.add(:ai_script, "#{label} has unknown condition #{name}") unless Battle::AI::CONDITIONS.include?(name)

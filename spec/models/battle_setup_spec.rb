@@ -27,6 +27,11 @@ RSpec.describe BattleSetup do
     expect(campaign.messages.last.body).to eq("Ambush begins: Faris against 2 × Goblin.")
   end
 
+  it "starts the form with nothing to face, one of a kind, so a boss picked is one boss" do
+    rows = BattleSetup.defaults(campaign)[:encounter]
+    expect(rows).to all(include(monster: "", count: "1"))
+  end
+
   it "says no to a fight nobody can have" do
     bartz.update!(hp: 0)
     expect { setup.start! }.to raise_error(Refusal, /still standing/)

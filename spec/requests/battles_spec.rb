@@ -155,6 +155,27 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).not_to include("Choose before the clock runs out")
   end
 
+  it "offers the Fight panel's monsters without a boss's later forms, which come by its phases" do
+    world = battle.campaign.world
+    create_monster(world, slug: "warden_cracked", name: "Warden, Cracked", boss: true)
+    create_monster(world, slug: "warden", name: "Warden", boss: true, phases: [ { hp_below: 50, becomes: "warden_cracked" } ])
+    battle.call_off! # the table calls Battle once the fight is over
+    sit(battle.campaign, "gm")
+    get new_campaign_battle_path(battle.campaign) # calls Battle at the table: the Fight panel
+    follow_redirect!
+    names = page.css("select[name='battle[encounter][0][monster]'] option").map(&:text)
+    expect(names.join).to include("Warden (")
+    expect(names.join).not_to include("Warden, Cracked")
+  end
+
+  it "says nobody fell rather than listing 0 EXP each, when they got away" do
+    %w[goblin_a goblin_b].each { |id| battle.apply!({ "type" => "gm_override", "op" => "dismiss", "unit" => id }, actor: "gm") }
+    sit_in_battle(battle, "gm")
+    get battle_panel_path(battle)
+    expect(response.body).to include("They got away before anyone fell: nothing won, nothing lost.")
+    expect(response.body).not_to include("0 EXP")
+  end
+
   it "tells a player the round ran before they chose, when the clock or the GM ran it" do
     timed = start_battle(input_seconds: 30)
     me = timed.party.first.id

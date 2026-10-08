@@ -291,6 +291,7 @@ input[type=checkbox], input[type=radio], input[type=file] { box-shadow: none !im
 }
 .popup--crit { background: var(--sun-yellow); color: var(--ink); margin-top: -40px; font-size: 16px; box-shadow: inset 0 -3px 0 var(--signal); }
 .popup--miss, .popup--status { background: var(--ink); color: var(--paper); }
+.popup--crit.popup--on { margin-top: 0; } /* a reaction's word, on the creature itself */
 .popup.status-poison, .popup.status-sleep, .popup.status-paralyze, .popup.status-silence,
 .popup.status-blind, .popup.status-haste, .popup.status-slow { color: var(--paper); }
 .popup.status-poison { background: var(--poison); } .popup.status-sleep { background: var(--sleep); }
@@ -1061,6 +1062,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
   }
   .battle--play .battle__dock .battle-ticker:not(:empty) { display: block; flex: none; margin-bottom: 4px; font-size: 13px; line-height: 18px; }
   .battle--play .command-frame { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  /* While a beat plays the panel is "…" (is-resolving): the dock steps down so the party half of the stage shows. */
+  .battle--play .battle__dock:has(.command-frame.is-resolving) { max-height: 22vh; }
   .battle--play .command-frame .window { margin: 0; border-top: 0; padding-top: 0; }
   .battle--play .command-frame .pick-table { margin: 6px 0 8px; }
   .battle--play .command-frame .pick-table td { height: 48px; }
@@ -1092,8 +1095,8 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .unit--enemy { --sprite: clamp(56px, min(calc(100cqi / min(var(--count, 1), 5) - 12px), 18vh), 160px); }
   .unit--enemy .unit__label { max-width: calc(var(--sprite) + 6px); white-space: normal; text-align: center; overflow-wrap: anywhere; font-size: 12px; line-height: 14px; }
   /* The party's row starts at the left edge: their plans hang from their left, the last one's from its right. */
-  .unit--party .intent { left: 0; right: auto; translate: 0 0; max-width: 160px; }
-  .unit--party:last-child .intent { left: auto; right: 0; }
+  .battle .unit--party .intent { left: 0; right: auto; translate: 0 0; max-width: 160px; } /* over the desktop rule, later in the file */
+  .battle .unit--party:last-child .intent { left: auto; right: 0; }
 }
 
 /* ---------------------------------------------------------------------------

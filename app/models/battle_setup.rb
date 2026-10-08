@@ -12,12 +12,12 @@ class BattleSetup
   MOST = 8
 
   def self.defaults(campaign)
-    monster = campaign.world.monsters.order(:level).first&.slug
     {
       name: "Battle", seed: nil, escapable: "1", input_seconds: BattleRecord::DEFAULT_TIMER.to_s, terrain: "",
       # The standing first; the fallen come too, down, to be raised (and their players watch).
       characters: campaign.characters.order(:created_at).sort_by { |c| c.conscious? ? 0 : 1 }.first(4).map(&:id), antagonists: [],
-      encounter: [ { monster: monster.to_s, count: "3" } ] + Array.new(ENCOUNTER_SLOTS - 1) { { monster: "", count: "1" } }
+      # Nothing chosen for the GM: what they face is picked, one of a kind to start (a boss is one).
+      encounter: Array.new(ENCOUNTER_SLOTS) { { monster: "", count: "1" } }
     }
   end
 

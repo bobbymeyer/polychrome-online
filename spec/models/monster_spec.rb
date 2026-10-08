@@ -53,12 +53,13 @@ RSpec.describe Monster do
 
     it "takes a rule's moment and the type of blow it answers, and checks them" do
       create_ability(world)
-      monster = create_monster(world, ai_script: [ { when: "hit", by: "fire", use: "fire", say: "Back at you." }, { when: "falls", by: "fire", use: "fire" }, { use: "attack" } ])
+      monster = create_monster(world, ai_script: [ { when: "hit", by: "fire", use: "fire", say: "Back at you." }, { when: "falls", use: "fire" }, { use: "attack" } ])
       expect(monster.ai_script.first).to include("when" => "hit", "by" => "fire")
-      expect(monster.ai_script.second).not_to have_key("by") # only a hit is by something
-      bad = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { when: "sneezes", use: "attack" }, { when: "hit", by: "plasma", use: "attack" } ])
+      bad = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { when: "sneezes", use: "attack" }, { when: "hit", by: "plasma", use: "attack" },
+                                                                                { when: "falls", by: "fire", use: "attack" } ])
       expect(bad).not_to be_valid
-      expect(bad.errors[:ai_script]).to include(/unknown moment sneezes/, /blows of plasma, which isn't one of this world's types/)
+      expect(bad.errors[:ai_script]).to include(/unknown moment sneezes/, /blows of plasma, which isn't one of this world's types/,
+                                                "rule 3 answers blows of fire, but only a rule for when it's hit answers blows") # said, not dropped
     end
 
     it "validates conditions and target strategies" do
