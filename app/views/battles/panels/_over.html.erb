@@ -26,7 +26,10 @@
   <p>Used <%= settlement["used"].map { |name, n| "#{n} × #{name}" }.to_sentence %>.</p>
 <% end %>
 
-<% if settlement["result"] == "victory" %>
+<% if settlement["result"] == "victory" && !@battle.enemies_fell? %>
+  <%# Nobody fell: nothing was won, and the list of 0 EXP each says nothing. %>
+  <p class="muted">They got away before anyone fell: nothing won, nothing lost.</p>
+<% elsif settlement["result"] == "victory" %>
   <% levelled = settlement["members"].any? { |m| m["level"] || m["learned"].present? } %>
   <ul class="refs" <%= tag.attributes(data: { controller: "jingle", jingle_name_value: "level_up", jingle_once_value: "levelled-#{@battle.id}" }) if levelled %>>
     <% if settlement["gil"].to_i.positive? %><li><%= money(settlement["gil"]) %> for the party</li><% end %>

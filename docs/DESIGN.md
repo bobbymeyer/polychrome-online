@@ -76,13 +76,20 @@ deliberate divergence from much of what follows, and where the two disagree the 
   The frame leaves room under it for the commands, and the menu never scrolls the stage away while
   the stage is speaking (a boss's entrance, a line in its box).
 - **Reactions.** A script's "when" rule fires out of turn with a word popped on the creature in the
-  critical-hit style (COUNTER!, VENGEANCE!, LAST BREATH!) and a shake, then the move as any other.
+  critical-hit style (COUNTER!, VENGEANCE!, LAST BREATH!), mid-sprite and clear of the round's rail,
+  and a shake, then the move as any other. A last breath comes from a caster still standing for it;
+  the board after the beat lays them down again.
+- **Every boss gets its card,** an antagonist too, under their own name. Its line is said in the box
+  only when no entrance was said before the fight, so a boss room's prelude isn't heard twice. After
+  a fight the table's box steps aside: the line before it was the fight's lead-in. On a phone, while
+  a beat plays the pinned panel steps down to a fifth of the screen, so the party shows.
   A summon called for no set time goes down with its summoner: the adds are the boss's.
 - **Phases and telegraphs.** What a creature says as its rule fires is a beat in the stage's
   dialogue box, with its face from the field and a pop of its sprite: the warning before the
   gathered blow, read where the blow will land, typed out as any line at the table is. A boss with
   music of its own (a track from the world's book) plays it for the fight, and a form with its own
-  changes the music as it comes. A boss becoming its next form is a wine-red slab thrown the other way from the
+  changes the music as it comes. On a phone the phase slab and the epitaph fit the width, the name
+  on two lines if it must, never clipped at the edge. A boss becoming its next form is a wine-red slab thrown the other way from the
   boss-down one, its new name across the stage, its line after; the board that follows wears the
   new form. The Bestiary page lists a creature's phases under its script, and a form says what it
   is a form of.

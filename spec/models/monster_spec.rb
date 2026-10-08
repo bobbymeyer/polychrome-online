@@ -53,12 +53,13 @@ RSpec.describe Monster do
 
     it "takes a rule's moment and the type of blow it answers, and checks them" do
       create_ability(world)
-      monster = create_monster(world, ai_script: [ { when: "hit", by: "fire", use: "fire", say: "Back at you." }, { when: "falls", by: "fire", use: "fire" }, { use: "attack" } ])
+      monster = create_monster(world, ai_script: [ { when: "hit", by: "fire", use: "fire", say: "Back at you." }, { when: "falls", use: "fire" }, { use: "attack" } ])
       expect(monster.ai_script.first).to include("when" => "hit", "by" => "fire")
-      expect(monster.ai_script.second).not_to have_key("by") # only a hit is by something
-      bad = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { when: "sneezes", use: "attack" }, { when: "hit", by: "plasma", use: "attack" } ])
+      bad = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { when: "sneezes", use: "attack" }, { when: "hit", by: "plasma", use: "attack" },
+                                                                                { when: "falls", by: "fire", use: "attack" } ])
       expect(bad).not_to be_valid
-      expect(bad.errors[:ai_script]).to include(/unknown moment sneezes/, /blows of plasma, which isn't one of this world's types/)
+      expect(bad.errors[:ai_script]).to include(/unknown moment sneezes/, /blows of plasma, which isn't one of this world's types/,
+                                                "rule 3 answers blows of fire, but only a rule for when it's hit answers blows") # said, not dropped
     end
 
     it "validates conditions and target strategies" do
@@ -127,6 +128,24 @@ RSpec.describe Monster do
       expect(bad).not_to be_valid
       expect(bad.errors[:phases]).to include(/phase 1 becomes nobody, which is not in the Bestiary/, /phase 2 restore must be 0 to 100/, /in order/)
       expect(world.monsters.new(name: "Self", slug: "self", stats: monster_stats, phases: [ { hp_below: 50, becomes: "self" } ])).not_to be_valid
+    end
+
+    it "goes one way: a form can't become, through its own forms, the entry it's a form of" do
+      create_monster(world, slug: "goblin_lord", name: "Goblin Lord", phases: [ { hp_below: 50, becomes: "goblin_king" } ])
+      second.phases = [ { hp_below: 40, becomes: "goblin_lord" } ] # Goblin King → Goblin Lord → Goblin King
+      expect(second).not_to be_valid
+      expect(second.errors[:phases]).to include("go round in a circle (Goblin King → Goblin Lord → Goblin King): a form can't become what it's a form of")
+    end
+
+    it "goes no deeper than the engine builds forms" do
+      create_monster(world, slug: "e", name: "E")
+      create_monster(world, slug: "d", name: "D", phases: [ { hp_below: 50, becomes: "e" } ])
+      create_monster(world, slug: "c", name: "C", phases: [ { hp_below: 50, becomes: "d" } ])
+      three = create_monster(world, slug: "b", name: "B", phases: [ { hp_below: 50, becomes: "c" } ]) # B → C → D → E: three forms
+      expect(three).to be_valid
+      four = world.monsters.new(name: "A", slug: "a", stats: monster_stats, phases: [ { hp_below: 50, becomes: "b" } ])
+      expect(four).not_to be_valid
+      expect(four.errors[:phases]).to include("go 4 forms deep (A → B → C → D → E): 3 is the most a boss can take")
     end
 
     it "keeps a form in the Bestiary while something becomes it" do

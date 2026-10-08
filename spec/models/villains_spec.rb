@@ -113,6 +113,15 @@ RSpec.describe "Villains and what clearing a place changes" do
     expect(morrow.reload).to have_attributes(escapes: 1, location: lair) # still the Barrow's master, stronger for it
   end
 
+  it "says in the table's line that a boss sent off the field got away" do
+    battle = BattleRecord.start!(campaign: campaign, characters: [ rook ], name: "The Chief", encounter: { "goblin_chief" => 1, "goblin" => 1 }, boss: true)
+    chief = battle.enemies.find { |u| u.image_slug == "goblin_chief" }
+    battle.apply!({ "type" => "gm_override", "op" => "dismiss", "unit" => chief.id }, actor: "gm")
+    win!(battle.reload)
+    expect(campaign.messages.last.body).to include("Victory!", "Goblin Chief got away.")
+    expect(campaign.messages.last.body).not_to include("has fallen")
+  end
+
   it "lets the villain slip away the first time, their trouble still running; the second time, down is down" do
     walk_into_the_throne_room
     win!(campaign.start_pending_encounter!)

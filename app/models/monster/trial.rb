@@ -36,17 +36,18 @@ class Monster::Trial
   def standing = BattleState.new(state).units.select(&:party?)
   def enemies = BattleState.new(state).units.select(&:enemy?)
 
-  # Each move the creatures used, with how many times: [["Fire", 3], ["Attack", 2]].
-  def moves
-    enemy = enemy_ids
-    events.filter_map do |e|
-      next unless enemy.include?(e["actor"])
+  # Each move the creatures used, with how many times: [["Fire", 3], ["Attack", 2]]. adds: what the
+  # creatures they called did instead.
+  def moves(adds: false) = tally_moves(adds ? add_ids : own_ids)
 
-      case e["type"]
-      when "attack" then "Attack"
-      when "cast" then e["name"] || names[e["ability"]] || e["ability"]
-      end
-    end.tally.sort_by { |name, n| [ -n, name ] }
+  # What it said (its telegraphs, its reactions' and phases' lines), with how many times.
+  def said
+    events.filter_map { |e| e["line"] if %w[says].include?(e["type"]) && own_ids.include?(e["actor"]) }.tally.to_a
+  end
+
+  # Its reactions to blows of one type: they never fire here, where the party only attacks.
+  def untried_counters
+    monster.ai_script.select { |rule| rule["when"] == "hit" && rule["by"] }.map { |rule| rule["by"] }.uniq
   end
 
   # Who fell, and in which round: [["Knight", 7]].
@@ -80,9 +81,22 @@ class Monster::Trial
 
   private
 
+  def tally_moves(ids)
+    events.filter_map do |e|
+      next unless ids.include?(e["actor"])
+
+      case e["type"]
+      when "attack" then "Attack"
+      when "cast" then e["name"] || names[e["ability"]] || e["ability"]
+      end
+    end.tally.sort_by { |name, n| [ -n, name ] }
+  end
+
   def battle(seed) = monster.world.battle(seed: seed, party: party, monsters: { monster.slug => count })
 
   def enemy_ids = state["units"].select { |u| u["side"] == "enemy" }.map { |u| u["id"] }
+  def own_ids = state["units"].select { |u| u["side"] == "enemy" && !u["summoned"] }.map { |u| u["id"] }
+  def add_ids = state["units"].select { |u| u["side"] == "enemy" && u["summoned"] }.map { |u| u["id"] }
   def party_ids = state["units"].select { |u| u["side"] == "party" }.map { |u| u["id"] }
   def unit_name(id) = state["units"].find { |u| u["id"] == id }&.dig("name") || id
   def names = @names ||= monster.world.abilities.pluck(:slug, :name).to_h

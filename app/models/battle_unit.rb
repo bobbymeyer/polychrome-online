@@ -22,6 +22,8 @@ class BattleUnit
   def guest? = @data["guest"] == true
   # Off the field for good: fled, sent off, a summon gone home.
   def gone? = @data["gone"] == true
+  # Called by another (the summon primitive): an add, not one of the fight's own.
+  def summoned? = @data["summoned"].present?
   def on_field? = !gone?
 
   def stats = @data["stats"]

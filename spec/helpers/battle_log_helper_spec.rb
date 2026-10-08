@@ -40,6 +40,7 @@ RSpec.describe BattleLogHelper, type: :helper do
     expect(helper.battle_log_line({ "type" => "desperation", "actor" => "bartz", "ability" => "goblin_punch", "name" => "Goblin Punch" }, state))
       .to eq("Bartz, at the end of their rope: Goblin Punch!")
     expect(helper.battle_log_line({ "type" => "says", "actor" => "goblin_a", "line" => "Grr." }, state)).to eq("Goblin A: “Grr.”")
+    expect(helper.term("lowest_hp")).to eq("Lowest HP")
     expect(helper.battle_log_line({ "type" => "reacts", "actor" => "goblin_a", "trigger" => "hit", "ability" => "goblin_punch", "name" => "Goblin Punch" }, state))
       .to eq("Goblin A answers the blow: Goblin Punch!")
     expect(helper.battle_log_line({ "type" => "reacts", "actor" => "goblin_a", "trigger" => "falls", "ability" => "goblin_punch", "name" => "Goblin Punch" }, state))

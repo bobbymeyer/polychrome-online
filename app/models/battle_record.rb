@@ -44,7 +44,7 @@ class BattleRecord < ApplicationRecord
   # names: { "dark_mage" => "Sten Pike" }, a name for the first of a kind.
   # room: the dungeon room this fight is for, dealt with when it is won (Settlement).
   def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false, terrain: nil,
-                  antagonists: [], names: {}, room: nil)
+                  antagonists: [], names: {}, room: nil, prelude_said: false)
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
     raise Refusal, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
@@ -57,7 +57,7 @@ class BattleRecord < ApplicationRecord
     end
     monsters = campaign.world.monsters.where(slug: encounter.keys).index_by(&:slug)
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
-                     input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id), room: room,
+                     input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id), room: room, prelude_said: prelude_said,
                      boss: boss || antagonists.any? || monsters.each_value.any?(&:boss?))
     battle.open_round!
     campaign.update!(controls: "talk") if campaign.controls == "battle" # the setup form has done its job
@@ -155,6 +155,12 @@ class BattleRecord < ApplicationRecord
     villains = enemies.filter_map { |u| u.npc_id && campaign&.npcs&.find_by(id: u.npc_id)&.monster }
     own = (villains + boss_monsters.to_a).find { |monster| monster.music.present? }
     own&.music || (boss? ? "boss" : "battle")
+  end
+
+  # The Bestiary entries behind the bosses, for their entrance: an antagonist's entry first, else the boss monsters.
+  def boss_entries
+    villains = enemies.filter_map { |u| u.npc_id && campaign&.npcs&.find_by(id: u.npc_id)&.monster }
+    villains.presence || boss_monsters.to_a
   end
 
   def boss_monsters

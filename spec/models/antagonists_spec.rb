@@ -38,6 +38,12 @@ RSpec.describe "Recurring antagonists" do
     expect(Recap.new(campaign, 1.hour.ago..1.minute.from_now).battle_lines.first).to eq("Won: Alley (Gorn the Red got away)")
   end
 
+  it "says on their form that a villain of the setting slips away the first time" do
+    villain = base_world.campaigns.create!(name: "Lore").tap(&:set_out!).npcs.find_by!(name: "Morrow")
+    html = ApplicationController.render(partial: "npcs/form", locals: { npc: villain }, assigns: { campaign: villain.campaign, world: villain.campaign.world })
+    expect(html).to include("knocked out the first time, they slip away to come back stronger")
+  end
+
   it "stays where they were when they get away (the night moves them on), wherever the party fought them" do
     quarry = campaign.locations.create!(location_template: world.location_templates.find_by!(slug: "goblin_cave"), seed: 3)
     gorn.update!(location: quarry)

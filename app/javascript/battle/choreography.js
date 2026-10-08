@@ -117,7 +117,9 @@ const STEPS = {
   // A reaction: a script's "when" rule fires out of turn (a counter, a last breath).
   reacts(b, tl, e, at) {
     const word = { hit: "COUNTER!", ally_falls: "VENGEANCE!", falls: "LAST BREATH!" }[e.trigger] || "REACTS!"
-    b.popup(tl, e.actor, word, "crit", at)
+    // The last breath comes from a caster still standing for it: the board after the beat lays them down again.
+    if (e.trigger === "falls") tl.call(() => b.unitEl(e.actor)?.classList.remove("is-ko"), at)
+    b.popup(tl, e.actor, word, "crit", at, "popup--on")
     gesture(tl, b.sprite(e.actor), "shake", at)
     return 500
   },
@@ -134,6 +136,7 @@ const STEPS = {
     gesture(tl, b.sprite(e.actor), "flash", at)
     gesture(tl, b.sprite(e.actor), "shake", at + 200)
     b.banner(tl, `${e.form || e.name}!`, at + 300, "phase")
+    tl.call(() => b.rename(e.actor, e.name), at + 300) // what it's called from here on in this beat (its next line, its epitaph)
     if (e.music) tl.call(() => setMusic(e.music, { cut: true }), at + 300)
     if (e.line) tl.call(() => b.speak(e.actor, e.line, e.name), at + 1500)
     return 1700
@@ -321,7 +324,7 @@ const STEPS = {
       return 2800
     }
     if (b.bossDown) {
-      b.banner(tl, b.bossDown, at + 1300, "boss-down")
+      b.banner(tl, b.bossDownNow, at + 1300, "boss-down")
       return 2800
     }
     return 1500
@@ -339,7 +342,11 @@ const STEPS = {
     // GM power is never hidden (§12): every override is in the log, and
     // gets a banner, except the routine auto for absent players.
     if (e.op === "auto") return 0
-    b.banner(tl, `GM: ${humanize(e.op)}`, at, "gm")
+    const who = e.unit && (b.unitEl(e.unit)?.querySelector(".unit__label")?.textContent || b.rosterEl(e.unit)?.querySelector(".roster__name")?.firstChild?.textContent?.trim())
+    const said = { dismiss: who && `${who} is sent off`, set_hp: who && `${who}'s HP set`, set_mp: who && `${who}'s MP set`,
+                   add_status: who && `${who}'s state changed`, remove_status: who && `${who}'s state changed`,
+                   execute_round: "the round runs now", end_battle: "the fight ends", add_unit: "someone joins", rule: "a ruling" }[e.op]
+    b.banner(tl, `GM: ${said || humanize(e.op)}`, at, "gm")
     if (e.hp !== undefined) tl.call(() => b.setHp(e.unit, e.hp), at)
     return 900
   },

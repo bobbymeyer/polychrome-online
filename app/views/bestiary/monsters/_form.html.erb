@@ -26,7 +26,7 @@
   <div class="field">
     <%= f.label :music, "Its own music" %>
     <%# One of the world's tracks by name (World::Music); a form of a boss with its own changes the music as it takes over. %>
-    <%= f.select :music, options_for_select(@world.named_music_choices, entry.music), include_blank: "The boss music (or the battle's, if it isn't one)" %>
+    <%= f.select :music, options_for_select(@world.named_music_choices(keep: entry.music), entry.music), include_blank: "The boss music (or the battle's, if it isn't one)" %>
     <p class="hint">A track from the world's Music book, called by name there. A second form with its own changes the music as it comes.</p>
   </div>
 
@@ -82,7 +82,9 @@
       down with it: the adds are the boss's.</p>
     <%# Battle abilities: a field ability is a move outside battle (FieldUse), never in one. %>
     <% abilities = [["Attack", "attack"]] + @world.abilities.in_battle.order(:name).map { |a| [a.name, a.slug] } %>
-    <table class="grid-form" data-controller="rows">
+    <%# Eleven columns: the grid scrolls sideways rather than crush its selects to three letters. %>
+    <div class="grid-scroll">
+    <table class="grid-form grid-form--wide" data-controller="rows">
       <thead>
         <tr><th>When</th><th>By</th><th>Own HP &lt; %</th><th>Ally HP &lt; %</th><th>Ally down</th><th>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th><th>Once</th><th>Says</th></tr>
       </thead>
@@ -113,6 +115,7 @@
       </tbody>
       <tfoot><tr><td colspan="11"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
     </table>
+    </div>
   </fieldset>
 
   <fieldset class="panel">

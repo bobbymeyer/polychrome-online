@@ -53,6 +53,7 @@
         <% conditions = rule.fetch("if", {}) %>
         <% moment = describe_moment(rule["when"], rule["by"]) %>
         <% if moment %><%= moment %><%= ", if " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") if conditions.any? %>:
+        <% elsif conditions.empty? && rule["once"] %>The first chance it gets:
         <% else %><%= conditions.empty? ? "Otherwise" : "If " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") %>:<% end %>
         <% ability = abilities[rule["use"]] %>
         <%= ability ? link_to(ability.name, world_grimoire_ability_path(@world, ability)) : "Attack" %>
@@ -81,7 +82,7 @@
     </ol>
   <% end %>
   <% if (of = entry.form_of).any? %>
-    <p class="hint">A form of <%= of.map { |m| link_to(m.name, world_bestiary_monster_path(@world, m)) }.to_sentence.html_safe %>.</p>
+    <p class="hint">A form of <%= safe_sentence(of.map { |m| link_to(m.name, world_bestiary_monster_path(@world, m)) }) %>.</p>
   <% end %>
 </section>
 

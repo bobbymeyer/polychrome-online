@@ -47,6 +47,9 @@ RSpec.describe "Authoring fixes", type: :request do
     expect(response.body).to include("What it did", "Attack ×", "Over 10 more rolls:", "the party won", "Edit Goblin")
     get world_bestiary_monster_trial_path(world, world.monsters.find_by!(slug: "crystal_wyrm"))
     expect(response.body).to include("1 × Crystal Wyrm") # a boss comes alone
+    expect(response.body).to include("Said:", "The wyrm&#39;s throat fills with light.") # its telegraph, among its moments
+    get world_bestiary_monster_trial_path(world, world.monsters.find_by!(slug: "crystal_wyrm_unbound"))
+    expect(response.body).to include("Its answers to blows of Electric never come here: this party only attacks.")
   end
 
   it "warns when the plain type is weak to several others, and talks of arts of the land, not Geomancers" do

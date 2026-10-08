@@ -31,10 +31,20 @@ module World::Music
   end
 
   # The tracks the GM calls by name (not a kind of scene's), as choices for a
-  # select: the stage's switch and a scene's music step.
-  def named_music_choices
-    tracks.select { |track| track.scene.nil? && track.playable? }.map { |track| [ "♪ #{track.name}", "track:#{track.id}" ] }
+  # select: the stage's switch, a scene's music step, a boss's own. keep: the
+  # choice already made, kept in the list with what became of it (given a
+  # scene since, or nothing to play yet), so saving the form doesn't drop it.
+  def named_music_choices(keep: nil)
+    choices = tracks.select { |track| track.scene.nil? && track.playable? }.map { |track| [ "♪ #{track.name}", "track:#{track.id}" ] }
+    kept = named_track(keep)
+    return choices if kept.nil? || choices.any? { |_, value| value == keep }
+
+    note = kept.scene ? "the #{kept.scene} track now" : "nothing to play yet"
+    choices + [ [ "♪ #{kept.name} (#{note})", keep ] ]
   end
+
+  # Who plays a track as their own (Monster#music), for the Music book.
+  def own_music_of(track) = monsters.where(music: "track:#{track.id}").alphabetical
 
   # The track a choice of music names ("track:12"), or nil: not that form, or
   # not one of this world's.

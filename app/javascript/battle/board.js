@@ -288,7 +288,8 @@ export class Board {
     const el = document.createElement("span")
     el.className = `popup popup--${kind} ${extra}`.trim()
     el.textContent = text
-    el.style.top = `${box.top - stage.top + box.height * 0.3}px`
+    // A word on the creature (a reaction) sits mid-sprite, clear of the rail along the stage's top.
+    el.style.top = `${box.top - stage.top + box.height * (extra.includes("popup--on") ? 0.5 : 0.3)}px`
     // Numbers land at a slight tilt, never the same twice (decoration, not outcome).
     if (["damage", "heal", "poison"].includes(kind)) el.style.rotate = `${(Math.random() * 12 - 6).toFixed(1)}deg`
     this.fx.append(el)
@@ -327,6 +328,19 @@ export class Board {
       tl.add(svg, { opacity: [1, 1, 0], duration: 320, ease: "inQuad" }, start + 160)
       tl.call(() => svg.remove(), start + 500)
     })
+  }
+
+  rename(id, name) {
+    const label = this.unitEl(id)?.querySelector(".unit__label")
+    if (label && name) label.textContent = name
+  }
+
+  // The bosses' epitaph, by what they're called now (a phase may have renamed them since the page came).
+  get bossDownNow() {
+    const names = this.bossIds.map((id) => this.unitEl(id)?.querySelector(".unit__label")?.textContent).filter(Boolean)
+    if (!names.length) return this.bossDown
+    const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0]
+    return `${list} ${names.length > 1 ? "fall" : "falls"}!`
   }
 
   // A unit's line, said in the stage's dialogue box as a beat of its own (dialogue_controller#say):
