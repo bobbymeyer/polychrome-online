@@ -33,7 +33,7 @@ module BattleLogHelper
     when "mp_restored" then "#{name.('target')} recovers #{event['amount']} #{word('mp')}."
     when "reacts" then reacts_line(event, name.("actor"), field)
     when "says" then "#{name.('actor')}: “#{event['line']}”"
-    when "phase" then "#{event['was']} becomes #{event['name']}!#{" “#{event['line']}”" if event['line'].present?}"
+    when "phase" then "#{event['was']} #{event['was'] == event['name'] ? 'takes the form of' : 'becomes'} #{event['form'] || event['name']}!#{" “#{event['line']}”" if event['line'].present?}"
     when "desperation" then "#{name.('actor')}, at the end of their rope: #{event['name']}!"
     when "cast"
       verb = field.ability(event["ability"])&.magic? ? "casts" : "uses"

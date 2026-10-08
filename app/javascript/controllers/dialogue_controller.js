@@ -105,6 +105,7 @@ export default class extends Controller {
     if (!this.hasBoxTarget) return
     const { speaker, text, plate, expression, portrait } = event.detail
     const line = {
+      said: true, // not a log line: nothing to take back (see #next)
       speakerValue: speaker, text, plate, expressionValue: expression || "",
       speakerKeyValue: `said:${speaker}`, portraitValue: portrait || "", dialogueValue: true,
       element: document.createElement("li")
@@ -194,7 +195,7 @@ export default class extends Controller {
     this.holdTimer = null
     this.clearPages()
     let line = this.queue.shift()
-    while (line && !line.element.isConnected) line = this.queue.shift() // taken back before its turn
+    while (line && !line.said && !line.element.isConnected) line = this.queue.shift() // a log line taken back before its turn
     if (!line) {
       this.current = null
       this.busy = false

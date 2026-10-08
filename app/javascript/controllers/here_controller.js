@@ -30,7 +30,9 @@ export default class extends Controller {
       const seen = Date.parse(who.dataset.seenAt || "")
       const here = !Number.isNaN(seen) && Date.now() - seen < HERE_MS
       who.classList.toggle("is-here", here)
-      who.textContent = here ? "here" : "away"
+      // The party panel's mark says "here" or "away"; a row can bring its own words ("Waiting on their player|Their player is away").
+      const [present, gone] = (who.dataset.hereWords || "here|away").split("|")
+      who.textContent = here ? present : gone
     })
   }
 }

@@ -41,6 +41,15 @@ RSpec.describe "Books", type: :request do
       expect(base.monsters.find_by!(slug: "goblin").name).to eq("Goblin")
     end
 
+    it "leaves no half-made world when a copy fails, and says what couldn't be copied" do
+      base = base_world
+      base.monsters.find_by!(slug: "goblin").update_column(:phases, [ { "hp_below" => 50, "becomes" => "nobody" } ]) # broken behind validation's back
+      post worlds_path, params: { world: { name: "Cinders", slug: "cinders" }, copy_from: "base" }
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Base World&#39;s monster Goblin couldn&#39;t be copied", "nobody, which is not in the Bestiary")
+      expect(World.find_by(slug: "cinders")).to be_nil
+    end
+
     it "copies only the rules when asked: the books without the setting" do
       base = base_world
       post worlds_path, params: { world: { name: "Velvet", slug: "velvet" }, copy_from: "base", rules_only: "1" }

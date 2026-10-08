@@ -188,6 +188,11 @@ export default class extends Controller {
     if (!this.current) this.panelTarget.classList.remove("is-resolving")
   }
 
+  // Something every panel should show changed (a player came back): ask again, unless mid-choice.
+  panelChanged() {
+    this.refreshPanel()
+  }
+
   // Reload the panel after a beat so it matches the new state. A beat that
   // only records someone else's command doesn't interrupt a player who is
   // mid-choice or typing.
