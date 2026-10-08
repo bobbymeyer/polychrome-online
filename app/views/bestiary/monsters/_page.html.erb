@@ -81,7 +81,7 @@
     </ol>
   <% end %>
   <% if (of = entry.form_of).any? %>
-    <p class="hint">A form of <%= of.map { |m| link_to(m.name, world_bestiary_monster_path(@world, m)) }.to_sentence.html_safe %>.</p>
+    <p class="hint">A form of <%= safe_sentence(of.map { |m| link_to(m.name, world_bestiary_monster_path(@world, m)) }) %>.</p>
   <% end %>
 </section>
 

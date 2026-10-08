@@ -15,6 +15,8 @@ class Track < ApplicationRecord
   SPOTIFY = %r{\A(?:https?://)?open\.spotify\.com/(?:intl-[a-z]{2}/)?(track|album|playlist|episode)/([A-Za-z0-9]+)}
 
   belongs_to :world
+  # Taken out of the book, it's nobody's own music any more: they go back to the boss track.
+  after_destroy { world.monsters.where(music: "track:#{id}").update_all(music: nil) }
   has_one_attached :audio
 
   normalizes :name, :url, with: ->(value) { value.to_s.strip.presence }

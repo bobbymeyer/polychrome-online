@@ -16,7 +16,13 @@
     <% @tracks.each do |track| %>
       <tr class="music-book__row">
         <td><strong><%= track.name %></strong></td>
-        <td><%= track.scene ? "In the #{track.scene}" : "When called" %></td>
+        <td>
+          <%= track.scene ? "In the #{track.scene}" : "When called" %>
+          <% if (bosses = @world.own_music_of(track)).any? %>
+            <%# Giving it a scene keeps it theirs: say whose it is, so nobody is surprised. %>
+            <br><span class="muted">Its own music for <%= safe_sentence(bosses.map { |m| link_to(m.name, world_bestiary_monster_path(@world, m)) }) %></span>
+          <% end %>
+        </td>
         <td>
           <% if track.link? %>
             <%= tag.a track.service, href: track.link_href, target: "_blank", rel: "noopener" %>

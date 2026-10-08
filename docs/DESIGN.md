@@ -82,7 +82,8 @@ deliberate divergence from much of what follows, and where the two disagree the 
   dialogue box, with its face from the field and a pop of its sprite: the warning before the
   gathered blow, read where the blow will land, typed out as any line at the table is. A boss with
   music of its own (a track from the world's book) plays it for the fight, and a form with its own
-  changes the music as it comes. A boss becoming its next form is a wine-red slab thrown the other way from the
+  changes the music as it comes. On a phone the phase slab and the epitaph fit the width, the name
+  on two lines if it must, never clipped at the edge. A boss becoming its next form is a wine-red slab thrown the other way from the
   boss-down one, its new name across the stage, its line after; the board that follows wears the
   new form. The Bestiary page lists a creature's phases under its script, and a form says what it
   is a form of.

@@ -1076,6 +1076,11 @@ body[data-view="controller"] .page { padding-top: 16px; }
   .battle--play :is(.banner--victory, .banner--defeat, .banner--escape, .banner--boss-down, .banner--all-out, .banner--phase) {
     position: fixed; top: 22vh; z-index: 35; font-size: 56px;
   }
+  /* A form's name or a boss's epitaph can be long ("Crystal Wyrm, Unbound!"): it fits the phone's width, on two lines if it must. */
+  .battle--play :is(.banner--phase, .banner--boss-down) {
+    left: 0; right: 0; padding: 8px 6%; font-size: clamp(26px, 9vw, 56px); line-height: 1.05;
+    white-space: normal; overflow-wrap: anywhere; text-align: center;
+  }
   /* One More too: above the pinned menu, not under it, across the whole width. */
   .battle--play .banner--one-more {
     position: fixed; top: 28vh; left: -8px; right: -8px; z-index: 35; font-size: 56px; text-align: center; box-shadow: 0 6px 0 var(--ink);

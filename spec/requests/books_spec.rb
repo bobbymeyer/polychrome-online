@@ -187,6 +187,21 @@ RSpec.describe "Books", type: :request do
       expect(response.body).to include("A form of")
     end
 
+    it "keeps a boss's own music when its track is given a scene, says whose it is in the Music book, and lets it go when the track does" do
+      theme = world.tracks.create!(name: "Forge theme", source: "link", url: "https://youtu.be/dQw4w9WgXcQ")
+      warden = create_monster(world, slug: "warden", name: "Warden", boss: true, music: "track:#{theme.id}")
+      theme.update!(scene: "boss") # now a kind of scene's track: not in the "called by name" list
+      get edit_world_bestiary_monster_path(world, warden)
+      expect(page.at("select[name='monster[music]'] option[selected]")&.text).to eq("♪ Forge theme (the boss track now)")
+      patch world_bestiary_monster_path(world, warden), params: { monster: { name: "Warden", music: "track:#{theme.id}" } } # saved as it came
+      expect(warden.reload.music).to eq("track:#{theme.id}")
+
+      get world_tracks_path(world)
+      expect(page.text.squish).to include("Its own music for Warden")
+      theme.destroy!
+      expect(warden.reload.music).to be_nil # back to the boss track, not pointing at nothing
+    end
+
     it "takes a chosen plate colour, or picks one from the name" do
       goblin = create_monster(world)
       get world_bestiary_monster_path(world, goblin)

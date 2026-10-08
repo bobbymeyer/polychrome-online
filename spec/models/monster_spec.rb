@@ -129,6 +129,24 @@ RSpec.describe Monster do
       expect(world.monsters.new(name: "Self", slug: "self", stats: monster_stats, phases: [ { hp_below: 50, becomes: "self" } ])).not_to be_valid
     end
 
+    it "goes one way: a form can't become, through its own forms, the entry it's a form of" do
+      create_monster(world, slug: "goblin_lord", name: "Goblin Lord", phases: [ { hp_below: 50, becomes: "goblin_king" } ])
+      second.phases = [ { hp_below: 40, becomes: "goblin_lord" } ] # Goblin King → Goblin Lord → Goblin King
+      expect(second).not_to be_valid
+      expect(second.errors[:phases]).to include("go round in a circle (Goblin King → Goblin Lord → Goblin King): a form can't become what it's a form of")
+    end
+
+    it "goes no deeper than the engine builds forms" do
+      create_monster(world, slug: "e", name: "E")
+      create_monster(world, slug: "d", name: "D", phases: [ { hp_below: 50, becomes: "e" } ])
+      create_monster(world, slug: "c", name: "C", phases: [ { hp_below: 50, becomes: "d" } ])
+      three = create_monster(world, slug: "b", name: "B", phases: [ { hp_below: 50, becomes: "c" } ]) # B → C → D → E: three forms
+      expect(three).to be_valid
+      four = world.monsters.new(name: "A", slug: "a", stats: monster_stats, phases: [ { hp_below: 50, becomes: "b" } ])
+      expect(four).not_to be_valid
+      expect(four.errors[:phases]).to include("go 4 forms deep (A → B → C → D → E): 3 is the most a boss can take")
+    end
+
     it "keeps a form in the Bestiary while something becomes it" do
       create_monster(world, phases: [ { hp_below: 50, becomes: "goblin_king" } ])
       expect(second.destroy).to be(false)

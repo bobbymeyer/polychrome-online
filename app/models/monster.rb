@@ -242,6 +242,29 @@ class Monster < ApplicationRecord
       errors.add(:phases, "#{label} says too much (200 letters at most)") if phase["say"].to_s.length > 200
     end
     errors.add(:phases, "must come in order, each below the last") unless phases.map { |p| p["hp_below"] }.compact.each_cons(2).all? { |a, b| b < a }
+    phase_chain_problems
+  end
+
+  # Forms go one way: a form that becomes (through its own forms) the entry
+  # it's a form of would loop. And a boss is at most PHASE_DEPTH forms deep:
+  # past that, the engine stops building them (#engine_phases).
+  def phase_chain_problems
+    return if phases.empty? || world.nil?
+
+    chains = world.monsters.where.not(id: id).pluck(:slug, :phases).to_h.merge(slug => phases)
+    names = world.monsters.pluck(:slug, :name).to_h.merge(slug => name) # itself as it is now, saved or not
+    stack = phases.map { |p| [ p["becomes"], 1, [ slug, p["becomes"] ] ] }
+    until stack.empty?
+      form, depth, path = stack.pop
+      if form == slug
+        return errors.add(:phases, "go round in a circle (#{path.map { |s| names[s] || s }.join(' → ')}): a form can't become what it's a form of")
+      end
+      if depth > PHASE_DEPTH
+        return errors.add(:phases, "go #{depth} forms deep (#{path.map { |s| names[s] || s }.join(' → ')}): #{PHASE_DEPTH} is the most a boss can take")
+      end
+
+      Array(chains[form]).each { |p| stack << [ p["becomes"], depth + 1, path + [ p["becomes"] ] ] }
+    end
   end
 
   def drops_are_items
