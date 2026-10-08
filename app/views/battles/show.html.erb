@@ -22,7 +22,7 @@
      data-battle-player-next-value="<%= @battle.battle_actions.count %>"
      data-battle-player-cries-value="<%= (@battle.campaign ? @battle.characters_by_unit.transform_values(&:motive).compact : {}).to_json %>"
      data-dialogue-auto-hide-value="true"
-     data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key setting:changed@window->battle-player#syncFast chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
+     data-action="battle-beat:arrived->battle-player#enqueue battle-panel:changed@window->battle-player#panelChanged turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key setting:changed@window->battle-player#syncFast chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
   <%= turbo_stream_from @battle %>
   <%# The first round's clock waits for each player to say they're ready (BattleRecord#arrive!). %>
   <% if @seat.unit_id && @battle.waiting_for_arrivals? && @battle.still_coming.include?(@seat.unit_id) %>

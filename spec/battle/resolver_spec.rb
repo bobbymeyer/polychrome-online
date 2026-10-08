@@ -493,7 +493,8 @@ RSpec.describe Battle::Resolver do
 
       state, events = apply(state, gm("set_hp", unit: "brute", value: 240)) # 40% of 600: below the first line
       phase = of_type(events, :phase).first
-      expect(phase).to include("actor" => "brute", "was" => "Brute", "name" => "Brute Unbound", "line" => "You wake what slept.", "restore" => 80)
+      expect(phase).to include("actor" => "brute", "was" => "Brute", "name" => "Brute Unbound", "form" => "Brute Unbound", "line" => "You wake what slept.")
+      expect(of_type(events, :heal).first).to include("target" => "brute", "amount" => 80, "phase" => true) # what the phase gives back, seen as a heal
       brute = unit(state, "brute")
       expect(brute).to include("name" => "Brute Unbound", "hp" => 320, "types" => %w[fire], "boss" => true, "rewards" => { "exp" => 60, "gil" => 120 },
                                "image" => { "book" => "monsters", "slug" => "brute_unbound" })
@@ -503,9 +504,21 @@ RSpec.describe Battle::Resolver do
       expect(state["status"]).to eq("input")
 
       state, events = apply(state, gm("set_hp", unit: "brute", value: 150)) # under 25% of 800: the last form, with 150 of its 300
-      expect(of_type(events, :phase).first).to include("name" => "Brute, Last Breath", "restore" => 0, "music" => "/music/last.mp3") # the form's own, for the stage
+      expect(of_type(events, :phase).first).to include("name" => "Brute, Last Breath", "music" => "/music/last.mp3") # the form's own, for the stage
+      expect(types(events)).not_to include("heal") # nothing to give back
       expect(unit(state, "brute")).to include("hp" => 150, "phases" => [])
       expect(unit(state, "brute")["stats"]["max_hp"]).to eq(300)
+    end
+
+    it "lets someone with a name of their own wear a form as a mask: their name and face stay, the rest changes" do
+      form = { name: "Wyrm Unbound", stats: stats(max_hp: 800, max_mp: 0, str: 14, atk: 12, agi: 10, def: 3, mdef: 2), types: %w[fire],
+               abilities: %w[goblin_punch], ai: [ { use: "goblin_punch" } ], image: { book: "monsters", slug: "wyrm_unbound" } }
+      sten = brute(name: "Sten Pike", named: true, image: { book: "npcs", slug: "7" }, phases: [ { hp_below: 50, becomes: form } ])
+      state = build_battle(enemies: [ sten ])
+      state, events = apply(state, gm("set_hp", unit: "brute", value: 100))
+      expect(of_type(events, :phase).first).to include("was" => "Sten Pike", "name" => "Sten Pike", "form" => "Wyrm Unbound")
+      expect(unit(state, "brute")).to include("name" => "Sten Pike", "image" => { "book" => "npcs", "slug" => "7" }, "types" => %w[fire], "named" => true)
+      expect(unit(state, "brute")["stats"]["max_hp"]).to eq(800)
     end
 
     it "checks a phase's form as it checks any unit, and its moves against the Grimoire" do

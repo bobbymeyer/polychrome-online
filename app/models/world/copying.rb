@@ -8,6 +8,9 @@ module World::Copying
   extend ActiveSupport::Concern
 
   BOOKS = %i[abilities items monsters encounter_tables generator_tables location_templates jobs].freeze
+  # Drops name items; scripts and phases wait for the Grimoire and the whole Bestiary (see copy_books_from!);
+  # tables name creatures; templates name tables; jobs name abilities.
+  COPY_ORDER = %i[items monsters abilities encounter_tables generator_tables location_templates jobs].freeze
   COPIED = %w[id world_id created_at updated_at].freeze
 
   # Start a new world from another one's books: every entry is copied
@@ -15,28 +18,27 @@ module World::Copying
   # setting instead of an empty one. Books refer to each other by slug, so
   # copies keep pointing at copies; the few id references are remapped.
   # Copied in dependency order, so each entry validates against the ones
-  # it names. rules_only: the books without the setting (see above).
+  # it names. The Bestiary and the Grimoire name each other (a summon calls
+  # a creature, a script uses a summon, a phase becomes a later entry), so
+  # the creatures come first without their scripts and phases, then the
+  # Grimoire whole, then the scripts and phases go on. rules_only: the
+  # books without the setting (see above).
   def copy_books_from!(source, rules_only: false)
     transaction do
       # The setting's types and skills first: the books are checked against them.
       update!(damage_types: source.damage_types, terrain_types: source.terrain_types, skills: source.skills, battle_rules: source.battle_rules)
       tables = {}
       abilities = {}
-      # Summons name creatures from the Bestiary, so they come after it.
-      summoning = source.abilities.select { |a| Array(a.effects).any? { |e| e["primitive"] == "summon" } }.map(&:id)
-      steps = BOOKS.flat_map do |book|
-        entries = source.public_send(book)
-        case book
-        when :abilities then [ [ :abilities, entries.where.not(id: summoning) ] ]
-        when :monsters then [ [ :monsters, entries ], [ :abilities, source.abilities.where(id: summoning) ] ]
-        else [ [ book, entries ] ]
-        end
-      end
-      steps.each do |book, entries|
-        entries.find_each do |entry|
+      later = {}
+      COPY_ORDER.each do |book|
+        source.public_send(book).find_each do |entry|
           copy = entry.dup
           copy.world = self
           copy.encounter_table_id = tables[entry.encounter_table_id] if book == :location_templates
+          if book == :monsters
+            later[copy] = entry.slice("ai_script", "phases")
+            copy.assign_attributes(ai_script: [], phases: [])
+          end
           copy.save!
           copy.image.attach(entry.image.blob) if entry.image.attached?
           tables[entry.id] = copy.id if book == :encounter_tables
@@ -45,6 +47,7 @@ module World::Copying
             entry.job_levels.each { |level| copy.job_levels.create!(level: level.level, ability_id: abilities.fetch(level.ability_id)) }
           end
         end
+        later.each { |copy, kept| copy.update!(kept) } if book == :abilities # every creature and move is here now
       end
       return if rules_only
 

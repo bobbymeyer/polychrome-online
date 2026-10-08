@@ -155,6 +155,18 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).not_to include("Choose before the clock runs out")
   end
 
+  it "tells a player the round ran before they chose, when the clock or the GM ran it" do
+    timed = start_battle(input_seconds: 30)
+    me = timed.party.first.id
+    sit_in_battle(timed, me)
+    timed.apply!({ "type" => "timeout" }, actor: "gm") # the clock ran out: everyone on reflex, and the next round opens
+    get battle_panel_path(timed)
+    expect(response.body).to include("The last round ran before you chose: you acted on reflex.")
+    post battle_actions_path(timed), params: { command: { kind: "defend" }, actor: me } # chosen for this round
+    get battle_panel_path(timed)
+    expect(response.body).not_to include("ran before you chose")
+  end
+
   it "warns a player at the end of their rope that an Attack may become their desperation move" do
     campaign = base_campaign
     hero = base_character(campaign, name: "Rook")
@@ -185,6 +197,11 @@ RSpec.describe "Battle screen", type: :request do
     who.seen!
     get battle_panel_path(battle)
     expect(page.css(".gm-rows[aria-label='The party'] .gm-row")[0].at(".gm-row__who").text.squish).to eq("Waiting on their player Auto")
+    # The words keep their own time on the page (here_controller), so away comes without a reload.
+    mark = page.at(".gm-rows[aria-label='The party'] [data-here-target=who]")
+    expect(mark["data-seen-at"]).to eq(who.reload.seen_at.iso8601)
+    expect(mark["data-here-words"]).to eq("Waiting on their player|Their player is away")
+    expect(page.at(".gm-rows[aria-label='The party']")["data-controller"]).to eq("here")
     expect(page.at("details.gm-controls")["data-controller"]).to eq("remember-open")
     expect(response.body).not_to include("Auto this round", "Auto every round", "Who chooses") # no two autos
     expect(page.at("table")).to be_nil # no table

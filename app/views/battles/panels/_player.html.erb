@@ -13,6 +13,10 @@
     · Choose before the clock runs out, or you <%= timeout_command(field, unit) %>.
   <% end %>
 </p>
+<%# Their choice came after the round had run (the clock, or the GM): it was refused, and the default went in. Say so. %>
+<% if !command && @battle.ran_without?(unit.id) && !@battle.over? %>
+  <p class="command-panel__ran-without muted">The last round ran before you chose: you acted on reflex.</p>
+<% end %>
 <%# A cue before it happens: at a quarter of their HP, an Attack may become their desperation move (once), so it's no surprise. %>
 <% if unit.desperate? %>
   <p class="command-panel__desperate"><strong>At the end of your rope:</strong> an Attack may become <%= field.abilities[unit.desperation]&.to_h&.dig("name") || unit.desperation.humanize %>, once, when it counts.</p>

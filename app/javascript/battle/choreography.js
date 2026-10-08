@@ -133,7 +133,7 @@ const STEPS = {
   phase(b, tl, e, at) {
     gesture(tl, b.sprite(e.actor), "flash", at)
     gesture(tl, b.sprite(e.actor), "shake", at + 200)
-    b.banner(tl, `${e.name}!`, at + 300, "phase")
+    b.banner(tl, `${e.form || e.name}!`, at + 300, "phase")
     if (e.music) tl.call(() => setMusic(e.music, { cut: true }), at + 300)
     if (e.line) tl.call(() => b.speak(e.actor, e.line, e.name), at + 1500)
     return 1700

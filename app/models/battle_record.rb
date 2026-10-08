@@ -53,7 +53,7 @@ class BattleRecord < ApplicationRecord
                                   terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec))
     names.each do |slug, named|
       unit = state["units"].find { |u| u["side"] == "enemy" && u.dig("image", "slug") == slug }
-      unit["name"] = named if unit
+      unit.merge!("name" => named, "named" => true) if unit # its own name: kept through its phases
     end
     monsters = campaign.world.monsters.where(slug: encounter.keys).index_by(&:slug)
     battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
@@ -217,6 +217,21 @@ class BattleRecord < ApplicationRecord
   def set_speed!(speed)
     update!(playback_speed: speed)
     broadcast_replace_to self, target: "battle_playback", partial: "battles/playback", locals: { battle: self }
+  end
+
+  # Every seat's command panel asks for itself again (battle_player_controller#panelChanged): a player
+  # came back, so the GM's rows say so. A seat mid-choice keeps its menu.
+  def refresh_panels
+    Turbo::StreamsChannel.broadcast_action_to(self, action: :battle_panel, target: "battle_beats")
+  end
+
+  # Whether the last round ran without this unit's choice (the clock ran out, or the GM ran it):
+  # the player's panel says so, since their choice was refused with the round already gone.
+  def ran_without?(unit_id)
+    ran = battle_events.where(kind: %w[timeout gm_override]).order(:position).last
+    return false unless ran && Array(ran.payload["defaulted"]).include?(unit_id)
+
+    battle_events.where(kind: "round_start").order(:position).last&.position.to_i > ran.position
   end
 
   private

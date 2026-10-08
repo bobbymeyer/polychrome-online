@@ -86,6 +86,13 @@ RSpec.describe BattleRecord do
         .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle-beat", "battle_beats"))
     end
 
+    it "asks every seat's panel to show itself again when a player comes back, so the GM's rows say so" do
+      who = battle.characters_by_unit[bartz]
+      who.update!(user: make_user("Bartz's player"))
+      expect { who.seen! }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_panel"))
+      expect { who.seen! }.not_to have_broadcasted_to(turbo_stream_for(battle)) # still here: nothing changed
+    end
+
     it "takes the table off the Fight control once the fight is on, so no stale setup form waits under the results" do
       campaign = battle.campaign
       campaign.update!(controls: "battle")

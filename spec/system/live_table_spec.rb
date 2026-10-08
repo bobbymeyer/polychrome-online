@@ -103,6 +103,20 @@ RSpec.describe "The live table", type: :system do
 
   # Beats play one after another, animated, so a later line waits on the
   # ones before it.
+  it "says a boss's lines in the stage's box: its opening words after its card, as a beat of its own" do
+    warden = create_monster(campaign.world, slug: "warden", name: "The Warden", boss: true, boss_line: "You came for the ledger.")
+    fight = BattleRecord.start!(campaign: campaign, characters: campaign.characters.to_a, name: "The Warden", encounter: { "warden" => 1 })
+    seat(gm, "gm")
+    as(gm) do
+      visit battle_path(fight)
+      expect(page).to have_css(".boss-intro:not([hidden])", text: "The Warden", wait: 10)
+      find(".boss-intro").click # skip the card: its line goes to the box
+      expect(page).to have_css("#dialogue_box_battle_#{fight.id}:not([hidden]) .dialogue__name", text: "The Warden", wait: 10)
+      expect(page).to have_css("#dialogue_box_battle_#{fight.id} .dialogue__body", text: /You came/, wait: 10)
+    end
+    expect(warden).to be_boss
+  end
+
   it "plays a battle's beats as they happen" do
     battle = start_battle(campaign: campaign, goblins: 1)
     seat(gm, "gm")

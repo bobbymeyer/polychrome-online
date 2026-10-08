@@ -58,7 +58,10 @@ class Character < ApplicationRecord
   def seen!
     back = !here?
     update_column(:seen_at, Time.current)
-    campaign.table_changed if back
+    return unless back
+
+    campaign.table_changed
+    campaign.current_battle&.refresh_panels # the GM's rows say they're back
   end
 
   validates :name, presence: true

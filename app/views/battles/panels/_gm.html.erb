@@ -64,7 +64,7 @@
     Send off for a guest. Auto is one thing: the rest of the battle (BattleRecord#set_auto!), this round too. %>
 <section>
   <h3>The party</h3>
-  <ul class="gm-rows" aria-label="The party">
+  <ul class="gm-rows" aria-label="The party" data-controller="here">
     <% field.on_field("party").each do |u| %>
       <li class="gm-row <%= 'is-ko' if u.ko? %> <%= 'is-low' if u.hp_band == 'danger' %>">
         <span class="gm-row__name"><%= u.name %><%= tag.span(" · guest", class: "muted") if u.guest? %></span>
@@ -85,8 +85,13 @@
                           class: "link-button", form: { class: "inline" }, title: "Their player chooses again" %>
           <% elsif awaiting.include?(u.id) %>
             <%# The table's presence (Character#here?): a player who closed the page is away, and Auto is the way on. %>
-            <% away = party_ids.include?(u.id) && (who = characters[u.id]) && who.user_id && !who.here? %>
-            <strong><%= away ? "Their player is away" : "Waiting on their player" %></strong>
+            <% who = party_ids.include?(u.id) && characters[u.id] %>
+            <% if who&.user_id %>
+              <%# Their presence keeps its own time here (here_controller): away once a minute has gone, without a reload. %>
+              <strong data-here-target="who" data-seen-at="<%= who.seen_at&.iso8601 %>" data-here-words="Waiting on their player|Their player is away"><%= who.here? ? "Waiting on their player" : "Their player is away" %></strong>
+            <% else %>
+              <strong>Waiting on their player</strong>
+            <% end %>
             <% if party_ids.include?(u.id) %>
               <%= button_to "Auto", battle_auto_path(@battle), method: :patch, params: { unit: u.id, on: "1" },
                             class: "link-button", form: { class: "inline" }, title: "Their default command, this round and the rest; Hand back when they're here" %>

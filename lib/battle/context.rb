@@ -247,13 +247,17 @@ module Battle
         phase = phases.first
         form = phase["becomes"]
         was = u["name"]
-        u.merge!(form.except("id", "side", "phases"))
+        # Someone (an antagonist, a named boss) wears the form as a mask: their name and face stay.
+        kept = u["named"] ? %w[id side phases name image named] : %w[id side phases]
+        u.merge!(form.except(*kept))
         u["phases"] = phases.drop(1)
         u.delete("fired")
-        restored = form["stats"]["max_hp"] * phase["restore"] / 100
-        u["hp"] = (u["hp"] + restored).clamp(1, form["stats"]["max_hp"])
+        u["hp"] = u["hp"].clamp(1, form["stats"]["max_hp"])
         u["mp"] = u["mp"].clamp(0, form["stats"]["max_mp"])
-        emit(:phase, actor: u["id"], was: was, name: u["name"], line: phase["say"], restore: restored, music: form["music"])
+        emit(:phase, actor: u["id"], was: was, name: u["name"], form: form["name"], line: phase["say"], music: form["music"])
+        # What the phase gives back: a heal, seen as any heal is.
+        restored = form["stats"]["max_hp"] * phase["restore"] / 100
+        restore_hp(u, restored, phase: true) if restored.positive?
       end
     end
 
