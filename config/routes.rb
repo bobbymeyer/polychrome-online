@@ -69,6 +69,8 @@ Rails.application.routes.draw do
       resources :tracks, path: "music", except: :show
       # Its pocket history, rolled over the atlas and written into the canon.
       resource :history, only: %i[show update create destroy], controller: "histories"
+      # A campaign module (CampaignModule), uploaded: a new campaign from it.
+      resources :campaign_modules, path: "modules", only: %i[new create]
     end
 
     # The language model's suggestions for world building (Draft).
@@ -98,6 +100,8 @@ Rails.application.routes.draw do
 
       # Prep: pressure, secrets, what's being said and done (one page).
       resource :prep, only: :show
+      # The campaign's prep as a module, to download (CampaignModule::Export).
+      resource :campaign_module, path: "module", only: :show
       # Every battle's numbers together, for the GM balancing the game (Battle::Report.across).
       resource :battle_report, only: :show
       # A fight played out many times before anyone plays it (BattleSimulation).

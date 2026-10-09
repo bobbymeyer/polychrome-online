@@ -3,6 +3,7 @@
   <h1><%= @world.name %></h1>
   <div class="actions">
     <%= link_to "New campaign", new_world_campaign_path(@world), class: "button" %>
+    <% if can_make_games? %><%= link_to "Import a module", new_world_campaign_module_path(@world), class: "button button--quiet" %><% end %>
     <%= link_to "Copy this world", new_world_path(copy_from: @world.slug), class: "button button--quiet" %>
     <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" %>
     <%= link_to "Music", world_tracks_path(@world), class: "button button--quiet" %>

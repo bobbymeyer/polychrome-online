@@ -1,0 +1,13 @@
+<% content_for :title, "Import a module" %>
+<div class="crumbs"><%= link_to @world.name, world_path(@world) %> / Import a module</div>
+<h1>Import a module</h1>
+<p class="hint">
+  A module is another GM's prep, exported as a .zip: its maps and places, cast, clocks, secrets and scenes, and the book entries it uses.
+  It becomes a new campaign in <%= @world.name %>, with you as its GM.
+  <% unless can_edit_world? %>Entries <%= @world.name %>'s books don't have yet can only be added by its editors: a module that needs some will say which.<% end %>
+</p>
+<%= form_with url: world_campaign_modules_path(@world), multipart: true, class: "window" do |f| %>
+  <div class="field"><%= f.label :module_file, "Module file" %><%= f.file_field :module_file, accept: ".zip,application/zip", required: true %></div>
+  <div class="field"><%= f.label :name, "Campaign name" %><%= f.text_field :name, placeholder: "The module's own" %></div>
+  <%= f.submit "Import", class: "button button--primary" %>
+<% end %>

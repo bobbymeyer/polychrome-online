@@ -69,3 +69,5 @@ gem "rqrcode", "~> 3.2"
 
 # The battle reports download as CSV (Battle::Report); csv leaves the standard library in Ruby 3.4.
 gem "csv"
+# Campaign modules travel as a .zip: module.json and the pictures it uses (CampaignModule::Archive).
+gem "rubyzip", "~> 3.0", require: "zip"

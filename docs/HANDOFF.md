@@ -18,7 +18,7 @@ This document is the design contract. Read it before writing code. Where it conf
 - No AI GM. Automating the improviser seat makes it a video game.
 - No tile maps, no tile movement, no pixel-art pipeline.
 - No AAA animation. Motion is gestural.
-- No second-author features (export/import, edition tooling) until there is a second author. Keep the seams; don't build the features.
+- No second-author features (world export/import, edition tooling) until there is a second author. Keep the seams; don't build the features. The exception, Bobby's call: **campaign modules**, a GM's prep exported and imported (§7).
 
 ## 2. Three layers, three tempos
 
@@ -163,6 +163,11 @@ The GM keeps families through rerolls and edits a place's past on the atlas; an 
 **Deeds and legends.** What the party does is history too. A deed (recorded by itself for an antagonist beaten or a dungeon cleared, or by the GM) starts a rumour carrying its sway, and each town the story reaches moves its view of the party, which sets its prices and, far enough down, whether it trades with them at all. The legends page puts the written history the party can know together with their own story.
 
 **Clearing a place changes the world.** When a dungeon's boss falls (`Campaign#clear_place!`): its clocks stop, unless the villain behind them got away; its dangerous roads go quiet; the secrets it kept come out, as the thread to pull next; and the nearest town waits to welcome the party back, with a word from someone who lives there, a hook from someone else, and a good deed there: the town thinks better of the party, so everything it sells costs less (`Campaign#welcome_back!`). A town has one price rule for its shop and its inn, temple and guild alike (`Location::Town#price_here`): dearer after a lost caravan, cheaper for friends. Everything the party does goes through the ways on (`Campaign#take_way!`): travelling from the map, making camp, a thing to do, the table's vote.
+
+**Campaign modules.** A GM's prep travels as a module (`CampaignModule`): a .zip of `module.json` and the pictures it uses, downloaded from Prep (Export module) and uploaded on a world's page (Import a module), or `bin/rails campaigns:export` / `campaigns:import`. Importing makes a new campaign, with whoever imported it as GM.
+- **It carries the prep, none of the play:** maps, places (template, seed and the GM's overrides; their modes), roads, the cast with their portraits, clocks, secrets, scenes beat by beat, flags, unheard rumours, lines and veils, and where the party starts. Clocks start empty, secrets kept, scenes unplayed, rooms unexplored; no characters, battles or log.
+- **It bundles the book entries it uses**, followed through their references (`CampaignModule::Books`): a monster's moves, forms and drops, a template's tables. Importing adds whichever the world lacks and never touches one it has; adding them takes someone who can change the world's books, and a module that needs them says so to anyone else.
+- **Records point at each other by refs, entries by slug,** never by ids. A world's own music tracks don't travel. The file is untrusted: only the format's fields are read, a place's overrides only in the shapes the generator reads, and pictures only under assets/.
 
 **Chat.** Portrait + dialogue box. `messages` broadcast via Turbo Streams. GM has a "speak as" picker for any NPC (possession). Expression tag selects portrait variant. Whispers are scoped broadcasts. Open design question: sequential dialogue box vs simultaneous chat — leaning toward GM/NPC lines in the box and player lines in a side log.
 

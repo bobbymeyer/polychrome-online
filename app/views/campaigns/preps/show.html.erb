@@ -16,6 +16,7 @@
     <%= link_to "Legends", campaign_legends_path(@campaign), class: "button button--quiet" %>
     <%= link_to "Battle report", campaign_battle_report_path(@campaign), class: "button button--quiet" %>
     <%= link_to "Simulate", campaign_simulation_path(@campaign), class: "button button--quiet" %>
+    <% if can_gm?(@campaign) %><%= link_to "Export module", campaign_campaign_module_path(@campaign), class: "button button--quiet", data: { turbo: false } %><% end %>
     <% if table_gm? %>
     <% end %>
   </div>
