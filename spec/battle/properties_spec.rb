@@ -20,7 +20,8 @@ RSpec.describe "Battle resolver properties" do
                                   turn_start turn_end flee victory defeat gm_override buff_applied
                                   buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll
                                   jump land away back covered counter second_wind mp_restored
-                                  shielded confused mp_lost hp_paid charging summoned one_more all_out])
+                                  shielded confused mp_lost hp_paid charging summoned one_more all_out
+                                  gathered patience reflected iai quick mimic transformed unmasked reraise])
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end
@@ -102,8 +103,11 @@ RSpec.describe "Battle resolver properties" do
     each_step do |_, before, _, after, events|
       away = before["units"].select(&gone).map { |u| u["id"] }
       side = (before["units"] + after["units"]).to_h { |u| [ u["id"], u["side"] ] }
+      reach = false
       events.each do |e|
         case e["type"]
+        when "attack", "cast" then reach = before["abilities"].dig(e["ability"], "reach")
+        when "turn_start" then reach = false
         when "jump" then away << e["actor"]
         when "away" then away << e["unit"]
         when "land" then away.delete(e["actor"])
@@ -111,7 +115,8 @@ RSpec.describe "Battle resolver properties" do
         when "ko" then away.delete(e["target"])
         when "damage", "miss"
           # Out of the enemy's reach (an ally can still hand them a potion).
-          expect(away).not_to include(e["target"]) if e["actor"] && side[e["actor"]] != side[e["target"]] && e["reason"] != "no_target"
+          # (A move with reach can find them: a Ranger's shot.)
+          expect(away).not_to include(e["target"]) if e["actor"] && side[e["actor"]] != side[e["target"]] && e["reason"] != "no_target" && !reach
         end
       end
       expect(Battle::State.awaiting_input(after) & after["units"].select(&gone).map { |u| u["id"] }).to be_empty
@@ -191,10 +196,15 @@ RSpec.describe "Battle resolver properties" do
       events.slice_before { |e| e["type"] == "round_start" }.each do |round|
         turns, quick = of_type(round, :turn_start).partition { |e| !e["quick"] }
         turns = turns.map { |e| e["unit"] }
+        quickened, quick = quick.partition { |e| e["reason"] == "quick" }.map { |list| list }
+        quickened = quickened.map { |e| e["unit"] }
         again, hasty = quick.partition { |e| e["reason"] == "one_more" }.map { |list| list.map { |e| e["unit"] } }
         expect(turns).to eq(turns.uniq)
         expect(hasty).to eq(hasty.uniq)
         expect(again).to eq(again.uniq)
+        # A Quick: once a round each, only for whoever a Quick named.
+        expect(quickened).to eq(quickened.uniq)
+        expect(quickened - of_type(round, :quick).map { |e| e["target"] }).to be_empty
         hasted = before["units"].select { |u| u["statuses"].any? { |s| s["kind"] == "haste" } }.map { |u| u["id"] }
         expect(hasty - hasted).to be_empty
         expect(again - of_type(round, :one_more).map { |e| e["actor"] }).to be_empty
@@ -218,10 +228,13 @@ RSpec.describe "Battle resolver properties" do
       events.each_with_index do |event, i|
         next unless event["type"] == "one_more"
 
-        moves = ->(list) { list.select { |e| %w[attack cast].include?(e["type"]) && e["actor"] == event["actor"] } }
+        # A Mimic's copy is the Mimic's doing: the move is the Mimic.
+        moves = ->(list) { list.select { |e| %w[attack cast].include?(e["type"]) && e["actor"] == event["actor"] && !e["mimicked"] } }
         before = moves.(events[0...i]).last
         after = moves.(events[(i + 1)..]).first
-        expect(after["ability"]).to eq(before["ability"]) if before && after && !before["desperation"]
+        # A desperation move isn't the command: the other go is the command's move.
+        desperate = events[0...i].any? { |e| e["type"] == "desperation" && e["actor"] == event["actor"] }
+        expect(after["ability"]).to eq(before["ability"]) if before && after && !before["desperation"] && !desperate
       end
     end
   end

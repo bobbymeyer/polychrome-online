@@ -20,7 +20,10 @@ module Stats
   STATUS_MODIFIERS = {
     "haste" => { "agi" => 50 },
     "slow" => { "agi" => -50 },
-    "berserk" => { "str" => 50 }
+    "berserk" => { "str" => 50 },
+    # Wearing a mask (Battle::Masks), and worn out after one.
+    "masked" => { "str" => 50, "mag" => 50, "agi" => 25, "def" => 30, "mdef" => 30 },
+    "spent" => { "str" => -30, "mag" => -30, "agi" => -50 }
   }.freeze
 
   MODIFIER_FLOOR = -90

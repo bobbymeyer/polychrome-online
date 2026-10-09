@@ -21,19 +21,23 @@ class RandomTable
                              u.merge(desperation: %w[goblin_punch meteor firaga_all].sample(random: @chooser),
                                      passives: Battle::PASSIVES.sample(@chooser.rand(0..2), random: @chooser),
                                      abilities: u[:abilities] + %w[cover jump gaia hide banish high_jump barrier taunt stop rage confuse focus flame_blade gravity osmose
-                                                                            blood_strike holy comet sneak_attack doom reckless revenge call_eagle call_wisp]
-                                                                         .sample(5, random: @chooser))
+                                                                            blood_strike holy comet sneak_attack doom reckless revenge call_eagle call_wisp
+                                                                            sheathe draw zantetsu iai_stance palm dragon_fist firaja scorch dispel reflect quick mimic
+                                                                            regen reraise triage pilfer_boon long_shot volley call_hawk don_mask]
+                                                                         .sample(7, random: @chooser))
                               .merge(job_parts(u))
                            },
       terrain: Battle::TYPES.sample(random: @chooser),
-      enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre, BattleFixtures.skeletons(@chooser.rand(1..3)) ].sample(random: @chooser),
+      enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre, BattleFixtures.skeletons(@chooser.rand(1..3)),
+                            BattleFixtures.giant ].sample(random: @chooser),
       abilities: BattleFixtures.abilities,
       summons: BattleFixtures.summons,
+      masks: BattleFixtures.masks,
       escapable: @chooser.rand(4) != 0,
       items: BattleFixtures.items(potion: @chooser.rand(0..3), phoenix_down: @chooser.rand(0..2),
                                   antidote: @chooser.rand(0..2), remedy: @chooser.rand(0..1)),
       # Half the tables play One More (from the seed, so the rest of the table is drawn as before).
-      rules: { one_more: seed.odd? }
+      rules: { one_more: seed.odd?, same_type: (seed % 3).zero? }
     )
     @actions = []
     @steps = [] # [state_before, action, state_after, events]

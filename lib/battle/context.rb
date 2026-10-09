@@ -11,12 +11,19 @@ module Battle
     # Creatures summoned by the move being resolved: they act once it's done
     # (Battle::Resolver#summon).
     attr_reader :arrivals
+    # What a move set off for after it's done (Battle::Resolver#follow_up):
+    # [:quick, unit] goes again, [:mimic, unit] copies an ally's last move.
+    attr_reader :follow_ups
+    # Who has had a turn so far this round, in order (Patience).
+    attr_reader :acted
 
     def initialize(state, rng: Rng.new(state["rng"]))
       @state = state
       @rng = rng
       @events = []
       @arrivals = []
+      @follow_ups = []
+      @acted = []
     end
 
     def finish
@@ -93,9 +100,10 @@ module Battle
       units.select { |o| o["side"] == u["side"] && !o["gone"] && (!alive || alive?(o)) }
     end
 
-    # Who u can aim at: the other side's living units, less any off the field.
-    def opponents(u)
-      units.select { |o| o["side"] != u["side"] && alive?(o) && !out_of_reach?(o) }
+    # Who u can aim at: the other side's living units, less any off the
+    # field (unless the move has the reach for them: a Ranger's shot).
+    def opponents(u, reach: false)
+      units.select { |o| o["side"] != u["side"] && alive?(o) && (reach || !out_of_reach?(o)) }
     end
 
     def out_of_reach?(u)
@@ -134,8 +142,19 @@ module Battle
       emit(:damage, target: target["id"], amount: amount, hp: target["hp"], **extra)
       return unless target["hp"].zero?
 
+      reraise = status?(target, "reraise")
       knock_out(target)
-      second_wind(target)
+      reraise ? reraised(target) : second_wind(target)
+    end
+
+    # Reraise: knocked out, back up at once at a quarter HP, and it's gone.
+    RERAISE_FRACTION = 25
+
+    def reraised(target)
+      return if over? || target["gone"]
+
+      emit(:reraise, target: target["id"])
+      revive(target, target["stats"]["max_hp"] * RERAISE_FRACTION / 100)
     end
 
     def shielded(target, amount)
@@ -171,6 +190,8 @@ module Battle
 
     def knock_out(target)
       target["hp"] = 0
+      mask = target["statuses"].find { |s| s["kind"] == "masked" }
+      Masks.take_off(self, target, mask, spent: false) if mask
       target["statuses"] = []
       target["buffs"] = []
       target["defending"] = false
@@ -200,8 +221,15 @@ module Battle
     def remove_status(target, kind, reason:)
       return unless status?(target, kind)
 
-      target["statuses"].reject! { |s| s["kind"] == kind }
+      gone = target["statuses"].select { |s| s["kind"] == kind }
+      target["statuses"] -= gone
       emit(:status_expired, target: target["id"], status: kind, reason: reason)
+      Masks.take_off(self, target, gone.first, spent: true) if kind == "masked"
+    end
+
+    # A stacking status's count (0 when it isn't on).
+    def stacks(u, kind)
+      u["statuses"].find { |s| s["kind"] == kind }&.fetch("stacks", 1).to_i
     end
 
     # Decide whether the battle has ended. Defeat is checked first: a party
