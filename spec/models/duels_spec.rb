@@ -84,7 +84,6 @@ RSpec.describe "Masks in the Armory" do
     expect(mask.errors[:mask].join).to include("type", "1 to 5", "nothing")
     expect(world.items.new(slug: "sword2", name: "S", category: "sword", mask: { type: "fire" })).not_to be_valid
   end
-
 end
 
 RSpec.describe "A mask worn" do

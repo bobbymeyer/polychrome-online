@@ -124,8 +124,8 @@ module Seeds
                        effects: [ { primitive: "steal", chance: 90 }, { primitive: "steal", chance: 80, boon: 1 } ], description: "Everything that isn't nailed down, and a few things that are." },
       vanishing_point: { name: "Vanishing Point", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "fade",
                          effects: [ { primitive: "physical", power: 300 } ], description: "There, then not, then there was a knife." },
-      pick_lock: { name: "Pick Lock", kind: "field", field_skill: "hands", field_outcome: "story", field_difficulty: "normal", effects: [],
-                   description: "A door, a strongbox, a clockwork seal. What's behind it is the GM's to tell; that it opens is the Thief's." },
+      pick_lock: { name: "Pick Lock", kind: "field", field_skill: "hands", field_outcome: "unlock", field_difficulty: "normal", effects: [],
+                   description: "A Company padlock, a clockwork door, a strongroom: the lock in the party's way opens, key or no key." },
 
       # --- the Monk: fists and breath, and no powder at all --------------------------------
       palm_strike: { name: "Palm Strike", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",

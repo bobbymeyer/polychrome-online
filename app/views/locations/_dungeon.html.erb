@@ -1,6 +1,6 @@
 <% current = location.current_room_key %>
 <% here = location.current_room %>
-<% glyph_names = { "encounter" => "Encounter", "boss" => "Boss", "treasure" => "Treasure", "event" => "Event", "fork" => "Fork", "key" => "Key" } %>
+<% glyph_names = { "encounter" => "Encounter", "boss" => "Boss", "treasure" => "Treasure", "event" => "Event", "fork" => "Fork", "key" => "Key", "trap" => "Trap" } %>
 <% describe = lambda do |room|
      d = room["decision"]
      case d["kind"]
@@ -50,6 +50,19 @@
         <% if here["decision"]["kind"] == "treasure" && !location.resolved?(here["key"]) %>
           <%= button_to "Hand over the treasure", location_treasures_path(location), params: { room: here["key"] }, class: "button play" %>
         <% end %>
+        <% if location.trap_waiting?(here["key"]) %>
+          <%# A trap waits (Location::Exploration): someone tries to disarm it, or it goes off; walking on sets it off too. %>
+          <%= form_with url: location_traps_path(location), class: "book-form trap-form" do %>
+            <%= hidden_field_tag :room, here["key"], id: nil %>
+            <div class="field-row">
+              <div class="field"><%= label_tag :trap_character_id, "Who" %><%= select_tag :character_id, options_for_select(@campaign.conscious_characters.map { |c| [ c.name, c.id ] }), id: "trap_character_id" %></div>
+              <div class="field"><%= label_tag :trap_stat, "Roll" %><%= select_tag :stat, check_options(@campaign.world), id: "trap_stat" %></div>
+              <div class="field"><%= label_tag :trap_difficulty, "Difficulty" %><%= select_tag :difficulty, options_for_select(Stats::Check::DIFFICULTIES.keys.map { |d| [ d.capitalize, d ] }, "normal"), id: "trap_difficulty" %></div>
+            </div>
+            <%= button_tag "Disarm it", name: "verdict", value: "disarm", class: "button play" %>
+            <%= button_tag "Let it go off", name: "verdict", value: "spring", class: "button" %>
+          <% end %>
+        <% end %>
         <h3>Ways on</h3>
         <%# One room a row (pick_table_controller): what the way there costs, or needs, in the cost column. %>
         <table class="pick-table play" data-controller="pick-table">
@@ -60,8 +73,8 @@
             <% cost = path&.dig("cost") %>
             <tr class="pick-row">
               <% if location.locked?(path) && !location.has_key?(path["lock"]) %>
-                <td class="pick-row__what"><button type="button" class="pick-row__act" disabled title="It needs <%= path['lock']['key_name'] %>"><%= room["name"] %></button></td>
-                <td class="pick-row__cost">locked: <%= path["lock"]["name"] %></td>
+                <td class="pick-row__what"><button type="button" class="pick-row__act" disabled title="It needs <%= path['lock']['key_name'] %>, or someone to pick it"><%= room["name"] %></button></td>
+                <td class="pick-row__cost">locked: <%= path["lock"]["name"] %> (a key, or a picked lock)</td>
               <% else %>
                 <td class="pick-row__what"><%= button_to room["name"], location_position_path(location), method: :patch, params: { room: key }, class: "pick-row__act", title: (Toll.of(cost).words if cost) %></td>
                 <td class="pick-row__cost">

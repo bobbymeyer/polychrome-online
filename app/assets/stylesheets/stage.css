@@ -439,6 +439,7 @@ svg .floorplan__marker--encounter { fill: var(--bright-red); }
 svg .floorplan__marker--boss { fill: var(--wine-red); }
 svg .floorplan__marker--treasure { fill: var(--sun-yellow); }
 svg .floorplan__marker--event { fill: var(--blue); }
+svg .floorplan__marker--trap { fill: var(--caution); }
 svg .floorplan__marker--fork { stroke: var(--orange); }
 svg .floorplan__marker--key { fill: none; stroke: var(--lake-green); stroke-width: 3; stroke-linecap: square; }
 .floorplan__room.is-resolved .floorplan__marker--key { stroke: var(--grey); fill: none; }

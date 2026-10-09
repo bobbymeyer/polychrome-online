@@ -18,6 +18,13 @@
     </div>
     <div class="field"><%= f.label :amount, "How much" %><%= f.number_field :amount, min: 0, max: 9999, placeholder: "its usual" %></div>
   </div>
+  <div class="field-row">
+    <div class="field field--wide">
+      <%= f.label :failure, "If everyone fails" %>
+      <%= f.select :failure, Outcome::ON_A_FAILURE.map { |kind| [ Outcome.of(kind).describe(campaign.world), kind ] }, { include_blank: "Nothing more: you tell what happens" },
+                   data: { help: "What a failure costs, on top of the clocks: caught with a hand in a pocket, the town thinks worse of the party." } %>
+    </div>
+  </div>
   <%= help_line("Who rolls what, and what a success does.") %>
   <%= f.submit "Roll", class: "button play", data: { help: "Everyone picked rolls; a failure ticks the clocks that tick on one." } %>
 <% end %>

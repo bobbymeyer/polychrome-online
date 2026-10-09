@@ -190,6 +190,8 @@ Rails.application.routes.draw do
       resource :entry, only: :create
       resource :position, only: :update
       resources :treasures, only: :create
+      # A trap in a room: disarmed (a check) or let go off (Location::Exploration).
+      resources :traps, only: :create
       resources :reversions, only: :create
       resources :purchases, only: :create
       resources :sales, only: :create

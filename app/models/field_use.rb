@@ -15,7 +15,7 @@ class FieldUse < ApplicationRecord
 
   # What success can do: a share of the game's outcomes (Outcome), which a
   # world names and flavours (Pick Lock, Hack Terminal, Commune with Spirits).
-  OUTCOMES = Outcome::KINDS.slice(*%w[story reveal sneak find restore learn safe_road uncover]).transform_values(&:first).freeze
+  OUTCOMES = Outcome::KINDS.slice(*%w[story reveal sneak find restore learn safe_road uncover unlock]).transform_values(&:first).freeze
 
   # The ability's outcome, with its own numbers (none: the outcome's own).
   def self.outcome_of(ability)

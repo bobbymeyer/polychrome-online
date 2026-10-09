@@ -4,7 +4,7 @@ module Generators
   # The dungeon generator (docs/HANDOFF.md §7): a room graph that branches and
   # loops, laid out as a floorplan. A dungeon is a nested pointcrawl, and
   # every room carries a decision: an encounter, an event, treasure, a fork
-  # with a visible cost, or a key. The deepest room holds the boss. "The
+  # with a visible cost, a trap, or a key. The deepest room holds the boss. "The
   # generator's job is generating decisions, not rooms."
   #
   # Locks and keys come in pairs from the "locks" table, in any flavour: a
@@ -16,11 +16,14 @@ module Generators
   #             "boss" => { "goblin_chief" => 1 },             optional
   #             "locks" => n }                                   optional, 0–3
   # encounters: encounter-table entries ([{ "weight", "monsters" }])
-  # tables:   { "dungeon_names" | "rooms" | "room_events" | "forks" | "treasure" | "locks" => [entries] }
+  # tables:   { "dungeon_names" | "rooms" | "room_events" | "forks" | "treasure" | "locks" | "traps" => [entries] }
+  #
+  # A trap is a room's decision, written like a fork's cost: "A tripwire and
+  # a powder charge (hurt 20)". Only templates that weigh "trap" roll them.
   #
   # Pure: same seed, same dungeon.
   module Dungeon
-    DECISIONS = %w[encounter event treasure fork boss key].freeze
+    DECISIONS = %w[encounter event treasure fork boss key trap].freeze
     WIDTH = 1000
     HEIGHT = 700
     MAX_EXITS = 3
@@ -287,6 +290,7 @@ module Generators
       weights.delete("fork") if onward.size < 2
       weights.delete("encounter") if encounters.empty?
       weights.delete("treasure") if tables.fetch("treasure", []).empty?
+      weights.delete("trap") if tables.fetch("traps", []).empty?
       weights = { "event" => 1 } if weights.values.sum.zero?
 
       case pool.choose(weights)
@@ -294,6 +298,8 @@ module Generators
         { "kind" => "encounter", "monsters" => pool.pick(encounters)["monsters"] }
       when "treasure"
         { "kind" => "treasure" }.merge(pool.pick_fresh(tables["treasure"]).slice("item", "gil"))
+      when "trap"
+        { "kind" => "trap", "text" => pool.pick_fresh(tables["traps"])&.fetch("text") || "A tripwire. (hurt 10)" }
       when "fork"
         costly = onward[pool.int(onward.size)]
         path = edge_list.find { |e| [ e["from"], e["to"] ].sort == [ room["key"], "room-#{costly}" ].sort }

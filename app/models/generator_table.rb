@@ -22,6 +22,8 @@ class GeneratorTable < ApplicationRecord
     "rooms" => %w[text],
     "room_events" => %w[text],
     "forks" => %w[text],
+    # A room's trap, written like a fork's cost (Location::Exploration).
+    "traps" => %w[text],
     "locks" => %w[text key],
     "treasure" => %w[item gil],
     # The world's lore (Generators::Lore): what its histories and provenance are made of.
@@ -65,6 +67,7 @@ class GeneratorTable < ApplicationRecord
                 "({dungeon} names the nearest dungeon: clearing it is what they wish for)",
     "rooms" => "a room's name", "room_events" => "what happens there",
     "forks" => "what the costly way costs, then in brackets what it takes, if the game takes it (A sealed door. (pay 100); Poison gas. (hurt 10); A long climb. (2); Loose rock. (ambush))", "locks" => "the lock, then | and its key (Portal | Blue crystal)",
+    "traps" => "a trap, then in brackets what it does when it goes off (A tripwire and a powder charge. (hurt 20); A pit. (hurt 10, 1))",
     "service_names" => "a name, then | and the service (inn, shop, guild or temple)",
     "stock" => "an item's name", "treasure" => "an item's name, or an amount like 150 gil",
     "trades" => "a trade, then | and what it makes, with commas (smith | blade, helm; nothing, for a trade that makes nothing to remember)",
