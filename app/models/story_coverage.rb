@@ -12,7 +12,7 @@ class StoryCoverage
   # Facts the game makes itself (Campaign::Moment, Campaign::Remarks); any
   # other key a row asks about is a flag or a secret's key, set or not.
   MADE = %w[place town dungeon landmark wilds field mode first_visit visits cleared standing reputation time dawn day dusk night dark days
-            weekday month season party hurt down home gil hurt_one tied tied_to check who failed succeeded stat skill move difficulty
+            weekday month season party hurt down home gil hurt_one tied tied_to cowards coward check who failed succeeded stat skill move difficulty
             easy normal hard heroic rest camp inn road journey to].freeze
 
   attr_reader :table, :world

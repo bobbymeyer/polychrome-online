@@ -10,7 +10,7 @@ class Item < ApplicationRecord
   CATEGORIES = {
     "consumable" => nil,
     "knife" => "weapon", "sword" => "weapon", "axe" => "weapon", "spear" => "weapon",
-    "staff" => "weapon", "rod" => "weapon", "bow" => "weapon",
+    "staff" => "weapon", "rod" => "weapon", "bow" => "weapon", "gun" => "weapon",
     "shield" => "shield",
     "helmet" => "head", "hat" => "head",
     "heavy_armor" => "body", "light_armor" => "body", "robe" => "body",
