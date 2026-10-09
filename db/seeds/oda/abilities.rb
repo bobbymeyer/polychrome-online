@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-# The Grimoire: each archetype's lessons, the creatures' moves, and the
-# masks' (docs/ODA.md). Numbers follow the Base World's tuning for a
-# level-5 party. (Seeds::Oda)
+# The Grimoire: each archetype's lessons and the creatures' moves
+# (docs/ODA.md). Numbers follow the Base World's tuning for a level-5
+# party. (Seeds::Oda)
 module Seeds
   module Oda
     # The five Mancers, written from one form: four measures of the one
@@ -230,6 +230,46 @@ module Seeds
       scout: { name: "Scout", kind: "field", field_skill: "trail", field_outcome: "reveal", field_difficulty: "easy", effects: [],
                description: "Up the nearest mesa with a glass, and back with the lie of the land." },
 
+      # --- the Soldier: pike, shot and the line held -------------------------------------
+      pike_thrust: { name: "Pike Thrust", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
+                     effects: [ { primitive: "physical", power: 130, pierce: 30 } ], description: "Eighteen feet of ash and a steel point, through whatever's in the way." },
+      war_cry: { name: "War Cry", kind: "skill", target: "self", mp_cost: 0, gesture: "bounce",
+                 effects: [ { primitive: "buff", stat: "str", amount: 50, duration: 3 } ], description: "A shout that does nothing to the enemy and everything to the Soldier." },
+      halberd_sweep: { name: "Halberd Sweep", kind: "skill", target: "all_enemies", mp_cost: 4, gesture: "spin",
+                       effects: [ { primitive: "physical", power: 75 } ], description: "A wide, low cut across the whole line." },
+      rally: { name: "Rally", kind: "skill", target: "all_allies", mp_cost: 6, gesture: "bounce",
+               effects: [ { primitive: "buff", stat: "str", amount: 25, duration: 3 } ], description: "\"On me! Hold!\" And they do." },
+      shield_bash: { name: "Shield Bash", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
+                     effects: [ { primitive: "physical", power: 80 }, { primitive: "status", kind: "paralyze", chance: 35, duration: 1 } ],
+                     description: "The rim of a shield, in the face. They lose a moment." },
+      butt_stroke: { name: "Butt Stroke", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
+                     effects: [ { primitive: "physical", power: 80 }, { primitive: "status", kind: "paralyze", chance: 35, duration: 1 } ],
+                     description: "The wrong end of the pike, in the face. They lose a moment." },
+      fire_at_will: { name: "Fire at Will", kind: "skill", target: "random_enemy", mp_cost: 8, gesture: "shake",
+                      effects: [ { primitive: "physical", power: 70, hits: 3, type: "shot" } ], description: "The matchlocks come up behind the pikes, and the line goes white with smoke." },
+      forlorn_hope: { name: "Forlorn Hope", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "lunge",
+                      effects: [ { primitive: "physical", power: 180, grudge: 100 } ], description: "The charge nobody comes back from, except, this once, the Soldier." },
+      kick_it_in: { name: "Kick It In", kind: "field", field_skill: "brawn", field_outcome: "unlock", field_difficulty: "normal", effects: [],
+                    description: "The Thief has a pick. The Soldier has a boot." },
+
+      # --- the Bodyguard: in front, always ----------------------------------------------
+      guard: { name: "Guard", kind: "skill", target: "self", mp_cost: 0, gesture: "shake",
+               effects: [ { primitive: "status", kind: "cover", duration: 3 } ], description: "Steps in front of everyone: every single blow meant for the party comes here instead." },
+      brace: { name: "Brace", kind: "skill", target: "self", mp_cost: 2, gesture: "tint",
+               effects: [ { primitive: "buff", stat: "def", amount: 60, duration: 3 }, { primitive: "buff", stat: "mdef", amount: 40, duration: 3 } ],
+               description: "Feet set, shield up, chin down." },
+      interpose: { name: "Interpose", kind: "skill", target: "single_ally", mp_cost: 4, gesture: "slide",
+                   effects: [ { primitive: "shield", power: 30, duration: 3 } ], description: "A shoulder and a shield between an ally and the worst of it." },
+      shield_wall: { name: "Shield Wall", kind: "skill", target: "all_allies", mp_cost: 8, gesture: "tint",
+                     effects: [ { primitive: "buff", stat: "def", amount: 30, duration: 3 } ], description: "Everyone behind the Bodyguard's shield, and the shield is big enough." },
+      unbreakable: { name: "Unbreakable", kind: "skill", target: "self", mp_cost: 10, gesture: "flash",
+                     effects: [ { primitive: "status", kind: "regen", duration: 4 }, { primitive: "buff", stat: "def", amount: 80, duration: 4 } ],
+                     description: "Whatever comes, they're still standing when it's gone." },
+      last_stand: { name: "Last Stand", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
+                    effects: [ { primitive: "physical", power: 160, grudge: 200 } ], description: "Everything the Bodyguard has taken for the others, given back at once." },
+      escort: { name: "Escort", kind: "field", field_skill: "nerve", field_outcome: "safe_road", field_difficulty: "normal", effects: [],
+                description: "Out in front, eyes on every ridge. Whatever waits on the road decides to wait for someone else." },
+
       # --- what the creatures do ---------------------------------------------------------
       talon: { name: "Talon", kind: "skill", target: "single_enemy", mp_cost: 0, effects: [ { primitive: "physical", power: 120, type: "wind" } ],
                description: "Down out of the sun." },
@@ -249,21 +289,6 @@ module Seeds
               description: "Hurt, it gets bigger." },
       rust_breath: { name: "Rust Breath", kind: "skill", target: "single_enemy", mp_cost: 0, effects: [ { primitive: "debuff", stat: "def", amount: 40, duration: 3 } ],
                      description: "Everything metal it breathes on goes soft." },
-
-      # --- the masks' own moves (Battle::Masks) -------------------------------------------
-      raijin_strike: { name: "Raijin Strike", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash",
-                       effects: [ { primitive: "physical", power: 130, type: "thunder" } ], description: "The Storm Mask's: lightning, on purpose." },
-      foxfire: { name: "Foxfire", kind: "magic", target: "all_enemies", mp_cost: 0, gesture: "flash",
-                 effects: [ { primitive: "elemental", type: "fire", power: 30 } ], description: "The Ember Fox Mask's: pale fires that dance between them." },
-      riptide: { name: "Riptide", kind: "magic", target: "single_enemy", mp_cost: 0, gesture: "flash",
-                 effects: [ { primitive: "elemental", type: "water", power: 50 } ], description: "The Tide Mask's: the sea, all at once." },
-      mountain_breaker: { name: "Mountain Breaker", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
-                          effects: [ { primitive: "physical", power: 220, type: "earth", pierce: 50 } ], description: "The Stone Mask's: one blow, made for giants." },
-      cyclone_edge: { name: "Cyclone Edge", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "spin",
-                      effects: [ { primitive: "physical", power: 110, type: "wind" } ], description: "The Gale Mask's: a turning blade of wind." },
-      swallow_the_light: { name: "Swallow the Light", kind: "magic", target: "single_enemy", mp_cost: 0, gesture: "fade",
-                           effects: [ { primitive: "elemental", type: "deep", power: 60 }, { primitive: "drain", power: 20 } ],
-                           description: "The Hollow Mask's: the deep, given a mouth." }
     ).freeze
   end
 end

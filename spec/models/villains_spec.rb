@@ -21,6 +21,8 @@ RSpec.describe "Villains and what clearing a place changes" do
     campaign.update!(current_node: barrow)
     lair = barrow.location
     lair.enter!
+    campaign.reload.wave_off_encounter! # what waits at the door is waved off: a fight bars the way on
+    lair.reload
     key = lair.add_room!(name: "The Charter Vault", connect: lair.view["entrance"], decision: { "kind" => "boss", "monsters" => { "goblin_chief" => 1, "goblin" => 2 } })
     lair.move_to!(key)
     campaign.reload

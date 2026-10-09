@@ -58,7 +58,7 @@ RSpec.describe "Traps, picked locks and getting caught" do
 
     before do
       near = lock_path["from"]
-      dungeon.update!(progress: { "current" => near, "visited" => [ near ] })
+      dungeon.update!(progress: { "current" => near, "visited" => [ near ], "resolved" => [ near ] })
     end
 
     it "opens to a picked lock (the unlock outcome), key or no key" do

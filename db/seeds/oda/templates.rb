@@ -7,7 +7,7 @@ module Seeds
       frontier_town: { name: "Frontier town", kind: "town", description: "One street, a bell tower, a boarding house, and everybody watching the street at noon.",
                        config: { services: { inn: 100, shop: 100, guild: 100, temple: 70 }, npcs: [ 4, 7 ], stock: [ 9, 13 ], buildings: [ 10, 14 ],
                                  tables: %w[town_names given_names hooks townsfolk_memories townsfolk_wishes service_names buildings town_stock] } },
-      clock_town: { name: "Clock town", kind: "town", description: "Walled, tidy and ticking: clockmakers, gunsmiths and the mask-maker's quarter.",
+      clock_town: { name: "Clock town", kind: "town", description: "Walled, tidy and ticking: clockmakers and gunsmiths.",
                     config: { services: { inn: 100, shop: 100, guild: 80, temple: 100 }, npcs: [ 5, 8 ], stock: [ 8, 12 ], buildings: [ 12, 16 ],
                               tables: %w[town_names given_names hooks townsfolk_memories townsfolk_wishes service_names buildings clock_stock] } },
       powder_mine: { name: "Powder mine", kind: "dungeon", encounter_table: "the_seam",

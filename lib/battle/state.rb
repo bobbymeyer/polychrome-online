@@ -173,7 +173,9 @@ module Battle
   #   first_strike — goes before everyone in the first round
   #   second_wind  — once a battle, gets back up when knocked down
   #   potency      — items in its hands work half again as well (an Apothecary)
-  PASSIVES = %w[counter regen mp_regen first_strike second_wind potency].freeze
+  #   guardian     — steps in front of a single blow meant for a wounded ally
+  #                  (FF5's Cover; Battle::Resolver#covered)
+  PASSIVES = %w[counter regen mp_regen first_strike second_wind potency guardian].freeze
 
   ATTACK = {
     "id" => "attack",

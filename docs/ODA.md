@@ -10,8 +10,8 @@ Oda is the third seeded setting (`db/seeds/oda/`), and the home of its archetype
 - **Types** (`worlds.damage_types`): Steel (the plain one), Shot (through armour), five powders round a circle (water quenches fire, fire burns wind, wind wears down earth, earth grounds thunder, thunder boils water), and Deep, what the giants are made of: steel and shot glance off it, and it breaks both.
 - **Same type** is on (`Battle::RULES` `same_type`): a move of one of the user's own types is half again as strong.
 - **The law.** Whoever refuses a duel is a coward, and a coward has no place in this world (§4).
-- **Masks** are rare treasure (§5). **Giants** wake when a seam is dug too deep.
-- **The atlas.** Noonbell, where every campaign starts, under the bell that rings for duels. Saltpeter, the powder town. Gearhold, the clock town, and the mask-maker's workshop behind it. Mines, forts and a drowned belfry. The cast: Silas Crane (the Smiling Draw, a duellist), Marrow Vey (who woke the giants), Mother Quill (who made the masks), and a bought sheriff.
+- **Masks** belong to one campaign, Dead Calm: there are seven, and that's all (§5, §9). **Giants** wake when a seam is dug too deep.
+- **The atlas.** Noonbell, where every campaign starts, under the bell that rings for duels. Saltpeter, the powder town. Gearhold, the clock town. Mines, forts and a drowned belfry. The cast: Silas Crane (the Smiling Draw, a duellist), Marrow Vey (who woke the giants), and a bought sheriff.
 
 ## 2. The archetypes
 
@@ -26,6 +26,8 @@ The code says `Job`; screens say archetype. Each has its type, skills, field abi
 | Magician | Thunder | Quick | Clear Mind | money |
 | Healer | Water | Triage | Potency | a rumour |
 | Ranger | Shot | Call Hawk | First Strike | money |
+| Soldier | Steel | Pike Thrust | Counter | money |
+| Bodyguard | Earth | Guard | Guardian | money |
 
 ### 2.1 Courtsword
 
@@ -92,6 +94,32 @@ Control, not damage.
 - **Call Hawk** brings a companion that `stays` the whole battle; **Call Hound** brings one for three turns.
 - **Typed shot** (fire, thunder, water, stone, wind) is ammunition in the Armory that anyone can fire.
 
+### 2.8 Soldier
+
+Pike, matchlock and plate. The straight heavy fighter.
+
+- **Wears** spears, swords and guns, heavy armour and helmets. No shield: a pike takes both hands.
+- **Pike Thrust** goes through part of the target's defence (`pierce`).
+- **Halberd Sweep** cuts the whole line, and **Fire at Will** is three shots at random.
+- **War Cry** strengthens the Soldier; **Rally** strengthens the party.
+- **Butt Stroke** can stun (paralyze).
+- **Kick It In** (field ability) has the `unlock` outcome, on Brawn: the Thief's pick, with a boot.
+- **Forlorn Hope** is their desperation move: a charge on everyone, harder the more hurt they are.
+
+### 2.9 Bodyguard
+
+The tank: in front of the blow meant for someone else, and in the heaviest of everything.
+
+- **Wears** the most defence there is: heavy armour, helmets, and the only shields in Oda. Swords or knives. Defence +20%, and the most HP of anyone.
+- **Guardian** (passive, FF5's Cover): a single blow meant for a badly hurt ally (30% HP or less) comes to the Bodyguard instead, if they're in better shape and free to move.
+- **Guard** (`cover` status) takes every single blow meant for the party, for three turns.
+- **Brace** raises their own defences, **Interpose** shields an ally, **Shield Wall** raises the party's defence, and **Unbreakable** gives regen and a great deal of defence.
+- **Shield Bash** can stun.
+- **Escort** (field ability) has the `safe_road` outcome, on Nerve.
+- **Last Stand** is their desperation move: everything they've taken, given back at once.
+
+The **Courtsword** wears heavy armour too.
+
 ## 3. The engine, piece by piece
 
 | Piece | Where | Who it's for |
@@ -108,6 +136,7 @@ Control, not damage.
 | `steal` with `boon` | `Effects#steal_boon` | Thief |
 | `triage`, `potency` | `Effects#heal`, `#revive` | Healer |
 | `summon` with `stays` | `Resolver#count_down_summon` | Ranger |
+| the `guardian` passive | `Resolver#covered` | Bodyguard |
 | `transform`, the `masked` and `spent` statuses | `Battle::Masks` | masks |
 
 The property specs (`spec/battle/properties_spec.rb`) run all of it, and `spec/battle/oda_spec.rb` checks each piece.
@@ -149,7 +178,7 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 
 ## 5. Masks
 
-- **In the Armory:** items of category `mask`, worn as an accessory by anyone. Each has its own type, turns and moves (`items.mask`). Oda has six: Storm, Ember Fox, Tide, Stone, Gale and the Hollow Mask.
+- **In the Armory:** items of category `mask`, worn as an accessory by anyone. Each has its own type, turns and moves (`items.mask`). There are seven, all Dead Calm's (§9): Red, Orange, Yellow, Green, Indigo, Blue and Violet. Oda's own books have none, and its atlas, cast, tables and codex never mention them.
 - **Never sold:** found as treasure, or given by the GM.
 - **Its Don.** Wearing one puts **Don the … Mask** on the menu (`Item#don_ability`).
 - **Putting it on** (`transform`), for its turns, the wearer gains:
@@ -169,6 +198,10 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
   - It waits in its room until the GM has someone disarm it (a check) or lets it go off.
   - Walking on past it sets it off.
   - On the floorplan it is an amber triangle.
+- **A fight bars the way on.** Ways on from a room deeper in stay shut while its fight is still waiting (`Location::Exploration#barred_by`).
+  - An encounter opens them when it's won or the GM waves it off. The master's room opens them only when it's won.
+  - The way back always stays open.
+  - The table's ways on leave a barred way out and name it, as they do a locked door.
 
 ## 7. Settled while building
 
@@ -181,7 +214,7 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 7. **Fire's rider** is a status of its own: burn.
 8. **The Monk** banks chi rather than chaining forms.
 9. **The Ranger** has a hawk that stays and a hound for three turns.
-10. **Masks** are one of each per campaign by custom: nothing stops a GM from granting a second.
+10. **Masks** are Dead Calm's seven, each worn by a guardian and dropped when it falls. They live in Oda's Armory, because items are a world's, but nothing else in Oda hands them out.
 
 ## 8. Not done
 

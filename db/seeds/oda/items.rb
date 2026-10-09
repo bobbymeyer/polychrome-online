@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# The Outfitter: remedies, powder shot, each kind of gear in three steps,
-# and the masks, which no outfitter sells. (Seeds::Oda)
+# The Outfitter: remedies, powder shot, and each kind of gear in three
+# steps. Oda has no masks of its own: there are seven, and they are Dead
+# Calm's (db/seeds/campaigns/dead_calm). (Seeds::Oda)
 module Seeds
   module Oda
     ITEMS = {
@@ -52,6 +53,18 @@ module Seeds
       matchlock: { name: "Matchlock", category: "gun", price: 300, stats: { atk: 17 }, description: "A slow match, a pan of powder and patience." },
       wheellock: { name: "Wheellock", category: "gun", price: 900, stats: { atk: 26 }, description: "A spring and a wheel instead of the match. Gearhold's pride." },
       long_rifle: { name: "Long Rifle", category: "gun", price: 2200, stats: { atk: 36 }, description: "Six feet of barrel. Reaches the next mesa." },
+      pike: { name: "Pike", category: "spear", price: 250, stats: { atk: 16 }, description: "Eighteen feet of ash with a point on the end." },
+      partisan: { name: "Partisan", category: "spear", price: 700, stats: { atk: 25 }, description: "A broad blade on a pole, and two wings to stop it going too deep." },
+      halberd: { name: "Halberd", category: "spear", price: 1800, stats: { atk: 35 }, description: "Axe, spike and hook on one haft. Gearhold forges it for the town watch." },
+      buckler: { name: "Buckler", category: "shield", price: 180, stats: { def: 5 }, description: "A fist-sized shield for turning a blade aside." },
+      target_shield: { name: "Target", category: "shield", price: 550, stats: { def: 10, mdef: 2 }, description: "A round shield, iron-rimmed, its face painted with a house's colours." },
+      pavise: { name: "Pavise", category: "shield", price: 1500, stats: { def: 16, mdef: 5 }, description: "A shield as tall as its bearer. Shot stops at it." },
+      morion: { name: "Morion", category: "helmet", price: 150, stats: { def: 4 }, description: "A steel cap with a comb and a brim." },
+      burgonet: { name: "Burgonet", category: "helmet", price: 500, stats: { def: 8, mdef: 2 }, description: "Cheek plates, a peak, and a crest for the bold." },
+      close_helm: { name: "Close Helm", category: "helmet", price: 1400, stats: { def: 12, mdef: 4 }, description: "Shut all round. You see through a slit and hear your own breath." },
+      cuirass: { name: "Cuirass", category: "heavy_armor", price: 400, stats: { def: 16 }, description: "A breastplate and a backplate, buckled together." },
+      half_plate: { name: "Half Plate", category: "heavy_armor", price: 1100, stats: { def: 26 }, description: "Plate to the knee. A pikeman's harness." },
+      gearhold_plate: { name: "Gearhold Plate", category: "heavy_armor", price: 2600, stats: { def: 36, mdef: 4 }, description: "Fluted, articulated, and proof against a pistol ball at ten paces." },
       travel_coat: { name: "Travel Coat", category: "light_armor", price: 150, stats: { def: 6 }, description: "Long, dusty, a lot of pockets." },
       duster: { name: "Duster", category: "light_armor", price: 500, stats: { def: 12, agi: 1 }, description: "Oiled canvas. Turns a knife, mostly." },
       brigandine: { name: "Brigandine", category: "light_armor", price: 1400, stats: { def: 20 }, description: "Plates sewn into a coat. Heavy on the shoulders." },
@@ -62,27 +75,7 @@ module Seeds
       lacquered_hat: { name: "Lacquered Hat", category: "hat", price: 450, stats: { def: 5, mdef: 5 }, description: "Black lacquer, red cord. Turns rain and the odd blade." },
       powder_horn: { name: "Powder Horn", category: "accessory", price: 300, stats: { mag: 3 }, description: "A horn of good powder: every measure goes further." },
       lucky_mark: { name: "Lucky Mark", category: "accessory", price: 400, stats: { agi: 3 }, description: "A coin with a hole shot through it. Someone was lucky once." },
-      iron_bracer: { name: "Iron Bracer", category: "accessory", price: 350, stats: { def: 5 }, description: "For catching a blade on the arm." },
-
-      # --- the masks: rare treasure. Never in a shop; found, earned, inherited (Battle::Masks).
-      storm_mask: { name: "Storm Mask", category: "mask", price: 0, stats: { spr: 2 },
-                    mask: { type: "thunder", duration: 3, abilities: %w[raijin_strike] },
-                    description: "A horned face in black lacquer that crackles when it's angry. Its last wearer rang the noon bell with it on, and the bell melted." },
-      ember_fox_mask: { name: "Ember Fox Mask", category: "mask", price: 0, stats: { mag: 2 },
-                        mask: { type: "fire", duration: 3, abilities: %w[foxfire] },
-                        description: "A white fox with red-lined eyes. It smells of smoke and laughs at its own jokes." },
-      tide_mask: { name: "Tide Mask", category: "mask", price: 0, stats: { mdef: 4 },
-                   mask: { type: "water", duration: 3, abilities: %w[riptide] },
-                   description: "Pale blue, smooth as a pebble, always cold and always a little wet." },
-      stone_mask: { name: "Stone Mask", category: "mask", price: 0, stats: { def: 4 },
-                    mask: { type: "earth", duration: 4, abilities: %w[mountain_breaker] },
-                    description: "Carved from a giant's tooth. Made to meet the deep on equal terms." },
-      gale_mask: { name: "Gale Mask", category: "mask", price: 0, stats: { agi: 2 },
-                   mask: { type: "wind", duration: 3, abilities: %w[cyclone_edge] },
-                   description: "A hawk's face in green lacquer. Whoever wears it never quite touches the ground." },
-      hollow_mask: { name: "Hollow Mask", category: "mask", price: 0, stats: { mag: 3 },
-                     mask: { type: "deep", duration: 2, abilities: %w[swallow_the_light] },
-                     description: "No face at all, just a dark that goes back further than the mask is deep. Mother Quill won't say who made it." }
+      iron_bracer: { name: "Iron Bracer", category: "accessory", price: 350, stats: { def: 5 }, description: "For catching a blade on the arm." }
     }.freeze
   end
 end

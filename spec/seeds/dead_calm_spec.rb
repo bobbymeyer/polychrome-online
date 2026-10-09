@@ -15,7 +15,7 @@ RSpec.describe Seeds::DeadCalm do
 
   it "adds its guardians, their forms, its masks and its dungeon to Oda's books, all valid" do
     expect(world.slug).to eq("oda")
-    expect(world.items.masks.where(slug: %w[red_mask orange_mask yellow_mask green_mask indigo_mask blue_mask violet_mask]).count).to eq(7)
+    expect(world.items.masks.pluck(:slug)).to contain_exactly(*%w[red_mask orange_mask yellow_mask green_mask indigo_mask blue_mask violet_mask])
     slugs = described_class::MONSTERS.keys.map(&:to_s)
     [ world.abilities.where(slug: described_class::ABILITIES.keys.map(&:to_s)), world.items.where(slug: described_class::ITEMS.keys.map(&:to_s)),
       world.monsters.where(slug: slugs), world.location_templates.where(slug: "five_rooms") ].each do |scope|
@@ -58,6 +58,26 @@ RSpec.describe Seeds::DeadCalm do
         expect(Toll.read(trap["text"]).last).to be_empty, trap["text"]
       end
     end
+  end
+
+  it "keeps each twist behind its guardian until the guardian falls" do
+    party = [ create_character(campaign, name: "Kei", job: world.jobs.find_by!(slug: "courtsword")) ]
+    dock = place("The Airship Dock")
+    campaign.update!(current_node: dock)
+    loc = dock.location
+    berth = loc.view["boss"]
+    loc.update!(progress: { "current" => berth, "visited" => [ berth ] })
+    expect { loc.move_to!("added-1") }.to raise_error(Refusal, /A fight still waits in The deep berth \(Crab\)/)
+    campaign.waylay!("The master of The Airship Dock", { "crab" => 1 }, boss: true, location: loc.id, room: berth)
+    campaign.wave_off_encounter! # a boss waved off still waits
+    expect { loc.reload.move_to!("added-1") }.to raise_error(Refusal)
+    campaign.waylay!("The master of The Airship Dock", { "crab" => 1 }, boss: true, location: loc.id, room: berth)
+    battle = campaign.start_pending_encounter!
+    battle.enemies.each { |unit| battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => unit.id, "value" => 0 }, actor: "gm") unless battle.over? }
+    expect(battle.reload.status).to eq("victory")
+    loc.reload.move_to!("added-1")
+    expect(loc.reload.current_room_key).to eq("added-1")
+    expect(party.first).to be_present
   end
 
   it "puts Amethyst 7A in the Head's last room, and casts the duellists" do

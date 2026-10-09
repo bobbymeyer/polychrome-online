@@ -46,19 +46,19 @@ module Seeds
                                      "Ironside", "Kettering", "Lowe", "Mallory", "Noon", "Orchard", "Pike", "Redfern", "Sallow", "Thorne") },
       hooks: { name: "Townsfolk hooks", kind: "hooks",
                entries: texts("Refused a duel twenty years ago, and still pays the shame price at every counter.",
-                              "Wants an escort to {town} and won't say who's following.", "Has a mask in a locked box. Won't say how they came by it.",
+                              "Wants an escort to {town} and won't say who's following.", "Has a duelling pistol in a locked box. Won't say whose it was.",
                               "Heard the ground breathe under {dungeon}.", "Keeps a tally of the Smiling Draw's duels on the back of a door.",
                               "Sells powder that's been cut with sand.", "Lost a brother to the Deep Seam; the Company sent his boots back.",
                               "Rings the noon bell, and has never once seen the duel through.", "Is looking for someone to fight a duel in their place. That isn't allowed. They know.",
                               "Saw a giant's shadow on the mesa at dusk, walking.", "Has a map to an old seam, half burned.",
                               "Owes the Powder Company more than they'll earn in their life.", "Was a Courtsword once. Their sheath is empty now.",
                               "Swears the Drowned Belfry rings at noon, under the water.", "Builds little clockwork birds and sells them to children.",
-                              "Wants word taken to Mother Quill in Gearhold.") },
+                              "Wants word taken to a clockmaker in Gearhold.") },
       townsfolk_memories: { name: "Townsfolk memories", kind: "memories",
                             entries: texts("I saw the Smiling Draw's first duel. The other one was laughing too, right until noon.",
                                            "I mined the Deep Seam for nine years. I heard it breathing in the eighth.",
                                            "My father refused a duel. We moved three times before I was ten.",
-                                           "I saw someone put on a mask once. I couldn't look at them for long.",
+                                           "I saw a giant once, far off on the mesa. I couldn't look at it for long.",
                                            "I rang the bell for a duel nobody came to. I rang it until dusk.",
                                            "I ran from {town} the night the ground split.") },
       townsfolk_wishes: { name: "Townsfolk wishes", kind: "wishes",
@@ -97,10 +97,12 @@ module Seeds
                               { text: "Water tower", width: 30, height: 110, roof: "dome" } ] },
       town_stock: { name: "Town stock", kind: "stock",
                     entries: %w[tonic strong_tonic smelling_salts charcoal_draught eyewash smoke_pot fire_shot thunder_shot water_shot stone_shot wind_shot
-                                court_blade stiletto charge_rod healers_staff mesa_bow wheellock duster monks_wrap mancers_robe lacquered_hat
+                                court_blade stiletto charge_rod healers_staff mesa_bow wheellock partisan target_shield burgonet half_plate
+                                duster monks_wrap mancers_robe lacquered_hat
                                 powder_horn lucky_mark iron_bracer].map { |item| { item: item } } },
       clock_stock: { name: "Gearhold stock", kind: "stock",
                      entries: %w[tonic strong_tonic smelling_salts panacea charcoal_draught noon_blade quay_knife seam_rod bell_staff long_rifle brigandine
+                                 halberd pavise close_helm gearhold_plate
                                  mancers_robe lacquered_hat powder_horn].map { |item| { item: item } } },
       mine_rooms: { name: "Mine rooms", kind: "rooms",
                     entries: texts("Pithead", "Cage Shaft", "Powder Store", "Gallery", "Glowing Drift", "Foreman's Hut", "Flooded Sump", "Crystal Face",
@@ -114,7 +116,7 @@ module Seeds
                                     "A seam of raw powder in the wall, pulsing like a slow heart.",
                                     "A company notice: DANGER, NO DIGGING BELOW THIS MARK. Someone has dug below it.",
                                     "A clockwork bird, wound down, holding a note in its beak.",
-                                    "Someone's left a mask-shaped space in the dust on a shelf.",
+                                    "Someone's left a pistol-shaped space in the dust on a shelf.",
                                     "The floor is warm, and the warmth is coming up.",
                                     "A bell rope hangs from nowhere, and sways.") },
       forks: { name: "Fork costs", kind: "forks",
@@ -132,14 +134,13 @@ module Seeds
                   entries: [ { item: "tonic", weight: 8 }, { item: "strong_tonic", weight: 4 }, { item: "smelling_salts", weight: 4 },
                              { item: "charcoal_draught", weight: 4 }, { item: "panacea", weight: 2 }, { item: "fire_shot", weight: 3 },
                              { item: "thunder_shot", weight: 3 }, { item: "noon_blade" }, { item: "long_rifle" }, { item: "seam_rod" },
-                             { item: "storm_mask" }, { item: "ember_fox_mask" }, { item: "gale_mask" },
                              { gil: 60, weight: 6 }, { gil: 150, weight: 4 }, { gil: 400, weight: 2 } ] }
     }.freeze
 
     # The land's lore (Generators::Lore): what its places' pasts are made of.
     LORE = {
       "trades" => { "miner" => [], "gunsmith" => %w[pistol rifle], "clockmaker" => %w[clock watch], "mancer" => [ "powder horn" ],
-                    "rancher" => [], "mask-maker" => [] },
+                    "rancher" => [] },
       "pasts" => {
         "mine" => { "rooms" => [ "Pithead", "Cage Shaft", "Gallery", "Powder Store", "Crystal Face" ],
                     "heart" => "The Deepest Face", "keeps" => [ "pick", "lamp", "tally" ], "named" => %w[mine seam shaft drift gallery] },
@@ -158,7 +159,7 @@ module Seeds
       },
       "quarrels" => [ "a duel refused", "a claim jumped", "a horse sold lame", "a seam both families swore they found", "a debt to the Company" ],
       "betrayals" => [ "sold the claim to the Company", "testified for the bought sheriff", "stood second in a duel and stepped in" ],
-      "fortunes" => [ "a seam of pure red salt", "a mask found in a dry well", "a duel won against the odds" ],
+      "fortunes" => [ "a seam of pure red salt", "a strongbox found in a dry well", "a duel won against the odds" ],
       "waters" => [ "the creek", "the drowned valley", "the water tower" ],
       "owners" => [ "Lost by a %s in a duel", "Sold by the %s family after the cave-in", "Won at cards from a %s" ],
       "sightings" => [ "{who} was seen in {where}, with a hand near their gun." ],

@@ -135,6 +135,24 @@ RSpec.describe Location do
   describe "a dungeon" do
     let(:entrance) { dungeon.view["entrance"] }
 
+    it "bars the ways on past a fight until it's won or waved off, and leaves the way back open" do
+      create_character(campaign, name: "Rook")
+      vault = dungeon.add_room!(name: "Guard Room", connect: entrance, decision: { "kind" => "encounter", "monsters" => { "goblin" => 2 } })
+      beyond = dungeon.reload.add_room!(name: "Strongroom", connect: vault, decision: { "kind" => "treasure", "gil" => 50 })
+      dungeon.reload.update!(progress: { "current" => entrance, "visited" => [ entrance ], "resolved" => [ entrance ] })
+      dungeon.move_to!(vault)
+      expect(campaign.reload.pending_encounter).to include("room" => vault)
+      expect { dungeon.reload.move_to!(beyond) }.to raise_error(Refusal, "A fight still waits in Guard Room (Goblin): win it before going on, or go back.")
+      expect(campaign.reload.ways_on.map { |way| way["label"] }).not_to include("Strongroom", "An unexplored way")
+      expect(campaign.locked_ways).to include("The way on from Guard Room (win the fight first)")
+
+      dungeon.move_to!(entrance) # back the way they came: always open
+      dungeon.move_to!(vault)
+      campaign.reload.wave_off_encounter!
+      dungeon.reload.move_to!(beyond)
+      expect(dungeon.reload.current_room_key).to eq(beyond)
+    end
+
     it "lets the GM place the boss and add rooms" do
       dungeon.place_boss!("ogre" => "2")
       boss_room = dungeon.room(dungeon.view["boss"])
@@ -294,7 +312,7 @@ RSpec.describe Location do
           break unless step
 
           dungeon.move_to!(step)
-          campaign.update!(pending_encounter: nil)
+          campaign.reload.wave_off_encounter! # a fight bars the way on until it's won or waved off
         end
       end
       walk.()

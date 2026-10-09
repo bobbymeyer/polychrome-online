@@ -63,14 +63,14 @@ module Seeds
                  ai_script: [ { if: { chance: 50 }, use: "quickdraw" }, { use: "attack" } ],
                  description: "A hired pistol with a reputation and the nerve to keep it." },
 
-      # --- the giants, woken from the deep (masks are made for them) -------------------------
+      # --- the giants, woken from the deep ---------------------------------------------------
       seam_giant: { name: "Seam Giant", level: 8, boss: true, giant: true,
                     stats: stats(max_hp: 900, max_mp: 50, str: 26, mag: 22, atk: 24, agi: 6, def: 18, mdef: 14),
                     base_type: "deep", exp: 400, gil: 300, abp: 12, status_immune: %w[stop doom],
                     ai_script: [ { if: { self_hp_below: 50 }, use: "grow", target: "self" }, { if: { round_multiple: 3 }, use: "seam_quake" },
                                  { if: { chance: 25 }, use: "deep_roar" }, { use: "attack" } ],
                     boss_line: "The seam opens like an eye.",
-                    description: "Raw powder that stood up when the Company dug too deep. Every wound makes it bigger. Steel and shot glance off; a mask meets it as an equal." },
+                    description: "Raw powder that stood up when the Company dug too deep. Every wound makes it bigger. Steel and shot glance off." },
       ash_colossus: { name: "Ash Colossus", level: 10, boss: true, giant: true,
                       stats: stats(max_hp: 1200, max_mp: 60, str: 30, mag: 26, atk: 28, agi: 5, def: 22, mdef: 16),
                       base_type: "deep", exp: 600, gil: 500, abp: 15, status_immune: %w[stop doom sleep],
