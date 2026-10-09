@@ -993,3 +993,30 @@ details[open] > summary { margin-bottom: 16px; }
 /* A duel: the opponent's line, then what a read found. */
 .duel-tell { margin: 0 0 8px; }
 .duel-read { margin: 0 0 8px; font-weight: 700; }
+
+/* A duel (docs/ODA.md): a black slab of a header, two meters, a scorecard, and the result in display type.
+   The perfect line is red (the move); good and okay are greys around it. */
+.duel { margin: 16px 0; border: 2px solid var(--ink); background: var(--paper); }
+.duel__head { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; padding: 8px 16px; background: var(--ink); color: var(--paper); }
+.duel__head p { margin: 0; }
+.duel__title { font-weight: 900; letter-spacing: .2em; text-transform: uppercase; }
+.duel__round { margin-left: auto !important; font-size: 13px; }
+.duel__meters { display: grid; gap: 16px; padding: 16px; }
+.duel-meter__name { margin: 0 0 4px; font-weight: 700; }
+.duel-meter__track { position: relative; height: 32px; border: 2px solid var(--ink); background: var(--paper); overflow: hidden; }
+.duel-meter__band { position: absolute; top: 0; bottom: 0; }
+.duel-meter__band--okay { background: var(--rule); }
+.duel-meter__band--good { background: var(--control-line); }
+.duel-meter__band--perfect { background: var(--signal); min-width: 2px; }
+.duel-meter__needle { position: absolute; top: -2px; bottom: -2px; width: 3px; margin-left: -1px; background: var(--ink); }
+.duel-meter__swing { margin-top: 8px; min-width: 120px; }
+.duel-meter__state { margin: 8px 0 0; color: var(--grey); }
+.duel-meter.is-swung .duel-meter__track { border-color: var(--grey); }
+.duel__how { margin: 0; padding: 0 16px 12px; }
+.duel__result { margin: 0; padding: 24px 16px; text-align: center; font: var(--display); font-size: clamp(32px, 6vw, 64px); letter-spacing: .04em; text-transform: uppercase; }
+.duel__result--satisfaction { letter-spacing: .2em; }
+.duel__card { width: calc(100% - 32px); margin: 0 16px 16px; border-collapse: collapse; }
+.duel__card th, .duel__card td { padding: 4px 8px; border-bottom: 1px solid var(--rule); text-align: left; }
+.duel__grade--perfect { font-weight: 900; color: var(--signal); }
+.duel__grade--miss { color: var(--grey); }
+.duel > form, .duel > .inline { margin: 0 16px 16px; }

@@ -162,6 +162,10 @@ Rails.application.routes.draw do
       resource :challenge, only: %i[create destroy] do
         resource :answer, only: :create, module: :challenges
       end
+      # The duel itself (Duel): a swing on the meter from either side, and the GM putting the result away.
+      resources :duels, only: :update do
+        resources :swings, only: :create, module: :duels
+      end
     end
   end
 

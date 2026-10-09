@@ -147,10 +147,7 @@ module Battle
   # (down: a world's One More rule knocks units down, Battle::Resolver#one_more.)
   PRIMITIVE_STATUSES = %w[airborne imbued shield charging down reloading sheathed chi masked spent].freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
-  # A battle, or a duel (Battle::Duel).
-  KINDS = %w[battle duel].freeze
-  # stance and read are a duel's (Battle::Duel); the rest a battle's.
-  COMMAND_KINDS = %w[ability item defend flee custom stance read].freeze
+  COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
 
   # A world's own battle rules, each off unless it says so:
@@ -220,10 +217,7 @@ module Battle
     # rules: a world's battle rules, on top of the game's own (RULES).
     # masks:  what the transform primitive puts on (Battle::Masks):
     #         { "storm_mask" => { name:, type:, duration:, abilities: [...], image: } }
-    # kind:   "battle", or "duel" (Battle::Duel): one against one, in stances.
-    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {}, masks: {},
-              kind: "battle")
-      raise ArgumentError, "unknown battle kind #{kind}" unless KINDS.include?(kind.to_s)
+    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {}, masks: {})
       rules = normalize(rules).select { |rule, on| RULES.include?(rule) && on == true }
       types = types ? Types.validate!(normalize(types)) : normalize(Types::DEFAULT)
       known = Types.list(types)
@@ -273,9 +267,7 @@ module Battle
         end
       end
 
-      Duel.validate!(units) if kind.to_s == "duel"
-
-      built = {
+      {
         "version" => VERSION,
         "seed" => Integer(seed),
         "rng" => Rng.seed_state(seed),
@@ -291,8 +283,6 @@ module Battle
         "inputs" => {}
       }.merge(rules.any? ? { "rules" => rules } : {})
        .merge(faces.any? ? { "masks" => faces } : {})
-       .merge(kind.to_s == "duel" ? { "kind" => "duel", "duel" => Duel.opening, "escapable" => false } : {})
-      Duel.duel?(built) ? Duel.open(built) : built
     end
 
     # Where the fight is has a type; anywhere in particular is the plain one.
@@ -309,23 +299,6 @@ module Battle
       raise ArgumentError, "#{id} has unknown passives: #{unknown.join(', ')}" if unknown.any?
 
       list.any? ? { "passives" => list } : {}
-    end
-
-    # What a duellist brings (Battle::Duel): their archetype's technique,
-    # and, for one the GM plays, the lines that give away their stance.
-    def duel_parts(id, spec)
-      parts = {}
-      if spec["technique"]
-        raise ArgumentError, "#{id} has an unknown duel technique #{spec['technique']}" unless Duel::TECHNIQUES.include?(spec["technique"].to_s)
-
-        parts["technique"] = spec["technique"].to_s
-      end
-      tells = spec.fetch("tells", {})
-      unless tells.is_a?(Hash) && (tells.keys - Duel::STANCES).empty? && tells.values.all? { |lines| lines.is_a?(Array) && lines.all?(String) }
-        raise ArgumentError, "#{id}: tells are lines for each stance (#{Duel::STANCES.join(', ')})"
-      end
-      parts["tells"] = tells if tells.any?
-      parts
     end
 
     def unit(spec, side, known = TYPES)
@@ -367,7 +340,6 @@ module Battle
        .merge(spec["boss"] ? { "boss" => true } : {})
        .merge(spec["giant"] ? { "giant" => true } : {})
        .merge(spec["coward"] ? { "coward" => true } : {})
-       .merge(duel_parts(id, spec))
        .merge(passives(id, spec))
        .merge(job_parts(id, spec, known))
     end

@@ -17,7 +17,6 @@ RSpec.describe Seeds::Oda do
     expect(world.abilities.count).to be >= 100
     expect(world.items.masks.count).to eq(6)
     expect(world.monsters.where(giant: true).count).to be >= 2
-    expect(world.monsters.where.not(technique: nil).count).to be >= 3
     expect(world.world_places.count).to eq(9)
     expect(world.world_figures.count).to eq(4)
     expect(world.world_fronts.count).to eq(2)
@@ -49,13 +48,12 @@ RSpec.describe Seeds::Oda do
     expect(world.almanac.periods).to include("Noon")
   end
 
-  it "gives every archetype a signature, a field ability, a desperation move, a payoff and a duel technique" do
+  it "gives every archetype a signature, a field ability, a desperation move and a payoff" do
     world.jobs.each do |job|
       expect(job.signature_ability).to be_present, job.slug
       expect(job.field_ability_entry).to be_present, job.slug
       expect(%w[single_enemy all_enemies random_enemy]).to include(job.desperation_ability&.target), job.slug
       expect(job.payoff["kind"]).to be_present, job.slug
-      expect(Battle::Duel::TECHNIQUES).to include(job.technique), job.slug
       expect(job.job_levels.count).to be >= 5
     end
     expect(world.jobs.find_by!(slug: "monk").abilities.sum(:mp_cost)).to eq(0) # gave up powder
@@ -75,7 +73,7 @@ RSpec.describe Seeds::Oda do
     party = world.jobs.order(:name).map do |job|
       gear = world.items.select { |item| item.equipment? && !item.mask? && job.equips?(item) }.group_by(&:slot).values.map(&:first)
       stats = Stats::Derivation.derive(base: base, job: job.to_derivation, equipment: gear.map(&:to_equipment), passives: job.passives)
-      { id: job.slug, name: job.name, stats: stats, abilities: job.abilities.pluck(:slug) + [ job.signature, "don_storm_mask" ], technique: job.technique }
+      { id: job.slug, name: job.name, stats: stats, abilities: job.abilities.pluck(:slug) + [ job.signature, "don_storm_mask" ] }
     end
     world.monsters.find_each do |monster|
       state = world.battle(seed: monster.id, party: party.sample(4, random: Random.new(monster.id)), monsters: { monster.slug => 2 })
@@ -85,20 +83,6 @@ RSpec.describe Seeds::Oda do
         state, = Battle::Resolver.apply(state, { type: "timeout" })
       end
       expect(%w[victory defeat input]).to include(state["status"])
-    end
-  end
-
-  it "fights a duel between an archetype and each of its duellists" do
-    world.monsters.where.not(technique: nil).find_each do |monster|
-      courtsword = world.jobs.find_by!(slug: "courtsword")
-      hero = { id: "hero", name: "Hero", stats: Stats::Derivation.derive(base: { max_hp: 200, str: 14, agi: 12 }, job: courtsword.to_derivation), technique: "wait" }
-      state = world.battle(seed: 7, party: [ hero ], monsters: { monster.slug => 1 }, kind: "duel")
-      40.times do |i|
-        break unless state["status"] == "input"
-
-        state, = Battle::Resolver.apply(state, { type: "command", actor: "hero", command: { kind: "stance", stance: Battle::Duel::STANCES[i % 3] } })
-      end
-      expect(%w[victory defeat]).to include(state["status"])
     end
   end
 

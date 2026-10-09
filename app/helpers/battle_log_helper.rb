@@ -76,11 +76,6 @@ module BattleLogHelper
     when "transformed" then "#{name.('actor')} puts on the #{event['name']}!"
     when "unmasked" then "#{name.('unit')}'s mask comes off."
     when "reraise" then "#{name.('target')} won't stay down!"
-    when "stare" then "— Exchange #{event['exchange']} —"
-    when "tell" then "#{name.('unit')}: “#{event['line']}”"
-    when "reveal" then reveal_line(event, state)
-    when "clash" then clash_line(event, state)
-    when "technique" then technique_line(event, state)
     end
   end
 
@@ -188,34 +183,6 @@ module BattleLogHelper
     when "charging" then "#{unit} is still gathering strength."
     when "reloading" then "#{unit} is reloading."
     else "#{unit} has no orders."
-    end
-  end
-
-  # A duel's stances, shown together.
-  def reveal_line(event, state)
-    event["stances"].map { |id, stance| "#{unit_name(state, id)}: #{stance == 'wait' ? 'waits' : stance.capitalize}" }.join(" · ")
-  end
-
-  def clash_line(event, state)
-    case event["result"]
-    when "win" then "#{unit_name(state, event['winner'])} reads #{unit_name(state, event['loser'])}!"
-    when "trade" then "Steel on steel: they trade blows."
-    when "wait" then "#{unit_name(state, event['unit'])} waits, hand on the hilt."
-    else "They circle each other."
-    end
-  end
-
-  def technique_line(event, state)
-    actor = unit_name(state, event["actor"])
-    case event["technique"]
-    when "read" then "#{actor} reads #{unit_name(state, event['target'])}: a #{event['stance'].capitalize} is coming."
-    when "opening" then "#{actor} fires before the stare!"
-    when "tie_win" then "#{actor} holds firm: the tie is theirs."
-    when "switch" then "#{actor} slips the blow."
-    when "steady" then "#{actor}'s aim holds anyway."
-    when "recover" then "#{actor} steadies their breath."
-    when "wait" then "#{actor} keeps the blade in its sheath."
-    else "#{actor}: #{GlossaryHelper::TECHNIQUES.dig(event['technique'], 0)}."
     end
   end
 

@@ -7,7 +7,7 @@
     has called (Campaign::Controls): the talk box is there only under Talk. %>
 <% state = campaign.table_state %>
 <%# table-now--controls: the GM's controls strip is in the line (below), and the line is that strip (stage.css, "The controls"). %>
-<% controls = gm && !battle && !state.in?(%w[encounter choice challenge]) %>
+<% controls = gm && !battle && !state.in?(%w[encounter choice challenge duel]) %>
 <section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %><%= " table-now--controls" if controls %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>" data-controls="<%= campaign.controls %>" data-change="state" data-change-key="table-now">
   <%# In free play the GM's line is the controls row and nothing else: no label, no sentence. A scene on the stage
       says nothing here either: the stage is the scene, and the director's hand is on the stage's corner tag
@@ -25,6 +25,10 @@
       <strong>A battle is on: <%= battle.name %>.</strong>
       <%= gm ? "You run it from the battle page." : "Everyone at the table fights it." %>
       <%= "The choice waits until it's over." if choice %>
+    <% elsif state == "duel" %>
+      <% duel = campaign.current_duel %>
+      <strong><%= duel.on? ? "A duel: #{duel.character.name} and #{duel.opponent_name}." : "The duel is over." %></strong>
+      <%= "Everyone else watches." if duel.on? %>
     <% elsif state == "challenge" %>
       <%# A duel (Campaign::Duels): the challenged character answers; refusing makes them a coward. %>
       <% challenged = campaign.challenged_character %>
@@ -53,6 +57,7 @@
   </p>
   <% end %>
   <%= render "campaigns/tables/current_battle", campaign: campaign %>
+  <%= render "campaigns/tables/duel", duel: campaign.current_duel, gm: gm, you: local_assigns[:you] if state == "duel" %>
   <%# The challenged player's answer, on their own screen. %>
   <% if !gm && state == "challenge" && local_assigns[:you] && local_assigns[:you] == campaign.challenged_character %>
     <div class="table-now__do">

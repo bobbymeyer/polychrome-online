@@ -43,20 +43,19 @@ class BattleRecord < ApplicationRecord
   # antagonists: the campaign's NPCs who fight in it (Npc#battle_spec).
   # names: { "dark_mage" => "Sten Pike" }, a name for the first of a kind.
   # room: the dungeon room this fight is for, dealt with when it is won (Settlement).
-  # kind: "duel", one against one in stances (Battle::Duel; Campaign::Duels).
   def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false, terrain: nil,
-                  antagonists: [], names: {}, room: nil, kind: "battle")
+                  antagonists: [], names: {}, room: nil)
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
     raise Refusal, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
 
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items,
-                                  terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec), kind: kind)
+                                  terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec))
     names.each do |slug, named|
       unit = state["units"].find { |u| u["side"] == "enemy" && u.dig("image", "slug") == slug }
       unit["name"] = named if unit
     end
-    battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state, kind: kind,
+    battle = create!(world: campaign.world, campaign: campaign, name: name, seed: seed, initial_state: state, state: state,
                      input_seconds: input_seconds, auto_units: characters.reject(&:user_id).map(&:battle_unit_id), room: room,
                      boss: boss || antagonists.any? || campaign.world.monsters.where(slug: encounter.keys, boss: true).exists?)
     battle.open_round!
@@ -92,8 +91,6 @@ class BattleRecord < ApplicationRecord
   def over?
     status != "input"
   end
-
-  def duel? = kind == "duel"
 
   # Plain words for the status, for players.
   STATUS_LABELS = { "input" => "Under way", "victory" => "Won", "defeat" => "Lost", "fled" => "Fled", "abandoned" => "Called off" }.freeze

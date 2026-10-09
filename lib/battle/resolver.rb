@@ -79,7 +79,6 @@ module Battle
       unit = ctx.unit(action["actor"])
       raise InvalidAction, "#{unit['id']} is not a party member" unless unit["side"] == "party"
       raise InvalidAction, "#{unit['id']} cannot act" unless awaiting.include?(unit["id"])
-      return duel_command(unit, action.fetch("command") { raise InvalidAction, "command missing" }) if Duel.duel?(state)
 
       cmd = validate_command(unit, action.fetch("command") { raise InvalidAction, "command missing" })
       state["inputs"][unit["id"]] = cmd
@@ -87,33 +86,9 @@ module Battle
       run_round if ready?
     end
 
-    # A duel takes a stance, and nothing else: no moves, no items, no
-    # running (Battle::Duel). A Thief's read happens at once and isn't the
-    # command.
-    def duel_command(unit, cmd)
-      kind = cmd.fetch("kind", "stance")
-      if kind == "read"
-        Duel.read(ctx, unit)
-        return
-      end
-      raise InvalidAction, "a duel is fought in stances" unless kind == "stance"
-      raise InvalidAction, "unknown stance #{cmd['stance'].inspect}" unless Duel::STANCES.include?(cmd["stance"])
-
-      command = { "kind" => "stance", "stance" => cmd["stance"] }
-      if cmd["technique"]
-        raise InvalidAction, "#{unit['name']} can't #{cmd['technique']} now" unless cmd["technique"] == "wait" && Duel.has?(ctx, unit, "wait")
-
-        command["technique"] = "wait"
-      end
-      state["inputs"][unit["id"]] = command
-      ctx.emit(:command_accepted, actor: unit["id"])
-      run_round if ready?
-    end
-
     def validate_command(unit, cmd)
       kind = cmd.fetch("kind", "ability")
       raise InvalidAction, "unknown command #{kind.inspect}" unless COMMAND_KINDS.include?(kind)
-      raise InvalidAction, "#{kind} is for duels" if %w[stance read].include?(kind)
       return { "kind" => "defend" } if kind == "defend"
 
       if kind == "flee"
@@ -165,8 +140,6 @@ module Battle
     end
 
     def default_command(unit)
-      return { "kind" => "stance", "stance" => unit.dig("last_command", "stance") || "strike" } if Duel.duel?(state)
-
       last = unit["last_command"]&.except("timing") # a Perfect is earned each round
       return last if last && still_valid?(unit, last)
 
@@ -305,8 +278,6 @@ module Battle
     # library doesn't have yet. A name already on the field gets the next
     # letter, like the rest of its kind.
     def gm_add_unit(action)
-      raise InvalidAction, "a duel is one against one" if Duel.duel?(state)
-
       side = action["side"] == "party" ? "party" : "enemy"
       spec = State.normalize(action.fetch("unit") { raise InvalidAction, "add_unit needs a unit" })
       Hash(action["abilities"]).each do |id, ability|
@@ -428,10 +399,6 @@ module Battle
     def run_round
       inputs = state["inputs"]
       ctx.emit(:round_start, round: state["round"])
-      if Duel.duel?(state)
-        Duel.exchange(ctx, inputs[Duel.party_unit(ctx)["id"]])
-        return close_round(inputs)
-      end
 
       ctx.side("party").each do |u|
         u["defending"] = inputs.dig(u["id"], "kind") == "defend" && ctx.alive?(u)

@@ -6,10 +6,12 @@ module Seeds
     CODEX = {
       "Duels" => {
         category: "Custom", public: true,
-        body: "Two people, to the KO, one against one. Anyone can challenge anyone, and anyone can refuse. Whoever refuses is a coward, " \
-              "and everyone knows it: a coward has no place in this world. The only way back is to fight another duel and win it.",
-        gm_notes: "A duel is its own kind of battle: stances, tells and each archetype's technique (docs/ODA.md). Challenge someone from the " \
-                  "Fight control; they answer at the table. A coward gets no mask, no payoff at a rest, and dearer prices for the whole party."
+        body: "Two people, one against one, three passes each. Anyone can challenge anyone, and anyone can refuse. Whoever refuses is a " \
+              "coward, and everyone knows it: a coward has no place in this world. The only way back is to fight another duel and win it. " \
+              "When both stand level at the end, it's satisfaction, and both walk away with their name.",
+        gm_notes: "A duel is outside battle: three swings each on a meter, the mark moving and narrowing every round; you swing for the " \
+                  "opponent (docs/ODA.md). Challenge someone from the Fight control; they answer at the table. A coward gets no mask, no " \
+                  "payoff at a rest, and dearer prices for the whole party."
       },
       "Powder" => {
         category: "Craft", public: true,

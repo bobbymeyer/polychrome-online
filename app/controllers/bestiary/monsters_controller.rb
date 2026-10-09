@@ -14,8 +14,8 @@ module Bestiary
 
     def entry_params
       params.expect(monster: [
-        :name, :slug, :level, :description, :base_type, :exp, :gil, :abp, :boss, :undead, :giant, :technique, :boss_line, *art_params,
-        { tells: Battle::Duel::STANCES, stats: Stats::NAMES, affinities: @world.type_chart.slugs, status_immune: [],
+        :name, :slug, :level, :description, :base_type, :exp, :gil, :abp, :boss, :undead, :giant, :boss_line, *art_params,
+        { stats: Stats::NAMES, affinities: @world.type_chart.slugs, status_immune: [],
           ai_script: [ [ :use, :target, *Battle::AI::CONDITIONS ] ], drops: [ %i[item chance] ] }
       ])
     end

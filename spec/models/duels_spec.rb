@@ -2,67 +2,134 @@
 
 require "rails_helper"
 
-# Duels and cowards at the table (Campaign::Duels, Character::Courage; docs/ODA.md).
+# Duels and cowards at the table (Duel, Campaign::Duels, Character::Courage; docs/ODA.md).
 RSpec.describe "Duels" do
   let(:campaign) { create_campaign }
   let(:world) { campaign.world }
   let!(:bartz) { create_character(campaign, name: "Bartz") }
-  let!(:rival) { create_monster(world, slug: "ronin", technique: "tie_win", tells: { "strike" => "Now.\nEnough." }) }
+  let!(:rival) { create_monster(world, slug: "ronin") }
 
-  it "waits on the table for the challenged character's answer" do
-    campaign.challenge!(character: bartz, monster: rival, line: "Draw.")
-    expect(campaign.reload.table_state).to eq("challenge")
-    expect(campaign.challenged_character).to eq(bartz)
-    expect(campaign.challenger_name).to eq("Ronin")
-    expect(campaign.messages.last.body).to eq("Ronin challenges Bartz to a duel! “Draw.”")
+  # Swing for a side at its grade this round: the centre of the target, or off it.
+  def swing(duel, side, grade)
+    zone = duel.zone
+    off = { "perfect" => 0, "good" => DuelMeter::PERFECT + 1, "okay" => DuelMeter::PERFECT + zone["good"] + 1, "miss" => 200 }.fetch(grade)
+    position = zone["center"] + off
+    position = zone["center"] - off if position > DuelMeter::LENGTH
+    duel.swing!(side, position.clamp(0, DuelMeter::LENGTH))
   end
 
-  it "starts a duel when they accept: one against one, in stances, nobody running" do
-    campaign.challenge!(character: bartz, monster: rival)
-    battle = campaign.answer_challenge!(accept: true)
-    expect(battle).to be_duel
-    expect(battle.state).to include("kind" => "duel", "escapable" => false)
-    expect(battle.party.map { |u| u["id"] }).to eq([ bartz.battle_unit_id ])
-    expect(battle.enemies.map { |u| u["technique"] }).to eq([ "tie_win" ])
-    expect(battle.enemies.first["tells"]).to eq("strike" => [ "Now.", "Enough." ])
-    expect(campaign.reload.challenge).to be_nil
+  def play(duel, rounds)
+    rounds.each do |mine, theirs|
+      swing(duel, "character", mine)
+      swing(duel.reload, "gm", theirs)
+      duel.reload
+    end
+    duel
   end
 
-  it "makes a coward of whoever refuses, with everything that costs" do
-    town_price = ->(base) { Location.new(campaign: campaign).extend(Location::Town).price_here(base) }
-    before = town_price.(100)
-    bartz.job.update!(payoff: { "kind" => "money", "amount" => 10 })
-    campaign.update!(spent_parts: 2)
-    expect(campaign.payoffs_owed.map(&:first)).to include(bartz)
+  describe "the challenge" do
+    it "waits on the table for the challenged character's answer" do
+      campaign.challenge!(character: bartz, monster: rival, line: "Draw.")
+      expect(campaign.reload.table_state).to eq("challenge")
+      expect(campaign.challenged_character).to eq(bartz)
+      expect(campaign.messages.last.body).to eq("Ronin challenges Bartz to a duel! “Draw.”")
+    end
 
-    campaign.challenge!(character: bartz, monster: rival)
-    campaign.answer_challenge!(accept: false)
-    expect(bartz.reload).to be_coward
-    expect(campaign.messages.last.body).to include("A coward has no place in this world.")
-    expect(campaign.payoffs_owed.map(&:first)).not_to include(bartz)
-    expect(town_price.(100)).to eq(before + Character::Courage::COWARD_PRICE)
-    expect(bartz.battle_spec).to include("coward" => true)
+    it "starts a duel, outside battle, when they accept" do
+      campaign.challenge!(character: bartz, monster: rival)
+      duel = campaign.answer_challenge!(accept: true)
+      expect(duel).to be_a(Duel).and(be_on)
+      expect(duel.opponent_name).to eq("Ronin")
+      expect(campaign.reload.table_state).to eq("duel")
+      expect(campaign.battles).to be_empty
+      expect(campaign.challenge).to be_nil
+    end
+
+    it "makes a coward of whoever refuses, with everything that costs" do
+      town_price = ->(base) { Location.new(campaign: campaign).extend(Location::Town).price_here(base) }
+      before = town_price.(100)
+      bartz.job.update!(payoff: { "kind" => "money", "amount" => 10 })
+      campaign.update!(spent_parts: 2)
+      campaign.challenge!(character: bartz, monster: rival)
+      campaign.answer_challenge!(accept: false)
+      expect(bartz.reload).to be_coward
+      expect(campaign.messages.last.body).to include("A coward has no place in this world.")
+      expect(campaign.payoffs_owed.map(&:first)).not_to include(bartz)
+      expect(town_price.(100)).to eq(before + Character::Courage::COWARD_PRICE)
+      expect(bartz.battle_spec).to include("coward" => true)
+    end
+
+    it "lets the GM withdraw a challenge, shaming nobody" do
+      campaign.challenge!(character: bartz, monster: rival)
+      campaign.withdraw_challenge!
+      expect(campaign.reload.challenge).to be_nil
+      expect(bartz.reload).not_to be_coward
+    end
+
+    it "refuses a challenge while a battle or another duel is on, or with nobody to issue it" do
+      expect { campaign.challenge!(character: bartz) }.to raise_error(Refusal)
+      campaign.call_out!(character: bartz, monster: rival)
+      expect { campaign.challenge!(character: bartz, monster: rival) }.to raise_error(Refusal, /duel is on/)
+    end
   end
 
-  it "takes the shame away when they win a duel" do
-    bartz.update!(coward: true)
-    battle = campaign.call_out!(character: bartz, monster: rival)
-    battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
-    expect(bartz.reload).not_to be_coward
-    expect(campaign.messages.last(3).map(&:body)).to include(a_string_including("Nobody calls them a coward now"))
-  end
+  describe "the duel" do
+    let(:duel) { campaign.call_out!(character: bartz, monster: rival) }
 
-  it "lets the GM withdraw a challenge, shaming nobody" do
-    campaign.challenge!(character: bartz, monster: rival)
-    campaign.withdraw_challenge!
-    expect(campaign.reload.challenge).to be_nil
-    expect(bartz.reload).not_to be_coward
-  end
+    it "hides a swing until both are in, then shows the round to the table" do
+      swing(duel, "character", "good")
+      expect(duel.reload.shown_rounds).to be_empty
+      expect(duel.swung?("character")).to be(true)
+      expect(campaign.messages.last.body).not_to start_with("Round 1")
+      expect { swing(duel, "character", "good") }.to raise_error(Refusal, /has swung/)
+      swing(duel, "gm", "okay")
+      expect(duel.reload.shown_rounds.size).to eq(1)
+      expect(duel.round).to eq(2)
+      expect(campaign.messages.last.body).to eq("Round 1: Bartz: good (2) · Ronin: okay (1).")
+    end
 
-  it "refuses a challenge while a battle is on, or with nobody to issue it" do
-    expect { campaign.challenge!(character: bartz) }.to raise_error(Refusal)
-    start_battle(campaign: campaign)
-    expect { campaign.challenge!(character: bartz, monster: rival) }.to raise_error(Refusal, /battle is on/)
+    it "is won on the higher total after three rounds; the loser goes down" do
+      play(duel, [ %w[perfect okay], %w[good good], %w[miss okay] ])
+      expect(duel).to be_over
+      expect(duel.result).to eq("character")
+      expect(duel.totals).to eq("character" => 5, "gm" => 4)
+      expect(campaign.messages.pluck(:body)).to include("Bartz wins the duel, 5 to 4. Ronin goes down.")
+
+      other = create_character(campaign, name: "Faris")
+      duel.close!
+      lost = play(campaign.call_out!(character: other, monster: rival), [ %w[miss perfect], %w[okay good], %w[good good] ])
+      expect(lost.result).to eq("gm")
+      expect(other.reload).not_to be_conscious
+    end
+
+    it "reads SATISFACTION on level totals, and both win" do
+      bartz.update!(coward: true)
+      play(duel, [ %w[good okay], %w[okay good], %w[perfect perfect] ])
+      expect(duel.result).to eq("satisfaction")
+      expect(duel.result_line).to eq("SATISFACTION")
+      expect(bartz.reload).not_to be_coward
+      expect(bartz).to be_conscious
+      expect(campaign.messages.pluck(:body).join).to include("SATISFACTION.")
+    end
+
+    it "takes a coward's shame away when they win" do
+      bartz.update!(coward: true)
+      play(duel, [ %w[perfect miss], %w[perfect miss], %w[perfect miss] ])
+      expect(bartz.reload).not_to be_coward
+    end
+
+    it "takes no swings once it's over, and is put away by the GM" do
+      play(duel, [ %w[good good], %w[good good], %w[good good] ])
+      expect { duel.swing!("character", 10) }.to raise_error(Refusal, /over/)
+      expect(campaign.reload.current_duel).to eq(duel)
+      duel.close!
+      expect(campaign.reload.current_duel).to be_nil
+      expect(campaign.table_state).not_to eq("duel")
+    end
+
+    it "takes only a swing that stops on the meter" do
+      expect { duel.swing!("character", 900) }.to raise_error(Refusal)
+    end
   end
 end
 
@@ -110,11 +177,7 @@ RSpec.describe "Oda's books" do
     expect(world.abilities.new(slug: "x", name: "X", kind: "skill", target: "self", reload_turns: 9, effects: [ { primitive: "scan" } ])).not_to be_valid
   end
 
-  it "gives a monster its giant, technique and tells, and a job its technique" do
-    oni = create_monster(world, slug: "oni", giant: true, technique: "read", tells: { "guard" => "Come, then.", "dance" => "x" })
-    expect(oni.to_engine).to include("giant" => true, "technique" => "read", "tells" => { "guard" => [ "Come, then." ] })
-    expect(world.monsters.new(slug: "y", name: "Y", stats: monster_stats, technique: "flail")).not_to be_valid
-    expect(create_job(world, technique: "wait").technique).to eq("wait")
-    expect(world.jobs.new(slug: "z", name: "Z", technique: "flail")).not_to be_valid
+  it "marks a monster as a giant" do
+    expect(create_monster(world, slug: "oni", giant: true).to_engine).to include("giant" => true)
   end
 end

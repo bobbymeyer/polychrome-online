@@ -1,14 +1,14 @@
 <%# A duel (Campaign::Duels), under the battle setup in the Fight control: one character against someone the
     GM plays, a cast member who fights or a Bestiary entry. Either they call the character out, and the
     character's player answers at the table (refusing makes them a coward), or the character called them out
-    and the duel starts now. campaign. %>
+    and the duel starts now (Duel). campaign. %>
 <% characters = campaign.characters.includes(:job).order(:created_at).select(&:conscious?) %>
 <% duellists = campaign.duellists %>
 <% if characters.any? %>
   <%= form_with url: campaign_challenge_path(campaign), method: :post, class: "book-form duel-setup", data: { turbo_frame: "_top" } do %>
     <fieldset class="panel">
       <legend>A duel</legend>
-      <p class="hint">Two people, to KO, in stances: Strike beats Feint, Guard beats Strike, Feint beats Guard. Whoever refuses a duel is a coward until they win one.</p>
+      <p class="hint">Not a battle: three swings each on a meter, at a mark that moves and narrows every round. You swing for whoever they face. The higher total wins and the loser goes down; level totals are SATISFACTION, and both win. Whoever refuses a duel is a coward until they win one.</p>
       <div class="field-row">
         <div class="field">
           <%= label_tag :duel_character_id, "Who" %>

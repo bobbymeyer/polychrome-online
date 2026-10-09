@@ -40,6 +40,7 @@ class Campaign < ApplicationRecord
     def under_way = where(status: "input")
   end
   # The party, in the order it was made: everything that lists it keeps to that.
+  has_many :duels, dependent: :destroy # at characters and the cast (Campaign::Duels)
   has_many :characters, -> { order(:created_at) }, dependent: :destroy do # at places (home)
     # With what their stats need loaded (Character#stats).
     def with_stats = includes(:job, :character_jobs, equipment_slots: :item)

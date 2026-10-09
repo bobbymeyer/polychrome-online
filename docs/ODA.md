@@ -15,17 +15,17 @@ Oda is the third seeded setting (`db/seeds/oda/`), and the home of its archetype
 
 ## 2. The archetypes
 
-The code says `Job`; screens say archetype. Each has its type, skills, field ability, signature, passive, desperation move, learn table, payoff, and a duel technique (`jobs.technique`).
+The code says `Job`; screens say archetype. Each has its type, skills, field ability, signature, passive, desperation move, learn table and payoff.
 
-| Archetype | Type | Signature | Passive | In a duel | Payoff |
-| --- | --- | --- | --- | --- | --- |
-| Courtsword | Steel | Sheathe | Second Wind | Wait | money |
-| Firemancer … Windmancer | their powder | its Load | Clear Mind (mp_regen) | Opening | ABP |
-| Thief | Wind | Mug | First Strike | Read | money |
-| Monk | Earth | Palm Strike | Counter | Unbroken (tie_win) | EXP |
-| Magician | Thunder | Quick | Clear Mind | Sleight (switch) | money |
-| Healer | Water | Triage | Potency | Steady breath (recover) | a rumour |
-| Ranger | Shot | Call Hawk | First Strike | Steady aim (steady) | money |
+| Archetype | Type | Signature | Passive | Payoff |
+| --- | --- | --- | --- | --- |
+| Courtsword | Steel | Sheathe | Second Wind | money |
+| Firemancer … Windmancer | their powder | its Load | Clear Mind (mp_regen) | ABP |
+| Thief | Wind | Mug | First Strike | money |
+| Monk | Earth | Palm Strike | Counter | EXP |
+| Magician | Thunder | Quick | Clear Mind | money |
+| Healer | Water | Triage | Potency | a rumour |
+| Ranger | Shot | Call Hawk | First Strike | money |
 
 ### 2.1 Courtsword
 
@@ -109,32 +109,32 @@ Control, not damage.
 | `triage`, `potency` | `Effects#heal`, `#revive` | Healer |
 | `summon` with `stays` | `Resolver#count_down_summon` | Ranger |
 | `transform`, the `masked` and `spent` statuses | `Battle::Masks` | masks |
-| the duel | `Battle::Duel` | everyone |
 
 The property specs (`spec/battle/properties_spec.rb`) run all of it, and `spec/battle/oda_spec.rb` checks each piece.
 
 ## 4. Duels
 
-- **The rules:** two people, to KO. Anyone can refuse. Whoever does is a **coward** until they fight another duel and win it.
-- **A battle kind of its own** (`battles.kind`, state `"kind" => "duel"`): one party unit, one enemy, no items, no allies, no running.
-- **Stances.** Each exchange both pick one: Strike beats Feint, Guard beats Strike, Feint beats Guard. They are shown together.
-  - The winner lands a heavy blow.
-  - Two Strikes trade light ones.
-  - A matching Guard or Feint circles.
-  - Stats and archetype set how hard a blow lands, never who wins the exchange.
-- **Tells.** The opponent's next stance is drawn when the last exchange ends, with a tell: a line that gives it away three times in four, and bluffs otherwise. A Bestiary entry has its own lines (`monsters.tells`); without them it says the game's. The drawn stance waits in the state and the views never show it.
-- **Techniques** (`Battle::Duel::TECHNIQUES`; a job's or a monster's `technique`):
-  - **Wait** (Courtsword), chosen: hold an exchange; the next one won lands three times as hard.
-  - **Opening** (Mancers): a shot before the first stare.
-  - **Read** (Thief), chosen: the planned stance, plainly, without spending the exchange.
-  - **Tie_win** (Monk): the first tie is a win.
-  - **Switch** (Magician): the first exchange it would lose, it ties.
-  - **Recover** (Healer): a little HP after every exchange.
-  - **Steady** (Ranger): the first Strike that loses still lands lightly.
+A duel is not a battle. It's a scene of its own at the table (`Duel`, scored by the pure `DuelMeter`), and neither HP nor archetype has any part in it.
+
+- **The rules:** two people, one against one. Anyone can refuse; whoever does is a **coward** until they fight another duel and win it.
+- **The meter.** Each duellist has their own, at the same target:
+  - **Swing** starts the needle across it and back; the next press stops it.
+  - **The challenged player** swings their character's. **The GM** swings the opponent's: they play them.
+- **Scoring:**
+  - a 1-unit **perfect** line in the middle, 3 points;
+  - **good** either side of it, 2;
+  - **okay** beyond that, 1;
+  - anywhere else a **miss**, 0.
+- **Three rounds.** Each round the target moves (drawn from the duel's seed) and its bands narrow: good reaches 5, 4, then 3 units beyond the perfect line, okay 10, 7, then 4 beyond good. The meter is 300 units long, scaled to the screen.
+- **Hidden swings.** Nobody sees a swing until both are in. Then the round's grades go on the scorecard and into the log.
+- **The result.** After three rounds:
+  - **The higher total wins.** A character who loses is left knocked out.
+  - **Level totals read SATISFACTION,** and both win.
+  - **Winning, or satisfaction,** ends a coward's shame.
 - **At the table** (`Campaign::Duels`):
-  - **Fight control:** under the battle setup, the GM picks who and against whom: a cast member who fights as a Bestiary entry, or the entry itself. Then either "They challenge" (the challenged player answers on their screen) or "The challenge is taken" (the duel starts now).
-  - **The Now strip** shows a waiting challenge. The GM can withdraw it.
-  - **The duel's panel** is three stance rows, with Wait or Read for those who have them.
+  - **Fight control:** under the battle setup, the GM picks who and against whom: a cast member who fights as a Bestiary entry, or the entry itself. Then either "They challenge" (the challenged player answers Accept or Refuse on their screen) or "The challenge is taken" (the duel starts now).
+  - **While it's on,** the duel is the table's Now: both meters, the round, the scorecard.
+  - **When it ends,** the result is in large type until the GM puts it away.
 
 ### 4.1 Cowards
 
@@ -145,7 +145,7 @@ A character's `coward` flag, seen by everyone (the party panel's struck-through 
 - While one travels with the party, every town charges 25% more (`Location::Town#price_here`).
 - Story lines can ask about it: the facts `cowards` (how many) and `coward` (who).
 
-Winning a duel clears the flag (`BattleRecord::Settlement`), and the table hears it.
+Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears it.
 
 ## 5. Masks
 
@@ -172,10 +172,8 @@ Winning a duel clears the flag (`BattleRecord::Settlement`), and the table hears
 
 ## 7. Settled while building
 
-These were open questions in the first draft. Each was settled with the recommendation, and any of them can change:
-
-1. **The duel's core:** stances, not the archetype's usual moves.
-2. **Who duels:** anyone the GM plays as a Bestiary entry (a cast member, or the entry itself). Monsters can be called out, but only people can challenge a character.
+1. **The duel** is outside battle: a meter, three rounds, a score (Bobby's design). Ties are SATISFACTION and both win. There is no kill.
+2. **Who duels:** anyone the GM plays, as a cast member or a Bestiary entry. The GM swings their meter.
 3. **A coward can call someone out,** like anyone: it's their way back. A character's own challenge ("the challenge is taken") is the GM's to start.
 4. **Refusing twice** changes nothing: coward is on or off.
 5. **Powder** is the magic.

@@ -20,6 +20,7 @@ class Npc < ApplicationRecord
   include CampaignPages
 
   belongs_to :campaign
+  has_many :duels, dependent: :nullify
   belongs_to :location, optional: true
   belongs_to :monster, optional: true
   belongs_to :world_figure, optional: true

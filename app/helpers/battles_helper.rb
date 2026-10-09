@@ -161,9 +161,6 @@ module BattlesHelper
   def intent_label(state, unit, command)
     return if command.blank? || unit["side"] != "party" || unit["hp"].to_i.zero?
 
-    # A stance is a secret until both are shown (Battle::Duel).
-    return "Ready" if command["kind"] == "stance"
-
     what = case command["kind"]
     when "ability" then ability_name(state, command["ability"])
     when "item" then item_name(state, command["item"])
@@ -196,8 +193,6 @@ module BattlesHelper
   # (Battle::Resolver.default_command): their last command again if it
   # still works, else Attack. Said as the panel's warning.
   def timeout_command(state, unit)
-    return "#{unit.dig('last_command', 'stance')&.capitalize || 'Strike'} again" if Battle::Duel.duel?(state)
-
     last = unit["last_command"]
     return "Attack" unless last&.dig("kind") == "ability" && last["ability"] != "attack"
 

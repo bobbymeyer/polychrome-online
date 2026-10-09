@@ -9,7 +9,7 @@ class Campaigns::Challenges::AnswersController < Campaigns::BaseController
     seat = table_seat
     return forbid("Only #{character.name} can answer that.") unless seat.gm? || seat.character == character
 
-    battle = @campaign.answer_challenge!(accept: params.expect(:answer) == "accept")
-    battle ? redirect_to(battle_path(battle), status: :see_other) : redirect_back_or_to(campaign_table_path(@campaign), status: :see_other)
+    @campaign.answer_challenge!(accept: params.expect(:answer) == "accept")
+    redirect_back_or_to campaign_table_path(@campaign), status: :see_other
   end
 end

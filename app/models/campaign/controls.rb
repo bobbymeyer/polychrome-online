@@ -56,6 +56,7 @@ module Campaign::Controls
   # follow it (campaigns/tables/_now, stage.css).
   def table_state
     if battle_on? then "battle"
+    elsif current_duel then "duel"
     elsif pending_encounter.present? then "encounter"
     elsif challenge.present? then "challenge"
     elsif open_choice then "choice"

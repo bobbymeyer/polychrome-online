@@ -3,28 +3,52 @@
 require "rails_helper"
 
 # A duel as the table sees it (docs/ODA.md): the challenge on the player's
-# screen, their answer, and an exchange in stances played on the board.
+# screen, their answer, and swings on the meter from both seats.
 RSpec.describe "A duel", type: :system do
   include_context "a GM's table"
 
-  let!(:ronin) { create_monster(campaign.world, slug: "ronin", tells: { "strike" => [ "Now." ], "guard" => [ "Come, then." ], "feint" => [ "Look there." ] }) }
+  let!(:ronin) { create_monster(campaign.world, slug: "ronin") }
 
-  it "goes from a challenge on the table to an exchange played on the board" do
+  def swing_the_meter
+    within("[data-controller=duel-meter]") do
+      click_on "Swing"
+      sleep 0.4 # let the needle travel
+      click_on "Stop"
+    end
+  end
+
+  it "goes from a challenge to three rounds on the meter, and a result" do
     seat(player, rook)
+    seat(gm, "gm")
     campaign.challenge!(character: rook, monster: ronin, line: "Draw.")
     as(player) do
       expect(page).to have_css("#table_now", text: "Ronin challenges Rook to a duel!", wait: 15)
       click_on "Accept"
-      expect(page).to have_current_path(%r{/battles/\d+}, wait: 15)
-      wait_for_streams
-      within(".command-panel") { expect(page).to have_button("Strike", wait: 15) }
-      expect(page).to have_css(".duel-tell")
-      within(".command-panel") { click_on "Guard" }
-      # The exchange plays on the board, and the panel comes back for the next one, with its tell.
-      within(".command-panel") { expect(page).to have_css(".duel-tell", text: "Exchange 2", wait: 15) }
-      expect(page).to have_css(".board[data-status=input]")
+      expect(page).to have_css(".duel-meter", count: 2, wait: 15)
     end
-    expect(campaign.current_battle.state["duel"]["exchange"]).to eq(2)
+    duel = campaign.reload.current_duel
+    as(gm) { expect(page).to have_css("[data-controller=duel-meter] .duel-meter__name", text: "Ronin", wait: 15) }
+
+    3.times do |i|
+      as(player) do
+        expect(page).to have_css(".duel__round", text: "Round #{i + 1}", wait: 15)
+        swing_the_meter
+        expect(page).to have_css(".duel-meter.is-swung", text: "Rook", wait: 15)
+      end
+      as(gm) do
+        expect(page).to have_css(".duel__round", text: "Round #{i + 1}", wait: 15)
+        swing_the_meter
+      end
+      # Both in: the round is shown to everyone.
+      as(player) { expect(page).to have_css(".duel__card tbody tr", count: i + 1, wait: 15) }
+    end
+
+    as(player) { expect(page).to have_css(".duel__result", text: duel.reload.result_line, wait: 15) }
+    as(gm) do
+      expect(page).to have_css(".duel__card tfoot", text: "Total", wait: 15)
+      click_on "Put it away"
+      expect(page).to have_no_css(".duel", wait: 15)
+    end
   end
 
   it "marks a coward who refuses" do

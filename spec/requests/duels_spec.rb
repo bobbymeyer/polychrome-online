@@ -2,21 +2,20 @@
 
 require "rails_helper"
 
-# A duel from the table to the last exchange (docs/ODA.md).
+# A duel from the table's challenge to its swings (docs/ODA.md).
 RSpec.describe "Duels at the table", type: :request do
   let(:campaign) { create_campaign.tap { |c| c.update!(gm: @admin) } }
   let(:krile) { make_user("Krile") }
   let!(:bartz) { create_character(campaign, name: "Bartz", user: krile) }
-  let!(:ronin) { create_monster(campaign.world, slug: "ronin", tells: { "strike" => [ "Now." ] }) }
+  let!(:ronin) { create_monster(campaign.world, slug: "ronin") }
 
   def challenge(by: "opponent")
     sit(campaign, "gm")
     post campaign_challenge_path(campaign), params: { character_id: bartz.id, monster: "ronin", line: "Draw.", by: by }
   end
 
-  it "puts the challenge to the challenged player, who accepts and duels in stances" do
+  it "puts the challenge to the challenged player, who accepts and swings their own meter" do
     challenge
-    expect(campaign.reload.challenge).to include("character_id" => bartz.id, "monster" => "ronin")
     at_the_table(campaign, as: "gm")
     expect(page.at_css("#table_now").text).to include("Ronin challenges Bartz to a duel!", "Draw.")
 
@@ -24,20 +23,35 @@ RSpec.describe "Duels at the table", type: :request do
     at_the_table(campaign, as: bartz)
     expect(page.at_css("#table_now").text).to include("Accept", "Refuse")
     post campaign_challenge_answer_path(campaign), params: { answer: "accept" }
-    battle = campaign.reload.current_battle
-    expect(battle).to be_duel
-    expect(response).to redirect_to(battle_path(battle))
+    duel = campaign.reload.current_duel
+    expect(duel).to be_on
 
-    sit_in_battle(battle, bartz.battle_unit_id)
-    get battle_panel_path(battle)
-    expect(page.css(".pick-row__act").map(&:text)).to eq(%w[Strike Guard Feint])
-    expect(page.at_css(".duel-tell")).to be_present
-    expect(response.body).not_to include(battle.state["duel"]["planned"].capitalize + " is coming")
+    get campaign_table_path(campaign)
+    meters = page.css(".duel-meter")
+    expect(meters.size).to eq(2)
+    expect(page.css(".duel-meter__swing").size).to eq(1) # only their own
+    expect(page.css("[data-controller=duel-meter] .duel-meter__name").text).to eq("Bartz")
 
-    post battle_actions_path(battle), params: { command: { kind: "stance", stance: "guard" } }
-    events = battle.reload.battle_events.map(&:kind)
-    expect(events).to include("stare", "reveal", "clash")
-    expect(battle.state["duel"]["exchange"]).to eq(2)
+    post campaign_duel_swings_path(campaign, duel), params: { side: "character", position: duel.zone["center"] }
+    expect(duel.reload.swung?("character")).to be(true)
+    post campaign_duel_swings_path(campaign, duel), params: { side: "gm", position: 10 }
+    expect(duel.reload.swung?("gm")).to be(false) # the GM's swing isn't theirs
+  end
+
+  it "lets the GM swing the opponent's meter, and put the result away" do
+    challenge(by: "character")
+    duel = campaign.reload.current_duel
+    get campaign_table_path(campaign)
+    expect(page.css("[data-controller=duel-meter] .duel-meter__name").text).to eq("Ronin")
+    3.times do
+      duel.reload.swing!("character", duel.zone["center"])
+      post campaign_duel_swings_path(campaign, duel), params: { side: "gm", position: duel.reload.zone["center"] }
+    end
+    expect(duel.reload).to be_over
+    get campaign_table_path(campaign)
+    expect(page.at_css(".duel__result").text).to eq("SATISFACTION")
+    patch campaign_duel_path(campaign, duel)
+    expect(campaign.reload.current_duel).to be_nil
   end
 
   it "makes a coward of a player who refuses" do
@@ -61,25 +75,11 @@ RSpec.describe "Duels at the table", type: :request do
     expect(campaign.reload.challenge).to be_present
   end
 
-  it "starts a character's own challenge at once" do
-    challenge(by: "character")
-    battle = campaign.reload.current_battle
-    expect(battle).to be_duel
-    expect(campaign.challenge).to be_nil
-  end
-
-  it "offers the GM a duel under the Fight control, and shows the duel's board" do
+  it "offers the GM a duel under the Fight control" do
     sit(campaign, "gm")
     patch campaign_controls_path(campaign), params: { kind: "battle" }
     get campaign_table_path(campaign)
     expect(page.at_css(".duel-setup").text).to include("A duel", "They challenge")
-    challenge(by: "character")
-    battle = campaign.reload.current_battle
-    get battle_path(battle)
-    expect(response).to have_http_status(:ok)
-    sit_in_battle(battle, "gm")
-    get battle_panel_path(battle)
-    expect(response).to have_http_status(:ok)
   end
 
   it "keeps challenges for the GM" do

@@ -20,22 +20,6 @@
     <div class="field field--check"><%= f.check_box :undead %><%= f.label :undead, "Undead: healing hurts it, and drain runs backwards" %></div>
     <div class="field field--check"><%= f.check_box :giant %><%= f.label :giant, "A giant, woken from the deep: a masked blow lands twice as hard" %></div>
   </div>
-  <fieldset class="panel">
-    <legend>In a duel</legend>
-    <p class="hint">When it duels someone (a cast member fighting as this entry): its technique, and the lines that give away its stance, one a line. It says one before each exchange, usually the truth. Blank: the game's own.</p>
-    <div class="field">
-      <%= f.label :technique, "Technique" %>
-      <%= f.select :technique, GlossaryHelper::TECHNIQUES.map { |key, (label, _)| [ label, key ] }, include_blank: "(none)" %>
-    </div>
-    <div class="field-row">
-      <% Battle::Duel::STANCES.each do |stance| %>
-        <div class="field">
-          <label for="monster_tells_<%= stance %>">Before a <%= stance.capitalize %></label>
-          <%= text_area_tag json_field_name(f, :tells, stance), Array(entry.tells[stance]).join("\n"), rows: 3, id: "monster_tells_#{stance}" %>
-        </div>
-      <% end %>
-    </div>
-  </fieldset>
   <div class="field">
     <%= f.label :boss_line, "What it says before the fight" %>
     <%= f.text_area :boss_line, rows: 2, placeholder: "You came for the ledger. So did the last ones." %>

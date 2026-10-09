@@ -1,17 +1,21 @@
 # frozen_string_literal: true
 
-# Duels (docs/ODA.md): two people, to KO, in a battle of its own kind
-# (Battle::Duel). Someone at the table can be challenged by someone the GM
-# plays, a cast member or a Bestiary entry: the challenge waits on the table
-# until the character's player answers. Accepting starts the duel; refusing
-# makes them a coward (Character::Courage), until they fight and win another.
-# A character's own challenge, the GM accepts for whoever they called out
-# and the duel starts at once.
+# Duels (docs/ODA.md): a character against someone the GM plays, outside
+# battle: three swings each on a meter (Duel, DuelMeter). Someone at the
+# table can be challenged by a cast member or a Bestiary entry: the
+# challenge waits on the table until the character's player answers.
+# Accepting starts the duel; refusing makes them a coward
+# (Character::Courage), until they fight and win another. A character's own
+# challenge, the GM accepts for whoever they called out and the duel starts
+# at once.
 #
 # The challenge waiting for an answer is campaigns.challenge:
 #   { "character_id", "npc_id" | "monster", "line" }
 module Campaign::Duels
   extend ActiveSupport::Concern
+
+  # The duel the table is watching: under way, or just ended and not yet put away.
+  def current_duel = duels.shown.order(:id).last
 
   # The people the GM can put up in a duel: the cast members who fight
   # as a Bestiary entry and are still at large.
@@ -22,6 +26,7 @@ module Campaign::Duels
   # Someone the GM plays calls a character out. They answer at the table.
   def challenge!(character:, npc: nil, monster: nil, line: nil)
     raise Refusal, "A battle is on: the challenge can wait until it's over" if battle_on?
+    raise Refusal, "A duel is on: one at a time" if current_duel&.on?
     raise Refusal, "#{character.name} can't stand to fight a duel" unless character.conscious?
     raise Refusal, "Someone has to issue the challenge" unless npc || monster
 
@@ -78,9 +83,13 @@ module Campaign::Duels
 
   def duel!(character:, npc: nil, monster: nil)
     raise Refusal, "#{character.name} can't stand to fight a duel" unless character.conscious?
+    raise Refusal, "A duel is on: one at a time" if current_duel&.on?
 
-    BattleRecord.start!(campaign: self, characters: [ character ], name: "Duel: #{character.name} and #{npc&.name || monster.name}",
-                        encounter: monster ? { monster.slug => 1 } : {}, antagonists: [ npc ].compact, escapable: false, kind: "duel")
+    current_duel&.close!
+    duel = duels.create!(character: character, npc: npc, opponent_name: npc&.name || monster.name, seed: Random.new_seed % 2**31)
+    narrate("The duel: #{character.name} and #{duel.opponent_name}. Three swings each; the best wins.")
+    table_changed
+    duel
   end
 
   # A coward in the party sets every price they're asked (Location::Town#price_here).

@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 # The Bestiary: what's met on the mesa roads and in the seams, the
-# duellists (who fight one against one, with a technique and their tells),
-# the giants woken from the deep, and a Ranger's animals. (Seeds::Oda)
+# duellists the GM can put up against a character, the giants woken from the deep, and a Ranger's animals. (Seeds::Oda)
 module Seeds
   module Oda
     MONSTERS = {
@@ -47,28 +46,21 @@ module Seeds
                      ai_script: [ { if: { chance: 40 }, use: "watera" }, { if: { chance: 20 }, use: "undertow" }, { use: "attack" } ],
                      description: "What the drowned belfry keeps. Healing hurts it." },
 
-      # --- the duellists: one against one, by their technique, giving away their stance --
-      smiling_draw: { name: "The Smiling Draw", level: 8, boss: true, technique: "wait",
+      # --- duellists: who the GM can put up in a duel (Duel), and who fight too -------------
+      smiling_draw: { name: "The Smiling Draw", level: 8, boss: true,
                       stats: stats(max_hp: 420, max_mp: 30, str: 24, atk: 24, agi: 20, def: 14, mdef: 10, spr: 14),
                       base_type: "steel", exp: 300, gil: 400, abp: 10,
                       ai_script: [ { if: { round_multiple: 3 }, use: "iai_stance" }, { if: { chance: 30 }, use: "quickdraw" }, { use: "attack" } ],
-                      tells: { "strike" => [ "Let's not keep the bell waiting.", "He stops smiling.", "Now, I think." ],
-                               "guard" => [ "Your move, friend.", "He smiles wider.", "I've got all day." ],
-                               "feint" => [ "Did you hear something?", "His hand drifts, then doesn't.", "Look at you, so serious." ] },
                       boss_line: "Noon's a fine time for it. Shall we?",
                       description: "Silas Crane: forty-one duels and he has smiled through every one. He collects them like other men collect coins." },
-      bell_tower_brawler: { name: "Bell-Tower Brawler", level: 3, technique: "tie_win",
+      bell_tower_brawler: { name: "Bell-Tower Brawler", level: 3,
                             stats: stats(max_hp: 160, str: 17, atk: 15, agi: 10, def: 8, mdef: 4),
                             base_type: "earth", exp: 60, gil: 50, abp: 3, ai_script: [ { use: "attack" } ],
-                            tells: { "strike" => [ "Hah!", "Cracks his knuckles." ], "guard" => [ "Come on, then.", "Plants his feet." ],
-                                     "feint" => [ "Look over there!", "Grins at someone behind you." ] },
                             description: "Fights anybody under the bell for a round of drinks. Loses gracefully, mostly." },
-      gunhand: { name: "Gunhand", level: 5, technique: "steady",
+      gunhand: { name: "Gunhand", level: 5,
                  stats: stats(max_hp: 200, str: 18, atk: 20, agi: 22, def: 8, mdef: 6),
                  base_type: "shot", exp: 120, gil: 150, abp: 5,
                  ai_script: [ { if: { chance: 50 }, use: "quickdraw" }, { use: "attack" } ],
-                 tells: { "strike" => [ "Fingers twitch over the grip.", "Draw." ], "guard" => [ "Steps back, slow.", "Waits." ],
-                          "feint" => [ "Tips the hat.", "Whistles a few notes." ] },
                  description: "A hired pistol with a reputation and the nerve to keep it." },
 
       # --- the giants, woken from the deep (masks are made for them) -------------------------

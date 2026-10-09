@@ -36,7 +36,6 @@ module Character::InBattle
       "image" => { "book" => "jobs", "slug" => job.slug },
       "desperation" => job.desperation_ability&.slug,
       "level" => level,
-      "technique" => job.technique,
       "coward" => (true if coward?)
     }.merge(job.battle_type).compact
   end

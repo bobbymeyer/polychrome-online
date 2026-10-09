@@ -78,7 +78,7 @@ class Battles::ActionsController < ApplicationController
       ruling!(gm) if gm["op"] == "rule"
       [ { "type" => "gm_override", "actor" => "gm" }.merge(gm), "gm" ]
     elsif params[:command] && seat_unit
-      command = params.expect(command: %i[kind ability item target timing text stance technique]).to_h.compact_blank
+      command = params.expect(command: %i[kind ability item target timing text]).to_h.compact_blank
       [ { "type" => "command", "actor" => seat_unit["id"], "command" => command }, seat_unit["id"] ]
     end
   end

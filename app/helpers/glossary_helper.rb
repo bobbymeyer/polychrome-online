@@ -44,21 +44,6 @@ module GlossaryHelper
     "potency" => [ "Potency", "Items work half again as well in your hands." ]
   }.freeze
 
-  # What an archetype does in a duel (Battle::Duel).
-  TECHNIQUES = {
-    "wait" => [ "Wait", "Hold one exchange; the next one you win is the draw, three times as hard. Once a duel." ],
-    "opening" => [ "Opening shot", "A shot before the first stare." ],
-    "read" => [ "Read", "Before you pick, read your opponent plainly: their tell tells the truth. Once a duel." ],
-    "tie_win" => [ "Unbroken", "Your first tie counts as a win." ],
-    "switch" => [ "Sleight", "The first exchange you'd lose, you tie instead." ],
-    "recover" => [ "Steady breath", "A little HP back after every exchange." ],
-    "steady" => [ "Steady aim", "Your first Strike that loses still lands, lightly." ]
-  }.freeze
-
-  def technique_term(key)
-    label, definition = TECHNIQUES.fetch(key.to_s) { return key.to_s.humanize }
-    tag.span(label, class: "gloss", tabindex: 0, data: { gloss: definition }, aria: { label: "#{label}: #{definition}" })
-  end
 
   def passive_term(key)
     label, definition = PASSIVES.fetch(key.to_s) { return key.to_s.humanize }

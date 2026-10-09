@@ -348,33 +348,6 @@ const STEPS = {
     b.popup(tl, e.unit, "MASK OFF", "status", at)
     return 400
   },
-  // A duel (Battle::Duel): the stare, the tell, both stances at once, who read whom.
-  stare(b, tl, e, at) {
-    b.banner(tl, `Exchange ${e.exchange}`, at)
-    return 600
-  },
-  tell(b, tl, e, at) {
-    b.caption(tl, `“${e.line}”`, at, "narration")
-    return 900
-  },
-  reveal(b, tl, e, at) {
-    Object.entries(e.stances || {}).forEach(([id, stance]) => b.popup(tl, id, stance.toUpperCase(), "status", at))
-    gesture(tl, b.stage, "shake", at + 200)
-    return 700
-  },
-  clash(b, tl, e, at) {
-    if (e.result === "win") {
-      gesture(tl, b.sprite(e.winner), "lunge", at, b.facing(e.winner))
-      b.popup(tl, e.winner, "READ!", "perfect", at)
-      return 450
-    }
-    b.caption(tl, e.result === "trade" ? "Steel on steel" : e.result === "wait" ? "Waiting…" : "They circle", at)
-    return 500
-  },
-  technique(b, tl, e, at) {
-    b.popup(tl, e.actor, humanize(e.technique).toUpperCase(), "perfect", at)
-    return 400
-  },
   gm_override(b, tl, e, at) {
     // GM power is never hidden (§12): every override is in the log, and
     // gets a banner, except the routine auto for absent players.

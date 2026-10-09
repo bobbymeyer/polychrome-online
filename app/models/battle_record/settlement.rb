@@ -53,8 +53,6 @@ module BattleRecord::Settlement
     # fled, what waits there waits still (Location::Exploration#cleared?).
     campaign.dungeon_in_progress&.resolve!(room) if victory && room
     record_deeds!(summary, characters) if victory
-    # A duel won takes a coward's shame away (Character::Courage).
-    standing.each(&:redeem!) if victory && duel?
     # Everyone down: what now is the table's to decide (Campaign::Defeat).
     campaign.ask_what_now! if status == "defeat" && campaign.wiped_out?
   end

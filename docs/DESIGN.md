@@ -766,15 +766,17 @@ scramble back to their feet. It happens at most once a round.
 
 ### A duel
 
-A duel (Oda) is one against one, to the KO, and it plays differently from a fight. The player's
-panel has three rows, Strike, Guard and Feint, each with what it beats in the right column,
-under what the opponent just said (their tell, in quotes) and which exchange it is. A Courtsword
-also has Wait; a Thief has Read, and what they read is said in bold above the rows. Once chosen,
-the stance is a secret: the board says "Ready", never the stance, until both are shown. An
-exchange opens with a banner ("Exchange 2"), shows both stances at once over the duellists,
-shakes the stage, and the one who read the other lunges with "READ!" over them. The challenge
-before it is a line on the table's Now strip, with Accept and Refuse on the challenged player's
-screen; refusing asks once, because it makes them a coward.
+A duel (Oda) is not a battle and doesn't look like one. While it's on it is the table's Now, for
+everyone: a black slab headed "DUEL" with the two names and the round, then two meters, one per
+duellist, each a white track with the target on it. The perfect line is red, the one move to make,
+with good and okay as greys on either side. The challenged player's own meter has Swing under it:
+the needle runs across and back until the next press stops it. The GM has the same for the
+opponent. Everyone else sees two still tracks marked "Waiting to swing" or "Swung", and nobody sees
+where a swing stopped until both are in. Then the round goes on a small scorecard (perfect in red,
+a miss in grey) and into the log, and the next round's target moves and narrows. At the end, the
+result fills the slab in display type: a name and "wins", or **SATISFACTION**, spaced wide. It
+stays until the GM puts it away. The challenge before it is a line on the Now strip, with Accept
+and Refuse on the challenged player's screen; refusing asks once, because it makes them a coward.
 
 ### Masks
 

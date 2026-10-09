@@ -119,7 +119,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.json "arrived_units", default: [], null: false
     t.datetime "watched_at"
     t.string "room"
-    t.string "kind", default: "battle", null: false
     t.index ["campaign_id"], name: "index_battles_on_campaign_id"
     t.index ["world_id"], name: "index_battles_on_world_id"
   end
@@ -286,6 +285,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.index ["owner_type", "owner_id"], name: "index_drafts_on_owner"
   end
 
+  create_table "duels", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.integer "character_id", null: false
+    t.integer "npc_id"
+    t.string "opponent_name", null: false
+    t.integer "seed", null: false
+    t.json "rounds", default: [], null: false
+    t.string "status", default: "on", null: false
+    t.string "result"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_duels_on_campaign_id"
+    t.index ["character_id"], name: "index_duels_on_character_id"
+    t.index ["npc_id"], name: "index_duels_on_npc_id"
+  end
+
   create_table "encounter_tables", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -449,7 +464,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.string "field_ability"
     t.json "payoff", default: {}, null: false
     t.boolean "typed_attack", default: true, null: false
-    t.string "technique"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -627,8 +641,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.string "base_type", default: "normal", null: false
     t.boolean "undead", default: false, null: false
     t.boolean "giant", default: false, null: false
-    t.json "tells", default: {}, null: false
-    t.string "technique"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end
@@ -925,6 +937,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
   add_foreign_key "clocks", "modes"
   add_foreign_key "clocks", "world_fronts"
   add_foreign_key "codex_entries", "worlds"
+  add_foreign_key "duels", "campaigns"
+  add_foreign_key "duels", "characters"
+  add_foreign_key "duels", "npcs"
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"
