@@ -158,6 +158,14 @@ Rails.application.routes.draw do
       # Where next: a player's suggestion (a vote), or the GM going (Campaign::Ways).
       resources :ways, only: :create
       resource :encounter, only: %i[create destroy]
+      # A duel (Campaign::Duels): the GM's challenge, and the challenged character's answer.
+      resource :challenge, only: %i[create destroy] do
+        resource :answer, only: :create, module: :challenges
+      end
+      # The duel itself (Duel): a swing on the meter from either side, and the GM putting the result away.
+      resources :duels, only: :update do
+        resources :swings, only: :create, module: :duels
+      end
     end
   end
 
@@ -186,6 +194,8 @@ Rails.application.routes.draw do
       resource :entry, only: :create
       resource :position, only: :update
       resources :treasures, only: :create
+      # A trap in a room: disarmed (a check) or let go off (Location::Exploration).
+      resources :traps, only: :create
       resources :reversions, only: :create
       resources :purchases, only: :create
       resources :sales, only: :create

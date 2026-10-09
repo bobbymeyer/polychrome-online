@@ -94,7 +94,7 @@
       <% end %>
       <%# The Controls: what's happening now, then what this seat does about it. %>
       <section class="table-controls" aria-label="Controls">
-        <%= render "campaigns/tables/now", campaign: @campaign, gm: @seat.gm? %>
+        <%= render "campaigns/tables/now", campaign: @campaign, gm: @seat.gm?, you: @seat.character %>
         <%# The door: with no seat, the way in comes before anything else. %>
         <%= render "campaigns/tables/take_a_seat", campaign: @campaign if !@seat.seated? && view != "screen" %>
         <% if @seat.gm? && view != "screen" %>

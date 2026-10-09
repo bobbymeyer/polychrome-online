@@ -142,7 +142,8 @@ class Monster < ApplicationRecord
       "rewards" => rewards,
       "drops" => (names = drop_items.transform_values(&:name); drops.map { |d| d.merge("name" => names[d["item"]]).compact }),
       "image" => { "book" => "monsters", "slug" => slug }
-    }.merge(undead? ? { "undead" => true } : {}).merge(boss? ? { "boss" => true } : {}).merge(engine_phases(depth))
+    }.merge(undead? ? { "undead" => true } : {}).merge(boss? ? { "boss" => true } : {}).merge(giant? ? { "giant" => true } : {})
+     .merge(engine_phases(depth))
      .merge(music_path ? { "music" => music_path } : {}) # so a form can bring its own
   end
 

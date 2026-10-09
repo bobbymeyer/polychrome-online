@@ -181,8 +181,9 @@ const STEPS = {
   },
   damage(b, tl, e, at) {
     tl.call(() => { b.setHp(e.target, e.hp); b.count("damage", e.actor, e.target, e.amount) }, at)
-    b.popup(tl, e.target, String(e.amount), e.status === "poison" ? "poison" : "damage", at)
-    gesture(tl, b.sprite(e.target), e.status === "poison" ? "tint" : "shake", at)
+    const ticking = e.status === "poison" || e.status === "burn"
+    b.popup(tl, e.target, String(e.amount), ticking ? "poison" : "damage", at)
+    gesture(tl, b.sprite(e.target), ticking ? "tint" : "shake", at)
     // The type chart, said out loud.
     if (e.effectiveness > 100) {
       b.popup(tl, e.target, "SUPER EFFECTIVE!", "weak", at + 120)
@@ -209,7 +210,8 @@ const STEPS = {
   },
   miss(b, tl, e, at) {
     b.die(tl, e.reason === "resisted" ? e.target : e.actor, e, at)
-    b.popup(tl, e.target || e.actor, { immune: e.damage_type ? "NO EFFECT" : "IMMUNE", nothing_to_cure: "NO EFFECT", nothing_to_steal: "NOTHING", steal_failed: "MISSED" }[e.reason] || "MISS", "miss", at)
+    b.popup(tl, e.target || e.actor, { immune: e.damage_type ? "NO EFFECT" : "IMMUNE", nothing_to_cure: "NO EFFECT", nothing_to_steal: "NOTHING", steal_failed: "MISSED",
+                                       nothing_to_dispel: "NO EFFECT", nothing_to_mimic: "NOTHING", coward: "REFUSED", masked: "NOT YET" }[e.reason] || "MISS", "miss", at)
     return 380
   },
   // One More (a world's rule): the blow found a weakness, and they go again.
@@ -337,6 +339,56 @@ const STEPS = {
     b.banner(tl, "Defeat", at, "defeat")
     tl.call(() => play("defeat"), at)
     return 1300
+  },
+  // Oda's (docs/ODA.md): stacks gathered, a patient draw, a reflection, the iai cut.
+  gathered(b, tl, e, at) {
+    b.popup(tl, e.unit, `${b.statusName(e.status).toUpperCase()} ×${e.stacks}`, "status", at)
+    gesture(tl, b.sprite(e.unit), "pop", at)
+    return 300
+  },
+  patience(b, tl, e, at) {
+    b.popup(tl, e.actor, `WAITED ${e.waited}`, "perfect", at)
+    return 300
+  },
+  reflected(b, tl, e, at) {
+    b.popup(tl, e.unit, "REFLECT!", "status", at)
+    gesture(tl, b.sprite(e.unit), "flash", at)
+    b.streak(tl, e.unit, [e.back_to], "magic", at + 150)
+    return 450
+  },
+  iai(b, tl, e, at) {
+    b.banner(tl, "IAI!", at, "one-more")
+    gesture(tl, b.sprite(e.actor), "lunge", at, b.facing(e.actor))
+    gesture(tl, b.stage, "flash", at + 120)
+    return 700
+  },
+  quick(b, tl, e, at) {
+    b.popup(tl, e.target, "QUICK!", "perfect", at)
+    gesture(tl, b.sprite(e.target), "bounce", at)
+    return 350
+  },
+  mimic(b, tl, e, at) {
+    b.popup(tl, e.actor, "MIMIC!", "status", at)
+    return 300
+  },
+  reraise(b, tl, e, at) {
+    tl.call(() => b.setKo(e.target, false), at)
+    b.popup(tl, e.target, "RERAISE!", "perfect", at)
+    gesture(tl, b.sprite(e.target), "bounce", at)
+    return 600
+  },
+  // A mask goes on: the transformation (tokusatsu's henshin). The board after the beat has its face.
+  transformed(b, tl, e, at) {
+    tl.call(() => play("one_more"), at)
+    b.banner(tl, `${e.name}!`, at, "all-out")
+    gesture(tl, b.sprite(e.actor), "spin", at)
+    gesture(tl, b.stage, "flash", at + 300)
+    return 1300
+  },
+  unmasked(b, tl, e, at) {
+    gesture(tl, b.sprite(e.unit), "fade", at)
+    b.popup(tl, e.unit, "MASK OFF", "status", at)
+    return 400
   },
   gm_override(b, tl, e, at) {
     // GM power is never hidden (§12): every override is in the log, and

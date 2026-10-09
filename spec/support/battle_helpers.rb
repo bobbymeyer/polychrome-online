@@ -88,15 +88,51 @@ module BattleFixtures
       talon: { name: "Talon Dive", kind: "skill", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "physical", type: "flying", power: 160 } ] },
       chill: { name: "Chill", kind: "magic", target: "all_enemies", cost: { mp: 0 }, effects: [ { primitive: "elemental", type: "ghost", power: 10 } ] },
       sneak_attack: { name: "Sneak Attack", kind: "skill", target: "single_enemy", cost: { mp: 0 },
-                      effects: [ { primitive: "physical", power: 100, against: "sleep", bonus: 200 } ] }
+                      effects: [ { primitive: "physical", power: 100, against: "sleep", bonus: 200 } ] },
+      # Oda's archetypes (docs/ODA.md).
+      sheathe: { name: "Sheathe", kind: "skill", target: "self", cost: { mp: 0 },
+                 effects: [ { primitive: "gather", kind: "sheathed" }, { primitive: "buff", stat: "def", amount: 30, duration: 1 } ] },
+      draw: { name: "Draw", kind: "skill", target: "all_enemies", cost: { mp: 0 },
+              effects: [ { primitive: "physical", power: 60, with: "sheathed", boost: 60, patience: 15 } ] },
+      zantetsu: { name: "Zantetsu", kind: "skill", target: "single_enemy", cost: { mp: 4 },
+                  effects: [ { primitive: "physical", power: 80, against: "wounded", bonus: 300 } ] },
+      iai_stance: { name: "Iai Stance", kind: "skill", target: "self", cost: { mp: 0 }, effects: [ { primitive: "status", kind: "iai", duration: 2 } ] },
+      palm: { name: "Palm Strike", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+              effects: [ { primitive: "physical", power: 90 }, { primitive: "gather", kind: "chi" } ] },
+      dragon_fist: { name: "Dragon Fist", kind: "skill", target: "single_enemy", cost: { mp: 0 },
+                     effects: [ { primitive: "physical", power: 100, pierce: 50, with: "chi", boost: 40 } ] },
+      firaja: { name: "Firaja", kind: "magic", target: "single_enemy", cost: { mp: 12 }, reload: 1,
+                effects: [ { primitive: "elemental", type: "fire", power: 40, unresisted: 1 } ] },
+      scorch: { name: "Scorch", kind: "magic", target: "single_enemy", cost: { mp: 3 }, effects: [ { primitive: "status", kind: "burn", chance: 80, duration: 3 } ] },
+      dispel: { name: "Dispel", kind: "magic", target: "single_enemy", cost: { mp: 3 }, effects: [ { primitive: "dispel" } ] },
+      reflect: { name: "Reflect", kind: "magic", target: "single_ally", cost: { mp: 4 }, effects: [ { primitive: "status", kind: "reflect", duration: 3 } ] },
+      quick: { name: "Quick", kind: "magic", target: "single_ally", cost: { mp: 6 }, effects: [ { primitive: "quick" } ] },
+      mimic: { name: "Mimic", kind: "skill", target: "self", cost: { mp: 0 }, effects: [ { primitive: "mimic" } ] },
+      regen: { name: "Regen", kind: "magic", target: "single_ally", cost: { mp: 4 }, effects: [ { primitive: "status", kind: "regen", duration: 4 } ] },
+      reraise: { name: "Reraise", kind: "magic", target: "single_ally", cost: { mp: 8 }, effects: [ { primitive: "status", kind: "reraise", duration: 5 } ] },
+      triage: { name: "Triage", kind: "magic", target: "single_ally", cost: { mp: 3 }, effects: [ { primitive: "heal", power: 15, triage: 200 } ] },
+      pilfer_boon: { name: "Lift", kind: "skill", target: "single_enemy", cost: { mp: 0 }, effects: [ { primitive: "steal", chance: 60, boon: 1 } ] },
+      long_shot: { name: "Long Shot", kind: "skill", target: "single_enemy", cost: { mp: 0 }, reach: true, reload: 1,
+                   effects: [ { primitive: "physical", power: 170, type: "flying" } ] },
+      volley: { name: "Volley", kind: "skill", target: "random_enemy", cost: { mp: 2 }, reach: true,
+                effects: [ { primitive: "physical", power: 50, hits: 3 } ] },
+      call_hawk: { name: "Call Hawk", kind: "skill", target: "self", cost: { mp: 3 }, effects: [ { primitive: "summon", creature: "hawk", stays: 1 } ] },
+      don_mask: { name: "Don the Storm Mask", kind: "skill", target: "self", cost: { mp: 0 }, effects: [ { primitive: "transform", mask: "storm_mask" } ] },
+      raijin: { name: "Raijin", kind: "skill", target: "all_enemies", cost: { mp: 0 }, effects: [ { primitive: "physical", type: "electric", power: 120 } ] }
     }
+  end
+
+  # What the transform primitive puts on.
+  def masks
+    { storm_mask: { name: "Storm Mask", type: "electric", duration: 3, abilities: %w[raijin] } }
   end
 
   # Creatures abilities can call (the summon primitive).
   def summons
     {
       eagle: { name: "Eagle", stats: stats(max_hp: 40, str: 12, atk: 10, agi: 30), types: %w[flying], ai: [ { use: "talon" } ], abilities: %w[talon] },
-      wisp: { name: "Wisp", stats: stats(max_hp: 30, mag: 14, agi: 20), types: %w[ghost], ai: [ { use: "chill" } ], abilities: %w[chill] }
+      wisp: { name: "Wisp", stats: stats(max_hp: 30, mag: 14, agi: 20), types: %w[ghost], ai: [ { use: "chill" } ], abilities: %w[chill] },
+      hawk: { name: "Hawk", stats: stats(max_hp: 35, str: 10, atk: 8, agi: 28), types: %w[flying], ai: [ { use: "talon" } ], abilities: %w[talon] }
     }
   end
 
@@ -137,6 +173,16 @@ module BattleFixtures
         types: %w[ghost], rewards: { exp: 8, gil: 10 }, abilities: %w[confuse], ai: [ { if: { chance: 20 }, use: "confuse" }, { use: "attack" } ] } ]
   end
 
+  # A thing woken from the deep: masks are made for it. It reflects, and
+  # sometimes cuts first.
+  def giant
+    [ { id: "oni", name: "Oni", giant: true, boss: true,
+        stats: stats(max_hp: 350, max_mp: 30, str: 18, atk: 16, agi: 6, def: 10, mdef: 8, mag: 10),
+        types: %w[rock], rewards: { exp: 90, gil: 120 }, abilities: %w[reflect iai_stance fire],
+        ai: [ { if: { round_multiple: 4 }, use: "reflect", target: "self" }, { if: { chance: 20 }, use: "iai_stance" },
+              { if: { chance: 20 }, use: "fire" }, { use: "attack" } ] } ]
+  end
+
   def ogre
     [ { id: "ogre", name: "Ogre", boss: true,
        stats: stats(max_hp: 400, max_mp: 30, str: 20, atk: 18, agi: 7, def: 12, mdef: 6, mag: 8),
@@ -161,9 +207,12 @@ module BattleHelpers
   end
 
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
-                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil, summons: BattleFixtures.summons, rules: {})
+                   abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil, summons: BattleFixtures.summons, rules: {},
+                   masks: nil)
+    # The fixtures' Storm Mask is electric: a world without it has no mask.
+    masks ||= types ? {} : BattleFixtures.masks
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items, terrain: terrain,
-                        types: types, summons: summons, rules: rules)
+                        types: types, summons: summons, rules: rules, masks: masks)
   end
 
   def apply(state, action)

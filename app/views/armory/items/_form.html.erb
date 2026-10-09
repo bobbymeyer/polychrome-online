@@ -26,6 +26,28 @@
   </fieldset>
 
   <fieldset class="panel">
+    <legend>A mask (category Mask)</legend>
+    <p class="hint">Rare treasure: whoever wears one can put it on in battle and transform for a few turns, stronger, striking with its type, with its moves on their menu; then they're spent for a while. It won't have a coward.</p>
+    <div class="field-row">
+      <div class="field">
+        <label for="item_mask_type">Type</label>
+        <%= select_tag json_field_name(f, :mask, :type), options_for_select(type_options, entry.mask["type"]), include_blank: "(none)", id: "item_mask_type" %>
+      </div>
+      <div class="field">
+        <label for="item_mask_duration">Turns</label>
+        <%= number_field_tag json_field_name(f, :mask, :duration), entry.mask["duration"], min: 1, max: Battle::Masks::MAX_DURATION,
+                             placeholder: Battle::Masks::DEFAULT_DURATION, id: "item_mask_duration" %>
+      </div>
+      <div class="field">
+        <label for="item_mask_abilities">Its moves</label>
+        <%= hidden_field_tag "#{json_field_name(f, :mask, :abilities)}[]", "", id: nil %>
+        <%= select_tag "#{json_field_name(f, :mask, :abilities)}[]", options_for_select(@world.abilities.in_battle.order(:name).map { |a| [ a.name, a.slug ] }, entry.mask["abilities"]),
+                       multiple: true, size: 5, id: "item_mask_abilities" %>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="panel">
     <legend>When used (consumables)</legend>
     <div class="field">
       <%= f.label :target %>

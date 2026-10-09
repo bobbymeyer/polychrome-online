@@ -86,6 +86,64 @@ module Location::Exploration
     keys_found.include?(lock["id"])
   end
 
+  # The locks on the ways out of the room the party is in that they can't
+  # open yet: no key in hand, and nobody has picked them.
+  def locks_in_the_way
+    return [] unless current_room_key
+
+    neighbours(current_room_key).filter_map { |key| path_between(current_room_key, key) }
+                                .select { |path| locked?(path) && !has_key?(path["lock"]) }.map { |path| path["lock"] }.uniq { |lock| lock["id"] }
+  end
+
+  # A lock in the way opens without its key (Outcome "unlock": a Thief's
+  # Pick Lock, a check). Returns what the table hears.
+  def pick_lock!(by:)
+    lock = locks_in_the_way.first or return "There's no lock here to open."
+    remember_in_progress!("unlocked", lock["id"])
+    campaign.table_changed
+    "#{by} works at #{lock['name']} until it gives. No #{lock['key_name']} needed."
+  end
+
+  # --- traps (a room's decision) -------------------------------------------------
+  # A trap waits in its room until someone disarms it (a check) or it goes
+  # off: sprung on purpose, or by the party walking on without dealing with
+  # it. What it does is written like a fork's cost: "A tripwire (hurt 20)".
+
+  def trap_waiting?(key)
+    (target = room(key)) && target.dig("decision", "kind") == "trap" && !resolved?(key)
+  end
+
+  # Someone tries to disarm it: a check with the skill or stat the GM picks.
+  def disarm_trap!(key, character:, stat:, difficulty: "normal")
+    raise Refusal, "There's no trap waiting there" unless trap_waiting?(key)
+
+    created, = campaign.check!(characters: [ character ], stat: stat, difficulty: difficulty, reason: "disarm #{Toll.of(room(key).dig('decision', 'text')).words}")
+    if created.first.data["success"]
+      resolve!(key)
+      campaign.narrate("#{character.name} disarms it. The way is safe.")
+      campaign.table_changed
+    else
+      spring_trap!(key)
+    end
+  end
+
+  # It goes off: what it does happens, and the room is dealt with.
+  def spring_trap!(key)
+    raise Refusal, "There's no trap waiting there" unless trap_waiting?(key)
+
+    toll = Toll.of(room(key).dig("decision", "text"))
+    transaction do
+      resolve!(key)
+      campaign.narrate("The trap goes off!")
+      toll.outcomes.each do |outcome|
+        said = outcome.apply!(campaign, by: "The party")
+        campaign.narrate(said) if said
+      end
+      campaign.pass_time!(toll.takes) if toll.takes.positive?
+    end
+    campaign.table_changed
+  end
+
   # What the party carries: the keys found and not yet used.
   def keys_in_hand
     view.fetch("paths", []).filter_map { |p| p["lock"] }.uniq { |l| l["id"] }
@@ -140,10 +198,13 @@ module Location::Exploration
     toll&.outcomes&.each { |outcome| outcome.can_happen!(campaign) }
     raise Refusal, "The party has #{campaign.money(campaign.gil)}; that way costs #{campaign.money(toll.price)}" if toll && toll.price > campaign.gil
 
+    # Walking on past a trap nobody disarmed sets it off.
+    spring_trap!(from) if from && trap_waiting?(from)
+
     transaction do
       walk_away_from_fight!(to: key)
       pay!(path, toll) if path&.dig("cost") && !paid?(path)
-      if lock
+      if lock && !unlocked?(lock)
         remember_in_progress!("unlocked", lock["id"])
         campaign.narrate("#{name}: #{lock['key_name']} opens #{lock['name']}. The way is clear.", cue: "door")
       end
@@ -268,6 +329,8 @@ module Location::Exploration
       worth = { "shortcut" => " It looks like the quicker way down.", "treasure" => " Something glints that way." }[path&.dig("gain")]
       campaign.narrate("The way splits. One path has a cost: #{Toll.of(decision['text']).words}#{worth}")
       resolve!(target["key"])
+    when "trap"
+      campaign.narrate("A trap in #{target['name']}: #{Toll.of(decision['text']).words.sub(/\.\z/, '')}. Disarm it, or it goes off when the party moves on.", cue: "door")
     when "key"
       remember_in_progress!("keys", decision["lock"])
       lock = view.fetch("paths", []).find { |p| p.dig("lock", "id") == decision["lock"] }&.dig("lock")

@@ -5,6 +5,14 @@
     <h1><%= entry.name %></h1>
     <dl class="facts">
       <% if entry.slot %><dt>Slot</dt><dd><%= term(entry.slot) %></dd><% end %>
+      <% if entry.mask? %>
+        <dt>Put on</dt>
+        <dd>
+          For <%= pluralize(entry.mask.fetch("duration", Battle::Masks::DEFAULT_DURATION), "turn") %><%= ", striking as #{type_name(entry.mask['type']).downcase}" if entry.mask["type"] %>;
+          stronger, then spent.<% if entry.mask["abilities"].present? %> Its moves: <%= @world.abilities.where(slug: entry.mask["abilities"]).order(:name).map(&:name).to_sentence %>.<% end %>
+          It won't have a coward.
+        </dd>
+      <% end %>
       <dt>Price</dt><dd><%= money(entry.price) %></dd>
       <% if entry.consumable? %><dt>Target</dt><dd><%= term(entry.target) %></dd><% end %>
     </dl>

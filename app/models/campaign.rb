@@ -40,6 +40,7 @@ class Campaign < ApplicationRecord
     def under_way = where(status: "input")
   end
   # The party, in the order it was made: everything that lists it keeps to that.
+  has_many :duels, dependent: :destroy # at characters and the cast (Campaign::Duels)
   has_many :characters, -> { order(:created_at) }, dependent: :destroy do # at places (home)
     # With what their stats need loaded (Character#stats).
     def with_stats = includes(:job, :character_jobs, equipment_slots: :item)
@@ -51,7 +52,7 @@ class Campaign < ApplicationRecord
   has_many :map_links, dependent: :destroy
   has_many :locations, dependent: :destroy
 
-  include Bag, Shopping, Services, Travelling, Ways, Checks, Belonging, Limits, Moment, Remarks, Moves, MonsterNotes, JobRewards, Payoffs, Happenings, Rumours, Deeds, Defeat, Broadcasts
+  include Bag, Shopping, Services, Travelling, Ways, Checks, Belonging, Limits, Moment, Remarks, Moves, MonsterNotes, JobRewards, Payoffs, Happenings, Rumours, Deeds, Defeat, Broadcasts, Duels
 
   # The campaign's dice: one seeded RNG, stored here like a battle's, for
   # everything outside a battle (encounters on the road, checks, what

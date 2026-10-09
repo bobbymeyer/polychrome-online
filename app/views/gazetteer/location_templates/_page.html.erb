@@ -44,7 +44,7 @@
   </ul>
 </section>
 
-<% needed = entry.town? ? GeneratorTable::TOWN_KINDS : GeneratorTable::DUNGEON_KINDS + (s["locks"].to_i.positive? ? [ "locks" ] : []) %>
+<% needed = entry.town? ? GeneratorTable::TOWN_KINDS : GeneratorTable::DUNGEON_KINDS + (s["locks"].to_i.positive? ? [ "locks" ] : []) + (s.dig("decisions", "trap").to_i.positive? ? [ "traps" ] : []) %>
 <% missing = needed - entry.table_entries.keys %>
 <% if missing.any? %>
   <p class="flash flash--alert" role="status">

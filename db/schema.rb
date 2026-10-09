@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_042508) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -30,6 +30,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_042508) do
     t.string "field_outcome"
     t.string "field_difficulty", default: "normal", null: false
     t.integer "field_power", default: 0, null: false
+    t.integer "reload_turns", default: 0, null: false
+    t.boolean "reach", default: false, null: false
     t.index ["world_id", "slug"], name: "index_abilities_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_abilities_on_world_id"
   end
@@ -173,6 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_042508) do
     t.integer "shown_map_id"
     t.string "stage_view", default: "here", null: false
     t.string "controls", default: "talk", null: false
+    t.json "challenge"
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true
@@ -211,6 +214,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_042508) do
     t.integer "home_node_id"
     t.json "ties", default: [], null: false
     t.datetime "seen_at"
+    t.boolean "coward", default: false, null: false
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["home_node_id"], name: "index_characters_on_home_node_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
@@ -280,6 +284,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_042508) do
     t.datetime "updated_at", null: false
     t.index ["owner_type", "owner_id", "kind", "target"], name: "index_drafts_on_owner_type_and_owner_id_and_kind_and_target"
     t.index ["owner_type", "owner_id"], name: "index_drafts_on_owner"
+  end
+
+  create_table "duels", force: :cascade do |t|
+    t.integer "campaign_id", null: false
+    t.integer "character_id", null: false
+    t.integer "npc_id"
+    t.string "opponent_name", null: false
+    t.integer "seed", null: false
+    t.json "rounds", default: [], null: false
+    t.string "status", default: "on", null: false
+    t.string "result"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_duels_on_campaign_id"
+    t.index ["character_id"], name: "index_duels_on_character_id"
+    t.index ["npc_id"], name: "index_duels_on_npc_id"
   end
 
   create_table "encounter_tables", force: :cascade do |t|
@@ -408,6 +428,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_042508) do
     t.json "variant", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "mask", default: {}, null: false
     t.index ["world_id", "slug"], name: "index_items_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_items_on_world_id"
   end
@@ -620,6 +641,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_042508) do
     t.text "boss_line"
     t.string "base_type", default: "normal", null: false
     t.boolean "undead", default: false, null: false
+    t.boolean "giant", default: false, null: false
     t.json "phases", default: [], null: false
     t.string "music"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
@@ -918,6 +940,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_042508) do
   add_foreign_key "clocks", "modes"
   add_foreign_key "clocks", "world_fronts"
   add_foreign_key "codex_entries", "worlds"
+  add_foreign_key "duels", "campaigns"
+  add_foreign_key "duels", "characters"
+  add_foreign_key "duels", "npcs"
   add_foreign_key "encounter_tables", "worlds"
   add_foreign_key "equipment_slots", "characters"
   add_foreign_key "equipment_slots", "items"

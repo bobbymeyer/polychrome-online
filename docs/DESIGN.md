@@ -796,6 +796,27 @@ black slab crosses the whole stage with "ALL-OUT ATTACK!" in red, the party boun
 a drum roll and a crash, and each of them lands an Attack on every enemy. Then the enemies
 scramble back to their feet. It happens at most once a round.
 
+### A duel
+
+A duel (Oda) is not a battle and doesn't look like one. While it's on it is the table's Now, for
+everyone: a black slab headed "DUEL" with the two names and the round, then two meters, one per
+duellist, each a white track with the target on it. The perfect line is red, the one move to make,
+with good and okay as greys on either side. The challenged player's own meter has Swing under it:
+the needle runs across and back until the next press stops it. The GM has the same for the
+opponent. Everyone else sees two still tracks marked "Waiting to swing" or "Swung", and nobody sees
+where a swing stopped until both are in. Then the round goes on a small scorecard (perfect in red,
+a miss in grey) and into the log, and the next round's target moves and narrows. At the end, the
+result fills the slab in display type: a name and "wins", or **SATISFACTION**, spaced wide. It
+stays until the GM puts it away. The challenge before it is a line on the Now strip, with Accept
+and Refuse on the challenged player's screen; refusing asks once, because it makes them a coward.
+
+### Masks
+
+Putting a mask on is the tokusatsu transformation: the wearer spins, a slanted banner names the
+mask across the stage over a stab of brass, the stage flashes, and the board shows the mask's own
+art in place of the wearer for as long as it lasts, outlined in red. When it comes off, the art
+fades back and "MASK OFF" pops over them.
+
 ### Daily life pays off
 
 Time spent on things to do pays off through the party's archetypes, at the next rest. Each
@@ -968,6 +989,16 @@ Record each place where the game needed more than the Swiss defaults: what chang
 - **Story time in the log.** Log lines show the part of the day they were said in ("Dusk"), and
   the recap is dated by the setting's calendar. The wall-clock time is only on hover, because
   "00:17" in a fantasy log breaks the fiction.
+- **A coward is struck through in grey.** On the party panel a small grey "Coward" tag, struck
+  through, sits after their name; on their sheet a grey note says what it costs. It is shame, not
+  a move, so it stays out of red; grey and the strike-through say "less than they were" without a
+  badge that looks like something to press. (Oda, docs/ODA.md.)
+- **Oda's statuses.** Burn is amber (`--caution`), poison's hotter cousin. Stacks (Sheathed, Chi)
+  are solid black badges showing "×3", not turns: they count up and wait to be spent. A masked
+  unit's sprite is outlined in red while the mask lasts: the one red on the battlefield that isn't a
+  move, because a mask is the game's biggest moment.
+- **A trap is an amber triangle** on a dungeon's floorplan, the warning shape, beside the
+  encounter's square and the treasure's diamond.
 - **Red for a deadline.** A deadline passing is a red card, and its last day is a red band. That's
   the one place red means something other than a move: the game stopping you. A grey or black
   card read as one more notice, and the Persona table missed the biggest beat of its campaign.

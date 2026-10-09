@@ -89,8 +89,9 @@ class Job < ApplicationRecord
     end)
   end
 
+  # Anyone can wear a mask: whether it will have them is the mask's affair.
   def equips?(item)
-    equip_categories.include?(item.category)
+    item.mask? || equip_categories.include?(item.category)
   end
 
   # Stats::Derivation inputs.

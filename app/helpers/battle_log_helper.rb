@@ -58,7 +58,9 @@ module BattleLogHelper
     when "ko" then field.unit(event["target"])&.party? ? "#{name.('target')} is KO'd!" : "#{name.('target')} is defeated."
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
-    when "steal" then "#{name.('actor')} stole #{event['name']} from #{name.('target')}!#{dice_note(event)}"
+    when "steal"
+      what = event["status"] ? "#{name.('target')}'s #{term(event['status']).downcase}" : "#{event['name']} from #{name.('target')}"
+      "#{name.('actor')} stole #{what}!#{dice_note(event)}"
     when "scan" then scan_line(event, name.("target"), field.types)
     when "flee" then "#{flee_line(event)}#{dice_note(event)}"
     when "turn_skipped" then skipped_line(event, name.("unit"))
@@ -68,6 +70,16 @@ module BattleLogHelper
     when "abandoned" then "Called off."
     when "defeat" then "The party has fallen…"
     when "gm_override" then gm_line(event, field)
+    # Oda's (docs/ODA.md).
+    when "gathered" then "#{name.('unit')}: #{term(event['status'])} ×#{event['stacks']}."
+    when "patience" then "#{name.('actor')} waited for #{event['waited']}, and draws."
+    when "reflected" then "#{name.('unit')}'s reflection sends it back at #{field.unit_name(event['back_to'])}!"
+    when "iai" then "#{name.('actor')} cuts #{name.('target')} down first!"
+    when "quick" then "#{name.('target')} moves again!"
+    when "mimic" then "#{name.('actor')} copies #{field.unit_name(event['of'])}'s #{field.ability_name(event['ability'])}!"
+    when "transformed" then "#{name.('actor')} puts on the #{event['name']}!"
+    when "unmasked" then "#{name.('unit')}'s mask comes off."
+    when "reraise" then "#{name.('target')} won't stay down!"
     end
   end
 
@@ -75,6 +87,7 @@ module BattleLogHelper
 
   def damage_line(event, target)
     return "#{target} takes #{event['amount']} poison damage." if event["status"] == "poison"
+    return "#{target} takes #{event['amount']} from the burn." if event["status"] == "burn"
     return "Doom comes for #{target}." if event["status"] == "doom"
     return "#{target} takes #{event['amount']} in recoil." if event["recoil"]
 
@@ -99,6 +112,11 @@ module BattleLogHelper
     when "steal_failed" then "Couldn't steal from #{target}.#{dice_note(event)}"
     when "no_effect" then "#{target} barely feels it."
     when "no_mp" then "#{target} has no MP to take."
+    when "nothing_to_dispel" then "#{target} has nothing to dispel."
+    when "nothing_to_mimic" then "There's nothing to copy yet."
+    when "coward" then "The mask won't have a coward."
+    when "masked" then "#{target} can't put on another mask yet."
+    when "no_mask" then "There's no such mask."
     else "#{event['item'] ? field.item_name(event['item']) : field.ability_name(event['ability'])} has no target."
     end
   end
@@ -125,6 +143,8 @@ module BattleLogHelper
     case event["reason"]
     when "woke" then "#{target} wakes up."
     when "cured" then "#{target} is cured of #{term(event['status']).downcase}."
+    when "dispelled" then "#{target}'s #{term(event['status']).downcase} is dispelled."
+    when "spent" then nil # the move that spent it says enough
     when "gm" then nil # the gm_override line already said it
     else "#{target}'s #{term(event['status'])} wears off."
     end
@@ -165,6 +185,7 @@ module BattleLogHelper
     when "stop" then "#{unit} is stopped in time."
     when "down" then "#{unit} is getting back up."
     when "charging" then "#{unit} is still gathering strength."
+    when "reloading" then "#{unit} is reloading."
     else "#{unit} has no orders."
     end
   end

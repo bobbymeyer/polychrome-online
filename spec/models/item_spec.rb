@@ -40,7 +40,7 @@ RSpec.describe Item do
   end
 
   it "rejects unknown categories and stats" do
-    item = world.items.new(name: "Thing", category: "gun", stats: { "luck" => 3 })
+    item = world.items.new(name: "Thing", category: "lightsaber", stats: { "luck" => 3 })
     expect(item).not_to be_valid
     expect(item.errors.attribute_names).to include(:category, :stats)
   end

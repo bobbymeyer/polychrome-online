@@ -40,8 +40,10 @@ module GlossaryHelper
     "regen" => [ "Regen", "A little HP back at the end of each of your turns." ],
     "mp_regen" => [ "Clear Mind", "A little MP back at the end of each of your turns." ],
     "first_strike" => [ "First Strike", "In the first round of a fight, you go before anyone." ],
-    "second_wind" => [ "Second Wind", "Once a battle, get back up at a quarter HP when knocked down." ]
+    "second_wind" => [ "Second Wind", "Once a battle, get back up at a quarter HP when knocked down." ],
+    "potency" => [ "Potency", "Items work half again as well in your hands." ]
   }.freeze
+
 
   def passive_term(key)
     label, definition = PASSIVES.fetch(key.to_s) { return key.to_s.humanize }

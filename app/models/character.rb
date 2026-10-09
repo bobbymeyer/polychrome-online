@@ -14,7 +14,7 @@ class Character < ApplicationRecord
   include Portrayed
   include Colourable
 
-  include Progression, Abilities, Equipment, Background, InBattle
+  include Progression, Abilities, Equipment, Background, InBattle, Courage
 
   SLOTS = %w[weapon shield head body accessory].freeze
 
@@ -24,6 +24,7 @@ class Character < ApplicationRecord
   belongs_to :user, optional: true
   belongs_to :job
   belongs_to :home_node, class_name: "MapNode", optional: true
+  has_many :duels, dependent: :destroy
   has_many :character_jobs, dependent: :destroy
   has_many :ability_slots, -> { order(:position) }, dependent: :destroy
   has_many :equipment_slots, dependent: :destroy

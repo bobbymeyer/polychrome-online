@@ -28,6 +28,7 @@ module Campaign::Moment
     "down" => "How many of the party are knocked out.",
     "home" => "Who of the party is from here, by name (Vivi, or Vivi and Bartz); true when anyone is.",
     "hurt_one" => "The one of the party standing who is worst hurt, under half their HP, by name.",
+    "cowards, coward" => "How many of the party refused a duel and haven't won one since (Character::Courage), and who, by name.",
     "tied, tied_to" => "One of the party with a tie, by name, and who they're tied to.",
     "from_<origin>" => "Who of the party is of that origin, by name (from_highlands = Vivi).",
     "gil" => "What the party has to spend.",
@@ -98,6 +99,8 @@ module Campaign::Moment
     facts = { "party" => standing.size, "hurt" => hurt.size, "down" => everyone.size - standing.size, "gil" => gil,
               "home" => home.to_sentence.presence, "hurt_one" => hurt.min_by { |c| c.current_hp.fdiv(c.stats["max_hp"]) }&.name,
               "tied" => tied&.name, "tied_to" => tied && tie_npcs[tied.ties.find { |tie| tie_npcs[tie["npc_id"]] }["npc_id"]] }
+    cowards = everyone.select(&:coward?)
+    facts.merge!("cowards" => cowards.size, "coward" => cowards.map(&:name).to_sentence.presence)
     everyone.select(&:origin).group_by(&:origin).each do |origin, people|
       key = Campaign::Moment.key(origin) or next
       facts["from_#{key}"] = people.map(&:name).to_sentence

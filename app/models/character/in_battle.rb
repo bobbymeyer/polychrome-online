@@ -29,13 +29,19 @@ module Character::InBattle
       "stats" => stats,
       "hp" => current_hp,
       "mp" => current_mp,
-      "abilities" => (battle_abilities.map(&:slug) + [ job.signature ].compact).uniq,
+      "abilities" => (battle_abilities.map(&:slug) + [ job.signature ].compact + worn_masks.map(&:don_slug)).uniq,
       "signature" => job.signature,
       "mastery" => battle_mastery.presence,
       "passives" => passives,
       "image" => { "book" => "jobs", "slug" => job.slug },
       "desperation" => job.desperation_ability&.slug,
-      "level" => level
+      "level" => level,
+      "coward" => (true if coward?)
     }.merge(job.battle_type).compact
+  end
+
+  # The masks they wear: each one's Don is on their menu (Item#don_ability).
+  def worn_masks
+    equipped_items.select(&:mask?)
   end
 end

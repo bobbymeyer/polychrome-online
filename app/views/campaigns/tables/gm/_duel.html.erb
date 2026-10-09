@@ -1,0 +1,38 @@
+<%# A duel (Campaign::Duels), under the battle setup in the Fight control: one character against someone the
+    GM plays, a cast member who fights or a Bestiary entry. Either they call the character out, and the
+    character's player answers at the table (refusing makes them a coward), or the character called them out
+    and the duel starts now (Duel). campaign. %>
+<% characters = campaign.characters.includes(:job).order(:created_at).select(&:conscious?) %>
+<% duellists = campaign.duellists %>
+<% if characters.any? %>
+  <%= form_with url: campaign_challenge_path(campaign), method: :post, class: "book-form duel-setup", data: { turbo_frame: "_top" } do %>
+    <fieldset class="panel">
+      <legend>A duel</legend>
+      <p class="hint">Not a battle: three swings each on a meter, at a mark that moves and narrows every round. You swing for whoever they face. The higher total wins and the loser goes down; level totals are SATISFACTION, and both win. Whoever refuses a duel is a coward until they win one.</p>
+      <div class="field-row">
+        <div class="field">
+          <%= label_tag :duel_character_id, "Who" %>
+          <%= select_tag :character_id, options_for_select(characters.map { |c| [ "#{c.name}#{' (a coward)' if c.coward?}", c.id ] }), id: "duel_character_id" %>
+        </div>
+        <% if duellists.any? %>
+          <div class="field">
+            <%= label_tag :duel_npc_id, "Against" %>
+            <%= select_tag :npc_id, options_for_select(duellists.map { |npc| [ npc.name, npc.id ] }), include_blank: "(a Bestiary entry)", id: "duel_npc_id" %>
+          </div>
+        <% end %>
+        <div class="field">
+          <%= label_tag :duel_monster, duellists.any? ? "Or" : "Against" %>
+          <%= select_tag :monster, options_for_select(monster_options(campaign.world.monsters)), include_blank: "(none)", id: "duel_monster" %>
+        </div>
+      </div>
+      <div class="field">
+        <%= label_tag :duel_line, "What they say" %>
+        <%= text_field_tag :line, nil, id: "duel_line", placeholder: "Draw, or be known for running." %>
+      </div>
+      <div class="actions">
+        <%= button_tag "They challenge", name: "by", value: "opponent", class: "button play" %>
+        <%= button_tag "The challenge is taken: duel now", name: "by", value: "character", class: "button" %>
+      </div>
+    </fieldset>
+  <% end %>
+<% end %>

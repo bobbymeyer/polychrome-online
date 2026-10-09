@@ -1,0 +1,71 @@
+<%# A duel at the table (Duel, docs/ODA.md): one meter each, the same target, which moves and narrows round by round.
+    The challenged player swings theirs; the GM swings the opponent's. A swing shows only when both are in; then the
+    round's grades join the card below. At the end, the result in large type: a winner, or SATISFACTION.
+    duel; gm (the GM's seat); you (the seat's character). %>
+<% you = local_assigns[:you] %>
+<% mine = ->(side) { side == "gm" ? gm : (you == duel.character || (gm && duel.character.user_id.nil?)) } %>
+<section class="duel" aria-label="A duel">
+  <header class="duel__head">
+    <p class="duel__title">Duel</p>
+    <p class="duel__who"><strong><%= duel.character.name %></strong> and <strong><%= duel.opponent_name %></strong></p>
+    <p class="duel__round"><%= duel.over? ? "Three rounds" : "Round #{duel.round} of #{DuelMeter::ROUNDS}" %></p>
+  </header>
+
+  <% if duel.on? %>
+    <% zone = duel.zone %>
+    <% pct = ->(units) { (units * 100.0 / DuelMeter::LENGTH).round(3) } %>
+    <% bands = { "okay" => DuelMeter::PERFECT + zone["good"] + zone["okay"], "good" => DuelMeter::PERFECT + zone["good"], "perfect" => DuelMeter::PERFECT } %>
+    <div class="duel__meters">
+      <% DuelMeter::SIDES.each do |side| %>
+        <% swung = duel.swung?(side) %>
+        <% playing = mine.(side) && !swung %>
+        <%# A running meter survives a refresh (data-turbo-permanent); a finished one is a different element. %>
+        <div class="duel-meter<%= ' is-swung' if swung %>" id="duel_meter_<%= duel.id %>_<%= duel.round %>_<%= side %>_<%= playing ? 'ready' : 'still' %>"
+             <%= tag.attributes(data: playing ? { turbo_permanent: true, controller: "duel-meter", duel_meter_length_value: DuelMeter::LENGTH, duel_meter_sweep_value: DuelMeter::SWEEP_MS } : {}) %>>
+          <p class="duel-meter__name"><%= duel.name_of(side) %></p>
+          <div class="duel-meter__track">
+            <% bands.each do |band, reach| %>
+              <span class="duel-meter__band duel-meter__band--<%= band %>" style="left: <%= pct.(zone['center'] - reach) %>%; width: <%= pct.(reach * 2) %>%"></span>
+            <% end %>
+            <% shown = swung && mine.(side) ? duel.swings.dig(side, "position") : nil %>
+            <span class="duel-meter__needle" <%= tag.attributes(data: ({ duel_meter_target: "needle" } if playing)) %> style="left: <%= shown ? pct.(shown) : 0 %>%"<%= " hidden" unless playing || shown %>></span>
+          </div>
+          <% if playing %>
+            <%= form_with url: campaign_duel_swings_path(duel.campaign, duel), method: :post, data: { duel_meter_target: "form" }, class: "duel-meter__form" do %>
+              <%= hidden_field_tag :side, side, id: nil %>
+              <%= hidden_field_tag :position, "", id: nil, data: { duel_meter_target: "position" } %>
+            <% end %>
+            <button type="button" class="button play duel-meter__swing" data-duel-meter-target="button" data-action="duel-meter#press">Swing</button>
+          <% else %>
+            <p class="duel-meter__state"><%= swung ? "Swung" : "Waiting to swing" %><%= ": #{duel.swings.dig(side, 'grade')}" if shown %></p>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <p class="hint duel__how">Swing, then stop the needle on the red line: perfect 3, good 2, okay 1. The mark moves and narrows every round. Nobody sees a swing until both are in.</p>
+  <% else %>
+    <p class="duel__result<%= ' duel__result--satisfaction' if duel.result == 'satisfaction' %>"><%= duel.result_line %></p>
+  <% end %>
+
+  <% if duel.shown_rounds.any? %>
+    <table class="duel__card">
+      <thead><tr><th>Round</th><% DuelMeter::SIDES.each do |side| %><th><%= duel.name_of(side) %></th><% end %></tr></thead>
+      <tbody>
+        <% duel.shown_rounds.each_with_index do |entry, i| %>
+          <tr>
+            <td><%= i + 1 %></td>
+            <% DuelMeter::SIDES.each do |side| %>
+              <% swing = entry.dig("swings", side) %>
+              <td class="duel__grade duel__grade--<%= swing['grade'] %>"><%= swing["grade"].capitalize %> <span class="muted"><%= swing["points"] %></span></td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot><tr><th>Total</th><% DuelMeter::SIDES.each do |side| %><th><%= duel.totals[side] %></th><% end %></tr></tfoot>
+    </table>
+  <% end %>
+
+  <% if duel.over? && gm %>
+    <%= button_to "Put it away", campaign_duel_path(duel.campaign, duel), method: :patch, class: "button", form: { class: "inline" } %>
+  <% end %>
+</section>

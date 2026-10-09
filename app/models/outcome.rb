@@ -64,6 +64,8 @@ class Outcome
     "safe_road" => [ "The next dangerous path rolls no encounter", nil ],
     "uncover" => [ "One of the GM's secrets comes out (its next clue, if it comes a step at a time), one about where the party is if there is one", nil ],
     "story" => [ "The GM tells what happens", nil ],
+    # A lock in the party's way in the dungeon opens without its key (a Thief's Pick Lock).
+    "unlock" => [ "The lock in the party's way opens, key or no key", nil ],
     "mode" => [ "A place changes", nil ],
     "battle" => [ "A fight", nil ],
     "hurt" => [ "Everyone standing loses %{amount}% of %{hp}", 10 ],
@@ -72,15 +74,20 @@ class Outcome
     "lose" => [ "The party loses %{amount}", 50 ],
     "time" => [ "Time goes by: %{amount} of the day's parts", 1 ],
     "tick" => [ "A clock that matters goes on a segment", nil ],
-    "give" => [ "The party gives up %{item}", nil ]
+    "give" => [ "The party gives up %{item}", nil ],
+    # Caught at it: the town where it happened thinks worse of the party (a deed, Campaign::Deeds).
+    "disgrace" => [ "The town here thinks worse of the party", 1 ]
   }.freeze
 
   # What takes from the party, rather than giving: the hard moves.
-  TAKES = %w[hurt weary ambush lose time tick].freeze
+  TAKES = %w[hurt weary ambush lose time tick disgrace].freeze
 
   # What a check can make happen on a success (Campaign#check!): anything
   # that needs nothing more to say than how much.
-  ON_A_CHECK = %w[money exp abp rumour restore reveal find learn sneak safe_road uncover].freeze
+  ON_A_CHECK = %w[money exp abp rumour restore reveal find learn sneak safe_road uncover unlock].freeze
+
+  # What a check the GM calls can make happen when everyone fails (Campaign#check!).
+  ON_A_FAILURE = TAKES
 
   # What a camp or road event's choice can do: what a check can, what takes,
   # and giving something from the bag (Campaign::Remarks).
@@ -132,6 +139,7 @@ class Outcome
     raise Refusal, "Nobody is standing to fight" if kind == "battle" && campaign.characters.none?(&:conscious?)
     raise Refusal, "Nobody is KO'd" if kind == "raise" && campaign.characters.none? { |c| !c.conscious? }
     raise Refusal, "Not while a battle is on" if kind == "rest" && campaign.battle_on?
+    raise Refusal, "There's no lock in the party's way" if kind == "unlock" && campaign.dungeon_in_progress&.locks_in_the_way.blank?
   end
 
   # Whether it would do anything now, for what takes: a hard move with
@@ -145,6 +153,7 @@ class Outcome
     when "lose" then campaign.gil.positive?
     when "give" then (item = campaign.world.items.find_by(slug: target["item"])) && campaign.party_quantity_of(item).positive?
     when "tick" then !campaign.clock_to_tick.nil?
+    when "disgrace" then campaign.current_node.present?
     when "ambush" then !(campaign.dungeon_in_progress || campaign.current_node&.location)&.location_template&.encounter_table.nil?
     else true
     end
@@ -323,6 +332,19 @@ class Outcome
 
     campaign.waylay!("#{place.name}: on the way", monsters, terrain: table.terrain_type)
     "Encounter! #{campaign.describe_encounter(monsters)}."
+  end
+
+  def unlock!(campaign, by:, **)
+    dungeon = campaign.dungeon_in_progress or return "There's no lock here to open."
+    dungeon.pick_lock!(by: by)
+  end
+
+  # Caught: a deed against the party where they are, so prices rise there
+  # (Location::Town#price_here) and the story travels.
+  def disgrace!(campaign, by:, **)
+    node = campaign.current_node or return "Nobody saw. This time."
+    campaign.record_deed!("#{by} was caught at it in #{node.name}", at: node, sway: -amount, kind: "gm", seen: true)
+    "#{node.name} saw that. They'll remember it."
   end
 
   def lose!(campaign, **)

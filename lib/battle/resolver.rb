@@ -492,6 +492,7 @@ module Battle
       return unless ctx.alive?(unit) # KO'd earlier this round: no turn at all
 
       ctx.emit(:turn_start, unit: unit["id"])
+      ctx.acted << unit["id"]
       # What the unit carried into its turn: only that counts this turn down.
       # A buff it gives itself now lasts its full length (War Cry for 3 is
       # three buffed turns, not two).
@@ -528,7 +529,7 @@ module Battle
     # turn (no upkeep, no countdowns). Only a plain move repeats: not an item
     # (that's the party's to spend), a flight, an idea for the GM, a wind-up,
     # a leap or a summons.
-    SINGLE_GO = %w[jump away summon escape].freeze
+    SINGLE_GO = %w[jump away summon escape transform].freeze
 
     def quick_turn(unit, cmd)
       return unless ctx.status?(unit, "haste")
@@ -675,9 +676,10 @@ module Battle
       effect.fetch("power") { DEFAULT_POWER.fetch(effect["primitive"], 100) }
     end
 
-    # An imbued Attack takes the imbued type over the job's.
+    # An imbued Attack takes the imbued type over the job's, and a mask's
+    # over both.
     def own(unit, ability)
-      imbued = unit["statuses"].find { |s| s["kind"] == "imbued" }&.dig("type")
+      imbued = Masks.type(unit) || unit["statuses"].find { |s| s["kind"] == "imbued" }&.dig("type")
       attack_type = ability["id"] == "attack" && imbued ? imbued : unit["attack_type"]
       typed = attack_type && (ability["id"] == "attack" || ability["id"] == unit["signature"])
       mastery = unit.dig("mastery", ability["id"])
@@ -719,7 +721,8 @@ module Battle
 
     def desperate(unit, ability)
       move = unit["desperation"]
-      return ability unless move && ability["id"] == "attack" && !unit["desperation_used"]
+      # A coward has nothing more to find.
+      return ability unless move && ability["id"] == "attack" && !unit["desperation_used"] && !unit["coward"]
       return ability unless ctx.hp_percent(unit) <= DESPERATION_HP_PERCENT && ctx.rng.percent?(DESPERATION_CHANCE)
 
       unit["desperation_used"] = true
@@ -795,19 +798,112 @@ module Battle
         unit["hp"] -= blood
         ctx.emit(:hp_paid, actor: unit["id"], amount: blood, hp: unit["hp"])
       end
-      ability = charged(unit, ability)
+      remember(unit, ability, target_id)
+      ability = fortify(unit, charged(unit, ability))
       if ability["target"] == "random_enemy"
         announce(unit, ability, [], cost)
-        return random_hits(unit, ability)
+        random_hits(unit, ability)
+        return reload(unit, ability)
       end
 
-      targets = resolve_targets(unit, ability, target_id)
+      targets = reflected(unit, ability, resolve_targets(unit, ability, target_id))
       announce(unit, ability, targets, cost)
       if targets.empty?
         return ctx.emit(:miss, actor: unit["id"], ability: ability["id"], reason: "no_target")
       end
+      return if iai(unit, ability, targets)
 
       apply_effects(unit, ability, targets)
+      reload(unit, ability)
+    end
+
+    # The last move each side made, for a Mimic (not a Mimic's own copy).
+    def remember(unit, ability, target_id)
+      return if ability["mimicked"] || ability["effects"].any? { |e| e["primitive"] == "mimic" }
+
+      (state["last_moves"] ||= {})[unit["side"]] = { "actor" => unit["id"], "ability" => ability["id"], "target" => target_id }
+    end
+
+    # with: more power for the stacks of a status on the user, spent unless
+    # held. patience: more for everyone who has gone before the user this round.
+    def fortify(unit, ability)
+      return ability unless ability["effects"].any? { |e| e["with"] || e["patience"] }
+
+      spent = []
+      waited = (ctx.acted.uniq - [ unit["id"] ]).size
+      effects = ability["effects"].map do |effect|
+        power = power_of(effect)
+        if effect["with"] && (stacks = ctx.stacks(unit, effect["with"])).positive?
+          power = power * (100 + effect.fetch("boost", 50) * stacks) / 100
+          spent << effect["with"] unless effect["hold"] == 1
+        end
+        power = power * (100 + effect["patience"] * waited) / 100 if effect["patience"]
+        effect.except("with", "boost", "hold", "patience").merge(effect.key?("with") || effect.key?("patience") ? { "power" => power } : {})
+      end
+      ctx.emit(:patience, actor: unit["id"], waited: waited) if waited.positive? && ability["effects"].any? { |e| e["patience"] }
+      spent.uniq.each { |kind| ctx.remove_status(unit, kind, reason: "spent") }
+      ability.merge("effects" => effects)
+    end
+
+    # Reflect: single-target magic at someone reflecting goes back to its caster.
+    def reflected(unit, ability, targets)
+      return targets unless ability["kind"] == "magic" && %w[single_enemy single_ally].include?(ability["target"])
+
+      target = targets.first
+      return targets unless target && target != unit && ctx.status?(target, "reflect")
+
+      ctx.emit(:reflected, unit: target["id"], back_to: unit["id"])
+      [ unit ]
+    end
+
+    # Iai: the first opponent to aim a blow at a unit in the stance alone is
+    # cut down first (IAI_POWER), and the stance is spent. True when the blow
+    # never comes: its striker went down, or the fight is over.
+    IAI_POWER = 150
+
+    def iai(unit, ability, targets)
+      target = targets.first
+      return false unless ability["target"] == "single_enemy" && target && target["side"] != unit["side"]
+      return false unless ctx.status?(target, "iai") && ctx.alive?(target) && !ctx.disabled?(target)
+      return false unless ability["effects"].any? { |e| e["primitive"] == "physical" }
+
+      ctx.emit(:iai, actor: target["id"], target: unit["id"])
+      ctx.remove_status(target, "iai", reason: "spent")
+      ctx.countering = true
+      Effects.physical(ctx, target, unit, { "primitive" => "physical", "power" => IAI_POWER, "type" => target["attack_type"] }.compact)
+      ctx.countering = false
+      ctx.check_end
+      ctx.over? || !ctx.alive?(unit)
+    end
+
+    # A move with a reload leaves its user spent for that many turns.
+    def reload(unit, ability)
+      turns = ability.fetch("reload", 0)
+      ctx.add_status(unit, "reloading", turns, ability: ability["id"]) if turns.positive? && ctx.alive?(unit) && !ctx.over?
+    end
+
+    # What a move set off, once it's done: an ally's Quick go, a Mimic.
+    def follow_up
+      while (job = ctx.follow_ups.shift)
+        break if ctx.over?
+
+        kind, unit = job
+        case kind
+        when :quick then extra_go(unit, state["inputs"][unit["id"]], reason: "quick")
+        when :mimic then mimic(unit)
+        end
+        ctx.check_end
+      end
+    end
+
+    # Mimic: the last move an ally made, again, free, at once.
+    def mimic(unit)
+      last = state.dig("last_moves", unit["side"])
+      ability = last && last["actor"] != unit["id"] && state["abilities"][last["ability"]]
+      return ctx.emit(:miss, actor: unit["id"], target: unit["id"], reason: "nothing_to_mimic") unless ability && ctx.alive?(unit)
+
+      ctx.emit(:mimic, actor: unit["id"], ability: ability["id"], of: last["actor"])
+      use_ability(unit, own(unit, ability).merge("cost" => {}, "released" => true, "mimicked" => true), last["target"])
     end
 
     # Summoned creatures act as soon as the move that called them is done.
@@ -824,10 +920,11 @@ module Battle
     end
 
     # A summoned creature leaves once its turns are up (or it's down). One
-    # called for no set time (duration 0) stays while its summoner stands.
+    # called for no set time (duration 0) stays while its summoner stands; a
+    # companion (stays) for the whole battle.
     def count_down_summon(unit)
       return unless unit["summoned"] && !unit["gone"]
-      return if unit["summoned"]["left"].zero? && ctx.alive?(unit)
+      return if (unit["summoned"]["stays"] || unit["summoned"]["left"].zero?) && ctx.alive?(unit)
 
       unit["summoned"]["left"] -= 1
       return if unit["summoned"]["left"].positive? && ctx.alive?(unit)
@@ -873,6 +970,8 @@ module Battle
     def apply_effects(unit, ability, targets, item: false)
       targets.each do |target|
         ability["effects"].each do |effect|
+          next if effect["primitive"] == "gather"
+
           effect = effect.merge("item" => true) if item
           hits(effect).times do
             break if ctx.over?
@@ -882,30 +981,44 @@ module Battle
           end
         end
       end
+      gather(unit, ability)
       arrive
       react
+      follow_up
+    end
+
+    # A move's gathering is the user's, once a use, however many it hit.
+    def gather(unit, ability)
+      ability["effects"].select { |e| e["primitive"] == "gather" }.each do |effect|
+        Effects.apply(ctx, unit, unit, effect) if ctx.alive?(unit) && !ctx.over?
+      end
     end
 
     def announce(unit, ability, targets, cost)
       type = ability["kind"] == "attack" ? :attack : :cast
       extra = ability["perfect"] ? { perfect: true } : {}
+      extra[:mimicked] = true if ability["mimicked"]
       ctx.emit(type, actor: unit["id"], ability: ability["id"], targets: targets.map { |t| t["id"] }, mp_cost: cost, **extra)
     end
 
     # random_enemy: every hit of every effect picks a fresh living opponent.
     def random_hits(unit, ability)
       ability["effects"].each do |effect|
+        next if effect["primitive"] == "gather"
+
         hits(effect).times do
           break if ctx.over?
 
-          target = ctx.rng.pick(ctx.opponents(unit))
+          target = ctx.rng.pick(ctx.opponents(unit, reach: ability["reach"]))
           break unless target
 
           Effects.apply(ctx, unit, target, effect)
         end
       end
+      gather(unit, ability)
       arrive
       react
+      follow_up
     end
 
     def hits(effect)
@@ -923,14 +1036,14 @@ module Battle
       when "self" then [ unit ]
       when "single_enemy"
         chosen = nil unless chosen && State.valid_target?(unit, ability, chosen)
-        [ covered(chosen || ctx.rng.pick(ctx.opponents(unit))) ].compact
+        [ covered(chosen || ctx.rng.pick(ctx.opponents(unit, reach: ability["reach"]))) ].compact
       when "single_ally"
         fallen = ctx.allies(unit, alive: false).reject { |a| ctx.alive?(a) }
         return [ chosen ] if chosen && State.valid_target?(unit, ability, chosen)
         return [ ctx.rng.pick(fallen) ].compact if revive
 
         [ ctx.allies(unit).min_by { |a| [ ctx.hp_percent(a), a["hp"] ] } ]
-      when "all_enemies" then ctx.opponents(unit)
+      when "all_enemies" then ctx.opponents(unit, reach: ability["reach"])
       when "all_allies" then ctx.allies(unit, alive: !revive)
       end
     end

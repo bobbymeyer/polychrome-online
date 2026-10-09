@@ -14,6 +14,9 @@ module Battle
     BASE_CRIT = 5
     CRIT_CEILING = 25
     POISON_DIVISOR = 16
+    BURN_DIVISOR = 10
+    # Items in the hands of a unit with Potency (an Apothecary).
+    POTENCY = 150
 
     module_function
 
@@ -27,7 +30,7 @@ module Battle
       when "drain" then drain(ctx, actor, target, effect)
       when "buff" then modify(ctx, target, effect, 1)
       when "debuff" then modify(ctx, target, effect, -1)
-      when "revive" then revive(ctx, target, effect)
+      when "revive" then revive(ctx, actor, target, effect)
       when "escape" then escape(ctx, actor)
       when "cleanse" then cleanse(ctx, actor, target, effect)
       when "steal" then steal(ctx, actor, target, effect)
@@ -39,6 +42,11 @@ module Battle
       when "percent" then percent(ctx, actor, target, effect)
       when "sap" then sap(ctx, actor, target, effect)
       when "summon" then summon(ctx, actor, effect)
+      when "gather" then gather(ctx, actor, effect)
+      when "dispel" then dispel(ctx, actor, target)
+      when "quick" then quick(ctx, actor, target)
+      when "mimic" then ctx.follow_ups << [ :mimic, actor ]
+      when "transform" then Masks.put_on(ctx, actor, effect)
       else raise Error, "unknown primitive #{effect['primitive']}"
       end
     end
@@ -49,6 +57,8 @@ module Battle
     # success roll and the pick every time, so the stream doesn't depend on
     # whether it worked.
     def steal(ctx, actor, target, effect)
+      return steal_boon(ctx, actor, target, effect) if effect["boon"] == 1
+
       drops = target.fetch("drops", [])
       if drops.empty? || target["stolen"]
         return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "nothing_to_steal")
@@ -63,6 +73,60 @@ module Battle
       target["stolen"] = true
       (ctx.state["stolen"] ||= []) << drop["item"]
       ctx.emit(:steal, actor: actor["id"], target: target["id"], item: drop["item"], name: drop.fetch("name", drop["item"]), roll: roll, needed: Rng.target(chance))
+    end
+
+    # steal(boon: 1): one of the target's good statuses (STEALABLE_BOONS,
+    # the first it has), moved to the thief as it was. The same rolls as a
+    # steal, in the same order.
+    def steal_boon(ctx, actor, target, effect)
+      boon = target["statuses"].find { |s| STEALABLE_BOONS.include?(s["kind"]) }
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "nothing_to_steal") unless boon
+
+      chance = (effect.fetch("chance", 50) + (ctx.stat(actor, "agi") - ctx.stat(target, "agi"))).clamp(5, 95)
+      success, roll = ctx.rng.d100(chance)
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "steal_failed", roll: roll, needed: Rng.target(chance)) unless success
+
+      target["statuses"].delete(boon)
+      actor["statuses"].reject! { |s| s["kind"] == boon["kind"] }
+      actor["statuses"] << boon
+      ctx.emit(:steal, actor: actor["id"], target: target["id"], status: boon["kind"], roll: roll, needed: Rng.target(chance))
+    end
+
+    # gather(kind, amount): stacks of a stacking status on the user, up to
+    # MAX_STACKS. They don't count down: they wait to be spent (or a KO).
+    def gather(ctx, actor, effect)
+      kind = effect["kind"]
+      status = actor["statuses"].find { |s| s["kind"] == kind }
+      unless status
+        status = { "kind" => kind, "turns" => 1, "stacks" => 0 }
+        actor["statuses"] << status
+      end
+      status["stacks"] = [ status["stacks"].to_i + effect.fetch("amount", 1), MAX_STACKS ].min
+      ctx.emit(:gathered, unit: actor["id"], status: kind, stacks: status["stacks"])
+    end
+
+    # dispel: the target's good statuses (BOONS) and raised stats are gone.
+    # No RNG: it always works, and dispelling nothing is a miss.
+    def dispel(ctx, actor, target)
+      boons = BOONS.select { |kind| ctx.status?(target, kind) }
+      raised = target["buffs"].select { |b| b["amount"].positive? }
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "nothing_to_dispel") if boons.empty? && raised.empty?
+
+      boons.each { |kind| ctx.remove_status(target, kind, reason: "dispelled") }
+      target["buffs"] -= raised
+      raised.each { |b| ctx.emit(:buff_expired, target: target["id"], stat: b["stat"], amount: b["amount"], dispelled: true) }
+    end
+
+    # quick: an ally goes again once the move is done (Battle::Resolver#follow_up),
+    # once a round each.
+    def quick(ctx, actor, target)
+      if target == actor || target["side"] != actor["side"] || target["quick_round"] == ctx.state["round"]
+        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "no_effect")
+      end
+
+      target["quick_round"] = ctx.state["round"]
+      ctx.emit(:quick, actor: actor["id"], target: target["id"])
+      ctx.follow_ups << [ :quick, target ]
     end
 
     # scan: the target's types, its own affinities, what it shrugs off, and
@@ -96,11 +160,12 @@ module Battle
       crit, crit_roll = ctx.rng.d100(crit_chance)
       basis = effect["basis"]
       base = (ctx.stat(actor, "atk", basis: basis) + ctx.stat(actor, "str", basis: basis)) * effect.fetch("power", 100) / 100
-      amount = against(ctx, target, effect, mitigate(vary(ctx, base), ctx.stat(target, "def")))
+      amount = against(ctx, target, effect, mitigate(vary(ctx, base), pierced(ctx.stat(target, "def"), effect)))
       amount *= 2 if crit
       amount /= 2 if target["defending"]
       # Typed after every draw, so the stream doesn't depend on the chart.
-      return if typed(ctx, actor, target, type_of(ctx, effect), amount, crit: crit, roll: crit_roll, needed: Rng.target(crit_chance), recoil: effect["recoil"])
+      return if typed(ctx, actor, target, type_of(ctx, effect), amount, crit: crit, roll: crit_roll, needed: Rng.target(crit_chance), recoil: effect["recoil"],
+                                                                        unresisted: effect["unresisted"] == 1)
 
       if ctx.alive?(target)
         ctx.remove_status(target, "sleep", reason: "woke")
@@ -172,7 +237,8 @@ module Battle
     # elemental(type, power, hits): power scaled by mag, softened by mdef,
     # then by the type chart. Magic never misses.
     def elemental(ctx, actor, target, effect)
-      typed(ctx, actor, target, type_of(ctx, effect), against(ctx, target, effect, magic_amount(ctx, actor, target, effect)), recoil: effect["recoil"])
+      typed(ctx, actor, target, type_of(ctx, effect), against(ctx, target, effect, magic_amount(ctx, actor, target, effect)), recoil: effect["recoil"],
+                                                                                                                       unresisted: effect["unresisted"] == 1)
     end
 
     # grudge: power grows with the user's missing HP, up to grudge% more
@@ -190,19 +256,24 @@ module Battle
       trait = effect["against"]
       return amount unless trait
 
-      matched = ctx.status?(target, trait) || target.fetch("types", []).include?(trait) || (AGAINST_TRAITS.include?(trait) && target[trait])
+      matched = ctx.status?(target, trait) || target.fetch("types", []).include?(trait) || (AGAINST_TRAITS.include?(trait) && target[trait]) ||
+                (trait == "wounded" && ctx.hp_percent(target) <= WOUNDED_PERCENT)
       matched ? amount * effect.fetch("bonus", 200) / 100 : amount
     end
 
     # Deal damage of a type (nil: typeless) through the chart and the
     # target's affinities. Returns true when it didn't land as damage
     # (no effect, or absorbed).
-    def typed(ctx, actor, target, type, amount, crit: false, roll: nil, needed: nil, recoil: nil)
+    def typed(ctx, actor, target, type, amount, crit: false, roll: nil, needed: nil, recoil: nil, unresisted: false)
       percent = Types.effectiveness(type, target, ctx.types)
       if percent == 0 # rubocop:disable Style/NumericPredicate -- may be :absorb
         ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", damage_type: type)
         return true
       end
+
+      percent = 100 if unresisted && percent != :absorb && percent < 100
+      amount = amount * SAME_TYPE_POWER / 100 if type && ctx.state.dig("rules", "same_type") && actor.fetch("types", []).include?(type)
+      amount = amount * Masks::GIANT_POWER / 100 if target["giant"] && ctx.status?(actor, "masked")
 
       amount = [ percent == :absorb ? amount : amount * percent / 100, 1 ].max
       if percent == :absorb
@@ -246,11 +317,20 @@ module Battle
 
     def heal(ctx, actor, target, effect)
       power = effect.fetch("power")
+      power = power * POTENCY / 100 if effect["item"] && potent?(actor)
+      # Triage: up to triage% more, the more of its HP the target is missing.
+      power = power * (100 + effect["triage"] * missing_percent(target) / 100) / 100 if effect["triage"]
       scaled = effect["item"] ? by_mag(power, ITEM_MAG) : scale_by_mag(ctx, actor, power, effect["basis"])
       amount = [ vary(ctx, scaled), 1 ].max
       return ctx.deal_damage(target, amount, actor: actor["id"], undead: true) if target["undead"]
 
       ctx.restore_hp(target, amount, actor: actor["id"])
+    end
+
+    def potent?(unit) = Array(unit["passives"]).include?("potency")
+
+    def missing_percent(unit)
+      (unit["stats"]["max_hp"] - unit["hp"]) * 100 / unit["stats"]["max_hp"]
     end
 
     # drain(power): non-elemental magic damage returned to the caster as HP.
@@ -311,6 +391,7 @@ module Battle
       creature = State.unit(spec.merge("id" => "#{spec['id']}_#{n}", "rewards" => {}, "drops" => []), actor["side"], ctx.type_list)
       creature["guest"] = true if actor["side"] == "party"
       creature["summoned"] = { "by" => actor["id"], "left" => effect.fetch("duration", 1) }
+      creature["summoned"]["stays"] = true if effect["stays"] == 1
       ctx.units << creature
       ctx.arrivals << creature
       ctx.emit(:summoned, actor: actor["id"], unit: creature["id"], name: creature["name"], side: creature["side"],
@@ -343,16 +424,18 @@ module Battle
 
     # revive(fraction): fraction is a percent of max HP. On the living
     # undead it's that much damage instead.
-    def revive(ctx, target, effect)
+    def revive(ctx, actor, target, effect)
+      fraction = effect.fetch("fraction", 25)
+      fraction = [ fraction * POTENCY / 100, 100 ].min if effect["item"] && potent?(actor)
       if target["undead"] && ctx.alive?(target)
-        return ctx.deal_damage(target, [ target["stats"]["max_hp"] * effect.fetch("fraction", 25) / 100, 1 ].max, undead: true)
+        return ctx.deal_damage(target, [ target["stats"]["max_hp"] * fraction / 100, 1 ].max, undead: true)
       end
 
       if ctx.alive?(target)
         return ctx.emit(:miss, target: target["id"], reason: "not_ko")
       end
 
-      ctx.revive(target, target["stats"]["max_hp"] * effect.fetch("fraction", 25) / 100)
+      ctx.revive(target, target["stats"]["max_hp"] * fraction / 100)
     end
 
     # escape: the whole side leaves, guaranteed, unless the battle forbids it.
@@ -397,16 +480,21 @@ module Battle
         ctx.deal_damage(unit, [ unit["stats"]["max_hp"] / POISON_DIVISOR, 1 ].max, status: "poison")
         return unless ctx.alive?(unit)
       end
+      if ctx.status?(unit, "burn")
+        ctx.deal_damage(unit, [ unit["stats"]["max_hp"] / BURN_DIVISOR, 1 ].max, status: "burn")
+        return unless ctx.alive?(unit)
+      end
       passives = Array(unit["passives"])
-      if passives.include?("regen") && unit["hp"] < unit["stats"]["max_hp"]
+      if (passives.include?("regen") || ctx.status?(unit, "regen")) && unit["hp"] < unit["stats"]["max_hp"]
         ctx.restore_hp(unit, [ unit["stats"]["max_hp"] / REGEN_DIVISOR, 1 ].max, regen: true)
       end
       if passives.include?("mp_regen") && unit["mp"] < unit["stats"]["max_mp"]
         ctx.restore_mp(unit, [ unit["stats"]["max_mp"] / MP_REGEN_DIVISOR, 1 ].max, regen: true)
       end
 
-      # Away and charging count their own turns (Battle::Resolver).
-      unit["statuses"].each { |s| s["turns"] -= 1 if counts.(s) && !%w[away charging].include?(s["kind"]) }
+      # Away and charging count their own turns (Battle::Resolver); stacks
+      # wait to be spent.
+      unit["statuses"].each { |s| s["turns"] -= 1 if counts.(s) && !(%w[away charging] + STACKING_STATUSES).include?(s["kind"]) }
       unit["statuses"].select { |s| s["turns"] <= 0 }.map { |s| s["kind"] }.each do |kind|
         ctx.remove_status(unit, kind, reason: "wore_off")
         # Doom's count runs out: down they go, shield or no.
@@ -438,7 +526,12 @@ module Battle
     end
 
     def magic_amount(ctx, actor, target, effect)
-      mitigate(vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"), effect["basis"])), ctx.stat(target, "mdef"))
+      mitigate(vary(ctx, scale_by_mag(ctx, actor, effect.fetch("power"), effect["basis"])), pierced(ctx.stat(target, "mdef"), effect))
+    end
+
+    # pierce: that share of a defence counts for nothing.
+    def pierced(defense, effect)
+      defense * (100 - effect.fetch("pierce", 0)) / 100
     end
 
     # A spell's power grows with the caster's mag: ×2 at 16, ×3 at 28, ×4

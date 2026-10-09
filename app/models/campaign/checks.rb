@@ -13,7 +13,9 @@ module Campaign::Checks
   # once, whoever succeeded; source: what did it, for a secret it brings out.
   # move: the name of what they tried, instead of the skill's ("Pick Lock").
   # Returns the check lines and the outcome's line.
-  def check!(characters:, stat:, difficulty:, reason: nil, move: nil, outcome: nil, source: nil)
+  # failure: what happens when everyone fails (Outcome::ON_A_FAILURE): caught
+  # picking a pocket, a town thinks worse of the party.
+  def check!(characters:, stat:, difficulty:, reason: nil, move: nil, outcome: nil, source: nil, failure: nil)
     skill = world.skill(stat.to_s.delete_prefix("skill:")) if stat.to_s.start_with?("skill:")
     stat = skill["stat"] if skill
     raise Refusal, "Pick who's trying" if characters.empty?
@@ -45,6 +47,10 @@ module Campaign::Checks
       winner = lines.find { |_, data| data["success"] }&.last
       said = outcome && winner && outcome.apply!(self, by: winner["name"], source: source)
       narrate(said) if said
+      unless winner || failure.nil?
+        failed = failure.apply!(self, by: lines.map { |_, data| data["name"] }.to_sentence)
+        narrate(failed) if failed
+      end
       offer_complications!(lines.map(&:last))
       [ created, said ]
     end

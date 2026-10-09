@@ -11,7 +11,7 @@ module Battle
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
   PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan jump away
-                  shield imbue percent sap summon].freeze
+                  shield imbue percent sap summon gather dispel quick mimic transform].freeze
 
   # Parameters each primitive takes, split into required and optional
   # (optional ones have defaults in Battle::Effects). String-valued params
@@ -21,10 +21,18 @@ module Battle
     # or type, or that's undead or a boss (×2 against the sleeping).
     # recoil: the user takes recoil% of the damage it deals (Reckless Strike).
     # grudge: up to grudge% more power the closer the user is to down (Revenge).
-    "physical" => { required: [], optional: %w[power hits type against bonus recoil grudge] },
-    "elemental" => { required: %w[type power], optional: %w[hits against bonus recoil grudge] },
+    # pierce: pierce% of the target's def (mdef, for magic) is ignored.
+    # unresisted: 1, and a resistance counts as neutral (no effect still stops it).
+    # with/boost/hold: boost% more power for each stack of the status named
+    # on the user (once, for a status without stacks), which the move then
+    # spends unless hold is 1 (Draw, a Monk's finishers).
+    # patience: patience% more power for every unit that has gone before
+    # the user this round (a Courtsword draws last).
+    "physical" => { required: [], optional: %w[power hits type against bonus recoil grudge pierce unresisted with boost hold patience] },
+    "elemental" => { required: %w[type power], optional: %w[hits against bonus recoil grudge pierce unresisted with boost hold patience] },
     "status" => { required: %w[kind], optional: %w[chance duration] },
-    "heal" => { required: %w[power], optional: [] },
+    # triage: up to triage% more the lower the target's HP.
+    "heal" => { required: %w[power], optional: %w[triage] },
     "drain" => { required: %w[power], optional: [] },
     "buff" => { required: %w[stat amount], optional: %w[duration] },
     "debuff" => { required: %w[stat amount], optional: %w[duration] },
@@ -32,8 +40,9 @@ module Battle
     "escape" => { required: [], optional: [] },
     # Cures one named status, or every harmful one when none is named.
     "cleanse" => { required: [], optional: %w[kind] },
-    # Takes one of the target's drops, once per target.
-    "steal" => { required: [], optional: %w[chance] },
+    # Takes one of the target's drops, once per target; boon 1, one of
+    # its good statuses instead (haste, a barrier), to the user.
+    "steal" => { required: [], optional: %w[chance boon] },
     # Shows the target's affinities, status immunities and HP.
     "scan" => { required: [], optional: [] },
     # Leaves the field and lands on the target on the next turn: an Away
@@ -55,16 +64,37 @@ module Battle
     "sap" => { required: %w[power], optional: %w[keep] },
     # A creature from the battle's summons (a Bestiary entry) comes to the
     # user's side, acts at once, and leaves after `duration` of its turns;
-    # power% scales its Str, Mag and Atk (Battle::Resolver#summon).
-    "summon" => { required: %w[creature], optional: %w[duration power] }
+    # power% scales its Str, Mag and Atk (Battle::Resolver#summon). stays 1:
+    # a companion, there for the whole battle (a Ranger's hawk).
+    "summon" => { required: %w[creature], optional: %w[duration power stays] },
+    # Stacks of a stacking status on the user (Sheathe, chi), up to
+    # MAX_STACKS. Once a use, however many it hits.
+    "gather" => { required: %w[kind], optional: %w[amount] },
+    # Takes the target's good statuses and raised stats away.
+    "dispel" => { required: [], optional: [] },
+    # An ally goes again at once, their move this round (once a round each).
+    "quick" => { required: [], optional: [] },
+    # The last move an ally made, again, from the user, free.
+    "mimic" => { required: [], optional: [] },
+    # Puts on a mask from the battle's masks (Battle::Masks).
+    "transform" => { required: %w[mask], optional: [] }
   }.freeze
-  PRIMITIVE_STRING_PARAMS = %w[type kind stat who against creature].freeze
+  PRIMITIVE_STRING_PARAMS = %w[type kind stat who against creature with mask].freeze
+  # The flags among the params: 0 or 1.
+  PRIMITIVE_FLAGS = %w[unresisted hold boon stays].freeze
   MAX_SUMMON_TURNS = 5
   # What a bonus can be against, beside statuses and types.
-  AGAINST_TRAITS = %w[undead boss].freeze
+  # wounded: at WOUNDED_PERCENT of its HP or less. giant: a thing woken
+  # from the deep (a monster's giant flag).
+  AGAINST_TRAITS = %w[undead boss wounded giant].freeze
+  WOUNDED_PERCENT = 30
   MAX_BONUS = 400
   # Most turns a move can take to charge before it goes off.
   MAX_CHARGE = 3
+  # Most turns a move can leave its user reloading.
+  MAX_RELOAD = 3
+  # Most stacks a stacking status holds.
+  MAX_STACKS = 5
   # Most of the user's max HP a move can cost.
   MAX_HP_COST = 90
   AWAY_WHO = %w[self target].freeze
@@ -89,17 +119,33 @@ module Battle
   # shield:  takes damage out of the status's amount first (the shield primitive).
   # charging: winding up a move that takes turns to go off.
   # doom:    a countdown; when it runs out, the unit is knocked out.
+  # burn:    poison's hotter cousin: more HP each turn, the same cures.
+  # regen:   a little HP back at the end of each of its turns (the passive, given).
+  # reraise: knocked out, it gets back up at once, once.
+  # reflect: single-target magic aimed at it goes back to whoever cast it.
+  # iai:     the first opponent to aim a blow at it alone is cut down first.
+  # reloading: spent by a big shot (a move's reload): it loses its turns.
+  # sheathed, chi: stacking (STACKING_STATUSES), gathered and spent.
+  # masked:  wearing a mask (Battle::Masks); spent: worn out after one.
   STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away
-                aggro stop berserk confuse charged imbued shield charging doom down].freeze
+                aggro stop berserk confuse charged imbued shield charging doom down
+                burn regen reraise reflect iai reloading sheathed chi masked spent].freeze
+  # Counted in stacks rather than turns; they last until spent or KO.
+  STACKING_STATUSES = %w[sheathed chi].freeze
   # Off the field: nobody can reach them, and they can't be commanded.
   OUT_OF_REACH_STATUSES = %w[airborne away].freeze
   # Draw the other side's single-target moves.
   AGGRO_STATUSES = %w[aggro cover].freeze
-  # What a cleanse with no kind cures: everything but the good ones.
-  HARMFUL_STATUSES = (STATUSES - %w[haste cover airborne away aggro charged imbued shield charging]).freeze
+  # The good ones: what a dispel takes away.
+  BOONS = %w[haste cover aggro charged imbued shield regen reraise reflect iai sheathed chi].freeze
+  # What a steal with boon can take.
+  STEALABLE_BOONS = %w[haste shield regen reraise reflect charged imbued].freeze
+  # What a cleanse with no kind cures: everything but the good ones and
+  # the engine's own (being away, winding up, reloading, a mask).
+  HARMFUL_STATUSES = (STATUSES - BOONS - %w[airborne away charging reloading masked spent]).freeze
   # Only their own primitives make these: they carry more than a duration.
   # (down: a world's One More rule knocks units down, Battle::Resolver#one_more.)
-  PRIMITIVE_STATUSES = %w[airborne imbued shield charging down].freeze
+  PRIMITIVE_STATUSES = %w[airborne imbued shield charging down reloading sheathed chi masked spent].freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
   COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
@@ -108,11 +154,14 @@ module Battle
   #   one_more — a blow that finds a weakness or lands a critical hit knocks
   #              its target down (they lose their next turn), and whoever
   #              struck goes again at once (Battle::Resolver#one_more)
-  RULES = %w[one_more].freeze
+  #   same_type — a move of one of the user's own types is SAME_TYPE_POWER%
+  #               as strong (Pokémon's same-type bonus; Oda's mancers)
+  RULES = %w[one_more same_type].freeze
+  SAME_TYPE_POWER = 150
 
   # Statuses that stop a unit from taking its turn (and from being asked
   # for input).
-  DISABLING_STATUSES = %w[sleep paralyze stop down].freeze
+  DISABLING_STATUSES = %w[sleep paralyze stop down reloading].freeze
   # They act on their own: berserk attacks, confuse attacks anyone.
   RUNAWAY_STATUSES = %w[berserk confuse].freeze
   # No command while these last: the unit's turn is already spoken for.
@@ -123,7 +172,8 @@ module Battle
   #   mp_regen     — a little MP back at the end of each of its turns
   #   first_strike — goes before everyone in the first round
   #   second_wind  — once a battle, gets back up when knocked down
-  PASSIVES = %w[counter regen mp_regen first_strike second_wind].freeze
+  #   potency      — items in its hands work half again as well (an Apothecary)
+  PASSIVES = %w[counter regen mp_regen first_strike second_wind potency].freeze
 
   ATTACK = {
     "id" => "attack",
@@ -165,7 +215,9 @@ module Battle
     #            world's when not given. Everything typed must be one of them.
     # summons:   creatures abilities can call, as unit specs: { "eagle" => { name:, stats:, ai:, ... } }
     # rules: a world's battle rules, on top of the game's own (RULES).
-    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {})
+    # masks:  what the transform primitive puts on (Battle::Masks):
+    #         { "storm_mask" => { name:, type:, duration:, abilities: [...], image: } }
+    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {}, masks: {})
       rules = normalize(rules).select { |rule, on| RULES.include?(rule) && on == true }
       types = types ? Types.validate!(normalize(types)) : normalize(Types::DEFAULT)
       known = Types.list(types)
@@ -189,11 +241,15 @@ module Battle
         unit(spec.merge("id" => id), "party", known) # checked now, so a summon never fails mid-fight
         [ id, spec.merge("id" => id) ]
       end
+      faces = Masks.validate!(normalize(masks), library, known)
       library.each_value do |ability|
         ability["effects"].each do |effect|
-          next unless effect["primitive"] == "summon" && !creatures.key?(effect["creature"])
-
-          raise ArgumentError, "#{ability['id']}: summons #{effect['creature']}, which isn't in the battle's summons"
+          if effect["primitive"] == "summon" && !creatures.key?(effect["creature"])
+            raise ArgumentError, "#{ability['id']}: summons #{effect['creature']}, which isn't in the battle's summons"
+          end
+          if effect["primitive"] == "transform" && !faces.key?(effect["mask"])
+            raise ArgumentError, "#{ability['id']}: puts on #{effect['mask']}, which isn't in the battle's masks"
+          end
         end
       end
 
@@ -226,6 +282,7 @@ module Battle
         "units" => units,
         "inputs" => {}
       }.merge(rules.any? ? { "rules" => rules } : {})
+       .merge(faces.any? ? { "masks" => faces } : {})
     end
 
     # Where the fight is has a type; anywhere in particular is the plain one.
@@ -284,6 +341,8 @@ module Battle
        .merge(spec["level"] ? { "level" => Integer(spec["level"]) } : {})
        .merge(spec["undead"] ? { "undead" => true } : {})
        .merge(spec["boss"] ? { "boss" => true } : {})
+       .merge(spec["giant"] ? { "giant" => true } : {})
+       .merge(spec["coward"] ? { "coward" => true } : {})
        .merge(passives(id, spec))
        .merge(job_parts(id, spec, known))
     end
@@ -414,7 +473,7 @@ module Battle
       when "single_enemy"
         return "is not an enemy" unless enemy
         return "is down" unless target["hp"].positive? && !target["gone"]
-        return "is out of reach" if out_of_reach?(target)
+        return "is out of reach" if out_of_reach?(target) && !ability["reach"]
       when "single_ally"
         if enemy
           return "is not an ally" unless heals?(ability)
@@ -450,6 +509,9 @@ module Battle
       raise ArgumentError, "#{id}: HP cost must be 0 to #{MAX_HP_COST}%" unless hp.is_a?(Integer) && hp.between?(0, MAX_HP_COST)
       charge = ability.fetch("charge", 0)
       raise ArgumentError, "#{id}: charge must be 0 to #{MAX_CHARGE} turns" unless charge.is_a?(Integer) && charge.between?(0, MAX_CHARGE)
+      reload = ability.fetch("reload", 0)
+      raise ArgumentError, "#{id}: reload must be 0 to #{MAX_RELOAD} turns" unless reload.is_a?(Integer) && reload.between?(0, MAX_RELOAD)
+      raise ArgumentError, "#{id}: reach is true or false" unless [ nil, true, false ].include?(ability["reach"])
       raise ArgumentError, "#{id}: unknown kind #{ability['kind']}" unless ABILITY_KINDS.include?(ability.fetch("kind", "skill"))
       raise ArgumentError, "#{id}: unknown targeting #{ability['target']}" unless TARGETINGS.include?(ability["target"])
 
@@ -469,6 +531,7 @@ module Battle
 
         (effect.keys - [ "primitive" ] - PRIMITIVE_STRING_PARAMS).each do |param|
           raise ArgumentError, "#{id}: #{primitive} #{param} must be an integer" unless effect[param].is_a?(Integer)
+          raise ArgumentError, "#{id}: #{primitive} #{param} is 0 or 1" if PRIMITIVE_FLAGS.include?(param) && !effect[param].between?(0, 1)
         end
 
         case primitive
@@ -485,6 +548,10 @@ module Battle
           raise ArgumentError, "#{id}: bonus must be 0 to #{MAX_BONUS}" if effect["bonus"] && !effect["bonus"].between?(0, MAX_BONUS)
           raise ArgumentError, "#{id}: recoil must be 0 to 100" if effect["recoil"] && !effect["recoil"].between?(0, 100)
           raise ArgumentError, "#{id}: grudge must be 0 to #{MAX_BONUS}" if effect["grudge"] && !effect["grudge"].between?(0, MAX_BONUS)
+          raise ArgumentError, "#{id}: pierce must be 0 to 100" if effect["pierce"] && !effect["pierce"].between?(0, 100)
+          raise ArgumentError, "#{id}: boost must be 0 to #{MAX_BONUS}" if effect["boost"] && !effect["boost"].between?(0, MAX_BONUS)
+          raise ArgumentError, "#{id}: patience must be 0 to #{MAX_BONUS}" if effect["patience"] && !effect["patience"].between?(0, MAX_BONUS)
+          raise ArgumentError, "#{id}: unknown status #{effect['with']}" if effect["with"] && !STATUSES.include?(effect["with"])
           # "terrain": the type of where the fight is (a Geomancer's arts).
           typed = known.include?(effect["type"]) || effect["type"] == "terrain"
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !typed
@@ -497,12 +564,16 @@ module Battle
           # 0: for no set time, while its summoner stands (Resolver#count_down_summon).
           raise ArgumentError, "#{id}: summon stays 1 to #{MAX_SUMMON_TURNS} turns, or 0 while its summoner stands" if effect["duration"] && !effect["duration"].between?(0, MAX_SUMMON_TURNS)
           raise ArgumentError, "#{id}: summon power must be 1 to #{MAX_BONUS}" if effect["power"] && !effect["power"].between?(1, MAX_BONUS)
+        when "gather"
+          raise ArgumentError, "#{id}: #{effect['kind']} doesn't stack" unless STACKING_STATUSES.include?(effect["kind"])
+          raise ArgumentError, "#{id}: gather 1 to #{MAX_STACKS}" if effect["amount"] && !effect["amount"].between?(1, MAX_STACKS)
         when "cleanse"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" if effect["kind"] && !STATUSES.include?(effect["kind"])
         when "buff", "debuff"
           raise ArgumentError, "#{id}: cannot modify #{effect['stat']}" unless Stats::MODIFIABLE.include?(effect["stat"])
         when "heal", "drain", "shield"
           raise ArgumentError, "#{id}: power must be a positive number" if effect["power"] && effect["power"] < 1
+          raise ArgumentError, "#{id}: triage must be 0 to #{MAX_BONUS}" if effect["triage"] && !effect["triage"].between?(0, MAX_BONUS)
         end
       end
     end
