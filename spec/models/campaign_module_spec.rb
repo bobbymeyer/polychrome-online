@@ -92,7 +92,7 @@ RSpec.describe CampaignModule do
     campaign.world.monsters.find_by!(slug: "crab").image.attach(io: StringIO.new(picture), filename: "crab.png", content_type: "image/png")
 
     zip = CampaignModule::Export.new(campaign).to_zip
-    archive = CampaignModule::Archive.read(zip)
+    archive = PackageArchive.read(zip, format: CampaignModule::FORMAT)
     expect(archive.assets.size).to eq(1) # one picture, used three times, travels once
     World.where(slug: "oda").destroy_all
     world = Seeds::Oda.run
@@ -109,14 +109,16 @@ RSpec.describe CampaignModule do
     dock["location"]["overrides"] = { "name" => "The Dock", "boss" => { "kraken_of_nowhere" => 9, "crab" => 99 }, "pins" => { "room-1" => "junk" },
                                       "added_rooms" => [ { "key" => "added-1", "connect" => "room-0", "decision" => { "kind" => "explode" } } ],
                                       "progress" => { "current" => "room-3" }, "tables" => { "rooms" => [] } }
-    zip = CampaignModule::Archive.new(data).to_zip
+    zip = PackageArchive.new(CampaignModule::FORMAT, data).to_zip
     imported = CampaignModule::Import.new(zip, world: campaign.world, gm: other_gm).run!
     location = imported.map_nodes.find_by!(name: "The Airship Dock").location
     expect(location.overrides).to eq("name" => "The Dock", "boss" => { "crab" => 8 })
     expect(location.view["rooms"]).to be_present
   end
 
-  describe CampaignModule::Archive do
+  describe PackageArchive do
+    def read(source) = described_class.read(source, format: CampaignModule::FORMAT)
+
     def zip(entries)
       Zip::OutputStream.write_buffer(StringIO.new) do |out|
         entries.each { |name, body| out.put_next_entry(name); out.write(body) }
@@ -124,16 +126,16 @@ RSpec.describe CampaignModule do
     end
 
     it "refuses what isn't a module" do
-      expect { described_class.read("not a zip at all") }.to raise_error(Refusal, /isn't a campaign module/)
-      expect { described_class.read(zip("notes.txt" => "hi")) }.to raise_error(Refusal, /has no module.json/)
-      expect { described_class.read(zip("module.json" => { "format" => "something-else" }.to_json)) }.to raise_error(Refusal, /isn't a campaign module/)
+      expect { read("not a zip at all") }.to raise_error(Refusal, /isn't a campaign module/)
+      expect { read(zip("notes.txt" => "hi")) }.to raise_error(Refusal, /has no module.json/)
+      expect { read(zip("module.json" => { "format" => "something-else" }.to_json)) }.to raise_error(Refusal, /isn't a campaign module/)
       newer = { "format" => CampaignModule::FORMAT, "version" => CampaignModule::VERSION + 1 }.to_json
-      expect { described_class.read(zip("module.json" => newer)) }.to raise_error(Refusal, /newer version/)
+      expect { read(zip("module.json" => newer)) }.to raise_error(Refusal, /newer version/)
     end
 
     it "reads module.json and pictures under assets/, and nothing else" do
       body = { "format" => CampaignModule::FORMAT, "version" => 1 }.to_json
-      archive = described_class.read(zip("module.json" => body, "assets/abc.png" => "png", "../evil.rb" => "puts 1", "assets/x.rb" => "nope"))
+      archive = read(zip("module.json" => body, "assets/abc.png" => "png", "../evil.rb" => "puts 1", "assets/x.rb" => "nope"))
       expect(archive.assets.keys).to eq([ "assets/abc.png" ])
     end
   end

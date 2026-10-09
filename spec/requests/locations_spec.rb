@@ -101,6 +101,7 @@ RSpec.describe "Locations", type: :request do
       campaign.update!(current_node: cave_node)
       post location_entry_path(cave)
       expect(cave.reload.progress["current"]).to eq(cave.view["entrance"])
+      campaign.reload.wave_off_encounter! # whatever waits at the door bars the way on until it's dealt with
 
       entrance = cave.view["entrance"]
       next_room = cave.neighbours(entrance).find { |key| !cave.locked?(cave.path_between(entrance, key)) } # not behind a lock

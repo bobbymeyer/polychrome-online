@@ -15,7 +15,7 @@ module CampaignModule
     # books (Authorization#can_edit_world?). Without it, a module that
     # needs entries the world lacks is refused, and says which.
     def initialize(source, world:, gm:, can_add_books: true, name: nil)
-      @archive = source.is_a?(Archive) ? source : Archive.read(source)
+      @archive = source.is_a?(PackageArchive) ? source : PackageArchive.read(source, format: FORMAT)
       @world = world
       @gm = gm
       @can_add_books = can_add_books
@@ -42,7 +42,7 @@ module CampaignModule
       end
 
       Campaign.transaction do
-        add_books!
+        PackageBooks.add!(world, data["books"], archive, from: data["name"].presence || "the module")
         campaign = world.campaigns.create!(name: @name || data["name"].presence || "Imported campaign", gm: gm,
                                            lines: data["lines"], veils: data["veils"], open_jobs: open_jobs)
         build!(campaign)
@@ -63,47 +63,6 @@ module CampaignModule
     def int(value) = JsonCasting.integer(value)
     def list(value) = value.is_a?(Array) ? value : []
     def hash(value) = value.is_a?(Hash) ? value : {}
-
-    # --- the books ------------------------------------------------------------------
-
-    # The entries the world lacks, saved as their references allow: a move
-    # that summons a creature after the creature, a monster after its moves
-    # and forms. Pass after pass until nothing more will save.
-    def add_books!
-      pending = Books::KINDS.flat_map do |kind, scope|
-        have = world.public_send(scope).pluck(:slug)
-        rows(kind).reject { |row| have.include?(row["slug"]) }.map { |row| [ kind, scope, row ] }
-      end
-      loop do
-        saved = pending.select { |kind, scope, row| save_entry(kind, scope, row) }
-        pending -= saved
-        break if pending.empty? || saved.empty?
-      end
-      return if pending.empty?
-
-      problems = pending.map do |_, scope, row|
-        entry = build_entry(scope, row)
-        entry.valid?
-        "#{entry.name || row['slug']}: #{entry.errors.full_messages.to_sentence}"
-      end
-      raise Refusal, "#{world.name} can't take some of the module's book entries: #{problems.first(5).join('; ')}."
-    end
-
-    def save_entry(_kind, scope, row)
-      entry = build_entry(scope, row)
-      return false unless entry.save
-
-      attach(entry.image, row["image"])
-      true
-    end
-
-    def build_entry(scope, row)
-      model = world.public_send(scope)
-      columns = model.klass.column_names - Books::SKIP
-      attrs = row.slice(*columns)
-      attrs["encounter_table"] = world.encounter_tables.find_by(slug: row["encounter_table"]) if model.klass == LocationTemplate && row["encounter_table"]
-      model.new(attrs)
-    end
 
     # --- the prep ---------------------------------------------------------------------
 
@@ -292,13 +251,6 @@ module CampaignModule
       value && world.music_choice?(value, extra: %w[follow]) ? value : "follow"
     end
 
-    # A picture from the archive into its slot. A name the archive doesn't
-    # have is skipped: the slot stays empty, as in a module without art.
-    def attach(slot, name)
-      asset = name.is_a?(String) && archive.assets[name]
-      return unless asset && asset.content_type.start_with?("image/")
-
-      slot.attach(io: StringIO.new(asset.bytes), filename: File.basename(asset.name), content_type: asset.content_type)
-    end
+    def attach(slot, name) = archive.attach(slot, name)
   end
 end

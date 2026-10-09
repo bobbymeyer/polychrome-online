@@ -15,6 +15,8 @@ Rails.application.routes.draw do
   # Local co-op: the QR code on the shared screen leads here.
   get "join/:code", to: "joins#show", as: :join
   post "join/:code", to: "joins#create"
+  # A world package (WorldPackage), uploaded: a new world from it. Before the worlds, so "import" isn't read as a slug.
+  resource :world_import, path: "worlds/import", only: %i[new create]
   resources :worlds, param: :slug do
     # Each book is a resource namespace inside its world (docs/HANDOFF.md §7).
     namespace :bestiary do
@@ -69,6 +71,8 @@ Rails.application.routes.draw do
       resources :tracks, path: "music", except: :show
       # Its pocket history, rolled over the atlas and written into the canon.
       resource :history, only: %i[show update create destroy], controller: "histories"
+      # The whole world as a package, to download (WorldPackage::Export).
+      resource :package, only: :show
       # A campaign module (CampaignModule), uploaded: a new campaign from it.
       resources :campaign_modules, path: "modules", only: %i[new create]
     end

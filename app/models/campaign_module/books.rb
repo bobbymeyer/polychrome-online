@@ -9,15 +9,11 @@
 module CampaignModule
   class Books
     # In the order the world's books list them; an import saves them in as
-    # many passes as their references need (CampaignModule::Import#add_books!).
+    # many passes as their references need (PackageBooks.add!).
     KINDS = {
       "abilities" => :abilities, "items" => :items, "monsters" => :monsters,
       "encounter_tables" => :encounter_tables, "generator_tables" => :generator_tables, "location_templates" => :location_templates
     }.freeze
-    # What isn't the entry's own: its row in this database, and the
-    # template's table, which travels by slug.
-    SKIP = %w[id world_id created_at updated_at encounter_table_id].freeze
-
     attr_reader :world, :wanted
 
     def initialize(world)
@@ -54,13 +50,6 @@ module CampaignModule
         end
         found.transform_values(&:values)
       end
-    end
-
-    # An entry as the module writes it: its columns, less what's this database's.
-    def self.attributes(entry)
-      attrs = entry.attributes.except(*SKIP)
-      attrs["encounter_table"] = entry.encounter_table&.slug if entry.is_a?(LocationTemplate)
-      attrs
     end
 
     private

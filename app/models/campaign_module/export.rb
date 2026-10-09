@@ -14,7 +14,7 @@ module CampaignModule
       @assets = {}
     end
 
-    def to_zip = Archive.new(data, @assets).to_zip
+    def to_zip = PackageArchive.new(FORMAT, data, @assets).to_zip
 
     def filename = "#{campaign.name.parameterize.presence || 'campaign'}.module.zip"
 
@@ -43,7 +43,7 @@ module CampaignModule
       blob = attachment.blob
       ext = File.extname(blob.filename.to_s).delete(".").downcase.presence || Rack::Mime::MIME_TYPES.invert[blob.content_type]&.delete(".") || "png"
       name = "assets/#{blob.checksum.to_s.unpack1('m0').unpack1('H*')}.#{ext}"
-      return unless name.match?(Archive::ASSET)
+      return unless PackageArchive.asset_name?(FORMAT, name)
 
       @assets[name] ||= blob.download
       name
@@ -153,7 +153,7 @@ module CampaignModule
 
     def books
       @books.entries.to_h do |kind, entries|
-        [ kind, entries.sort_by(&:slug).map { |entry| Books.attributes(entry).merge("image" => asset(entry.image)) } ]
+        [ kind, entries.sort_by(&:slug).map { |entry| PackageBooks.attributes(entry).merge("image" => asset(entry.image)) } ]
       end
     end
   end

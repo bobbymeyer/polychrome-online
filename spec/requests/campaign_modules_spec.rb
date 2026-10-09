@@ -23,7 +23,7 @@ RSpec.describe "Campaign modules", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.media_type).to eq("application/zip")
     expect(response.headers["Content-Disposition"]).to include("dead-calm.module.zip")
-    expect(CampaignModule::Archive.read(response.body).data["name"]).to eq("Dead Calm")
+    expect(PackageArchive.read(response.body, format: CampaignModule::FORMAT).data["name"]).to eq("Dead Calm")
 
     sign_in_as(make_user("Stranger"))
     get campaign_campaign_module_path(campaign)

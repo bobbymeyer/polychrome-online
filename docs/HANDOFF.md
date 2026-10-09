@@ -18,7 +18,7 @@ This document is the design contract. Read it before writing code. Where it conf
 - No AI GM. Automating the improviser seat makes it a video game.
 - No tile maps, no tile movement, no pixel-art pipeline.
 - No AAA animation. Motion is gestural.
-- No second-author features (world export/import, edition tooling) until there is a second author. Keep the seams; don't build the features. The exception, Bobby's call: **campaign modules**, a GM's prep exported and imported (§7).
+- No edition tooling (versions, diffs, merging one world into another) until there is a second author. Keep the seams; don't build the features. Packages are built, Bobby's call: a campaign's prep as a **module**, and a whole **world** (§7).
 
 ## 2. Three layers, three tempos
 
@@ -169,6 +169,12 @@ The GM keeps families through rerolls and edits a place's past on the atlas; an 
 - **It bundles the book entries it uses**, followed through their references (`CampaignModule::Books`): a monster's moves, forms and drops, a template's tables. Importing adds whichever the world lacks and never touches one it has; adding them takes someone who can change the world's books, and a module that needs them says so to anyone else.
 - **Records point at each other by refs, entries by slug,** never by ids. A world's own music tracks don't travel. The file is untrusted: only the format's fields are read, a place's overrides only in the shapes the generator reads, and pictures only under assets/.
 
+**World packages.** A whole world travels the same way (`WorldPackage`, `PackageArchive`): a .zip of `world.json` and the pictures and music it uses, downloaded from the world's page (Export world, for those who know its lore, since it carries the GM's side) and uploaded on the worlds page (Import a world), or `bin/rails worlds:export` / `worlds:import`. Importing makes a new world, owned by whoever imported it, as "Copy this world" does from this database.
+- **It carries the setting:** the world's types, skills, terrain, rules, voice, lines and veils, words, calendar, origins and history; every book with its pictures, archetypes with their learn tables; maps, places, roads, cast with portraits, fronts and the codex; and its music, uploaded or linked.
+- **Not its campaigns:** a campaign travels as a module.
+- **Ids are remapped:** its history names places by "place-<id>", and its monsters their own tracks by "track:<id>"; both point at the new world's copies.
+- **The file is untrusted,** as a module is.
+
 **Chat.** Portrait + dialogue box. `messages` broadcast via Turbo Streams. GM has a "speak as" picker for any NPC (possession). Expression tag selects portrait variant. Whispers are scoped broadcasts. Open design question: sequential dialogue box vs simultaneous chat — leaning toward GM/NPC lines in the box and player lines in a side log.
 
 **Controllers.** Everything of one campaign lives under `app/controllers/campaigns/` and inherits `Campaigns::BaseController`, which loads the campaign; a controller adds which GM it needs (`require_table_gm` for the table's controls, `require_campaign_gm` for Prep). A world's books include `WorldScoped`. Scenes, beats and characters load through `CampaignScoped`. A refusal (`Refusal`) is answered once, in `ApplicationController`, back at the table.
@@ -192,7 +198,7 @@ The GM keeps families through rerolls and edits a place's past on the atlas; an 
 5. Dialogue box vs group chat — pick a model (see §7).
 6. Animation/DOM race — see §6.
 7. Stat derivation bugs — pure module, heavy tests.
-8. Editions — decided: **worlds are live.** A GM develops their world as they play it, so editing the Bestiary changes live campaigns, on purpose. There are no world versions and no pins. What stays stable: a battle in progress (it copies what it needs when it starts), anything a GM has pinned in a location, and the people of a place the party has been to (it keeps the name tables it was rolled from then, so the innkeeper they met keeps her name; a reroll, or letting go of that change, takes the world's tables again). Forking is copying: a new world can start from another world's books. The seed never overwrites an existing entry; `bin/rails base_world:update` does, explicitly.
+8. Editions — decided: **worlds are live.** A GM develops their world as they play it, so editing the Bestiary changes live campaigns, on purpose. There are no world versions and no pins. What stays stable: a battle in progress (it copies what it needs when it starts), anything a GM has pinned in a location, and the people of a place the party has been to (it keeps the name tables it was rolled from then, so the innkeeper they met keeps her name; a reroll, or letting go of that change, takes the world's tables again). Forking is copying: a new world can start from another world's books, here or from a world package. The seed never overwrites an existing entry; `bin/rails base_world:update` does, explicitly.
 9. Turbo Drive vs persistent game screen — game is one long-lived page fed by streams; books use ordinary Turbo Drive navigation.
 
 ## 10. Stack
