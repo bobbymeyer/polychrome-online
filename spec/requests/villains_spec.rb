@@ -31,6 +31,8 @@ RSpec.describe "A villain's boss room, at the table", type: :request do
     campaign.update!(current_node: barrow)
     lair = barrow.location
     lair.enter!
+    campaign.reload.wave_off_encounter!
+    lair.reload
     lair.move_to!(lair.add_room!(name: "The Charter Vault", connect: lair.view["entrance"], decision: { "kind" => "boss", "monsters" => { "zombie" => 1 } }))
     met = campaign.reload.start_pending_encounter!
     expect(met).to be_prelude_said # the prelude said his line at the table
@@ -59,6 +61,8 @@ RSpec.describe "A villain's boss room, at the table", type: :request do
     campaign.update!(current_node: barrow)
     lair = barrow.location
     lair.enter!
+    campaign.reload.wave_off_encounter!
+    lair.reload
     lair.move_to!(lair.add_room!(name: "The Charter Vault", connect: lair.view["entrance"], decision: { "kind" => "boss", "monsters" => { "goblin_chief" => 1, "goblin" => 2 } }))
 
     at_the_table(campaign, as: "gm")

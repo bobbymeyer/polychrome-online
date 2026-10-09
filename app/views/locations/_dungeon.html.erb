@@ -75,7 +75,10 @@
             <% path = location.path_between(here["key"], key) %>
             <% cost = path&.dig("cost") %>
             <tr class="pick-row">
-              <% if location.locked?(path) && !location.has_key?(path["lock"]) %>
+              <% if (barred = location.barred_by(here["key"], key)) %>
+                <td class="pick-row__what"><button type="button" class="pick-row__act" disabled title="<%= location.barred_line(barred) %>"><%= room["name"] %></button></td>
+                <td class="pick-row__cost">barred: win the fight here first</td>
+              <% elsif location.locked?(path) && !location.has_key?(path["lock"]) %>
                 <td class="pick-row__what"><button type="button" class="pick-row__act" disabled title="It needs <%= path['lock']['key_name'] %>, or someone to pick it"><%= room["name"] %></button></td>
                 <td class="pick-row__cost">locked: <%= path["lock"]["name"] %> (a key, or a picked lock)</td>
               <% else %>

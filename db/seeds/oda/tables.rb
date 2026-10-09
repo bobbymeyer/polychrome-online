@@ -97,10 +97,12 @@ module Seeds
                               { text: "Water tower", width: 30, height: 110, roof: "dome" } ] },
       town_stock: { name: "Town stock", kind: "stock",
                     entries: %w[tonic strong_tonic smelling_salts charcoal_draught eyewash smoke_pot fire_shot thunder_shot water_shot stone_shot wind_shot
-                                court_blade stiletto charge_rod healers_staff mesa_bow wheellock duster monks_wrap mancers_robe lacquered_hat
+                                court_blade stiletto charge_rod healers_staff mesa_bow wheellock partisan target_shield burgonet half_plate
+                                duster monks_wrap mancers_robe lacquered_hat
                                 powder_horn lucky_mark iron_bracer].map { |item| { item: item } } },
       clock_stock: { name: "Gearhold stock", kind: "stock",
                      entries: %w[tonic strong_tonic smelling_salts panacea charcoal_draught noon_blade quay_knife seam_rod bell_staff long_rifle brigandine
+                                 halberd pavise close_helm gearhold_plate
                                  mancers_robe lacquered_hat powder_horn].map { |item| { item: item } } },
       mine_rooms: { name: "Mine rooms", kind: "rooms",
                     entries: texts("Pithead", "Cage Shaft", "Powder Store", "Gallery", "Glowing Drift", "Foreman's Hut", "Flooded Sump", "Crystal Face",

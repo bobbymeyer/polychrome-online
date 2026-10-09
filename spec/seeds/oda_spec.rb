@@ -11,9 +11,9 @@ RSpec.describe Seeds::Oda do
 
   def gm(name) = User.create!(name: name, email_address: "#{name.parameterize}@example.com", password: "a-long-enough-password")
 
-  it "seeds the eleven archetypes and the books they need" do
+  it "seeds the thirteen archetypes and the books they need" do
     expect(world.jobs.pluck(:name)).to contain_exactly("Courtsword", "Firemancer", "Watermancer", "Thundermancer", "Earthmancer", "Windmancer",
-                                                       "Thief", "Monk", "Magician", "Healer", "Ranger")
+                                                       "Thief", "Monk", "Magician", "Healer", "Ranger", "Soldier", "Bodyguard")
     expect(world.abilities.count).to be >= 100
     expect(world.items.masks).to be_empty # the seven are Dead Calm's
     expect(world.monsters.where(giant: true).count).to be >= 2
@@ -58,6 +58,15 @@ RSpec.describe Seeds::Oda do
     end
     expect(world.jobs.find_by!(slug: "monk").abilities.sum(:mp_cost)).to eq(0) # gave up powder
     expect(world.jobs.find_by!(slug: "healer").passive).to eq("potency")
+  end
+
+  it "puts the heavy fighters in plate: the Courtsword, the Soldier, and the Bodyguard in all the best of it" do
+    plate = world.items.find_by!(slug: "gearhold_plate")
+    wearers = world.jobs.select { |job| job.equips?(plate) }.map(&:name)
+    expect(wearers).to contain_exactly("Courtsword", "Soldier", "Bodyguard")
+    expect(world.jobs.select { |job| job.equips?(world.items.find_by!(slug: "pavise")) }.map(&:name)).to eq([ "Bodyguard" ])
+    expect(world.jobs.find_by!(slug: "bodyguard").passive).to eq("guardian")
+    expect(world.generator_tables.find_by!(slug: "clock_stock").entries.map { |e| e["item"] }).to include("gearhold_plate", "pavise", "halberd")
   end
 
   it "writes the mancers from one form: four measures, a trick, a load" do

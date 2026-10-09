@@ -41,7 +41,8 @@ module GlossaryHelper
     "mp_regen" => [ "Clear Mind", "A little MP back at the end of each of your turns." ],
     "first_strike" => [ "First Strike", "In the first round of a fight, you go before anyone." ],
     "second_wind" => [ "Second Wind", "Once a battle, get back up at a quarter HP when knocked down." ],
-    "potency" => [ "Potency", "Items work half again as well in your hands." ]
+    "potency" => [ "Potency", "Items work half again as well in your hands." ],
+    "guardian" => [ "Guardian", "When a blow is meant for a badly hurt ally, you step in front of it and take it yourself." ]
   }.freeze
 
 

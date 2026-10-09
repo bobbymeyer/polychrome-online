@@ -60,6 +60,26 @@ RSpec.describe Seeds::DeadCalm do
     end
   end
 
+  it "keeps each twist behind its guardian until the guardian falls" do
+    party = [ create_character(campaign, name: "Kei", job: world.jobs.find_by!(slug: "courtsword")) ]
+    dock = place("The Airship Dock")
+    campaign.update!(current_node: dock)
+    loc = dock.location
+    berth = loc.view["boss"]
+    loc.update!(progress: { "current" => berth, "visited" => [ berth ] })
+    expect { loc.move_to!("added-1") }.to raise_error(Refusal, /A fight still waits in The deep berth \(Crab\)/)
+    campaign.waylay!("The master of The Airship Dock", { "crab" => 1 }, boss: true, location: loc.id, room: berth)
+    campaign.wave_off_encounter! # a boss waved off still waits
+    expect { loc.reload.move_to!("added-1") }.to raise_error(Refusal)
+    campaign.waylay!("The master of The Airship Dock", { "crab" => 1 }, boss: true, location: loc.id, room: berth)
+    battle = campaign.start_pending_encounter!
+    battle.enemies.each { |unit| battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => unit.id, "value" => 0 }, actor: "gm") unless battle.over? }
+    expect(battle.reload.status).to eq("victory")
+    loc.reload.move_to!("added-1")
+    expect(loc.reload.current_room_key).to eq("added-1")
+    expect(party.first).to be_present
+  end
+
   it "puts Amethyst 7A in the Head's last room, and casts the duellists" do
     head = place("Founders' Hill").location
     expect(head.resident_villain.name).to eq("Amethyst 7A")

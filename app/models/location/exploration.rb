@@ -66,6 +66,29 @@ module Location::Exploration
     update!(progress: progress.merge("resolved" => progress.fetch("resolved", []) - [ key ]))
   end
 
+  # --- what bars the way --------------------------------------------------------
+
+  # A fight still waiting in a room (an encounter or the master) bars the
+  # ways on from it, deeper in: it's won, or an ordinary one waved off,
+  # before the party goes past. The way back stays open. Returns the room
+  # that bars the way from one room to the next, or nil.
+  def barred_by(from, to)
+    here = room(from)
+    there = room(to)
+    return unless here && there && FIGHTS.include?(here.dig("decision", "kind")) && !resolved?(from)
+
+    here if there["depth"].to_i > here["depth"].to_i
+  end
+
+  FIGHTS = %w[encounter boss].freeze
+
+  # How the table hears it: "A fight still waits in The deep berth (Crab): …".
+  def barred_line(room)
+    who = (resident_villain&.name if room.dig("decision", "kind") == "boss")
+    who ||= campaign.world.monsters.where(slug: (room.dig("decision", "monsters") || {}).keys).pluck(:name).to_sentence.presence
+    "A fight still waits in #{room['name']}#{" (#{who})" if who}: win it before going on, or go back."
+  end
+
   # --- locks and keys ----------------------------------------------------------
 
   # Lock ids whose keys the party has found here.
@@ -189,6 +212,8 @@ module Location::Exploration
 
     target = room(key) or raise Refusal, "No such room"
     raise Refusal, "That room isn't next to this one" if from && !neighbours(from).include?(key)
+    barred = from && barred_by(from, key)
+    raise Refusal, barred_line(barred) if barred
 
     path = from && path_between(from, key)
     lock = path && locked?(path) ? path["lock"] : nil

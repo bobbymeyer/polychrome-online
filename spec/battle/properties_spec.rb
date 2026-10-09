@@ -232,8 +232,10 @@ RSpec.describe "Battle resolver properties" do
         moves = ->(list) { list.select { |e| %w[attack cast].include?(e["type"]) && e["actor"] == event["actor"] && !e["mimicked"] } }
         before = moves.(events[0...i]).last
         after = moves.(events[(i + 1)..]).first
-        # A desperation move isn't the command: the other go is the command's move.
+        # A desperation move isn't the command: the other go is the command's move, unless the
+        # desperation move takes the other go's place itself.
         desperate = events[0...i].any? { |e| e["type"] == "desperation" && e["actor"] == event["actor"] }
+        desperate ||= after && events[(i + 1)...events.index(after)].any? { |e| e["type"] == "desperation" && e["actor"] == event["actor"] }
         expect(after["ability"]).to eq(before["ability"]) if before && after && !before["desperation"] && !desperate
       end
     end

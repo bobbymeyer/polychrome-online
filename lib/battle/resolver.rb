@@ -1048,15 +1048,28 @@ module Battle
       end
     end
 
-    # Cover: a unit meant for this blow has an ally standing in front of it.
+    # Cover: a unit meant for this blow has an ally standing in front of it:
+    # one guarding the party (cover, aggro), or else one with the guardian
+    # passive when the blow is meant for someone already wounded, and the
+    # guardian is in better shape than they are and free to move.
     def covered(target)
       return target unless target
 
       guard = ctx.allies(target).find { |a| a != target && AGGRO_STATUSES.any? { |k| ctx.status?(a, k) } && !ctx.out_of_reach?(a) }
+      guard ||= guardian_for(target)
       return target unless guard
 
       ctx.emit(:covered, unit: guard["id"], for: target["id"])
       guard
+    end
+
+    def guardian_for(target)
+      return unless ctx.hp_percent(target) <= WOUNDED_PERCENT
+
+      ctx.allies(target).find do |ally|
+        ally != target && Array(ally["passives"]).include?("guardian") && ctx.hp_percent(ally) > ctx.hp_percent(target) &&
+          !ctx.disabled?(ally) && !ctx.out_of_reach?(ally) && !ctx.status?(ally, "charging")
+      end
     end
 
     def close_round(inputs)

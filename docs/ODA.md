@@ -26,6 +26,8 @@ The code says `Job`; screens say archetype. Each has its type, skills, field abi
 | Magician | Thunder | Quick | Clear Mind | money |
 | Healer | Water | Triage | Potency | a rumour |
 | Ranger | Shot | Call Hawk | First Strike | money |
+| Soldier | Steel | Pike Thrust | Counter | money |
+| Bodyguard | Earth | Guard | Guardian | money |
 
 ### 2.1 Courtsword
 
@@ -92,6 +94,32 @@ Control, not damage.
 - **Call Hawk** brings a companion that `stays` the whole battle; **Call Hound** brings one for three turns.
 - **Typed shot** (fire, thunder, water, stone, wind) is ammunition in the Armory that anyone can fire.
 
+### 2.8 Soldier
+
+Pike, matchlock and plate. The straight heavy fighter.
+
+- **Wears** spears, swords and guns, heavy armour and helmets. No shield: a pike takes both hands.
+- **Pike Thrust** goes through part of the target's defence (`pierce`).
+- **Halberd Sweep** cuts the whole line, and **Fire at Will** is three shots at random.
+- **War Cry** strengthens the Soldier; **Rally** strengthens the party.
+- **Butt Stroke** can stun (paralyze).
+- **Kick It In** (field ability) has the `unlock` outcome, on Brawn: the Thief's pick, with a boot.
+- **Forlorn Hope** is their desperation move: a charge on everyone, harder the more hurt they are.
+
+### 2.9 Bodyguard
+
+The tank: in front of the blow meant for someone else, and in the heaviest of everything.
+
+- **Wears** the most defence there is: heavy armour, helmets, and the only shields in Oda. Swords or knives. Defence +20%, and the most HP of anyone.
+- **Guardian** (passive, FF5's Cover): a single blow meant for a badly hurt ally (30% HP or less) comes to the Bodyguard instead, if they're in better shape and free to move.
+- **Guard** (`cover` status) takes every single blow meant for the party, for three turns.
+- **Brace** raises their own defences, **Interpose** shields an ally, **Shield Wall** raises the party's defence, and **Unbreakable** gives regen and a great deal of defence.
+- **Shield Bash** can stun.
+- **Escort** (field ability) has the `safe_road` outcome, on Nerve.
+- **Last Stand** is their desperation move: everything they've taken, given back at once.
+
+The **Courtsword** wears heavy armour too.
+
 ## 3. The engine, piece by piece
 
 | Piece | Where | Who it's for |
@@ -108,6 +136,7 @@ Control, not damage.
 | `steal` with `boon` | `Effects#steal_boon` | Thief |
 | `triage`, `potency` | `Effects#heal`, `#revive` | Healer |
 | `summon` with `stays` | `Resolver#count_down_summon` | Ranger |
+| the `guardian` passive | `Resolver#covered` | Bodyguard |
 | `transform`, the `masked` and `spent` statuses | `Battle::Masks` | masks |
 
 The property specs (`spec/battle/properties_spec.rb`) run all of it, and `spec/battle/oda_spec.rb` checks each piece.
@@ -169,6 +198,10 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
   - It waits in its room until the GM has someone disarm it (a check) or lets it go off.
   - Walking on past it sets it off.
   - On the floorplan it is an amber triangle.
+- **A fight bars the way on.** Ways on from a room deeper in stay shut while its fight is still waiting (`Location::Exploration#barred_by`).
+  - An encounter opens them when it's won or the GM waves it off. The master's room opens them only when it's won.
+  - The way back always stays open.
+  - The table's ways on leave a barred way out and name it, as they do a locked door.
 
 ## 7. Settled while building
 

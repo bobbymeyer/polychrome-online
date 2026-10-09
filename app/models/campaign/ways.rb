@@ -223,8 +223,12 @@ module Campaign::Ways
     here = dungeon.current_room_key
     dungeon.neighbours(here).filter_map do |key|
       path = dungeon.path_between(here, key)
-      "#{path['lock']['name']} (needs #{path['lock']['key_name']})" if dungeon.locked?(path) && !dungeon.has_key?(path["lock"])
-    end
+      if dungeon.locked?(path) && !dungeon.has_key?(path["lock"])
+        "#{path['lock']['name']} (needs #{path['lock']['key_name']})"
+      elsif dungeon.barred_by(here, key)
+        "The way on from #{dungeon.room(here)['name']} (win the fight first)"
+      end
+    end.uniq
   end
 
   private
@@ -233,7 +237,7 @@ module Campaign::Ways
     here = dungeon.current_room_key
     ways = dungeon.neighbours(here).filter_map do |key|
       path = dungeon.path_between(here, key)
-      [ key, path ] unless dungeon.locked?(path) && !dungeon.has_key?(path["lock"])
+      [ key, path ] unless (dungeon.locked?(path) && !dungeon.has_key?(path["lock"])) || dungeon.barred_by(here, key)
     end
     way_out = here == dungeon.view["entrance"] ? [ { "label" => "Leave #{dungeon.name}", "move" => { "location" => dungeon.id, "leave" => true } } ] : []
     unseen = ways.map(&:first).reject { |key| dungeon.seen_by_players?(key) }

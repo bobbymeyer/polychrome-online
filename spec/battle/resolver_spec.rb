@@ -731,6 +731,26 @@ RSpec.describe Battle::Resolver do
       expect(of_type(events, :covered).map { |e| e["for"] }.uniq).to include("mage") if of_type(events, :covered).any?
     end
 
+    it "has a guardian step in front of a blow meant for a wounded ally, and not for a healthy one" do
+      guardian = knight.merge(passives: %w[guardian])
+      covers = (1..6).flat_map do |seed|
+        state = with_unit(build_battle(seed: seed, party: [ guardian, mage ], enemies: brute), "mage", hp: 200) # wounded: 22%
+        _, events = round(state, "knight" => { kind: "defend" }, "mage" => { kind: "defend" })
+        expect(of_type(events, :damage).select { |e| e["actor"] == "brute" }.map { |e| e["target"] }).to all(eq("knight"))
+        of_type(events, :covered)
+      end
+      expect(covers).not_to be_empty
+      expect(covers).to all(include("unit" => "knight", "for" => "mage"))
+
+      # Healthy, the mage takes their own blows; a guardian worse off than them doesn't step in either.
+      healthy = build_battle(seed: 2, party: [ guardian, mage ], enemies: brute)
+      _, events = round(healthy, "knight" => { kind: "defend" }, "mage" => { kind: "defend" })
+      expect(of_type(events, :covered)).to be_empty
+      worse = with_unit(with_unit(build_battle(seed: 2, party: [ guardian, mage ], enemies: brute), "mage", hp: 200), "knight", hp: 100)
+      _, events = round(worse, "knight" => { kind: "defend" }, "mage" => { kind: "defend" })
+      expect(of_type(events, :covered)).to be_empty
+    end
+
     it "takes a Dragoon out of reach for a round, then lands the blow" do
       state = build_battle(seed: 2, party: [ knight.merge(agi: 50, stats: tough.merge("agi" => 50)) ], enemies: brute)
       state, events = round(state, "knight" => { kind: "ability", ability: "jump", target: "brute" })
