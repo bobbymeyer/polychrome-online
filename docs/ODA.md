@@ -189,3 +189,29 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 - **Mix** (two items into one).
 - **A giant's second phase** (growing on the field).
 - **Rumour-travelling shame:** a coward is known everywhere at once, not town by town.
+
+## 9. Dead Calm, a written campaign
+
+`db/seeds/campaigns/dead_calm.rb` is Bobby's kaiju-mecha campaign, started for a GM with `bin/rails "campaigns:seed[dead_calm,gm@example.com]"`. It makes a campaign in Oda from a blank map, since the island is cut off from the mainland. Run again, it finds that GM's campaign rather than making another.
+
+- **Oda's books gain** (only what's missing):
+  - each guardian and its forms;
+  - the mooks and duellists;
+  - the seven plain masks;
+  - a five-room dungeon template.
+- **The island's map** has the city's tiers laid out as she lies under them. Each dungeon is rolled as one corridor, and its rooms are pinned to the entrance, puzzle, setback and guardian. The twist is a room past the guardian.
+- **The rest of the campaign:**
+  - the cast;
+  - the Seven Signs and the Torso's siege, as clocks;
+  - the founding secrets, as chains of clues;
+  - the scenes, from the cold open to the seven mask visions;
+  - the GM's checklist, as flags.
+- **The notes' types are mapped onto Oda's.** Rock and Ground are Earth, Bug and Flying are Wind, Normal is Steel, Poison/Grass is Earth with a poison bite, and Ghost/Steel is Steel.
+- **Some of the notes' patterns are the GM's to play**, because the engine doesn't do them:
+  - striking first on a riposte;
+  - "whoever hit it last";
+  - interrupting a telegraph;
+  - freeing a grabbed ally.
+
+  Each dungeon's GM notes say which.
+- **The Giant Battle is not built.**
