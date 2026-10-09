@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-# The Grimoire: each archetype's lessons, the creatures' moves, and the
-# masks' (docs/ODA.md). Numbers follow the Base World's tuning for a
-# level-5 party. (Seeds::Oda)
+# The Grimoire: each archetype's lessons and the creatures' moves
+# (docs/ODA.md). Numbers follow the Base World's tuning for a level-5
+# party. (Seeds::Oda)
 module Seeds
   module Oda
     # The five Mancers, written from one form: four measures of the one
@@ -249,21 +249,6 @@ module Seeds
               description: "Hurt, it gets bigger." },
       rust_breath: { name: "Rust Breath", kind: "skill", target: "single_enemy", mp_cost: 0, effects: [ { primitive: "debuff", stat: "def", amount: 40, duration: 3 } ],
                      description: "Everything metal it breathes on goes soft." },
-
-      # --- the masks' own moves (Battle::Masks) -------------------------------------------
-      raijin_strike: { name: "Raijin Strike", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash",
-                       effects: [ { primitive: "physical", power: 130, type: "thunder" } ], description: "The Storm Mask's: lightning, on purpose." },
-      foxfire: { name: "Foxfire", kind: "magic", target: "all_enemies", mp_cost: 0, gesture: "flash",
-                 effects: [ { primitive: "elemental", type: "fire", power: 30 } ], description: "The Ember Fox Mask's: pale fires that dance between them." },
-      riptide: { name: "Riptide", kind: "magic", target: "single_enemy", mp_cost: 0, gesture: "flash",
-                 effects: [ { primitive: "elemental", type: "water", power: 50 } ], description: "The Tide Mask's: the sea, all at once." },
-      mountain_breaker: { name: "Mountain Breaker", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
-                          effects: [ { primitive: "physical", power: 220, type: "earth", pierce: 50 } ], description: "The Stone Mask's: one blow, made for giants." },
-      cyclone_edge: { name: "Cyclone Edge", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "spin",
-                      effects: [ { primitive: "physical", power: 110, type: "wind" } ], description: "The Gale Mask's: a turning blade of wind." },
-      swallow_the_light: { name: "Swallow the Light", kind: "magic", target: "single_enemy", mp_cost: 0, gesture: "fade",
-                           effects: [ { primitive: "elemental", type: "deep", power: 60 }, { primitive: "drain", power: 20 } ],
-                           description: "The Hollow Mask's: the deep, given a mouth." }
     ).freeze
   end
 end

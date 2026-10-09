@@ -10,8 +10,8 @@ Oda is the third seeded setting (`db/seeds/oda/`), and the home of its archetype
 - **Types** (`worlds.damage_types`): Steel (the plain one), Shot (through armour), five powders round a circle (water quenches fire, fire burns wind, wind wears down earth, earth grounds thunder, thunder boils water), and Deep, what the giants are made of: steel and shot glance off it, and it breaks both.
 - **Same type** is on (`Battle::RULES` `same_type`): a move of one of the user's own types is half again as strong.
 - **The law.** Whoever refuses a duel is a coward, and a coward has no place in this world (§4).
-- **Masks** are rare treasure (§5). **Giants** wake when a seam is dug too deep.
-- **The atlas.** Noonbell, where every campaign starts, under the bell that rings for duels. Saltpeter, the powder town. Gearhold, the clock town, and the mask-maker's workshop behind it. Mines, forts and a drowned belfry. The cast: Silas Crane (the Smiling Draw, a duellist), Marrow Vey (who woke the giants), Mother Quill (who made the masks), and a bought sheriff.
+- **Masks** belong to one campaign, Dead Calm: there are seven, and that's all (§5, §9). **Giants** wake when a seam is dug too deep.
+- **The atlas.** Noonbell, where every campaign starts, under the bell that rings for duels. Saltpeter, the powder town. Gearhold, the clock town. Mines, forts and a drowned belfry. The cast: Silas Crane (the Smiling Draw, a duellist), Marrow Vey (who woke the giants), and a bought sheriff.
 
 ## 2. The archetypes
 
@@ -149,7 +149,7 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 
 ## 5. Masks
 
-- **In the Armory:** items of category `mask`, worn as an accessory by anyone. Each has its own type, turns and moves (`items.mask`). Oda has six: Storm, Ember Fox, Tide, Stone, Gale and the Hollow Mask.
+- **In the Armory:** items of category `mask`, worn as an accessory by anyone. Each has its own type, turns and moves (`items.mask`). There are seven, all Dead Calm's (§9): Red, Orange, Yellow, Green, Indigo, Blue and Violet. Oda's own books have none, and its atlas, cast, tables and codex never mention them.
 - **Never sold:** found as treasure, or given by the GM.
 - **Its Don.** Wearing one puts **Don the … Mask** on the menu (`Item#don_ability`).
 - **Putting it on** (`transform`), for its turns, the wearer gains:
@@ -181,7 +181,7 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 7. **Fire's rider** is a status of its own: burn.
 8. **The Monk** banks chi rather than chaining forms.
 9. **The Ranger** has a hawk that stays and a hound for three turns.
-10. **Masks** are one of each per campaign by custom: nothing stops a GM from granting a second.
+10. **Masks** are Dead Calm's seven, each worn by a guardian and dropped when it falls. They live in Oda's Armory, because items are a world's, but nothing else in Oda hands them out.
 
 ## 8. Not done
 

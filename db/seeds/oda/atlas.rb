@@ -19,14 +19,13 @@ module Seeds
                                    "Haggle on the quays (Dusk, money 25, rumour): Powder, pelts, gossip, by the crate.",
                        night_line: "Saltpeter by night: the refineries glow red, and the quays are busier than by day." },
       "Gearhold" => { kind: "town", template: "clock_town", x: 230, y: 230, known: true, seed: 303,
-                      description: "A walled town of clockmakers and gunsmiths on a mesa top, and the mask-maker's quarter behind a locked gate.",
-                      notes: "Mother Quill, the mask-maker, lives behind the gate. She remembers every mask she ever made, and where it went.",
+                      description: "A walled town of clockmakers and gunsmiths on a mesa top.",
                       activities: "Wind the town clock (Dawn, money 20): Three hundred steps up and a key as long as your arm.\n" \
                                   "Sit with a gunsmith (Noon, 2, exp 20): Springs, wheels and patience.",
                       night_line: "Gearhold by night: a thousand clocks ticking behind shutters." },
       "The Deep Seam" => { kind: "dungeon", template: "powder_mine", x: 700, y: 210, known: true, seed: 304,
                            description: "The Powder Company's deepest mine, following a seam of pure red salt down past where anyone should have stopped. The miners say it breathes.",
-                           notes: "The Seam Giant waits at the deepest face. Masks meet it as equals; without one, it's a long fight.",
+                           notes: "The Seam Giant waits at the deepest face. It's a long fight.",
                            past: { "was" => "mine", "founded" => 380, "family" => "Vey", "holder" => "Vey", "fall" => { "kind" => "waking", "ago" => 1 },
                                    "lost" => [ "The ninth shift" ], "edited" => true },
                            night_line: "The Deep Seam by night: the pithead lamps, and a glow from below that isn't lamps." },
@@ -44,11 +43,7 @@ module Seeds
                            activities: "Hunt the mesas (Dawn, 2, find 100): A long day, a clean shot, and a pelt." },
       "The Powder Flats" => { kind: "wilds", x: 800, y: 330, known: true,
                               description: "Where the seams come to the surface: crusted white and red and yellow, crunching underfoot, and very easy to set alight.",
-                              activities: "Skim surface salt (Dawn, 2, find 120): A sack, a scraper, and never a naked flame." },
-      "The Mask-Maker's Workshop" => { kind: "landmark", x: 250, y: 120, known: false,
-                                       description: "Behind Gearhold's locked gate: a workshop full of faces, half of them unfinished, and an old woman who talks to them.",
-                                       notes: "Mother Quill made eleven masks and remembers each one. She'll tell the party where one went for a favour, or a good story.",
-                                       lead: "The masks of Oda were made in Gearhold, behind a locked gate, by a woman who's still alive." }
+                              activities: "Skim surface salt (Dawn, 2, find 120): A sack, a scraper, and never a naked flame." }
     }.freeze
 
     ROUTES = [
@@ -59,7 +54,6 @@ module Seeds
                                         travel_event: "Company wagons on the road, all going one way, and the ground warm underfoot." } ],
       [ "Saltpeter", "The Powder Flats", { state: "dangerous", encounters: "powder_flats", duration: 1 } ],
       [ "Saltpeter", "The Drowned Belfry", { state: "dangerous", encounters: "the_belfry", duration: 2 } ],
-      [ "Gearhold", "The Mask-Maker's Workshop", { state: "blocked", duration: 1, travel_event: "Through the locked gate, if someone opens it." } ],
       [ "Gearhold", "Fort Cinder", { state: "dangerous", encounters: "mesa_road", duration: 1 } ],
       [ "The Red Mesas", "The Deep Seam", { state: "dangerous", encounters: "mesa_road", duration: 1 } ]
     ].freeze
@@ -74,9 +68,6 @@ module Seeds
       "Marrow Vey" => { title: "Overseer of the Deep Seam", monster: "overseer", place: "Saltpeter", colour: "steel_grey",
                         blurb: "Runs the Powder Company's deepest mine. Digs where the old maps say not to.",
                         description: "Knows the giants are real: his ninth shift woke one. The Company wants more red salt than any seam can give, and he'd rather feed it miners than tell it no. He refuses every duel he's offered, and pays the shame price without blinking." },
-      "Mother Quill" => { title: "The mask-maker of Gearhold", place: "Gearhold", colour: "sun_yellow",
-                          blurb: "Made the masks of Oda. All of them. Still alive, behind a locked gate.",
-                          description: "Made eleven masks over sixty years and will make no more. She knows the Hollow Mask isn't one of hers, and it frightens her." },
       "Wade Ashdown" => { title: "Sheriff of Noonbell", place: "Noonbell", colour: "blue",
                           blurb: "Wears the star and the Company's coat over it.",
                           description: "Bought, and knows it. Rings the bell for Silas's duels himself and hates every one." }
@@ -104,8 +95,7 @@ module Seeds
             mode_description: "A giant woke from the Deep Seam and came to Saltpeter. The outfitter is shut and everyone who can is leaving." }
         ],
         secrets: [
-          { body: "The ninth shift didn't die in a cave-in. They woke a giant, and Vey sealed the gallery with them inside.", place: "The Deep Seam", figure: "Marrow Vey" },
-          { body: "The Hollow Mask was made from the deep itself. Whoever wears it, the deep wears back.", figure: "Mother Quill" }
+          { body: "The ninth shift didn't die in a cave-in. They woke a giant, and Vey sealed the gallery with them inside.", place: "The Deep Seam", figure: "Marrow Vey" }
         ]
       },
       "The forty-second duel" => {

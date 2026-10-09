@@ -15,7 +15,7 @@ RSpec.describe Seeds::DeadCalm do
 
   it "adds its guardians, their forms, its masks and its dungeon to Oda's books, all valid" do
     expect(world.slug).to eq("oda")
-    expect(world.items.masks.where(slug: %w[red_mask orange_mask yellow_mask green_mask indigo_mask blue_mask violet_mask]).count).to eq(7)
+    expect(world.items.masks.pluck(:slug)).to contain_exactly(*%w[red_mask orange_mask yellow_mask green_mask indigo_mask blue_mask violet_mask])
     slugs = described_class::MONSTERS.keys.map(&:to_s)
     [ world.abilities.where(slug: described_class::ABILITIES.keys.map(&:to_s)), world.items.where(slug: described_class::ITEMS.keys.map(&:to_s)),
       world.monsters.where(slug: slugs), world.location_templates.where(slug: "five_rooms") ].each do |scope|

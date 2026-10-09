@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# The Outfitter: remedies, powder shot, each kind of gear in three steps,
-# and the masks, which no outfitter sells. (Seeds::Oda)
+# The Outfitter: remedies, powder shot, and each kind of gear in three
+# steps. Oda has no masks of its own: there are seven, and they are Dead
+# Calm's (db/seeds/campaigns/dead_calm). (Seeds::Oda)
 module Seeds
   module Oda
     ITEMS = {
@@ -62,27 +63,7 @@ module Seeds
       lacquered_hat: { name: "Lacquered Hat", category: "hat", price: 450, stats: { def: 5, mdef: 5 }, description: "Black lacquer, red cord. Turns rain and the odd blade." },
       powder_horn: { name: "Powder Horn", category: "accessory", price: 300, stats: { mag: 3 }, description: "A horn of good powder: every measure goes further." },
       lucky_mark: { name: "Lucky Mark", category: "accessory", price: 400, stats: { agi: 3 }, description: "A coin with a hole shot through it. Someone was lucky once." },
-      iron_bracer: { name: "Iron Bracer", category: "accessory", price: 350, stats: { def: 5 }, description: "For catching a blade on the arm." },
-
-      # --- the masks: rare treasure. Never in a shop; found, earned, inherited (Battle::Masks).
-      storm_mask: { name: "Storm Mask", category: "mask", price: 0, stats: { spr: 2 },
-                    mask: { type: "thunder", duration: 3, abilities: %w[raijin_strike] },
-                    description: "A horned face in black lacquer that crackles when it's angry. Its last wearer rang the noon bell with it on, and the bell melted." },
-      ember_fox_mask: { name: "Ember Fox Mask", category: "mask", price: 0, stats: { mag: 2 },
-                        mask: { type: "fire", duration: 3, abilities: %w[foxfire] },
-                        description: "A white fox with red-lined eyes. It smells of smoke and laughs at its own jokes." },
-      tide_mask: { name: "Tide Mask", category: "mask", price: 0, stats: { mdef: 4 },
-                   mask: { type: "water", duration: 3, abilities: %w[riptide] },
-                   description: "Pale blue, smooth as a pebble, always cold and always a little wet." },
-      stone_mask: { name: "Stone Mask", category: "mask", price: 0, stats: { def: 4 },
-                    mask: { type: "earth", duration: 4, abilities: %w[mountain_breaker] },
-                    description: "Carved from a giant's tooth. Made to meet the deep on equal terms." },
-      gale_mask: { name: "Gale Mask", category: "mask", price: 0, stats: { agi: 2 },
-                   mask: { type: "wind", duration: 3, abilities: %w[cyclone_edge] },
-                   description: "A hawk's face in green lacquer. Whoever wears it never quite touches the ground." },
-      hollow_mask: { name: "Hollow Mask", category: "mask", price: 0, stats: { mag: 3 },
-                     mask: { type: "deep", duration: 2, abilities: %w[swallow_the_light] },
-                     description: "No face at all, just a dark that goes back further than the mask is deep. Mother Quill won't say who made it." }
+      iron_bracer: { name: "Iron Bracer", category: "accessory", price: 350, stats: { def: 5 }, description: "For catching a blade on the arm." }
     }.freeze
   end
 end

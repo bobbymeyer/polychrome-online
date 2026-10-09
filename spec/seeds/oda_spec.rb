@@ -15,10 +15,10 @@ RSpec.describe Seeds::Oda do
     expect(world.jobs.pluck(:name)).to contain_exactly("Courtsword", "Firemancer", "Watermancer", "Thundermancer", "Earthmancer", "Windmancer",
                                                        "Thief", "Monk", "Magician", "Healer", "Ranger")
     expect(world.abilities.count).to be >= 100
-    expect(world.items.masks.count).to eq(6)
+    expect(world.items.masks).to be_empty # the seven are Dead Calm's
     expect(world.monsters.where(giant: true).count).to be >= 2
-    expect(world.world_places.count).to eq(9)
-    expect(world.world_figures.count).to eq(4)
+    expect(world.world_places.count).to eq(8)
+    expect(world.world_figures.count).to eq(3)
     expect(world.world_fronts.count).to eq(2)
   end
 
@@ -73,7 +73,7 @@ RSpec.describe Seeds::Oda do
     party = world.jobs.order(:name).map do |job|
       gear = world.items.select { |item| item.equipment? && !item.mask? && job.equips?(item) }.group_by(&:slot).values.map(&:first)
       stats = Stats::Derivation.derive(base: base, job: job.to_derivation, equipment: gear.map(&:to_equipment), passives: job.passives)
-      { id: job.slug, name: job.name, stats: stats, abilities: job.abilities.pluck(:slug) + [ job.signature, "don_storm_mask" ] }
+      { id: job.slug, name: job.name, stats: stats, abilities: job.abilities.pluck(:slug) + [ job.signature ] }
     end
     world.monsters.find_each do |monster|
       state = world.battle(seed: monster.id, party: party.sample(4, random: Random.new(monster.id)), monsters: { monster.slug => 2 })
@@ -90,8 +90,8 @@ RSpec.describe Seeds::Oda do
     campaign = world.campaigns.create!(name: "High Noon", gm: gm("Oda GM"))
     campaign.set_out!(from_the_setting: true)
     expect(campaign.current_node.name).to eq("Noonbell")
-    expect(campaign.map_nodes.where(visible: false).pluck(:name)).to contain_exactly("Fort Cinder", "The Drowned Belfry", "The Mask-Maker's Workshop")
-    expect(campaign.npcs.pluck(:name)).to include("Silas Crane", "Marrow Vey", "Mother Quill")
+    expect(campaign.map_nodes.where(visible: false).pluck(:name)).to contain_exactly("Fort Cinder", "The Drowned Belfry")
+    expect(campaign.npcs.pluck(:name)).to include("Silas Crane", "Marrow Vey", "Wade Ashdown")
     expect(campaign.duellists.pluck(:name)).to include("Silas Crane")
     expect(campaign.clocks.pluck(:name)).to include("The seam goes deeper", "The Smiling Draw's tally")
   end

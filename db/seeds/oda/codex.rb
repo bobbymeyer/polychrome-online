@@ -10,7 +10,7 @@ module Seeds
               "coward, and everyone knows it: a coward has no place in this world. The only way back is to fight another duel and win it. " \
               "When both stand level at the end, it's satisfaction, and both walk away with their name.",
         gm_notes: "A duel is outside battle: three swings each on a meter, the mark moving and narrowing every round; you swing for the " \
-                  "opponent (docs/ODA.md). Challenge someone from the Fight control; they answer at the table. A coward gets no mask, no " \
+                  "opponent (docs/ODA.md). Challenge someone from the Fight control; they answer at the table. A coward gets no " \
                   "payoff at a rest, and dearer prices for the whole party."
       },
       "Powder" => {
@@ -27,17 +27,10 @@ module Seeds
               "top measure, which no resistance stops. When the matchup is bad, they load an ally's weapon instead.",
         gm_notes: "Same-type is on in Oda: a move of the user's own type is half again as strong."
       },
-      "Masks" => {
-        category: "Treasure", public: true,
-        body: "Sealed vessels of powder carved as faces, bound to whoever wears one. Put on, a mask transforms its wearer for a few breaths: " \
-              "stronger, striking with the mask's powder, with the mask's own moves. Afterwards they're spent. There are only a dozen in Oda, " \
-              "and no mask will have a coward.",
-        gm_notes: "Masks are found, earned or granted, never sold. A masked blow lands twice as hard on a giant."
-      },
       "The Giants" => {
         category: "Danger", public: true,
         body: "Raw powder that stood up. They wake when a seam is dug too deep, and every wound makes them bigger. Steel and shot glance off.",
-        gm_notes: "Giants have the giant trait and the Deep type. Masks are made for them; a party without one can still win, slowly."
+        gm_notes: "Giants have the giant trait and the Deep type."
       },
       "The Powder Company" => {
         category: "Faction", public: true,

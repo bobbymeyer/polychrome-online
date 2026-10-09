@@ -9,13 +9,13 @@
 # measured into cartridges and paper charms and fired through barrels,
 # staves and talismans. A gun is a cheap, dumb caster; a Mancer is the
 # expensive, clever kind. Dig deep enough after the good seams and things
-# wake up: giants of raw powder that grow when they're hurt. Masks, sealed
-# vessels of powder bound to whoever wears them, are the only thing that
-# meets a giant on equal terms, and there are only a dozen in the land.
+# wake up: giants of raw powder that grow when they're hurt. Oda has no
+# masks of its own: there are seven in all, and they belong to one
+# campaign, Dead Calm (db/seeds/campaigns/dead_calm).
 #
 # Everyone in Oda knows one law: someone who refuses a duel is a coward,
-# and a coward has no place in this world. Duels are to the KO, between two
-# people, in stances (Battle::Duel).
+# and a coward has no place in this world. A duel is one against one, three
+# swings each on a meter (Duel, DuelMeter).
 #
 # The tone swaps (the GM's to steer): one session a grim frontier, the next
 # a bright one with a masked hero and a monster of the week. Its genres are
@@ -67,7 +67,7 @@ module Seeds
       { "slug" => "nerve", "name" => "Nerve", "stat" => "spr", "description" => "Standing still while someone stares you down. Not blinking. Not running." },
       { "slug" => "trail", "name" => "Trail", "stat" => "vit", "description" => "Tracks, weather, water, the long ride, what's safe to eat in the Reach." },
       { "slug" => "hands", "name" => "Hands", "stat" => "agi", "description" => "Locks, pockets, cards, knots: quick, exact work." },
-      { "slug" => "powdercraft", "name" => "Powdercraft", "stat" => "mag", "description" => "Reading a seam, a measure, a charm, a mask: what powder is and what it will do." },
+      { "slug" => "powdercraft", "name" => "Powdercraft", "stat" => "mag", "description" => "Reading a seam, a measure, a charm: what powder is and what it will do." },
       { "slug" => "clockwork", "name" => "Clockwork", "stat" => "mag", "description" => "Springs, gears, locks and the little machines that run on a pinch of powder." },
       { "slug" => "brawn", "name" => "Brawn", "stat" => "str", "description" => "Lifting, hauling, breaking a door, holding a horse." },
       { "slug" => "parley", "name" => "Parley", "stat" => "spr", "description" => "Talking someone round, or down, or out of a duel they'd win." }
