@@ -14,7 +14,7 @@ module Armory
 
     def entry_params
       params.expect(item: [ :name, :slug, :category, :price, :target, :description, *art_params,
-                           { stats: Stats::NAMES, effects: [ effect_fields ] } ])
+                           { stats: Stats::NAMES, effects: [ effect_fields ], mask: [ :type, :duration, { abilities: [] } ] } ])
     end
   end
 end

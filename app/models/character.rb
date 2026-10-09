@@ -14,7 +14,7 @@ class Character < ApplicationRecord
   include Portrayed
   include Colourable
 
-  include Progression, Abilities, Equipment, Background, InBattle
+  include Progression, Abilities, Equipment, Background, InBattle, Courage
 
   SLOTS = %w[weapon shield head body accessory].freeze
 

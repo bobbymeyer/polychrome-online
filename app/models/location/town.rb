@@ -72,7 +72,11 @@ module Location::Town
   # and guild alike: dearer after a caravan is lost on
   # the road, easing back day by day (Campaign::Overnight), and cheaper for
   # friends.
-  def price_here(base) = (base * (100 + prices - (REPUTATION_PRICE * reputation)).clamp(10, 300) / 100.0).round
+  # A coward in the party costs it more everywhere (Character::Courage).
+  def price_here(base)
+    shame = Character::Courage::COWARD_PRICE * campaign.cowards.count
+    (base * (100 + prices + shame - (REPUTATION_PRICE * reputation)).clamp(10, 300) / 100.0).round
+  end
 
   def price_of(item) = price_here(item.price)
 

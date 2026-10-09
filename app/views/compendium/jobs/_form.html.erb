@@ -34,6 +34,11 @@
       <p class="hint">What the archetype gives beyond numbers. Master the archetype and a character keeps it in every archetype.</p>
     </div>
     <div class="field">
+      <%= f.label :technique, "Duel technique" %>
+      <%= f.select :technique, GlossaryHelper::TECHNIQUES.map { |key, (label, _)| [ label, key ] }, include_blank: "(none)" %>
+      <p class="hint">What the archetype does in a duel, beyond picking a stance: <%= GlossaryHelper::TECHNIQUES.map { |_, (label, what)| "#{label}: #{what}" }.join(" ") %></p>
+    </div>
+    <div class="field">
       <%= f.label :desperation, "Desperation move" %>
       <%= f.select :desperation, @world.abilities.where(target: %w[single_enemy all_enemies random_enemy]).order(:name).map { |a| [ a.name, a.slug ] },
                    include_blank: "(none)" %>

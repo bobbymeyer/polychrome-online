@@ -57,6 +57,7 @@ module Campaign::Controls
   def table_state
     if battle_on? then "battle"
     elsif pending_encounter.present? then "encounter"
+    elsif challenge.present? then "challenge"
     elsif open_choice then "choice"
     elsif staged_scene&.current_beat then "scene"
     else "free"

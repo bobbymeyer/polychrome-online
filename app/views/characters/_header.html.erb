@@ -3,6 +3,9 @@
   <div>
     <p class="eyebrow">Character<% if (player = @character.user&.name.presence || @character.player_name.presence) %> · played by <%= player %><% end %></p>
     <h1><%= @character.name %></h1>
+    <% if @character.coward? %>
+      <p class="coward-note"><strong>A coward.</strong> They refused a duel: no mask will have them, nobody hires them, and every price is dearer while they travel with the party. Winning a duel ends it.</p>
+    <% end %>
     <% if @character.motive %><p class="motive"><%= @character.motive %></p><% end %>
     <% from = [ @character.origin_entry&.dig("name"), (@character.home_node && "home in #{@character.home_node.name}") ].compact %>
     <% if from.any? %><p class="muted"><%= from.join(", ").upcase_first %>.</p><% end %>

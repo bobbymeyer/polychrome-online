@@ -3,10 +3,12 @@
 <ul class="badges" data-badges>
   <% unit["statuses"].each do |status| %>
     <% turns = status["left"] || status["turns"] %>
+    <%# Stacks (Sheathe, chi) count up and wait to be spent: the count is the stacks, not turns. %>
+    <% stacks = status["stacks"] %>
     <li class="badge badge--<%= status['kind'] %>" data-status="<%= status['kind'] %>" data-turns="<%= turns %>"
-        title="<%= term(status['kind'], world) %>: <%= pluralize(turns, 'turn') %> left">
+        title="<%= term(status['kind'], world) %>: <%= stacks ? pluralize(stacks, 'stack') : "#{pluralize(turns, 'turn')} left" %>">
       <%= term(status["kind"], world) %><%= " #{type_name(status['type'])}" if status["type"] %>
-      <% if status["kind"] == "shield" %><b><%= status["amount"] %></b><% elsif turns.to_i.positive? %><b><%= turns %></b><% end %>
+      <% if status["kind"] == "shield" %><b><%= status["amount"] %></b><% elsif stacks %><b>×<%= stacks %></b><% elsif turns.to_i.positive? %><b><%= turns %></b><% end %>
     </li>
   <% end %>
   <% unit["buffs"].each do |buff| %>

@@ -23,7 +23,7 @@ module Campaign::Payoffs
 
     conscious_characters.filter_map do |character|
       payoff = character.job.payoff
-      next if payoff.blank?
+      next if payoff.blank? || character.coward? # nobody hires a coward
 
       [ character, payoff, payoff["kind"] == "rumour" ? 1 : payoff["amount"].to_i * parts ]
     end
@@ -32,7 +32,7 @@ module Campaign::Payoffs
   # What each archetype pays, as the table reads it before the rest:
   # ["Rook, 40 gil a part", "Lenna, a rumour"].
   def payoff_preview
-    conscious_characters.filter_map do |character|
+    conscious_characters.reject(&:coward?).filter_map do |character|
       payoff = character.job.payoff.presence or next
       paid = case payoff["kind"]
       when "rumour" then "a rumour"

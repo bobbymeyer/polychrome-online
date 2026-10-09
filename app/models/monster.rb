@@ -18,6 +18,9 @@ class Monster < ApplicationRecord
   validate :status_immunities_are_statuses
   validate :ai_script_is_valid
   validate :drops_are_items
+  # A duellist's technique and the lines that give its stance away (Battle::Duel).
+  validates :technique, inclusion: { in: Battle::Duel::TECHNIQUES }, allow_nil: true
+  normalizes :technique, with: ->(slug) { slug.presence }
 
   def stats=(values)
     super((values || {}).to_h.stringify_keys.transform_values { |v| JsonCasting.integer(v) }.compact)
@@ -46,6 +49,13 @@ class Monster < ApplicationRecord
       end.to_h
       { "if" => conditions.presence, "use" => row["use"].to_s, "target" => row["target"].presence }.compact
     end)
+  end
+
+  # { "strike" => ["Enough talk."], ... }: from the form, a line per row.
+  def tells=(value)
+    value = value.to_h.stringify_keys.slice(*Battle::Duel::STANCES)
+    super(value.to_h { |stance, lines| [ stance, (lines.is_a?(String) ? lines.lines : Array(lines)).map { |l| l.to_s.strip }.compact_blank ] }
+               .reject { |_, lines| lines.empty? })
   end
 
   def drops=(rows)
@@ -88,7 +98,8 @@ class Monster < ApplicationRecord
       "rewards" => rewards,
       "drops" => (names = drop_items.transform_values(&:name); drops.map { |d| d.merge("name" => names[d["item"]]).compact }),
       "image" => { "book" => "monsters", "slug" => slug }
-    }.merge(undead? ? { "undead" => true } : {}).merge(boss? ? { "boss" => true } : {})
+    }.merge(undead? ? { "undead" => true } : {}).merge(boss? ? { "boss" => true } : {}).merge(giant? ? { "giant" => true } : {})
+     .merge({ "technique" => technique, "tells" => tells.presence }.compact)
   end
 
   private

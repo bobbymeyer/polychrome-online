@@ -7,7 +7,7 @@
     has called (Campaign::Controls): the talk box is there only under Talk. %>
 <% state = campaign.table_state %>
 <%# table-now--controls: the GM's controls strip is in the line (below), and the line is that strip (stage.css, "The controls"). %>
-<% controls = gm && !battle && !state.in?(%w[encounter choice]) %>
+<% controls = gm && !battle && !state.in?(%w[encounter choice challenge]) %>
 <section id="table_now" class="table-now<%= " table-now--battle" if battle || campaign.pending_encounter.present? %><%= " table-now--controls" if controls %>" aria-label="Right now" aria-live="polite" data-state="<%= state %>" data-controls="<%= campaign.controls %>" data-change="state" data-change-key="table-now">
   <%# In free play the GM's line is the controls row and nothing else: no label, no sentence. A scene on the stage
       says nothing here either: the stage is the scene, and the director's hand is on the stage's corner tag
@@ -25,6 +25,16 @@
       <strong>A battle is on: <%= battle.name %>.</strong>
       <%= gm ? "You run it from the battle page." : "Everyone at the table fights it." %>
       <%= "The choice waits until it's over." if choice %>
+    <% elsif state == "challenge" %>
+      <%# A duel (Campaign::Duels): the challenged character answers; refusing makes them a coward. %>
+      <% challenged = campaign.challenged_character %>
+      <strong><%= campaign.challenger_name %> challenges <%= challenged&.name %> to a duel!</strong>
+      <%= "“#{campaign.challenge['line']}”" if campaign.challenge["line"] %>
+      <% if challenged && (gm || local_assigns[:you] == challenged) %>
+        Accept, or refuse and be a coward until you win one.
+      <% else %>
+        <%= challenged&.name %> answers.
+      <% end %>
     <% elsif (encounter = campaign.pending_encounter).present? %>
       <strong>Encounter! <%= campaign.encounter_foes(encounter).to_sentence %>.</strong>
       <%= gm ? "It's your call." : "The GM calls it: fight, or wave it off." %>
@@ -43,10 +53,23 @@
   </p>
   <% end %>
   <%= render "campaigns/tables/current_battle", campaign: campaign %>
+  <%# The challenged player's answer, on their own screen. %>
+  <% if !gm && state == "challenge" && local_assigns[:you] && local_assigns[:you] == campaign.challenged_character %>
+    <div class="table-now__do">
+      <%= button_to "Accept", campaign_challenge_answer_path(campaign), params: { answer: "accept" }, class: "button play", form: { class: "inline" } %>
+      <%= button_to "Refuse", campaign_challenge_answer_path(campaign), params: { answer: "refuse" }, class: "button", form: { class: "inline" },
+                    data: { turbo_confirm: "A coward has no place in this world. You'll be one until you win a duel. Refuse?" } %>
+    </div>
+  <% end %>
   <%# The GM's prompt: the moves that fit this state, right here (the panels below have the detail). %>
   <% if gm && !battle %>
     <div class="table-now__do">
-      <% if state == "encounter" %>
+      <% if state == "challenge" %>
+        <%= button_to "Accept for #{campaign.challenged_character&.name}", campaign_challenge_answer_path(campaign), params: { answer: "accept" }, class: "button play", form: { class: "inline" } %>
+        <%= button_to "Refuse", campaign_challenge_answer_path(campaign), params: { answer: "refuse" }, class: "button", form: { class: "inline" },
+                      data: { turbo_confirm: "#{campaign.challenged_character&.name} will be a coward until they win a duel. Refuse?" } %>
+        <%= button_to "Withdraw it", campaign_challenge_path(campaign), method: :delete, class: "button button--quiet", form: { class: "inline" } %>
+      <% elsif state == "encounter" %>
         <%= link_to "Fight or wave it off ↓", "#table_ways", class: "button play" %>
       <% elsif state == "choice" %>
         <%= link_to "Settle it ↓", "#table_choice", class: "button play" %>

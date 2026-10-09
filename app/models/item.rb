@@ -14,7 +14,9 @@ class Item < ApplicationRecord
     "shield" => "shield",
     "helmet" => "head", "hat" => "head",
     "heavy_armor" => "body", "light_armor" => "body", "robe" => "body",
-    "accessory" => "accessory"
+    "accessory" => "accessory",
+    # Oda's rare treasure (Battle::Masks): worn as an accessory, by anyone.
+    "mask" => "accessory"
   }.freeze
   EQUIPMENT_CATEGORIES = (CATEGORIES.keys - [ "consumable" ]).freeze
 
@@ -24,6 +26,34 @@ class Item < ApplicationRecord
   validates :price, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :stats_are_stats
   validate :consumable_has_usable_effects
+  validate :mask_is_a_mask
+
+  scope :masks, -> { where(category: "mask") }
+
+  def mask?
+    category == "mask"
+  end
+
+  # A mask's own: { "type", "duration" (turns), "abilities" (slugs, its moves while worn) }.
+  def mask=(value)
+    value = value.to_h.stringify_keys
+    super({ "type" => value["type"].presence, "duration" => JsonCasting.integer(value["duration"]),
+            "abilities" => Array(value["abilities"]).compact_blank.map(&:to_s) }.compact.reject { |_, v| v == [] })
+  end
+
+  # The command a mask gives whoever wears it: put it on.
+  def don_slug = "don_#{slug}"
+
+  def don_ability
+    { "name" => "Don #{name}", "kind" => "skill", "target" => "self", "cost" => { "mp" => 0 }, "gesture" => "flash",
+      "effects" => [ { "primitive" => "transform", "mask" => slug } ] }
+  end
+
+  # The engine's mask (Battle::Masks).
+  def to_mask
+    { "name" => name, "type" => mask["type"], "duration" => mask["duration"], "abilities" => Array(mask["abilities"]),
+      "image" => { "book" => "items", "slug" => slug } }.compact
+  end
 
   def consumable?
     category == "consumable"
@@ -78,6 +108,18 @@ class Item < ApplicationRecord
     bad = stats.reject { |_, v| JsonCasting.integer?(v) }
     errors.add(:stats, "must be whole numbers (#{bad.keys.join(', ')})") if bad.any?
     errors.add(:stats, "only apply to equipment") if consumable? && stats.any?
+  end
+
+  def mask_is_a_mask
+    if !mask?
+      errors.add(:mask, "only applies to masks") if mask.present?
+      return
+    end
+    errors.add(:mask, "type is not one of this world's types") if mask["type"] && !world_types.include?(mask["type"])
+    duration = mask.fetch("duration", Battle::Masks::DEFAULT_DURATION)
+    errors.add(:mask, "lasts 1 to #{Battle::Masks::MAX_DURATION} turns") unless duration.is_a?(Integer) && duration.between?(1, Battle::Masks::MAX_DURATION)
+    missing = Array(mask["abilities"]) - Array(world&.abilities&.in_battle&.pluck(:slug))
+    errors.add(:mask, "grants moves that aren't in the Grimoire: #{missing.join(', ')}") if missing.any?
   end
 
   def consumable_has_usable_effects

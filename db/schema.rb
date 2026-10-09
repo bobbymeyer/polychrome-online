@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -30,6 +30,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.string "field_outcome"
     t.string "field_difficulty", default: "normal", null: false
     t.integer "field_power", default: 0, null: false
+    t.integer "reload_turns", default: 0, null: false
+    t.boolean "reach", default: false, null: false
     t.index ["world_id", "slug"], name: "index_abilities_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_abilities_on_world_id"
   end
@@ -117,6 +119,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.json "arrived_units", default: [], null: false
     t.datetime "watched_at"
     t.string "room"
+    t.string "kind", default: "battle", null: false
     t.index ["campaign_id"], name: "index_battles_on_campaign_id"
     t.index ["world_id"], name: "index_battles_on_world_id"
   end
@@ -172,6 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.integer "shown_map_id"
     t.string "stage_view", default: "here", null: false
     t.string "controls", default: "talk", null: false
+    t.json "challenge"
     t.index ["current_node_id"], name: "index_campaigns_on_current_node_id"
     t.index ["gm_id"], name: "index_campaigns_on_gm_id"
     t.index ["join_code"], name: "index_campaigns_on_join_code", unique: true
@@ -210,6 +214,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.integer "home_node_id"
     t.json "ties", default: [], null: false
     t.datetime "seen_at"
+    t.boolean "coward", default: false, null: false
     t.index ["campaign_id"], name: "index_characters_on_campaign_id"
     t.index ["home_node_id"], name: "index_characters_on_home_node_id"
     t.index ["job_id"], name: "index_characters_on_job_id"
@@ -407,6 +412,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.json "variant", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "mask", default: {}, null: false
     t.index ["world_id", "slug"], name: "index_items_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_items_on_world_id"
   end
@@ -443,6 +449,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.string "field_ability"
     t.json "payoff", default: {}, null: false
     t.boolean "typed_attack", default: true, null: false
+    t.string "technique"
     t.index ["world_id", "slug"], name: "index_jobs_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_jobs_on_world_id"
   end
@@ -619,6 +626,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.text "boss_line"
     t.string "base_type", default: "normal", null: false
     t.boolean "undead", default: false, null: false
+    t.boolean "giant", default: false, null: false
+    t.json "tells", default: {}, null: false
+    t.string "technique"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end

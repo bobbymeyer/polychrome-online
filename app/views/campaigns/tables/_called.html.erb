@@ -14,6 +14,7 @@
     <%= render "campaigns/tables/gm/check", campaign: campaign %>
   <% elsif gm && campaign.controls == "battle" && !campaign.battle_on? %>
     <%= render "battles/setup", campaign: campaign, setup: BattleSetup.defaults(campaign) %>
+    <%= render "campaigns/tables/gm/duel", campaign: campaign unless campaign.challenge.present? %>
   <% elsif gm && campaign.controls == "tools" %>
     <%= render "campaigns/tables/gm/tools", campaign: campaign %>
   <% end %>

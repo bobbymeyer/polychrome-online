@@ -1,0 +1,61 @@
+<%# A duellist's panel (Battle::Duel): what the opponent just said, then a stance, one a row, and the
+    archetype's technique when it's theirs to call. The opponent's stance is never shown: it waits in the
+    state until both are revealed. battle, state, unit, command. %>
+<% duel = state["duel"] %>
+<% foe = state["units"].find { |u| u["side"] == "enemy" } %>
+<% tell = duel["tell"] %>
+<p class="duel-tell">
+  <span class="muted">Exchange <%= duel["exchange"] %>.</span>
+  <% if tell %><strong><%= unit_name(state, tell["unit"]) %>:</strong> “<%= tell["line"] %>”<% end %>
+</p>
+<% if duel["read"] %>
+  <p class="duel-read">You read <%= foe["name"] %>: a <strong><%= duel["read"].capitalize %></strong> is coming.</p>
+<% end %>
+<% if command && !params[:change] %>
+  <p data-chosen>
+    Ready: <strong><%= command["technique"] == "wait" ? "Wait" : command["stance"].capitalize %></strong>. Your stance is shown when <%= foe["name"] %>'s is.
+  </p>
+  <%= link_to "Change stance", battle_panel_path(battle, change: 1), class: "link-button", data: { menu_back: true } %>
+<% else %>
+  <%# The stances, one a row: what each beats and loses to on the right (docs/DESIGN.md, "Choices are tables"). %>
+  <table class="pick-table play">
+    <tbody>
+    <% Battle::Duel::STANCES.each do |stance| %>
+      <% beats = Battle::Duel::BEATS[stance] %>
+      <% loses = Battle::Duel::BEATS.key(stance) %>
+      <tr class="pick-row">
+        <td class="pick-row__what">
+          <%= button_to stance.capitalize, battle_actions_path(battle), class: "pick-row__act",
+                        data: { help: "Beats #{beats.capitalize}, loses to #{loses.capitalize}.#{' Two Strikes trade light blows.' if stance == 'strike'}", menu_key: stance.capitalize },
+                        params: { command: { kind: "stance", stance: stance } } %>
+        </td>
+        <td class="pick-row__cost">beats <%= beats.capitalize %></td>
+      </tr>
+    <% end %>
+    <% if Battle::Duel.has?(Battle::Context.new(Battle::State.normalize(state)), unit, "wait") %>
+      <tr class="pick-row">
+        <td class="pick-row__what">
+          <%= button_to "Wait", battle_actions_path(battle), class: "pick-row__act",
+                        data: { help: GlossaryHelper::TECHNIQUES.dig("wait", 1), menu_key: "Wait" },
+                        params: { command: { kind: "stance", stance: "guard", technique: "wait" } } %>
+        </td>
+        <td class="pick-row__cost">once</td>
+      </tr>
+    <% end %>
+    <% if !duel["read"] && Battle::Duel.has?(Battle::Context.new(Battle::State.normalize(state)), unit, "read") %>
+      <tr class="pick-row">
+        <td class="pick-row__what">
+          <%= button_to "Read", battle_actions_path(battle), class: "pick-row__act",
+                        data: { help: GlossaryHelper::TECHNIQUES.dig("read", 1), menu_key: "Read" },
+                        params: { command: { kind: "read" } } %>
+        </td>
+        <td class="pick-row__cost">once</td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+  <p class="menu-help" data-menu-target="help" aria-live="polite"></p>
+  <% if unit["technique"] && !Battle::Duel::CHOSEN.include?(unit["technique"]) %>
+    <p class="hint">Your archetype: <%= technique_term(unit["technique"]) %>.</p>
+  <% end %>
+<% end %>

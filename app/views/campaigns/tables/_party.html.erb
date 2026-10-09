@@ -18,6 +18,7 @@
         <%= character_portrait(character, size: :small) %>
         <div>
           <strong class="coop-party__name"><%= link_to character.name, character_path(character), data: { turbo_frame: "_top" }, title: "#{character.name}'s sheet" %></strong>
+          <%= tag.span("Coward", class: "coward-mark", title: "Refused a duel: no mask will have them, nobody hires them, and every price is dearer, until they win one") if character.coward? %>
           <span class="muted">Lv <%= character.level %> <%= character.job.name %> ·
             <% if character.user %>
               <%= character.user.name %>

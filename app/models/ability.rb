@@ -28,6 +28,9 @@ class Ability < ApplicationRecord
   validates :mp_cost, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :hp_cost, numericality: { only_integer: true, in: 0..Battle::MAX_HP_COST }
   validates :charge, numericality: { only_integer: true, in: 0..Battle::MAX_CHARGE }
+  # reload: turns the user is spent for after it. reach: it finds what's off
+  # the field (a Ranger's shot).
+  validates :reload_turns, numericality: { only_integer: true, in: 0..Battle::MAX_RELOAD }
   validates :gesture, inclusion: { in: GESTURES }, allow_blank: true
   validates :slug, exclusion: { in: %w[attack], message: "is reserved for the built-in Attack" }
   validate :engine_accepts_effects
@@ -71,7 +74,9 @@ class Ability < ApplicationRecord
       "cost" => { "mp" => mp_cost.to_i, "hp" => (hp_cost if hp_cost.to_i.positive?) }.compact,
       "effects" => effects,
       "gesture" => gesture.presence,
-      "charge" => (charge if charge.to_i.positive?)
+      "charge" => (charge if charge.to_i.positive?),
+      "reload" => (reload_turns if reload_turns.to_i.positive?),
+      "reach" => (true if reach?)
     }.compact
   end
 

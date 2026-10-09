@@ -158,6 +158,10 @@ Rails.application.routes.draw do
       # Where next: a player's suggestion (a vote), or the GM going (Campaign::Ways).
       resources :ways, only: :create
       resource :encounter, only: %i[create destroy]
+      # A duel (Campaign::Duels): the GM's challenge, and the challenged character's answer.
+      resource :challenge, only: %i[create destroy] do
+        resource :answer, only: :create, module: :challenges
+      end
     end
   end
 

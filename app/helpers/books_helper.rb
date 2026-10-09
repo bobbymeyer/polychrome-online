@@ -131,21 +131,28 @@ module BooksHelper
     when "physical" then "#{"#{effect_type(e['type'])} " if e['type']}Physical #{e.fetch('power', 100)}%#{hits(e)}#{describe_against(e)}#{describe_extras(e)}"
     when "elemental" then "#{effect_type(e['type'])} damage, power #{e['power']}#{hits(e)}#{describe_against(e)}#{describe_extras(e)}"
     when "status" then "#{term(e['kind'])} (#{e.fetch('chance', 100)}%, #{e.fetch('duration', 3)} turns)"
-    when "heal" then "Restore #{word('hp')}, power #{e['power']}"
+    when "heal" then "Restore #{word('hp')}, power #{e['power']}#{", up to +#{e['triage']}% the lower the target" if e['triage'].to_i.positive?}"
     when "drain" then "Drain #{word('hp')}, power #{e['power']}"
     when "buff" then "#{stat_label(e['stat'])} +#{e['amount']}% for #{e.fetch('duration', 3)} turns"
     when "debuff" then "#{stat_label(e['stat'])} −#{e['amount']}% for #{e.fetch('duration', 3)} turns"
     when "revive" then "Revive at #{e.fetch('fraction', 25)}% #{word('hp')}"
     when "escape" then "Escape from battle"
     when "cleanse" then e["kind"] ? "Cure #{term(e['kind']).downcase}" : "Cure every harmful status"
-    when "steal" then "Steal one of its drops (#{e.fetch('chance', 50)}% + speed)"
+    when "steal" then e["boon"] == 1 ? "Steal one of its good statuses (#{e.fetch('chance', 50)}% + speed)" : "Steal one of its drops (#{e.fetch('chance', 50)}% + speed)"
     when "scan" then "Reveal #{word('hp')}, weaknesses and immunities"
     when "jump" then "Leap out of reach, then land a #{e.fetch('power', 200)}% blow next turn"
     when "away" then describe_away(e)
     when "shield" then "A barrier against the next #{e['power']}-power worth of damage (#{e.fetch('duration', 3)} turns)"
     when "imbue" then "Attack strikes as #{effect_type(e['type']).downcase} (#{e.fetch('duration', 3)} turns)"
     when "percent" then "#{e['power']}% of current #{word('hp')}#{" (#{e['chance']}%)" if e['chance']}; never the last of it"
-    when "summon" then "Call #{@world&.monsters&.find_by(slug: e['creature'])&.name || e['creature'].to_s.humanize} (acts at once, stays #{pluralize(e.fetch('duration', 1), 'turn')}#{", #{e['power']}% strength" if e['power']})"
+    when "summon"
+      stay = e["stays"] == 1 ? "for the battle" : pluralize(e.fetch("duration", 1), "turn")
+      "Call #{@world&.monsters&.find_by(slug: e['creature'])&.name || e['creature'].to_s.humanize} (acts at once, stays #{stay}#{", #{e['power']}% strength" if e['power']})"
+    when "gather" then "Gather #{pluralize(e.fetch('amount', 1), 'stack')} of #{term(e['kind']).downcase} (up to #{Battle::MAX_STACKS})"
+    when "dispel" then "Take away its good statuses and raised stats"
+    when "quick" then "The ally goes again at once (once a round)"
+    when "mimic" then "The last move an ally made, again, free"
+    when "transform" then "Put on #{@world&.items&.find_by(slug: e['mask'])&.name || e['mask'].to_s.humanize}"
     when "sap" then "Take #{word('mp')}, power #{e['power']}#{", keep #{e['keep']}%" if e['keep'].to_i.positive?}"
     else e["primitive"].to_s.humanize
     end
@@ -160,7 +167,11 @@ module BooksHelper
 
   def describe_extras(e)
     [ (", the user takes #{e['recoil']}% of it" if e["recoil"].to_i.positive?),
-      (", up to +#{e['grudge']}% power at the brink" if e["grudge"].to_i.positive?) ].compact.join
+      (", up to +#{e['grudge']}% power at the brink" if e["grudge"].to_i.positive?),
+      (", ignores #{e['pierce']}% of defence" if e["pierce"].to_i.positive?),
+      (", resistances count as neutral" if e["unresisted"] == 1),
+      (", +#{e.fetch('boost', 50)}% for each stack of #{term(e['with']).downcase}#{e['hold'] == 1 ? ', kept' : ', spent'}" if e["with"]),
+      (", +#{e['patience']}% for everyone who went first" if e["patience"].to_i.positive?) ].compact.join
   end
 
   def describe_away(e)

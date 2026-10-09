@@ -980,3 +980,16 @@ details[open] > summary { margin-bottom: 16px; }
 /* The map page inside a dungeon: the floorplan under the world map. */
 .map-window .table-floorplan:not(:empty) { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--rule); }
 .map-window .table-floorplan:empty { display: none; }
+
+/* Oda (docs/ODA.md). A coward is marked in grey, struck through: shame, not a game move. */
+.coward-mark { font-size: 10px; line-height: 14px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 0 4px; margin-left: 4px;
+               color: var(--grey); border: 1px solid var(--grey); text-decoration: line-through; }
+.coward-note { max-width: 60ch; color: var(--grey); }
+/* Burn is poison's hotter cousin; stacks wait to be spent, in black. */
+.badge--burn { background: var(--caution); color: var(--ink); border-color: transparent; }
+.badge--sheathed, .badge--chi { background: var(--ink); color: var(--paper); }
+/* A mask on: the wearer outlined in the signal colour while it lasts. */
+.unit.is-masked .sprite { outline: 3px solid var(--signal); outline-offset: 2px; }
+/* A duel: the opponent's line, then what a read found. */
+.duel-tell { margin: 0 0 8px; }
+.duel-read { margin: 0 0 8px; font-weight: 700; }

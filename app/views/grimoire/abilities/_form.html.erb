@@ -26,6 +26,16 @@
       <p class="hint">Turns it takes to go off. The user can't act meanwhile.</p>
     </div>
     <div class="field">
+      <%= f.label :reload_turns, "Reload (turns)" %>
+      <%= f.number_field :reload_turns, min: 0, max: Battle::MAX_RELOAD %>
+      <p class="hint">Turns the user is spent for after it: a big shot.</p>
+    </div>
+    <div class="field field--check">
+      <%= f.check_box :reach %>
+      <%= f.label :reach, "Reach" %>
+      <p class="hint">It finds foes off the field (leaping, hiding): a Ranger's shot.</p>
+    </div>
+    <div class="field">
       <%= f.label :gesture %>
       <%= f.select :gesture, Ability::GESTURES.map { |g| [term(g), g] }, include_blank: "None" %>
     </div>

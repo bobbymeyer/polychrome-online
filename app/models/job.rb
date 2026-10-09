@@ -29,13 +29,15 @@ class Job < ApplicationRecord
   validate :signature_is_an_ability
   validate :field_ability_is_a_field_ability
   validates :passive, inclusion: { in: Battle::PASSIVES }, allow_nil: true
+  # What the job does in a duel (Battle::Duel::TECHNIQUES).
+  validates :technique, inclusion: { in: Battle::Duel::TECHNIQUES }, allow_nil: true
   validate :payoff_is_a_payoff
   # A character in the job has its type: hit as the chart says, and hitting
   # with it through Attack and the job's own command.
   before_validation :default_to_plain_type, on: :create
   validates :base_type, inclusion: { in: ->(job) { job.world_types }, message: "isn't one of this world's types" }
 
-  normalizes :desperation, :signature, :passive, :field_ability, with: ->(slug) { slug.presence }
+  normalizes :desperation, :signature, :passive, :field_ability, :technique, with: ->(slug) { slug.presence }
 
   # The job's move outside battle (FieldUse): a Grimoire entry of kind field.
   def field_ability_entry
@@ -89,8 +91,9 @@ class Job < ApplicationRecord
     end)
   end
 
+  # Anyone can wear a mask: whether it will have them is the mask's affair.
   def equips?(item)
-    equip_categories.include?(item.category)
+    item.mask? || equip_categories.include?(item.category)
   end
 
   # Stats::Derivation inputs.

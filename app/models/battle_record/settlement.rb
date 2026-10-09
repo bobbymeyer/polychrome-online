@@ -29,9 +29,9 @@ module BattleRecord::Settlement
     summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items!,
                 "stolen" => take_stolen_items!, "antagonists" => settle_antagonists! }.compact
     victory = events.find { |e| e["type"] == "victory" }
+    standing = party.select { |u| u["hp"].positive? }.filter_map { |u| characters[u["id"]] }
     if victory
       rewards = victory["rewards"]
-      standing = party.select { |u| u["hp"].positive? }.filter_map { |u| characters[u["id"]] }
       exp_share = standing.empty? ? 0 : rewards["exp"].to_i / standing.size
       standing.each do |character|
         summary["members"] << { "name" => character.name }.merge(character.gain!(exp: exp_share, abp: rewards["abp"].to_i))
@@ -53,6 +53,8 @@ module BattleRecord::Settlement
     # fled, what waits there waits still (Location::Exploration#cleared?).
     campaign.dungeon_in_progress&.resolve!(room) if victory && room
     record_deeds!(summary, characters) if victory
+    # A duel won takes a coward's shame away (Character::Courage).
+    standing.each(&:redeem!) if victory && duel?
     # Everyone down: what now is the table's to decide (Campaign::Defeat).
     campaign.ask_what_now! if status == "defeat" && campaign.wiped_out?
   end

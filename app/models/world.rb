@@ -83,20 +83,29 @@ class World < ApplicationRecord
     monsters.where(slug: creatures).to_h { |m| [ m.slug, m.to_engine.except("count") ] }
   end
 
-  # The world's Grimoire in the resolver's library format.
+  # The world's Grimoire in the resolver's library format, and each mask's
+  # Don (Item#don_ability).
   def ability_library
     abilities.in_battle.to_h { |ability| [ ability.slug, ability.to_engine ] }
+             .merge(items.masks.to_h { |mask| [ mask.don_slug, mask.don_ability ] })
+  end
+
+  # The Armory's masks, as the engine puts them on (Battle::Masks).
+  def mask_library
+    items.masks.to_h { |mask| [ mask.slug, mask.to_mask ] }
   end
 
   # Build a battle straight from the books.
   #   world.battle(seed: 1, party: [...unit specs], monsters: { "goblin" => 3 })
   # extra_enemies: engine unit specs to add as they are (antagonists).
-  def battle(seed:, party:, monsters:, escapable: true, items: {}, terrain: nil, extra_enemies: [])
+  # kind: "duel" for one against one (Battle::Duel).
+  def battle(seed:, party:, monsters:, escapable: true, items: {}, terrain: nil, extra_enemies: [], kind: "battle")
     by_slug = self.monsters.where(slug: monsters.keys).index_by(&:slug)
     enemies = monsters.map do |slug, count|
       by_slug.fetch(slug.to_s) { raise ActiveRecord::RecordNotFound, "no monster #{slug} in #{self.slug}" }.to_engine(count: count)
     end + extra_enemies
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: ability_library, escapable: escapable, items: items,
-                        terrain: terrain, types: type_chart.to_engine, summons: summon_library, rules: battle_rules)
+                        terrain: terrain, types: type_chart.to_engine, summons: summon_library, rules: battle_rules, masks: mask_library,
+                        kind: kind)
   end
 end

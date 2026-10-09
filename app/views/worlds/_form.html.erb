@@ -93,6 +93,12 @@
         <%= label_tag "world_battle_rules_one_more", "One More" %>
       </div>
       <p class="hint">A blow that finds a weakness, or lands a critical hit, knocks its target down (they lose their next turn), and whoever struck goes again at once, at whoever is still standing and weakest to it. Enemies too. When the party has every enemy down, everyone piles in: an All-Out Attack, and the enemies get back up.</p>
+      <%= hidden_field_tag "world[battle_rules][same_type]", "0", id: nil %>
+      <div class="field field--check">
+        <%= check_box_tag "world[battle_rules][same_type]", "1", world.rule?(:same_type), id: "world_battle_rules_same_type" %>
+        <%= label_tag "world_battle_rules_same_type", "Same type" %>
+      </div>
+      <p class="hint">A move of one of the user's own types (an archetype's type, a monster's) is half again as strong: a specialist hits hardest in their own element.</p>
     </fieldset>
     <fieldset class="panel">
       <legend>Lines and veils</legend>

@@ -55,7 +55,9 @@ module BattleLogHelper
     when "ko" then state["units"].find { |u| u["id"] == event["target"] }&.dig("side") == "party" ? "#{name.('target')} is KO'd!" : "#{name.('target')} is defeated."
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
-    when "steal" then "#{name.('actor')} stole #{event['name']} from #{name.('target')}!#{dice_note(event)}"
+    when "steal"
+      what = event["status"] ? "#{name.('target')}'s #{term(event['status']).downcase}" : "#{event['name']} from #{name.('target')}"
+      "#{name.('actor')} stole #{what}!#{dice_note(event)}"
     when "scan" then scan_line(event, name.("target"), state["types"] || Battle::Types::DEFAULT)
     when "flee" then "#{flee_line(event)}#{dice_note(event)}"
     when "turn_skipped" then skipped_line(event, name.("unit"))
@@ -64,6 +66,21 @@ module BattleLogHelper
     when "victory" then victory_line(event)
     when "defeat" then "The party has fallen…"
     when "gm_override" then gm_line(event, state)
+    # Oda's (docs/ODA.md).
+    when "gathered" then "#{name.('unit')}: #{term(event['status'])} ×#{event['stacks']}."
+    when "patience" then "#{name.('actor')} waited for #{event['waited']}, and draws."
+    when "reflected" then "#{name.('unit')}'s reflection sends it back at #{unit_name(state, event['back_to'])}!"
+    when "iai" then "#{name.('actor')} cuts #{name.('target')} down first!"
+    when "quick" then "#{name.('target')} moves again!"
+    when "mimic" then "#{name.('actor')} copies #{unit_name(state, event['of'])}'s #{ability_name(state, event['ability'])}!"
+    when "transformed" then "#{name.('actor')} puts on the #{event['name']}!"
+    when "unmasked" then "#{name.('unit')}'s mask comes off."
+    when "reraise" then "#{name.('target')} won't stay down!"
+    when "stare" then "— Exchange #{event['exchange']} —"
+    when "tell" then "#{name.('unit')}: “#{event['line']}”"
+    when "reveal" then reveal_line(event, state)
+    when "clash" then clash_line(event, state)
+    when "technique" then technique_line(event, state)
     end
   end
 
@@ -71,6 +88,7 @@ module BattleLogHelper
 
   def damage_line(event, target)
     return "#{target} takes #{event['amount']} poison damage." if event["status"] == "poison"
+    return "#{target} takes #{event['amount']} from the burn." if event["status"] == "burn"
     return "Doom comes for #{target}." if event["status"] == "doom"
     return "#{target} takes #{event['amount']} in recoil." if event["recoil"]
 
@@ -95,6 +113,11 @@ module BattleLogHelper
     when "steal_failed" then "Couldn't steal from #{target}.#{dice_note(event)}"
     when "no_effect" then "#{target} barely feels it."
     when "no_mp" then "#{target} has no MP to take."
+    when "nothing_to_dispel" then "#{target} has nothing to dispel."
+    when "nothing_to_mimic" then "There's nothing to copy yet."
+    when "coward" then "The mask won't have a coward."
+    when "masked" then "#{target} can't put on another mask yet."
+    when "no_mask" then "There's no such mask."
     else "#{event['item'] ? item_name(state, event['item']) : ability_name(state, event['ability'])} has no target."
     end
   end
@@ -121,6 +144,8 @@ module BattleLogHelper
     case event["reason"]
     when "woke" then "#{target} wakes up."
     when "cured" then "#{target} is cured of #{term(event['status']).downcase}."
+    when "dispelled" then "#{target}'s #{term(event['status']).downcase} is dispelled."
+    when "spent" then nil # the move that spent it says enough
     when "gm" then nil # the gm_override line already said it
     else "#{target}'s #{term(event['status'])} wears off."
     end
@@ -161,7 +186,36 @@ module BattleLogHelper
     when "stop" then "#{unit} is stopped in time."
     when "down" then "#{unit} is getting back up."
     when "charging" then "#{unit} is still gathering strength."
+    when "reloading" then "#{unit} is reloading."
     else "#{unit} has no orders."
+    end
+  end
+
+  # A duel's stances, shown together.
+  def reveal_line(event, state)
+    event["stances"].map { |id, stance| "#{unit_name(state, id)}: #{stance == 'wait' ? 'waits' : stance.capitalize}" }.join(" · ")
+  end
+
+  def clash_line(event, state)
+    case event["result"]
+    when "win" then "#{unit_name(state, event['winner'])} reads #{unit_name(state, event['loser'])}!"
+    when "trade" then "Steel on steel: they trade blows."
+    when "wait" then "#{unit_name(state, event['unit'])} waits, hand on the hilt."
+    else "They circle each other."
+    end
+  end
+
+  def technique_line(event, state)
+    actor = unit_name(state, event["actor"])
+    case event["technique"]
+    when "read" then "#{actor} reads #{unit_name(state, event['target'])}: a #{event['stance'].capitalize} is coming."
+    when "opening" then "#{actor} fires before the stare!"
+    when "tie_win" then "#{actor} holds firm: the tie is theirs."
+    when "switch" then "#{actor} slips the blow."
+    when "steady" then "#{actor}'s aim holds anyway."
+    when "recover" then "#{actor} steadies their breath."
+    when "wait" then "#{actor} keeps the blade in its sheath."
+    else "#{actor}: #{GlossaryHelper::TECHNIQUES.dig(event['technique'], 0)}."
     end
   end
 

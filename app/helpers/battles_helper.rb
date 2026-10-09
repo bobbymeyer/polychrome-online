@@ -10,8 +10,14 @@ module BattlesHelper
       "jobs" => battle.world.jobs.with_attached_image.index_by(&:slug),
       "npcs" => (battle.campaign&.npcs&.antagonists || Npc.none).to_h { |npc| [ npc.id.to_s, npc.battle_art ] },
       "characters" => (battle.campaign&.characters&.includes(:job, portraits: { image_attachment: :blob }) || Character.none)
-                        .to_h { |character| [ character.battle_unit_id, character.battle_art ] }
+                        .to_h { |character| [ character.battle_unit_id, character.battle_art ] },
+      "items" => battle.world.items.masks.with_attached_image.index_by(&:slug)
     }
+    # Masked, the mask is their face (Battle::Masks), when it has art.
+    mask = unit["statuses"].to_a.find { |s| s["kind"] == "masked" }&.dig("mask")
+    face = mask && @unit_art[battle.id].dig("items", mask)
+    return face if face&.image&.attached?
+
     ref = unit["image"] || {}
     @unit_art[battle.id].dig("characters", unit["id"].to_s) || @unit_art[battle.id].dig(ref["book"], ref["slug"])
   end
@@ -155,6 +161,9 @@ module BattlesHelper
   def intent_label(state, unit, command)
     return if command.blank? || unit["side"] != "party" || unit["hp"].to_i.zero?
 
+    # A stance is a secret until both are shown (Battle::Duel).
+    return "Ready" if command["kind"] == "stance"
+
     what = case command["kind"]
     when "ability" then ability_name(state, command["ability"])
     when "item" then item_name(state, command["item"])
@@ -169,6 +178,7 @@ module BattlesHelper
   # party (aggro, cover), charged, barriered, off the field.
   def unit_marks(unit)
     kinds = unit["statuses"].map { |s| s["kind"] }
+    return "is-masked" if kinds.include?("masked")
     [ ("is-guarding" if kinds.intersect?(Battle::AGGRO_STATUSES)), ("is-charged" if kinds.include?("charged")),
       ("is-shielded" if kinds.include?("shield")), ("is-away" if kinds.intersect?(Battle::OUT_OF_REACH_STATUSES)),
       ("is-doomed" if kinds.include?("doom")) ].compact.join(" ")
@@ -186,6 +196,8 @@ module BattlesHelper
   # (Battle::Resolver.default_command): their last command again if it
   # still works, else Attack. Said as the panel's warning.
   def timeout_command(state, unit)
+    return "#{unit.dig('last_command', 'stance')&.capitalize || 'Strike'} again" if Battle::Duel.duel?(state)
+
     last = unit["last_command"]
     return "Attack" unless last&.dig("kind") == "ability" && last["ability"] != "attack"
 

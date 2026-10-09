@@ -16,6 +16,9 @@
       <% if (field = entry.field_ability_entry) %>
         <dt><%= gloss(:field_ability, "Field") %></dt><dd><%= link_to field.name, world_grimoire_ability_path(entry.world, field) %></dd>
       <% end %>
+      <% if entry.technique %>
+        <dt>In a duel</dt><dd><%= technique_term(entry.technique) %></dd>
+      <% end %>
       <% if entry.passive %>
         <dt><%= gloss(:passive, "Passive") %></dt><dd><%= passive_term(entry.passive) %></dd>
       <% end %>
