@@ -1,5 +1,5 @@
 import { gesture } from "motion/gestures"
-import { play } from "sound"
+import { play, setMusic } from "sound"
 import { humanize } from "battle/board"
 
 // How each of the resolver's events plays on the board (docs/HANDOFF.md §6):
@@ -113,6 +113,33 @@ const STEPS = {
   },
   desperation(b, tl, e, at) {
     return b.cutIn(tl, e, at)
+  },
+  // A reaction: a script's "when" rule fires out of turn (a counter, a last breath).
+  reacts(b, tl, e, at) {
+    const word = { hit: "COUNTER!", ally_falls: "VENGEANCE!", falls: "LAST BREATH!" }[e.trigger] || "REACTS!"
+    // The last breath comes from a caster still standing for it: the board after the beat lays them down again.
+    if (e.trigger === "falls") tl.call(() => b.unitEl(e.actor)?.classList.remove("is-ko"), at)
+    b.popup(tl, e.actor, word, "crit", at, "popup--on")
+    gesture(tl, b.sprite(e.actor), "shake", at)
+    return 500
+  },
+  // A creature says a line as its rule fires: the telegraph before the blow, said in the stage's
+  // dialogue box as a beat of its own (dialogue_controller#say), with its face from the field.
+  says(b, tl, e, at) {
+    gesture(tl, b.sprite(e.actor), "pop", at)
+    tl.call(() => b.speak(e.actor, e.line), at)
+    return 900
+  },
+  // A boss becomes its next form: the board after the beat has it; here, the slab, its line in the
+  // box, and its own music if the form brings any.
+  phase(b, tl, e, at) {
+    gesture(tl, b.sprite(e.actor), "flash", at)
+    gesture(tl, b.sprite(e.actor), "shake", at + 200)
+    b.banner(tl, `${e.form || e.name}!`, at + 300, "phase")
+    tl.call(() => b.rename(e.actor, e.name), at + 300) // what it's called from here on in this beat (its next line, its epitaph)
+    if (e.music) tl.call(() => setMusic(e.music, { cut: true }), at + 300)
+    if (e.line) tl.call(() => b.speak(e.actor, e.line, e.name), at + 1500)
+    return 1700
   },
   unit_joined(b, tl, e, at) {
     // The board after the beat has them; here, the entrance.
@@ -282,16 +309,31 @@ const STEPS = {
     return e.defaulted.length ? 700 : 0
   },
   victory(b, tl, e, at) {
+    // Nobody fell: the enemy got away (sent off the field). No fanfare, no hop.
+    if (e.fell === false) {
+      b.banner(tl, "They got away!", at, "escape")
+      return 1200
+    }
     b.banner(tl, "Victory!", at, "victory")
     tl.call(() => play("victory"), at)
     // The party's victory hop, as in the games.
     b.party().forEach((el, i) => { gesture(tl, el, "bounce", at + 200 + i * 80); gesture(tl, el, "bounce", at + 700 + i * 80) })
-    // A boss gets its epitaph: the victory says what it beat.
+    // A boss gets its epitaph: the victory says what it beat, or that it got away (every boss left the field).
+    const gone = e.gone || []
+    const bossAway = b.bossIds.length && b.bossIds.every((id) => gone.includes(id))
+    if (bossAway && b.bossAway) {
+      b.banner(tl, b.bossAway, at + 1300, "escape")
+      return 2800
+    }
     if (b.bossDown) {
-      b.banner(tl, b.bossDown, at + 1300, "boss-down")
+      b.banner(tl, b.bossDownNow, at + 1300, "boss-down")
       return 2800
     }
     return 1500
+  },
+  abandoned(b, tl, e, at) {
+    b.banner(tl, "Called off", at, "defeat")
+    return 1200
   },
   defeat(b, tl, e, at) {
     b.banner(tl, "Defeat", at, "defeat")
@@ -352,7 +394,11 @@ const STEPS = {
     // GM power is never hidden (§12): every override is in the log, and
     // gets a banner, except the routine auto for absent players.
     if (e.op === "auto") return 0
-    b.banner(tl, `GM: ${humanize(e.op)}`, at, "gm")
+    const who = e.unit && (b.unitEl(e.unit)?.querySelector(".unit__label")?.textContent || b.rosterEl(e.unit)?.querySelector(".roster__name")?.firstChild?.textContent?.trim())
+    const said = { dismiss: who && `${who} is sent off`, set_hp: who && `${who}'s HP set`, set_mp: who && `${who}'s MP set`,
+                   add_status: who && `${who}'s state changed`, remove_status: who && `${who}'s state changed`,
+                   execute_round: "the round runs now", end_battle: "the fight ends", add_unit: "someone joins", rule: "a ruling" }[e.op]
+    b.banner(tl, `GM: ${said || humanize(e.op)}`, at, "gm")
     if (e.hp !== undefined) tl.call(() => b.setHp(e.unit, e.hp), at)
     return 900
   },

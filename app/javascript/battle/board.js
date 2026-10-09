@@ -16,6 +16,15 @@ export class Board {
     return this.element.dataset.bossDown
   }
 
+  get bossAway() {
+    return this.element.dataset.bossAway
+  }
+
+  // The bosses' unit ids, to tell a boss that fell from one that got away (the victory event says who left).
+  get bossIds() {
+    return JSON.parse(this.element.dataset.bossIds || "[]")
+  }
+
   // --- lookups ---
 
   unitEl(id) {
@@ -216,7 +225,7 @@ export class Board {
     const parts = [
       ...Object.entries(this.tallies.dealt).map(([id, n]) => `${name(id)} dealt ${n}`),
       ...Object.entries(this.tallies.healed).map(([id, n]) => `${name(id)} healed ${n}`),
-      ...(this.tallies.fallen.length ? [`${this.tallies.fallen.map(name).join(", ")} ${this.tallies.fallen.length > 1 ? "fell" : "fell"}`] : []),
+      ...(this.tallies.fallen.length ? [`${[...new Set(this.tallies.fallen)].map(name).join(", ")} fell`] : []), // once each: down, up, down again is one fall
     ]
     this.tally.replaceChildren()
     const label = document.createElement("strong")
@@ -279,7 +288,8 @@ export class Board {
     const el = document.createElement("span")
     el.className = `popup popup--${kind} ${extra}`.trim()
     el.textContent = text
-    el.style.top = `${box.top - stage.top + box.height * 0.3}px`
+    // A word on the creature (a reaction) sits mid-sprite, clear of the rail along the stage's top.
+    el.style.top = `${box.top - stage.top + box.height * (extra.includes("popup--on") ? 0.5 : 0.3)}px`
     // Numbers land at a slight tilt, never the same twice (decoration, not outcome).
     if (["damage", "heal", "poison"].includes(kind)) el.style.rotate = `${(Math.random() * 12 - 6).toFixed(1)}deg`
     this.fx.append(el)
@@ -320,12 +330,38 @@ export class Board {
     })
   }
 
+  rename(id, name) {
+    const label = this.unitEl(id)?.querySelector(".unit__label")
+    if (label && name) label.textContent = name
+  }
+
+  // The bosses' epitaph, by what they're called now (a phase may have renamed them since the page came).
+  get bossDownNow() {
+    const names = this.bossIds.map((id) => this.unitEl(id)?.querySelector(".unit__label")?.textContent).filter(Boolean)
+    if (!names.length) return this.bossDown
+    const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0]
+    return `${list} ${names.length > 1 ? "fall" : "falls"}!`
+  }
+
+  // A unit's line, said in the stage's dialogue box as a beat of its own (dialogue_controller#say):
+  // its name, its face from the field (the sprite's image, else its plate's colour).
+  speak(id, line, name = null) {
+    const sprite = this.sprite(id)
+    const plate = sprite?.querySelector(".sprite__plate")
+    window.dispatchEvent(new CustomEvent("dialogue:say", {
+      detail: {
+        speaker: name || this.unitEl(id)?.querySelector(".unit__label")?.textContent || id,
+        text: line, plate: plate?.getAttribute("style") || "", portrait: sprite?.querySelector("img")?.src || "", expression: "angry"
+      }
+    }))
+  }
+
   banner(tl, text, at, kind = "round") {
     const el = document.createElement("div")
     el.className = `banner banner--${kind}`
     el.textContent = text
     this.fx.append(el)
-    if (["victory", "defeat", "escape", "boss-down", "all-out"].includes(kind)) {
+    if (["victory", "defeat", "escape", "boss-down", "all-out", "phase"].includes(kind)) {
       // Thrown across the stage from the left, held, then gone.
       tl.add(el, { opacity: [0, 1, 1, 1, 0], translateX: ["-60%", "0%", "0%", "0%", "4%"], duration: 1300, ease: "outExpo" }, at)
     } else {

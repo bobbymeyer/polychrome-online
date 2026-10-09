@@ -58,8 +58,8 @@ module Generators
         @pool = pool
         @years = years
         @lore = Lore.empty.merge(lore)
-        # The world's names; a world without any still has people, just plainly named.
-        @given = unique(given_names).then { |names| names.empty? ? %w[Someone] : names }
+        # The world's names; a world without any still has people, known by their house alone.
+        @given = unique(given_names)
         @surnames = unique(family_names)
         @places = places.map { |p| { "key" => p["key"].to_s, "name" => p["name"].to_s, "kind" => p["kind"].to_s } }
         @pinned = Array(families).select { |f| f["name"].to_s.strip != "" }
@@ -96,6 +96,8 @@ module Generators
 
       # A name nobody alive has; once the names run out, the dead's come back.
       def given
+        return nil if @given.empty?
+
         fresh = @given - @used_given
         if fresh.empty?
           @used_given = Array(@families).flat_map { |f| [ f["head"], f["heir"] ] }.compact.map { |p| p["name"].split.first }
@@ -108,7 +110,7 @@ module Generators
       end
 
       def person(family, born)
-        { "name" => "#{given} #{family['name']}", "born" => born }
+        { "name" => [ given, family["name"] ].compact.join(" "), "born" => born }
       end
 
       def living = @families.reject { |f| f["gone"] }

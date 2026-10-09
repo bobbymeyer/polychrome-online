@@ -3,7 +3,9 @@
     timer, the seed, where, and whether the party can flee. The form posts to BattlesController#create.
     campaign; setup (BattleSetup.defaults, or the form as it came back). %>
 <% world = campaign.world %>
-<% monsters = monster_options(world.monsters) %>
+<%# A boss's later forms come by its phases, not on their own (Monster#phases). %>
+<% forms = world.monsters.flat_map { |m| m.phases.map { |p| p["becomes"] } } %>
+<% monsters = monster_options(world.monsters.where.not(slug: forms)) %>
 <%= form_with url: campaign_battles_path(campaign), scope: :battle, class: "book-form battle-setup",
               data: { controller: "forecast help", forecast_url_value: campaign_forecast_path(campaign), action: "change->forecast#changed input->forecast#changed", turbo_frame: "_top" } do |f| %>
   <%= hidden_field_tag :from, "table", id: nil %>

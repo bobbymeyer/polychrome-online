@@ -146,8 +146,11 @@ module BooksHelper
     when "imbue" then "Attack strikes as #{effect_type(e['type']).downcase} (#{e.fetch('duration', 3)} turns)"
     when "percent" then "#{e['power']}% of current #{word('hp')}#{" (#{e['chance']}%)" if e['chance']}; never the last of it"
     when "summon"
-      stay = e["stays"] == 1 ? "for the battle" : pluralize(e.fetch("duration", 1), "turn")
-      "Call #{@world&.monsters&.find_by(slug: e['creature'])&.name || e['creature'].to_s.humanize} (acts at once, stays #{stay}#{", #{e['power']}% strength" if e['power']})"
+      stays = if e["stays"] == 1 then "stays for the battle"
+      elsif e.fetch("duration", 1).zero? then "stays while its summoner stands"
+      else "stays #{pluralize(e.fetch('duration', 1), 'turn')}"
+      end
+      "Call #{@world&.monsters&.find_by(slug: e['creature'])&.name || e['creature'].to_s.humanize} (acts at once, #{stays}#{", #{e['power']}% strength" if e['power']})"
     when "gather" then "Gather #{pluralize(e.fetch('amount', 1), 'stack')} of #{term(e['kind']).downcase} (up to #{Battle::MAX_STACKS})"
     when "dispel" then "Take away its good statuses and raised stats"
     when "quick" then "The ally goes again at once (once a round)"
@@ -185,6 +188,15 @@ module BooksHelper
 
   def effect_type(type)
     type == "terrain" ? "Terrain" : type_name(type)
+  end
+
+  # A reaction's moment (Battle::AI::TRIGGERS), or nil for a rule taken on the creature's turn.
+  def describe_moment(trigger, by = nil)
+    case trigger
+    when "hit" then by ? "When hit by #{term(by)}" : "When hit"
+    when "ally_falls" then "When one of its own falls"
+    when "falls" then "With its last breath"
+    end
   end
 
   def describe_condition(name, value)

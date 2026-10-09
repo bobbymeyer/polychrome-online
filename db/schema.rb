@@ -119,6 +119,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.json "arrived_units", default: [], null: false
     t.datetime "watched_at"
     t.string "room"
+    t.boolean "prelude_said", default: false, null: false
     t.index ["campaign_id"], name: "index_battles_on_campaign_id"
     t.index ["world_id"], name: "index_battles_on_world_id"
   end
@@ -641,6 +642,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_100000) do
     t.string "base_type", default: "normal", null: false
     t.boolean "undead", default: false, null: false
     t.boolean "giant", default: false, null: false
+    t.json "phases", default: [], null: false
+    t.string "music"
     t.index ["world_id", "slug"], name: "index_monsters_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_monsters_on_world_id"
   end

@@ -154,7 +154,7 @@ export default class extends Controller {
     window.dispatchEvent(new CustomEvent("log-drawer:unread", { detail: { count: this.unread } }))
   }
 
-  // The table's log keeps its newest line on top (data-newest="first"); a battle's log grows downward.
+  // A log keeps its newest line on top (data-newest="first"); one without grows downward.
   scrollToNewest() {
     this.listTargets.forEach((list) => { list.parentElement.scrollTop = list.dataset.newest === "first" ? 0 : list.parentElement.scrollHeight })
   }

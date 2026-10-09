@@ -18,6 +18,13 @@ class Monster < ApplicationRecord
   validate :status_immunities_are_statuses
   validate :ai_script_is_valid
   validate :drops_are_items
+  validate :phases_are_forms
+  # Its own music: one of its world's tracks by name ("track:12"); blank, the world's boss track.
+  normalizes :music, with: ->(choice) { choice.presence }
+  validate :music_is_a_track
+  # Every battle takes the whole Grimoire and every table may roll it: an entry something still
+  # names can't go, or the summon, the table and the lair would all break (Battle::State.build).
+  before_destroy :still_needed
 
   def stats=(values)
     super((values || {}).to_h.stringify_keys.transform_values { |v| JsonCasting.integer(v) }.compact)
@@ -44,8 +51,34 @@ class Monster < ApplicationRecord
 
         [ name, name == "ally_ko" ? ActiveModel::Type::Boolean.new.cast(value) : JsonCasting.integer(value) ]
       end.to_h
-      { "if" => conditions.presence, "use" => row["use"].to_s, "target" => row["target"].presence }.compact
+      # once: the rule fires one time a battle; say: a line said as it fires (the telegraph);
+      # when: a reaction (hit, ally_falls, falls), by: the type of blow a hit reaction answers.
+      { "if" => conditions.presence, "use" => row["use"].to_s, "target" => row["target"].presence,
+        "once" => (true if ActiveModel::Type::Boolean.new.cast(row["once"])), "say" => row["say"].to_s.strip.presence,
+        "when" => row["when"].presence, "by" => row["by"].presence }.compact
     end)
+  end
+
+  # Phases: [{ "hp_below" => 50, "becomes" => slug, "say" => "…", "restore" => 10 }], in order.
+  # Below that share of its HP the creature becomes the entry named: its name, look, stats and script.
+  def phases=(rows)
+    super(JsonCasting.rows(rows).filter_map do |row|
+      next if row["becomes"].blank?
+
+      { "hp_below" => JsonCasting.integer(row["hp_below"]), "becomes" => row["becomes"].to_s, "say" => row["say"].to_s.strip.presence,
+        "restore" => JsonCasting.integer(row["restore"]) || 0 }.compact
+    end)
+  end
+
+  # The entries it becomes, in order.
+  def forms
+    by_slug = world.monsters.where(slug: phases.map { |p| p["becomes"] }).index_by(&:slug)
+    phases.filter_map { |p| by_slug[p["becomes"]] }
+  end
+
+  # The entries whose phases become it.
+  def form_of
+    world.monsters.alphabetical.select { |m| m.phases.any? { |p| p["becomes"] == slug } }
   end
 
   def drops=(rows)
@@ -69,12 +102,33 @@ class Monster < ApplicationRecord
     world.items.where(slug: drops.map { |d| d["item"] }).index_by(&:slug)
   end
 
+  # Cross-references (§7): the abilities that summon it, the encounter tables that roll it, the
+  # location templates whose boss it is, and the NPCs and cast who fight as it.
+  def summoned_by
+    world.abilities.alphabetical.select { |a| Array(a.effects).any? { |e| e["primitive"] == "summon" && e["creature"] == slug } }
+  end
+
+  def rolled_by
+    world.encounter_tables.alphabetical.select { |t| t.entries.any? { |e| e["monsters"].key?(slug) } }
+  end
+
+  def boss_of
+    world.location_templates.alphabetical.select { |t| t.config.dig("boss", slug) }
+  end
+
+  def fought_as_by
+    Npc.where(monster_id: id).order(:name).pluck(:name) + world.world_figures.where(monster_id: id).order(:name).pluck(:name)
+  end
+
   def rewards
     { "exp" => exp, "gil" => gil, "abp" => abp }
   end
 
+  # Where its own music is heard from (World::Music#music_path), or nil.
+  def music_path = music && world.music_path(music)
+
   # Enemy spec for Battle::State.build.
-  def to_engine(count: 1)
+  def to_engine(count: 1, depth: 0)
     {
       "id" => slug,
       "name" => name,
@@ -89,6 +143,23 @@ class Monster < ApplicationRecord
       "drops" => (names = drop_items.transform_values(&:name); drops.map { |d| d.merge("name" => names[d["item"]]).compact }),
       "image" => { "book" => "monsters", "slug" => slug }
     }.merge(undead? ? { "undead" => true } : {}).merge(boss? ? { "boss" => true } : {}).merge(giant? ? { "giant" => true } : {})
+     .merge(engine_phases(depth))
+     .merge(music_path ? { "music" => music_path } : {}) # so a form can bring its own
+  end
+
+  # Its phases as the engine takes them: each becomes the other entry's spec. A form's own
+  # phases follow, to a depth (a chain of forms, not a loop).
+  PHASE_DEPTH = 3
+
+  def engine_phases(depth)
+    return {} if phases.empty? || depth >= PHASE_DEPTH
+
+    by_slug = world.monsters.where(slug: phases.map { |p| p["becomes"] }).index_by(&:slug)
+    built = phases.filter_map do |phase|
+      form = by_slug[phase["becomes"]] or next
+      phase.merge("becomes" => form.to_engine(depth: depth + 1).except("count"))
+    end
+    built.any? ? { "phases" => built } : {}
   end
 
   private
@@ -114,21 +185,87 @@ class Monster < ApplicationRecord
     errors.add(:status_immune, "has unknown statuses: #{unknown.join(', ')}") if unknown.any?
   end
 
+  def still_needed
+    return if destroyed_by_association # the whole world is going, books and all
+
+    needs = []
+    needs << "#{summoned_by.map(&:name).to_sentence} #{summoned_by.one? ? 'summons' : 'summon'} it" if summoned_by.any?
+    needs << "#{rolled_by.map(&:name).to_sentence} #{rolled_by.one? ? 'rolls' : 'roll'} it" if rolled_by.any?
+    needs << "it is the boss of #{boss_of.map(&:name).to_sentence}" if boss_of.any?
+    needs << "#{fought_as_by.to_sentence} #{fought_as_by.one? ? 'fights' : 'fight'} as it" if fought_as_by.any?
+    needs << "it is a form of #{form_of.map(&:name).to_sentence}" if form_of.any?
+    return if needs.empty?
+
+    errors.add(:base, "#{name} is still needed: #{needs.to_sentence}. Change those first.")
+    throw :abort
+  end
+
   def ai_script_is_valid
-    known = world ? world.abilities.where(slug: ability_slugs).pluck(:slug) : []
+    known = world ? world.abilities.in_battle.where(slug: ability_slugs).pluck(:slug) : []
+    field = world ? world.abilities.field.where(slug: ability_slugs).pluck(:slug) : []
     ai_script.each_with_index do |rule, i|
       label = "rule #{i + 1}"
       use = rule["use"]
-      errors.add(:ai_script, "#{label} uses #{use}, which is not in the Grimoire") unless use == "attack" || known.include?(use)
+      if field.include?(use)
+        errors.add(:ai_script, "#{label} uses #{use}, a field ability, which can't be used in battle")
+      elsif !(use == "attack" || known.include?(use))
+        errors.add(:ai_script, "#{label} uses #{use}, which is not in the Grimoire")
+      end
       if rule["target"] && !Battle::AI::STRATEGIES.include?(rule["target"])
         errors.add(:ai_script, "#{label} has unknown target #{rule['target']}")
       end
+      errors.add(:ai_script, "#{label} says too much (200 letters at most)") if rule["say"].to_s.length > 200
+      errors.add(:ai_script, "#{label} has unknown moment #{rule['when']}") if rule["when"] && !Battle::AI::TRIGGERS.include?(rule["when"])
+      errors.add(:ai_script, "#{label} answers blows of #{rule['by']}, but only a rule for when it's hit answers blows") if rule["by"] && rule["when"] != "hit"
+      errors.add(:ai_script, "#{label} answers blows of #{rule['by']}, which isn't one of this world's types") if rule["by"] && !world_types.include?(rule["by"])
       rule.fetch("if", {}).each do |name, value|
         next errors.add(:ai_script, "#{label} has unknown condition #{name}") unless Battle::AI::CONDITIONS.include?(name)
         next if name == "ally_ko"
 
-        errors.add(:ai_script, "#{label} #{name} must be a positive whole number") unless JsonCasting.integer?(value) && value.positive?
+        next errors.add(:ai_script, "#{label} #{name} must be a positive whole number") unless JsonCasting.integer?(value) && value.positive?
+
+        errors.add(:ai_script, "#{label} chance must be 1 to 100") if name == "chance" && value > 100
       end
+    end
+  end
+
+  def music_is_a_track
+    errors.add(:music, "isn't one of #{world&.name}'s tracks") if music && !world&.music_track_choice?(music)
+  end
+
+  def phases_are_forms
+    known = world ? world.monsters.where(slug: phases.map { |p| p["becomes"] }).pluck(:slug) : []
+    phases.each_with_index do |phase, i|
+      label = "phase #{i + 1}"
+      errors.add(:phases, "#{label} becomes #{phase['becomes']}, which is not in the Bestiary") unless known.include?(phase["becomes"])
+      errors.add(:phases, "#{label} can't become itself") if phase["becomes"] == slug
+      errors.add(:phases, "#{label} HP below must be 1 to 99") unless phase["hp_below"].is_a?(Integer) && phase["hp_below"].between?(1, 99)
+      errors.add(:phases, "#{label} restore must be 0 to 100") unless phase["restore"].between?(0, 100)
+      errors.add(:phases, "#{label} says too much (200 letters at most)") if phase["say"].to_s.length > 200
+    end
+    errors.add(:phases, "must come in order, each below the last") unless phases.map { |p| p["hp_below"] }.compact.each_cons(2).all? { |a, b| b < a }
+    phase_chain_problems
+  end
+
+  # Forms go one way: a form that becomes (through its own forms) the entry
+  # it's a form of would loop. And a boss is at most PHASE_DEPTH forms deep:
+  # past that, the engine stops building them (#engine_phases).
+  def phase_chain_problems
+    return if phases.empty? || world.nil?
+
+    chains = world.monsters.where.not(id: id).pluck(:slug, :phases).to_h.merge(slug => phases)
+    names = world.monsters.pluck(:slug, :name).to_h.merge(slug => name) # itself as it is now, saved or not
+    stack = phases.map { |p| [ p["becomes"], 1, [ slug, p["becomes"] ] ] }
+    until stack.empty?
+      form, depth, path = stack.pop
+      if form == slug
+        return errors.add(:phases, "go round in a circle (#{path.map { |s| names[s] || s }.join(' → ')}): a form can't become what it's a form of")
+      end
+      if depth > PHASE_DEPTH
+        return errors.add(:phases, "go #{depth} forms deep (#{path.map { |s| names[s] || s }.join(' → ')}): #{PHASE_DEPTH} is the most a boss can take")
+      end
+
+      Array(chains[form]).each { |p| stack << [ p["becomes"], depth + 1, path + [ p["becomes"] ] ] }
     end
   end
 

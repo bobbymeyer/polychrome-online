@@ -37,7 +37,11 @@ class SiteSetting < ApplicationRecord
   def urls_are_plain_addresses
     URLS.each do |field|
       value = self[field] or next
-      uri = URI.parse(value) rescue nil
+      uri = begin
+        URI.parse(value)
+      rescue URI::InvalidURIError
+        nil
+      end
       if !uri.is_a?(URI::HTTP) || uri.host.blank?
         errors.add(field, "must be an http:// or https:// address")
       elsif uri.userinfo

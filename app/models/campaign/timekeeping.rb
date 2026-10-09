@@ -6,7 +6,7 @@
 # door); a rest sleeps until the day begins again, or through its first part
 # if begun then; the GM can pass time by hand. Each new day ticks the clocks that tick on dawn, so
 # "the festival is in three days" is a three-segment clock, and the world
-# moves on a little (Campaign::Overnight).
+# moves on a little (Campaign::Night).
 module Campaign::Timekeeping
   extend ActiveSupport::Concern
 

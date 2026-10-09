@@ -23,15 +23,15 @@ module BattleRecord::Settlement
 
     characters = characters_by_unit
     party.each do |unit|
-      characters[unit["id"]]&.update!(hp: unit["hp"], mp: unit["mp"])
+      characters[unit.id]&.update!(hp: unit.hp, mp: unit.mp)
     end
 
     summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items!,
                 "stolen" => take_stolen_items!, "antagonists" => settle_antagonists! }.compact
     victory = events.find { |e| e["type"] == "victory" }
-    standing = party.select { |u| u["hp"].positive? }.filter_map { |u| characters[u["id"]] }
     if victory
       rewards = victory["rewards"]
+      standing = party.select(&:standing?).filter_map { |u| characters[u.id] }
       exp_share = standing.empty? ? 0 : rewards["exp"].to_i / standing.size
       standing.each do |character|
         summary["members"] << { "name" => character.name }.merge(character.gain!(exp: exp_share, abp: rewards["abp"].to_i))
@@ -50,9 +50,10 @@ module BattleRecord::Settlement
     update!(settlement: summary)
     announce!(settlement_line(summary))
     # The room this fight was for is dealt with now, and only now: lost or
-    # fled, what waits there waits still (Location::Exploration#cleared?).
-    campaign.dungeon_in_progress&.resolve!(room) if victory && room
-    record_deeds!(summary, characters) if victory
+    # fled, what waits there waits still (Location::Exploration#cleared?), and
+    # so does a boss who got away (sent off the field, to come back stronger).
+    campaign.dungeon_in_progress&.resolve!(room) if victory && room && bosses_beaten?
+    record_deeds!(summary, characters) if victory && bosses_beaten?
     # Everyone down: what now is the table's to decide (Campaign::Defeat).
     campaign.ask_what_now! if status == "defeat" && campaign.wiped_out?
   end
@@ -71,19 +72,18 @@ module BattleRecord::Settlement
   # Antagonists who got away come back stronger; the fallen are finished.
   # Returns [{ "name", "fate" }] for the settlement, or nil if none fought.
   def settle_antagonists!
-    fates = state["units"].filter_map do |unit|
-      npc = (id = Npc.from_battle_unit(unit["id"])) && campaign.npcs.find_by(id: id)
+    fates = units.filter_map do |unit|
+      npc = unit.npc_id && campaign.npcs.find_by(id: unit.npc_id)
       next unless npc
 
-      fate = if unit["gone"] then "escaped"
-      elsif unit["hp"].zero? && first_meeting?(npc) then "slipped_away"
-      elsif unit["hp"].zero? then "defeated"
+      fate = if unit.gone? then "escaped"
+      elsif unit.ko? && first_meeting?(npc) then "slipped_away"
+      elsif unit.ko? then "defeated"
       else "remains"
       end
-      if %w[escaped slipped_away].include?(fate)
-        # Gone from here, to turn up somewhere near (Campaign::Overnight).
-        npc.update!(escapes: npc.escapes + 1, location: campaign.current_node&.location || npc.location)
-      end
+      # Gone from the field, not from the map: they stay where they were until the night moves them on
+      # (Campaign::Night), as the NPC form says. A villain met in their own lair is still its master.
+      npc.update!(escapes: npc.escapes + 1) if %w[escaped slipped_away].include?(fate)
       npc.update!(defeated_at: Time.current) if fate == "defeated"
       { "name" => npc.name, "fate" => fate }
     end
@@ -99,24 +99,24 @@ module BattleRecord::Settlement
 
   # Items used in battle come out of the bag. Returns { "Potion" => 2 }.
   def use_up_items!
-    carried = initial_state.fetch("items", {})
+    carried = BattleState.new(initial_state).items
     return {} if carried.empty?
 
     items = world.items.where(slug: carried.keys).index_by(&:slug)
     carried.each_with_object({}) do |(slug, item), used|
-      n = item["count"] - state.dig("items", slug, "count").to_i
+      n = item.count - (field.item(slug)&.count).to_i
       next unless n.positive? && items[slug]
 
       campaign.use_items!(items[slug], n)
-      used[item["name"]] = n
+      used[item.name] = n
     end
   end
 
   def settlement_line(summary)
-    parts = [ { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away." }.fetch(summary["result"], "It's over.") ]
+    parts = [ result_line ]
     if boss? && summary["result"] == "victory" && summary["antagonists"].blank?
       names = boss_names
-      parts << "#{names.to_sentence} #{names.size > 1 ? 'have' : 'has'} fallen!"
+      parts << (bosses_beaten? ? "#{names.to_sentence} #{names.size > 1 ? 'have' : 'has'} fallen!" : "#{names.to_sentence} got away.")
     end
     Array(summary["antagonists"]).each do |antagonist|
       case antagonist["fate"]

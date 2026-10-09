@@ -57,7 +57,7 @@ class Npc < ApplicationRecord
   def battle_spec
     spec = monster.to_engine.except("count")
     stats = spec["stats"].to_h { |stat, value| [ stat, SCALED.include?(stat) ? value * strength_percent / 100 : value ] }
-    spec.merge("id" => battle_unit_id, "name" => name, "stats" => stats, "boss" => true,
+    spec.merge("id" => battle_unit_id, "name" => name, "stats" => stats, "boss" => true, "named" => true,
                "image" => { "book" => "npcs", "slug" => id.to_s })
   end
 

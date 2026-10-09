@@ -130,6 +130,10 @@ RSpec.describe "Maps", type: :request do
       expect(page.at("[data-controller~=map-editor]")).to be_present
       expect(page.at("#map_panel")).to be_present
       expect(page.at(".map-sheet--editor")).to be_present
+
+      get campaign_map_panel_path(campaign) # the panel itself, as its frame fetches it
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Put the party here")
     end
 
     it "makes a map on another, moves it by dragging, puts it beside one, and takes it away" do

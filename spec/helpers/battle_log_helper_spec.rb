@@ -13,7 +13,7 @@ RSpec.describe BattleLogHelper, type: :helper do
     silent = %w[command_accepted turn_order turn_start turn_end round_end]
     steps.each do |_, _, after, events|
       events.each do |event|
-        line = helper.battle_log_line(event, after)
+        line = helper.battle_log_line(event, BattleState.new(after))
         if silent.include?(event["type"])
           expect(line).to be_nil
         elsif event["type"] != "status_expired" && event["type"] != "timeout"
@@ -26,11 +26,11 @@ RSpec.describe BattleLogHelper, type: :helper do
   it "always writes a line for a GM override (§12)" do
     overrides = steps.flat_map { |_, _, after, events| events.select { |e| e["type"] == "gm_override" }.map { |e| [ e, after ] } }
     expect(overrides).not_to be_empty
-    overrides.each { |event, state| expect(helper.battle_log_line(event, state)).to start_with("GM ") }
+    overrides.each { |event, state| expect(helper.battle_log_line(event, BattleState.new(state))).to start_with("GM ") }
   end
 
   it "names units and abilities" do
-    state = build_battle
+    state = BattleState.new(build_battle)
     expect(helper.battle_log_line({ "type" => "cast", "actor" => "vivi", "ability" => "fire" }, state)).to eq("Vivi casts Fire.")
     expect(helper.battle_log_line({ "type" => "timeout", "defaulted" => [ "bartz" ] }, state)).to eq("Time's up! Bartz acts on reflex.")
     expect(helper.battle_log_line({ "type" => "timeout", "defaulted" => %w[bartz vivi] }, state)).to eq("Time's up! Bartz and Vivi act on reflex.")
@@ -39,8 +39,20 @@ RSpec.describe BattleLogHelper, type: :helper do
       .to eq("Goblin A dodges. (rolled 3, needed 11 or over)")
     expect(helper.battle_log_line({ "type" => "desperation", "actor" => "bartz", "ability" => "goblin_punch", "name" => "Goblin Punch" }, state))
       .to eq("Bartz, at the end of their rope: Goblin Punch!")
+    expect(helper.battle_log_line({ "type" => "says", "actor" => "goblin_a", "line" => "Grr." }, state)).to eq("Goblin A: “Grr.”")
+    expect(helper.term("lowest_hp")).to eq("Lowest HP")
+    expect(helper.battle_log_line({ "type" => "reacts", "actor" => "goblin_a", "trigger" => "hit", "ability" => "goblin_punch", "name" => "Goblin Punch" }, state))
+      .to eq("Goblin A answers the blow: Goblin Punch!")
+    expect(helper.battle_log_line({ "type" => "reacts", "actor" => "goblin_a", "trigger" => "falls", "ability" => "goblin_punch", "name" => "Goblin Punch" }, state))
+      .to eq("Goblin A, with its last breath: Goblin Punch!")
+    expect(helper.battle_log_line({ "type" => "phase", "actor" => "goblin_a", "was" => "Goblin A", "name" => "Goblin King", "form" => "Goblin King", "line" => "Now." }, state))
+      .to eq("Goblin A becomes Goblin King! “Now.”")
+    expect(helper.battle_log_line({ "type" => "phase", "actor" => "goblin_a", "was" => "Sten", "name" => "Sten", "form" => "Goblin King" }, state))
+      .to eq("Sten takes the form of Goblin King!")
     expect(helper.battle_log_line({ "type" => "damage", "target" => "goblin_a", "amount" => 9, "weak" => true }, state))
       .to eq("Goblin A takes 9 damage. It's super effective!")
     expect(helper.battle_log_line({ "type" => "victory", "rewards" => { "exp" => 18, "gil" => 36 } }, state)).to eq("Victory! 18 EXP and 36 gil.")
+    expect(helper.battle_log_line({ "type" => "victory", "rewards" => {}, "fell" => false }, state)).to eq("They got away.")
+    expect(helper.battle_log_line({ "type" => "abandoned" }, state)).to eq("Called off.")
   end
 end

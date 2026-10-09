@@ -70,7 +70,7 @@ module Location::Town
 
   # What anything costs here today, the shop's stock and the inn, temple
   # and guild alike: dearer after a caravan is lost on
-  # the road, easing back day by day (Campaign::Overnight), and cheaper for
+  # the road, easing back day by day (Campaign::Night), and cheaper for
   # friends.
   # A coward in the party costs it more everywhere (Character::Courage).
   def price_here(base)

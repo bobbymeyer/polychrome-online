@@ -97,14 +97,17 @@ export default class extends Controller {
     if (!this.typing && !this.pages.length) this.scheduleNext()
   }
 
-  // A line that isn't a message: a boss's opening words (boss_intro).
-  // It goes to the front of the queue and never to the log.
+  // A line that isn't a message: a boss's opening words (boss_intro), what
+  // a creature says as its rule fires or as it becomes its next form
+  // (battle/board.js#speak). It goes to the front of the queue and never
+  // to the log (the battle's log has its own line for it).
   say(event) {
     if (!this.hasBoxTarget) return
-    const { speaker, text, plate, expression } = event.detail
+    const { speaker, text, plate, expression, portrait } = event.detail
     const line = {
+      said: true, // not a log line: nothing to take back (see #next)
       speakerValue: speaker, text, plate, expressionValue: expression || "",
-      speakerKeyValue: `said:${speaker}`, portraitValue: "", dialogueValue: true,
+      speakerKeyValue: `said:${speaker}`, portraitValue: portrait || "", dialogueValue: true,
       element: document.createElement("li")
     }
     this.queue.unshift(line)
@@ -192,7 +195,7 @@ export default class extends Controller {
     this.holdTimer = null
     this.clearPages()
     let line = this.queue.shift()
-    while (line && !line.element.isConnected) line = this.queue.shift() // taken back before its turn
+    while (line && !line.said && !line.element.isConnected) line = this.queue.shift() // a log line taken back before its turn
     if (!line) {
       this.current = null
       this.busy = false

@@ -23,7 +23,7 @@ export default class extends Controller {
     const data = new FormData(this.element)
     const query = new URLSearchParams()
     for (const [key, value] of data) {
-      if (/\[(characters|encounter)\]/.test(key)) query.append(key, value)
+      if (/\[(characters|encounter|antagonists)\]/.test(key)) query.append(key, value)
     }
     this.frameTarget.src = `${this.urlValue}?${query}`
   }

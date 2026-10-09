@@ -1,20 +1,19 @@
-<%# The shared battle board, rendered from a resolver state. Identical for every viewer, so it holds
-    nothing seat-specific: enemy HP stays hidden (the GM sees it in the command panel). What lasts on a
-    unit is on it (docs/DESIGN.md, "Motion with meaning"): each status with the turns it has left, a
-    barrier with its points, a blade's type; and what each of the party means to do this round. %>
-<% inputs = state["inputs"] || {} %>
+<%# The shared battle board, drawn from a resolver state (a BattleState: the battle's own, or a beat's before).
+    Identical for every viewer, so it holds nothing seat-specific: enemy HP stays hidden (the GM sees it in the
+    command panel). What lasts on a unit is on it (docs/DESIGN.md, "Motion with meaning"): each status with the
+    turns it has left, a barrier with its points, a blade's type; and what each of the party means to do this round. %>
 <% battle_world = battle.campaign.world %>
-<div class="board" data-status="<%= state["status"] %>">
+<div class="board" data-status="<%= field.status %>">
   <div class="battlefield">
     <% %w[enemy party].each do |side| %>
-      <% units = state["units"].select { |u| u["side"] == side && !u["gone"] } %>
+      <% units = field.on_field(side) %>
       <div class="battlefield__side battlefield__side--<%= side %>" style="--count: <%= [ units.size, 1 ].max %>">
         <% units.each do |unit| %>
-          <div class="unit unit--<%= side %> <%= 'is-ko' if unit['hp'].zero? %> <%= unit_marks(unit) %>" data-unit="<%= unit['id'] %>">
+          <div class="unit unit--<%= side %> <%= 'is-ko' if unit.ko? %> <%= unit_marks(unit) %>" data-unit="<%= unit.id %>">
             <div class="sprite" data-sprite><%= unit_sprite(battle, unit) %></div>
-            <div class="unit__label"><%= unit["name"] %></div>
+            <div class="unit__label"><%= unit.name %></div>
             <%= render "battles/badges", unit: unit, world: battle_world %>
-            <% if (intent = intent_label(state, unit, inputs[unit["id"]])) %>
+            <% if (intent = intent_label(field, unit)) %>
               <span class="intent" data-intent><%= intent %></span>
             <% end %>
           </div>
@@ -24,19 +23,19 @@
   </div>
 
   <ol class="roster window" aria-label="Party">
-    <% state["units"].select { |u| u["side"] == "party" && !u["gone"] }.each do |unit| %>
-      <li class="roster__row <%= 'is-ko' if unit['hp'].zero? %>" data-roster="<%= unit['id'] %>" data-max-hp="<%= unit['stats']['max_hp'] %>">
-        <span class="roster__ready <%= 'is-ready' if inputs.key?(unit["id"]) %>" data-ready title="Ready"></span>
-        <span class="roster__name"><%= unit["name"] %><%= tag.span("Guest", class: "roster__guest") if unit["guest"] %>
-          <% if (intent = intent_label(state, unit, inputs[unit["id"]])) %><span class="roster__intent" data-intent><%= intent %></span><% end %>
+    <% field.on_field("party").each do |unit| %>
+      <li class="roster__row <%= 'is-ko' if unit.ko? %>" data-roster="<%= unit.id %>" data-max-hp="<%= unit.max_hp %>">
+        <span class="roster__ready <%= 'is-ready' if field.chosen?(unit) %>" data-ready title="Ready"></span>
+        <span class="roster__name"><%= unit.name %><%= tag.span("Guest", class: "roster__guest") if unit.guest? %>
+          <% if (intent = intent_label(field, unit)) %><span class="roster__intent" data-intent><%= intent %></span><% end %>
         </span>
         <span class="roster__hp">
           <span class="label"><%= word("hp", battle_world) %></span>
-          <span data-hp><%= unit["hp"] %></span><span class="muted">/<%= unit["stats"]["max_hp"] %></span>
+          <span data-hp><%= unit.hp %></span><span class="muted">/<%= unit.max_hp %></span>
           <span class="roster__delta" data-delta></span>
-          <span class="bar"><span class="bar__fill bar__fill--<%= hp_band(unit) %>" data-hp-bar style="width: <%= hp_percent(unit) %>%"></span></span>
+          <span class="bar"><span class="bar__fill bar__fill--<%= unit.hp_band %>" data-hp-bar style="width: <%= unit.hp_percent %>%"></span></span>
         </span>
-        <span class="roster__mp"><span class="label"><%= word("mp", battle_world) %></span> <span data-mp><%= unit["mp"] %></span></span>
+        <span class="roster__mp"><span class="label"><%= word("mp", battle_world) %></span> <span data-mp><%= unit.mp %></span></span>
         <%= render "battles/badges", unit: unit, world: battle_world %>
       </li>
     <% end %>

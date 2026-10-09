@@ -14,12 +14,11 @@ module BattlesHelper
       "items" => battle.world.items.masks.with_attached_image.index_by(&:slug)
     }
     # Masked, the mask is their face (Battle::Masks), when it has art.
-    mask = unit["statuses"].to_a.find { |s| s["kind"] == "masked" }&.dig("mask")
+    mask = unit.status("masked")&.dig("mask")
     face = mask && @unit_art[battle.id].dig("items", mask)
     return face if face&.image&.attached?
 
-    ref = unit["image"] || {}
-    @unit_art[battle.id].dig("characters", unit["id"].to_s) || @unit_art[battle.id].dig(ref["book"], ref["slug"])
+    @unit_art[battle.id].dig("characters", unit.id.to_s) || @unit_art[battle.id].dig(unit.image["book"], unit.image_slug)
   end
 
   def unit_sprite(battle, unit)
@@ -28,43 +27,43 @@ module BattlesHelper
     if entry&.image&.attached?
       image_tag(url_for(entry.image), alt: "", class: "sprite__image", style: style, draggable: false)
     else
-      tag.span(unit["name"].to_s.first, class: "sprite__plate", style: [ plate_style(unit.dig("image", "slug") || unit["name"], entry.try(:colour)), style ].compact.join(" "))
+      tag.span(unit.name.to_s.first, class: "sprite__plate", style: [ plate_style(unit.image_slug || unit.name, entry.try(:colour)), style ].compact.join(" "))
     end
   end
 
   # The help line for a command (docs/DESIGN.md, "Play"): what it hits, what it
   # does, what it costs; or why it can't be used right now.
   def ability_help(unit, ability)
-    cost = Battle::State.ability_cost(ability)
-    unless Battle::State.usable?(unit, ability)
-      silenced = ability["kind"] == "magic" && unit["statuses"].any? { |s| s["kind"] == "silence" }
-      return silenced ? "Silenced: no magic until it wears off." : "Not enough MP (needs #{cost}, you have #{unit['mp']})."
+    cost = ability.mp_cost
+    unless Battle::State.usable?(unit.to_h, ability.to_h)
+      silenced = ability.magic? && unit.status("silence")
+      return silenced ? "Silenced: no magic until it wears off." : "Not enough MP (needs #{cost}, you have #{unit.mp})."
     end
 
-    parts = [ term(ability["target"]) ]
-    parts.concat(ability["effects"].map { |e| describe_effect(e) })
+    parts = [ term(ability.target) ]
+    parts.concat(ability.effects.map { |e| describe_effect(e) })
     parts << "#{cost} MP" if cost.positive?
     parts.join(" · ")
   end
 
   # The help line for an item: what it hits and does, and how many are left.
   def item_help(item, left)
-    return "None left: the party has used or spoken for every #{item['name']}." unless left.positive?
+    return "None left: the party has used or spoken for every #{item.name}." unless left.positive?
 
-    [ term(item["target"]), *item["effects"].map { |e| describe_effect(e) }, "#{left} left" ].join(" · ")
+    [ term(item.target), *item.effects.map { |e| describe_effect(e) }, "#{left} left" ].join(" · ")
   end
 
   AFFINITY_LABELS = { "weak" => "Weak to", "resist" => "Resists", "immune" => "Immune to", "absorb" => "Absorbs" }.freeze
 
   # What you can see of a target: an ally's HP and MP. For an enemy, what the
   # Bestiary says (its level and affinities), but never its HP.
-  def target_help(battle, state, id)
-    target = state["units"].find { |u| u["id"] == id }
+  def target_help(battle, field, id)
+    target = field.unit(id)
     return "" unless target
 
-    statuses = target["statuses"].map { |s| s["kind"].humanize }
-    facts = if target["side"] == "party"
-      [ "HP #{target['hp']}/#{target['stats']['max_hp']}", "MP #{target['mp']}" ]
+    statuses = target.status_kinds.map(&:humanize)
+    facts = if target.party?
+      [ "HP #{target.hp}/#{target.max_hp}", "MP #{target.mp}" ]
     else
       enemy_facts(battle, target)
     end
@@ -72,21 +71,21 @@ module BattlesHelper
   end
 
   def enemy_facts(battle, target)
-    return [ "KO" ] if target["hp"].zero?
+    return [ "KO" ] if target.ko?
 
     level = battle && unit_art(battle, target).try(:level)
     facts = [ level ? "Level #{level}" : "Enemy" ]
     # In a campaign, players see only what the party has found out.
-    known = battle&.campaign&.known_affinities&.fetch(target.dig("image", "slug").to_s, {})
-    types = target.fetch("types", [])
+    known = battle&.campaign&.known_affinities&.fetch(target.image_slug.to_s, {})
+    types = target.types
     # Once the party knows what a monster is, the chart tells them the rest.
     knows_type = types.any? && (known.nil? || known["types"].present?)
-    engine = battle&.state&.dig("types") || Battle::Types::DEFAULT
+    engine = battle ? battle.field.types : Battle::Types::DEFAULT
     facts << "#{types.map { |t| type_name(t) }.join('/')} type" if knows_type && types_matter?
-    profile = type_profile(knows_type ? types : [], target.fetch("affinities", {}), engine: engine)
+    profile = type_profile(knows_type ? types : [], target.affinities, engine: engine)
     AFFINITY_LABELS.each do |affinity, label|
       names = profile[affinity].dup
-      names += target.fetch("status_immune", []) if affinity == "immune"
+      names += target.status_immune if affinity == "immune"
       names &= (known.keys + (knows_type ? Battle::Types.list(engine) : [])) if known
       facts << "#{label} #{names.map { |n| type_or_status(n) }.to_sentence}" if names.any?
     end
@@ -97,30 +96,30 @@ module BattlesHelper
   # "Won't affect Wolf A": what the party knows of a target says this move
   # can't hurt it (the chart's no effect, or it drinks the type up). Only
   # from what's been found out, so it never gives a weakness away.
-  def futile_note(battle, state, actor, move, target)
-    return unless target["side"] == "enemy" && target["hp"].positive?
+  def futile_note(battle, field, actor, move, target)
+    return unless target.enemy? && target.standing?
 
-    type = move_type(state, actor, move) or return
-    known = battle&.campaign&.known_affinities&.fetch(target.dig("image", "slug").to_s, {})
-    seen = known ? { "types" => Array(known["types"]), "affinities" => known.select { |_, v| %w[immune absorb].include?(v) } } : target
-    percent = Battle::Types.effectiveness(type, seen, state["types"] || Battle::Types::DEFAULT)
-    if percent == 0 then "Won't affect #{target['name']}" # rubocop:disable Style/NumericPredicate -- may be :absorb
-    elsif percent == :absorb then "#{target['name']} absorbs it"
+    type = move_type(field, actor, move) or return
+    known = battle&.campaign&.known_affinities&.fetch(target.image_slug.to_s, {})
+    seen = known ? { "types" => Array(known["types"]), "affinities" => known.select { |_, v| %w[immune absorb].include?(v) } } : target.to_h
+    percent = Battle::Types.effectiveness(type, seen, field.types)
+    if percent == 0 then "Won't affect #{target.name}" # rubocop:disable Style/NumericPredicate -- may be :absorb
+    elsif percent == :absorb then "#{target.name} absorbs it"
     end
   end
 
   # What the party knows a move will do to a target, beside "Won't work":
   # "Weak!" or "Resists", from the chart and what they've seen of the
   # target's types. Never more than they've found out.
-  def edge_note(battle, state, actor, move, target)
-    return unless target["side"] == "enemy" && target["hp"].positive?
+  def edge_note(battle, field, actor, move, target)
+    return unless target.enemy? && target.standing?
 
-    type = move_type(state, actor, move) or return
-    known = battle&.campaign&.known_affinities&.fetch(target.dig("image", "slug").to_s, nil) or return
+    type = move_type(field, actor, move) or return
+    known = battle&.campaign&.known_affinities&.fetch(target.image_slug.to_s, nil) or return
     return if Array(known["types"]).empty? && !known.key?(type)
 
     seen = { "types" => Array(known["types"]), "affinities" => known.select { |_, v| %w[weak resist].include?(v) } }
-    percent = Battle::Types.effectiveness(type, seen, state["types"] || Battle::Types::DEFAULT)
+    percent = Battle::Types.effectiveness(type, seen, field.types)
     return unless percent.is_a?(Integer) && percent != 100
 
     percent > 100 ? "Weak!" : "Resists"
@@ -128,74 +127,58 @@ module BattlesHelper
 
   # The type a move deals damage with, as the resolver will: its own, or
   # for Attack and the signature, the unit's (Battle::Resolver#own).
-  def move_type(state, actor, move)
-    effect = move.fetch("effects", []).find { |e| %w[physical elemental jump].include?(e["primitive"]) } or return
-    return (effect["type"] == "terrain" ? state["terrain"] : effect["type"]) if effect["type"]
-    return unless move["id"] == "attack" || move["id"] == actor["signature"]
+  def move_type(field, actor, move)
+    effect = move.effects.find { |e| %w[physical elemental jump].include?(e["primitive"]) } or return
+    return (effect["type"] == "terrain" ? field.terrain : effect["type"]) if effect["type"]
+    return unless move.id == "attack" || move.id == actor.signature
     return if effect["primitive"] == "elemental"
 
-    imbued = actor["statuses"].find { |s| s["kind"] == "imbued" }&.dig("type") if move["id"] == "attack"
-    imbued || actor["attack_type"]
-  end
-
-  def hp_percent(unit)
-    (100.0 * unit["hp"] / unit["stats"]["max_hp"]).round
-  end
-
-  def hp_band(unit)
-    pct = hp_percent(unit)
-    if pct.zero? then "ko"
-    elsif pct <= 25 then "danger"
-    elsif pct <= 50 then "warn"
-    else "ok"
-    end
-  end
-
-  def unit_name(state, id)
-    state["units"].find { |u| u["id"] == id }&.dig("name") || id.to_s.humanize
+    imbued = actor.status("imbued")&.dig("type") if move.id == "attack"
+    imbued || actor.attack_type
   end
 
   # What a party member means to do this round, for the board's intent tag
   # (docs/DESIGN.md, "Motion with meaning"): "Chip → Slip Hound A". Nothing
   # for a unit on nobody's side of the plan (an enemy, the KO'd).
-  def intent_label(state, unit, command)
-    return if command.blank? || unit["side"] != "party" || unit["hp"].to_i.zero?
+  def intent_label(field, unit)
+    command = field.command_for(unit)
+    return if command.nil? || !unit.party? || unit.ko?
 
-    what = case command["kind"]
-    when "ability" then ability_name(state, command["ability"])
-    when "item" then item_name(state, command["item"])
-    when "custom" then "“#{command['text'].to_s.truncate(24)}”"
-    else command["kind"].to_s.humanize
-    end
-    target = command["target"] && command["target"] != unit["id"] ? " → #{unit_name(state, command['target'])}" : ""
+    what = command.custom? ? "“#{command.text.to_s.truncate(24)}”" : command_name(field, command)
+    target = command.target && command.target != unit.id ? " → #{field.unit_name(command.target)}" : ""
     "#{what}#{target}"
+  end
+
+  # What a command uses, by name: "Fire", "Potion", or its kind ("Defend").
+  def command_name(field, command)
+    if command.ability? then field.ability_name(command.ability)
+    elsif command.item? then field.item_name(command.item)
+    else command.kind.to_s.humanize
+    end
+  end
+
+  # What lasts on a unit, in words, for the GM's rows: "Poison (2), Str +20%".
+  def unit_conditions(unit)
+    (unit.statuses.map { |s| "#{term(s['kind'])} (#{s['turns']})" } + unit.buffs.map { |b| "#{stat_label(b['stat'])} #{signed(b['amount'])}%" }).join(", ")
   end
 
   # Classes for what lasts on a unit and shows on its sprite: guarding the
   # party (aggro, cover), charged, barriered, off the field.
   def unit_marks(unit)
-    kinds = unit["statuses"].map { |s| s["kind"] }
+    kinds = unit.status_kinds
     return "is-masked" if kinds.include?("masked")
     [ ("is-guarding" if kinds.intersect?(Battle::AGGRO_STATUSES)), ("is-charged" if kinds.include?("charged")),
       ("is-shielded" if kinds.include?("shield")), ("is-away" if kinds.intersect?(Battle::OUT_OF_REACH_STATUSES)),
       ("is-doomed" if kinds.include?("doom")) ].compact.join(" ")
   end
 
-  def ability_name(state, id)
-    state["abilities"].dig(id, "name") || id.to_s.humanize
-  end
-
-  def item_name(state, id)
-    state.fetch("items", {}).dig(id, "name") || id.to_s.humanize
-  end
-
   # What a unit does if the round's clock runs out before they choose
   # (Battle::Resolver.default_command): their last command again if it
   # still works, else Attack. Said as the panel's warning.
-  def timeout_command(state, unit)
-    last = unit["last_command"]
-    return "Attack" unless last&.dig("kind") == "ability" && last["ability"] != "attack"
+  def timeout_command(field, unit)
+    last = unit.last_command
+    return "Attack" unless last&.ability? && last.ability != "attack"
 
-    "#{ability_name(state, last['ability'])} again (or Attack, if it can't)"
+    "#{field.ability_name(last.ability)} again (or Attack, if it can't)"
   end
 end

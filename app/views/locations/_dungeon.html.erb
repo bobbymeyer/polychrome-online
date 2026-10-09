@@ -4,7 +4,10 @@
 <% describe = lambda do |room|
      d = room["decision"]
      case d["kind"]
-     when "encounter", "boss" then "#{glyph_names[d['kind']]}: #{@campaign.describe_encounter(d['monsters'])}#{" (#{d['who']})" if d['who']}"
+     when "encounter", "boss"
+       # A villain at the head of the boss room is who's there: the rolled master isn't named beside them.
+       who = d["who"] unless d["kind"] == "boss" && location.resident_villain
+       "#{glyph_names[d['kind']]}: #{@campaign.describe_encounter(d['monsters'])}#{" (#{who})" if who}#{' (cleared)' if location.resolved?(room['key'])}"
      when "treasure"
        "Treasure: #{location.describe_treasure(d)}#{' (taken)' if location.resolved?(room['key'])}"
      when "key"
@@ -95,7 +98,15 @@
         <ul class="location-list location-list--rooms">
           <% view["rooms"].each do |room| %>
             <li class="<%= 'is-resolved' if location.resolved?(room['key']) %>">
-              <span><strong><%= room["name"] %></strong><%= " (added)" if room["added"] %><br><span class="muted"><%= describe.(room) %></span></span>
+              <span><strong><%= room["name"] %></strong><%= " (added)" if room["added"] %><br><span class="muted"><%= describe.(room) %></span>
+                <% if room.dig("decision", "kind") == "boss" && (villain = location.resident_villain) %>
+                  <%# The antagonist who calls this place home takes the room when the party walks in (Location::Exploration#meet_villain). %>
+                  <% if location.resolved?(room["key"]) %>
+                    <br><strong><%= villain.name %> got away from here<%= ", #{villain.strength_percent}% now" if villain.escapes.positive? %>, and is still about.</strong>
+                  <% else %>
+                    <br><strong><%= villain.name %> waits here<%= ", as #{villain.monster.name}," if villain.monster %> at the head of it<%= " (#{villain.strength_percent}%)" if villain.escapes.positive? %>.</strong>
+                  <% end %>
+                <% end %></span>
               <% unless room["added"] %><%= render "locations/pin", location: location, key: room["key"] %><% end %>
             </li>
           <% end %>
@@ -107,7 +118,7 @@
         <%= form_with url: location_boss_path(location), method: :patch, scope: :boss, class: "book-form" do |f| %>
           <% boss = location.overrides["boss"]&.first %>
           <div class="field-row">
-            <div class="field"><%= f.label :monster %><%= f.select :monster, @world.monsters.order(:level, :name).map { |m| [ m.name, m.slug ] }, include_blank: "As rolled", selected: boss&.first %></div>
+            <div class="field"><%= f.label :monster %><%= f.select :monster, monster_options(@world.monsters), include_blank: "As rolled", selected: boss&.first %></div>
             <div class="field"><%= f.label :count %><%= f.number_field :count, value: boss&.last || 1, min: 1, max: 8 %></div>
           </div>
           <%= f.submit "Place boss", class: "button" %>

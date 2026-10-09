@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "The world moving overnight (Campaign::Overnight)", type: :request do
+RSpec.describe "The world moving overnight (Campaign::Night)", type: :request do
   let!(:world) { base_world }
   let(:village) { world.location_templates.find_by!(slug: "village") }
   let(:campaign) { base_campaign(name: "Pulp", gm: @admin) }

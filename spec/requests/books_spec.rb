@@ -41,6 +41,15 @@ RSpec.describe "Books", type: :request do
       expect(base.monsters.find_by!(slug: "goblin").name).to eq("Goblin")
     end
 
+    it "leaves no half-made world when a copy fails, and says what couldn't be copied" do
+      base = base_world
+      base.monsters.find_by!(slug: "goblin").update_column(:phases, [ { "hp_below" => 50, "becomes" => "nobody" } ]) # broken behind validation's back
+      post worlds_path, params: { world: { name: "Cinders", slug: "cinders" }, copy_from: "base" }
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to include("Base World&#39;s monster Goblin couldn&#39;t be copied", "nobody, which is not in the Bestiary")
+      expect(World.find_by(slug: "cinders")).to be_nil
+    end
+
     it "copies only the rules when asked: the books without the setting" do
       base = base_world
       post worlds_path, params: { world: { name: "Velvet", slug: "velvet" }, copy_from: "base", rules_only: "1" }
@@ -101,6 +110,11 @@ RSpec.describe "Books", type: :request do
     it "runs the full CRUD cycle" do
       get new_world_grimoire_ability_path(world)
       expect(response).to have_http_status(:ok)
+      # A Status effect offers the statuses it can give; those with a primitive of their own (charging, shield) come from it.
+      statuses = page.css("select[aria-label='Status 1'] option").map { |o| o["value"] }
+      expect(statuses).to include("poison", "doom", "haste")
+      expect(statuses).not_to include("charging", "shield", "down")
+      expect(page.at("[data-controller=rows] button[data-action='rows#add']").text).to eq("Add a row") # more than the two blanks
 
       post world_grimoire_abilities_path(world), params: { ability: form }
       ability = world.abilities.find_by!(slug: "bio")
@@ -155,6 +169,41 @@ RSpec.describe "Books", type: :request do
                          effects: [ { primitive: "heal", power: 30 } ])
     end
 
+    it "writes a boss's phases and a rule's once and line on the form, and reads them back on the page" do
+      king = create_monster(world, slug: "goblin_king", name: "Goblin King", boss: true)
+      goblin = create_monster(world)
+      get edit_world_bestiary_monster_path(world, goblin)
+      expect(response.body).to include("Phases", "Once", "Says", "Becomes", "When hit", "As it falls", "Any blow")
+      patch world_bestiary_monster_path(world, goblin),
+            params: { monster: { ai_script: { "0" => { use: "fire", once: "1", say: "Burn." }, "1" => { use: "attack", once: "0" },
+                                              "2" => { when: "hit", by: "fire", use: "fire" } },
+                                 phases: { "0" => { hp_below: "50", becomes: "goblin_king", say: "Now you see.", restore: "10" } } } }
+      expect(response).to redirect_to(world_bestiary_monster_path(world, goblin))
+      expect(goblin.reload.phases).to eq([ { "hp_below" => 50, "becomes" => "goblin_king", "say" => "Now you see.", "restore" => 10 } ])
+      expect(goblin.ai_script.first).to include("once" => true, "say" => "Burn.")
+      get world_bestiary_monster_path(world, goblin)
+      expect(response.body).to include("The first chance it gets:", "(once)", "“Burn.”", "Below 50% HP: becomes", "Goblin King", "10% HP back", "“Now you see.”", "When hit by Fire:")
+      get world_bestiary_monster_path(world, king)
+      expect(response.body).to include("A form of")
+      get world_bestiary_monsters_path(world)
+      expect(page.text.squish).to include("Goblin King · a form of Goblin") # forms marked in the index
+    end
+
+    it "keeps a boss's own music when its track is given a scene, says whose it is in the Music book, and lets it go when the track does" do
+      theme = world.tracks.create!(name: "Forge theme", source: "link", url: "https://youtu.be/dQw4w9WgXcQ")
+      warden = create_monster(world, slug: "warden", name: "Warden", boss: true, music: "track:#{theme.id}")
+      theme.update!(scene: "boss") # now a kind of scene's track: not in the "called by name" list
+      get edit_world_bestiary_monster_path(world, warden)
+      expect(page.at("select[name='monster[music]'] option[selected]")&.text).to eq("♪ Forge theme (the boss track now)")
+      patch world_bestiary_monster_path(world, warden), params: { monster: { name: "Warden", music: "track:#{theme.id}" } } # saved as it came
+      expect(warden.reload.music).to eq("track:#{theme.id}")
+
+      get world_tracks_path(world)
+      expect(page.text.squish).to include("Its own music for Warden")
+      theme.destroy!
+      expect(warden.reload.music).to be_nil # back to the boss track, not pointing at nothing
+    end
+
     it "takes a chosen plate colour, or picks one from the name" do
       goblin = create_monster(world)
       get world_bestiary_monster_path(world, goblin)
@@ -195,7 +244,7 @@ RSpec.describe "Books", type: :request do
       expect(monster.image).to be_attached
 
       follow_redirect!
-      expect(response.body).to include("25% of the time", "Fire", "Lowest hp", "Potion", "(30%)", "Immune to")
+      expect(response.body).to include("25% of the time", "Fire", "Lowest HP", "Potion", "(30%)", "Immune to")
       expect(response.body).to include("hue-rotate(40deg)", "scaleX(-1)")
     end
 

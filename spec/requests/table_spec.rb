@@ -38,6 +38,16 @@ RSpec.describe "The table", type: :request do
   describe "the GM" do
     before { sit(campaign, "gm") }
 
+    it "puts the box away after a fight: the line before it was its lead-in" do
+      say(body: "You'll never take the ledger.", speaker: "npc:#{cid.id}", whisper_to: "")
+      get campaign_table_path(campaign)
+      expect(page.at("#dialogue_box_table .dialogue__body").text).to include("never take the ledger")
+      fight = start_battle(campaign: campaign, goblins: 1)
+      fight.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
+      get campaign_table_path(campaign)
+      expect(page.at("#dialogue_box_table")["hidden"]).not_to be_nil
+    end
+
     it "speaks as an NPC, with an expression, and keeps that speaker for the next line" do
       say(body: "Hold on!", speaker: "npc:#{cid.id}", expression: "surprised", whisper_to: "")
       line = campaign.messages.last
@@ -116,12 +126,7 @@ RSpec.describe "The table", type: :request do
       expect(you.text.squish).to include("Bartz", "Lv 5 Knight", "My sister's debt is mine now.")
       expect(page.css("#table_party .coop-party__list li").first).to eq(you)
       expect(you.at(".vitals")["id"]).to be_present # the row broadcasts look for
-      # Three columns: you and the party on the left, the stage over the controls in the middle, the log on the right.
-      expect(page.at(".table__side #table_party li.is-you")).to be_present
-      expect(page.at(".table__side #drawer_party")).to be_present
-      expect(page.at(".table__stage #stage #table_scene")).to be_present # the stage, in the middle
-      expect(page.at(".table__stage .table-controls #table_now")).to be_present # the controls under it
-      expect(page.at(".table-controls .your-moves #table_choice")).to be_present
+      # (The three-column layout itself is a system spec: table_moments_spec "lays a wide screen out".)
       expect(page.at(".table-controls .gm-tools")).to be_nil # a player has no GM tools
       expect(page.at(".recent-lines")).to be_nil # the log is the record
       expect(page.at("#stage .dialogue")).to be_present # what's said plays on it

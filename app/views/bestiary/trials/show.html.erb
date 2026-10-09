@@ -16,13 +16,45 @@
   <thead><tr><th>Who</th><th class="num"><%= word("hp") %></th><th class="num"><%= word("mp") %></th></tr></thead>
   <tbody>
     <% (@trial.standing + @trial.enemies).each do |u| %>
-      <tr class="<%= 'is-ko' if u['hp'].zero? %>"><td><%= u["name"] %></td><td class="num"><%= u["hp"] %>/<%= u["stats"]["max_hp"] %></td><td class="num"><%= u["mp"] %>/<%= u["stats"]["max_mp"] %></td></tr>
+      <tr class="<%= 'is-ko' if u.ko? %>"><td><%= u.name %><%= tag.span(" (called)", class: "muted") if u.summoned? %></td><td class="num"><%= u.hp %>/<%= u.max_hp %></td><td class="num"><%= u.mp %>/<%= u.max_mp %></td></tr>
     <% end %>
   </tbody>
 </table>
+<%# The moments: what it did, who fell and when, what it put on them. The designer watches the moments. %>
+<h2>What it did</h2>
+<% if @trial.moves.any? %>
+  <p><%= @trial.moves.map { |name, n| "#{name} ×#{n}" }.to_sentence %>.</p>
+<% else %>
+  <p class="muted">Nothing: it never got a turn.</p>
+<% end %>
+<% if (adds = @trial.moves(adds: true)).any? %>
+  <p>What it called did: <%= adds.map { |name, n| "#{name} ×#{n}" }.to_sentence %>.</p>
+<% end %>
+<% if @trial.said.any? %>
+  <p>Said: <%= safe_sentence(@trial.said.map { |line, n| tag.q(line) + (n > 1 ? " ×#{n}" : "") }) %>.</p>
+<% end %>
+<% if @trial.became.any? %>
+  <p>Became <%= @trial.became.map { |name, round| "#{name} in round #{round}" }.to_sentence %>.</p>
+<% end %>
+<% if @trial.fallen.any? %>
+  <p>Fell: <%= @trial.fallen.map { |name, round| "#{name} in round #{round}" }.to_sentence %>.</p>
+<% end %>
+<% if @trial.inflicted.any? %>
+  <p>Put on the party: <%= @trial.inflicted.map { |name, n| "#{name} ×#{n}" }.to_sentence %>.</p>
+<% end %>
+<%# One roll is one roll: ten more say how it tends to go. %>
+<% forecast = @trial.forecast %>
+<p>
+  <strong>Over <%= Monster::Trial::ROLLS %> more rolls:</strong> the party won <%= forecast["wins"] %> of <%= forecast["runs"] %>,
+  in <%= forecast["rounds"] %> rounds on average, with <%= forecast["downed"] %> of them down at the end
+  and <%= forecast["hp_left"] %>% of their <%= word("hp") %> left.
+</p>
 <p class="hint">
-  Seed <%= @trial.state["seed"] %>. Try
+  Seed <%= @trial.state["seed"] %>. <%= link_to "Edit #{@monster.name}", edit_world_bestiary_monster_path(@world, @monster) %>, or try
   <% [ 1, 2, 3, 4 ].each do |n| %><%= link_to "#{n} of them", world_bestiary_monster_trial_path(@world, @monster, count: n) %><%= ", " unless n == 4 %><% end %>,
   or <%= link_to "another roll", world_bestiary_monster_trial_path(@world, @monster, count: @trial.count, seed: @trial.state["seed"].to_i + 1) %>.
   A first boss should take a party like this six rounds or more and cost it someone; a towpath creature, two or three.
+  <% if (counters = @trial.untried_counters).any? %>
+    Its answers to blows of <%= counters.map { |t| term(t) }.to_sentence %> never come here: this party only attacks.
+  <% end %>
 </p>

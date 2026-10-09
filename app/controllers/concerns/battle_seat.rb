@@ -36,7 +36,7 @@ module BattleSeat
   # Whether this account may take a seat ("gm" or a unit id).
   def may_sit?(seat)
     return battle_gm? if seat == "gm"
-    return false unless @battle.unit(seat)&.dig("side") == "party"
+    return false unless @battle.unit(seat)&.party?
 
     character = seat_character(seat)
     character.nil? || can_play?(character)

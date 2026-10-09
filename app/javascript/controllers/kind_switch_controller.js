@@ -12,6 +12,7 @@ export default class extends Controller {
   }
 
   update() {
+    if (!this.hasSelectTarget) return // a form with nothing to switch on (a say step)
     const kind = this.selectTarget.value
     this.element.querySelectorAll("[data-show-for]").forEach((el) => {
       el.hidden = !el.dataset.showFor.split(" ").includes(kind)

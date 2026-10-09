@@ -7,7 +7,7 @@ module Battle
   # path (abilities, statuses, GM overrides) reports changes the same way.
   class Context
     attr_reader :state, :rng, :events
-    attr_accessor :countering
+    attr_accessor :countering, :reacting
     # Creatures summoned by the move being resolved: they act once it's done
     # (Battle::Resolver#summon).
     attr_reader :arrivals
@@ -16,6 +16,9 @@ module Battle
     attr_reader :follow_ups
     # Who has had a turn so far this round, in order (Patience).
     attr_reader :acted
+    # Reactions the move being resolved called for (a script's "when" rules): they come once it's done
+    # (Battle::Resolver#react). [{ "unit", "rule", "trigger", "target" }]
+    attr_reader :reactions
 
     def initialize(state, rng: Rng.new(state["rng"]))
       @state = state
@@ -24,6 +27,17 @@ module Battle
       @arrivals = []
       @follow_ups = []
       @acted = []
+      @reactions = []
+    end
+
+    # A moment a script's "when" rule waits for: the first rule for it is queued, once per unit per
+    # move. Never from within a reaction: reactions don't set off reactions.
+    def queue_reaction(unit, trigger, by: nil, target: nil)
+      return if reacting || over? || unit["gone"]
+      return if reactions.any? { |r| r["unit"] == unit["id"] && r["trigger"] == trigger }
+
+      index = AI.reaction(self, unit, trigger, by: by) or return
+      reactions << { "unit" => unit["id"], "rule" => index, "trigger" => trigger, "target" => target }
     end
 
     def finish
@@ -140,6 +154,9 @@ module Battle
 
       target["hp"] = [ target["hp"] - amount, 0 ].max
       emit(:damage, target: target["id"], amount: amount, hp: target["hp"], **extra)
+      # Struck by an opponent: what it does when hit (a counter), once it's standing or not.
+      striker = extra[:actor] && unit(extra[:actor])
+      queue_reaction(target, "hit", by: extra[:damage_type], target: striker["id"]) if striker && striker["side"] != target["side"]
       return unless target["hp"].zero?
 
       reraise = status?(target, "reraise")
@@ -196,11 +213,24 @@ module Battle
       target["buffs"] = []
       target["defending"] = false
       emit(:ko, target: target["id"])
+      # Its last breath, and what its side does when one of them falls.
+      queue_reaction(target, "falls")
+      units.each { |ally| queue_reaction(ally, "ally_falls") if ally["side"] == target["side"] && ally != target && alive?(ally) }
+      # What it called to its side goes with it: the adds are the boss's.
+      units.each { |creature| send_home(creature) if creature.dig("summoned", "by") == target["id"] && !creature["gone"] }
       # A summoned creature isn't left lying there to be raised: down, it's gone.
       return unless target["summoned"] && !target["gone"]
 
       target["gone"] = true
       emit(:unit_left, unit: target["id"], name: target["name"], summoned: true)
+    end
+
+    # A summoned creature leaves the field (its turns up, its summoner down).
+    def send_home(creature)
+      creature["gone"] = true
+      creature["statuses"] = []
+      creature["buffs"] = []
+      emit(:unit_left, unit: creature["id"], name: creature["name"], summoned: true)
     end
 
     def revive(target, hp)
@@ -232,17 +262,48 @@ module Battle
       u["statuses"].find { |s| s["kind"] == kind }&.fetch("stacks", 1).to_i
     end
 
+    # A boss whose HP has crossed one of its lines becomes its next form, in
+    # the order its phases are written: what it was called and looked like,
+    # its script, its stats (the HP it has left carries over, plus what the
+    # phase restores). A new script starts fresh. Checked wherever the end
+    # is, after every stroke; never once the fight is over.
+    def enter_phases
+      side("enemy").each do |u|
+        phases = u["phases"]
+        next unless phases&.any? && alive?(u) && hp_percent(u) < phases.first["hp_below"]
+
+        phase = phases.first
+        form = phase["becomes"]
+        was = u["name"]
+        # Someone (an antagonist, a named boss) wears the form as a mask: their name and face stay.
+        kept = u["named"] ? %w[id side phases name image named] : %w[id side phases]
+        u.merge!(form.except(*kept))
+        u["phases"] = phases.drop(1)
+        u.delete("fired")
+        u["hp"] = u["hp"].clamp(1, form["stats"]["max_hp"])
+        u["mp"] = u["mp"].clamp(0, form["stats"]["max_mp"])
+        emit(:phase, actor: u["id"], was: was, name: u["name"], form: form["name"], line: phase["say"], music: form["music"])
+        # What the phase gives back: a heal, seen as any heal is.
+        restored = form["stats"]["max_hp"] * phase["restore"] / 100
+        restore_hp(u, restored, phase: true) if restored.positive?
+      end
+    end
+
     # Decide whether the battle has ended. Defeat is checked first: a party
     # that falls on the same stroke as the last enemy has not won.
     def check_end
       return if over?
 
+      enter_phases
       if side("party").reject { |u| u["guest"] }.none? { |u| alive?(u) }
         state["status"] = "defeat"
         emit(:defeat)
       elsif side("enemy").none? { |u| alive?(u) }
         state["status"] = "victory"
-        emit(:victory, rewards: rewards, drops: roll_drops)
+        # Who left the field rather than fall (sent off, or a summon gone home): a victory over
+        # nobody is the enemy getting away, and a boss that left hasn't been beaten.
+        enemies = units.select { |u| u["side"] == "enemy" } # side() leaves out the gone
+        emit(:victory, rewards: rewards, drops: roll_drops, fell: enemies.any? { |u| !u["gone"] }, gone: enemies.select { |u| u["gone"] }.map { |u| u["id"] })
       end
     end
 

@@ -182,10 +182,12 @@ module Campaign::Travelling
     end
 
     # The fallen come too, down: their players watch, and a raise brings them in.
-    battle = BattleRecord.start!(campaign: self, characters: party, name: encounter["table"],
+    said = prelude.any? || encounter["prelude"].present? # the entrance was said before the fight
+    battle = BattleRecord.start!(campaign: self, characters: party, name: encounter["table"], prelude_said: said,
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
                                  terrain: encounter["terrain"], names: encounter.fetch("names", {}), room: encounter["room"],
-                                 antagonists: npcs.where(id: encounter.fetch("antagonists", [])).to_a)
+                                 antagonists: npcs.where(id: encounter.fetch("antagonists", [])).to_a,
+                                 escapable: !encounter["boss"]) # a boss fight is fought (the Fight panel has its own say)
     update!(pending_encounter: nil)
     battle
   end

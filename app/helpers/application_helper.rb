@@ -30,6 +30,13 @@ module ApplicationHelper
   # The music a page asks for (sound.js): its own scene's track, unless the
   # GM has chosen one for the table. A battle is fixed: it keeps its music
   # whatever the GM picks. An empty track is silence.
+  # A sentence of safe pieces (links): "A, B and C", escaped as it joins.
+  def safe_sentence(pieces)
+    return safe_join(pieces) if pieces.size < 2
+
+    safe_join([ safe_join(pieces[0..-2], ", "), pieces.last ], " and ")
+  end
+
   def music_meta(campaign, scene, fixed: false)
     return unless campaign
 
@@ -68,7 +75,7 @@ module ApplicationHelper
     return word("service.#{token}", world) if World::Vocabulary::SERVICES.include?(token)
     return "Things to do" if token == "pastimes" # a mode can shut them (Mode)
 
-    token.humanize
+    token.humanize.sub(/\bhp\b/i) { word("hp", world) } # "Lowest HP", in the world's word
   end
 
   # What a check can be made with: the world's skills first, then the bare

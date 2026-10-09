@@ -8,7 +8,8 @@ module Bestiary
 
     def show
       @monster = @world.monsters.find_by!(slug: params[:monster_slug])
-      @trial = Monster::Trial.new(@monster, count: params.fetch(:count, 2).to_i.clamp(1, 8), seed: params.fetch(:seed, @monster.id).to_i)
+      count = params[:count].present? ? params[:count].to_i.clamp(1, 8) : nil # none given: one boss, or two of anything else
+      @trial = Monster::Trial.new(@monster, count: count, seed: params.fetch(:seed, @monster.id).to_i)
     end
   end
 end

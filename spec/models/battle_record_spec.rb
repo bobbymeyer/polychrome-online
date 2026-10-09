@@ -7,8 +7,8 @@ RSpec.describe BattleRecord do
   include ActiveJob::TestHelper
 
   let(:battle) { start_battle }
-  let(:bartz) { battle.party.first["id"] }
-  let(:faris) { battle.party.second["id"] }
+  let(:bartz) { battle.party.first.id }
+  let(:faris) { battle.party.second.id }
 
   def command(actor, kind: "ability", ability: "attack", target: nil)
     { "type" => "command", "actor" => actor, "command" => { "kind" => kind, "ability" => ability, "target" => target }.compact }
@@ -22,13 +22,34 @@ RSpec.describe BattleRecord do
     expect(battle).to be_persisted
     expect(battle.model_name.param_key).to eq("battle")
     expect(battle.initial_state).to eq(battle.state)
-    expect(battle.units.map { |u| u["id"] }).to eq([ bartz, faris, "goblin_a", "goblin_b" ])
+    expect(battle.units.map(&:id)).to eq([ bartz, faris, "goblin_a", "goblin_b" ])
     bartz_character = battle.campaign.characters.find_by!(name: "Bartz")
     expect(bartz).to eq("character_#{bartz_character.id}")
-    expect(battle.party.first).to include("name" => "Bartz", "abilities" => [ "attack", "cure" ],
+    expect(battle.party.first.to_h).to include("name" => "Bartz", "abilities" => [ "attack", "cure" ],
                                           "image" => { "book" => "jobs", "slug" => "knight" },
                                           "stats" => bartz_character.stats)
-    expect(battle.unit("goblin_a")["image"]).to eq("book" => "monsters", "slug" => "goblin")
+    expect(battle.unit("goblin_a").image).to eq("book" => "monsters", "slug" => "goblin")
+  end
+
+  describe "#gm_override" do
+    it "turns a ruling's quick choices into engine effects" do
+      action = battle.gm_override("op" => "rule", "unit" => bartz, "effect" => "damage", "strength" => "heavy", "type" => "fire", "value" => "3")
+      expect(action).to include("type" => "gm_override", "actor" => "gm", "op" => "rule", "value" => 3,
+                                "effects" => [ { "primitive" => "elemental", "type" => "fire", "power" => 40 } ])
+      expect(action).not_to include("strength", "type" => "fire")
+      expect(battle.gm_override("op" => "rule", "unit" => bartz, "effect" => "status")["effects"]).to eq([])
+    end
+
+    it "refuses a skill or a monster the world hasn't got" do
+      expect { battle.gm_override("op" => "rule", "unit" => bartz, "stat" => "skill:juggling") }.to raise_error(Battle::InvalidAction, /juggling|skill/)
+      expect { battle.gm_override("op" => "add_unit", "side" => "enemy", "monster" => "nobody") }.to raise_error(Battle::InvalidAction)
+    end
+
+    it "brings a guest from the Bestiary under the GM's name for them, earning and dropping nothing" do
+      action = battle.gm_override("op" => "add_unit", "side" => "party", "monster" => "goblin", "name" => "Cid")
+      expect(action["unit"]).to include("name" => "Cid", "id" => "cid", "rewards" => {}, "drops" => [])
+      expect(action).not_to have_key("monster")
+    end
   end
 
   describe "#apply!" do
@@ -65,6 +86,27 @@ RSpec.describe BattleRecord do
         .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle-beat", "battle_beats"))
     end
 
+    it "asks every seat's panel to show itself again when a player comes back, so the GM's rows say so" do
+      who = battle.characters_by_unit[bartz]
+      who.update!(user: make_user("Bartz's player"))
+      expect { who.seen! }.to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_panel"))
+      expect { who.seen! }.not_to have_broadcasted_to(turbo_stream_for(battle)) # still here: nothing changed
+    end
+
+    it "takes the table off the Fight control once the fight is on, so no stale setup form waits under the results" do
+      campaign = battle.campaign
+      campaign.update!(controls: "battle")
+      start_battle(campaign: campaign)
+      expect(campaign.reload.controls).to eq("talk")
+    end
+
+    it "broadcasts calling it off as a beat too, so every seat's panel goes to the results" do
+      expect { battle.call_off! }
+        .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_beats", "abandoned", "Called off."))
+      expect(battle.reload.result_line).to eq("Called off. Nothing came of it.")
+      expect { battle.call_off! }.not_to have_broadcasted_to(turbo_stream_for(battle)) # once
+    end
+
     it "records the battle's end" do
       battle.apply!({ "type" => "gm_override", "op" => "end_battle", "result" => "victory" }, actor: "gm")
       expect(battle.reload).to be_over
@@ -74,7 +116,7 @@ RSpec.describe BattleRecord do
 
   it "gives the first of a kind a name of its own: who the place's past says waits there" do
     named = start_battle(names: { "goblin" => "Sten Pike" })
-    expect(named.enemies.map { |u| u["name"] }).to eq([ "Sten Pike", "Goblin B" ])
+    expect(named.enemies.map(&:name)).to eq([ "Sten Pike", "Goblin B" ])
   end
 
   describe "input timer" do
@@ -169,7 +211,7 @@ RSpec.describe BattleRecord do
 
   it "runs a round nobody can choose in at once, until someone can" do
     battle = start_battle(goblins: 1, input_seconds: 30)
-    bartz, faris = battle.party.map { |u| u["id"] }
+    bartz, faris = battle.party.map(&:id)
     [ bartz, faris ].each do |id|
       battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => id, "value" => 999 }, actor: "gm")
       battle.apply!({ "type" => "gm_override", "op" => "add_status", "unit" => id, "status" => "stop", "turns" => 3 }, actor: "gm")
@@ -177,6 +219,27 @@ RSpec.describe BattleRecord do
     battle.apply!({ "type" => "gm_override", "op" => "execute_round" }, actor: "gm")
     expect(battle.reload.round).to be > 2 # the stopped rounds ran by themselves
     expect(battle.over? || battle.awaiting_input.any?).to be(true)
+  end
+
+  it "stops running rounds by itself after QUIET_ROUNDS, one beat broadcast for each, when nobody can ever choose" do
+    battle = start_battle(goblins: 1, input_seconds: 30)
+    battle.party.each do |unit|
+      battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => unit.id, "value" => 9999 }, actor: "gm")
+      battle.apply!({ "type" => "gm_override", "op" => "add_status", "unit" => unit.id, "status" => "stop", "turns" => 99 }, actor: "gm")
+    end
+    goblin = battle.enemies.sole.id
+    battle.apply!({ "type" => "gm_override", "op" => "set_hp", "unit" => goblin, "value" => 9999 }, actor: "gm")
+    battle.apply!({ "type" => "gm_override", "op" => "add_status", "unit" => goblin, "status" => "stop", "turns" => 99 }, actor: "gm")
+    round = battle.round
+    actions = battle.battle_actions.count
+
+    expect { battle.apply!({ "type" => "gm_override", "op" => "execute_round" }, actor: "gm") }
+      .to have_broadcasted_to(turbo_stream_for(battle)).with(a_string_including("battle_beats")).exactly(BattleRecord::QUIET_ROUNDS + 1).times
+    expect(battle.reload.round).to eq(round + 1 + BattleRecord::QUIET_ROUNDS)
+    expect(battle.battle_actions.count - actions).to eq(1 + BattleRecord::QUIET_ROUNDS)
+    expect(battle.battle_actions.last.payload).to include("type" => "timeout")
+    expect(battle).not_to be_over
+    expect(battle.awaiting_input).to be_empty # the round waits for the timer, or the GM
   end
 
   describe "bosses" do

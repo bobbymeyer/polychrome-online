@@ -372,6 +372,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink); outli
 .grid-form { width: 100%; border-collapse: collapse; }
 .grid-form th { text-align: left; padding: 0 8px 4px 0; white-space: nowrap; }
 .grid-form td { padding: 0 8px 8px 0; }
+.grid-scroll { overflow-x: auto; }
+.grid-form--wide { min-width: 1280px; }
+.grid-form--wide select { min-width: 120px; }
+.grid-form--wide input[type="text"] { min-width: 260px; }
 .panel { overflow-x: auto; }
 .art-fields { display: flex; gap: var(--gutter); align-items: flex-start; flex-wrap: wrap; }
 .art-fields > div { flex: 1 1 280px; }
@@ -421,7 +425,8 @@ details[open] > summary { margin-bottom: 16px; }
 .playback { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* The stage (.stage) is stage.css's: the 16:9 frame. */
-.fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+/* Over everything on the frame (the rail, the roster, the tally, the box): a slab is thrown across all of it. */
+.fx { position: absolute; inset: 0; z-index: 7; pointer-events: none; overflow: hidden; }
 
 /* The field: enemies left, party right, standing on one black line. The
    art is the show: enemies big, the party a size down (DESIGN.md). */

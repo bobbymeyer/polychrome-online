@@ -125,8 +125,10 @@ RSpec.describe Location do
       expect(town.view["stock"]).to eq(town.generated["stock"])
     end
 
-    it "asks every viewer to refresh when it changes" do
-      expect { town.rename!("Tule") }.to have_broadcasted_to(Turbo::StreamsChannel.send(:stream_name_from, town))
+    it "asks every viewer to refresh when it changes, from a job as every refresh is" do
+      town # made before the change
+      expect { town.rename!("Tule") }.to have_enqueued_job(Turbo::Streams::BroadcastStreamJob)
+        .with(Turbo::StreamsChannel.send(:stream_name_from, town), content: a_string_including('action="refresh"')).exactly(:once)
     end
   end
 
@@ -137,6 +139,12 @@ RSpec.describe Location do
       dungeon.place_boss!("ogre" => "2")
       boss_room = dungeon.room(dungeon.view["boss"])
       expect(boss_room["decision"]).to include("kind" => "boss", "monsters" => { "ogre" => 2 })
+
+      # One of the Bestiary's, one to eight of them, and only where there's a boss room.
+      expect { dungeon.place_boss!("nonexistent_thing" => 1) }.to raise_error(Refusal, "nonexistent_thing isn't in the Bestiary.")
+      dungeon.place_boss!("ogre" => 99)
+      expect(dungeon.room(dungeon.view["boss"])["decision"]["monsters"]).to eq("ogre" => 8)
+      expect { town.place_boss!("ogre" => 1) }.to raise_error(Refusal, /has no boss room/)
 
       key = dungeon.add_room!(name: "Secret Library", connect: entrance, decision: { "kind" => "treasure", "item" => "power_ring" })
       expect(dungeon.neighbours(entrance)).to include(key)

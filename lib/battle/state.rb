@@ -260,7 +260,7 @@ module Battle
       raise ArgumentError, "duplicate unit id #{duplicate.first}" if duplicate
 
       units.each do |u|
-        missing = u["abilities"] - library.keys
+        missing = (u["abilities"] + u.fetch("phases", []).flat_map { |p| p["becomes"]["abilities"] }).uniq - library.keys
         raise ArgumentError, "#{u['id']} knows unknown abilities: #{missing.join(', ')}" if missing.any?
         if u["desperation"] && !library.key?(u["desperation"])
           raise ArgumentError, "#{u['id']} has an unknown desperation move: #{u['desperation']}"
@@ -335,6 +335,9 @@ module Battle
         "defending" => false,
         "last_command" => nil
       }.merge(spec["desperation"] ? { "desperation" => spec["desperation"].to_s } : {})
+       .merge(spec["phases"].is_a?(Array) && !spec["phases"].empty? ? { "phases" => phases(id, spec["phases"], side, known) } : {})
+       .merge(spec["music"] ? { "music" => spec["music"].to_s } : {}) # where its own music plays from, for the stage
+       .merge(spec["named"] ? { "named" => true } : {}) # someone, not a kind: keeps their name and face through phases
        .merge(spec["level"] ? { "level" => Integer(spec["level"]) } : {})
        .merge(spec["undead"] ? { "undead" => true } : {})
        .merge(spec["boss"] ? { "boss" => true } : {})
@@ -342,6 +345,25 @@ module Battle
        .merge(spec["coward"] ? { "coward" => true } : {})
        .merge(passives(id, spec))
        .merge(job_parts(id, spec, known))
+    end
+
+    # A boss's phases, in order: below a share of its HP it becomes another
+    # creature (a built unit: its name, image, stats, script and rewards),
+    # saying a line, with some HP back. Each is entered once, as the HP
+    # crosses the line (Context#enter_phases).
+    def phases(id, phases, side, known)
+      phases.each_with_index.map do |phase, i|
+        label = "#{id} phase #{i + 1}"
+        below = phase["hp_below"]
+        raise ArgumentError, "#{label}: hp_below must be 1 to 99" unless below.is_a?(Integer) && below.between?(1, 99)
+        restore = phase.fetch("restore", 0)
+        raise ArgumentError, "#{label}: restore must be 0 to 100" unless restore.is_a?(Integer) && restore.between?(0, 100)
+        raise ArgumentError, "#{label}: needs a creature to become" unless phase["becomes"].is_a?(Hash)
+
+        form = unit(phase["becomes"].merge("id" => id), side, known).except("hp", "mp", "statuses", "buffs", "defending", "last_command")
+        say = phase["say"].to_s
+        { "hp_below" => below, "restore" => restore, "becomes" => form }.merge(say.empty? ? {} : { "say" => say })
+      end
     end
 
     # What a character's jobs bring (see #build). Only present keys are kept,
@@ -518,6 +540,7 @@ module Battle
           raise ArgumentError, "#{id}: away lasts 1 to #{MAX_AWAY_TURNS} turns" if effect["duration"] && !effect["duration"].between?(1, MAX_AWAY_TURNS)
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" if effect["type"] && !(known.include?(effect["type"]) || effect["type"] == "terrain")
         when "elemental", "physical", "jump"
+          raise ArgumentError, "#{id}: power must be a positive number" if effect["power"] && effect["power"] < 1
           if effect["against"]
             against_ok = STATUSES.include?(effect["against"]) || known.include?(effect["against"]) || AGAINST_TRAITS.include?(effect["against"])
             raise ArgumentError, "#{id}: a bonus can't be against #{effect['against']}" unless against_ok
@@ -538,10 +561,9 @@ module Battle
         when "imbue"
           raise ArgumentError, "#{id}: unknown type #{effect['type']}" unless known.include?(effect["type"])
         when "summon"
-          raise ArgumentError, "#{id}: summon stays 1 to #{MAX_SUMMON_TURNS} turns" if effect["duration"] && !effect["duration"].between?(1, MAX_SUMMON_TURNS)
+          # 0: for no set time, while its summoner stands (Resolver#count_down_summon).
+          raise ArgumentError, "#{id}: summon stays 1 to #{MAX_SUMMON_TURNS} turns, or 0 while its summoner stands" if effect["duration"] && !effect["duration"].between?(0, MAX_SUMMON_TURNS)
           raise ArgumentError, "#{id}: summon power must be 1 to #{MAX_BONUS}" if effect["power"] && !effect["power"].between?(1, MAX_BONUS)
-        when "heal"
-          raise ArgumentError, "#{id}: triage must be 0 to #{MAX_BONUS}" if effect["triage"] && !effect["triage"].between?(0, MAX_BONUS)
         when "gather"
           raise ArgumentError, "#{id}: #{effect['kind']} doesn't stack" unless STACKING_STATUSES.include?(effect["kind"])
           raise ArgumentError, "#{id}: gather 1 to #{MAX_STACKS}" if effect["amount"] && !effect["amount"].between?(1, MAX_STACKS)
@@ -549,6 +571,9 @@ module Battle
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" if effect["kind"] && !STATUSES.include?(effect["kind"])
         when "buff", "debuff"
           raise ArgumentError, "#{id}: cannot modify #{effect['stat']}" unless Stats::MODIFIABLE.include?(effect["stat"])
+        when "heal", "drain", "shield"
+          raise ArgumentError, "#{id}: power must be a positive number" if effect["power"] && effect["power"] < 1
+          raise ArgumentError, "#{id}: triage must be 0 to #{MAX_BONUS}" if effect["triage"] && !effect["triage"].between?(0, MAX_BONUS)
         end
       end
     end

@@ -13,15 +13,32 @@ module Battle
   # ally_ko (true), round_multiple (n), chance (percent).
   # Target strategies: random (default for opponents), lowest_hp (default
   # for allies), highest_hp, self.
+  #
+  # A rule can be "once" => true (it fires once a battle: a self-buff that
+  # isn't recast every turn, a one-time move) and "say" => "…" (a line the
+  # creature says as the rule fires: the telegraph before a charged blow,
+  # the taunt at low HP). The resolver marks fired rules on the unit
+  # ("fired", by index) and emits the line; choosing changes nothing.
+  #
+  # A rule with "when" is a reaction, never chosen on the creature's turn:
+  # "hit" (struck by an opponent; "by" => a type narrows it to blows of
+  # that type), "ally_falls" (one of its side goes down), "falls" (its own
+  # last breath: a final attack as it goes down). Its conditions still
+  # apply. The reaction comes at once, free of its charge, and reactions
+  # never set off reactions (Context#queue_reaction, Resolver#react).
   module AI
     CONDITIONS = %w[self_hp_below ally_hp_below ally_ko round_multiple chance].freeze
     STRATEGIES = %w[random lowest_hp highest_hp self].freeze
+    TRIGGERS = %w[hit ally_falls falls].freeze
 
     module_function
 
-    # Returns [ability, target_id_or_nil]. Falls back to Attack.
+    # Returns [ability, target_id_or_nil, rule_index_or_nil]. Falls back to Attack.
     def choose(ctx, unit)
-      unit["ai"].each do |rule|
+      unit["ai"].each_with_index do |rule, index|
+        next if rule["when"] # a reaction waits for its moment
+        next if rule["once"] && unit.fetch("fired", []).include?(index)
+
         ability = ctx.state["abilities"][rule["use"]]
         next unless ability && ctx.usable?(unit, ability)
         next unless conditions_met?(ctx, unit, rule.fetch("if", {}))
@@ -29,10 +46,32 @@ module Battle
         target = pick_target(ctx, unit, ability, rule["target"])
         next if target == :none
 
-        return [ ability, target ]
+        return [ ability, target, index ]
       end
 
-      [ ctx.ability("attack"), nil ]
+      [ ctx.ability("attack"), nil, nil ]
+    end
+
+    # The reaction a moment calls for: the first "when" rule for the trigger (and the type that struck,
+    # for a hit) whose conditions hold and that isn't spent. Returns its index, or nil.
+    def reaction(ctx, unit, trigger, by: nil)
+      unit["ai"].each_with_index do |rule, index|
+        next unless rule["when"] == trigger
+        next if rule["by"] && rule["by"] != by
+        next if rule["once"] && unit.fetch("fired", []).include?(index)
+        next unless ctx.state["abilities"][rule["use"]]
+        next unless conditions_met?(ctx, unit, rule.fetch("if", {}))
+
+        return index
+      end
+      nil
+    end
+
+    # The rule chosen is used: one that fires once is spent, and what it says is said.
+    def fire(ctx, unit, index)
+      rule = index && unit["ai"][index] or return
+      (unit["fired"] ||= []) << index if rule["once"]
+      ctx.emit(:says, actor: unit["id"], line: rule["say"]) unless rule["say"].to_s.empty?
     end
 
     def conditions_met?(ctx, unit, conditions)

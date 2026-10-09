@@ -8,7 +8,8 @@ class Locations::BossesController < ApplicationController
 
   def update
     boss = params.expect(boss: %i[monster count])
-    @location.place_boss!(boss[:monster].present? ? { boss[:monster] => boss[:count] } : {})
-    back boss[:monster].present? ? "Boss placed." : "The boss is back to what was rolled."
+    placed = boss[:monster].present? && boss[:count].to_i.positive?
+    @location.place_boss!(placed ? { boss[:monster] => boss[:count] } : {})
+    back placed ? "Boss placed." : "The boss is back to what was rolled."
   end
 end

@@ -239,7 +239,7 @@ RSpec.describe "Campaigns and characters", type: :request do
         name: "Test", characters: [ bartz.id.to_s ], encounter: { "0" => { monster: "goblin", count: "1" } }
       } }
       battle = BattleRecord.last
-      expect(battle.party.sole).to include("hp" => 50, "stats" => bartz.stats)
+      expect(battle.party.sole.to_h).to include("hp" => 50, "stats" => bartz.stats)
 
       sit_in_battle(battle, "gm")
       post battle_actions_path(battle), params: { gm: { op: "end_battle", result: "victory" } }

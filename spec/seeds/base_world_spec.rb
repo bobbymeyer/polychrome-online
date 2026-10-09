@@ -4,10 +4,10 @@ require "rails_helper"
 require Rails.root.join("db/seeds/base_world")
 
 RSpec.describe Seeds::BaseWorld do
-  # From nothing, not the suite's ready-made world (spec/support/base_world.rb).
-  before { World.where(slug: "base").destroy_all }
-
-  let!(:world) { described_class.run }
+  # The suite's ready-made world (spec/support/base_world.rb), seeded from nothing at the start of the
+  # run by this very seeder: no need to build it again for each example. What an example changes
+  # in it rolls back with the example.
+  let(:world) { base_world }
 
   it "seeds every book" do
     expect(world.slug).to eq("base")
@@ -51,12 +51,11 @@ RSpec.describe Seeds::BaseWorld do
   end
 
   it "only adds what's missing when re-run, so a GM's edits survive a deploy" do
-    world = described_class.run
     goblin = world.monsters.find_by!(slug: "goblin")
     goblin.update!(name: "Bog Goblin", exp: 99)
     knight = world.jobs.find_by!(slug: "knight")
     knight.job_levels.last.destroy!
-    world.monsters.find_by!(slug: "ogre").destroy!
+    world.monsters.find_by!(slug: "ogre").delete # gone missing (a GM can't delete one the tables still roll)
 
     described_class.run
     expect(goblin.reload).to have_attributes(name: "Bog Goblin", exp: 99)
@@ -65,7 +64,6 @@ RSpec.describe Seeds::BaseWorld do
   end
 
   it "puts everything back when asked to overwrite" do
-    world = described_class.run
     world.monsters.find_by!(slug: "goblin").update!(name: "Bog Goblin")
     world.jobs.find_by!(slug: "knight").job_levels.last.destroy!
 

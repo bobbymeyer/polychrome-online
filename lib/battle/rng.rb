@@ -3,8 +3,8 @@
 module Battle
   # Seeded PRNG (mulberry32) whose entire state is one 32-bit integer.
   #
-  # The handoff sketches `Random.new(seed)`, but Ruby's Random cannot expose
-  # its internal state as plain data. Storing a single integer in the battle
+  # Not `Random.new(seed)` (HANDOFF §5): Ruby's Random cannot expose its
+  # internal state as plain data. Storing a single integer in the battle
   # state gives the same guarantee — replays are exact — while keeping the
   # state JSON-serialisable and resumable from any point.
   class Rng

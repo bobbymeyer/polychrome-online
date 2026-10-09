@@ -4,7 +4,7 @@
   <% if gm %>
     <% choices = [ [ "Follow the scene (#{campaign.scene})", "" ] ] +
                  World::MUSIC.map { |c| [ c.capitalize + (campaign.world.music_track(c) ? "" : " (no track)"), c ] } +
-                 campaign.world.named_music_choices +
+                 campaign.world.named_music_choices(keep: campaign.music) +
                  [ [ "Silence", "silence" ] ] %>
     <%= form_with url: campaign_music_path(campaign), method: :patch, class: "music-switch", data: { controller: "autosubmit", turbo_frame: "_top" } do %>
       <%= label_tag :music, "Music for the table", class: "visually-hidden" %>

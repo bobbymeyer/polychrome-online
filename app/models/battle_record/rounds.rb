@@ -25,20 +25,23 @@ module BattleRecord::Rounds
   # If everyone still standing is on auto, nothing is filled: the round
   # waits for the GM or the timer, so a battle never plays itself out.
   def auto_fill!
-    return if over?
+    command = auto_command or return
 
-    return if everyone_on_auto?
-
-    units = awaiting_input & auto_units
-    return if units.empty?
-
-    apply!({ "type" => "gm_override", "op" => "auto", "units" => units }, actor: "gm", if_round: round)
+    apply!(command, actor: "gm", if_round: round)
   rescue Battle::InvalidAction
     nil # someone sat down and chose for one of them first; the timer or the GM covers the rest
   end
 
+  # The GM's auto override for the units on auto still to choose this round, or nil.
+  def auto_command
+    return if over? || everyone_on_auto?
+
+    units = awaiting_input & auto_units
+    { "type" => "gm_override", "op" => "auto", "units" => units } if units.any?
+  end
+
   def set_auto!(unit_id, on)
-    return unless party.any? { |u| u["id"] == unit_id }
+    return unless party.any? { |u| u.id == unit_id }
 
     update!(auto_units: on ? (auto_units | [ unit_id ]) : (auto_units - [ unit_id ]))
     start_first_clock! # nobody to wait for on auto
@@ -48,7 +51,7 @@ module BattleRecord::Rounds
   def auto?(unit_id) = auto_units.include?(unit_id)
 
   # The party's units still standing, by id.
-  def standing_ids = party.select { |u| u["hp"].positive? }.map { |u| u["id"] }
+  def standing_ids = party.select(&:standing?).map(&:id)
 
   # Everyone still standing is on auto: then the round waits for the GM or
   # the timer (auto_fill!), so a fight never plays itself out.
@@ -67,7 +70,7 @@ module BattleRecord::Rounds
 
   # A player is ready (Battles::ArrivalsController: their Ready button).
   def arrive!(unit_id)
-    return if arrived_units.include?(unit_id) || party.none? { |u| u["id"] == unit_id }
+    return if arrived_units.include?(unit_id) || party.none? { |u| u.id == unit_id }
 
     update!(arrived_units: arrived_units | [ unit_id ])
     # The clock starts, or the list of who it's waiting for is one shorter.
@@ -132,7 +135,7 @@ module BattleRecord::Rounds
 
   # A player's idea is waiting for the GM's ruling: the clock stops.
   def ruling_pending?
-    state["inputs"].any? { |_, cmd| cmd["kind"] == "custom" && !cmd["ruling"] }
+    field.ideas_awaiting_ruling.any?
   end
 
   # Once nothing is waiting for a ruling, the clock goes on, with at least

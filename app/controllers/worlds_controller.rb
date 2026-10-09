@@ -32,16 +32,21 @@ class WorldsController < ApplicationController
     # Anyone can make a world, usually by copying one; it's theirs to edit.
     @world = World.new(params.expect(world: %i[name slug description]).merge(owner: current_user))
     source = World.find_by(slug: params[:copy_from]) if params[:copy_from].present?
-    if @world.save
-      rules_only = params[:rules_only] == "1"
+    rules_only = params[:rules_only] == "1"
+    # One transaction: a copy that fails leaves no half-made world behind, and says what it couldn't copy.
+    World.transaction do
+      @world.save!
       if source
         @world.copy_books_from!(source, rules_only: rules_only)
         @world.copy_music_from!(source) unless rules_only
       end
-      redirect_to @world, notice: source ? "#{@world.name} was created from #{source.name}'s #{rules_only ? 'rules' : 'books'}." : "#{@world.name} was created."
-    else
-      render :new, status: :unprocessable_content
     end
+    redirect_to @world, notice: source ? "#{@world.name} was created from #{source.name}'s #{rules_only ? 'rules' : 'books'}." : "#{@world.name} was created."
+  rescue ActiveRecord::RecordInvalid => e
+    if e.record != @world
+      @world.errors.add(:base, "#{source&.name}'s #{e.record.class.model_name.human.downcase} #{e.record.try(:name)} couldn't be copied: #{e.record.errors.full_messages.to_sentence}")
+    end
+    render :new, status: :unprocessable_content
   end
 
   def update

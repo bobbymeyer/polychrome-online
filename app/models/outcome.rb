@@ -378,7 +378,9 @@ class Outcome
 
   # A fight, now: the stage takes everyone there.
   def battle!(campaign, **)
-    campaign.waylay!(target["name"], target["monsters"])
+    # A boss among them makes it a boss fight: its entrance, and no fleeing it.
+    boss = campaign.world.monsters.where(slug: target["monsters"].to_h.keys, boss: true).exists?
+    campaign.waylay!(target["name"], target["monsters"], boss: boss)
     campaign.start_pending_encounter!
     nil
   end

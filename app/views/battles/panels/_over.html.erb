@@ -1,6 +1,5 @@
-<% result = { "victory" => "Victory!", "defeat" => "The party has fallen.", "fled" => "The party got away.", "abandoned" => "Called off. Nothing came of it." } %>
 <% settlement = @battle.settlement || {} %>
-<h2><%= result.fetch(@battle.status, @battle.status.humanize) %></h2>
+<h2><%= @battle.result_line %></h2>
 
 <%= render "battles/panels/aftermath", battle: @battle %>
 <% if @battle.campaign %>
@@ -27,7 +26,10 @@
   <p>Used <%= settlement["used"].map { |name, n| "#{n} × #{name}" }.to_sentence %>.</p>
 <% end %>
 
-<% if settlement["result"] == "victory" %>
+<% if settlement["result"] == "victory" && !@battle.enemies_fell? %>
+  <%# Nobody fell: nothing was won, and the list of 0 EXP each says nothing. %>
+  <p class="muted">They got away before anyone fell: nothing won, nothing lost.</p>
+<% elsif settlement["result"] == "victory" %>
   <% levelled = settlement["members"].any? { |m| m["level"] || m["learned"].present? } %>
   <ul class="refs" <%= tag.attributes(data: { controller: "jingle", jingle_name_value: "level_up", jingle_once_value: "levelled-#{@battle.id}" }) if levelled %>>
     <% if settlement["gil"].to_i.positive? %><li><%= money(settlement["gil"]) %> for the party</li><% end %>
@@ -42,7 +44,7 @@
       </li>
     <% end %>
     <%# Whoever was down at the end earns nothing, and says so rather than vanishing from the list. %>
-    <% (@battle.party.reject { |u| u["guest"] || u["hp"].positive? }.map { |u| u["name"] } - settlement["members"].map { |m| m["name"] }).each do |fallen| %>
+    <% (@battle.party.select(&:ko?).map(&:name) - settlement["members"].map { |m| m["name"] }).each do |fallen| %>
       <li><strong><%= fallen %></strong>: <span class="muted">down at the end, so no EXP or ABP.</span></li>
     <% end %>
   </ul>

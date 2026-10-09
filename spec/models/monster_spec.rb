@@ -51,12 +51,119 @@ RSpec.describe Monster do
       expect(monster.errors[:ai_script]).to include(/meteor, which is not in the Grimoire/)
     end
 
+    it "takes a rule's moment and the type of blow it answers, and checks them" do
+      create_ability(world)
+      monster = create_monster(world, ai_script: [ { when: "hit", by: "fire", use: "fire", say: "Back at you." }, { when: "falls", use: "fire" }, { use: "attack" } ])
+      expect(monster.ai_script.first).to include("when" => "hit", "by" => "fire")
+      bad = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { when: "sneezes", use: "attack" }, { when: "hit", by: "plasma", use: "attack" },
+                                                                                { when: "falls", by: "fire", use: "attack" } ])
+      expect(bad).not_to be_valid
+      expect(bad.errors[:ai_script]).to include(/unknown moment sneezes/, /blows of plasma, which isn't one of this world's types/,
+                                                "rule 3 answers blows of fire, but only a rule for when it's hit answers blows") # said, not dropped
+    end
+
     it "validates conditions and target strategies" do
       monster = world.monsters.new(name: "Blob", stats: monster_stats,
                                    ai_script: [ { if: { moon_phase: 3, chance: -1 }, use: "attack", target: "strongest" } ])
       expect(monster).not_to be_valid
       expect(monster.errors[:ai_script]).to include(/unknown condition moon_phase/, /chance must be a positive/, /unknown target strongest/)
     end
+  end
+
+  it "stays in the Bestiary while an ability summons it, a table rolls it, a template makes it a boss or someone fights as it" do
+    sprite = create_monster(world, slug: "sprite")
+    expect(sprite.destroy).to be_truthy # nothing names it yet
+
+    rat = create_monster(world, slug: "rat")
+    create_ability(world, slug: "call_rat", target: "self", effects: [ { primitive: "summon", creature: "rat", duration: 2 } ])
+    world.encounter_tables.create!(name: "Sewers", slug: "sewers", terrain: "cave", tier: 1, entries: [ { weight: 1, monsters: { "rat" => 2 } } ])
+    expect(rat.destroy).to be(false)
+    expect(rat.errors.full_messages.to_sentence).to eq("Rat is still needed: Call rat summons it and Sewers rolls it. Change those first.")
+    expect(world.monsters.where(slug: "rat")).to exist
+
+    boss = create_monster(world, slug: "rat_king")
+    world.location_templates.create!(name: "Nest", slug: "nest", kind: "dungeon", config: { "boss" => { "rat_king" => 1 } })
+    expect(boss.destroy).to be(false)
+    expect(boss.errors.full_messages.to_sentence).to include("it is the boss of Nest")
+  end
+
+  it "takes only battle abilities in its script: a field ability is a move outside battle" do
+    appraise = base_world.abilities.field.first # the base world has field abilities, with its skills
+    monster = base_world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { use: appraise.slug } ])
+    expect(monster).not_to be_valid
+    expect(monster.errors[:ai_script]).to include("rule 1 uses #{appraise.slug}, a field ability, which can't be used in battle")
+  end
+
+  it "takes only battle abilities in its script (an unknown one is refused too)" do
+    monster = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { use: "appraise" } ])
+    expect(monster).not_to be_valid
+    expect(monster.errors[:ai_script]).to include("rule 1 uses appraise, which is not in the Grimoire")
+  end
+
+  it "keeps a rule's chance a percentage" do
+    monster = world.monsters.new(name: "Blob", stats: monster_stats, ai_script: [ { if: { chance: 150 }, use: "attack" } ])
+    expect(monster).not_to be_valid
+    expect(monster.errors[:ai_script]).to include("rule 1 chance must be 1 to 100")
+  end
+
+  describe "phases" do
+    let!(:second) { create_monster(world, slug: "goblin_king", name: "Goblin King", boss: true) }
+
+    it "takes form rows, checks them against the Bestiary and keeps them in order, and exports each form for the engine" do
+      create_ability(world)
+      monster = create_monster(world, ai_script: [ { use: "fire", once: "1", say: " Burn. " }, { use: "attack" } ],
+                                      phases: [ { hp_below: "50", becomes: "goblin_king", say: "Now you see.", restore: "10" }, { becomes: "" } ])
+      expect(monster.ai_script.first).to eq("use" => "fire", "once" => true, "say" => "Burn.")
+      expect(monster.phases).to eq([ { "hp_below" => 50, "becomes" => "goblin_king", "say" => "Now you see.", "restore" => 10 } ])
+      expect(monster.forms).to eq([ second ])
+      expect(second.form_of).to eq([ monster ])
+
+      spec = monster.to_engine
+      expect(spec["phases"].first).to include("hp_below" => 50, "say" => "Now you see.", "restore" => 10)
+      expect(spec["phases"].first["becomes"]).to include("name" => "Goblin King", "boss" => true, "image" => { "book" => "monsters", "slug" => "goblin_king" })
+      state = world.battle(seed: 1, party: [ { id: "hero", stats: monster_stats(max_hp: 200) } ], monsters: { "goblin" => 1 })
+      expect(state["units"].last["phases"].first["becomes"]["name"]).to eq("Goblin King")
+
+      bad = world.monsters.new(name: "Blob", stats: monster_stats, phases: [ { hp_below: 50, becomes: "nobody" }, { hp_below: 60, becomes: "goblin_king", restore: 500 } ])
+      expect(bad).not_to be_valid
+      expect(bad.errors[:phases]).to include(/phase 1 becomes nobody, which is not in the Bestiary/, /phase 2 restore must be 0 to 100/, /in order/)
+      expect(world.monsters.new(name: "Self", slug: "self", stats: monster_stats, phases: [ { hp_below: 50, becomes: "self" } ])).not_to be_valid
+    end
+
+    it "goes one way: a form can't become, through its own forms, the entry it's a form of" do
+      create_monster(world, slug: "goblin_lord", name: "Goblin Lord", phases: [ { hp_below: 50, becomes: "goblin_king" } ])
+      second.phases = [ { hp_below: 40, becomes: "goblin_lord" } ] # Goblin King → Goblin Lord → Goblin King
+      expect(second).not_to be_valid
+      expect(second.errors[:phases]).to include("go round in a circle (Goblin King → Goblin Lord → Goblin King): a form can't become what it's a form of")
+    end
+
+    it "goes no deeper than the engine builds forms" do
+      create_monster(world, slug: "e", name: "E")
+      create_monster(world, slug: "d", name: "D", phases: [ { hp_below: 50, becomes: "e" } ])
+      create_monster(world, slug: "c", name: "C", phases: [ { hp_below: 50, becomes: "d" } ])
+      three = create_monster(world, slug: "b", name: "B", phases: [ { hp_below: 50, becomes: "c" } ]) # B → C → D → E: three forms
+      expect(three).to be_valid
+      four = world.monsters.new(name: "A", slug: "a", stats: monster_stats, phases: [ { hp_below: 50, becomes: "b" } ])
+      expect(four).not_to be_valid
+      expect(four.errors[:phases]).to include("go 4 forms deep (A → B → C → D → E): 3 is the most a boss can take")
+    end
+
+    it "keeps a form in the Bestiary while something becomes it" do
+      create_monster(world, phases: [ { hp_below: 50, becomes: "goblin_king" } ])
+      expect(second.destroy).to be(false)
+      expect(second.errors.full_messages.to_sentence).to include("it is a form of Goblin")
+    end
+  end
+
+  it "plays its own music, one of its world's tracks by name, and carries where it plays from into the engine" do
+    track = world.tracks.create!(name: "Doom march", source: "link", url: "https://youtu.be/dQw4w9WgXcQ")
+    monster = create_monster(world, boss: true, music: "track:#{track.id}")
+    expect(monster.music_path).to eq(track.play_url)
+    expect(monster.to_engine["music"]).to eq(track.play_url)
+    expect(world.monsters.new(name: "Quiet", stats: monster_stats, music: "")).to be_valid # blank: the world's boss track
+    bad = world.monsters.new(name: "Loud", stats: monster_stats, music: "track:999")
+    expect(bad).not_to be_valid
+    expect(bad.errors[:music]).to include(/isn't one of Testland's tracks/)
   end
 
   it "validates drops against the Armory" do

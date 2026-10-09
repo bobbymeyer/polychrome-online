@@ -17,6 +17,9 @@
 <% if entry.boss_line.present? %>
   <blockquote class="boss-line"><%= entry.boss_line %></blockquote>
 <% end %>
+<% if (track = @world.named_track(entry.music)) %>
+  <p class="hint">Its own music: <%= link_to "♪ #{track.name}", world_tracks_path(@world) %>.</p>
+<% end %>
 
 <section class="window">
   <h2>Stat block</h2>
@@ -48,15 +51,38 @@
     <% entry.ai_script.each do |rule| %>
       <li>
         <% conditions = rule.fetch("if", {}) %>
-        <%= conditions.empty? ? "Otherwise" : "If " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") %>:
+        <% moment = describe_moment(rule["when"], rule["by"]) %>
+        <% if moment %><%= moment %><%= ", if " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") if conditions.any? %>:
+        <% elsif conditions.empty? && rule["once"] %>The first chance it gets:
+        <% else %><%= conditions.empty? ? "Otherwise" : "If " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") %>:<% end %>
         <% ability = abilities[rule["use"]] %>
         <%= ability ? link_to(ability.name, world_grimoire_ability_path(@world, ability)) : "Attack" %>
         <% if rule["target"] %><span class="muted">→ <%= term(rule["target"]) %></span><% end %>
+        <% if rule["once"] %><span class="muted">(once)</span><% end %>
+        <% if rule["say"].present? %><em class="ai-script__say">“<%= rule["say"] %>”</em><% end %>
       </li>
     <% end %>
   </ol>
   <% unless entry.ai_script.last&.then { |rule| rule["if"].blank? } %>
     <p class="hint">When no rule matches: Attack.</p>
+  <% end %>
+  <% if entry.phases.any? %>
+    <%# Its phases: what it becomes, below what share of its HP, saying what (Monster#phases). %>
+    <h3>Phases</h3>
+    <% forms = entry.forms.index_by(&:slug) %>
+    <ol class="ai-script">
+      <% entry.phases.each do |phase| %>
+        <li>
+          Below <%= phase["hp_below"] %>% <%= word("hp") %>: becomes
+          <% if (form = forms[phase["becomes"]]) %><%= link_to form.name, world_bestiary_monster_path(@world, form) %><% else %><%= phase["becomes"] %><% end %>
+          <% if phase["restore"].to_i.positive? %><span class="muted">(<%= phase["restore"] %>% <%= word("hp") %> back)</span><% end %>
+          <% if phase["say"].present? %><em class="ai-script__say">“<%= phase["say"] %>”</em><% end %>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+  <% if (of = entry.form_of).any? %>
+    <p class="hint">A form of <%= safe_sentence(of.map { |m| link_to(m.name, world_bestiary_monster_path(@world, m)) }) %>.</p>
   <% end %>
 </section>
 

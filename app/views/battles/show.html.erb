@@ -1,25 +1,28 @@
 <% content_for :title, @battle.name %>
-<% content_for :head, music_meta(@battle.campaign, @battle.boss? ? "boss" : "battle", fixed: true) %>
+<% content_for :head, music_meta(@battle.campaign, @battle.music_choice, fixed: true) %>
 <% content_for :head do %>
   <%# The battle screen is one long-lived page (§9.9): never show a stale cached snapshot. %>
   <meta name="turbo-cache-control" content="no-cache">
 <% end %>
 
+<% field = @battle.field %>
 <% boss_names = @battle.boss? ? @battle.boss_names : [] %>
-<%# An antagonist's entrance was their own lines, said before the fight: the card is for a dungeon's monster. %>
-<% villains = @battle.enemies.any? { |u| Npc.from_battle_unit(u["id"]) } %>
-<% bosses = villains ? [] : @battle.boss_monsters.to_a %>
+<%# Every boss gets its card, an antagonist too (their entry's line, their own name). Its line is said only when no
+    entrance was said before the fight (a boss room's prelude: BattleRecord#prelude_said), so it isn't heard twice. %>
+<% bosses = @battle.boss_entries %>
 <% view = @battle.campaign && coop_view(@battle.campaign) %>
 <%# A setting for this device, not a move: in the Menu with the rest of the way around (DESIGN.md, "Only the battle"). %>
 <%# battle--play: the battle as a player or the GM plays it (stage.css lays it out); else the co-op screen, controller or stage view. %>
 <div class="battle battle--<%= view || "play" %><%= " battle--boss" if boss_names.any? %>" data-controller="battle-player dialogue heartbeat<%= " recap" if @battle.campaign %>" data-heartbeat-url-value="<%= battle_watch_path(@battle) %>" <%= tag.attributes(data: { recap_campaign_value: @battle.campaign_id }) if @battle.campaign %>
-     <%= tag.attributes(data: { boss_down: ("#{boss_names.to_sentence} #{boss_names.size > 1 ? 'fall' : 'falls'}!" if boss_names.any?) }) %>
+     <%= tag.attributes(data: { boss_down: ("#{boss_names.to_sentence} #{boss_names.size > 1 ? 'fall' : 'falls'}!" if boss_names.any?),
+                                boss_away: ("#{boss_names.to_sentence} got away!" if boss_names.any?),
+                                boss_ids: (@battle.boss_units.map(&:id).to_json if boss_names.any?) }) %>
      data-battle-player-panel-url-value="<%= battle_panel_path(@battle) %>"
      data-battle-player-words-value="<%= battle_words(@battle.campaign.world).to_json %>"
      data-battle-player-next-value="<%= @battle.battle_actions.count %>"
      data-battle-player-cries-value="<%= (@battle.campaign ? @battle.characters_by_unit.transform_values(&:motive).compact : {}).to_json %>"
      data-dialogue-auto-hide-value="true"
-     data-action="battle-beat:arrived->battle-player#enqueue turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key setting:changed@window->battle-player#syncFast chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
+     data-action="battle-beat:arrived->battle-player#enqueue battle-panel:changed@window->battle-player#panelChanged turbo:frame-load->battle-player#panelLoaded keydown@window->battle-player#key setting:changed@window->battle-player#syncFast chat-line:arrived->dialogue#arrive turbo:before-stream-render@document->dialogue#streamed dialogue:say@window->dialogue#say">
   <%= turbo_stream_from @battle %>
   <%# The first round's clock waits for each player to say they're ready (BattleRecord#arrive!). %>
   <% if @seat.unit_id && @battle.waiting_for_arrivals? && @battle.still_coming.include?(@seat.unit_id) %>
@@ -55,17 +58,19 @@
   <% end %>
 
   <%# The battle's stage is the frame itself (stage.css, "The Stage"): the field fills it, the roster along its bottom. %>
-  <div class="stage stage__frame" data-battle-player-target="stage" data-controller="stage-fit" data-stage-fit-below-value="24">
+  <%# Room under the frame for the commands (stage_fit_controller): a short screen shrinks the frame rather than
+      scrolling it away when the menu takes focus (menu_controller#bringIntoView). %>
+  <div class="stage stage__frame" data-battle-player-target="stage" data-controller="stage-fit" data-stage-fit-below-value="280">
     <%# This round's order, as it plays: who has gone, who's up, who's still to come (battle/board.js). %>
     <ol class="turn-rail" data-battle-player-target="rail" aria-label="This round" hidden></ol>
     <div data-battle-player-target="boardContainer">
-      <%= render "battles/board", battle: @battle, state: @battle.state %>
+      <%= render "battles/board", battle: @battle, field: field %>
     </div>
     <%# What the round came to, once it's played, until the next one starts. %>
     <p class="round-tally" data-battle-player-target="tally" aria-live="polite" hidden></p>
     <div class="fx" data-battle-player-target="fx" aria-hidden="true"></div>
     <%# What's said plays on the stage, along its bottom, as at the table. %>
-    <%= render "campaigns/tables/dialogue_box", campaign: @battle.campaign, extra: "dialogue--battle" if @battle.campaign && view != "controller" %>
+    <%= render "campaigns/tables/dialogue_box", campaign: @battle.campaign, extra: "dialogue--battle", scope: "battle_#{@battle.id}" if @battle.campaign && view != "controller" %>
   </div>
 
   <% unless view == "stage" %>
@@ -80,7 +85,7 @@
       <div class="battle__dock">
         <ol class="battle-ticker" data-battle-player-target="ticker" aria-label="What just happened">
           <% @log.last(1).each do |event| %>
-            <% line = battle_log_line(event.payload, @battle.state) %>
+            <% line = battle_log_line(event.payload, field) %>
             <% if line %><li><%= line %></li><% end %>
           <% end %>
         </ol>
@@ -106,12 +111,12 @@
     </details>
   <% end %>
 
-  <%= render layout: "shared/log_drawer", locals: { self_name: @seat&.character&.name, dockable: @seat&.gm? } do %>
+  <%= render layout: "shared/log_drawer", locals: { scope: "battle_#{@battle.id}", self_name: @seat&.character&.name, dockable: @seat&.gm? } do %>
     <section class="battle-log log-drawer__section" aria-label="Battle">
       <h3>Battle</h3>
-      <ol data-battle-player-target="log" data-log-drawer-target="list" aria-live="polite">
-        <% @log.each do |event| %>
-          <% line = battle_log_line(event.payload, @battle.state) %>
+      <ol data-battle-player-target="log" data-log-drawer-target="list" data-newest="first" aria-live="polite">
+        <% @log.reverse_each do |event| %>
+          <% line = battle_log_line(event.payload, field) %>
           <% if line %><li><%= line %></li><% end %>
         <% end %>
       </ol>
@@ -126,7 +131,7 @@
          data-boss-intro-key-value="battle-<%= @battle.id %>"
          data-boss-intro-fresh-value="<%= @battle.round <= 1 && !@battle.over? %>"
          data-boss-intro-name-value="<%= boss_names.first %>"
-         data-boss-intro-line-value="<%= boss.boss_line %>"
+         data-boss-intro-line-value="<%= boss.boss_line unless @battle.prelude_said? %>"
          data-boss-intro-plate-value="<%= plate_style(boss.slug, boss.colour) %>">
       <div class="boss-card" data-boss-intro-target="card" style="<%= plate_style(boss.slug, boss.colour) %>">
         <span class="boss-card__tag">Boss</span>

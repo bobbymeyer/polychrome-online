@@ -76,7 +76,7 @@ Every table that belongs to a world carries `world_id`. This is the only second-
 - `regions`, `factions`, `lore_entries` (Worldbook)
 - `location_templates` — town / dungeon / field archetypes; generator config (Gazetteer)
 - `named_places` — fixed, hand-authored locations
-- `monsters` — stat block, image slot, variant recipe, AI script (condition/action list), drop table
+- `monsters` — stat block, image slot, variant recipe, AI script (condition/action list; a rule can fire once, and say a line as it fires: the telegraph before a charged blow; a rule with a moment is a reaction, out of turn: when hit, by one type of blow or any, when one of its side falls, or with its last breath), phases (below a share of its HP it becomes another entry, saying a line, with some HP back: a boss's second form is its own page), its own music (one of the world's tracks, played for the fight; a form's own takes over as it comes), drop table
 - `encounter_tables` — weighted monster groups by terrain/tier
 - `jobs`, `job_learn_tables` — FF5-style: a type, job levels 1–100 on one ABP curve, the job level each ability comes at, equip permissions, innates. Each ability grows to mastery over the 40 job levels after it's learned (+50% power), gets +25% in the job that teaches it, and keeps its job's Str/Mag once mastered; job level 100 masters the job (`Stats::Mastery`)
 - `abilities` — primitive + params + targeting + cost
@@ -114,7 +114,7 @@ Battle::Resolver.apply(state, action) -> [new_state, events]
 ```
 
 - `state` is a plain hash/struct: parties, enemies, turn order, statuses, RNG state.
-- RNG is `Random.new(seed)` stored on the battle; RNG state advances deterministically so replays are exact.
+- The RNG is seeded and its whole state lives in the battle state (`Battle::Rng`, a 32-bit mulberry32 whose state is one integer, `state["rng"]`: Ruby's `Random` can't hand its state over as data). It advances deterministically, so a battle resumes exactly from any saved state and replays are exact.
 - `events` are the contract with the view: `attack`, `damage`, `miss`, `crit`, `cast`, `heal`, `status_applied`, `status_expired`, `ko`, `turn_start`, `turn_end`, `flee`, `victory`, `defeat`, `gm_override`.
 - Enemy AI: per-monster ordered condition/action lists evaluated by the resolver (FF-style: "if HP < 30% use X, else attack").
 - GM override is an action type the resolver accepts and logs. It goes into the replay, never around it.
@@ -158,7 +158,7 @@ Every generated place carries where it came from (`Generators::Provenance`):
 
 The GM keeps families through rerolls and edits a place's past on the atlas; an edited past, like an edited page, is theirs, and the history won't write over it.
 
-**The world moves overnight.** Each new day, a pure step over the campaign's map (`Pointcrawl::Overnight`, RNG in state like the resolver) decides what moved: clocks that tick now and then, rumours travelling a road a day, antagonists who got away wandering, caravans lost on dangerous roads and the prices that follow. The campaign applies it (`Campaign::Overnight`). The GM gets a private note; players only learn what reaches them as rumours. Kept secrets about a place sometimes leak there as rumours.
+**The world moves overnight.** Each new day, a pure step over the campaign's map (`Pointcrawl::Overnight`, RNG in state like the resolver) decides what moved: clocks that tick now and then, rumours travelling a road a day, antagonists who got away wandering, caravans lost on dangerous roads and the prices that follow. The campaign applies it (`Campaign::Night`). The GM gets a private note; players only learn what reaches them as rumours. Kept secrets about a place sometimes leak there as rumours.
 
 **Deeds and legends.** What the party does is history too. A deed (recorded by itself for an antagonist beaten or a dungeon cleared, or by the GM) starts a rumour carrying its sway, and each town the story reaches moves its view of the party, which sets its prices and, far enough down, whether it trades with them at all. The legends page puts the written history the party can know together with their own story.
 
@@ -224,5 +224,6 @@ Steps 1–3 are the proof. If the battle isn't fun with a GM in the seat, nothin
 - A model that tells several stories tells them in concerns, one story each, in a folder named for the model (`Campaign::Shopping`, `Location::Exploration`). A slice's constants live in the slice.
 - When the game says no ("the party can't afford that"), a model raises `Refusal`, and the person who asked sees it as an alert. `ArgumentError` means a bug, and crashes.
 - The table hears the game through `Campaign#narrate`.
+- Broadcasts come in two kinds. A page refresh goes `_later` and debounced (each viewer fetches their own page again, as their own seat, so a burst of changes is one fetch). A targeted stream that carries a moment's state (a battle beat, a line said, the countdown, the GM's panels) goes at once, in order, rendered from the state as it is then: rendered later, a beat's board could show a state the battle has already moved past.
 - A migration that removes or changes a column runs outside a transaction (`disable_ddl_transaction!`). SQLite rebuilds the table to do it, and inside a transaction it can't switch foreign keys off, so the rebuild fires ON DELETE actions on other tables. `spec/migrations_spec.rb` checks. New foreign keys stay plain; the models clean up (`dependent:`).
 
