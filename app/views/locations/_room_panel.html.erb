@@ -1,0 +1,43 @@
+<%# The room the GM clicked on the floorplan, in the panel beside it: what's
+    in it, the rooms it can be joined to, and the ways out with a cut on each.
+    The same shape as a map place's panel (map_nodes/edit.html.erb), because
+    this is the same job one level down. %>
+<%= turbo_frame_tag "room_panel" do %>
+  <div class="room-panel">
+    <h3><%= room["name"] %><%= tag.span " (added)", class: "muted" if room["added"] %></h3>
+    <p class="muted"><%= room["decision"]["kind"].humanize %><%= ": #{room['decision']['text']}" if room["decision"]["text"].present? %></p>
+
+    <% others = location.view.fetch("rooms", []).reject { |r| r["key"] == room["key"] || location.path_between(room["key"], r["key"]) } %>
+    <h4>Connect to…</h4>
+    <% if others.empty? %>
+      <p class="empty">It already joins every other room.</p>
+    <% else %>
+      <%= form_with url: location_ways_path(location), scope: :path, class: "book-form inline-form" do |f| %>
+        <%= f.hidden_field :from, value: room["key"] %>
+        <div class="field">
+          <%= f.label :to, "Room" %>
+          <%= f.select :to, others.map { |r| [ r["name"], r["key"] ] } %>
+        </div>
+        <%= f.submit "Connect", class: "button" %>
+      <% end %>
+    <% end %>
+
+    <% ways = location.neighbours(room["key"]) %>
+    <% if ways.any? %>
+      <h4>Ways out</h4>
+      <ul class="refs">
+        <% ways.each do |key| %>
+          <% path = location.path_between(room["key"], key) %>
+          <li>
+            <%= location.room(key)&.fetch("name") || key %>
+            <% if path["lock"] %><span class="muted">· <%= path["lock"]["name"] %></span><% end %>
+            <% if path["cost"] %><span class="muted">· <%= Toll.of(path["cost"]).words %></span><% end %>
+            <%= button_to "Cut", location_way_path(location, path["key"]), method: :delete, class: "link-button",
+                          form: { data: { turbo_confirm: "Cut the way between #{room['name']} and #{location.room(key)&.fetch('name')}?#{' Its lock goes with it.' if path['lock']}" } } %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+    <p class="hint">Drag a room on the floorplan to move it. A reroll puts the shape back to what the seed makes.</p>
+  </div>
+<% end %>

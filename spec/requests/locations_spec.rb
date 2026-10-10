@@ -126,6 +126,122 @@ RSpec.describe "Locations", type: :request do
       expect(cave.reload.view["rooms"].last).to include("name" => "Vault", "added" => true)
     end
 
+    # Reshaping a dungeon, as a map's places are reshaped: drag a room, join
+    # two, cut a way. Each one an override, so each one reverts.
+    it "moves rooms and joins and cuts ways, and won't strand a room" do
+      cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+      cave = generate("goblin_cave", on: cave_node)
+
+      # Dragged on the floorplan. JSON, as floorplan_editor_controller sends it.
+      room = cave.view["rooms"].first["key"]
+      patch location_room_path(cave, room), params: { room: { x: 240, y: 90 } }.to_json,
+            headers: { "CONTENT_TYPE" => "application/json", "ACCEPT" => "application/json" }
+      expect(response).to have_http_status(:no_content)
+      expect(cave.reload.room(room).slice("x", "y")).to eq("x" => 240, "y" => 90)
+
+      # Clamped to the sheet rather than refused.
+      patch location_room_path(cave, room), params: { room: { x: -50, y: 9_000 } }
+      expect(cave.reload.room(room).slice("x", "y")).to eq("x" => 0, "y" => Generators::Dungeon::HEIGHT)
+
+      patch location_room_path(cave, "room-99"), params: { room: { x: 1, y: 1 } }
+      follow_redirect!
+      expect(response.body).to include("No room room-99 here")
+
+      # Joined from the room's panel.
+      far = cave.view["rooms"].find { |r| r["key"] != room && !cave.path_between(room, r["key"]) }["key"]
+      post location_ways_path(cave), params: { path: { from: room, to: far } }
+      expect(cave.reload.neighbours(room)).to include(far)
+      post location_ways_path(cave), params: { path: { from: room, to: far } }
+      follow_redirect!
+      expect(response.body).to include("already joined")
+
+      # Cut again, and the override it came from goes with it.
+      joined = cave.reload.path_between(room, far)
+      delete location_way_path(cave, joined["key"])
+      expect(cave.reload.neighbours(room)).not_to include(far)
+      expect(cave.overrides.fetch("added_paths", [])).to be_empty
+      expect(cave.overrides.fetch("removed_paths", [])).to be_empty # it was never the roll's to remove
+
+      # The guard: the way off the entrance is the only way in, so cutting it
+      # would strand everything behind it.
+      entrance = cave.view["entrance"]
+      only_way = cave.view["paths"].find { |pa| [ pa["from"], pa["to"] ].include?(entrance) }
+      if cave.neighbours(entrance).one?
+        delete location_way_path(cave, only_way["key"])
+        follow_redirect!
+        expect(response.body).to include("strands")
+        expect(cave.reload.path_between(only_way["from"], only_way["to"])).to be_present
+      end
+
+      delete location_way_path(cave, "path-nowhere")
+      follow_redirect!
+      expect(response.body).to include("No way path-nowhere here")
+    end
+
+    # The contract between the floorplan and floorplan_editor_controller.js:
+    # the hooks it binds to have to be on the page, and only for the GM.
+    it "draws the GM an editable floorplan, and the players a picture" do
+      cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+      cave = generate("goblin_cave", on: cave_node)
+      room = cave.view["rooms"].first
+      way = cave.view["paths"].first
+
+      get location_path(cave)
+      expect(response.body).to include("floorplan--editor", %(data-controller="floorplan-editor"))
+      expect(response.body).to include(%(data-floorplan-room="#{room['key']}"), %(data-update-url="#{location_room_path(cave, room['key'])}"))
+      expect(response.body).to include(%(data-floorplan-path="#{way['key']}"), %(data-floorplan-from="#{way['from']}"))
+      expect(page.at("turbo-frame#room_panel")).to be_present
+      expect(response.body).to include("Drag a room to move it")
+
+      # The panel the controller loads into that frame.
+      get location_room_path(cave, room["key"])
+      expect(response.body).to include(room["name"], "Connect to", "Ways out", "Cut")
+
+      sit(campaign, bartz)
+      get location_path(cave)
+      expect(response.body).not_to include("floorplan--editor", "data-floorplan-room", "floorplan-editor")
+    end
+
+    it "forgets a dungeon's shape on a reroll, and keeps its pins and added rooms" do
+      cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+      cave = generate("goblin_cave", on: cave_node)
+      room = cave.view["rooms"].first["key"]
+
+      post location_pins_path(cave), params: { key: room }
+      post location_rooms_path(cave), params: { room: { name: "Vault", connect: room, kind: "treasure", item: "power_ring" } }
+      patch location_room_path(cave, room), params: { room: { x: 240, y: 90 } }
+      far = cave.reload.view["rooms"].find { |r| r["key"] != room && !cave.path_between(room, r["key"]) }["key"]
+      post location_ways_path(cave), params: { path: { from: room, to: far } }
+
+      expect(cave.reload.overrides.keys).to include("moved_rooms", "added_paths", "pins", "added_rooms")
+      post location_reroll_path(cave)
+      overrides = cave.reload.overrides
+      expect(overrides.keys).not_to include("moved_rooms", "added_paths", "removed_paths")
+      expect(overrides.keys).to include("pins", "added_rooms") # those are the GM's writing, not the layout
+      expect(cave.view["rooms"].map { |r| r["name"] }).to include("Vault")
+    end
+
+    it "lists a reshaped dungeon's changes and takes each one back" do
+      cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+      cave = generate("goblin_cave", on: cave_node)
+      room = cave.view["rooms"].first["key"]
+      far = cave.view["rooms"].find { |r| r["key"] != room && !cave.path_between(room, r["key"]) }["key"]
+      cut = cave.view["paths"].find { |pa| cave.rooms_off_the_entrance(cave.view["paths"] - [ pa ]).empty? }
+
+      cave.move_room!(room, x: 240, y: 90)
+      cave.connect_rooms!(room, far)
+      cave.cut_path!(cut["key"]) if cut
+
+      kinds = cave.reload.changes.map { |c| c["kind"] }
+      expect(kinds).to include("moved", "path")
+      expect(kinds).to include("cut") if cut
+      expect(cave.changes.map { |c| c["summary"] }.join).to include("Moved", "Joined")
+
+      cave.changes.each { |c| cave.revert!(c["kind"], c["key"]) }
+      expect(cave.reload.overrides.keys).not_to include("moved_rooms", "added_paths", "removed_paths")
+      expect(cave.view["paths"].size).to eq(cave.generated["paths"].size)
+    end
+
     it "sends everyone back into the dungeon after a fight in it" do
       cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
       cave = generate("goblin_cave", on: cave_node)

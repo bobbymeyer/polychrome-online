@@ -8,8 +8,15 @@ module Location::Tailoring
 
   # A new seed. Pins, stock, boss and added rooms stay; a dungeon's
   # exploration starts over, since its rooms have moved.
+  #
+  # The shape goes with the roll. Moved rooms and joined or cut ways are
+  # placed against one layout, and a reroll is a different one -- a
+  # different room count, even (five_rooms rolls 4 to 6). Keeping them
+  # would hang coordinates and doors off rooms that this roll didn't make.
+  SHAPE = %w[moved_rooms added_paths removed_paths].freeze
+
   def reroll!
-    update!(seed: Location.new_seed, progress: {}, overrides: overrides.except("tables", "families"))
+    update!(seed: Location.new_seed, progress: {}, overrides: overrides.except("tables", "families", *SHAPE))
   end
 
   # Take the world's tables again (Location::Generation#remember!): the
@@ -84,6 +91,70 @@ module Location::Tailoring
     key
   end
 
+  # Drag a room off where it rolled (Generators::Overrides "moved_rooms").
+  # The floorplan's own coordinates, clamped to the sheet.
+  def move_room!(key, x:, y:)
+    raise Refusal, "No room #{key} here" unless room(key)
+
+    at = [ x.to_i.clamp(0, Generators::Dungeon::WIDTH), y.to_i.clamp(0, Generators::Dungeon::HEIGHT) ]
+    set_shape!("moved_rooms", overrides.fetch("moved_rooms", {}).merge(key => at))
+  end
+
+  # Join two rooms, so the party can walk between them. A plain way: no
+  # lock, no toll -- those are the roll's to give.
+  def connect_rooms!(from, to)
+    here, there = room(from), room(to)
+    raise Refusal, "No room #{here ? to : from} here" unless here && there
+    raise Refusal, "#{here['name']} can't join itself" if from == to
+    raise Refusal, "#{here['name']} and #{there['name']} are already joined" if path_between(from, to)
+
+    set_shape!("added_paths", overrides.fetch("added_paths", []) + [ [ from, to ] ])
+  end
+
+  # Cut a way. Any way, the roll's included -- but not one that would
+  # strand a room: a dungeon nobody can walk through isn't playable, and
+  # the party has to be able to reach every room from the entrance.
+  def cut_path!(key)
+    path = view.fetch("paths", []).find { |p| p["key"] == key }
+    raise Refusal, "No way #{key} here" unless path
+
+    left = view.fetch("paths", []).reject { |p| p["key"] == key }
+    stranded = rooms_off_the_entrance(left)
+    if stranded.any?
+      raise Refusal, "Cutting that way strands #{stranded.map { |r| r['name'] }.to_sentence}. Join #{stranded.one? ? 'it' : 'them'} elsewhere first."
+    end
+
+    # A way the GM drew comes out of added_paths rather than going into
+    # removed_paths, so drawing then cutting leaves nothing behind.
+    if path["added"]
+      pair = [ path["from"], path["to"] ].sort
+      set_shape!("added_paths", overrides.fetch("added_paths", []).reject { |p| p.sort == pair })
+    else
+      set_shape!("removed_paths", overrides.fetch("removed_paths", []) + [ key ])
+    end
+  end
+
+  # A shape override, emptied back out of `overrides` rather than left as an
+  # empty hash or list: elsewhere the code asks whether a key is there at all.
+  def set_shape!(key, value)
+    update!(overrides: value.presence ? overrides.merge(key => value) : overrides.except(key))
+  end
+
+  # Which rooms these ways leave unreachable from the entrance.
+  def rooms_off_the_entrance(paths)
+    rooms = view.fetch("rooms", [])
+    reached = [ view["entrance"] ].compact
+    loop do
+      more = paths.filter_map do |path|
+        (path["to"] if reached.include?(path["from"])) || (path["from"] if reached.include?(path["to"]))
+      end.uniq - reached
+      break if more.empty?
+
+      reached.concat(more)
+    end
+    rooms.reject { |room| reached.include?(room["key"]) }
+  end
+
   # Every way the GM has changed this location from what was rolled, as
   # [{ "kind", "key", "summary" }], each revertible with #revert!.
   def changes
@@ -111,6 +182,15 @@ module Location::Tailoring
     overrides.fetch("added_rooms", []).each do |room|
       list << change("room", room["key"], "Added room #{room['name']}")
     end
+    overrides.fetch("moved_rooms", {}).each_key do |key|
+      list << change("moved", key, "Moved #{room(key)&.fetch('name') || key}")
+    end
+    overrides.fetch("added_paths", []).each do |from, to|
+      list << change("path", Generators::Overrides.added_path_key(from, to), "Joined #{room_name(from)} to #{room_name(to)}")
+    end
+    overrides.fetch("removed_paths", []).each do |key|
+      list << change("cut", key, "Cut the way #{rolled_path_name(key)}")
+    end
     list
   end
 
@@ -125,9 +205,27 @@ module Location::Tailoring
     when "stock" then set_stock!(nil)
     when "boss" then place_boss!({})
     when "room" then remove_room!(key)
+    when "moved" then set_shape!("moved_rooms", overrides.fetch("moved_rooms", {}).except(key))
+    when "path" then cut_path!(key)
+    when "cut" then set_shape!("removed_paths", overrides.fetch("removed_paths", []) - [ key ])
     when "tables" then update!(overrides: overrides.except("tables", "families")) # rolled from the world's tables as they are now
     else raise Refusal, "Unknown change #{kind}"
     end
+  end
+
+  # A room's name for the change list: from the view while it's there,
+  # else the roll's, else the bare key.
+  def room_name(key)
+    room(key)&.fetch("name") || generated.fetch("rooms", []).find { |r| r["key"] == key }&.fetch("name") || key
+  end
+
+  # A cut way named by its ends. It isn't in the view any more -- that's
+  # what cutting it did -- so the roll is where to look.
+  def rolled_path_name(key)
+    path = generated.fetch("paths", []).find { |p| p["key"] == key }
+    return key unless path
+
+    "#{room_name(path['from'])} – #{room_name(path['to'])}"
   end
 
   # Remove a hand-authored room, and any rooms added off it.
@@ -146,7 +244,11 @@ module Location::Tailoring
     remaining = added.reject { |r| doomed.include?(r["key"]) }
     progress = self.progress.merge("visited" => visited - doomed)
     progress["current"] = view["entrance"] if doomed.include?(progress["current"])
-    update!(overrides: overrides.merge("added_rooms" => remaining), progress: progress)
+    # Its ways and its place go with it, so the change list stops naming it.
+    shape = { "added_paths" => overrides.fetch("added_paths", []).reject { |pair| pair.any? { |end_| doomed.include?(end_) } },
+              "moved_rooms" => overrides.fetch("moved_rooms", {}).except(*doomed) }
+    kept, emptied = shape.partition { |_, value| value.present? }
+    update!(overrides: overrides.merge("added_rooms" => remaining, **kept.to_h).except(*emptied.to_h.keys), progress: progress)
   end
 
   private

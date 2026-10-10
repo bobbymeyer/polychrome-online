@@ -18,9 +18,12 @@
    end %>
 
 <div class="map-layout">
-  <section class="window map-window">
+  <section class="window map-window" <%= tag.attributes(data: { controller: ("floorplan-editor" if gm) }) %>>
     <% if gm %>
-      <%= render "locations/floorplan", view: view, current: current, resolved: location.progress.fetch("resolved", []), unlocked: location.progress.fetch("unlocked", []) %>
+      <%# The GM's floorplan is the editor: drag a room to move it, click one for its panel. %>
+      <%= render "locations/floorplan", view: view, current: current, editor: true, location: location,
+                 resolved: location.progress.fetch("resolved", []), unlocked: location.progress.fetch("unlocked", []) %>
+      <p class="hint">Drag a room to move it. Click one to join or cut its ways.</p>
     <% else %>
       <% seen = view["rooms"].map { |r| r["key"] }.select { |k| location.seen_by_players?(k) } %>
       <%= render "locations/floorplan", view: view, current: current, shown: location.visited, known: seen - location.visited, unlocked: location.progress.fetch("unlocked", []) %>
@@ -29,6 +32,8 @@
   </section>
 
   <aside class="window map-panel">
+    <%# The room the GM clicked, loaded into this frame by floorplan_editor_controller. %>
+    <% if gm %><%= turbo_frame_tag "room_panel" %><% end %>
     <% if here %>
       <h2><%= here["name"] %></h2>
       <p><%= describe.(here) if gm || location.resolved?(here["key"]) || here["decision"]["kind"] == "treasure" %></p>

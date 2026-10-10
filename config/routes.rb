@@ -201,7 +201,14 @@ Rails.application.routes.draw do
       resource :stock, only: %i[update destroy]
       resource :boss, only: :update
       resources :npcs, only: :create
-      resources :rooms, only: :create
+      # A dungeon's rooms: added, dragged (update), and opened in the panel
+      # beside the floorplan (show). NOT :position -- that one is the party's.
+      resources :rooms, only: %i[show create update]
+      # The ways between them, joined and cut (Location::Tailoring). "ways"
+      # is the word the dungeon's own panel uses; the generator's data calls
+      # them paths. Not `resources :paths`, which would name the member route
+      # location_path_path, one typo from location_path.
+      resources :ways, only: %i[create destroy]
       resource :entry, only: :create
       resource :position, only: :update
       resources :treasures, only: :create

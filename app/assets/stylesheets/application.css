@@ -773,6 +773,25 @@ details[open] > summary { margin-bottom: 16px; }
 .floorplan__marker--fork { fill: none; stroke-width: 2.5; }
 .floorplan__room.is-boss rect { stroke-width: 4; }
 .floorplan__room.is-unknown rect { stroke: var(--grey); stroke-dasharray: 4 4; }
+
+/* The GM's floorplan is an editor (floorplan_editor_controller): a room drags
+   to move, a way takes a click to open the panel it is cut from. The same
+   grab/grabbing/control-colour pair as a map's places and roads above. */
+.floorplan--editor [data-floorplan-room] { cursor: grab; outline: none; }
+.floorplan--editor [data-floorplan-room].is-dragging { cursor: grabbing; }
+.floorplan--editor [data-floorplan-room].is-error rect { stroke: var(--grey); stroke-dasharray: 3 3; }
+.floorplan--editor [data-floorplan-room]:hover rect,
+.floorplan--editor [data-floorplan-room]:focus-visible rect { stroke: var(--control); stroke-width: 4; }
+/* Beats `.floorplan__path line` on specificity, which would paint it in ink. */
+.floorplan__path line.floorplan__path-hit { stroke: transparent; stroke-width: 20; cursor: pointer; }
+.floorplan--editor [data-floorplan-path]:hover line { stroke: var(--control); stroke-width: 5; }
+.floorplan--editor [data-floorplan-path]:hover line.floorplan__path-hit { stroke: transparent; }
+/* A way the GM drew, told apart from the roll's by a finer dashed line. */
+.floorplan__path--added line { stroke-dasharray: 4 4; stroke-width: 1.5; }
+
+.room-panel h3 { margin: 0 0 2px; }
+.room-panel h4 { margin: 12px 0 4px; }
+.room-panel .refs form { display: inline; margin: 0; }
 .floorplan__room.is-unknown text { fill: var(--grey); }
 .floorplan__room.is-resolved .floorplan__marker { fill: var(--paper); stroke-width: 1.5; }
 .floorplan__room.is-resolved .floorplan__marker--fork { stroke: var(--grey); }
