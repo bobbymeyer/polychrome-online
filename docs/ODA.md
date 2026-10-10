@@ -112,7 +112,7 @@ The tank: in front of the blow meant for someone else, and in the heaviest of ev
 
 - **Wears** the most defence there is: heavy armour, helmets, and the only shields in Oda. Swords or knives. Defence +20%, and the most HP of anyone.
 - **Guardian** (passive, FF5's Cover): a single blow meant for a badly hurt ally (30% HP or less) comes to the Bodyguard instead, if they're in better shape and free to move.
-- **Guard** (`cover` status) takes every single blow meant for the party, for three turns.
+- **Guard** (`cover` status) takes every single blow meant for the party, for three turns, with the shield set (DEF +30).
 - **Brace** raises their own defences, **Interpose** shields an ally, **Shield Wall** raises the party's defence, and **Unbreakable** gives regen and a great deal of defence.
 - **Shield Bash** can stun.
 - **Escort** (field ability) has the `safe_road` outcome, on Nerve.
@@ -248,4 +248,31 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 
   Each dungeon's GM notes say which.
 - **The island has its own voice.** The Steps is an Island city, with its own people, shops and buildings. The Just Seven's arrival lines and GM moves are in Oda's tables but ask for the campaign's `just_seven` and `island` flags, so they fit no other campaign and beat Oda's mesa lines on the island.
+- **The numbers come from a simulated playtest** (October 2026). Each dungeon was played 192 times by random four-person parties at the dungeon's level, with the gear a party that level could afford. The fights ran in order, and wounds carried from room to room. The players were the battle simulator's full tactics: heal, raise, keep a Guard up, and use the hardest-hitting move by the type chart. Each guardian was also fought rested by a healer, a magician, a ranger and each other archetype in turn. The aim was a guardian that lasts six to eight rounds, with the party at about half HP, and that a sensible party beats nine times in ten. Real players buff and use items, which the simulation doesn't, so they should do better.
+
+  | Dungeon | Party level | Cleared | Boss rounds | Party HP left |
+  |---|---|---|---|---|
+  | The lounge (Act 1) | 2 | 100% | 3 | 82% |
+  | Left Leg: the Crab | 5 | 90% | 6 | 65% |
+  | Right Leg: the Raccoon | 6 | 100% | 8 | 55% |
+  | Left Arm: the Orchid Mantis | 7 | 95% | 5 | 45% |
+  | Right Arm: the Cormorant | 8 | 98% | 8 | 62% |
+  | The Sword: three water fights, then the Toad | 9 | 96% | 5 | 50% |
+  | The Torso: die-hards, then the Bull and the Viper | 10 | 99% | 7 | 56% |
+  | The Head: die-hards, then Amethyst 7A | 12 | 97% | 6 | 63% |
+
+  What changed from the first pass:
+  - every guardian has more HP: the Crab 1200, the Raccoon 1300, the Mantis 950, the Cormorant 1250, the Toad 900, the Bull 1500 then the Viper 800, and Amethyst 1700;
+  - the physical hitters hit harder;
+  - the Toad's Belly Flash (45 to 24), Hot Skin (a burn every time to half the time) and Tide Call (60 to 40) came down, because at first they wiped a rested party in five rounds;
+  - the Soldier's Strength multiplier went from 125 to 115, because it outhit the Courtsword everywhere;
+  - the Bodyguard's Guard now also raises its DEF by 30 while it guards.
+
+  Things to watch at the table:
+  - Parties of mancers with no healer struggle with the Crab, whose Rock type resists Fire and Wind and whose Harden reflects powder.
+  - The Monk struggles with the Cormorant, which circles out of reach and resists Fighting.
+  - At the Head, a party with only two real damage dealers runs long.
+  - The lounge brawl is a pushover, as a comic opener should be.
+
+  A table of five to seven will find all of it easier.
 - **The Giant Battle is not built.**

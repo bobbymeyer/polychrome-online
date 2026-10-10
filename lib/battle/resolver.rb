@@ -34,6 +34,15 @@ module Battle
       new(state).apply(action)
     end
 
+    # The type a unit's Attack or signature strikes with: the job's, or an
+    # imbued or masked Attack's. nil for any other move, or an untyped unit.
+    def self.strike_type(unit, ability)
+      imbued = Masks.type(unit) || unit["statuses"].find { |s| s["kind"] == "imbued" }&.dig("type")
+      return imbued if ability["id"] == "attack" && imbued
+
+      unit["attack_type"] if ability["id"] == "attack" || ability["id"] == unit["signature"]
+    end
+
     def initialize(state)
       @ctx = Context.new(State.normalize(state))
     end
@@ -682,9 +691,8 @@ module Battle
     # An imbued Attack takes the imbued type over the job's, and a mask's
     # over both.
     def own(unit, ability)
-      imbued = Masks.type(unit) || unit["statuses"].find { |s| s["kind"] == "imbued" }&.dig("type")
-      attack_type = ability["id"] == "attack" && imbued ? imbued : unit["attack_type"]
-      typed = attack_type && (ability["id"] == "attack" || ability["id"] == unit["signature"])
+      attack_type = Resolver.strike_type(unit, ability)
+      typed = !attack_type.nil?
       mastery = unit.dig("mastery", ability["id"])
       return ability unless typed || mastery
 

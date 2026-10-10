@@ -36,6 +36,36 @@ RSpec.describe Battle::Forecast do
     expect(described_class.sensible(with_unit(one, "bartz", hp: 10), "rosa", tactics: "full")["ability"]).to eq("cure") # mending still comes first
   end
 
+  it "chooses by the type chart: no spell at a foe it can't touch, the one it's weak to first" do
+    one = build_battle(seed: 1, enemies: BattleFixtures.goblins(1))
+    goblin = one["units"].find { |u| u["side"] == "enemy" }["id"]
+    type_of = ->(state) { state["abilities"][described_class.sensible(state, "vivi", tactics: "full")["ability"]]["effects"].first["type"] }
+    type = type_of.(one)
+
+    immune = with_unit(one, goblin, affinities: { type => "immune" })
+    move = described_class.sensible(immune, "vivi", tactics: "full") # another spell, or a plain Attack (nil)
+    expect(move && immune["abilities"][move["ability"]]["effects"].first["type"]).not_to eq(type)
+
+    others = unit(one, "vivi")["abilities"].filter_map { |slug| one["abilities"][slug] }
+                                           .flat_map { |a| Array(a["effects"]).filter_map { |e| e["type"] } }.uniq - [ type ]
+    weak = with_unit(one, goblin, affinities: { others.first => "weak" })
+    expect(type_of.(weak)).to eq(others.first)
+  end
+
+  it "with full tactics, keeps a Guard up while the guard is fit to take the blows" do
+    state = with_unit(build_battle(seed: 1), "bartz", abilities: %w[cover double_cut])
+    expect(described_class.sensible(state, "bartz", tactics: "full")).to eq("kind" => "ability", "ability" => "cover")
+    expect(described_class.sensible(state, "bartz")).to be_nil # the floor just attacks
+
+    up = with_unit(state, "bartz", statuses: [ { "kind" => "cover", "turns" => 2 } ],
+                                   last_command: { "kind" => "ability", "ability" => "cover" })
+    move = described_class.sensible(up, "bartz", tactics: "full") # the guard's up: hit something, don't let the round repeat it
+    expect(move).to include("kind" => "ability")
+    expect(%w[attack double_cut]).to include(move["ability"])
+    hurt = with_unit(state, "bartz", hp: unit(state, "bartz")["stats"]["max_hp"] / 3)
+    expect(described_class.sensible(hurt, "bartz", tactics: "full")&.dig("ability")).not_to eq("cover")
+  end
+
   it "says what MP is left, and with report: true, what every run came to" do
     states = (1..6).map { |seed| build_battle(seed: seed, enemies: BattleFixtures.goblins(3)) }
     floor = described_class.run(states)

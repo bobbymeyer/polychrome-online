@@ -82,7 +82,7 @@ module Seeds
       soldier: { name: "Soldier", base_type: "normal", skills: %w[brawn trail], field_ability: "kick_it_in", signature: "pike_thrust", passive: "counter",
                  desperation: "forlorn_hope",
                  description: "Pike, matchlock and plate, and a lifetime of holding the line. Nothing clever; nothing that needs to be.",
-                 stat_multipliers: { max_hp: 125, str: 125, vit: 115, agi: 90, mag: 50 },
+                 stat_multipliers: { max_hp: 125, str: 115, vit: 115, agi: 90, mag: 50 },
                  equip_categories: %w[spear sword gun light_armor heavy_armor helmet hat accessory], innates: [ { stat: "atk", add: 6 } ],
                  levels: [ [ "pike_thrust", 1 ], [ "war_cry", 4 ], [ "halberd_sweep", 10 ], [ "butt_stroke", 16 ], [ "rally", 22 ], [ "fire_at_will", 32 ] ] },
       bodyguard: { name: "Bodyguard", base_type: "steel", skills: %w[nerve brawn], field_ability: "escort", signature: "guard", passive: "guardian",

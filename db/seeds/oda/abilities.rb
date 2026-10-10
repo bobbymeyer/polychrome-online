@@ -256,7 +256,8 @@ module Seeds
 
       # --- the Bodyguard: in front, always ----------------------------------------------
       guard: { name: "Guard", kind: "skill", target: "self", mp_cost: 0, gesture: "shake",
-               effects: [ { primitive: "status", kind: "cover", duration: 3 } ], description: "Steps in front of everyone: every single blow meant for the party comes here instead." },
+               effects: [ { primitive: "status", kind: "cover", duration: 3 }, { primitive: "buff", stat: "def", amount: 30, duration: 3 } ],
+               description: "Steps in front of everyone, shield set: every single blow meant for the party comes here instead." },
       brace: { name: "Brace", kind: "skill", target: "self", mp_cost: 2, gesture: "tint",
                effects: [ { primitive: "buff", stat: "def", amount: 60, duration: 3 }, { primitive: "buff", stat: "mdef", amount: 40, duration: 3 } ],
                description: "Feet set, shield up, chin down." },

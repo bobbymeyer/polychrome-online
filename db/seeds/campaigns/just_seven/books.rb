@@ -5,8 +5,9 @@
 # five-room dungeon the island's places are rolled from. Added like any
 # setting's entries: only what's missing, never over a GM's edits.
 #
-# Bobby's notes give fiction, structure and boss behaviour; the numbers here
-# are a first pass to tune at the table. Oda's types are Pokémon's, so
+# Bobby's notes give fiction, structure and boss behaviour. The numbers
+# were tuned in a simulated playtest (docs/ODA.md, The Just Seven) and are
+# next tuned at the table. Oda's types are Pokémon's, so
 # each guardian is what the notes say, second types too (Monster#types);
 # the chart says what they're weak to, and only Amethyst 7A's weakness to
 # Fighting, which a Ghost would otherwise shrug off, is written down.
@@ -31,7 +32,7 @@ module Seeds
 
       # --- the Crab (Left Leg) -------------------------------------------------------------------
       pincer: { name: "Pincer", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
-                effects: [ { primitive: "physical", power: 120 } ], description: "A claw the size of a door." },
+                effects: [ { primitive: "physical", power: 150 } ], description: "A claw the size of a door." },
       clamp: { name: "Clamp", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "shake",
                effects: [ { primitive: "physical", power: 70 }, { primitive: "status", kind: "stop", chance: 100, duration: 2 } ],
                description: "Caught, and squeezed. Heat, rhythm or grease opens the claw; force only tightens it." },
@@ -39,18 +40,18 @@ module Seeds
                 effects: [ { primitive: "buff", stat: "def", amount: 100, duration: 2 }, { primitive: "status", kind: "reflect", duration: 2 } ],
                 description: "The shell plates lock shut, and powder skips off them." },
       twin_pincer: { name: "Twin Pincer", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
-                     effects: [ { primitive: "physical", power: 100, hits: 2 } ], description: "Both claws, no more caution." },
+                     effects: [ { primitive: "physical", power: 120, hits: 2 } ], description: "Both claws, no more caution." },
 
       # --- the Raccoon (Right Leg) ---------------------------------------------------------------
       scratch: { name: "Scratch", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
-                 effects: [ { primitive: "physical", power: 110 } ], description: "Small hands, long nails." },
+                 effects: [ { primitive: "physical", power: 140 } ], description: "Small hands, long nails." },
       pilfer: { name: "Pilfer", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "slide",
                 effects: [ { primitive: "physical", power: 60 }, { primitive: "steal", chance: 70, boon: 1 } ],
                 description: "Whatever's shiny, into the hoard." },
       junk_toss: { name: "Junk Toss", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "shake", charge: 1,
-                   effects: [ { primitive: "physical", power: 70 } ], description: "An armful of failed machines, thrown at everyone." },
+                   effects: [ { primitive: "physical", power: 90 } ], description: "An armful of failed machines, thrown at everyone." },
       junk_avalanche: { name: "Junk Avalanche", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "shake", charge: 1,
-                        effects: [ { primitive: "physical", power: 95 } ], description: "The whole pile, at once." },
+                        effects: [ { primitive: "physical", power: 120 } ], description: "The whole pile, at once." },
       debris_slam: { name: "Debris Slam", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
                      effects: [ { primitive: "physical", power: 120 } ], description: "A fist of scrap on a body of scrap." },
 
@@ -66,11 +67,11 @@ module Seeds
 
       # --- the Cormorant (Right Arm) -------------------------------------------------------------
       hooked_bill: { name: "Hooked Bill", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
-                     effects: [ { primitive: "physical", power: 120, type: "flying" } ], description: "A fisher's bill, on whoever hit it last." },
+                     effects: [ { primitive: "physical", power: 150, type: "flying" } ], description: "A fisher's bill, on whoever hit it last." },
       circle: { name: "Circle", kind: "skill", target: "self", mp_cost: 0, gesture: "float",
                 effects: [ { primitive: "away", who: "self", duration: 2 } ], description: "Up into the rafters, out of a blade's reach. A shot still finds it." },
       dive: { name: "Dive", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge", charge: 1,
-              effects: [ { primitive: "physical", power: 240, type: "flying" } ], description: "It names its mark, folds its wings, and drops." },
+              effects: [ { primitive: "physical", power: 280, type: "flying" } ], description: "It names its mark, folds its wings, and drops." },
       wing_spread: { name: "Wing Spread", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "shake",
                      effects: [ { primitive: "elemental", type: "flying", power: 8 }, { primitive: "debuff", stat: "agi", amount: 25, duration: 2 } ],
                      description: "A gust. The first real wind anyone has felt in weeks." },
@@ -86,27 +87,27 @@ module Seeds
       tongue_lash: { name: "Tongue Lash", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
                      effects: [ { primitive: "physical", power: 120 } ], description: "Quick, wet and heavier than it looks." },
       hot_skin: { name: "Hot Skin", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "tint",
-                  effects: [ { primitive: "status", kind: "burn", chance: 100, duration: 2 } ], description: "Touch it and you'll know." },
+                  effects: [ { primitive: "status", kind: "burn", chance: 50, duration: 2 } ], description: "Touch it and you'll know." },
       belly_flash: { name: "Belly Flash", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash", charge: 1,
-                     effects: [ { primitive: "elemental", type: "fire", power: 45 } ],
+                     effects: [ { primitive: "elemental", type: "fire", power: 24 } ],
                      description: "It arches, shows a belly red as a forge, and then the forge opens." },
       dial_spin: { name: "Dial Spin", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "spin",
                    effects: [ { primitive: "elemental", type: "fire", power: 12 } ], description: "The lamp's dial knocked round: a sweeping beam across the room." },
       tide_call: { name: "Tide Call", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "shake", charge: 3,
-                   effects: [ { primitive: "elemental", type: "water", power: 60 } ],
+                   effects: [ { primitive: "elemental", type: "water", power: 40 } ],
                    description: "It croaks, the Sword hums back, and the sea starts coming in." },
 
       # --- the mechanical bull and the Viper (Torso) ---------------------------------------------
       gore: { name: "Gore", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
-              effects: [ { primitive: "physical", power: 140 } ], description: "Brass horns, and a lot of engine behind them." },
+              effects: [ { primitive: "physical", power: 170 } ], description: "Brass horns, and a lot of engine behind them." },
       stampede: { name: "Stampede", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "shake", charge: 1,
-                  effects: [ { primitive: "physical", power: 100 } ], description: "It paws the floor, and then everyone is in the way." },
+                  effects: [ { primitive: "physical", power: 130 } ], description: "It paws the floor, and then everyone is in the way." },
       steam_vent: { name: "Steam Vent", kind: "skill", target: "self", mp_cost: 0, gesture: "fade",
                     effects: [ { primitive: "buff", stat: "def", amount: 60, duration: 3 } ], description: "A scald of steam, and the plates close behind it." },
       overclock: { name: "Overclock", kind: "skill", target: "self", mp_cost: 0, gesture: "flash",
                    effects: [ { primitive: "status", kind: "haste", duration: 5 } ], description: "The lights flicker. It moves twice for every breath." },
       fangs: { name: "Fangs", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",
-               effects: [ { primitive: "physical", power: 100 }, { primitive: "status", kind: "poison", chance: 60, duration: 3 } ],
+               effects: [ { primitive: "physical", power: 130 }, { primitive: "status", kind: "poison", chance: 60, duration: 3 } ],
                description: "Always for whoever is bleeding most." },
       spore_mist: { name: "Spore Mist", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "tint", charge: 1,
                     effects: [ { primitive: "status", kind: "poison", chance: 70, duration: 3 } ], description: "A green breath that fills the chamber." },
@@ -118,7 +119,7 @@ module Seeds
 
       # --- Amethyst 7A (Head) --------------------------------------------------------------------
       autocannon: { name: "Autocannon", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "shake",
-                    effects: [ { primitive: "physical", power: 45, hits: 3, type: "steel" } ], description: "A rapid burst at one target." },
+                    effects: [ { primitive: "physical", power: 55, hits: 3, type: "steel" } ], description: "A rapid burst at one target." },
       missile_lock: { name: "Missile Lock", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge", charge: 1,
                       effects: [ { primitive: "physical", power: 260, type: "steel" } ], description: "A reticle settles on someone. Next turn, it's a missile." },
       laser_sweep: { name: "Laser Sweep", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash",
@@ -199,14 +200,14 @@ module Seeds
                           description: "Hired by the inventor's backers to fight their slander in a duel. Paid either way." },
 
       # --- the Crab (Left Leg, Red Mask) ---------------------------------------------------------
-      crab: { name: "Crab", level: 5, boss: true, stats: stats(max_hp: 600, str: 18, atk: 16, agi: 6, def: 22, mdef: 8),
+      crab: { name: "Crab", level: 5, boss: true, stats: stats(max_hp: 1200, str: 18, atk: 16, agi: 6, def: 22, mdef: 8),
               base_type: "rock", exp: 220, gil: 200, abp: 8,
               ai_script: [ { if: { round_multiple: 3 }, use: "harden", say: "The shell plates grind and lock shut." },
                            { if: { chance: 30 }, use: "clamp" }, { use: "pincer" } ],
               phases: [ { hp_below: 50, becomes: "crab_frenzied", say: "Shell plates crack and fall away. Under them, soft meat, and fury." } ],
               drops: [ { item: "red_mask", chance: 100 } ], boss_line: "Something the size of a cart sidles out of the dock's dark, wearing a red mask.",
               description: "A shore crab grown monstrous under a red mask it found and wore for longer than anyone can say." },
-      crab_frenzied: { name: "Crab (Frenzy)", level: 5, boss: true, stats: stats(max_hp: 600, str: 20, atk: 18, agi: 8, def: 8, mdef: 6),
+      crab_frenzied: { name: "Crab (Frenzy)", level: 5, boss: true, stats: stats(max_hp: 1200, str: 20, atk: 18, agi: 8, def: 8, mdef: 6),
                        base_type: "rock", exp: 220, gil: 200, abp: 8,
                        ai_script: [ { if: { chance: 30 }, use: "clamp" }, { use: "twin_pincer" } ],
                        drops: [ { item: "red_mask", chance: 100 } ], description: "Shell broken, no more hiding: two pincers a turn." },
@@ -215,7 +216,7 @@ module Seeds
       debris_golem: { name: "Debris Golem", level: 5, stats: stats(max_hp: 150, str: 16, atk: 14, agi: 6, def: 14, mdef: 4),
                       base_type: "steel", exp: 60, gil: 20, abp: 2, ai_script: [ { use: "debris_slam" } ],
                       description: "Junk that walks, at night, when nobody watches. Somebody watched." },
-      raccoon: { name: "Raccoon", level: 6, boss: true, stats: stats(max_hp: 560, str: 16, atk: 15, agi: 26, def: 10, mdef: 10),
+      raccoon: { name: "Raccoon", level: 6, boss: true, stats: stats(max_hp: 1300, str: 16, atk: 15, agi: 26, def: 10, mdef: 10),
                  base_type: "dark", second_type: "ground", exp: 260, gil: 260, abp: 9,
                  ai_script: [ { if: { round_multiple: 4 }, use: "hide", say: "It dives into the pile and is gone." },
                               { if: { round_multiple: 3 }, use: "junk_toss", say: "It scrabbles up the heap with an armful of scrap." },
@@ -223,14 +224,14 @@ module Seeds
                  phases: [ { hp_below: 50, becomes: "raccoon_frantic", say: "It chitters, frantic, and grabs at everything." } ],
                  drops: [ { item: "orange_mask", chance: 100 } ], boss_line: "On top of the hoard, wearing an orange mask: a raccoon. A very large raccoon.",
                  description: "A dump raccoon that found an orange mask among the prototypes, and kept it, and kept everything else." },
-      raccoon_frantic: { name: "Raccoon (Frantic)", level: 6, boss: true, stats: stats(max_hp: 560, str: 17, atk: 16, agi: 30, def: 10, mdef: 10),
+      raccoon_frantic: { name: "Raccoon (Frantic)", level: 6, boss: true, stats: stats(max_hp: 1300, str: 17, atk: 16, agi: 30, def: 10, mdef: 10),
                          base_type: "dark", second_type: "ground", exp: 260, gil: 260, abp: 9,
                          ai_script: [ { if: { round_multiple: 3 }, use: "junk_avalanche", say: "It heaves at the whole pile." },
                                       { if: { chance: 60 }, use: "pilfer" }, { use: "scratch" } ],
                          drops: [ { item: "orange_mask", chance: 100 } ], description: "Grabbing at everything shiny, faster and faster." },
 
       # --- the Orchid Mantis (Left Arm, Yellow Mask): an orchid until it's hit, then two molts -----
-      orchid_bloom: { name: "A Striking Orchid", level: 7, boss: true, stats: stats(max_hp: 620, str: 19, atk: 18, agi: 30, def: 10, mdef: 12),
+      orchid_bloom: { name: "A Striking Orchid", level: 7, boss: true, stats: stats(max_hp: 950, str: 19, atk: 18, agi: 30, def: 10, mdef: 12),
                       base_type: "grass", exp: 300, gil: 300, abp: 10,
                       ai_script: [ { use: "bloom_sway" } ],
                       phases: [ { hp_below: 99, becomes: "orchid_mantis", say: "The orchid moves. It was never a flower." },
@@ -238,21 +239,21 @@ module Seeds
                                 { hp_below: 33, becomes: "orchid_mantis_full_bloom", say: "Another molt: every colour at once, and desperate." } ],
                       drops: [ { item: "yellow_mask", chance: 100 } ], boss_line: "Deep in the vines, a striking orchid, pink and white, and something yellow glinting behind it.",
                       description: "An orchid. Probably." },
-      orchid_mantis: { name: "Orchid Mantis", level: 7, boss: true, stats: stats(max_hp: 620, str: 19, atk: 18, agi: 30, def: 10, mdef: 12),
+      orchid_mantis: { name: "Orchid Mantis", level: 7, boss: true, stats: stats(max_hp: 950, str: 19, atk: 18, agi: 30, def: 10, mdef: 12),
                        base_type: "bug", exp: 300, gil: 300, abp: 10,
                        ai_script: [ { when: "hit", if: { chance: 50 }, use: "riposte" },
                                     { if: { round_multiple: 3 }, use: "lure", say: "It flares more vivid than any flower, and waits for someone to come closer." },
                                     { use: "raptorial_strike" } ],
                        drops: [ { item: "yellow_mask", chance: 100 } ],
                        description: "A floral mimic under a yellow mask. Hit it up close and it answers first." },
-      orchid_mantis_molted: { name: "Orchid Mantis (Molted)", level: 7, boss: true, stats: stats(max_hp: 620, str: 20, atk: 19, agi: 32, def: 10, mdef: 12),
+      orchid_mantis_molted: { name: "Orchid Mantis (Molted)", level: 7, boss: true, stats: stats(max_hp: 950, str: 20, atk: 19, agi: 32, def: 10, mdef: 12),
                               base_type: "bug", exp: 300, gil: 300, abp: 10,
                               ai_script: [ { when: "hit", if: { chance: 75 }, use: "riposte" },
                                            { if: { round_multiple: 3 }, use: "lure", say: "It flares, gold and pink, and waits." },
                                            { use: "raptorial_strike" } ],
                               drops: [ { item: "yellow_mask", chance: 100 } ], description: "More ornate, not more menacing. Quicker to answer." },
       orchid_mantis_full_bloom: { name: "Orchid Mantis (Full Bloom)", level: 7, boss: true,
-                                  stats: stats(max_hp: 620, str: 21, atk: 20, agi: 34, def: 10, mdef: 12),
+                                  stats: stats(max_hp: 950, str: 21, atk: 20, agi: 34, def: 10, mdef: 12),
                                   base_type: "bug", exp: 300, gil: 300, abp: 10,
                                   ai_script: [ { when: "hit", use: "riposte" },
                                                { if: { round_multiple: 2 }, use: "lure", say: "Every colour of the masks at once. Come closer." },
@@ -260,7 +261,7 @@ module Seeds
                                   drops: [ { item: "yellow_mask", chance: 100 } ], description: "Beauty, escalating with desperation. It answers every blow." },
 
       # --- the Cormorant (Right Arm, Green Mask) -------------------------------------------------
-      cormorant: { name: "Cormorant", level: 8, boss: true, stats: stats(max_hp: 640, str: 20, atk: 19, agi: 30, def: 12, mdef: 10),
+      cormorant: { name: "Cormorant", level: 8, boss: true, stats: stats(max_hp: 1250, str: 20, atk: 19, agi: 30, def: 12, mdef: 10),
                    base_type: "flying", exp: 340, gil: 320, abp: 11,
 
                    ai_script: [ { if: { round_multiple: 4 }, use: "circle", say: "It beats up into the chamber's height, out of reach." },
@@ -269,7 +270,7 @@ module Seeds
                    phases: [ { hp_below: 50, becomes: "cormorant_frenzied", say: "It shrieks and climbs, and the dives come faster." } ],
                    drops: [ { item: "green_mask", chance: 100 } ], boss_line: "The chamber door opens, and something black and green-masked unfolds from the rafters.",
                    description: "The one sea bird that stayed, guarding a prism nobody was allowed to touch." },
-      cormorant_frenzied: { name: "Cormorant (Frenzy)", level: 8, boss: true, stats: stats(max_hp: 640, str: 21, atk: 20, agi: 32, def: 12, mdef: 10),
+      cormorant_frenzied: { name: "Cormorant (Frenzy)", level: 8, boss: true, stats: stats(max_hp: 1250, str: 21, atk: 20, agi: 32, def: 12, mdef: 10),
                             base_type: "flying", exp: 340, gil: 320, abp: 11,
 
                             ai_script: [ { if: { round_multiple: 3 }, use: "circle", say: "Up again, out of reach." },
@@ -289,7 +290,7 @@ module Seeds
                        description: "Chest-deep water, and something in it with too many arms." },
 
       # --- the Fire-bellied Toad (the Sword, Indigo Mask) ----------------------------------------
-      fire_bellied_toad: { name: "Fire-bellied Toad", level: 9, boss: true, stats: stats(max_hp: 760, max_mp: 40, str: 20, mag: 22, atk: 19, agi: 14, def: 14, mdef: 14),
+      fire_bellied_toad: { name: "Fire-bellied Toad", level: 9, boss: true, stats: stats(max_hp: 900, max_mp: 40, str: 20, mag: 22, atk: 19, agi: 14, def: 14, mdef: 14),
                            base_type: "fire", second_type: "water", exp: 380, gil: 360, abp: 12,
                            ai_script: [ { when: "hit", use: "hot_skin" },
                                         { if: { round_multiple: 3 }, use: "belly_flash", say: "It arches its back and shows a belly red as a forge." },
@@ -299,7 +300,7 @@ module Seeds
                            drops: [ { item: "indigo_mask", chance: 100 } ], boss_line: "Under the lamp, a toad as big as a boat, in an indigo mask, puffing up.",
                            description: "A fire-bellied toad that has worn an indigo mask in the lamp room since before the tide covered the door." },
       fire_bellied_toad_tide: { name: "Fire-bellied Toad (Tide Call)", level: 9, boss: true,
-                                stats: stats(max_hp: 760, max_mp: 40, str: 20, mag: 22, atk: 19, agi: 14, def: 14, mdef: 14),
+                                stats: stats(max_hp: 900, max_mp: 40, str: 20, mag: 22, atk: 19, agi: 14, def: 14, mdef: 14),
                                 base_type: "fire", second_type: "water", exp: 380, gil: 360, abp: 12,
                                 ai_script: [ { when: "hit", use: "hot_skin" },
                                              { once: true, use: "tide_call", say: "The flood countdown starts: three turns until the sea comes in. Break the mask first." },
@@ -307,7 +308,7 @@ module Seeds
                                 drops: [ { item: "indigo_mask", chance: 100 } ], description: "The water is coming." },
 
       # --- the mechanical bull, then the Viper inside it (Torso, Blue Mask) -----------------------
-      mechanical_bull: { name: "Mechanical Bull", level: 10, boss: true, stats: stats(max_hp: 700, str: 24, atk: 22, agi: 10, def: 20, mdef: 12),
+      mechanical_bull: { name: "Mechanical Bull", level: 10, boss: true, stats: stats(max_hp: 1500, str: 24, atk: 22, agi: 10, def: 20, mdef: 12),
                          base_type: "normal", exp: 300, gil: 300, abp: 10, status_immune: %w[poison sleep confuse],
                          ai_script: [ { if: { round_multiple: 3 }, use: "stampede", say: "It paws the floor and lowers its brass horns." },
                                       { if: { chance: 25 }, use: "steam_vent" }, { use: "gore" } ],
@@ -317,12 +318,12 @@ module Seeds
                          drops: [ { item: "blue_mask", chance: 100 } ], boss_line: "The surplus power wakes the sacred beast. It was never sacred.",
                          description: "A Gnallix-built false bull, worshipped as a sacred beast by people who never looked inside it." },
       mechanical_bull_overclocked: { name: "Mechanical Bull (Overclock)", level: 10, boss: true,
-                                     stats: stats(max_hp: 700, str: 24, atk: 22, agi: 12, def: 18, mdef: 12),
+                                     stats: stats(max_hp: 1500, str: 24, atk: 22, agi: 12, def: 18, mdef: 12),
                                      base_type: "normal", exp: 300, gil: 300, abp: 10, status_immune: %w[poison sleep confuse],
                                      ai_script: [ { once: true, use: "overclock" }, { if: { round_multiple: 3 }, use: "stampede", say: "It lowers its horns." },
                                                   { use: "gore" } ],
                                      drops: [ { item: "blue_mask", chance: 100 } ], description: "Acting twice, the lights flickering with it." },
-      viper: { name: "Viper", level: 10, boss: true, stats: stats(max_hp: 650, max_mp: 30, str: 22, mag: 20, atk: 20, agi: 22, def: 12, mdef: 14),
+      viper: { name: "Viper", level: 10, boss: true, stats: stats(max_hp: 800, max_mp: 30, str: 22, mag: 20, atk: 20, agi: 22, def: 12, mdef: 14),
                base_type: "poison", second_type: "grass", exp: 400, gil: 400, abp: 13, status_immune: %w[poison],
 
                ai_script: [ { if: { self_hp_below: 50 }, once: true, use: "venom_surge", say: "Its venom surges: it strikes twice before anyone sees it strike once." },
@@ -332,7 +333,7 @@ module Seeds
                description: "The true guardian: it nested for centuries in the bull's warm chest, by the heart. It always goes for whoever is hurt most." },
 
       # --- Amethyst 7A (Head, Violet Mask): a Gnallix in a minimech -------------------------------
-      amethyst_7a: { name: "Amethyst 7A", level: 12, boss: true, stats: stats(max_hp: 1000, max_mp: 60, str: 24, mag: 26, atk: 24, agi: 16, def: 20, mdef: 18),
+      amethyst_7a: { name: "Amethyst 7A", level: 12, boss: true, stats: stats(max_hp: 1700, max_mp: 60, str: 24, mag: 26, atk: 24, agi: 16, def: 20, mdef: 18),
                      base_type: "ghost", second_type: "steel", exp: 600, gil: 500, abp: 15, affinities: { "fighting" => "weak" }, status_immune: %w[poison sleep confuse berserk],
 
                      ai_script: [ { if: { round_multiple: 3 }, use: "her_song", say: "Her taunt rings through the walls. It isn't his. He fights inside it, unbothered." },
@@ -342,7 +343,7 @@ module Seeds
                      drops: [ { item: "violet_mask", chance: 100 } ],
                      description: "A Gnallix, sealed in the Head since the founding, a little mad from the quiet. Fascinated, never bitter." },
       amethyst_7a_overcharged: { name: "Amethyst 7A (Overcharge)", level: 12, boss: true,
-                                 stats: stats(max_hp: 1000, max_mp: 60, str: 24, mag: 26, atk: 24, agi: 18, def: 20, mdef: 18),
+                                 stats: stats(max_hp: 1700, max_mp: 60, str: 24, mag: 26, atk: 24, agi: 18, def: 20, mdef: 18),
                                  base_type: "ghost", second_type: "steel", exp: 600, gil: 500, abp: 15, affinities: { "fighting" => "weak" }, status_immune: %w[poison sleep confuse berserk],
 
                                  ai_script: [ { once: true, use: "overcharge" },
