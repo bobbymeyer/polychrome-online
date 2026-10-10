@@ -17,6 +17,18 @@ RSpec.describe "A world's types", type: :request do
     end
   end
 
+  # /types was the base world's chart before worlds had their own, and the
+  # redirect pointed at /worlds/base/types until Oda took the root seat.
+  it "sends the bare /types address to the root world's chart" do
+    expect(World.root).to eq(base_world)
+    get "/types"
+    expect(response).to redirect_to("/worlds/#{base_world.to_param}/types")
+
+    base_world.update!(slug: "oda")
+    get "/types"
+    expect(response).to redirect_to("/worlds/oda/types")
+  end
+
   it "shows what uses each type, for the editor" do
     get edit_world_types_path(world)
     expect(response.body).to include("Bomb", "Fire", "Knight", "Edit types")

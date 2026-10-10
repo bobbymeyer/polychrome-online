@@ -36,9 +36,21 @@ class World < ApplicationRecord
   validates :slug, presence: true, uniqueness: true,
                    format: { with: BookEntry::SLUG_FORMAT, message: "must be lowercase letters, digits and underscores, starting with a letter" }
 
-  # A world can go once nobody plays in it; the Base World never does.
+  # The first world, the one the others are copied from (HANDOFF §2: seed
+  # data, "the first `World` and its children"). It was the Base World and
+  # is now Oda; what makes it the root is being first, not its name, so a
+  # rename or a reseed under another slug doesn't move the privilege.
+  def self.root
+    order(:id).first
+  end
+
+  def root?
+    id.present? && id == self.class.root&.id
+  end
+
+  # A world can go once nobody plays in it; the root world never does.
   def refuse_deleting!
-    raise Refusal, "The Base World stays: the others are copied from it" if slug == "base"
+    raise Refusal, "#{name} stays: the others are copied from it" if root?
     return unless campaigns.exists?
 
     raise Refusal, "#{campaigns.count == 1 ? 'A campaign is' : "#{campaigns.count} campaigns are"} played in #{name} (#{campaigns.order(:name).pluck(:name).uniq.first(3).to_sentence}). Those go first."

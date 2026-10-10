@@ -10,7 +10,10 @@ Rails.application.routes.draw do
 
   root "worlds#index"
 
-  get "types", to: redirect("/worlds/base/types") # the base world's chart, where it used to live
+  # The root world's chart, where it used to live. Resolved per request, not
+  # at boot: the root world is a row, and a hardcoded slug 404s the day it
+  # is reseeded under another name (it was /worlds/base/types until Oda).
+  get "types", to: redirect { |_params, _request| "/worlds/#{World.root&.to_param || 'oda'}/types" }
   get "how-to-play", to: "guides#show", as: :how_to_play
   # Local co-op: the QR code on the shared screen leads here.
   get "join/:code", to: "joins#show", as: :join
