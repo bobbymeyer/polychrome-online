@@ -1,6 +1,6 @@
 # JRPG Tabletop — Handoff
 
-A multiplayer tabletop RPG with a human GM and JRPG mechanics. Rails app. One opinionated base world, architected so another author could build their own.
+A multiplayer tabletop RPG with a human GM and JRPG mechanics. Rails app. One opinionated world — Oda — architected so another author could build their own.
 
 This document is the design contract. Read it before writing code. Where it conflicts with a shortcut, the document wins until Bobby changes it.
 
@@ -28,7 +28,9 @@ This document is the design contract. Read it before writing code. Where it conf
 | Campaign | Between sessions | GM as author | Pointcrawl instance, NPC/location diffs, party, flags |
 | Session | Live | GM as narrator/improviser | Battles, chat, reveals, rerolls |
 
-Everything is a row. There is no YAML world. The base world is seed data: the first `World` and its children. Greenware (`db/seeds/greenware/`) is a second seeded setting, written against the same books through the same seeder (`Seeds::Setting`): the proof that another author can. Oda (`db/seeds/oda/`, docs/ODA.md) is the third: the home of its archetypes, duels and masks.
+Everything is a row. There is no YAML world. A seeded setting is seed data: a `World` and its children. **Oda** (`db/seeds/oda/`, docs/ODA.md) is the one being played, and the one a fresh database starts as: `db:seed` seeds Oda and nothing else. It is the **root world** — `World.root`, the first row by id — which is the seat the Base World held until 2026-10-10, and what the seat carries is two things: the root world can't be deleted (`World#refuse_deleting!`, since the others are copied from it), and the bare `/types` address is its chart. The seat goes by being first, not by name: nothing checks for the slug `base` or `oda`.
+
+The Base World (`db/seeds/base_world/`) and Greenware (`db/seeds/greenware/`) are still written and still seedable one at a time (`bin/rails worlds:seed[base_world]`, `worlds:seed[greenware]`) — Greenware remains the proof that another author can build their own from the same books through the same seeder (`Seeds::Setting`), and the suite builds the Base World for its fixtures (`spec/support/base_world.rb`). They are simply not what a new database starts as.
 
 ## 3. Closed vocabularies
 

@@ -24,7 +24,7 @@
   <%= link_to "Import a world", new_world_import_path, class: "button button--quiet" if can_make_games? %>
 </div>
 <% if @worlds.empty? %>
-  <p class="empty">No worlds yet. Run <code>bin/rails db:seed</code> for the base world.</p>
+  <p class="empty">No worlds yet. Run <code>bin/rails db:seed</code> for Oda.</p>
 <% else %>
   <ul class="world-list">
     <% @worlds.each do |world| %>

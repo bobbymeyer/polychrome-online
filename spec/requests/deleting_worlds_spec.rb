@@ -15,7 +15,7 @@ RSpec.describe "Deleting a world", type: :request do
     expect(response).to redirect_to(worlds_path)
   end
 
-  it "keeps a world someone is playing in, and the Base World, and doesn't let another GM delete it" do
+  it "keeps a world someone is playing in, and the root world, and doesn't let another GM delete it" do
     faris = make_user("Faris")
     scratch.campaigns.create!(name: "Faris's Run", gm: faris)
     sign_in_as(faris)
@@ -31,6 +31,21 @@ RSpec.describe "Deleting a world", type: :request do
 
     sign_in_as(@admin)
     delete world_path(base_world)
-    expect(flash[:alert]).to include("The Base World stays")
+    expect(flash[:alert]).to include("Base World stays")
+  end
+
+  # The privilege belongs to the first world, not to a particular slug: it
+  # was the Base World's and is Oda's now, and the check is World#root?.
+  it "keeps whichever world is the first one, whatever it is called" do
+    root = base_world # built before the suite's examples, so it is the first row
+    expect(World.root).to eq(root)
+    expect(root).to be_root
+    expect(scratch).not_to be_root
+
+    root.update!(name: "Oda", slug: "oda") # the seat doesn't move with the name
+    sign_in_as(@admin)
+    delete world_path(root)
+    expect(flash[:alert]).to include("Oda stays")
+    expect(World.exists?(root.id)).to be(true)
   end
 end
