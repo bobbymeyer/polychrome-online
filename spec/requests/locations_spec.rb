@@ -226,17 +226,20 @@ RSpec.describe "Locations", type: :request do
     it "elaborates a dungeon around its pinned core, and takes it all back" do
       cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
       cave = generate("goblin_cave", on: cave_node)
+      cave.update!(seed: 4) # Location.new_seed is random; a roomy roll, pinned so the counts below hold
       core = cave.view["rooms"].map { |r| r.slice("key", "name", "decision", "depth", "x", "y") }
       ways = cave.view["paths"].size
 
       patch location_elaboration_path(cave), params: { level: "3" }
       expect(flash[:notice]).to eq("Elaborated to 3.")
       grown = cave.reload.view
+      added = grown["rooms"].count { |r| r["elaborated"] }
+      expect(added).to eq(6)
       expect(grown["rooms"].size).to eq(core.size + 6)
       expect(grown["paths"].size).to be > ways
       # Every pinned room, word for word and pixel for pixel.
       expect(grown["rooms"].first(core.size).map { |r| r.slice("key", "name", "decision", "depth", "x", "y") }).to eq(core)
-      expect(grown["rooms"].last(6)).to all(include("elaborated" => true))
+      expect(grown["rooms"].last(added)).to all(include("elaborated" => true))
 
       get location_path(cave)
       expect(response.body).to include("is-elaborated", "6 of these #{grown['rooms'].size} rooms are the dial") # the apostrophe is escaped in the page
@@ -252,6 +255,7 @@ RSpec.describe "Locations", type: :request do
     it "keeps an elaborated room the GM pinned as the dial rises, and through a reroll" do
       cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
       cave = generate("goblin_cave", on: cave_node)
+      cave.update!(seed: 4) # Location.new_seed is random; pinned so the counts below are the same every run
 
       patch location_elaboration_path(cave), params: { level: "1" }
       room = cave.reload.view["rooms"].find { |r| r["elaborated"] }
