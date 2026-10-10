@@ -187,6 +187,7 @@ module Campaign::Travelling
                                  encounter: encounter["monsters"], input_seconds: input_seconds, boss: encounter["boss"] || false,
                                  terrain: encounter["terrain"], names: encounter.fetch("names", {}), room: encounter["room"],
                                  antagonists: npcs.where(id: encounter.fetch("antagonists", [])).to_a, field: encounter["field"],
+                                 waves: encounter.fetch("waves", []),
                                  escapable: !encounter["boss"]) # a boss fight is fought (the Fight panel has its own say)
     update!(pending_encounter: nil)
     battle

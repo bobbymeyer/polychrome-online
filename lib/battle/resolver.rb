@@ -315,7 +315,7 @@ module Battle
 
       base_id = spec.fetch("id") { raise InvalidAction, "the unit needs an id" }.to_s
       base_name = spec.fetch("name", base_id).to_s
-      taken = ctx.units.map { |u| u["id"] }
+      taken = (ctx.units + Array(state["reserves"]).flatten).map { |u| u["id"] } # the waves still to come have their letters
       kin = taken.any? { |t| t == base_id || t.match?(/\A#{Regexp.escape(base_id)}_[a-z]\z/) }
       lettered = ("a".."z").map { |l| [ "#{base_id}_#{l}", "#{base_name} #{l.upcase}" ] }
       id, name = (kin ? lettered : [ [ base_id, base_name ] ]).find { |candidate, _| !taken.include?(candidate) }
@@ -523,6 +523,8 @@ module Battle
         release(unit)
       elsif ctx.status?(unit, "confuse")
         run_amok(unit)
+      elsif ctx.status?(unit, "rage")
+        turn_on_own(unit)
       elsif ctx.status?(unit, "berserk")
         use_ability(unit, own(unit, ctx.ability("attack")), nil)
       elsif unit["side"] == "enemy" || unit["guest"]
@@ -603,7 +605,7 @@ module Battle
       return false if foes.empty? || !foes.all? { |foe| ctx.status?(foe, "down") }
       return false unless ctx.events[mark..].any? { |e| e["type"] == "one_more" }
 
-      crew = ctx.allies(unit).reject { |ally| (DISABLING_STATUSES + %w[airborne away charging confuse]).any? { |kind| ctx.status?(ally, kind) } }
+      crew = ctx.allies(unit).reject { |ally| (DISABLING_STATUSES + %w[airborne away charging confuse rage]).any? { |kind| ctx.status?(ally, kind) } }
       return false if crew.empty?
 
       ctx.emit(:all_out, actor: unit["id"], units: crew.map { |ally| ally["id"] }, targets: foes.map { |foe| foe["id"] })
@@ -634,7 +636,7 @@ module Battle
     # repeat: the move to go again with, for a unit the AI plays (One More).
     def extra_go(unit, cmd, reason: nil, repeat: nil)
       return unless ctx.alive?(unit)
-      return if (DISABLING_STATUSES + %w[airborne away charging confuse]).any? { |kind| ctx.status?(unit, kind) }
+      return if (DISABLING_STATUSES + %w[airborne away charging confuse rage]).any? { |kind| ctx.status?(unit, kind) }
 
       ai = unit["side"] == "enemy" || unit["guest"]
       ability = if ctx.status?(unit, "berserk") then ctx.ability("attack")
@@ -659,6 +661,19 @@ module Battle
       pool = ctx.units.select { |u| u != unit && ctx.alive?(u) && !ctx.out_of_reach?(u) }
       target = ctx.rng.pick(pool)
       ctx.emit(:confused, actor: unit["id"], target: target&.dig("id"))
+      return unless target
+
+      attack = own(unit, ctx.ability("attack"))
+      announce(unit, attack, [ target ], 0)
+      apply_effects(unit, attack, [ target ])
+    end
+
+    # Raging: an Attack at one of its own side in reach (not itself); with
+    # nobody else standing, at the other side.
+    def turn_on_own(unit)
+      own_side = ctx.allies(unit).reject { |u| u == unit || ctx.out_of_reach?(u) }
+      target = ctx.rng.pick(own_side.empty? ? ctx.opponents(unit) : own_side)
+      ctx.emit(:raging, actor: unit["id"], target: target&.dig("id"))
       return unless target
 
       attack = own(unit, ctx.ability("attack"))

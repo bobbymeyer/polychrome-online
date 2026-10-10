@@ -240,11 +240,28 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
   - the scenes, from the cold open to the seven mask visions;
   - the GM's checklist, as flags.
 - **Each guardian is the notes' type,** second types too: the Crab Rock, the Raccoon Dark/Ground, the Mantis Bug, the Cormorant Flying, the Toad Fire/Water, the Bull Normal, the Viper Poison/Grass, Amethyst 7A Ghost/Steel (and weak to Fighting, as the notes have it). The masks take their guardians' types; the Violet is Psychic.
-- **Some of the notes' patterns are the GM's to play**, because the engine doesn't do them:
-  - striking first on a riposte;
-  - "whoever hit it last";
-  - interrupting a telegraph;
-  - freeing a grabbed ally.
+- **The guardians' patterns are the engine's** (phase 5, built one dungeon ahead of the party):
+  - **The Crab's Clamp and the Viper's Coil hold someone fast** (`grab`, the `held` status). A fire blow on the Crab opens the Clamp. Any blow on the Viper tears a coiled ally free, at a tenth of their HP. The octopus's Grab breaks on any blow.
+  - **The Raccoon's Pilfer takes from the party's bag.** Everything comes back when it falls; what a thief gets away with is lost.
+  - **The Mantis's Riposte and the Toad's Hot Skin answer a blow up close before it lands** (a script's `struck` rule). They never answer spells or shots from range, and a striker the answer puts down never lands the blow.
+  - **The Cormorant goes for whoever hit it last** (`last_hit`). Its telegraphed Dive finds them again as it drops, so landing a hit first turns it. A missed Dive grounds it (`stumble`). Circling, it's out of reach of blows, but a spell or a Ranger's shot still finds it (`aloft`).
+  - **The Sword's fights are on rising water** (the battle's field: `Battle::Conditions`):
+    - ankle-deep: fire at half;
+    - waist-deep: everyone a quarter slower;
+    - chest-deep: thunder through everyone, and the water takes a little from all but the sea's own.
+
+    It rises after four rounds, and the GM can raise it sooner from the battle panel.
+  - **The siege's lights go out after two rounds:** blows land less often.
+  - **The Toad's Belly Flash breaks** if it takes an eighth of its HP while it winds up (`interrupt`); the Toad is then stunned for a turn. At zero, Tide Call gives it another go at once (`again`).
+  - **The hill's die-hards come in three waves**, one fight.
+  - **Her Song fills the party with rage:** the raging attack each other until a blow brings them round.
+
+  Still the GM's to play:
+  - the Clamp's rhythm and grease (a Try Something; grease is a cure);
+  - jamming the lamp's dial;
+  - the chitin plate's impairments;
+  - the golems' dizziness;
+  - the mask visions and the Sign ticks.
 
   Each dungeon's GM notes say which.
 - **The island has its own voice.** The Steps is an Island city, with its own people, shops and buildings. The Just Seven's arrival lines and GM moves are in Oda's tables but ask for the campaign's `just_seven` and `island` flags, so they fit no other campaign and beat Oda's mesa lines on the island.

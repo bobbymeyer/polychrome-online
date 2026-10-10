@@ -296,6 +296,47 @@ RSpec.describe "The Just Seven's mechanics" do
     end
   end
 
+  describe "waves, and a rage that isn't theirs (the Head)" do
+    let(:grunt) { { id: "die_hard", name: "Die-hard", stats: stats(max_hp: 10, agi: 1), types: %w[normal], ai: [], rewards: { exp: 5 } } }
+    let(:enemies) { [ grunt.merge(count: 2) ] }
+
+    def waves(*counts) = counts.map { |n| [ grunt.merge(count: n) ] }
+
+    it "brings the next wave on when the field is clear, lettered after the last, and wins only when the last falls" do
+      state = battle(party: [ hero ], waves: waves(2, 1))
+      expect(state["units"].map { |u| u["id"] }).to eq(%w[hero die_hard_a die_hard_b])
+      expect(state["reserves"].map { |wave| wave.map { |u| u["id"] } }).to eq([ %w[die_hard_c die_hard_d], %w[die_hard_e] ])
+
+      state, events = apply(state, gm("set_hp", unit: "die_hard_a", value: 0))
+      expect(of_type(events, :wave)).to be_empty
+      state, events = apply(state, gm("set_hp", unit: "die_hard_b", value: 0))
+      expect(of_type(events, :wave)).to include(include("units" => %w[die_hard_c die_hard_d], "left" => 1))
+      expect(state["status"]).to eq("input")
+
+      state, = apply(state, gm("set_hp", unit: "die_hard_c", value: 0))
+      state, = apply(state, gm("set_hp", unit: "die_hard_d", value: 0))
+      expect(state["reserves"]).to be_nil
+      state, events = apply(state, gm("set_hp", unit: "die_hard_e", value: 0))
+      expect(state["status"]).to eq("victory")
+      expect(of_type(events, :victory).first["rewards"]).to include("exp" => 25) # every wave's
+    end
+
+    it "turns a raging unit on its own side, until a blow brings it round" do
+      state = with_unit(battle, "ward", statuses: [ { "kind" => "rage", "turns" => 2 } ])
+      expect(Battle::State.awaiting_input(state)).to eq([ "hero" ])
+      _, events = apply(state, command("hero", nil, kind: "defend"))
+      expect(of_type(events, :raging)).to include(include("actor" => "ward", "target" => "hero"))
+      expect(of_type(events, :damage)).to include(include("actor" => "ward", "target" => "hero"))
+
+      # A die-hard's blow on Ward: Ward comes to.
+      came_to = (1..20).lazy.map do |seed|
+        state = battle(seed: seed, enemies: [ grunt.merge(ai: [ { use: "attack", target: "lowest_hp" } ]) ])
+        apply(with_unit(state, "ward", statuses: [ { "kind" => "rage", "turns" => 3 } ]), command("hero", nil, kind: "defend")).last
+      end.find { |events| of_type(events, :damage).any? { |e| e["actor"] == "die_hard" && e["target"] == "ward" } }
+      expect(of_type(came_to, :status_expired)).to include(include("target" => "ward", "status" => "rage", "reason" => "came_to"))
+    end
+  end
+
   describe "a thief among the monsters (the Raccoon)" do
     let(:moves) { { pilfer: { name: "Pilfer", kind: "skill", target: "single_enemy", effects: [ { primitive: "steal", chance: 95 } ] } } }
     let(:enemies) do

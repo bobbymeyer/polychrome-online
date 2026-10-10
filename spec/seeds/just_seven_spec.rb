@@ -39,6 +39,16 @@ RSpec.describe Seeds::JustSeven do
     expect(world.abilities.find_by!(slug: "tide_call").to_engine).to include("again" => true)
   end
 
+  it "holds the hill with die-hards in waves, and Her Song turns the party on itself" do
+    hill = place("Founders' Hill").location.view["rooms"].find { |room| room["name"] == "The hill" }["decision"]
+    character = campaign.characters.create!(name: "Ana", job: world.jobs.find_by!(slug: "soldier"), starting_level: 12)
+    battle = BattleRecord.start!(campaign: campaign, characters: [ character ], name: "The hill", encounter: hill["monsters"], waves: hill["waves"])
+    expect(battle.state["units"].count { |u| u["side"] == "enemy" }).to eq(3)
+    expect(battle.state["reserves"].map(&:size)).to eq([ 3, 4 ])
+    expect(campaign.messages.last.body).to include("and 2 more waves behind them")
+    expect(world.abilities.find_by!(slug: "her_song").effects).to include(include("kind" => "rage"))
+  end
+
   it "is made once for a GM: a second run finds it" do
     expect { described_class.run(gm: gm) }.not_to(change { [ Campaign.count, Monster.count, Ability.count ] })
     expect(described_class.run(gm: gm)).to eq(campaign)

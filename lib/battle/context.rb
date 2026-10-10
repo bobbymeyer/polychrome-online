@@ -293,6 +293,19 @@ module Battle
       emit(:recovered, unit: thief["id"], items: taken, names: taken.map { |id| state.dig("items", id, "name") || id })
     end
 
+    # The next wave of enemies comes on, if there's one waiting (State.build's
+    # waves). Returns true when it did.
+    def next_wave
+      reserves = state["reserves"]
+      return false if reserves.nil? || reserves.empty?
+
+      wave = reserves.shift
+      state.delete("reserves") if reserves.empty?
+      units.concat(wave)
+      emit(:wave, units: wave.map { |u| u["id"] }, names: wave.map { |u| u["name"] }, left: reserves.size)
+      true
+    end
+
     # Whoever this unit holds (the grab primitive) is let go: it fell, or left the field.
     def let_go(holder, reason:)
       units.each do |u|
@@ -358,6 +371,8 @@ module Battle
       if side("party").reject { |u| u["guest"] }.none? { |u| alive?(u) }
         state["status"] = "defeat"
         emit(:defeat)
+      elsif side("enemy").none? { |u| alive?(u) } && next_wave
+        nil # the next wave is on the field: it isn't over
       elsif side("enemy").none? { |u| alive?(u) }
         state["status"] = "victory"
         # Who left the field rather than fall (sent off, or a summon gone home): a victory over

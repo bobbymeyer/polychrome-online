@@ -49,6 +49,10 @@ const STEPS = {
     b.popup(tl, e.target, e.left > 0 ? `BARRIER −${e.absorbed}` : "BARRIER BROKEN", "status", at)
     return 260
   },
+  raging(b, tl, e, at) {
+    if (e.target) b.popup(tl, e.actor, "RAGE", "status", at)
+    return 220
+  },
   confused(b, tl, e, at) {
     if (e.target) b.popup(tl, e.actor, "CONFUSED", "status", at)
     return 220
@@ -144,6 +148,11 @@ const STEPS = {
   unit_joined(b, tl, e, at) {
     // The board after the beat has them; here, the entrance.
     b.banner(tl, e.guest ? `${e.name} joins the party!` : `${e.name} appears!`, at, "gm")
+    return 900
+  },
+  // The next wave comes on as the field clears (the board after the beat has them).
+  wave(b, tl, e, at) {
+    b.banner(tl, e.left > 0 ? "Another wave!" : "The last wave!", at, "gm")
     return 900
   },
   summoned(b, tl, e, at) {

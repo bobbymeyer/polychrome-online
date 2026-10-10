@@ -127,7 +127,7 @@ module Seeds
       laser_sweep: { name: "Laser Sweep", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash",
                      effects: [ { primitive: "elemental", type: "fire", power: 35 } ], description: "A beam across the whole party. Nowhere to stand that it doesn't reach." },
       her_song: { name: "Her Song", kind: "magic", target: "all_enemies", mp_cost: 0, gesture: "shake",
-                  effects: [ { primitive: "status", kind: "confuse", chance: 50, duration: 2 } ],
+                  effects: [ { primitive: "status", kind: "rage", chance: 50, duration: 2 } ],
                   description: "Her taunt through the walls. Everyone in the room wants to hit their brother." },
       overcharge: { name: "Overcharge", kind: "skill", target: "self", mp_cost: 0, gesture: "flash",
                     effects: [ { primitive: "status", kind: "haste", duration: 5 }, { primitive: "debuff", stat: "def", amount: 50, duration: 5 } ],
@@ -337,7 +337,7 @@ module Seeds
 
       # --- Amethyst 7A (Head, Violet Mask): a Gnallix in a minimech -------------------------------
       amethyst_7a: { name: "Amethyst 7A", level: 12, boss: true, stats: stats(max_hp: 1700, max_mp: 60, str: 24, mag: 26, atk: 24, agi: 16, def: 20, mdef: 18),
-                     base_type: "ghost", second_type: "steel", exp: 600, gil: 500, abp: 15, affinities: { "fighting" => "weak" }, status_immune: %w[poison sleep confuse berserk],
+                     base_type: "ghost", second_type: "steel", exp: 600, gil: 500, abp: 15, affinities: { "fighting" => "weak" }, status_immune: %w[poison sleep confuse berserk rage],
 
                      ai_script: [ { if: { round_multiple: 3 }, use: "her_song", say: "Her taunt rings through the walls. It isn't his. He fights inside it, unbothered." },
                                   { if: { round_multiple: 4 }, use: "missile_lock", say: "A targeting reticle settles. Missile lock." },
@@ -347,7 +347,7 @@ module Seeds
                      description: "A Gnallix, sealed in the Head since the founding, a little mad from the quiet. Fascinated, never bitter." },
       amethyst_7a_overcharged: { name: "Amethyst 7A (Overcharge)", level: 12, boss: true,
                                  stats: stats(max_hp: 1700, max_mp: 60, str: 24, mag: 26, atk: 24, agi: 18, def: 20, mdef: 18),
-                                 base_type: "ghost", second_type: "steel", exp: 600, gil: 500, abp: 15, affinities: { "fighting" => "weak" }, status_immune: %w[poison sleep confuse berserk],
+                                 base_type: "ghost", second_type: "steel", exp: 600, gil: 500, abp: 15, affinities: { "fighting" => "weak" }, status_immune: %w[poison sleep confuse berserk rage],
 
                                  ai_script: [ { once: true, use: "overcharge" },
                                               { if: { round_multiple: 3 }, use: "her_song", say: "Her song again. Steady as a tide." },

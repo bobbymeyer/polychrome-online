@@ -230,13 +230,14 @@ module Seeds
                "prepared before the jaw opens; nothing carries from here into the battle. Every room mentions the sea pulling back and something " \
                "coming over the seabed. No clock: Sign 7 is fixed to the jaw. No permission gate.\n" \
                "1 Entrance: the seven beams open the jaw in public view, the Pirate King's flag as a face, and the deafening citywide chorus " \
-               "(scene: The jaw opens; switch on The Steps' chorus mode, fill the Signs). Die-hard remnants hold the hill in suicidal waves; the " \
-               "party is strong by now and mows through. A power-fantasy capstone.\n" \
+               "(scene: The jaw opens; switch on The Steps' chorus mode, fill the Signs). Die-hard remnants hold the hill in suicidal waves (three of " \
+               "them, one fight: each comes on as the last falls); the party is strong by now and mows through. A power-fantasy capstone.\n" \
                "2 Setback: her unshielded rage bleeds through the walls: an overwhelming, competitive urge to attack each other. The cost is HP and " \
                "resources, never time. A sharp character may notice it isn't their own, and it's aimed at a sibling.\n" \
                "3 Climax: Amethyst 7A (he lives here: he's the boss). He fights for real: he thinks they've come to stop the mecha, and the tide " \
                "going out proves they're too late. Autocannon; Missile Lock telegraphed on a name (guard, heal, or redirect by hitting him first); " \
-               "Laser Sweep hits everyone; Her Song every third turn confuses (her rage, not his power; it never escalates); Overcharge below " \
+               "Laser Sweep hits everyone; Her Song every third turn fills the party with " \
+               "rage, and the raging attack each other until a blow brings them round (her rage, not his power; it never escalates); Overcharge below " \
                "half: two actions a turn, wide open. Mask breaks: the minimech powers down and he steps out. Told Fleet Crasher is really coming, " \
                "he's an excited spectator. Whether he survives or holds a mask in the finale is yours.\n" \
                "4 Twist: the combiner into the third-eye socket (only once the Violet mask is taken: all seven colours accounted for).\n" \
@@ -247,7 +248,7 @@ module Seeds
                "with fewer than four, each wears two (half masks).",
         rooms: [
           { name: "The jaw", decision: { kind: "event", text: "Seven beams strike the dome, and the face on the hill opens its jaw. It is the Pirate King's flag. And it sings." } },
-          { name: "The hill", decision: { kind: "encounter", monsters: { die_hard: 4 } } },
+          { name: "The hill", decision: { kind: "encounter", monsters: { die_hard: 3 }, waves: [ { die_hard: 3 }, { die_hard: 4 } ] } },
           { name: "The rage", decision: { kind: "trap", text: "A rage comes through the walls: you want to hit the person next to you, very badly. (hurt 20, weary 20)" } },
           { name: "The sealed room", decision: { kind: "boss", monsters: { amethyst_7a: 1 } } }
         ],

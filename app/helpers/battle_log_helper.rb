@@ -22,6 +22,8 @@ module BattleLogHelper
     when "away" then event["unit"] == event["actor"] ? "#{name.('actor')} slips off the field." : "#{name.('unit')} is sent off the field!"
     when "back" then "#{name.('unit')} is back."
     when "shielded" then "#{name.('target')}'s barrier takes #{event['absorbed']}#{event['left'].zero? ? ' and breaks' : ''}."
+    when "wave" then "#{event['left'].positive? ? 'Another wave' : 'The last wave'} comes on: #{event['names'].to_sentence}!"
+    when "raging" then event["target"] ? "#{name.('actor')}, in a rage that isn't theirs, turns on #{name.('target')}!" : "#{name.('actor')} rages at nothing."
     when "confused" then event["target"] ? "#{name.('actor')}, confused, turns on #{name.('target')}!" : "#{name.('actor')} stumbles about."
     when "mp_lost" then "#{name.('target')} loses #{event['amount']} #{word('mp')}."
     when "hp_paid" then "#{name.('actor')} pays #{event['amount']} #{word('hp')}."

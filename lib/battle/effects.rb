@@ -219,6 +219,7 @@ module Battle
       if ctx.alive?(target)
         ctx.remove_status(target, "sleep", reason: "woke")
         ctx.remove_status(target, "confuse", reason: "came_to")
+        ctx.remove_status(target, "rage", reason: "came_to")
       end
       counter(ctx, actor, target)
     end

@@ -110,6 +110,8 @@ module Battle
   MAX_AWAY_TURNS = 5
   MAX_GRAB_TURNS = 5
   MAX_STUMBLE = 3
+  # Most waves of enemies after the first.
+  MAX_WAVES = 5
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
   TYPES = Types::ALL # the base world's; a battle's own are in its state
   AFFINITIES = Types::AFFINITIES
@@ -125,6 +127,8 @@ module Battle
   # stop:    loses its turns; a blow doesn't break it.
   # berserk: attacks on its own, harder (Str +50%).
   # confuse: attacks anyone, friend or foe, until a blow brings it round.
+  # rage:    attacks one of its own side (someone else's rage, aimed at a
+  #          sibling: Her Song), until a blow brings it round.
   # charged: its next move that deals or restores HP is twice as strong.
   # imbued:  Attack strikes with the status's type (the imbue primitive).
   # shield:  takes damage out of the status's amount first (the shield primitive).
@@ -142,7 +146,7 @@ module Battle
   #          grip, the holder falls or leaves, or it wears off (the grab primitive).
   STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away
                 aggro stop berserk confuse charged imbued shield charging doom down
-                burn regen reraise reflect iai reloading sheathed chi masked spent held].freeze
+                burn regen reraise reflect iai reloading sheathed chi masked spent held rage].freeze
   # Counted in stacks rather than turns; they last until spent or KO.
   STACKING_STATUSES = %w[sheathed chi].freeze
   # Off the field: nobody can reach them, and they can't be commanded.
@@ -175,8 +179,8 @@ module Battle
   # Statuses that stop a unit from taking its turn (and from being asked
   # for input).
   DISABLING_STATUSES = %w[sleep paralyze stop down reloading held].freeze
-  # They act on their own: berserk attacks, confuse attacks anyone.
-  RUNAWAY_STATUSES = %w[berserk confuse].freeze
+  # They act on their own: berserk attacks, confuse attacks anyone, rage an ally.
+  RUNAWAY_STATUSES = %w[berserk confuse rage].freeze
   # No command while these last: the unit's turn is already spoken for.
   NO_INPUT_STATUSES = (DISABLING_STATUSES + OUT_OF_REACH_STATUSES + RUNAWAY_STATUSES + %w[charging]).freeze
   # What a job gives beyond numbers (Battle::Effects, #take_turn):
@@ -233,8 +237,11 @@ module Battle
     # masks:  what the transform primitive puts on (Battle::Masks):
     #         { "storm_mask" => { name:, type:, duration:, abilities: [...], image: } }
     # field:  the field it's fought on, in stages (Battle::Conditions): the water rising, the lights out.
+    # waves:  more enemies, in waves after the first ([[spec, ...], ...]):
+    #         when every enemy on the field is down, the next wave comes on
+    #         (Context#check_end), and the fight is won when the last falls.
     def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {}, masks: {},
-              field: nil)
+              field: nil, waves: [])
       rules = normalize(rules).select { |rule, on| RULES.include?(rule) && on == true }
       types = types ? Types.validate!(normalize(types)) : normalize(Types::DEFAULT)
       known = Types.list(types)
@@ -271,12 +278,19 @@ module Battle
       end
 
       units = normalize(party).map { |spec| unit(spec, "party", known) }
-      units += expand_enemies(normalize(enemies)).map { |spec| unit(spec, "enemy", known) }
+      # Every wave lettered together, so a goblin in the second wave isn't Goblin A again.
+      waves = normalize(waves)
+      raise ArgumentError, "a fight has at most #{MAX_WAVES} waves after the first" if waves.size > MAX_WAVES
 
-      duplicate = units.map { |u| u["id"] }.tally.find { |_, n| n > 1 }
+      tagged = ([ normalize(enemies) ] + waves).each_with_index.flat_map { |specs, wave| specs.map { |spec| spec.merge("wave" => wave) } }
+      foes = expand_enemies(tagged).map { |spec| [ spec["wave"], unit(spec.except("wave"), "enemy", known) ] }
+      units += foes.select { |wave, _| wave.zero? }.map(&:last)
+      reserves = (1..waves.size).map { |wave| foes.select { |w, _| w == wave }.map(&:last) }.reject(&:empty?)
+
+      duplicate = (units + reserves.flatten).map { |u| u["id"] }.tally.find { |_, n| n > 1 }
       raise ArgumentError, "duplicate unit id #{duplicate.first}" if duplicate
 
-      units.each do |u|
+      (units + reserves.flatten).each do |u|
         missing = (u["abilities"] + u.fetch("phases", []).flat_map { |p| p["becomes"]["abilities"] }).uniq - library.keys
         raise ArgumentError, "#{u['id']} knows unknown abilities: #{missing.join(', ')}" if missing.any?
         if u["desperation"] && !library.key?(u["desperation"])
@@ -301,6 +315,7 @@ module Battle
       }.merge(rules.any? ? { "rules" => rules } : {})
        .merge(faces.any? ? { "masks" => faces } : {})
        .merge((ground = Conditions.build(normalize(field), known)) ? { "field" => ground } : {})
+       .merge(reserves.any? ? { "reserves" => reserves } : {})
     end
 
     # Where the fight is has a type; anywhere in particular is the plain one.
