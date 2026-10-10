@@ -138,7 +138,7 @@ module BooksHelper
     when "revive" then "Revive at #{e.fetch('fraction', 25)}% #{word('hp')}"
     when "escape" then "Escape from battle"
     when "cleanse" then e["kind"] ? "Cure #{term(e['kind']).downcase}" : "Cure every harmful status"
-    when "steal" then e["boon"] == 1 ? "Steal one of its good statuses (#{e.fetch('chance', 50)}% + speed)" : "Steal one of its drops (#{e.fetch('chance', 50)}% + speed)"
+    when "steal" then e["boon"] == 1 ? "Steal one of its good statuses (#{e.fetch('chance', 50)}% + speed)" : "Steal one of its drops, or from the party's bag when a monster steals (#{e.fetch('chance', 50)}% + speed)"
     when "scan" then "Reveal #{word('hp')}, weaknesses and immunities"
     when "jump" then "Leap out of reach, then land a #{e.fetch('power', 200)}% blow next turn"
     when "away" then describe_away(e)
@@ -155,10 +155,18 @@ module BooksHelper
     when "dispel" then "Take away its good statuses and raised stats"
     when "quick" then "The ally goes again at once (once a round)"
     when "mimic" then "The last move an ally made, again, free"
+    when "grab" then describe_grab(e)
     when "transform" then "Put on #{@world&.items&.find_by(slug: e['mask'])&.name || e['mask'].to_s.humanize}"
     when "sap" then "Take #{word('mp')}, power #{e['power']}#{", keep #{e['keep']}%" if e['keep'].to_i.positive?}"
     else e["primitive"].to_s.humanize
     end
+  end
+
+  # "Hold fast for 3 turns; a fire blow on the user breaks it, and tears 10%".
+  def describe_grab(e)
+    breaks = e.fetch("breaks", "hit") == "hit" ? "any blow" : "a #{effect_type(e['breaks']).downcase} blow"
+    "Hold fast for #{pluralize(e.fetch('duration', 2), 'turn')}#{" (#{e['chance']}%)" if e['chance']}; #{breaks} on the user breaks it" \
+      "#{", and tears #{e['tear']}% #{word('hp')}" if e['tear'].to_i.positive?}"
   end
 
   def describe_against(e)

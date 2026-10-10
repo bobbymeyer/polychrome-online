@@ -25,6 +25,9 @@
 <% if settlement["used"].present? %>
   <p>Used <%= settlement["used"].map { |name, n| "#{n} × #{name}" }.to_sentence %>.</p>
 <% end %>
+<% if settlement["lost"].present? %>
+  <p>Lost to thieves: <%= settlement["lost"].map { |name, n| "#{n} × #{name}" }.to_sentence %>.</p>
+<% end %>
 
 <% if settlement["result"] == "victory" && !@battle.enemies_fell? %>
   <%# Nobody fell: nothing was won, and the list of 0 EXP each says nothing. %>

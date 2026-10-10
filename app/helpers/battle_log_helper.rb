@@ -48,7 +48,10 @@ module BattleLogHelper
       end
     when "miss" then miss_line(event, name.("target"), field)
     when "status_applied"
-      event["status"] == "down" ? "#{name.('target')} is knocked down!" : "#{name.('target')}: #{term(event['status'])}.#{dice_note(event)}"
+      if event["status"] == "down" then "#{name.('target')} is knocked down!"
+      elsif event["status"] == "held" && event["by"] then "#{field.unit_name(event['by'])} has #{name.('target')} held fast!"
+      else "#{name.('target')}: #{term(event['status'])}.#{dice_note(event)}"
+      end
     when "one_more" then "One More! #{name.('actor')} goes again#{" at #{name.('target')}" if event['target']}."
     when "all_out" then "All-Out Attack! Everyone piles in, and the enemies scramble to their feet."
     when "status_expired" then status_expired_line(event, name.("target"))
@@ -58,8 +61,12 @@ module BattleLogHelper
     when "ko" then field.unit(event["target"])&.party? ? "#{name.('target')} is KO'd!" : "#{name.('target')} is defeated."
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
+    when "recovered" then "#{event['names'].to_sentence} #{event['names'].one? ? 'is' : 'are'} back in the party's hands."
     when "steal"
-      what = event["status"] ? "#{name.('target')}'s #{term(event['status']).downcase}" : "#{event['name']} from #{name.('target')}"
+      what = if event["status"] then "#{name.('target')}'s #{term(event['status']).downcase}"
+      elsif event.key?("left") then "#{Wording.a_or_an(event['name'])} from the party's bag"
+      else "#{event['name']} from #{name.('target')}"
+      end
       "#{name.('actor')} stole #{what}!#{dice_note(event)}"
     when "scan" then scan_line(event, name.("target"), field.types)
     when "flee" then "#{flee_line(event)}#{dice_note(event)}"
@@ -89,6 +96,7 @@ module BattleLogHelper
     return "#{target} takes #{event['amount']} poison damage." if event["status"] == "poison"
     return "#{target} takes #{event['amount']} from the burn." if event["status"] == "burn"
     return "Doom comes for #{target}." if event["status"] == "doom"
+    return "#{target} tears free, and takes #{event['amount']}." if event["status"] == "held"
     return "#{target} takes #{event['amount']} in recoil." if event["recoil"]
 
     line = "#{target} takes #{event['amount']} damage."
@@ -144,6 +152,8 @@ module BattleLogHelper
     when "woke" then "#{target} wakes up."
     when "cured" then "#{target} is cured of #{term(event['status']).downcase}."
     when "dispelled" then "#{target}'s #{term(event['status']).downcase} is dispelled."
+    when "freed" then "#{target} is free!"
+    when "holder_fell", "holder_left" then "#{target} is let go."
     when "spent" then nil # the move that spent it says enough
     when "gm" then nil # the gm_override line already said it
     else "#{target}'s #{term(event['status'])} wears off."
@@ -186,6 +196,7 @@ module BattleLogHelper
     when "down" then "#{unit} is getting back up."
     when "charging" then "#{unit} is still gathering strength."
     when "reloading" then "#{unit} is reloading."
+    when "held" then "#{unit} is held fast."
     else "#{unit} has no orders."
     end
   end

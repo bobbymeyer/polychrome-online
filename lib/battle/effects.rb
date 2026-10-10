@@ -47,6 +47,7 @@ module Battle
       when "quick" then quick(ctx, actor, target)
       when "mimic" then ctx.follow_ups << [ :mimic, actor ]
       when "transform" then Masks.put_on(ctx, actor, effect)
+      when "grab" then grab(ctx, actor, target, effect)
       else raise Error, "unknown primitive #{effect['primitive']}"
       end
     end
@@ -58,6 +59,7 @@ module Battle
     # whether it worked.
     def steal(ctx, actor, target, effect)
       return steal_boon(ctx, actor, target, effect) if effect["boon"] == 1
+      return lift(ctx, actor, target, effect) if actor["side"] == "enemy" && target["side"] == "party"
 
       drops = target.fetch("drops", [])
       if drops.empty? || target["stolen"]
@@ -75,6 +77,27 @@ module Battle
       ctx.emit(:steal, actor: actor["id"], target: target["id"], item: drop["item"], name: drop.fetch("name", drop["item"]), roll: roll, needed: Rng.target(chance))
     end
 
+    # An enemy's steal on the party: one of the party's battle items (the
+    # bag everyone shares), weighted by how many of each there are. The
+    # thief keeps it until it falls, or the party wins the field, and then
+    # it's the party's again (Context#give_back); a thief that gets away
+    # takes it with it. The same rolls as a steal, in the same order.
+    def lift(ctx, actor, target, effect)
+      bag = ctx.state.fetch("items", {}).values.select { |item| item["count"].positive? }
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "nothing_to_steal") if bag.empty?
+
+      chance = (effect.fetch("chance", 50) + (ctx.stat(actor, "agi") - ctx.stat(target, "agi"))).clamp(5, 95)
+      success, roll = ctx.rng.d100(chance)
+      pick = ctx.rng.int(bag.sum { |item| item["count"] })
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "steal_failed", roll: roll, needed: Rng.target(chance)) unless success
+
+      item = bag.find { |i| (pick -= i["count"]).negative? }
+      item["count"] -= 1
+      (actor["pilfered"] ||= []) << item["id"]
+      ctx.emit(:steal, actor: actor["id"], target: target["id"], item: item["id"], name: item["name"], left: item["count"],
+                       roll: roll, needed: Rng.target(chance))
+    end
+
     # steal(boon: 1): one of the target's good statuses (STEALABLE_BOONS,
     # the first it has), moved to the thief as it was. The same rolls as a
     # steal, in the same order.
@@ -90,6 +113,31 @@ module Battle
       actor["statuses"].reject! { |s| s["kind"] == boon["kind"] }
       actor["statuses"] << boon
       ctx.emit(:steal, actor: actor["id"], target: target["id"], status: boon["kind"], roll: roll, needed: Rng.target(chance))
+    end
+
+    # grab(chance, duration, breaks, tear): the target is held fast by the
+    # user (held: it loses its turns) for `duration` of its turns, unless
+    # it's freed first (Context#free_from): a blow from its side on the
+    # user breaks the grip ("breaks": any blow, "hit", or only one of a
+    # type), and then it loses tear% of its max HP; the user falling or
+    # leaving lets it go. Against an opponent the chance is reduced by spr,
+    # as a status's is, and a unit can be immune ("held" in its
+    # status_immune). A new grab replaces an old one.
+    def grab(ctx, actor, target, effect)
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "no_effect") if target == actor
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", status: "held") if target["status_immune"].include?("held")
+
+      chance = effect.fetch("chance", 100)
+      chance = chance * 100 / (100 + ctx.stat(target, "spr")) if chance < 100 && target["side"] != actor["side"]
+      came_in, roll = ctx.rng.d100(chance)
+      unless came_in || chance >= 100
+        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "resisted", status: "held", roll: roll, needed: Rng.target(chance))
+      end
+
+      target["statuses"].reject! { |s| s["kind"] == "held" }
+      turns = effect.fetch("duration", 2)
+      ctx.add_status(target, "held", turns, by: actor["id"])
+      target["statuses"].find { |s| s["kind"] == "held" }.merge!("by" => actor["id"], "breaks" => effect.fetch("breaks", "hit"), "tear" => effect.fetch("tear", 0))
     end
 
     # gather(kind, amount): stacks of a stacking status on the user, up to
@@ -224,6 +272,7 @@ module Battle
       end
 
       turns = effect.fetch("duration", 1)
+      ctx.let_go(goer, reason: "holder_left")
       goer["statuses"].reject! { |s| OUT_OF_REACH_STATUSES.include?(s["kind"]) }
       goer["statuses"] << { "kind" => "away", "turns" => turns, "left" => turns, "self" => who == "self",
                             "power" => power, "target" => (target["id"] if power.positive?) }.merge(effect.slice("type", "basis")).compact

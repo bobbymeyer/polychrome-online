@@ -156,7 +156,10 @@ module Battle
       emit(:damage, target: target["id"], amount: amount, hp: target["hp"], **extra)
       # Struck by an opponent: what it does when hit (a counter), once it's standing or not.
       striker = extra[:actor] && unit(extra[:actor])
-      queue_reaction(target, "hit", by: extra[:damage_type], target: striker["id"]) if striker && striker["side"] != target["side"]
+      if striker && striker["side"] != target["side"]
+        queue_reaction(target, "hit", by: extra[:damage_type], target: striker["id"])
+        free_from(target, striker, extra[:damage_type]) unless extra[:status]
+      end
       return unless target["hp"].zero?
 
       reraise = status?(target, "reraise")
@@ -206,6 +209,8 @@ module Battle
     end
 
     def knock_out(target)
+      let_go(target, reason: "holder_fell")
+      give_back(target)
       target["hp"] = 0
       mask = target["statuses"].find { |s| s["kind"] == "masked" }
       Masks.take_off(self, target, mask, spent: false) if mask
@@ -227,6 +232,7 @@ module Battle
 
     # A summoned creature leaves the field (its turns up, its summoner down).
     def send_home(creature)
+      let_go(creature, reason: "holder_left")
       creature["gone"] = true
       creature["statuses"] = []
       creature["buffs"] = []
@@ -255,6 +261,40 @@ module Battle
       target["statuses"] -= gone
       emit(:status_expired, target: target["id"], status: kind, reason: reason)
       Masks.take_off(self, target, gone.first, spent: true) if kind == "masked"
+    end
+
+    # What a thief took from the party's bag comes back to it: the thief
+    # fell, or the party won the field (Effects#lift).
+    def give_back(thief)
+      taken = thief.delete("pilfered")
+      return if taken.nil? || taken.empty?
+
+      taken.each { |id| state["items"][id]["count"] += 1 if state.dig("items", id) }
+      emit(:recovered, unit: thief["id"], items: taken, names: taken.map { |id| state.dig("items", id, "name") || id })
+    end
+
+    # Whoever this unit holds (the grab primitive) is let go: it fell, or left the field.
+    def let_go(holder, reason:)
+      units.each do |u|
+        held = u["statuses"].find { |s| s["kind"] == "held" }
+        remove_status(u, "held", reason: reason) if held && held["by"] == holder["id"]
+      end
+    end
+
+    # A blow on a holder from the other side breaks the grip on whoever of
+    # the striker's side it holds, if it's the kind of blow that does
+    # ("breaks": any, "hit", or a type). Torn free, they lose tear% of
+    # their max HP: the grip's damage, not the striker's.
+    def free_from(holder, striker, type)
+      units.each do |u|
+        held = u["statuses"].find { |s| s["kind"] == "held" }
+        next unless held && held["by"] == holder["id"] && u["side"] == striker["side"] && alive?(u)
+        next unless held.fetch("breaks", "hit") == "hit" || held["breaks"] == type
+
+        remove_status(u, "held", reason: "freed")
+        tear = u["stats"]["max_hp"] * held.fetch("tear", 0).to_i / 100
+        deal_damage(u, tear, status: "held") if tear.positive?
+      end
     end
 
     # A stacking status's count (0 when it isn't on).

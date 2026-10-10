@@ -282,7 +282,9 @@ module Battle
       gm_event(action, result: result)
       state["status"] = result
       case result
-      when "victory" then ctx.emit(:victory, rewards: ctx.rewards, drops: ctx.roll_drops)
+      when "victory"
+        ctx.side("enemy").each { |u| ctx.give_back(u) } # the field is the party's, and so is what was taken on it
+        ctx.emit(:victory, rewards: ctx.rewards, drops: ctx.roll_drops)
       when "defeat"
         # The party has fallen: whoever was still standing goes down too.
         ctx.side("party").select { |u| ctx.alive?(u) }.each { |u| ctx.knock_out(u) }
@@ -342,6 +344,7 @@ module Battle
       raise InvalidAction, "#{unit['name']} has already gone" if unit["gone"]
 
       gm_event(action, unit: unit["id"])
+      ctx.let_go(unit, reason: "holder_left")
       unit["gone"] = true
       unit["statuses"] = []
       unit["buffs"] = []

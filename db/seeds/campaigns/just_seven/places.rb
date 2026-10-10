@@ -36,8 +36,8 @@ module Seeds
                "3 Setback: chitin armour, beautiful, lying there. It locks on after five minutes' wear and comes off only when the Crab's mask " \
                "does. Greaves halve movement, a vambrace takes an arm, a helm blinds, a breastplate suffocates (three failures shatter the ribs: " \
                "half HP, once). Play the impairments as statuses or fiction; it's in the bag as Chitin Plate.\n" \
-               "4 Climax: the Crab. Shelled, high defence; Pincer; Clamp holds someone (Stop): heat, rhythm or grease frees them, force only " \
-               "clenches it harder. Every third turn it Hardens (defence up, reflect). Below half its shell breaks: low defence, two pincers a turn, " \
+               "4 Climax: the Crab. Shelled, high defence; Pincer; Clamp holds someone fast: a fire blow on the Crab frees them (the engine does that); " \
+               "rhythm or grease is a Try Something, and force only clenches it harder. Every third turn it Hardens (defence up, reflect). Below half its shell breaks: low defence, two pincers a turn, " \
                "no more Harden. Mask breaks: an ordinary crab, and all the locked chitin falls off at once.\n" \
                "5 Twist: a colossal, plainly machined ankle joint. The first proof something mechanical-biological lives under the city.",
         rooms: [
@@ -61,8 +61,8 @@ module Seeds
                "hauled in. A wrong performance leaves the foot shut and the golems alerted (call a fight: Debris Golems).\n" \
                "3 Setback: inside, golems meditate by slowly spinning to gather karma. Spin along the whole way: an Agility check each stretch, or " \
                "fall Dizzy into the fight (weary, or confuse at the start of the battle; your call).\n" \
-               "4 Climax: the Raccoon. Scratch; Pilfer steals a good status (the notes' item theft: the GM can take a bag item too, buried in the " \
-               "hoard); Junk Toss telegraphed for everyone; Hide breaks target lock. Below half: more frantic, a wider Junk Avalanche. The kid " \
+               "4 Climax: the Raccoon. Scratch; Pilfer takes an item from the party's bag into the hoard (it comes back when " \
+               "the Raccoon falls; gear is the GM's to take by hand); Junk Toss telegraphed for everyone; Hide breaks target lock. Below half: more frantic, a wider Junk Avalanche. The kid " \
                "commentates every steal. Mask breaks: an ordinary raccoon; everything stolen resurfaces; the kid is fine, in a nest of trinkets.\n" \
                "5 Twist: the debris is plainly Gnallix-era failed prototypes. No further twist needed.",
         rooms: [
@@ -179,8 +179,8 @@ module Seeds
                "the heartbeat through the pipes.\n" \
                "3 Setback: die-hards and the Duel-Master; meant non-lethal and comic, echoing the lounge mob. Lights out partway (Siege 2).\n" \
                "4 Climax: the Bull (Gore; telegraphed Stampede; Steam Vent; Overclock below half: acts twice), then with no rest the Viper out of " \
-               "its cracked chest (Fangs poison whoever is hurt most; telegraphed Spore Mist; Coil holds someone; Venom Surge below half). In the " \
-               "notes, striking the Viper frees a coiled ally with a burst of damage; play that as GM.\n" \
+               "its cracked chest (Fangs poison whoever is hurt most; telegraphed Spore Mist; Coil holds someone; Venom Surge below half). Any " \
+               "blow on the Viper tears a coiled ally free, and that costs them a tenth of their HP.\n" \
                "5 Twist: behind the bull, a reactor that is plainly a heart, beating with the thump felt in the Left Leg pipes since Act 1.\n" \
                "Capstone (scene: The heart): restore the city's power; the heart settles; then Fleet Crasher's challenge-call comes through the pipes " \
                "and the heart spikes, and every light in the city surges with it. Does she side with her brother? Mount the splitter in the " \

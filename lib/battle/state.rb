@@ -11,7 +11,7 @@ module Battle
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
   PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan jump away
-                  shield imbue percent sap summon gather dispel quick mimic transform].freeze
+                  shield imbue percent sap summon gather dispel quick mimic transform grab].freeze
 
   # Parameters each primitive takes, split into required and optional
   # (optional ones have defaults in Battle::Effects). String-valued params
@@ -77,9 +77,15 @@ module Battle
     # The last move an ally made, again, from the user, free.
     "mimic" => { required: [], optional: [] },
     # Puts on a mask from the battle's masks (Battle::Masks).
-    "transform" => { required: %w[mask], optional: [] }
+    "transform" => { required: %w[mask], optional: [] },
+    # Holds the target fast (held: it loses its turns) while the user
+    # stands and stays, for `duration` of the target's turns. A blow from
+    # the target's side on the user breaks it: any blow ("breaks" "hit",
+    # the default) or only one of a type (heat opens a claw). Torn free,
+    # the held one loses tear% of its max HP (Battle::Effects#grab).
+    "grab" => { required: [], optional: %w[chance duration breaks tear] }
   }.freeze
-  PRIMITIVE_STRING_PARAMS = %w[type kind stat who against creature with mask].freeze
+  PRIMITIVE_STRING_PARAMS = %w[type kind stat who against creature with mask breaks].freeze
   # The flags among the params: 0 or 1.
   PRIMITIVE_FLAGS = %w[unresisted hold boon stays].freeze
   MAX_SUMMON_TURNS = 5
@@ -99,6 +105,7 @@ module Battle
   MAX_HP_COST = 90
   AWAY_WHO = %w[self target].freeze
   MAX_AWAY_TURNS = 5
+  MAX_GRAB_TURNS = 5
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
   TYPES = Types::ALL # the base world's; a battle's own are in its state
   AFFINITIES = Types::AFFINITIES
@@ -127,9 +134,11 @@ module Battle
   # reloading: spent by a big shot (a move's reload): it loses its turns.
   # sheathed, chi: stacking (STACKING_STATUSES), gathered and spent.
   # masked:  wearing a mask (Battle::Masks); spent: worn out after one.
+  # held:    grabbed: loses its turns until a blow on its holder breaks the
+  #          grip, the holder falls or leaves, or it wears off (the grab primitive).
   STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away
                 aggro stop berserk confuse charged imbued shield charging doom down
-                burn regen reraise reflect iai reloading sheathed chi masked spent].freeze
+                burn regen reraise reflect iai reloading sheathed chi masked spent held].freeze
   # Counted in stacks rather than turns; they last until spent or KO.
   STACKING_STATUSES = %w[sheathed chi].freeze
   # Off the field: nobody can reach them, and they can't be commanded.
@@ -145,7 +154,7 @@ module Battle
   HARMFUL_STATUSES = (STATUSES - BOONS - %w[airborne away charging reloading masked spent]).freeze
   # Only their own primitives make these: they carry more than a duration.
   # (down: a world's One More rule knocks units down, Battle::Resolver#one_more.)
-  PRIMITIVE_STATUSES = %w[airborne imbued shield charging down reloading sheathed chi masked spent].freeze
+  PRIMITIVE_STATUSES = %w[airborne imbued shield charging down reloading sheathed chi masked spent held].freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
   COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
@@ -161,7 +170,7 @@ module Battle
 
   # Statuses that stop a unit from taking its turn (and from being asked
   # for input).
-  DISABLING_STATUSES = %w[sleep paralyze stop down reloading].freeze
+  DISABLING_STATUSES = %w[sleep paralyze stop down reloading held].freeze
   # They act on their own: berserk attacks, confuse attacks anyone.
   RUNAWAY_STATUSES = %w[berserk confuse].freeze
   # No command while these last: the unit's turn is already spoken for.
@@ -571,6 +580,10 @@ module Battle
           raise ArgumentError, "#{id}: gather 1 to #{MAX_STACKS}" if effect["amount"] && !effect["amount"].between?(1, MAX_STACKS)
         when "cleanse"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" if effect["kind"] && !STATUSES.include?(effect["kind"])
+        when "grab"
+          raise ArgumentError, "#{id}: a grab lasts 1 to #{MAX_GRAB_TURNS} turns" if effect["duration"] && !effect["duration"].between?(1, MAX_GRAB_TURNS)
+          raise ArgumentError, "#{id}: a grab breaks on a hit or a type, not #{effect['breaks']}" if effect["breaks"] && !(effect["breaks"] == "hit" || known.include?(effect["breaks"]))
+          raise ArgumentError, "#{id}: tear must be 0 to 100" if effect["tear"] && !effect["tear"].between?(0, 100)
         when "buff", "debuff"
           raise ArgumentError, "#{id}: cannot modify #{effect['stat']}" unless Stats::MODIFIABLE.include?(effect["stat"])
         when "heal", "drain", "shield"

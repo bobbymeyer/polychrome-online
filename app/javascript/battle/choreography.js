@@ -278,6 +278,11 @@ const STEPS = {
     gesture(tl, b.sprite(e.actor), "lunge", at, b.facing(e.actor))
     return 600
   },
+  // A thief fell (or the party won the field): what it took is the party's again.
+  recovered(b, tl, e, at) {
+    b.popup(tl, e.unit, `${e.names.join(", ")} back`, "status", at)
+    return 450
+  },
   scan(b, tl, e, at) {
     b.popup(tl, e.target, "Scanned", "status", at)
     return 450

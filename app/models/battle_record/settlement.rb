@@ -3,7 +3,8 @@
 # When the battle ends, what happened is written back to the campaign:
 # HP/MP always; on victory, EXP split among the standing, ABP to each
 # standing character's current job, gil, and the dropped items. Stolen items
-# are the party's however the battle ends. Antagonists who got away come
+# are the party's however the battle ends; what a thief took from the party
+# and got away with is gone (Battle::Effects#lift). Antagonists who got away come
 # back stronger. Runs once, inside the transaction of the action that ended
 # the battle.
 module BattleRecord::Settlement
@@ -26,7 +27,7 @@ module BattleRecord::Settlement
       characters[unit.id]&.update!(hp: unit.hp, mp: unit.mp)
     end
 
-    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items!,
+    summary = { "result" => status, "gil" => 0, "drops" => [], "members" => [], "used" => use_up_items!, "lost" => lost_to_thieves.presence,
                 "stolen" => take_stolen_items!, "antagonists" => settle_antagonists! }.compact
     victory = events.find { |e| e["type"] == "victory" }
     if victory
@@ -97,19 +98,30 @@ module BattleRecord::Settlement
     npc.world_figure_id.present? && npc.escapes.zero?
   end
 
-  # Items used in battle come out of the bag. Returns { "Potion" => 2 }.
+  # Items used in battle come out of the bag, and so do those a thief got
+  # away with. Returns what was used: { "Potion" => 2 }.
   def use_up_items!
     carried = BattleState.new(initial_state).items
     return {} if carried.empty?
 
     items = world.items.where(slug: carried.keys).index_by(&:slug)
+    lost = pilfered.tally
     carried.each_with_object({}) do |(slug, item), used|
       n = item.count - (field.item(slug)&.count).to_i
       next unless n.positive? && items[slug]
 
       campaign.use_items!(items[slug], n)
-      used[item.name] = n
+      used[item.name] = n - lost.fetch(slug, 0) if n > lost.fetch(slug, 0)
     end
+  end
+
+  # What thieves still had when the battle ended: taken from the party, never given back.
+  def pilfered = state.fetch("units", []).flat_map { |unit| Array(unit["pilfered"]) }
+
+  # { "Potion" => 1 }, by name.
+  def lost_to_thieves
+    names = world.items.where(slug: pilfered).to_h { |item| [ item.slug, item.name ] }
+    pilfered.tally.to_h { |slug, n| [ names.fetch(slug, slug.humanize), n ] }
   end
 
   def settlement_line(summary)
@@ -127,6 +139,7 @@ module BattleRecord::Settlement
     end
     parts << "Stole #{summary['stolen'].to_sentence}." if summary["stolen"].present?
     parts << "Used #{summary['used'].map { |name, n| "#{n} × #{name}" }.to_sentence}." if summary["used"].present?
+    parts << "Lost #{summary['lost'].map { |name, n| "#{n} × #{name}" }.to_sentence} to thieves." if summary["lost"].present?
     parts << "#{campaign.money(summary['gil'])}." if summary["gil"].positive?
     parts << "Found #{summary['drops'].to_sentence}." if summary["drops"].any?
     summary["members"].each do |member|
