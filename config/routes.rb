@@ -204,6 +204,10 @@ Rails.application.routes.draw do
       # A dungeon's rooms: added, dragged (update), and opened in the panel
       # beside the floorplan (show). NOT :position -- that one is the party's.
       resources :rooms, only: %i[show create update]
+      # How elaborate a dungeon is: extra rooms around the core
+      # (Generators::Elaboration). A scale, not a reroll -- the core keeps
+      # its rooms and their order at every level.
+      resource :elaboration, only: :update
       # The ways between them, joined and cut (Location::Tailoring). "ways"
       # is the word the dungeon's own panel uses; the generator's data calls
       # them paths. Not `resources :paths`, which would name the member route

@@ -221,6 +221,63 @@ RSpec.describe "Locations", type: :request do
       expect(cave.view["rooms"].map { |r| r["name"] }).to include("Vault")
     end
 
+    # The elaboration dial (Generators::Elaboration). The promise the GM is
+    # being asked to trust: turning it never touches what they pinned.
+    it "elaborates a dungeon around its pinned core, and takes it all back" do
+      cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+      cave = generate("goblin_cave", on: cave_node)
+      core = cave.view["rooms"].map { |r| r.slice("key", "name", "decision", "depth", "x", "y") }
+      ways = cave.view["paths"].size
+
+      patch location_elaboration_path(cave), params: { level: "3" }
+      expect(flash[:notice]).to eq("Elaborated to 3.")
+      grown = cave.reload.view
+      expect(grown["rooms"].size).to eq(core.size + 6)
+      expect(grown["paths"].size).to be > ways
+      # Every pinned room, word for word and pixel for pixel.
+      expect(grown["rooms"].first(core.size).map { |r| r.slice("key", "name", "decision", "depth", "x", "y") }).to eq(core)
+      expect(grown["rooms"].last(6)).to all(include("elaborated" => true))
+
+      get location_path(cave)
+      expect(response.body).to include("is-elaborated", "6 of these #{grown['rooms'].size} rooms are the dial") # the apostrophe is escaped in the page
+
+      # Listed as one change, and reverting takes the whole lot back.
+      change = cave.changes.find { |c| c["kind"] == "elaboration" }
+      expect(change["summary"]).to eq("Elaborated to 3 of 5 (6 rooms added)")
+      cave.revert!("elaboration")
+      expect(cave.reload.view["rooms"].map { |r| r.slice("key", "name", "decision", "depth", "x", "y") }).to eq(core)
+      expect(cave.overrides).not_to have_key("elaboration")
+    end
+
+    it "keeps an elaborated room the GM pinned as the dial rises, and through a reroll" do
+      cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+      cave = generate("goblin_cave", on: cave_node)
+
+      patch location_elaboration_path(cave), params: { level: "1" }
+      room = cave.reload.view["rooms"].find { |r| r["elaborated"] }
+      post location_pins_path(cave), params: { key: room["key"] }
+      expect(cave.reload.pinned?(room["key"])).to be(true)
+
+      # Turning it up appends: the pinned room is still that room.
+      patch location_elaboration_path(cave), params: { level: "4" }
+      expect(cave.reload.room(room["key"])).to include("name" => room["name"], "decision" => room["decision"])
+
+      # A level is not a layout, so unlike moved rooms and joined ways it
+      # survives a reroll.
+      post location_reroll_path(cave)
+      expect(cave.reload.elaboration).to eq(4)
+      expect(cave.view["rooms"].count { |r| r["elaborated"] }).to eq(8)
+    end
+
+    it "has no dial for a town" do
+      town = generate("village")
+      get location_path(town)
+      expect(response.body).not_to include("Elaboration")
+      patch location_elaboration_path(town), params: { level: "3" }
+      follow_redirect!
+      expect(response.body).to include("is a town")
+    end
+
     it "lists a reshaped dungeon's changes and takes each one back" do
       cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
       cave = generate("goblin_cave", on: cave_node)

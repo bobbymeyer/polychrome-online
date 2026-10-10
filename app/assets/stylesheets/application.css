@@ -788,6 +788,13 @@ details[open] > summary { margin-bottom: 16px; }
 .floorplan--editor [data-floorplan-path]:hover line.floorplan__path-hit { stroke: transparent; }
 /* A way the GM drew, told apart from the roll's by a finer dashed line. */
 .floorplan__path--added line { stroke-dasharray: 4 4; stroke-width: 1.5; }
+/* The elaboration dial's rooms and passages (Generators::Elaboration) read
+   as lighter than the core: the pinned rooms are the adventure, these are
+   the depth around them. */
+.floorplan__room.is-elaborated rect { stroke: var(--grey); }
+.floorplan__room.is-elaborated text { fill: var(--grey); }
+.floorplan__room.is-elaborated .floorplan__marker { fill: var(--grey); stroke: var(--grey); }
+.floorplan__path--elaborated line { stroke: var(--grey); stroke-width: 1.5; }
 
 .room-panel h3 { margin: 0 0 2px; }
 .room-panel h4 { margin: 12px 0 4px; }

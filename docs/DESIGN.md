@@ -272,6 +272,7 @@ Simple shapes carry meaning, and each one is explained in a legend next to the m
 | Lock on a path | A Wine Red padlock; hollow once opened |
 | Costly way in a dungeon | Dashed path with a black diamond at its middle |
 | A way the GM joined | A finer dashed line than the roll's, so the shape shows whose it is |
+| An elaboration room or passage | Drawn in Steel Grey, lighter than the core: the pinned rooms are the adventure, these are the depth around them |
 | Current room | The room filled Dark Blue |
 | Resolved room | Its marker shown in outline |
 
