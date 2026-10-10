@@ -216,12 +216,15 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 9. **The Ranger** has a hawk that stays and a hound for three turns.
 10. **Masks** are The Just Seven's, each worn by a guardian and dropped when it falls. They live in Oda's Armory, because items are a world's, but nothing else in Oda hands them out.
 
-## 8. Not done
+## 8. Dropped
 
-- **Steal tiers** (common, uncommon, rare): drop tables are already weighted, so they weren't needed.
+Bobby's call: none of these will be built.
+
+- **Steal tiers** (common, uncommon, rare): drop tables are already weighted.
 - **Mix** (two items into one).
 - **A giant's second phase** (growing on the field).
-- **Rumour-travelling shame:** a coward is known everywhere at once, not town by town.
+- **Rumour-travelling shame:** a coward stays known everywhere at once.
+- **Edition tooling** (versions, diffs, merging worlds) and **hardening imports against strangers.**
 
 ## 9. The Just Seven, a written campaign
 
