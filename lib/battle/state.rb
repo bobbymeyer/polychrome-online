@@ -11,7 +11,7 @@ module Battle
   # Closed vocabularies (§3.1). World authors compose from these; they never
   # extend them.
   PRIMITIVES = %w[physical elemental status heal drain buff debuff revive escape cleanse steal scan jump away
-                  shield imbue percent sap summon gather dispel quick mimic transform].freeze
+                  shield imbue percent sap summon gather dispel quick mimic transform grab].freeze
 
   # Parameters each primitive takes, split into required and optional
   # (optional ones have defaults in Battle::Effects). String-valued params
@@ -28,7 +28,9 @@ module Battle
     # spends unless hold is 1 (Draw, a Monk's finishers).
     # patience: patience% more power for every unit that has gone before
     # the user this round (a Courtsword draws last).
-    "physical" => { required: [], optional: %w[power hits type against bonus recoil grudge pierce unresisted with boost hold patience] },
+    # stumble: a blow that misses leaves the user down for that many turns
+    # (a missed Dive grounds the bird).
+    "physical" => { required: [], optional: %w[power hits type against bonus recoil grudge pierce unresisted with boost hold patience stumble] },
     "elemental" => { required: %w[type power], optional: %w[hits against bonus recoil grudge pierce unresisted with boost hold patience] },
     "status" => { required: %w[kind], optional: %w[chance duration] },
     # triage: up to triage% more the lower the target's HP.
@@ -50,8 +52,9 @@ module Battle
     "jump" => { required: [], optional: %w[power type] },
     # Takes someone off the field for some of their turns (Battle::Effects#away):
     # who "self" (Jump, Hide, Vanish) or "target" (Banish, Knockback).
-    # Power > 0: they come back striking.
-    "away" => { required: [], optional: %w[who duration power chance type] },
+    # Power > 0: they come back striking. aloft 1: up high rather than
+    # gone (circling): out of reach of blows, but a spell still finds them.
+    "away" => { required: [], optional: %w[who duration power chance type aloft] },
     # A barrier that takes the next power-scaled-by-mag damage (Barrier, Stoneskin).
     "shield" => { required: %w[power], optional: %w[duration] },
     # Attack strikes with this type for a while (Flame Blade, Venom Edge).
@@ -77,11 +80,17 @@ module Battle
     # The last move an ally made, again, from the user, free.
     "mimic" => { required: [], optional: [] },
     # Puts on a mask from the battle's masks (Battle::Masks).
-    "transform" => { required: %w[mask], optional: [] }
+    "transform" => { required: %w[mask], optional: [] },
+    # Holds the target fast (held: it loses its turns) while the user
+    # stands and stays, for `duration` of the target's turns. A blow from
+    # the target's side on the user breaks it: any blow ("breaks" "hit",
+    # the default) or only one of a type (heat opens a claw). Torn free,
+    # the held one loses tear% of its max HP (Battle::Effects#grab).
+    "grab" => { required: [], optional: %w[chance duration breaks tear] }
   }.freeze
-  PRIMITIVE_STRING_PARAMS = %w[type kind stat who against creature with mask].freeze
+  PRIMITIVE_STRING_PARAMS = %w[type kind stat who against creature with mask breaks].freeze
   # The flags among the params: 0 or 1.
-  PRIMITIVE_FLAGS = %w[unresisted hold boon stays].freeze
+  PRIMITIVE_FLAGS = %w[unresisted hold boon stays aloft].freeze
   MAX_SUMMON_TURNS = 5
   # What a bonus can be against, beside statuses and types.
   # wounded: at WOUNDED_PERCENT of its HP or less. giant: a thing woken
@@ -99,6 +108,10 @@ module Battle
   MAX_HP_COST = 90
   AWAY_WHO = %w[self target].freeze
   MAX_AWAY_TURNS = 5
+  MAX_GRAB_TURNS = 5
+  MAX_STUMBLE = 3
+  # Most waves of enemies after the first.
+  MAX_WAVES = 5
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
   TYPES = Types::ALL # the base world's; a battle's own are in its state
   AFFINITIES = Types::AFFINITIES
@@ -114,6 +127,8 @@ module Battle
   # stop:    loses its turns; a blow doesn't break it.
   # berserk: attacks on its own, harder (Str +50%).
   # confuse: attacks anyone, friend or foe, until a blow brings it round.
+  # rage:    attacks one of its own side (someone else's rage, aimed at a
+  #          sibling: Her Song), until a blow brings it round.
   # charged: its next move that deals or restores HP is twice as strong.
   # imbued:  Attack strikes with the status's type (the imbue primitive).
   # shield:  takes damage out of the status's amount first (the shield primitive).
@@ -127,9 +142,11 @@ module Battle
   # reloading: spent by a big shot (a move's reload): it loses its turns.
   # sheathed, chi: stacking (STACKING_STATUSES), gathered and spent.
   # masked:  wearing a mask (Battle::Masks); spent: worn out after one.
+  # held:    grabbed: loses its turns until a blow on its holder breaks the
+  #          grip, the holder falls or leaves, or it wears off (the grab primitive).
   STATUSES = %w[poison sleep paralyze silence blind haste slow cover airborne away
                 aggro stop berserk confuse charged imbued shield charging doom down
-                burn regen reraise reflect iai reloading sheathed chi masked spent].freeze
+                burn regen reraise reflect iai reloading sheathed chi masked spent held rage].freeze
   # Counted in stacks rather than turns; they last until spent or KO.
   STACKING_STATUSES = %w[sheathed chi].freeze
   # Off the field: nobody can reach them, and they can't be commanded.
@@ -145,7 +162,7 @@ module Battle
   HARMFUL_STATUSES = (STATUSES - BOONS - %w[airborne away charging reloading masked spent]).freeze
   # Only their own primitives make these: they carry more than a duration.
   # (down: a world's One More rule knocks units down, Battle::Resolver#one_more.)
-  PRIMITIVE_STATUSES = %w[airborne imbued shield charging down reloading sheathed chi masked spent].freeze
+  PRIMITIVE_STATUSES = %w[airborne imbued shield charging down reloading sheathed chi masked spent held].freeze
   ABILITY_KINDS = %w[attack skill magic].freeze
   COMMAND_KINDS = %w[ability item defend flee custom].freeze
   SIDES = %w[party enemy].freeze
@@ -161,9 +178,9 @@ module Battle
 
   # Statuses that stop a unit from taking its turn (and from being asked
   # for input).
-  DISABLING_STATUSES = %w[sleep paralyze stop down reloading].freeze
-  # They act on their own: berserk attacks, confuse attacks anyone.
-  RUNAWAY_STATUSES = %w[berserk confuse].freeze
+  DISABLING_STATUSES = %w[sleep paralyze stop down reloading held].freeze
+  # They act on their own: berserk attacks, confuse attacks anyone, rage an ally.
+  RUNAWAY_STATUSES = %w[berserk confuse rage].freeze
   # No command while these last: the unit's turn is already spoken for.
   NO_INPUT_STATUSES = (DISABLING_STATUSES + OUT_OF_REACH_STATUSES + RUNAWAY_STATUSES + %w[charging]).freeze
   # What a job gives beyond numbers (Battle::Effects, #take_turn):
@@ -219,7 +236,12 @@ module Battle
     # rules: a world's battle rules, on top of the game's own (RULES).
     # masks:  what the transform primitive puts on (Battle::Masks):
     #         { "storm_mask" => { name:, type:, duration:, abilities: [...], image: } }
-    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {}, masks: {})
+    # field:  the field it's fought on, in stages (Battle::Conditions): the water rising, the lights out.
+    # waves:  more enemies, in waves after the first ([[spec, ...], ...]):
+    #         when every enemy on the field is down, the next wave comes on
+    #         (Context#check_end), and the fight is won when the last falls.
+    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {}, masks: {},
+              field: nil, waves: [])
       rules = normalize(rules).select { |rule, on| RULES.include?(rule) && on == true }
       types = types ? Types.validate!(normalize(types)) : normalize(Types::DEFAULT)
       known = Types.list(types)
@@ -256,12 +278,19 @@ module Battle
       end
 
       units = normalize(party).map { |spec| unit(spec, "party", known) }
-      units += expand_enemies(normalize(enemies)).map { |spec| unit(spec, "enemy", known) }
+      # Every wave lettered together, so a goblin in the second wave isn't Goblin A again.
+      waves = normalize(waves)
+      raise ArgumentError, "a fight has at most #{MAX_WAVES} waves after the first" if waves.size > MAX_WAVES
 
-      duplicate = units.map { |u| u["id"] }.tally.find { |_, n| n > 1 }
+      tagged = ([ normalize(enemies) ] + waves).each_with_index.flat_map { |specs, wave| specs.map { |spec| spec.merge("wave" => wave) } }
+      foes = expand_enemies(tagged).map { |spec| [ spec["wave"], unit(spec.except("wave"), "enemy", known) ] }
+      units += foes.select { |wave, _| wave.zero? }.map(&:last)
+      reserves = (1..waves.size).map { |wave| foes.select { |w, _| w == wave }.map(&:last) }.reject(&:empty?)
+
+      duplicate = (units + reserves.flatten).map { |u| u["id"] }.tally.find { |_, n| n > 1 }
       raise ArgumentError, "duplicate unit id #{duplicate.first}" if duplicate
 
-      units.each do |u|
+      (units + reserves.flatten).each do |u|
         missing = (u["abilities"] + u.fetch("phases", []).flat_map { |p| p["becomes"]["abilities"] }).uniq - library.keys
         raise ArgumentError, "#{u['id']} knows unknown abilities: #{missing.join(', ')}" if missing.any?
         if u["desperation"] && !library.key?(u["desperation"])
@@ -285,6 +314,8 @@ module Battle
         "inputs" => {}
       }.merge(rules.any? ? { "rules" => rules } : {})
        .merge(faces.any? ? { "masks" => faces } : {})
+       .merge((ground = Conditions.build(normalize(field), known)) ? { "field" => ground } : {})
+       .merge(reserves.any? ? { "reserves" => reserves } : {})
     end
 
     # Where the fight is has a type; anywhere in particular is the plain one.
@@ -475,7 +506,7 @@ module Battle
       when "single_enemy"
         return "is not an enemy" unless enemy
         return "is down" unless target["hp"].positive? && !target["gone"]
-        return "is out of reach" if out_of_reach?(target) && !ability["reach"]
+        return "is out of reach" unless reaches?(ability, target)
       when "single_ally"
         if enemy
           return "is not an ally" unless heals?(ability)
@@ -493,6 +524,17 @@ module Battle
 
     def out_of_reach?(unit)
       unit["statuses"].any? { |s| OUT_OF_REACH_STATUSES.include?(s["kind"]) }
+    end
+
+    # Up high rather than gone (an away that's aloft: circling).
+    def aloft?(unit)
+      unit["statuses"].any? { |s| s["kind"] == "away" && s["aloft"] }
+    end
+
+    # Can this move find this unit? Anyone on the field; anyone off it, for
+    # a move with the reach; and someone aloft, for a spell.
+    def reaches?(ability, unit)
+      !out_of_reach?(unit) || ability["reach"] == true || (ability["kind"] == "magic" && aloft?(unit))
     end
 
     # The targets a single-target move may be aimed at: allies first, then
@@ -514,6 +556,10 @@ module Battle
       reload = ability.fetch("reload", 0)
       raise ArgumentError, "#{id}: reload must be 0 to #{MAX_RELOAD} turns" unless reload.is_a?(Integer) && reload.between?(0, MAX_RELOAD)
       raise ArgumentError, "#{id}: reach is true or false" unless [ nil, true, false ].include?(ability["reach"])
+      raise ArgumentError, "#{id}: again is true or false" unless [ nil, true, false ].include?(ability["again"])
+      interrupt = ability.fetch("interrupt", 0)
+      raise ArgumentError, "#{id}: interrupt must be 0 to 100% of the user's HP" unless interrupt.is_a?(Integer) && interrupt.between?(0, 100)
+      raise ArgumentError, "#{id}: only a move that takes turns to go off can be interrupted" if interrupt.positive? && charge.zero?
       raise ArgumentError, "#{id}: unknown kind #{ability['kind']}" unless ABILITY_KINDS.include?(ability.fetch("kind", "skill"))
       raise ArgumentError, "#{id}: unknown targeting #{ability['target']}" unless TARGETINGS.include?(ability["target"])
 
@@ -553,6 +599,7 @@ module Battle
           raise ArgumentError, "#{id}: pierce must be 0 to 100" if effect["pierce"] && !effect["pierce"].between?(0, 100)
           raise ArgumentError, "#{id}: boost must be 0 to #{MAX_BONUS}" if effect["boost"] && !effect["boost"].between?(0, MAX_BONUS)
           raise ArgumentError, "#{id}: patience must be 0 to #{MAX_BONUS}" if effect["patience"] && !effect["patience"].between?(0, MAX_BONUS)
+          raise ArgumentError, "#{id}: stumble must be 1 to #{MAX_STUMBLE} turns" if effect["stumble"] && !effect["stumble"].between?(1, MAX_STUMBLE)
           raise ArgumentError, "#{id}: unknown status #{effect['with']}" if effect["with"] && !STATUSES.include?(effect["with"])
           # "terrain": the type of where the fight is (a Geomancer's arts).
           typed = known.include?(effect["type"]) || effect["type"] == "terrain"
@@ -571,6 +618,10 @@ module Battle
           raise ArgumentError, "#{id}: gather 1 to #{MAX_STACKS}" if effect["amount"] && !effect["amount"].between?(1, MAX_STACKS)
         when "cleanse"
           raise ArgumentError, "#{id}: unknown status #{effect['kind']}" if effect["kind"] && !STATUSES.include?(effect["kind"])
+        when "grab"
+          raise ArgumentError, "#{id}: a grab lasts 1 to #{MAX_GRAB_TURNS} turns" if effect["duration"] && !effect["duration"].between?(1, MAX_GRAB_TURNS)
+          raise ArgumentError, "#{id}: a grab breaks on a hit or a type, not #{effect['breaks']}" if effect["breaks"] && !(effect["breaks"] == "hit" || known.include?(effect["breaks"]))
+          raise ArgumentError, "#{id}: tear must be 0 to 100" if effect["tear"] && !effect["tear"].between?(0, 100)
         when "buff", "debuff"
           raise ArgumentError, "#{id}: cannot modify #{effect['stat']}" unless Stats::MODIFIABLE.include?(effect["stat"])
         when "heal", "drain", "shield"

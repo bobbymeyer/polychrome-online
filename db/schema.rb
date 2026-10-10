@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_10_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_10_170000) do
   create_table "abilities", force: :cascade do |t|
     t.integer "world_id", null: false
     t.string "slug", null: false
@@ -32,6 +32,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_10_150000) do
     t.integer "field_power", default: 0, null: false
     t.integer "reload_turns", default: 0, null: false
     t.boolean "reach", default: false, null: false
+    t.integer "interrupt", default: 0, null: false
+    t.boolean "again", default: false, null: false
     t.index ["world_id", "slug"], name: "index_abilities_on_world_id_and_slug", unique: true
     t.index ["world_id"], name: "index_abilities_on_world_id"
   end

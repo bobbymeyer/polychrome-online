@@ -10,6 +10,20 @@
 # secrets), then the twist past the guardian.
 module Seeds
   module JustSeven
+    # The fields three of the Sword's fights and the siege are fought on
+    # (Battle::Conditions): the water rising a stage when a fight runs long,
+    # and the lights going out partway.
+    ANKLE = { name: "Ankle-deep", line: "Cold water round the ankles, and the hiss of every spark going out.", rounds: 4,
+              conditions: [ { kind: "weaken", type: "fire", amount: 50 } ] }.freeze
+    WAIST = { name: "Waist-deep", line: "The water's up to the waist. Every step is a wade.", rounds: 4,
+              conditions: [ { kind: "weaken", type: "fire", amount: 50 }, { kind: "slow", amount: 25 } ] }.freeze
+    CHEST = { name: "Chest-deep", line: "Chest-deep, and cold. Thunder in here would go through everyone.",
+              conditions: [ { kind: "weaken", type: "fire", amount: 50 }, { kind: "slow", amount: 25 }, { kind: "conduct", type: "electric" },
+                            { kind: "drown", amount: 3, spares: "water" } ] }.freeze
+    LIT = { name: "Lamplit", rounds: 2, conditions: [] }.freeze
+    LIGHTS_OUT = { name: "Lights out", line: "The power goes: the die-hards have thrown the switch. Black, and singing.",
+                   conditions: [ { kind: "dark", amount: 30 } ] }.freeze
+
     PLACES = {
       "The Steps" => {
         kind: "town", x: 800, y: 760, visible: true, template: "island_city",
@@ -36,8 +50,8 @@ module Seeds
                "3 Setback: chitin armour, beautiful, lying there. It locks on after five minutes' wear and comes off only when the Crab's mask " \
                "does. Greaves halve movement, a vambrace takes an arm, a helm blinds, a breastplate suffocates (three failures shatter the ribs: " \
                "half HP, once). Play the impairments as statuses or fiction; it's in the bag as Chitin Plate.\n" \
-               "4 Climax: the Crab. Shelled, high defence; Pincer; Clamp holds someone (Stop): heat, rhythm or grease frees them, force only " \
-               "clenches it harder. Every third turn it Hardens (defence up, reflect). Below half its shell breaks: low defence, two pincers a turn, " \
+               "4 Climax: the Crab. Shelled, high defence; Pincer; Clamp holds someone fast: a fire blow on the Crab frees them (the engine does that); " \
+               "rhythm or grease is a Try Something, and force only clenches it harder. Every third turn it Hardens (defence up, reflect). Below half its shell breaks: low defence, two pincers a turn, " \
                "no more Harden. Mask breaks: an ordinary crab, and all the locked chitin falls off at once.\n" \
                "5 Twist: a colossal, plainly machined ankle joint. The first proof something mechanical-biological lives under the city.",
         rooms: [
@@ -61,8 +75,8 @@ module Seeds
                "hauled in. A wrong performance leaves the foot shut and the golems alerted (call a fight: Debris Golems).\n" \
                "3 Setback: inside, golems meditate by slowly spinning to gather karma. Spin along the whole way: an Agility check each stretch, or " \
                "fall Dizzy into the fight (weary, or confuse at the start of the battle; your call).\n" \
-               "4 Climax: the Raccoon. Scratch; Pilfer steals a good status (the notes' item theft: the GM can take a bag item too, buried in the " \
-               "hoard); Junk Toss telegraphed for everyone; Hide breaks target lock. Below half: more frantic, a wider Junk Avalanche. The kid " \
+               "4 Climax: the Raccoon. Scratch; Pilfer takes an item from the party's bag into the hoard (it comes back when " \
+               "the Raccoon falls; gear is the GM's to take by hand); Junk Toss telegraphed for everyone; Hide breaks target lock. Below half: more frantic, a wider Junk Avalanche. The kid " \
                "commentates every steal. Mask breaks: an ordinary raccoon; everything stolen resurfaces; the kid is fine, in a nest of trinkets.\n" \
                "5 Twist: the debris is plainly Gnallix-era failed prototypes. No further twist needed.",
         rooms: [
@@ -91,8 +105,8 @@ module Seeds
                "hacking, forcing or bare hands anger them (it goes off).\n" \
                "3 Setback: deep in the vines something gleams: the combiner prism, already there for reasons nobody knows. The Mantis just uses " \
                "the spot as a lure. Reaching for it springs the ambush straight into the fight.\n" \
-               "4 Climax: the Orchid Mantis. It starts as A Striking Orchid; the first hit breaks the illusion. Riposte answers hits (the notes have " \
-               "it strike first, 1/2/3 a round across its molts; the engine answers after, at 50%, 75%, then every hit). Lure is telegraphed. " \
+               "4 Climax: the Orchid Mantis. It starts as A Striking Orchid; the first hit breaks the illusion. Riposte answers a blow up close before it " \
+               "lands: half the time, then three times in four, then every time across its molts. Spells and shots from range get no answer. Lure is telegraphed. " \
                "Molts at two-thirds and one-third make it more ornate, not more menacing. Mid-fight, a look into the prism shows a coin-filled " \
                "room elsewhere in the garden.\n" \
                "5 Twist: unscrewing the prism (reverse-threaded) opens the way to the treasury, mostly emptied by the grandfather. The coins " \
@@ -120,8 +134,9 @@ module Seeds
                "grievance. Challenged, he can't refuse without exposing the oracle (refusing makes him a coward). He can't open the slit on his own " \
                "case, so the swordsman does: green, as always. He can't protest without confirming he knew.\n" \
                "4 Climax: opening the chamber door wakes the Cormorant (he always knew; it's why he never went in). Hooked Bill on whoever hit it " \
-               "last; Circle takes it out of reach for two turns (a Ranger's reach still hits); Dive is telegraphed on whoever hit it last (land a " \
-               "hit first to redirect; the engine picks at random, so steer it as GM). A missed Dive grounds it for a turn. Wing Spread: the first " \
+               "last; Circle takes it up out of reach of blows for two turns (a Ranger's reach or a spell still finds it); Dive is telegraphed " \
+               "on whoever hit it last, and goes for whoever has hit it last when it drops (land a hit first to redirect). A missed Dive grounds " \
+               "it for a turn. Wing Spread: the first " \
                "real wind in weeks, uncommented. Below half: more Dive and Circle.\n" \
                "5 Twist: testing the splitter proves the oracle was pure, unchanging optics. The court's legitimising ritual means nothing. The " \
                "Cormorant flies out through the slit toward the sea (Sign 2's holdout).",
@@ -142,13 +157,15 @@ module Seeds
                "1 Entrance: the long tide strands ships in the mud and exposes a hatch in the blade.\n" \
                "2 Puzzle: no stairs, an old flood-ballast lift. Work the ballast valves (a gauge by the hatch), climb the fuller groove on old " \
                "rigging, or hand-crank the winch. Brute strength does nothing.\n" \
-               "3 Setback: three fights under rising water, a stage each. A fight that runs long pushes the water up a stage early. Ankle-deep: " \
-               "fire weakened, moray eels that bite and hide. Waist-deep: everyone slower, a barnacle crust (thunder is the clean answer). " \
-               "Chest-deep: thunder hits the whole party and a small drowning tick each round; a giant octopus grabs and inks.\n" \
-               "4 Climax: the Toad. Hot Skin burns whoever hits it. Belly Flash is telegraphed (enough damage on the telegraph turn interrupts it " \
-               "and stuns it: a GM call). Dial Spin knocks the targeting lamp around: a sweeping light each round until someone spends an " \
-               "action to jam the dial. Below half, Tide Call: a three-turn flood countdown; at zero the water douses the lamp, hits everyone hard " \
-               "and the toad gets a free turn. Break the mask first.\n" \
+               "3 Setback: three fights under rising water, a stage each, fought on the field (the engine does it): a fight that runs " \
+               "four rounds pushes the water up a stage, and the GM can raise it sooner. Ankle-deep: fire at half strength, moray eels that " \
+               "bite and hide. Waist-deep: everyone a quarter slower, a barnacle crust (thunder is the clean answer). Chest-deep: thunder " \
+               "goes through everyone on a side, and the water takes a little from everyone but the sea's own each round; a giant octopus " \
+               "grabs and inks.\n" \
+               "4 Climax: the Toad. Hot Skin burns whoever touches it: a blow up close, not a spell or a shot. Belly Flash is telegraphed: an eighth of its HP in damage before it goes off " \
+               "interrupts it and stuns it for a turn. Dial Spin knocks the targeting lamp around: a sweeping light each round until someone spends an " \
+               "action to jam the dial. Below half, Tide Call: a three-turn flood countdown; at zero the water douses the lamp " \
+               "(no more Dial Spin), hits everyone hard and the toad goes again at once. Break the mask first.\n" \
                "5 Twist: read the dial against the coins: a kill list. Then set and lock the beam on the city's own heart, the cathedral. The beam " \
                "stops sweeping; the cult reads it as a sign, raising pressure at the Torso. The steady light lets the splitter make seven clean " \
                "beams. Fleet Crasher does not follow it: it's only a lock.",
@@ -157,9 +174,9 @@ module Seeds
         rooms: [
           { name: "The hatch", decision: { kind: "event", text: "Across the stinking seabed, a hatch in the blade, sealed for centuries, crusted, and unplundered." } },
           { name: "The ballast lift", decision: { kind: "trap", text: "An old lift car on ballast tanks. Muscle won't move it. (hurt 10, 1)" } },
-          { name: "Ankle-deep", decision: { kind: "encounter", monsters: { moray_eel: 3 } } },
-          { name: "Waist-deep", decision: { kind: "encounter", monsters: { barnacle_swarm: 2 } } },
-          { name: "Chest-deep", decision: { kind: "encounter", monsters: { giant_octopus: 1 } } },
+          { name: "Ankle-deep", decision: { kind: "encounter", monsters: { moray_eel: 3 }, field: { stages: [ ANKLE, WAIST, CHEST ] } } },
+          { name: "Waist-deep", decision: { kind: "encounter", monsters: { barnacle_swarm: 2 }, field: { stages: [ WAIST, CHEST ] } } },
+          { name: "Chest-deep", decision: { kind: "encounter", monsters: { giant_octopus: 1 }, field: { stages: [ CHEST ] } } },
           { name: "The lamp room", decision: { kind: "boss", monsters: { fire_bellied_toad: 1 } } }
         ],
         twist: [ { name: "The dial", text: "An engraved ring of city names, each with an angle, around the lamp. The beam used to point at the next one." } ]
@@ -177,10 +194,11 @@ module Seeds
                "1 Entrance: the culvert. Plant the clue: the heartbeat thumping through the pipes.\n" \
                "2 Puzzle: the valves were closed in ritual order and won't be forced: persuade a compliant clergy member for the sequence, or read " \
                "the heartbeat through the pipes.\n" \
-               "3 Setback: die-hards and the Duel-Master; meant non-lethal and comic, echoing the lounge mob. Lights out partway (Siege 2).\n" \
+               "3 Setback: die-hards and the Duel-Master; meant non-lethal and comic, echoing the lounge mob. Lights out partway (Siege 2): the field " \
+               "goes dark after two rounds, and blows land less often (or the GM throws the switch sooner).\n" \
                "4 Climax: the Bull (Gore; telegraphed Stampede; Steam Vent; Overclock below half: acts twice), then with no rest the Viper out of " \
-               "its cracked chest (Fangs poison whoever is hurt most; telegraphed Spore Mist; Coil holds someone; Venom Surge below half). In the " \
-               "notes, striking the Viper frees a coiled ally with a burst of damage; play that as GM.\n" \
+               "its cracked chest (Fangs poison whoever is hurt most; telegraphed Spore Mist; Coil holds someone; Venom Surge below half). Any " \
+               "blow on the Viper tears a coiled ally free, and that costs them a tenth of their HP.\n" \
                "5 Twist: behind the bull, a reactor that is plainly a heart, beating with the thump felt in the Left Leg pipes since Act 1.\n" \
                "Capstone (scene: The heart): restore the city's power; the heart settles; then Fleet Crasher's challenge-call comes through the pipes " \
                "and the heart spikes, and every light in the city surges with it. Does she side with her brother? Mount the splitter in the " \
@@ -190,7 +208,7 @@ module Seeds
         rooms: [
           { name: "The culvert", decision: { kind: "event", text: "An old royal culvert into the cistern, dark and dripping. Through the pipes, a slow thump, like a heartbeat." } },
           { name: "The ritual valves", decision: { kind: "trap", text: "Valves closed in a ritual order, and chained. Force them and the pipes kick back. (hurt 15)" } },
-          { name: "The barred sanctum", decision: { kind: "encounter", monsters: { die_hard: 3 } } },
+          { name: "The barred sanctum", decision: { kind: "encounter", monsters: { die_hard: 3 }, field: { stages: [ LIT, LIGHTS_OUT ] } } },
           { name: "The generator hall", decision: { kind: "boss", monsters: { mechanical_bull: 1 } } }
         ],
         twist: [ { name: "The heart", text: "Behind the cracked bull, the generator: chambers, valves, conduit grown around something alive, beating." } ]
@@ -212,13 +230,14 @@ module Seeds
                "prepared before the jaw opens; nothing carries from here into the battle. Every room mentions the sea pulling back and something " \
                "coming over the seabed. No clock: Sign 7 is fixed to the jaw. No permission gate.\n" \
                "1 Entrance: the seven beams open the jaw in public view, the Pirate King's flag as a face, and the deafening citywide chorus " \
-               "(scene: The jaw opens; switch on The Steps' chorus mode, fill the Signs). Die-hard remnants hold the hill in suicidal waves; the " \
-               "party is strong by now and mows through. A power-fantasy capstone.\n" \
+               "(scene: The jaw opens; switch on The Steps' chorus mode, fill the Signs). Die-hard remnants hold the hill in suicidal waves (three of " \
+               "them, one fight: each comes on as the last falls); the party is strong by now and mows through. A power-fantasy capstone.\n" \
                "2 Setback: her unshielded rage bleeds through the walls: an overwhelming, competitive urge to attack each other. The cost is HP and " \
                "resources, never time. A sharp character may notice it isn't their own, and it's aimed at a sibling.\n" \
                "3 Climax: Amethyst 7A (he lives here: he's the boss). He fights for real: he thinks they've come to stop the mecha, and the tide " \
                "going out proves they're too late. Autocannon; Missile Lock telegraphed on a name (guard, heal, or redirect by hitting him first); " \
-               "Laser Sweep hits everyone; Her Song every third turn confuses (her rage, not his power; it never escalates); Overcharge below " \
+               "Laser Sweep hits everyone; Her Song every third turn fills the party with " \
+               "rage, and the raging attack each other until a blow brings them round (her rage, not his power; it never escalates); Overcharge below " \
                "half: two actions a turn, wide open. Mask breaks: the minimech powers down and he steps out. Told Fleet Crasher is really coming, " \
                "he's an excited spectator. Whether he survives or holds a mask in the finale is yours.\n" \
                "4 Twist: the combiner into the third-eye socket (only once the Violet mask is taken: all seven colours accounted for).\n" \
@@ -229,7 +248,7 @@ module Seeds
                "with fewer than four, each wears two (half masks).",
         rooms: [
           { name: "The jaw", decision: { kind: "event", text: "Seven beams strike the dome, and the face on the hill opens its jaw. It is the Pirate King's flag. And it sings." } },
-          { name: "The hill", decision: { kind: "encounter", monsters: { die_hard: 4 } } },
+          { name: "The hill", decision: { kind: "encounter", monsters: { die_hard: 3 }, waves: [ { die_hard: 3 }, { die_hard: 4 } ] } },
           { name: "The rage", decision: { kind: "trap", text: "A rage comes through the walls: you want to hit the person next to you, very badly. (hurt 20, weary 20)" } },
           { name: "The sealed room", decision: { kind: "boss", monsters: { amethyst_7a: 1 } } }
         ],

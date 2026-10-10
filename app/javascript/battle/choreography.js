@@ -49,6 +49,10 @@ const STEPS = {
     b.popup(tl, e.target, e.left > 0 ? `BARRIER −${e.absorbed}` : "BARRIER BROKEN", "status", at)
     return 260
   },
+  raging(b, tl, e, at) {
+    if (e.target) b.popup(tl, e.actor, "RAGE", "status", at)
+    return 220
+  },
   confused(b, tl, e, at) {
     if (e.target) b.popup(tl, e.actor, "CONFUSED", "status", at)
     return 220
@@ -144,6 +148,11 @@ const STEPS = {
   unit_joined(b, tl, e, at) {
     // The board after the beat has them; here, the entrance.
     b.banner(tl, e.guest ? `${e.name} joins the party!` : `${e.name} appears!`, at, "gm")
+    return 900
+  },
+  // The next wave comes on as the field clears (the board after the beat has them).
+  wave(b, tl, e, at) {
+    b.banner(tl, e.left > 0 ? "Another wave!" : "The last wave!", at, "gm")
     return 900
   },
   summoned(b, tl, e, at) {
@@ -277,6 +286,27 @@ const STEPS = {
     b.popup(tl, e.target, `Stole ${e.name}!`, "status", at)
     gesture(tl, b.sprite(e.actor), "lunge", at, b.facing(e.actor))
     return 600
+  },
+  // The field changes (Battle::Conditions): the water rising, the lights out.
+  field_changed(b, tl, e, at) {
+    b.banner(tl, e.name, at)
+    return 600
+  },
+  // A telegraph broken by the damage it took while winding up.
+  interrupted(b, tl, e, at) {
+    b.popup(tl, e.unit, "INTERRUPTED", "crit", at)
+    gesture(tl, b.sprite(e.unit), "shake", at)
+    return 420
+  },
+  stumbled(b, tl, e, at) {
+    b.popup(tl, e.actor, "GROUNDED", "status", at)
+    gesture(tl, b.sprite(e.actor), "shake", at)
+    return 360
+  },
+  // A thief fell (or the party won the field): what it took is the party's again.
+  recovered(b, tl, e, at) {
+    b.popup(tl, e.unit, `${e.names.join(", ")} back`, "status", at)
+    return 450
   },
   scan(b, tl, e, at) {
     b.popup(tl, e.target, "Scanned", "status", at)

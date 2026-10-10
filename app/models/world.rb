@@ -102,12 +102,15 @@ class World < ApplicationRecord
   # Build a battle straight from the books.
   #   world.battle(seed: 1, party: [...unit specs], monsters: { "goblin" => 3 })
   # extra_enemies: engine unit specs to add as they are (antagonists).
-  def battle(seed:, party:, monsters:, escapable: true, items: {}, terrain: nil, extra_enemies: [])
-    by_slug = self.monsters.where(slug: monsters.keys).index_by(&:slug)
-    enemies = monsters.map do |slug, count|
-      by_slug.fetch(slug.to_s) { raise ActiveRecord::RecordNotFound, "no monster #{slug} in #{self.slug}" }.to_engine(count: count)
-    end + extra_enemies
+  # waves: more fights after the first, { slug => count } each: the next comes on when the field is clear.
+  def battle(seed:, party:, monsters:, escapable: true, items: {}, terrain: nil, extra_enemies: [], field: nil, waves: [])
+    by_slug = self.monsters.where(slug: monsters.keys + waves.flat_map(&:keys)).index_by(&:slug)
+    specs = lambda do |fight|
+      fight.map { |slug, count| by_slug.fetch(slug.to_s) { raise ActiveRecord::RecordNotFound, "no monster #{slug} in #{self.slug}" }.to_engine(count: count) }
+    end
+    enemies = specs.(monsters) + extra_enemies
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: ability_library, escapable: escapable, items: items,
-                        terrain: terrain, types: type_chart.to_engine, summons: summon_library, rules: battle_rules, masks: mask_library)
+                        terrain: terrain, types: type_chart.to_engine, summons: summon_library, rules: battle_rules, masks: mask_library, field: field,
+                        waves: waves.map(&specs))
   end
 end

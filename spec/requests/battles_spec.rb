@@ -231,6 +231,20 @@ RSpec.describe "Battle screen", type: :request do
     expect(response.body).to include("Fast animations")
   end
 
+  it "shows the GM the field the fight is on, and lets them move it on" do
+    flooded = start_battle(field: { "stages" => [ { "name" => "Waist-deep", "rounds" => 4, "conditions" => [ { "kind" => "slow", "amount" => 25 } ] },
+                                                  { "name" => "Chest-deep", "conditions" => [ { "kind" => "conduct", "type" => "fire" } ] } ] })
+    sit_in_battle(flooded, "gm")
+    get battle_panel_path(flooded)
+    expect(page.text).to include("The field", "Waist-deep: everyone's Agi −25%", "rises after 4 rounds", "On to Chest-deep")
+
+    post battle_actions_path(flooded), params: { gm: { op: "field", stage: "1" } }
+    expect(flooded.reload.state.dig("field", "stage")).to eq(1)
+    expect(flooded.battle_events.map(&:payload)).to include(a_hash_including("type" => "field_changed", "name" => "Chest-deep"))
+    get battle_panel_path(flooded)
+    expect(page.text).to include("Chest-deep: Fire hits the whole side", "Back to Waist-deep")
+  end
+
   it "shows only the battle: overrides, reinforcements and pacing behind GM controls, Fast animations in the Menu" do
     sit_in_battle(battle, "gm")
     get battle_panel_path(battle)

@@ -47,6 +47,7 @@ module Battle
       when "quick" then quick(ctx, actor, target)
       when "mimic" then ctx.follow_ups << [ :mimic, actor ]
       when "transform" then Masks.put_on(ctx, actor, effect)
+      when "grab" then grab(ctx, actor, target, effect)
       else raise Error, "unknown primitive #{effect['primitive']}"
       end
     end
@@ -58,6 +59,7 @@ module Battle
     # whether it worked.
     def steal(ctx, actor, target, effect)
       return steal_boon(ctx, actor, target, effect) if effect["boon"] == 1
+      return lift(ctx, actor, target, effect) if actor["side"] == "enemy" && target["side"] == "party"
 
       drops = target.fetch("drops", [])
       if drops.empty? || target["stolen"]
@@ -75,6 +77,27 @@ module Battle
       ctx.emit(:steal, actor: actor["id"], target: target["id"], item: drop["item"], name: drop.fetch("name", drop["item"]), roll: roll, needed: Rng.target(chance))
     end
 
+    # An enemy's steal on the party: one of the party's battle items (the
+    # bag everyone shares), weighted by how many of each there are. The
+    # thief keeps it until it falls, or the party wins the field, and then
+    # it's the party's again (Context#give_back); a thief that gets away
+    # takes it with it. The same rolls as a steal, in the same order.
+    def lift(ctx, actor, target, effect)
+      bag = ctx.state.fetch("items", {}).values.select { |item| item["count"].positive? }
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "nothing_to_steal") if bag.empty?
+
+      chance = (effect.fetch("chance", 50) + (ctx.stat(actor, "agi") - ctx.stat(target, "agi"))).clamp(5, 95)
+      success, roll = ctx.rng.d100(chance)
+      pick = ctx.rng.int(bag.sum { |item| item["count"] })
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "steal_failed", roll: roll, needed: Rng.target(chance)) unless success
+
+      item = bag.find { |i| (pick -= i["count"]).negative? }
+      item["count"] -= 1
+      (actor["pilfered"] ||= []) << item["id"]
+      ctx.emit(:steal, actor: actor["id"], target: target["id"], item: item["id"], name: item["name"], left: item["count"],
+                       roll: roll, needed: Rng.target(chance))
+    end
+
     # steal(boon: 1): one of the target's good statuses (STEALABLE_BOONS,
     # the first it has), moved to the thief as it was. The same rolls as a
     # steal, in the same order.
@@ -90,6 +113,31 @@ module Battle
       actor["statuses"].reject! { |s| s["kind"] == boon["kind"] }
       actor["statuses"] << boon
       ctx.emit(:steal, actor: actor["id"], target: target["id"], status: boon["kind"], roll: roll, needed: Rng.target(chance))
+    end
+
+    # grab(chance, duration, breaks, tear): the target is held fast by the
+    # user (held: it loses its turns) for `duration` of its turns, unless
+    # it's freed first (Context#free_from): a blow from its side on the
+    # user breaks the grip ("breaks": any blow, "hit", or only one of a
+    # type), and then it loses tear% of its max HP; the user falling or
+    # leaving lets it go. Against an opponent the chance is reduced by spr,
+    # as a status's is, and a unit can be immune ("held" in its
+    # status_immune). A new grab replaces an old one.
+    def grab(ctx, actor, target, effect)
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "no_effect") if target == actor
+      return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "immune", status: "held") if target["status_immune"].include?("held")
+
+      chance = effect.fetch("chance", 100)
+      chance = chance * 100 / (100 + ctx.stat(target, "spr")) if chance < 100 && target["side"] != actor["side"]
+      came_in, roll = ctx.rng.d100(chance)
+      unless came_in || chance >= 100
+        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "resisted", status: "held", roll: roll, needed: Rng.target(chance))
+      end
+
+      target["statuses"].reject! { |s| s["kind"] == "held" }
+      turns = effect.fetch("duration", 2)
+      ctx.add_status(target, "held", turns, by: actor["id"])
+      target["statuses"].find { |s| s["kind"] == "held" }.merge!("by" => actor["id"], "breaks" => effect.fetch("breaks", "hit"), "tear" => effect.fetch("tear", 0))
     end
 
     # gather(kind, amount): stacks of a stacking status on the user, up to
@@ -153,7 +201,8 @@ module Battle
       chance = hit_chance(ctx, actor, target)
       hit, roll = ctx.rng.d100(chance)
       unless auto_hit?(ctx, target) || hit
-        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "evaded", roll: roll, needed: Rng.target(chance))
+        ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "evaded", roll: roll, needed: Rng.target(chance))
+        return stumble(ctx, actor, effect["stumble"])
       end
 
       crit_chance = crit_chance(ctx, actor, target)
@@ -170,8 +219,18 @@ module Battle
       if ctx.alive?(target)
         ctx.remove_status(target, "sleep", reason: "woke")
         ctx.remove_status(target, "confuse", reason: "came_to")
+        ctx.remove_status(target, "rage", reason: "came_to")
       end
       counter(ctx, actor, target)
+    end
+
+    # A blow that missed, with a stumble: the user is down for its turns
+    # (a missed Dive: the bird on the ground).
+    def stumble(ctx, actor, turns)
+      return unless turns.to_i.positive? && ctx.alive?(actor) && !ctx.status?(actor, "down")
+
+      ctx.emit(:stumbled, actor: actor["id"], turns: turns)
+      ctx.add_status(actor, "down", turns)
     end
 
     # "terrain" is the type of where the fight is.
@@ -224,9 +283,11 @@ module Battle
       end
 
       turns = effect.fetch("duration", 1)
+      ctx.let_go(goer, reason: "holder_left")
       goer["statuses"].reject! { |s| OUT_OF_REACH_STATUSES.include?(s["kind"]) }
       goer["statuses"] << { "kind" => "away", "turns" => turns, "left" => turns, "self" => who == "self",
-                            "power" => power, "target" => (target["id"] if power.positive?) }.merge(effect.slice("type", "basis")).compact
+                            "power" => power, "target" => (target["id"] if power.positive?),
+                            "aloft" => (true if effect["aloft"] == 1) }.merge(effect.slice("type", "basis")).compact
       if who == "self" && power.positive?
         ctx.emit(:jump, actor: actor["id"], target: target["id"], turns: turns)
       else
@@ -273,6 +334,7 @@ module Battle
 
       percent = 100 if unresisted && percent != :absorb && percent < 100
       amount = amount * SAME_TYPE_POWER / 100 if type && ctx.state.dig("rules", "same_type") && actor.fetch("types", []).include?(type)
+      amount = amount * (100 - Conditions.weakened(ctx.state, type)) / 100 # the field: fire in the shallows
       amount = amount * Masks::GIANT_POWER / 100 if target["giant"] && ctx.status?(actor, "masked")
 
       amount = [ percent == :absorb ? amount : amount * percent / 100, 1 ].max
@@ -512,6 +574,7 @@ module Battle
 
     def hit_chance(ctx, actor, target)
       chance = (BASE_HIT + (ctx.stat(actor, "agi") - ctx.stat(target, "agi")) / 2).clamp(HIT_FLOOR, HIT_CEILING)
+      chance = [ chance - Conditions.dark(ctx.state), 5 ].max # the field: the lights out
       ctx.status?(actor, "blind") ? chance / 2 : chance
     end
 

@@ -27,7 +27,7 @@ module Battle
   # writes a line for each, and its spec checks every type the property
   # battles emit.
   class Resolver
-    GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle add_unit dismiss rule].freeze
+    GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle add_unit dismiss rule field].freeze
     END_RESULTS = %w[victory defeat fled].freeze
 
     def self.apply(state, action)
@@ -282,7 +282,9 @@ module Battle
       gm_event(action, result: result)
       state["status"] = result
       case result
-      when "victory" then ctx.emit(:victory, rewards: ctx.rewards, drops: ctx.roll_drops)
+      when "victory"
+        ctx.side("enemy").each { |u| ctx.give_back(u) } # the field is the party's, and so is what was taken on it
+        ctx.emit(:victory, rewards: ctx.rewards, drops: ctx.roll_drops)
       when "defeat"
         # The party has fallen: whoever was still standing goes down too.
         ctx.side("party").select { |u| ctx.alive?(u) }.each { |u| ctx.knock_out(u) }
@@ -313,7 +315,7 @@ module Battle
 
       base_id = spec.fetch("id") { raise InvalidAction, "the unit needs an id" }.to_s
       base_name = spec.fetch("name", base_id).to_s
-      taken = ctx.units.map { |u| u["id"] }
+      taken = (ctx.units + Array(state["reserves"]).flatten).map { |u| u["id"] } # the waves still to come have their letters
       kin = taken.any? { |t| t == base_id || t.match?(/\A#{Regexp.escape(base_id)}_[a-z]\z/) }
       lettered = ("a".."z").map { |l| [ "#{base_id}_#{l}", "#{base_name} #{l.upcase}" ] }
       id, name = (kin ? lettered : [ [ base_id, base_name ] ]).find { |candidate, _| !taken.include?(candidate) }
@@ -342,6 +344,7 @@ module Battle
       raise InvalidAction, "#{unit['name']} has already gone" if unit["gone"]
 
       gm_event(action, unit: unit["id"])
+      ctx.let_go(unit, reason: "holder_left")
       unit["gone"] = true
       unit["statuses"] = []
       unit["buffs"] = []
@@ -520,12 +523,14 @@ module Battle
         release(unit)
       elsif ctx.status?(unit, "confuse")
         run_amok(unit)
+      elsif ctx.status?(unit, "rage")
+        turn_on_own(unit)
       elsif ctx.status?(unit, "berserk")
         use_ability(unit, own(unit, ctx.ability("attack")), nil)
       elsif unit["side"] == "enemy" || unit["guest"]
         ability, target, rule = AI.choose(ctx, unit)
         AI.fire(ctx, unit, rule)
-        use_ability(unit, own(unit, ability), target)
+        use_ability(unit, own(unit, ability), target, aim: rule && unit["ai"][rule]["target"])
       elsif cmd.nil?
         ctx.emit(:turn_skipped, unit: unit["id"], reason: "no_command")
       else
@@ -600,7 +605,7 @@ module Battle
       return false if foes.empty? || !foes.all? { |foe| ctx.status?(foe, "down") }
       return false unless ctx.events[mark..].any? { |e| e["type"] == "one_more" }
 
-      crew = ctx.allies(unit).reject { |ally| (DISABLING_STATUSES + %w[airborne away charging confuse]).any? { |kind| ctx.status?(ally, kind) } }
+      crew = ctx.allies(unit).reject { |ally| (DISABLING_STATUSES + %w[airborne away charging confuse rage]).any? { |kind| ctx.status?(ally, kind) } }
       return false if crew.empty?
 
       ctx.emit(:all_out, actor: unit["id"], units: crew.map { |ally| ally["id"] }, targets: foes.map { |foe| foe["id"] })
@@ -631,7 +636,7 @@ module Battle
     # repeat: the move to go again with, for a unit the AI plays (One More).
     def extra_go(unit, cmd, reason: nil, repeat: nil)
       return unless ctx.alive?(unit)
-      return if (DISABLING_STATUSES + %w[airborne away charging confuse]).any? { |kind| ctx.status?(unit, kind) }
+      return if (DISABLING_STATUSES + %w[airborne away charging confuse rage]).any? { |kind| ctx.status?(unit, kind) }
 
       ai = unit["side"] == "enemy" || unit["guest"]
       ability = if ctx.status?(unit, "berserk") then ctx.ability("attack")
@@ -656,6 +661,19 @@ module Battle
       pool = ctx.units.select { |u| u != unit && ctx.alive?(u) && !ctx.out_of_reach?(u) }
       target = ctx.rng.pick(pool)
       ctx.emit(:confused, actor: unit["id"], target: target&.dig("id"))
+      return unless target
+
+      attack = own(unit, ctx.ability("attack"))
+      announce(unit, attack, [ target ], 0)
+      apply_effects(unit, attack, [ target ])
+    end
+
+    # Raging: an Attack at one of its own side in reach (not itself); with
+    # nobody else standing, at the other side.
+    def turn_on_own(unit)
+      own_side = ctx.allies(unit).reject { |u| u == unit || ctx.out_of_reach?(u) }
+      target = ctx.rng.pick(own_side.empty? ? ctx.opponents(unit) : own_side)
+      ctx.emit(:raging, actor: unit["id"], target: target&.dig("id"))
       return unless target
 
       attack = own(unit, ctx.ability("attack"))
@@ -745,9 +763,10 @@ module Battle
     # A move that takes turns to go off: the user winds it up (charging,
     # no commands) and it goes off on the turn the charge runs out, paid for
     # then (#release). Knocked out, the charge is lost with every status.
-    def wind_up(unit, ability, target_id)
+    def wind_up(unit, ability, target_id, aim = nil)
       unit["statuses"] << { "kind" => "charging", "turns" => ability["charge"], "left" => ability["charge"],
-                            "ability" => ability, "target" => target_id }
+                            "ability" => ability, "target" => target_id, "aim" => (aim if aim == "last_hit"),
+                            "interrupt" => (ability["interrupt"] if ability["interrupt"].to_i.positive?) }.compact
       ctx.emit(:charging, actor: unit["id"], ability: ability["id"], turns: ability["charge"])
     end
 
@@ -759,7 +778,12 @@ module Battle
 
       unit["statuses"].delete(status)
       ability = status["ability"] || ctx.ability("attack")
-      use_ability(unit, ability.merge("released" => true), status["target"])
+      target = status["target"]
+      if status["aim"] # whoever hit it last, as it goes off
+        aimed = AI.pick_target(ctx, unit, ability, status["aim"])
+        target = aimed unless aimed == :none
+      end
+      use_ability(unit, ability.merge("released" => true), target)
     end
 
     # Charged: the next move that deals or restores HP is twice as strong,
@@ -789,7 +813,9 @@ module Battle
       apply_effects(unit, item, targets, item: true)
     end
 
-    def use_ability(unit, ability, target_id)
+    # aim: the script's target strategy, for a move that takes turns to go
+    # off and finds its mark again then (last_hit).
+    def use_ability(unit, ability, target_id, aim: nil)
       if ability["kind"] == "magic" && ctx.status?(unit, "silence")
         return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: "silenced")
       end
@@ -802,7 +828,7 @@ module Battle
       if blood.positive? && unit["hp"] <= blood
         return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: "no_hp")
       end
-      return wind_up(unit, ability, target_id) if ability.fetch("charge", 0).positive? && !ability["released"]
+      return wind_up(unit, ability, target_id, aim) if ability.fetch("charge", 0).positive? && !ability["released"]
 
       unit["mp"] -= cost
       if blood.positive?
@@ -811,18 +837,23 @@ module Battle
       end
       remember(unit, ability, target_id)
       ability = fortify(unit, charged(unit, ability))
+      # Again: the user goes again once the move is done, once a round (the Toad, as the sea comes in).
+      if ability["again"] && !ctx.reacting && unit["again_round"] != state["round"]
+        unit["again_round"] = state["round"]
+        ctx.follow_ups << [ :again, unit ]
+      end
       if ability["target"] == "random_enemy"
         announce(unit, ability, [], cost)
         random_hits(unit, ability)
         return reload(unit, ability)
       end
 
-      targets = reflected(unit, ability, resolve_targets(unit, ability, target_id))
+      targets = conducted(unit, ability, reflected(unit, ability, resolve_targets(unit, ability, target_id)))
       announce(unit, ability, targets, cost)
       if targets.empty?
         return ctx.emit(:miss, actor: unit["id"], ability: ability["id"], reason: "no_target")
       end
-      return if iai(unit, ability, targets)
+      return if iai(unit, ability, targets) || forestalled?(unit, ability, targets)
 
       apply_effects(unit, ability, targets)
       reload(unit, ability)
@@ -856,6 +887,21 @@ module Battle
       ability.merge("effects" => effects)
     end
 
+    # The field conducts it (Battle::Conditions): a single-target move of the
+    # type, at an opponent, finds everyone on that side it can reach (thunder,
+    # chest-deep in water).
+    def conducted(unit, ability, targets)
+      target = targets.first
+      return targets unless ability["target"] == "single_enemy" && target && target["side"] != unit["side"]
+
+      type = ability["effects"].filter_map { |e| Effects.type_of(ctx, e) if %w[physical elemental].include?(e["primitive"]) }.first
+      return targets unless Conditions.conducts?(state, type)
+
+      everyone = ctx.within_reach(unit, ability)
+      ctx.emit(:conducted, actor: unit["id"], damage_type: type, targets: everyone.map { |u| u["id"] })
+      everyone
+    end
+
     # Reflect: single-target magic at someone reflecting goes back to its caster.
     def reflected(unit, ability, targets)
       return targets unless ability["kind"] == "magic" && %w[single_enemy single_ally].include?(ability["target"])
@@ -887,6 +933,24 @@ module Battle
       ctx.over? || !ctx.alive?(unit)
     end
 
+    # Struck: a creature with a "struck" rule (a mantis's riposte, a toad's
+    # hot skin) answers a blow up close before it lands: a move with a
+    # physical blow in it and without the reach. The blow comes only if its
+    # striker is still standing and free to swing. True when it never comes.
+    def forestalled?(unit, ability, targets)
+      return false if ability["reach"] || ability["effects"].none? { |e| %w[physical jump].include?(e["primitive"]) }
+
+      before = ctx.reactions.size
+      targets.each do |target|
+        ctx.queue_reaction(target, "struck", target: unit["id"]) if target["side"] != unit["side"] && ctx.alive?(target) && !ctx.disabled?(target)
+      end
+      return false if ctx.reactions.size == before
+
+      react
+      ctx.check_end
+      ctx.over? || !ctx.alive?(unit) || ctx.disabled?(unit)
+    end
+
     # A move with a reload leaves its user spent for that many turns.
     def reload(unit, ability)
       turns = ability.fetch("reload", 0)
@@ -901,6 +965,7 @@ module Battle
         kind, unit = job
         case kind
         when :quick then extra_go(unit, state["inputs"][unit["id"]], reason: "quick")
+        when :again then extra_go(unit, state["inputs"][unit["id"]], reason: "again")
         when :mimic then mimic(unit)
         end
         ctx.check_end
@@ -1020,7 +1085,7 @@ module Battle
         hits(effect).times do
           break if ctx.over?
 
-          target = ctx.rng.pick(ctx.opponents(unit, reach: ability["reach"]))
+          target = ctx.rng.pick(ctx.within_reach(unit, ability))
           break unless target
 
           Effects.apply(ctx, unit, target, effect)
@@ -1047,14 +1112,14 @@ module Battle
       when "self" then [ unit ]
       when "single_enemy"
         chosen = nil unless chosen && State.valid_target?(unit, ability, chosen)
-        [ covered(chosen || ctx.rng.pick(ctx.opponents(unit, reach: ability["reach"]))) ].compact
+        [ covered(chosen || ctx.rng.pick(ctx.within_reach(unit, ability))) ].compact
       when "single_ally"
         fallen = ctx.allies(unit, alive: false).reject { |a| ctx.alive?(a) }
         return [ chosen ] if chosen && State.valid_target?(unit, ability, chosen)
         return [ ctx.rng.pick(fallen) ].compact if revive
 
         [ ctx.allies(unit).min_by { |a| [ ctx.hp_percent(a), a["hp"] ] } ]
-      when "all_enemies" then ctx.opponents(unit, reach: ability["reach"])
+      when "all_enemies" then ctx.within_reach(unit, ability)
       when "all_allies" then ctx.allies(unit, alive: !revive)
       end
     end
@@ -1084,11 +1149,51 @@ module Battle
     end
 
     def close_round(inputs)
+      field_turns unless ctx.over?
       inputs.each { |id, cmd| ctx.unit(id)["last_command"] = cmd }
       ctx.units.each { |u| u["defending"] = false }
       state["inputs"] = {}
       ctx.emit(:round_end, round: state["round"])
       state["round"] += 1 unless ctx.over?
+    end
+
+    # The field at a round's end (Battle::Conditions): the water takes its
+    # share from all it doesn't spare, and a stage that has lasted its
+    # rounds gives way to the next (the water rising).
+    def field_turns
+      Conditions.of(state, "drown").each do |drown|
+        ctx.units.select { |u| ctx.alive?(u) && !(drown["spares"] && u.fetch("types", []).include?(drown["spares"])) }.each do |u|
+          ctx.deal_damage(u, [ u["stats"]["max_hp"] * drown["amount"] / 100, 1 ].max, status: "drown")
+        end
+        ctx.check_end
+        return if ctx.over?
+      end
+
+      field = state["field"] or return
+      rounds = Conditions.current(state)["rounds"]
+      return unless rounds && state["round"] - field["since"] + 1 >= rounds && field["stage"] + 1 < field["stages"].size
+
+      change_field(field["stage"] + 1)
+    end
+
+    def change_field(stage)
+      field = state["field"]
+      field["stage"] = stage
+      field["since"] = state["round"] + 1
+      now = Conditions.current(state)
+      ctx.emit(:field_changed, stage: stage, name: now["name"], line: now["line"])
+    end
+
+    # { op: "field", stage: n }: the field moves to that stage at once (the
+    # water up early, the lights out); with no stage, the next one.
+    def gm_field(action)
+      field = state["field"] or raise InvalidAction, "this fight has no field to change"
+      stage = action.key?("stage") ? Integer(action["stage"]) : field["stage"] + 1
+      raise InvalidAction, "the field has no stage #{stage + 1}" unless stage.between?(0, field["stages"].size - 1)
+      raise InvalidAction, "the field is already #{Conditions.current(state)['name']}" if stage == field["stage"]
+
+      gm_event(action, stage: stage)
+      change_field(stage)
     end
   end
 end

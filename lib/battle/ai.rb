@@ -12,7 +12,9 @@ module Battle
   # Conditions (all must hold): self_hp_below, ally_hp_below (percent),
   # ally_ko (true), round_multiple (n), chance (percent).
   # Target strategies: random (default for opponents), lowest_hp (default
-  # for allies), highest_hp, self.
+  # for allies), highest_hp, self, last_hit (whoever's blow last landed on
+  # it, else at random; a move that takes turns to go off finds them again
+  # as it goes off, so landing a blow first turns it).
   #
   # A rule can be "once" => true (it fires once a battle: a self-buff that
   # isn't recast every turn, a one-time move) and "say" => "…" (a line the
@@ -22,14 +24,17 @@ module Battle
   #
   # A rule with "when" is a reaction, never chosen on the creature's turn:
   # "hit" (struck by an opponent; "by" => a type narrows it to blows of
-  # that type), "ally_falls" (one of its side goes down), "falls" (its own
-  # last breath: a final attack as it goes down). Its conditions still
+  # that type), "struck" (an opponent's blow up close is about to land: it
+  # answers first, and the blow comes only if its striker is still standing
+  # and free to swing; Resolver#forestalled?), "ally_falls" (one of its
+  # side goes down), "falls" (its own last breath: a final attack as it
+  # goes down). Its conditions still
   # apply. The reaction comes at once, free of its charge, and reactions
   # never set off reactions (Context#queue_reaction, Resolver#react).
   module AI
     CONDITIONS = %w[self_hp_below ally_hp_below ally_ko round_multiple chance].freeze
-    STRATEGIES = %w[random lowest_hp highest_hp self].freeze
-    TRIGGERS = %w[hit ally_falls falls].freeze
+    STRATEGIES = %w[random lowest_hp highest_hp self last_hit].freeze
+    TRIGGERS = %w[hit struck ally_falls falls].freeze
 
     module_function
 
@@ -120,6 +125,7 @@ module Battle
       chosen = case strategy
       when "lowest_hp" then pool.min_by { |u| [ ctx.hp_percent(u), u["hp"] ] }
       when "highest_hp" then pool.max_by { |u| [ u["hp"], -ctx.units.index(u) ] }
+      when "last_hit" then pool.find { |u| u["id"] == unit["last_hit_by"] } || ctx.rng.pick(pool)
       else ctx.rng.pick(pool)
       end
       chosen["id"]

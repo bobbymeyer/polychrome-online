@@ -32,6 +32,7 @@ module CampaignModule
       return unless decision.is_a?(Hash)
 
       decision.fetch("monsters", {}).to_h.each_key { |slug| monster!(slug) }
+      Array(decision["waves"]).each { |wave| wave.to_h.each_key { |slug| monster!(slug) } if wave.is_a?(Hash) }
       item!(decision["item"]) if decision["item"].present?
     end
 

@@ -5,7 +5,7 @@
 class Battles::ActionsController < ApplicationController
   include BattleSeat
 
-  GM_FIELDS = %i[op unit value status turns result note monster side name stat difficulty aim effect strength type success failure].freeze
+  GM_FIELDS = %i[op unit value status turns result note monster side name stat difficulty aim effect strength type success failure stage].freeze
 
   before_action :set_battle
 

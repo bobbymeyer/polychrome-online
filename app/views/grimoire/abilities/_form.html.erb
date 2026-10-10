@@ -26,6 +26,11 @@
       <p class="hint">Turns it takes to go off. The user can't act meanwhile.</p>
     </div>
     <div class="field">
+      <%= f.label :interrupt, "Interrupted by (% of HP)" %>
+      <%= f.number_field :interrupt, min: 0, max: 100 %>
+      <p class="hint">For a move with a charge: this much damage while it winds up breaks it, and stuns the user for a turn. 0: it can't be.</p>
+    </div>
+    <div class="field">
       <%= f.label :reload_turns, "Reload (turns)" %>
       <%= f.number_field :reload_turns, min: 0, max: Battle::MAX_RELOAD %>
       <p class="hint">Turns the user is spent for after it: a big shot.</p>
@@ -34,6 +39,11 @@
       <%= f.check_box :reach %>
       <%= f.label :reach, "Reach" %>
       <p class="hint">It finds foes off the field (leaping, hiding): a Ranger's shot.</p>
+    </div>
+    <div class="field field--check">
+      <%= f.check_box :again %>
+      <%= f.label :again, "Again" %>
+      <p class="hint">The user goes again at once when it's done, once a round.</p>
     </div>
     <div class="field">
       <%= f.label :gesture %>

@@ -13,7 +13,7 @@ module Grimoire
     end
 
     def entry_params
-      params.expect(ability: [ :name, :slug, :kind, :target, :mp_cost, :hp_cost, :charge, :reload_turns, :reach, :gesture,
+      params.expect(ability: [ :name, :slug, :kind, :target, :mp_cost, :hp_cost, :charge, :interrupt, :reload_turns, :reach, :again, :gesture,
                                 :field_skill, :field_outcome, :field_difficulty, :field_power, :description, *art_params,
                               { effects: [ effect_fields ] } ])
     end

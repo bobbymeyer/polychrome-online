@@ -11,9 +11,10 @@
       <% else %>
       <dt>Target</dt><dd><%= term(entry.target) %></dd>
       <dt>Cost</dt><dd><%= [ ("#{entry.mp_cost} #{word('mp')}" if entry.mp_cost.positive?), ("#{entry.hp_cost}% of max #{word('hp')}" if entry.hp_cost.positive?) ].compact.join(" and ").presence || "Free" %></dd>
-      <% if entry.charge.positive? %><dt>Charge</dt><dd><%= pluralize(entry.charge, "turn") %> to go off</dd><% end %>
+      <% if entry.charge.positive? %><dt>Charge</dt><dd><%= pluralize(entry.charge, "turn") %> to go off<%= ", broken by #{entry.interrupt}% of the user's #{word('hp')} in damage" if entry.interrupt.positive? %></dd><% end %>
       <% if entry.reload_turns.positive? %><dt>Reload</dt><dd>Spent for <%= pluralize(entry.reload_turns, "turn") %> after</dd><% end %>
       <% if entry.reach? %><dt>Reach</dt><dd>Finds foes off the field</dd><% end %>
+      <% if entry.again? %><dt>Again</dt><dd>The user goes again once it's done</dd><% end %>
       <% if entry.gesture.present? %><dt>Gesture</dt><dd><%= term(entry.gesture) %></dd><% end %>
       <% end %>
     </dl>

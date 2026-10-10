@@ -98,7 +98,7 @@
           <% c = rule.fetch("if", {}) %>
           <% name = ->(key) { json_field_name(f, :ai_script, i, key) } %>
           <tr>
-            <td><%= select_tag name.(:when), options_for_select([ [ "On its turn", "" ], [ "When hit", "hit" ], [ "When an ally falls", "ally_falls" ], [ "As it falls", "falls" ] ], rule["when"]), "aria-label": "When, rule #{i + 1}" %></td>
+            <td><%= select_tag name.(:when), options_for_select([ [ "On its turn", "" ], [ "When hit", "hit" ], [ "Before a blow up close lands", "struck" ], [ "When an ally falls", "ally_falls" ], [ "As it falls", "falls" ] ], rule["when"]), "aria-label": "When, rule #{i + 1}" %></td>
             <td><%= select_tag name.(:by), options_for_select(type_options, rule["by"]), include_blank: "Any blow", "aria-label": "By, rule #{i + 1}" %></td>
             <td><%= number_field_tag name.(:self_hp_below), c["self_hp_below"], min: 1, max: 100, "aria-label": "Own HP below, rule #{i + 1}" %></td>
             <td><%= number_field_tag name.(:ally_hp_below), c["ally_hp_below"], min: 1, max: 100, "aria-label": "Ally HP below, rule #{i + 1}" %></td>

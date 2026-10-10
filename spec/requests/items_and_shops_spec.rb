@@ -50,6 +50,22 @@ RSpec.describe "Items and shops", type: :request do
       expect(campaign.messages.last.body).to include("Used 1 × Potion.")
     end
 
+    it "counts what a thief got away with as lost, not used, and out of the bags all the same" do
+      battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 1 }, seed: 3)
+      # A goblin with light fingers took one (Battle::Effects#lift), and the party runs.
+      state = battle.state.deep_dup
+      state["items"]["potion"]["count"] -= 1
+      state["units"].find { |u| u["side"] == "enemy" }["pilfered"] = %w[potion]
+      battle.update!(state: state)
+
+      sit_in_battle(battle, "gm")
+      post battle_actions_path(battle), params: { gm: { op: "end_battle", result: "fled" } }
+      expect(battle.reload.settlement).to include("lost" => { "Potion" => 1 })
+      expect(battle.settlement["used"]).to be_blank
+      expect(bartz.reload.quantity_of(potion) + faris.reload.quantity_of(potion) + campaign.reload.quantity_of(potion)).to eq(6)
+      expect(campaign.messages.last.body).to include("Lost 1 × Potion to thieves.")
+    end
+
     it "leaves the Item command out when the party has nothing usable" do
       campaign.use_items!(potion, 7) # their bags first, then the chest
       battle = BattleRecord.start!(campaign: campaign, characters: [ bartz, faris ], name: "Road", encounter: { "goblin" => 1 }, seed: 3)

@@ -208,11 +208,11 @@ module BattleHelpers
 
   def build_battle(seed: 1, party: BattleFixtures.party, enemies: BattleFixtures.goblins,
                    abilities: BattleFixtures.abilities, escapable: true, items: {}, terrain: nil, types: nil, summons: BattleFixtures.summons, rules: {},
-                   masks: nil)
+                   masks: nil, field: nil, waves: [])
     # The fixtures' Storm Mask is electric: a world without it has no mask.
     masks ||= types ? {} : BattleFixtures.masks
     Battle::State.build(seed: seed, party: party, enemies: enemies, abilities: abilities, escapable: escapable, items: items, terrain: terrain,
-                        types: types, summons: summons, rules: rules, masks: masks)
+                        types: types, summons: summons, rules: rules, masks: masks, field: field, waves: waves)
   end
 
   def apply(state, action)
