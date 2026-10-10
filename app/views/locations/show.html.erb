@@ -73,6 +73,30 @@
     </div>
     <%= help_line %>
     <%= render "map_nodes/modes", node: @location.map_node if @location.map_node %>
+    <%# The elaboration scale (Generators::Elaboration), beside Reroll because
+        it is the same kind of control: a setting for the whole place, not a
+        room-by-room edit. Not a reroll, though -- the core rooms keep their
+        names, their decisions and their order at every level, which is what
+        makes it safe to turn once the story is pinned on. %>
+    <% if @location.dungeon? %>
+      <details class="window gm-tools" <%= "open" if @location.elaboration.positive? %>>
+        <summary>Elaboration<%= " · #{@location.elaboration} of #{Generators::Elaboration::MAX_LEVEL}" if @location.elaboration.positive? %></summary>
+        <%= form_with url: location_elaboration_path(@location), method: :patch, class: "book-form inline-form",
+                      data: { controller: "autosubmit" } do %>
+          <div class="field">
+            <%= label_tag :level, "Extra rooms around the ones you pinned" %>
+            <%= select_tag :level, options_for_select((0..Generators::Elaboration::MAX_LEVEL).map { |n| [ n.zero? ? "As rolled" : "#{n} · up to #{n * Generators::Elaboration::PER_LEVEL} more rooms", n ] }, @location.elaboration),
+                           data: { action: "autosubmit#submit" } %>
+          </div>
+        <% end %>
+        <p class="hint">
+          Alcoves, side passages and loops, drawn in outline on the plan. It never moves the rooms you pinned or changes the order the party walks them.
+          <% if @location.elaboration.positive? %>
+            <%= view["rooms"].count { |r| r["elaborated"] } %> of these <%= view["rooms"].size %> rooms are its doing; "As rolled" takes them all back.
+          <% end %>
+        </p>
+      </details>
+    <% end %>
     <details class="window gm-tools">
       <summary>Rename</summary>
       <%= form_with model: @location, url: location_path(@location), class: "book-form inline-form" do |f| %>

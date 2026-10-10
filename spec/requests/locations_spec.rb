@@ -242,7 +242,8 @@ RSpec.describe "Locations", type: :request do
       expect(grown["rooms"].last(added)).to all(include("elaborated" => true))
 
       get location_path(cave)
-      expect(response.body).to include("is-elaborated", "6 of these #{grown['rooms'].size} rooms are the dial") # the apostrophe is escaped in the page
+      expect(response.body).to include("is-elaborated", "6 of these #{grown['rooms'].size} rooms are its doing")
+      expect(response.body).to include("Elaboration · 3 of 5") # the summary says where the dial stands
 
       # Listed as one change, and reverting takes the whole lot back.
       change = cave.changes.find { |c| c["kind"] == "elaboration" }
@@ -271,6 +272,24 @@ RSpec.describe "Locations", type: :request do
       post location_reroll_path(cave)
       expect(cave.reload.elaboration).to eq(4)
       expect(cave.view["rooms"].count { |r| r["elaborated"] }).to eq(8)
+    end
+
+    # Where the dial lives, which is the part that went wrong first: it is a
+    # setting for the whole place, so it belongs with Reroll and Rename in
+    # the GM section under the plan -- not in the room panel beside it with
+    # the per-room controls.
+    it "offers the dial under the plan, beside the other whole-place controls" do
+      cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+      cave = generate("goblin_cave", on: cave_node)
+
+      get location_path(cave)
+      expect(response.body).to include("Elaboration", "As rolled", "up to 10 more rooms")
+      section = page.at("section.location-gm")
+      expect(section).to be_present
+      expect(section.text).to include("Reroll", "Elaboration", "Rename")
+      expect(section.at("form[action='#{location_elaboration_path(cave)}']")).to be_present
+      # And not in the room panel, where it was at first.
+      expect(page.at("aside.map-panel").to_html).not_to include("Elaboration")
     end
 
     it "has no dial for a town" do
