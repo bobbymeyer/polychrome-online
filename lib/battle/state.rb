@@ -28,7 +28,9 @@ module Battle
     # spends unless hold is 1 (Draw, a Monk's finishers).
     # patience: patience% more power for every unit that has gone before
     # the user this round (a Courtsword draws last).
-    "physical" => { required: [], optional: %w[power hits type against bonus recoil grudge pierce unresisted with boost hold patience] },
+    # stumble: a blow that misses leaves the user down for that many turns
+    # (a missed Dive grounds the bird).
+    "physical" => { required: [], optional: %w[power hits type against bonus recoil grudge pierce unresisted with boost hold patience stumble] },
     "elemental" => { required: %w[type power], optional: %w[hits against bonus recoil grudge pierce unresisted with boost hold patience] },
     "status" => { required: %w[kind], optional: %w[chance duration] },
     # triage: up to triage% more the lower the target's HP.
@@ -50,8 +52,9 @@ module Battle
     "jump" => { required: [], optional: %w[power type] },
     # Takes someone off the field for some of their turns (Battle::Effects#away):
     # who "self" (Jump, Hide, Vanish) or "target" (Banish, Knockback).
-    # Power > 0: they come back striking.
-    "away" => { required: [], optional: %w[who duration power chance type] },
+    # Power > 0: they come back striking. aloft 1: up high rather than
+    # gone (circling): out of reach of blows, but a spell still finds them.
+    "away" => { required: [], optional: %w[who duration power chance type aloft] },
     # A barrier that takes the next power-scaled-by-mag damage (Barrier, Stoneskin).
     "shield" => { required: %w[power], optional: %w[duration] },
     # Attack strikes with this type for a while (Flame Blade, Venom Edge).
@@ -87,7 +90,7 @@ module Battle
   }.freeze
   PRIMITIVE_STRING_PARAMS = %w[type kind stat who against creature with mask breaks].freeze
   # The flags among the params: 0 or 1.
-  PRIMITIVE_FLAGS = %w[unresisted hold boon stays].freeze
+  PRIMITIVE_FLAGS = %w[unresisted hold boon stays aloft].freeze
   MAX_SUMMON_TURNS = 5
   # What a bonus can be against, beside statuses and types.
   # wounded: at WOUNDED_PERCENT of its HP or less. giant: a thing woken
@@ -106,6 +109,7 @@ module Battle
   AWAY_WHO = %w[self target].freeze
   MAX_AWAY_TURNS = 5
   MAX_GRAB_TURNS = 5
+  MAX_STUMBLE = 3
   TARGETINGS = %w[self single_ally single_enemy all_allies all_enemies random_enemy].freeze
   TYPES = Types::ALL # the base world's; a battle's own are in its state
   AFFINITIES = Types::AFFINITIES
@@ -484,7 +488,7 @@ module Battle
       when "single_enemy"
         return "is not an enemy" unless enemy
         return "is down" unless target["hp"].positive? && !target["gone"]
-        return "is out of reach" if out_of_reach?(target) && !ability["reach"]
+        return "is out of reach" unless reaches?(ability, target)
       when "single_ally"
         if enemy
           return "is not an ally" unless heals?(ability)
@@ -502,6 +506,17 @@ module Battle
 
     def out_of_reach?(unit)
       unit["statuses"].any? { |s| OUT_OF_REACH_STATUSES.include?(s["kind"]) }
+    end
+
+    # Up high rather than gone (an away that's aloft: circling).
+    def aloft?(unit)
+      unit["statuses"].any? { |s| s["kind"] == "away" && s["aloft"] }
+    end
+
+    # Can this move find this unit? Anyone on the field; anyone off it, for
+    # a move with the reach; and someone aloft, for a spell.
+    def reaches?(ability, unit)
+      !out_of_reach?(unit) || ability["reach"] == true || (ability["kind"] == "magic" && aloft?(unit))
     end
 
     # The targets a single-target move may be aimed at: allies first, then
@@ -562,6 +577,7 @@ module Battle
           raise ArgumentError, "#{id}: pierce must be 0 to 100" if effect["pierce"] && !effect["pierce"].between?(0, 100)
           raise ArgumentError, "#{id}: boost must be 0 to #{MAX_BONUS}" if effect["boost"] && !effect["boost"].between?(0, MAX_BONUS)
           raise ArgumentError, "#{id}: patience must be 0 to #{MAX_BONUS}" if effect["patience"] && !effect["patience"].between?(0, MAX_BONUS)
+          raise ArgumentError, "#{id}: stumble must be 1 to #{MAX_STUMBLE} turns" if effect["stumble"] && !effect["stumble"].between?(1, MAX_STUMBLE)
           raise ArgumentError, "#{id}: unknown status #{effect['with']}" if effect["with"] && !STATUSES.include?(effect["with"])
           # "terrain": the type of where the fight is (a Geomancer's arts).
           typed = known.include?(effect["type"]) || effect["type"] == "terrain"

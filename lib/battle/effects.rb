@@ -201,7 +201,8 @@ module Battle
       chance = hit_chance(ctx, actor, target)
       hit, roll = ctx.rng.d100(chance)
       unless auto_hit?(ctx, target) || hit
-        return ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "evaded", roll: roll, needed: Rng.target(chance))
+        ctx.emit(:miss, actor: actor["id"], target: target["id"], reason: "evaded", roll: roll, needed: Rng.target(chance))
+        return stumble(ctx, actor, effect["stumble"])
       end
 
       crit_chance = crit_chance(ctx, actor, target)
@@ -220,6 +221,15 @@ module Battle
         ctx.remove_status(target, "confuse", reason: "came_to")
       end
       counter(ctx, actor, target)
+    end
+
+    # A blow that missed, with a stumble: the user is down for its turns
+    # (a missed Dive: the bird on the ground).
+    def stumble(ctx, actor, turns)
+      return unless turns.to_i.positive? && ctx.alive?(actor) && !ctx.status?(actor, "down")
+
+      ctx.emit(:stumbled, actor: actor["id"], turns: turns)
+      ctx.add_status(actor, "down", turns)
     end
 
     # "terrain" is the type of where the fight is.
@@ -275,7 +285,8 @@ module Battle
       ctx.let_go(goer, reason: "holder_left")
       goer["statuses"].reject! { |s| OUT_OF_REACH_STATUSES.include?(s["kind"]) }
       goer["statuses"] << { "kind" => "away", "turns" => turns, "left" => turns, "self" => who == "self",
-                            "power" => power, "target" => (target["id"] if power.positive?) }.merge(effect.slice("type", "basis")).compact
+                            "power" => power, "target" => (target["id"] if power.positive?),
+                            "aloft" => (true if effect["aloft"] == 1) }.merge(effect.slice("type", "basis")).compact
       if who == "self" && power.positive?
         ctx.emit(:jump, actor: actor["id"], target: target["id"], turns: turns)
       else

@@ -87,6 +87,109 @@ RSpec.describe "The Just Seven's mechanics" do
     end
   end
 
+  describe "answering a blow before it lands (Riposte, Hot Skin)" do
+    let(:moves) do
+      { riposte: { name: "Riposte", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 60 } ] },
+        long_shot: { name: "Long Shot", kind: "skill", target: "single_enemy", reach: true, effects: [ { primitive: "physical", power: 100 } ] } }
+    end
+    let(:enemies) do
+      [ { id: "mantis", name: "Mantis", stats: stats(max_hp: 3000, str: 30, atk: 30, agi: 1, def: 10, mdef: 10), types: %w[normal],
+          abilities: %w[riposte], ai: [ { when: "struck", use: "riposte" } ] } ]
+    end
+    let(:hero) { { id: "hero", name: "Hero", stats: stats(max_hp: 300, max_mp: 60, str: 14, atk: 14, mag: 14, agi: 40), abilities: %w[fire long_shot] } }
+
+    def round(state, hero_move)
+      apply(apply(state, command("hero", hero_move, "mantis")).first, command("ward", nil, kind: "defend"))
+    end
+
+    it "answers a blow up close first, and the blow still comes if the striker can take it" do
+      _, events = round(battle, "attack")
+      riposte = events.index { |e| e["type"] == "reacts" && e["trigger"] == "struck" }
+      blow = events.index { |e| e["type"] == "damage" && e["target"] == "mantis" }
+      expect(riposte).to be < blow
+      expect(events[riposte]).to include("actor" => "mantis", "ability" => "riposte")
+      expect(of_type(events, :damage)).to include(include("actor" => "mantis", "target" => "hero"))
+    end
+
+    it "stops the blow when its answer puts the striker down" do
+      state = with_unit(battle, "hero", hp: 5)
+      _, events = round(state, "attack")
+      expect(of_type(events, :ko)).to include(include("target" => "hero"))
+      expect(of_type(events, :damage).select { |e| e["target"] == "mantis" }).to be_empty
+    end
+
+    it "has no answer for a spell or a shot from range" do
+      %w[fire long_shot].each do |move|
+        _, events = round(battle, move)
+        expect(of_type(events, :reacts)).to be_empty, move
+        expect(of_type(events, :damage)).to include(include("target" => "mantis"))
+      end
+    end
+  end
+
+  describe "a bird that keeps a grudge, dives, and circles (the Cormorant)" do
+    let(:moves) do
+      { bill: { name: "Hooked Bill", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 50 } ] },
+        dive: { name: "Dive", kind: "skill", target: "single_enemy", charge: 1, effects: [ { primitive: "physical", power: 50, stumble: 1 } ] },
+        lunge: { name: "Lunge", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 50, stumble: 1 } ] },
+        long_shot: { name: "Long Shot", kind: "skill", target: "single_enemy", reach: true, effects: [ { primitive: "physical", power: 100 } ] } }
+    end
+    let(:script) { [ { use: "bill", target: "last_hit" } ] }
+    let(:enemies) do
+      [ { id: "bird", name: "Cormorant", stats: stats(max_hp: 3000, str: 10, atk: 10, agi: 1, def: 10, mdef: 10), types: %w[normal],
+          abilities: %w[bill dive], ai: script } ]
+    end
+    let(:hero) { { id: "hero", name: "Hero", stats: stats(max_hp: 300, max_mp: 60, str: 14, atk: 14, mag: 14, agi: 40), abilities: %w[fire long_shot] } }
+    let(:ward) { { id: "ward", name: "Ward", stats: stats(max_hp: 200, max_mp: 20, str: 10, atk: 10, agi: 30), abilities: [] } }
+
+    def aimed_at(events, id) = of_type(events, :cast).select { |e| e["actor"] == "bird" && e["targets"] == [ id ] }
+
+    it "goes for whoever hit it last" do
+      (1..6).each do |seed|
+        state, = apply(battle(seed: seed), command("hero", "attack", "bird"))
+        _, events = apply(state, command("ward", nil, kind: "defend"))
+        expect(aimed_at(events, "hero")).not_to be_empty, "seed #{seed}"
+      end
+    end
+
+    context "with a dive that takes a turn to come down" do
+      let(:script) { [ { use: "dive", target: "last_hit" } ] }
+
+      it "finds whoever hit it last as it comes down, not who it named" do
+        state, = apply(battle, command("hero", "attack", "bird"))
+        state, = apply(state, command("ward", nil, kind: "defend"))
+        expect(unit(state, "bird")["statuses"]).to include(include("kind" => "charging", "aim" => "last_hit"))
+
+        state, = apply(state, command("hero", nil, kind: "defend"))
+        _, events = apply(state, command("ward", "attack", "bird")) # Ward lands one first: the dive turns
+        expect(of_type(events, :cast)).to include(include("actor" => "bird", "ability" => "dive", "targets" => [ "ward" ]))
+      end
+    end
+
+    it "is grounded for a turn when a blow that stumbles misses" do
+      quick = with_unit(battle, "hero", stats: stats(max_hp: 300, max_mp: 60, str: 14, atk: 14, mag: 14, agi: 250))
+      missed = (1..40).lazy.map do |seed|
+        state = quick.merge("seed" => seed, "rng" => Battle::Rng.seed_state(seed))
+        state, = apply(with_unit(state, "bird", ai: [ { "use" => "lunge" } ], abilities: %w[lunge]), command("hero", nil, kind: "defend"))
+        apply(state, command("ward", nil, kind: "defend"))
+      end.find { |_, events| of_type(events, :stumbled).any? }
+      expect(missed).not_to be_nil
+      state, events = missed
+      expect(of_type(events, :stumbled)).to include(include("actor" => "bird", "turns" => 1))
+      expect(unit(state, "bird")["statuses"]).to include(include("kind" => "down"))
+    end
+
+    it "circling, it's out of reach of blows, but a shot with the reach or a spell still finds it" do
+      state = with_unit(battle, "bird", statuses: [ { "kind" => "away", "turns" => 2, "left" => 2, "self" => true, "power" => 0, "aloft" => true } ])
+      expect { apply(state, command("hero", "attack", "bird")) }.to raise_error(Battle::InvalidAction, /out of reach/)
+      expect { apply(state, command("hero", "long_shot", "bird")) }.not_to raise_error
+      expect { apply(state, command("hero", "fire", "bird")) }.not_to raise_error
+
+      gone = with_unit(battle, "bird", statuses: [ { "kind" => "away", "turns" => 2, "left" => 2, "self" => true, "power" => 0 } ])
+      expect { apply(gone, command("hero", "fire", "bird")) }.to raise_error(Battle::InvalidAction, /out of reach/) # hiding, not circling
+    end
+  end
+
   describe "a thief among the monsters (the Raccoon)" do
     let(:moves) { { pilfer: { name: "Pilfer", kind: "skill", target: "single_enemy", effects: [ { primitive: "steal", chance: 95 } ] } } }
     let(:enemies) do

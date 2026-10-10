@@ -182,13 +182,17 @@ module BooksHelper
       (", ignores #{e['pierce']}% of defence" if e["pierce"].to_i.positive?),
       (", resistances count as neutral" if e["unresisted"] == 1),
       (", +#{e.fetch('boost', 50)}% for each stack of #{term(e['with']).downcase}#{e['hold'] == 1 ? ', kept' : ', spent'}" if e["with"]),
-      (", +#{e['patience']}% for everyone who went first" if e["patience"].to_i.positive?) ].compact.join
+      (", +#{e['patience']}% for everyone who went first" if e["patience"].to_i.positive?),
+      (", and a miss leaves the user down for #{pluralize(e['stumble'], 'turn')}" if e["stumble"].to_i.positive?) ].compact.join
   end
 
   def describe_away(e)
     turns = pluralize(e.fetch("duration", 1), "turn")
     if e["who"] == "self"
-      e.fetch("power", 0).positive? ? "Out of reach for #{turns}, then a #{e['power']}% blow" : "Off the field for #{turns}, then back to act"
+      if e.fetch("power", 0).positive? then "Out of reach for #{turns}, then a #{e['power']}% blow"
+      elsif e["aloft"] == 1 then "Up out of reach of blows (not of spells) for #{turns}, then back to act"
+      else "Off the field for #{turns}, then back to act"
+      end
     else
       "Sent off the field for #{turns} (#{e.fetch('chance', 100)}%)"
     end
@@ -202,6 +206,7 @@ module BooksHelper
   def describe_moment(trigger, by = nil)
     case trigger
     when "hit" then by ? "When hit by #{term(by)}" : "When hit"
+    when "struck" then "Before a blow up close lands"
     when "ally_falls" then "When one of its own falls"
     when "falls" then "With its last breath"
     end

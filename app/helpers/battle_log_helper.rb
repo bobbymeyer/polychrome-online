@@ -61,6 +61,7 @@ module BattleLogHelper
     when "ko" then field.unit(event["target"])&.party? ? "#{name.('target')} is KO'd!" : "#{name.('target')} is defeated."
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
+    when "stumbled" then "#{name.('actor')} misses, and comes down hard!"
     when "recovered" then "#{event['names'].to_sentence} #{event['names'].one? ? 'is' : 'are'} back in the party's hands."
     when "steal"
       what = if event["status"] then "#{name.('target')}'s #{term(event['status']).downcase}"
@@ -206,6 +207,7 @@ module BattleLogHelper
     move = field.ability_name(event["ability"]) || event["name"]
     case event["trigger"]
     when "hit" then "#{who} answers the blow: #{move}!"
+    when "struck" then "#{who} answers before the blow lands: #{move}!"
     when "ally_falls" then "#{who} sees one of its own fall: #{move}!"
     when "falls" then "#{who}, with its last breath: #{move}!"
     else "#{who}: #{move}!"

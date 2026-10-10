@@ -120,6 +120,11 @@ module Battle
       units.select { |o| o["side"] != u["side"] && alive?(o) && (reach || !out_of_reach?(o)) }
     end
 
+    # The other side's living units this move can find (State.reaches?).
+    def within_reach(u, ability)
+      units.select { |o| o["side"] != u["side"] && alive?(o) && State.reaches?(ability, o) }
+    end
+
     def out_of_reach?(u)
       OUT_OF_REACH_STATUSES.any? { |kind| status?(u, kind) }
     end
@@ -157,6 +162,7 @@ module Battle
       # Struck by an opponent: what it does when hit (a counter), once it's standing or not.
       striker = extra[:actor] && unit(extra[:actor])
       if striker && striker["side"] != target["side"]
+        target["last_hit_by"] = striker["id"] unless extra[:status]
         queue_reaction(target, "hit", by: extra[:damage_type], target: striker["id"])
         free_from(target, striker, extra[:damage_type]) unless extra[:status]
       end

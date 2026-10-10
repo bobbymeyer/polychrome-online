@@ -528,7 +528,7 @@ module Battle
       elsif unit["side"] == "enemy" || unit["guest"]
         ability, target, rule = AI.choose(ctx, unit)
         AI.fire(ctx, unit, rule)
-        use_ability(unit, own(unit, ability), target)
+        use_ability(unit, own(unit, ability), target, aim: rule && unit["ai"][rule]["target"])
       elsif cmd.nil?
         ctx.emit(:turn_skipped, unit: unit["id"], reason: "no_command")
       else
@@ -748,9 +748,9 @@ module Battle
     # A move that takes turns to go off: the user winds it up (charging,
     # no commands) and it goes off on the turn the charge runs out, paid for
     # then (#release). Knocked out, the charge is lost with every status.
-    def wind_up(unit, ability, target_id)
+    def wind_up(unit, ability, target_id, aim = nil)
       unit["statuses"] << { "kind" => "charging", "turns" => ability["charge"], "left" => ability["charge"],
-                            "ability" => ability, "target" => target_id }
+                            "ability" => ability, "target" => target_id, "aim" => (aim if aim == "last_hit") }.compact
       ctx.emit(:charging, actor: unit["id"], ability: ability["id"], turns: ability["charge"])
     end
 
@@ -762,7 +762,12 @@ module Battle
 
       unit["statuses"].delete(status)
       ability = status["ability"] || ctx.ability("attack")
-      use_ability(unit, ability.merge("released" => true), status["target"])
+      target = status["target"]
+      if status["aim"] # whoever hit it last, as it goes off
+        aimed = AI.pick_target(ctx, unit, ability, status["aim"])
+        target = aimed unless aimed == :none
+      end
+      use_ability(unit, ability.merge("released" => true), target)
     end
 
     # Charged: the next move that deals or restores HP is twice as strong,
@@ -792,7 +797,9 @@ module Battle
       apply_effects(unit, item, targets, item: true)
     end
 
-    def use_ability(unit, ability, target_id)
+    # aim: the script's target strategy, for a move that takes turns to go
+    # off and finds its mark again then (last_hit).
+    def use_ability(unit, ability, target_id, aim: nil)
       if ability["kind"] == "magic" && ctx.status?(unit, "silence")
         return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: "silenced")
       end
@@ -805,7 +812,7 @@ module Battle
       if blood.positive? && unit["hp"] <= blood
         return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: "no_hp")
       end
-      return wind_up(unit, ability, target_id) if ability.fetch("charge", 0).positive? && !ability["released"]
+      return wind_up(unit, ability, target_id, aim) if ability.fetch("charge", 0).positive? && !ability["released"]
 
       unit["mp"] -= cost
       if blood.positive?
@@ -825,7 +832,7 @@ module Battle
       if targets.empty?
         return ctx.emit(:miss, actor: unit["id"], ability: ability["id"], reason: "no_target")
       end
-      return if iai(unit, ability, targets)
+      return if iai(unit, ability, targets) || forestalled?(unit, ability, targets)
 
       apply_effects(unit, ability, targets)
       reload(unit, ability)
@@ -888,6 +895,24 @@ module Battle
       ctx.countering = false
       ctx.check_end
       ctx.over? || !ctx.alive?(unit)
+    end
+
+    # Struck: a creature with a "struck" rule (a mantis's riposte, a toad's
+    # hot skin) answers a blow up close before it lands: a move with a
+    # physical blow in it and without the reach. The blow comes only if its
+    # striker is still standing and free to swing. True when it never comes.
+    def forestalled?(unit, ability, targets)
+      return false if ability["reach"] || ability["effects"].none? { |e| %w[physical jump].include?(e["primitive"]) }
+
+      before = ctx.reactions.size
+      targets.each do |target|
+        ctx.queue_reaction(target, "struck", target: unit["id"]) if target["side"] != unit["side"] && ctx.alive?(target) && !ctx.disabled?(target)
+      end
+      return false if ctx.reactions.size == before
+
+      react
+      ctx.check_end
+      ctx.over? || !ctx.alive?(unit) || ctx.disabled?(unit)
     end
 
     # A move with a reload leaves its user spent for that many turns.
@@ -1023,7 +1048,7 @@ module Battle
         hits(effect).times do
           break if ctx.over?
 
-          target = ctx.rng.pick(ctx.opponents(unit, reach: ability["reach"]))
+          target = ctx.rng.pick(ctx.within_reach(unit, ability))
           break unless target
 
           Effects.apply(ctx, unit, target, effect)
@@ -1050,14 +1075,14 @@ module Battle
       when "self" then [ unit ]
       when "single_enemy"
         chosen = nil unless chosen && State.valid_target?(unit, ability, chosen)
-        [ covered(chosen || ctx.rng.pick(ctx.opponents(unit, reach: ability["reach"]))) ].compact
+        [ covered(chosen || ctx.rng.pick(ctx.within_reach(unit, ability))) ].compact
       when "single_ally"
         fallen = ctx.allies(unit, alive: false).reject { |a| ctx.alive?(a) }
         return [ chosen ] if chosen && State.valid_target?(unit, ability, chosen)
         return [ ctx.rng.pick(fallen) ].compact if revive
 
         [ ctx.allies(unit).min_by { |a| [ ctx.hp_percent(a), a["hp"] ] } ]
-      when "all_enemies" then ctx.opponents(unit, reach: ability["reach"])
+      when "all_enemies" then ctx.within_reach(unit, ability)
       when "all_allies" then ctx.allies(unit, alive: !revive)
       end
     end

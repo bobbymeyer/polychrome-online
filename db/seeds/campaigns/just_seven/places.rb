@@ -91,8 +91,8 @@ module Seeds
                "hacking, forcing or bare hands anger them (it goes off).\n" \
                "3 Setback: deep in the vines something gleams: the combiner prism, already there for reasons nobody knows. The Mantis just uses " \
                "the spot as a lure. Reaching for it springs the ambush straight into the fight.\n" \
-               "4 Climax: the Orchid Mantis. It starts as A Striking Orchid; the first hit breaks the illusion. Riposte answers hits (the notes have " \
-               "it strike first, 1/2/3 a round across its molts; the engine answers after, at 50%, 75%, then every hit). Lure is telegraphed. " \
+               "4 Climax: the Orchid Mantis. It starts as A Striking Orchid; the first hit breaks the illusion. Riposte answers a blow up close before it " \
+               "lands: half the time, then three times in four, then every time across its molts. Spells and shots from range get no answer. Lure is telegraphed. " \
                "Molts at two-thirds and one-third make it more ornate, not more menacing. Mid-fight, a look into the prism shows a coin-filled " \
                "room elsewhere in the garden.\n" \
                "5 Twist: unscrewing the prism (reverse-threaded) opens the way to the treasury, mostly emptied by the grandfather. The coins " \
@@ -120,8 +120,9 @@ module Seeds
                "grievance. Challenged, he can't refuse without exposing the oracle (refusing makes him a coward). He can't open the slit on his own " \
                "case, so the swordsman does: green, as always. He can't protest without confirming he knew.\n" \
                "4 Climax: opening the chamber door wakes the Cormorant (he always knew; it's why he never went in). Hooked Bill on whoever hit it " \
-               "last; Circle takes it out of reach for two turns (a Ranger's reach still hits); Dive is telegraphed on whoever hit it last (land a " \
-               "hit first to redirect; the engine picks at random, so steer it as GM). A missed Dive grounds it for a turn. Wing Spread: the first " \
+               "last; Circle takes it up out of reach of blows for two turns (a Ranger's reach or a spell still finds it); Dive is telegraphed " \
+               "on whoever hit it last, and goes for whoever has hit it last when it drops (land a hit first to redirect). A missed Dive grounds " \
+               "it for a turn. Wing Spread: the first " \
                "real wind in weeks, uncommented. Below half: more Dive and Circle.\n" \
                "5 Twist: testing the splitter proves the oracle was pure, unchanging optics. The court's legitimising ritual means nothing. The " \
                "Cormorant flies out through the slit toward the sea (Sign 2's holdout).",
@@ -145,7 +146,7 @@ module Seeds
                "3 Setback: three fights under rising water, a stage each. A fight that runs long pushes the water up a stage early. Ankle-deep: " \
                "fire weakened, moray eels that bite and hide. Waist-deep: everyone slower, a barnacle crust (thunder is the clean answer). " \
                "Chest-deep: thunder hits the whole party and a small drowning tick each round; a giant octopus grabs and inks.\n" \
-               "4 Climax: the Toad. Hot Skin burns whoever hits it. Belly Flash is telegraphed (enough damage on the telegraph turn interrupts it " \
+               "4 Climax: the Toad. Hot Skin burns whoever touches it: a blow up close, not a spell or a shot. Belly Flash is telegraphed (enough damage on the telegraph turn interrupts it " \
                "and stuns it: a GM call). Dial Spin knocks the targeting lamp around: a sweeping light each round until someone spends an " \
                "action to jam the dial. Below half, Tide Call: a three-turn flood countdown; at zero the water douses the lamp, hits everyone hard " \
                "and the toad gets a free turn. Break the mask first.\n" \
