@@ -231,7 +231,11 @@ its own colours, so they never argue.
 
 Places are coloured by kind: towns Orange, dungeons Wine Red, fields Green, events Blue. Rooms
 by decision: fights Bright Red, the boss Wine Red, treasure Sun Yellow, events Blue, forks
-Orange. In a town, the inn is Orange, the shop Sun Yellow, the guild Blue and the temple Pink, and
+Orange.
+
+The GM's floorplan is an editor, on the same terms as a map's sheet: a room is grabbed and dragged
+to move it, a click opens its panel beside the plan, and hover and focus take the control colour.
+The players' floorplan and the Gazetteer's example are pictures, with none of it. In a town, the inn is Orange, the shop Sun Yellow, the guild Blue and the temple Pink, and
 lit windows are Sun Yellow.
 
 The battlefield is a stage in colour: the enemies on Dark Blue under a white halftone (each
@@ -267,6 +271,7 @@ Simple shapes carry meaning, and each one is explained in a legend next to the m
 | Key room | A key, Lake Green |
 | Lock on a path | A Wine Red padlock; hollow once opened |
 | Costly way in a dungeon | Dashed path with a black diamond at its middle |
+| A way the GM joined | A finer dashed line than the roll's, so the shape shows whose it is |
 | Current room | The room filled Dark Blue |
 | Resolved room | Its marker shown in outline |
 

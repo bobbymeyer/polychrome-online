@@ -13,7 +13,14 @@ module Generators
   #   "stock"       => ["potion", ...]                    replaces the shop's stock
   #   "boss"        => { "ogre" => 1 }                    who waits in the boss room
   #   "added_rooms" => [{ "key", "name", "decision", "connect" }]
+  #   "moved_rooms" => { "room-3" => [x, y] }              rooms dragged off where they rolled
+  #   "added_paths" => [["room-1", "room-4"]]              ways the GM joined
+  #   "removed_paths" => ["path-room-1-room-2"]            ways the GM cut
   # }
+  #
+  # The last three are the dungeon's shape, and they go last for a reason:
+  # a path can join an added room, and a move can shift one, so the rooms
+  # have to all be there first.
   module Overrides
     ADDED_OFFSET = 70
 
@@ -40,6 +47,44 @@ module Generators
       boss = location["rooms"].find { |room| room["key"] == location["boss"] }
       boss["decision"] = boss["decision"].slice("who").merge("kind" => "boss", "monsters" => overrides["boss"]) if boss && overrides["boss"]
       overrides.fetch("added_rooms", []).each { |room| add_room(location, room) }
+      cut_paths(location, overrides.fetch("removed_paths", []))
+      join_paths(location, overrides.fetch("added_paths", []))
+      move_rooms(location, overrides.fetch("moved_rooms", {}))
+    end
+
+    # Ways the GM cut, by path key. A key the roll no longer produces is
+    # simply not there to drop.
+    def cut_paths(location, keys)
+      return if keys.empty?
+
+      location["paths"].reject! { |path| keys.include?(path["key"]) }
+    end
+
+    # Ways the GM joined. A pair naming a room this roll didn't produce is
+    # dropped rather than drawn to nowhere: the room count itself can change
+    # between rolls, and a half-drawn path would break #neighbours.
+    def join_paths(location, pairs)
+      keys = location["rooms"].map { |room| room["key"] }
+      pairs.each do |from, to|
+        next unless keys.include?(from) && keys.include?(to)
+        next if location["paths"].any? { |path| [ path["from"], path["to"] ].sort == [ from, to ].sort }
+
+        location["paths"] << { "key" => added_path_key(from, to), "from" => from, "to" => to, "added" => true }
+      end
+    end
+
+    # Rooms dragged off where they rolled. Last, so it reaches added rooms too.
+    def move_rooms(location, places)
+      return if places.empty?
+
+      location["rooms"].each do |room|
+        at = places[room["key"]] or next
+        room["x"], room["y"] = at.map(&:to_i)
+      end
+    end
+
+    def added_path_key(from, to)
+      "path-added-#{[ from, to ].sort.join('-')}"
     end
 
     # A hand-authored room hangs off an existing one, drawn just beside it.
