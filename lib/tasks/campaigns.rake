@@ -11,6 +11,26 @@ namespace :campaigns do
          "#{campaign.map_nodes.count} places, #{campaign.npcs.count} people, #{campaign.scenes.count} scenes, " \
          "#{campaign.secrets.count} secrets. Invite code #{campaign.join_code}."
   end
+
+  desc "Export a campaign's prep as a module (campaigns:export[12,tmp/dead-calm.module.zip])"
+  task :export, [ :id, :path ] => :environment do |_, args|
+    campaign = Campaign.find(args.fetch(:id))
+    export = CampaignModule::Export.new(campaign)
+    path = args[:path].presence || export.filename
+    File.binwrite(path, export.to_zip)
+    puts "Wrote #{campaign.name} to #{path}."
+  end
+
+  desc "Start a campaign from a module file, in a world, for a GM (campaigns:import[oda,tmp/dead-calm.module.zip,gm@example.com])"
+  task :import, [ :world, :path, :gm ] => :environment do |_, args|
+    world = World.find_by!(slug: args.fetch(:world))
+    gm = args[:gm].presence && User.find_by!(email_address: args[:gm].strip.downcase)
+    campaign = File.open(args.fetch(:path), "rb") { |file| CampaignModule::Import.new(file, world: world, gm: gm).run! }
+    puts "#{campaign.name} is ready in #{world.name}: #{campaign.map_nodes.count} places, #{campaign.npcs.count} people, " \
+         "#{campaign.scenes.count} scenes. Invite code #{campaign.join_code}."
+  rescue Refusal => e
+    abort e.message
+  end
 end
 
 module Seeds

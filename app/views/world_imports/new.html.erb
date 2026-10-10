@@ -1,0 +1,15 @@
+<% content_for :title, "Import a world" %>
+<div class="crumbs"><%= link_to "Worlds", worlds_path %> / Import a world</div>
+<h1>Import a world</h1>
+<p class="hint">
+  A world exported from this game as a .zip: its books, atlas, cast, fronts, codex and music. It becomes a new world here, yours to change,
+  as a copy would. Campaigns don't come with it: a campaign's prep travels as a module.
+</p>
+<%= form_with url: world_import_path, multipart: true, class: "window" do |f| %>
+  <div class="field"><%= f.label :package_file, "World file" %><%= f.file_field :package_file, accept: ".zip,application/zip", required: true %></div>
+  <div class="field-row">
+    <div class="field"><%= f.label :name, "Name" %><%= f.text_field :name, placeholder: "The world's own" %></div>
+    <div class="field"><%= f.label :slug, "Address" %><%= f.text_field :slug, placeholder: "From the name" %></div>
+  </div>
+  <%= f.submit "Import", class: "button button--primary" %>
+<% end %>

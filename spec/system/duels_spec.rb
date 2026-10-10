@@ -9,12 +9,17 @@ RSpec.describe "A duel", type: :system do
 
   let!(:ronin) { create_monster(campaign.world, slug: "ronin") }
 
-  def swing_the_meter
+  # A swing posts and the page comes back (Campaigns::Duels::SwingsController): once it has,
+  # and its streams are listening again, the other side can move and this page will hear it.
+  # Moving sooner can land the other side's swing while this page is still reconnecting.
+  def swing_the_meter(then_see:)
     within("[data-controller=duel-meter]") do
       click_on "Swing"
-      sleep 0.4 # let the needle travel
+      expect(page).to have_button("Stop") # the needle is moving
       click_on "Stop"
     end
+    expect(page).to have_css(then_see, wait: 15)
+    wait_for_streams
   end
 
   it "goes from a challenge to three rounds on the meter, and a result" do
@@ -32,18 +37,18 @@ RSpec.describe "A duel", type: :system do
     3.times do |i|
       as(player) do
         expect(page).to have_css(".duel__round", text: "Round #{i + 1}", wait: 15)
-        swing_the_meter
-        expect(page).to have_css(".duel-meter.is-swung", text: "Rook", wait: 15)
+        swing_the_meter(then_see: "#duel_meter_#{duel.id}_#{i + 1}_character_still.is-swung")
       end
       as(gm) do
         expect(page).to have_css(".duel__round", text: "Round #{i + 1}", wait: 15)
-        swing_the_meter
+        swing_the_meter(then_see: ".duel__card tbody tr:nth-child(#{i + 1})") # the round, shown, on the page that came back
       end
       # Both in: the round is shown to everyone.
       as(player) { expect(page).to have_css(".duel__card tbody tr", count: i + 1, wait: 15) }
     end
 
-    as(player) { expect(page).to have_css(".duel__result", text: duel.reload.result_line, wait: 15) }
+    # Set in capitals on the page ("RONIN WINS"): the words, whatever their case.
+    as(player) { expect(page).to have_css(".duel__result", text: /#{Regexp.escape(duel.reload.result_line)}/i, wait: 15) }
     as(gm) do
       expect(page).to have_css(".duel__card tfoot", text: "Total", wait: 15)
       click_on "Put it away"

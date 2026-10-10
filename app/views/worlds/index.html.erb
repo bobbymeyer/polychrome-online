@@ -21,6 +21,7 @@
 <div class="book-header">
   <h2>Worlds</h2>
   <%= link_to "New world", new_world_path, class: "button" if can_make_games? %>
+  <%= link_to "Import a world", new_world_import_path, class: "button button--quiet" if can_make_games? %>
 </div>
 <% if @worlds.empty? %>
   <p class="empty">No worlds yet. Run <code>bin/rails db:seed</code> for the base world.</p>
