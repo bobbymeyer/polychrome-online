@@ -5,8 +5,8 @@
 # kaiju-mecha; the party finds seven masks, routes light through two prisms
 # and wakes her, just as her ancient brother and rival arrives to finish an
 # old fight. About eight sessions: the smoke lounge, seven five-room
-# dungeons (Legs, Arms, Sword, Torso, Head), then the Giant Battle, which
-# isn't built yet.
+# dungeons (Legs, Arms, Sword, Torso, Head), then the Giant Battle, where
+# the party crews her against him (just_seven/giant_battle.rb).
 #
 # Started for a GM with bin/rails "campaigns:seed[just_seven,gm@example.com]".
 # It adds what it needs to Oda's books (only what's missing), then makes
@@ -29,11 +29,13 @@ module Seeds
       world.campaigns.find_by(name: NAME, gm: gm) || Campaign.transaction { start(world, gm) }
     end
 
-    # Forms first: a phase can only become an entry that's in the Bestiary.
+    # Forms first, in the order written (a form's own form before it): a
+    # phase can only become an entry that's in the Bestiary.
     def add_books(world)
-      forms = MONSTERS.values.flat_map { |attrs| Array(attrs[:phases]).map { |phase| phase[:becomes].to_sym } }
-      Setting.new(slug: "oda", world: Oda::WORLD, abilities: ABILITIES, items: ITEMS,
-                  monsters: MONSTERS.sort_by { |slug, _| forms.include?(slug) ? 0 : 1 }.to_h,
+      monsters = MONSTERS.merge(STATIONS).merge(FLEET_CRASHER)
+      forms = monsters.values.flat_map { |attrs| Array(attrs[:phases]).map { |phase| phase[:becomes].to_sym } }
+      Setting.new(slug: "oda", world: Oda::WORLD, abilities: ABILITIES.merge(STATION_ABILITIES), items: ITEMS,
+                  monsters: monsters.each_with_index.sort_by { |(slug, _), i| [ forms.include?(slug) ? 0 : 1, i ] }.map(&:first).to_h,
                   generator_tables: GENERATOR_TABLES, location_templates: LOCATION_TEMPLATES).run
     end
 
@@ -116,6 +118,7 @@ module Seeds
 end
 
 require_relative "just_seven/books"
+require_relative "just_seven/giant_battle"
 require_relative "just_seven/places"
 require_relative "just_seven/cast"
 require_relative "just_seven/story"

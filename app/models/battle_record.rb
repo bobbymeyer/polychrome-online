@@ -45,15 +45,24 @@ class BattleRecord < ApplicationRecord
   # room: the dungeon room this fight is for, dealt with when it is won (Settlement).
   # field: the room's field, in stages (Battle::Conditions): the water rising.
   # waves: more fights after the first, { slug => count } each, coming on as the field clears.
+  # crew: the party crews one great body instead of fighting as themselves (Crew: the Giant Battle).
   def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false, terrain: nil,
-                  antagonists: [], names: {}, room: nil, prelude_said: false, field: nil, waves: [])
+                  antagonists: [], names: {}, room: nil, prelude_said: false, field: nil, waves: [], crew: nil)
     seed = seed.presence&.to_i || Random.new_seed % 2**31
-    party = characters.map(&:battle_spec)
+    crew = Crew.new(campaign.world, characters, crew, npcs: campaign.npcs) if Crew.plan?(crew)
+    party = crew ? crew.party_specs + crew.wearer_specs : characters.map(&:battle_spec)
     raise Refusal, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
 
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items,
                                   terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec), field: field.presence,
                                   waves: Array(waves).map(&:to_h).reject(&:empty?))
+    if crew # who's at a station (their own HP stays theirs), and the cast's wearers, who crew on their own
+      state["units"].each do |unit|
+        unit["crewing"] = crew.crewing[unit["id"]] if crew.crewing.key?(unit["id"])
+        unit["statuses"] << { "kind" => "haste", "turns" => Crew::ALL_BATTLE } if crew.two_masks.include?(unit["id"])
+        unit["guest"] = true if unit["id"].start_with?("crew_npc_")
+      end
+    end
     names.each do |slug, named|
       unit = state["units"].find { |u| u["side"] == "enemy" && u.dig("image", "slug") == slug }
       unit.merge!("name" => named, "named" => true) if unit # its own name: kept through its phases

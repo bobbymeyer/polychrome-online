@@ -24,6 +24,8 @@ module BattleRecord::Settlement
 
     characters = characters_by_unit
     party.each do |unit|
+      next if unit.crewing? # the great body's damage, not theirs (Crew)
+
       characters[unit.id]&.update!(hp: unit.hp, mp: unit.mp)
     end
 

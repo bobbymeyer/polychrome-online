@@ -242,10 +242,15 @@ module Seeds
                "he's an excited spectator. Whether he survives or holds a mask in the finale is yours.\n" \
                "4 Twist: the combiner into the third-eye socket (only once the Violet mask is taken: all seven colours accounted for).\n" \
                "5 Result: the same light lights her eyes. She's awake and ready to pilot, with no breather.\n\n" \
-               "THE GIANT BATTLE is not built: the party crews her stations against Fleet Crasher (Dragon/Fairy in the notes; weak to Ice, Poison, " \
-               "Steel). Open: stations, the empty-station rule, her own HP pool, his phases, the hail bomb, the Bind and Break endings. Masks: " \
-               "seven total, at least two players; with fewer than seven players the rest go to the swordsman, then Amethyst 7A, then the king; " \
-               "with fewer than four, each wears two (half masks).",
+               "THE GIANT BATTLE (Landfall, past her eyes): the party crews her against Fleet Crasher. A battle, pure and simple. Each " \
+               "character fights at the station their archetype fits (Blade: Courtsword, Soldier; Breath: the mancers; Rigging: Thief; " \
+               "Drive: Monk; Sonar: Magician; Damage Control: Healer, Bodyguard; Ordnance: Ranger), and a station's damage is hers, not " \
+               "theirs. A station down is a system offline until Damage Control reboots it; she falls when every system is down. Seven " \
+               "masks: with fewer than seven players the swordsman, then Amethyst 7A, then the king crew the rest on their own; with " \
+               "fewer than four, each player crews two. Both kaiju are Dragon/Fairy: Ice, Poison and Steel find them. Fleet Crasher: " \
+               "sword and buckler (Crashing Lunge telegraphed on whatever hit him last: enough damage first and he flinches; Blade " \
+               "Ready cuts it), then under the water below two-thirds (only Ordnance's reach and Sonar find him), then enraged below a " \
+               "third. Ordnance has the hail bomb, once: hail out of a clear sky, and he stops for a turn.",
         rooms: [
           { name: "The jaw", decision: { kind: "event", text: "Seven beams strike the dome, and the face on the hill opens its jaw. It is the Pirate King's flag. And it sings." } },
           { name: "The hill", decision: { kind: "encounter", monsters: { die_hard: 3 }, waves: [ { die_hard: 3 }, { die_hard: 4 } ] } },
@@ -253,7 +258,8 @@ module Seeds
           { name: "The sealed room", decision: { kind: "boss", monsters: { amethyst_7a: 1 } } }
         ],
         twist: [ { name: "The third eye", text: "A socket in the brow, reverse-threaded, waiting for a prism. Seven colours accounted for." },
-                 { name: "Her eyes", text: "The light goes into her head, and out through her eyes. Under the whole city, something wakes." } ]
+                 { name: "Her eyes", text: "The light goes into her head, and out through her eyes. Under the whole city, something wakes." },
+                 { name: "Landfall", decision: { kind: "boss", monsters: { fleet_crasher: 1 }, crew: CREW } } ]
       }
     }.freeze
 

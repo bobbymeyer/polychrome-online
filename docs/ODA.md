@@ -231,7 +231,8 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
   - each guardian and its forms;
   - the mooks and duellists;
   - the seven plain masks;
-  - a five-room dungeon template.
+  - a five-room dungeon template;
+  - Swirl-Pool's seven stations and Fleet Crasher, for the Giant Battle.
 - **The island's map** has the city's tiers laid out as she lies under them. Each dungeon is rolled as one corridor, and its rooms are pinned to the entrance, puzzle, setback and guardian. The twist is a room past the guardian.
 - **The rest of the campaign:**
   - the cast;
@@ -292,4 +293,24 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
   - The lounge brawl is a pushover, as a comic opener should be.
 
   A table of five to seven will find all of it easier.
-- **The Giant Battle is not built.**
+- **The Giant Battle** is Landfall, the room past the Head's twist: the party crews Swirl-Pool against Fleet Crasher. It's a battle, pure and simple: there are no endings to choose between. It lives in `just_seven/giant_battle.rb`, and a crewed fight is `Crew`.
+  - **Her stations are her systems,** each a Bestiary entry the crew fight as: its stats, moves and types, under the character's own name, commanded as they'd command themselves. A station down is a system offline until Damage Control reboots it, and she falls when every system is down. A station's damage is hers: the characters' own HP is left alone.
+  - **Each archetype crews the station its fantasy fits:**
+
+    | Station | Crewed by | What it does |
+    |---|---|---|
+    | Blade | Courtsword, Soldier | the main strike: hold the cut, release it, cut his lunge first |
+    | Breath | the mancers | Ice, Poison and Fairy through the neon stripes |
+    | Rigging | Thief | hold him a turn, strip his buckler, a steel whip |
+    | Drive | Monk | build steam, then an overdrive that burns her own hull |
+    | Sonar | Magician | slow him, quicken a system, reflect, and find him under the water |
+    | Damage Control | Healer, Bodyguard | patch, reboot, seal the bulkheads, take the blow |
+    | Ordnance | Ranger | missiles and drones with the reach, and the hail bomb |
+  - **Seven masks.** With fewer than seven at the table, the swordsman, then Amethyst 7A, then the king crew the rest on their own: Blade, Ordnance, Damage Control. With fewer than four, each player wears two masks: two systems in one body, with a second station's moves, the larger HP plus half the other, and two goes a round.
+  - **Fleet Crasher** is Dragon/Fairy, like her, so Ice, Poison and Steel find him. He fights in three phases:
+    - sword and buckler: Crashing Lunge is telegraphed on whatever hit him last, and enough damage first makes him flinch;
+    - under the water below two-thirds: only a shot with the reach, or a spell, finds him;
+    - enraged below a third.
+
+    Each phase gives back a tenth of his HP. The hail bomb is Ordnance's, about once in a fight: hail, and he stops for a turn.
+  - **The numbers come from a simulated playtest:** crews of two to seven, of random archetypes, at level 13. The fight runs ten to twelve rounds, and the crew end with half their HP or so.

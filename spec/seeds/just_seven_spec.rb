@@ -151,7 +151,7 @@ RSpec.describe Seeds::JustSeven do
     expect(campaign.scenes.count).to eq(described_class::SCENES.size)
     expect(campaign.scenes.find_by!(name: "Vision: Violet").beats.map(&:text).join).to include("Swirl-Pool")
     expect(campaign.scenes.find_by!(name: "The Seer").beats.find_by!(position: 1).speaker.name).to eq("The Seer")
-    expect(campaign.flags.pluck(:key)).to include("combiner_prism", "splitter_prism", "ending")
+    expect(campaign.flags.pluck(:key)).to include("combiner_prism", "splitter_prism")
   end
 
   it "runs every guardian, through its forms, against a party built from the Compendium" do
@@ -207,5 +207,25 @@ RSpec.describe "The Just Seven at the table", type: :request do
       get location_path(location)
       expect(response).to have_http_status(:ok), location.name
     end
+  end
+
+  it "plays the Giant Battle at the table: the crew at their stations, the cast's wearers beside them, Fleet Crasher on the field" do
+    gm = sign_in_as(make_user("Bobby"))
+    campaign = Seeds::JustSeven.run(gm: gm)
+    ana = campaign.characters.create!(name: "Ana", job: campaign.world.jobs.find_by!(slug: "ranger"), starting_level: 13)
+    hill = campaign.map_nodes.find_by!(name: "Founders' Hill").location
+    landfall = hill.view["rooms"].find { |room| room["name"] == "Landfall" }
+    battle = BattleRecord.start!(campaign: campaign, characters: [ ana ], name: "Landfall", encounter: landfall.dig("decision", "monsters"),
+                                 crew: landfall.dig("decision", "crew"), boss: true)
+    sit_in_battle(battle, "gm")
+    get battle_path(battle)
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("Ana · Ordnance", "The Swordsman · Blade", "Fleet Crasher")
+    get battle_panel_path(battle)
+    expect(response).to have_http_status(:ok)
+
+    sit_in_battle(battle, ana.battle_unit_id)
+    get battle_panel_path(battle)
+    expect(page.css("[data-menu-key]").map { |el| el["data-menu-key"] }).to include("Missile Salvo", "Hail Bomb")
   end
 end
