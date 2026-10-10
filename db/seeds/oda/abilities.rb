@@ -9,25 +9,26 @@ module Seeds
     # powder (a single, a spread, a double and the top measure, which a
     # resistance can't stop and which leaves the caster reloading), the
     # powder's own trick, a load for an ally's weapon, a field art, and the
-    # last thing they learn.
+    # last thing they learn. Each powder has its name (and its archetype's)
+    # and its type on the chart: thunder powder is Electric.
     MANCER_POWDERS = {
-      "fire" => { tiers: %w[Fire Fira Firaga Firaja], trick: [ "scorch", "Scorch", { primitive: "status", kind: "burn", chance: 80, duration: 3 }, "single_enemy",
+      "fire" => { type: "fire", tiers: %w[Fire Fira Firaga Firaja], trick: [ "scorch", "Scorch", { primitive: "status", kind: "burn", chance: 80, duration: 3 }, "single_enemy",
                                                               "A pinch of red salt thrown in the face. It keeps burning after." ],
                   load: [ "flame_load", "Flame Load" ], last: [ "inferno", "Inferno" ],
                   field: [ "signal_fire", "Signal Fire", "reveal", "A red flare over the mesas, and every lookout for a day's ride answers with what they see." ] },
-      "water" => { tiers: %w[Water Watera Waterga Waterja], trick: [ "undertow", "Undertow", { primitive: "status", kind: "slow", chance: 75, duration: 3 }, "single_enemy",
+      "water" => { type: "water", tiers: %w[Water Watera Waterga Waterja], trick: [ "undertow", "Undertow", { primitive: "status", kind: "slow", chance: 75, duration: 3 }, "single_enemy",
                                                                     "Cold blue salt that drags at the legs like a river." ],
                    load: [ "tide_load", "Tide Load" ], last: [ "maelstrom", "Maelstrom" ],
                    field: [ "find_water", "Find Water", "restore", "A pinch of blue salt in the palm, and it turns toward the nearest spring." ] },
-      "thunder" => { tiers: %w[Thunder Thundara Thundaga Thundaja], trick: [ "jolt", "Jolt", { primitive: "status", kind: "paralyze", chance: 60, duration: 1 }, "single_enemy",
+      "thunder" => { type: "electric", tiers: %w[Thunder Thundara Thundaga Thundaja], trick: [ "jolt", "Jolt", { primitive: "status", kind: "paralyze", chance: 60, duration: 1 }, "single_enemy",
                                                                             "A spark through the joints. They stand very still for a moment." ],
                      load: [ "spark_load", "Spark Load" ], last: [ "thunderhead", "Thunderhead" ],
                      field: [ "spark_the_works", "Spark the Works", "find", "A dead machine, a jolt of yellow salt, and it remembers what it was for." ] },
-      "earth" => { tiers: %w[Stone Stonera Stonega Stoneja], trick: [ "stoneskin", "Stoneskin", { primitive: "shield", power: 8, duration: 3 }, "single_ally",
+      "earth" => { type: "ground", tiers: %w[Stone Stonera Stonega Stoneja], trick: [ "stoneskin", "Stoneskin", { primitive: "shield", power: 8, duration: 3 }, "single_ally",
                                                                       "Grey salt rubbed on the skin, and the skin remembers being rock." ],
                    load: [ "stone_load", "Stone Load" ], last: [ "landslide", "Landslide" ],
                    field: [ "read_the_seam", "Read the Seam", "find", "A taste of the dust, and they know where the good powder runs." ] },
-      "wind" => { tiers: %w[Aero Aerora Aeroga Aeroja], trick: [ "gale", "Gale", { primitive: "away", who: "target", duration: 2, chance: 70 }, "single_enemy",
+      "wind" => { type: "flying", tiers: %w[Aero Aerora Aeroga Aeroja], trick: [ "gale", "Gale", { primitive: "away", who: "target", duration: 2, chance: 70 }, "single_enemy",
                                                                 "A green gust that picks someone up and puts them somewhere else." ],
                   load: [ "gale_load", "Gale Load" ], last: [ "tempest", "Tempest" ],
                   field: [ "read_the_wind", "Read the Wind", "safe_road", "Green salt on the tongue, and the wind says which way the trouble lies." ] }
@@ -36,7 +37,8 @@ module Seeds
     MANCER_SKILLS = { "fire" => "powdercraft", "water" => "trail", "thunder" => "clockwork", "earth" => "powdercraft", "wind" => "trail" }.freeze
 
     def self.mancer_abilities
-      MANCER_POWDERS.flat_map do |type, powder|
+      MANCER_POWDERS.flat_map do |name, powder|
+        type = powder.fetch(:type)
         single, spread, double, top = powder[:tiers]
         trick_slug, trick_name, trick_effect, trick_target, trick_text = powder[:trick]
         load_slug, load_name = powder[:load]
@@ -45,7 +47,7 @@ module Seeds
         [
           [ single.downcase.to_sym, { name: single, kind: "magic", target: "single_enemy", mp_cost: 5, gesture: "flash",
                                       effects: [ { primitive: "elemental", type: type, power: 12 } ],
-                                      description: "A single measure of #{type} powder, fired from the palm." } ],
+                                      description: "A single measure of #{name} powder, fired from the palm." } ],
           [ spread.downcase.to_sym, { name: spread, kind: "magic", target: "all_enemies", mp_cost: 12, gesture: "flash",
                                       effects: [ { primitive: "elemental", type: type, power: 10 } ],
                                       description: "A measure spread thin across a whole line of them." } ],
@@ -58,11 +60,11 @@ module Seeds
           [ trick_slug.to_sym, { name: trick_name, kind: "magic", target: trick_target, mp_cost: 4, gesture: "pop", effects: [ trick_effect ], description: trick_text } ],
           [ load_slug.to_sym, { name: load_name, kind: "magic", target: "single_ally", mp_cost: 4, gesture: "tint",
                                 effects: [ { primitive: "imbue", type: type, duration: 3 } ],
-                                description: "Loads an ally's weapon with #{type} powder: their Attack strikes as #{type} for a while. A specialist changes the matchup instead of the score." } ],
+                                description: "Loads an ally's weapon with #{name} powder: their Attack strikes as #{type} for a while. A specialist changes the matchup instead of the score." } ],
           [ last_slug.to_sym, { name: last_name, kind: "magic", target: "all_enemies", mp_cost: 0, gesture: "spin",
                                 effects: [ { primitive: "elemental", type: type, power: 45 } ],
                                 description: "Everything left in the pouch at once. Only at the end of a Mancer's rope." } ],
-          [ field_slug.to_sym, { name: field_name, kind: "field", field_skill: MANCER_SKILLS.fetch(type), field_outcome: field_outcome, field_difficulty: "normal",
+          [ field_slug.to_sym, { name: field_name, kind: "field", field_skill: MANCER_SKILLS.fetch(name), field_outcome: field_outcome, field_difficulty: "normal",
                                  field_power: (field_outcome == "find" ? 150 : 0), effects: [], description: field_text } ]
         ]
       end.to_h
@@ -209,24 +211,24 @@ module Seeds
 
       # --- the Ranger --------------------------------------------------------------------
       aimed_shot: { name: "Aimed Shot", kind: "skill", target: "single_enemy", mp_cost: 0, reach: true, gesture: "lunge",
-                    effects: [ { primitive: "physical", power: 130, type: "shot" } ], description: "A breath, a squeeze. It finds them wherever they've gone." },
+                    effects: [ { primitive: "physical", power: 130, type: "steel" } ], description: "A breath, a squeeze. It finds them wherever they've gone." },
       call_hawk: { name: "Call Hawk", kind: "skill", target: "self", mp_cost: 3, gesture: "float",
                    effects: [ { primitive: "summon", creature: "hawk", stays: 1 } ], description: "A whistle, and the hawk comes down: it stays for the fight." },
       long_shot: { name: "Long Shot", kind: "skill", target: "single_enemy", mp_cost: 2, reach: true, reload_turns: 1, gesture: "lunge",
-                   effects: [ { primitive: "physical", power: 200, type: "shot" } ], description: "The long gun: a big shot, a long reload." },
+                   effects: [ { primitive: "physical", power: 200, type: "steel" } ], description: "The long gun: a big shot, a long reload." },
       volley: { name: "Volley", kind: "skill", target: "random_enemy", mp_cost: 4, reach: true, gesture: "shake",
-                effects: [ { primitive: "physical", power: 50, hits: 3, type: "shot" } ], description: "Three quick shots at whoever's there." },
+                effects: [ { primitive: "physical", power: 50, hits: 3, type: "steel" } ], description: "Three quick shots at whoever's there." },
       call_hound: { name: "Call Hound", kind: "skill", target: "self", mp_cost: 4, gesture: "bounce",
                     effects: [ { primitive: "summon", creature: "hound", duration: 3 } ], description: "A ranger's dog, in for three of its turns, and in hard." },
       pinning_shot: { name: "Pinning Shot", kind: "skill", target: "single_enemy", mp_cost: 3, reach: true, gesture: "lunge",
-                      effects: [ { primitive: "physical", power: 80, type: "shot" }, { primitive: "status", kind: "slow", chance: 70, duration: 3 } ],
+                      effects: [ { primitive: "physical", power: 80, type: "steel" }, { primitive: "status", kind: "slow", chance: 70, duration: 3 } ],
                       description: "Through the boot. They aren't running anywhere." },
       hunters_mark: { name: "Hunter's Mark", kind: "skill", target: "single_enemy", mp_cost: 3, gesture: "pop",
                       effects: [ { primitive: "debuff", stat: "def", amount: 40, duration: 3 } ], description: "Chalk on their coat, where the shot goes." },
       deadeye: { name: "Deadeye", kind: "skill", target: "single_enemy", mp_cost: 6, reach: true, gesture: "lunge",
-                 effects: [ { primitive: "physical", power: 150, type: "shot", against: "wounded", bonus: 250 } ], description: "For the one who's nearly done." },
+                 effects: [ { primitive: "physical", power: 150, type: "steel", against: "wounded", bonus: 250 } ], description: "For the one who's nearly done." },
       rain_of_lead: { name: "Rain of Lead", kind: "skill", target: "random_enemy", mp_cost: 0, reach: true, gesture: "shake",
-                      effects: [ { primitive: "physical", power: 60, hits: 6, type: "shot" } ], description: "Every chamber, every barrel, every pocket." },
+                      effects: [ { primitive: "physical", power: 60, hits: 6, type: "steel" } ], description: "Every chamber, every barrel, every pocket." },
       scout: { name: "Scout", kind: "field", field_skill: "trail", field_outcome: "reveal", field_difficulty: "easy", effects: [],
                description: "Up the nearest mesa with a glass, and back with the lie of the land." },
 
@@ -246,7 +248,7 @@ module Seeds
                      effects: [ { primitive: "physical", power: 80 }, { primitive: "status", kind: "paralyze", chance: 35, duration: 1 } ],
                      description: "The wrong end of the pike, in the face. They lose a moment." },
       fire_at_will: { name: "Fire at Will", kind: "skill", target: "random_enemy", mp_cost: 8, gesture: "shake",
-                      effects: [ { primitive: "physical", power: 70, hits: 3, type: "shot" } ], description: "The matchlocks come up behind the pikes, and the line goes white with smoke." },
+                      effects: [ { primitive: "physical", power: 70, hits: 3, type: "steel" } ], description: "The matchlocks come up behind the pikes, and the line goes white with smoke." },
       forlorn_hope: { name: "Forlorn Hope", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "lunge",
                       effects: [ { primitive: "physical", power: 180, grudge: 100 } ], description: "The charge nobody comes back from, except, this once, the Soldier." },
       kick_it_in: { name: "Kick It In", kind: "field", field_skill: "brawn", field_outcome: "unlock", field_difficulty: "normal", effects: [],
@@ -254,7 +256,8 @@ module Seeds
 
       # --- the Bodyguard: in front, always ----------------------------------------------
       guard: { name: "Guard", kind: "skill", target: "self", mp_cost: 0, gesture: "shake",
-               effects: [ { primitive: "status", kind: "cover", duration: 3 } ], description: "Steps in front of everyone: every single blow meant for the party comes here instead." },
+               effects: [ { primitive: "status", kind: "cover", duration: 3 }, { primitive: "buff", stat: "def", amount: 30, duration: 3 } ],
+               description: "Steps in front of everyone, shield set: every single blow meant for the party comes here instead." },
       brace: { name: "Brace", kind: "skill", target: "self", mp_cost: 2, gesture: "tint",
                effects: [ { primitive: "buff", stat: "def", amount: 60, duration: 3 }, { primitive: "buff", stat: "mdef", amount: 40, duration: 3 } ],
                description: "Feet set, shield up, chin down." },
@@ -271,17 +274,17 @@ module Seeds
                 description: "Out in front, eyes on every ridge. Whatever waits on the road decides to wait for someone else." },
 
       # --- what the creatures do ---------------------------------------------------------
-      talon: { name: "Talon", kind: "skill", target: "single_enemy", mp_cost: 0, effects: [ { primitive: "physical", power: 120, type: "wind" } ],
+      talon: { name: "Talon", kind: "skill", target: "single_enemy", mp_cost: 0, effects: [ { primitive: "physical", power: 120, type: "flying" } ],
                description: "Down out of the sun." },
       bite: { name: "Bite", kind: "skill", target: "single_enemy", mp_cost: 0, effects: [ { primitive: "physical", power: 130 } ], description: "Teeth." },
-      buckshot: { name: "Buckshot", kind: "skill", target: "all_enemies", mp_cost: 0, effects: [ { primitive: "physical", power: 55, type: "shot" } ],
+      buckshot: { name: "Buckshot", kind: "skill", target: "all_enemies", mp_cost: 0, effects: [ { primitive: "physical", power: 55, type: "steel" } ],
                   description: "A scattergun at everyone in front of it." },
-      quickdraw: { name: "Quickdraw", kind: "skill", target: "single_enemy", mp_cost: 0, effects: [ { primitive: "physical", power: 140, type: "shot" } ],
+      quickdraw: { name: "Quickdraw", kind: "skill", target: "single_enemy", mp_cost: 0, effects: [ { primitive: "physical", power: 140, type: "steel" } ],
                    description: "From the hip." },
       powder_spit: { name: "Powder Spit", kind: "skill", target: "single_enemy", mp_cost: 0, effects: [ { primitive: "elemental", type: "fire", power: 14 },
                                                                                                     { primitive: "status", kind: "burn", chance: 40, duration: 2 } ],
                      description: "A mouthful of raw red salt, lit." },
-      seam_quake: { name: "Seam Quake", kind: "skill", target: "all_enemies", mp_cost: 0, effects: [ { primitive: "elemental", type: "deep", power: 16 } ],
+      seam_quake: { name: "Seam Quake", kind: "skill", target: "all_enemies", mp_cost: 0, effects: [ { primitive: "elemental", type: "ground", power: 16 } ],
                     description: "The ground remembers what's under it." },
       deep_roar: { name: "Deep Roar", kind: "skill", target: "all_enemies", mp_cost: 0, effects: [ { primitive: "status", kind: "confuse", chance: 40, duration: 2 } ],
                    description: "A sound from under the world." },

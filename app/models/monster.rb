@@ -14,6 +14,10 @@ class Monster < ApplicationRecord
   validate :stat_block_is_complete
   before_validation :default_to_plain_type, on: :create
   validates :base_type, inclusion: { in: ->(monster) { monster.world_types }, message: "isn't one of this world's types" }
+  # A second type, as in the games (Poison and Grass): both count against a blow.
+  normalizes :second_type, with: ->(type) { type.to_s.strip.presence }
+  validates :second_type, inclusion: { in: ->(monster) { monster.world_types }, message: "isn't one of this world's types" }, allow_nil: true
+  validate { errors.add(:second_type, "is the same as its first") if second_type && second_type == base_type }
   validate :affinities_are_affinities
   validate :status_immunities_are_statuses
   validate :ai_script_is_valid
@@ -127,6 +131,9 @@ class Monster < ApplicationRecord
   # Where its own music is heard from (World::Music#music_path), or nil.
   def music_path = music && world.music_path(music)
 
+  # Its type, or its two.
+  def types = [ base_type, second_type ].compact.uniq
+
   # Enemy spec for Battle::State.build.
   def to_engine(count: 1, depth: 0)
     {
@@ -134,7 +141,7 @@ class Monster < ApplicationRecord
       "name" => name,
       "count" => count,
       "stats" => stats,
-      "types" => [ base_type ],
+      "types" => types,
       "affinities" => affinities,
       "status_immune" => status_immune,
       "abilities" => ability_slugs,

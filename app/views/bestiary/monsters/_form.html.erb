@@ -11,6 +11,10 @@
         <%= f.label :base_type, "Type" %>
         <%= f.select :base_type, type_options %>
       </div>
+      <div class="field">
+        <%= f.label :second_type, "Second type" %>
+        <%= f.select :second_type, type_options, include_blank: "None" %>
+      </div>
     <% else %>
       <%= f.hidden_field :base_type, value: type_chart.plain %>
     <% end %>

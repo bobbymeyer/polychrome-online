@@ -10,8 +10,10 @@ module Battle
   # round then times out, so the rest repeat their last command or Attack).
   # Players who cast, buff and use items do better, so it's a floor, not a
   # prediction. "full" (the simulator) also spends MP: whoever can, uses
-  # their hardest-hitting move on the weakest foe (or on all of them). Still
-  # no buffs, statuses or items: a sensible party, not a clever one.
+  # their hardest-hitting move on the weakest foe (or on all of them), by
+  # the type chart; and whoever can take the party's blows on themselves
+  # (a Guard) keeps that up while they're fit to. Still no buffs, statuses
+  # or items: a sensible party, not a clever one.
   module Forecast
     MAX_ROUNDS = 40
 
@@ -96,9 +98,32 @@ module Battle
         { "kind" => "ability", "ability" => raise_it["id"], "target" => fallen["id"] }
       elsif hurt && (mend = known.find { |a| State.heals?(a) && %w[single_ally all_allies].include?(a["target"]) })
         { "kind" => "ability", "ability" => mend["id"], "target" => (hurt["id"] if mend["target"] == "single_ally") }.compact
+      elsif tactics == "full" && (guard = covering(unit, allies, known))
+        { "kind" => "ability", "ability" => guard["id"] }
       elsif tactics == "full"
-        hardest(state, unit, known)
+        hardest(state, unit, known) || plain_attack(state, unit)
       end
+    end
+
+    # Attack, said out loud, when the round would otherwise repeat a
+    # guard or a mend that isn't wanted now.
+    def plain_attack(state, unit)
+      last = unit["last_command"] or return
+      return if last["kind"] == "ability" && last["ability"] == "attack"
+      return unless last["kind"] == "ability" && (ability = state["abilities"][last["ability"]])
+      return unless %w[self single_ally all_allies].include?(ability["target"])
+
+      foe = state["units"].select { |u| u["side"] != unit["side"] && u["hp"].positive? && !u["gone"] }.min_by { |u| u["hp"] } or return
+      { "kind" => "ability", "ability" => "attack", "target" => foe["id"] }
+    end
+
+    # A move that takes the party's blows on oneself, when it's worth
+    # raising: there's someone to stand in front of, the guard isn't up
+    # already, and they're not too hurt to take it.
+    def covering(unit, allies, known)
+      return if allies.size < 2 || unit["statuses"].any? { |s| s["kind"] == "cover" } || unit["hp"] * 100 < unit["stats"]["max_hp"] * 50
+
+      known.find { |a| a["target"] == "self" && a["effects"].any? { |e| e["primitive"] == "status" && e["kind"] == "cover" } }
     end
 
     # The move that does most to the foes standing (a move on them all
@@ -121,19 +146,27 @@ module Battle
       { "kind" => "ability", "ability" => best["id"], "target" => (weakest["id"] if best["target"] == "single_enemy") }.compact
     end
 
-    # What a move does to a target, by the resolver's own sums (Effects),
-    # before the dice's variance and the type chart: enough to choose by.
+    # What a move does to a target, by the resolver's own sums (Effects)
+    # and the type chart, before the dice's variance: enough to choose by.
+    # Nobody keeps casting Thunder at a creature of the ground.
     def expected(ctx, unit, ability, target)
       Array(ability["effects"]).sum do |effect|
-        hits = (effect["hits"] || 1).to_i
-        case effect["primitive"]
-        when "physical"
-          base = (ctx.stat(unit, "atk", basis: effect["basis"]) + ctx.stat(unit, "str", basis: effect["basis"])) * effect.fetch("power", 100) / 100
-          Effects.mitigate(base, ctx.stat(target, "def")) * hits
-        when "elemental", "drain"
-          Effects.mitigate(Effects.scale_by_mag(ctx, unit, effect.fetch("power"), effect["basis"]), ctx.stat(target, "mdef")) * hits
-        else 0
-        end
+        amount = raw(ctx, unit, effect, target) * (effect["hits"] || 1).to_i
+        type = effect["type"] || (Resolver.strike_type(unit, ability) if %w[physical jump].include?(effect["primitive"]))
+        percent = Types.effectiveness(type, target, ctx.types)
+        percent == :absorb ? -amount : amount * percent / 100
+      end
+    end
+
+    # One hit of an effect, mitigated, before its type.
+    def raw(ctx, unit, effect, target)
+      case effect["primitive"]
+      when "physical"
+        base = (ctx.stat(unit, "atk", basis: effect["basis"]) + ctx.stat(unit, "str", basis: effect["basis"])) * effect.fetch("power", 100) / 100
+        Effects.mitigate(base, ctx.stat(target, "def"))
+      when "elemental", "drain"
+        Effects.mitigate(Effects.scale_by_mag(ctx, unit, effect.fetch("power"), effect["basis"]), ctx.stat(target, "mdef"))
+      else 0
       end
     end
   end

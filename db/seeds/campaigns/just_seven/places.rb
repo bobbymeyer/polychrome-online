@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# The island's map (Seeds::DeadCalm): the city climbs the slope from the
+# The island's map (Seeds::JustSeven): the city climbs the slope from the
 # waterline to Founders' Hill, laid out as she lies under it, reclined and
 # face up, feet in the sea. Legs at the bottom, arms either side of the
 # Reaches, the cathedral at her heart, the dome on her head, and the Sword
@@ -9,10 +9,10 @@
 # hears on entering each (an event's text is said aloud, so it holds no
 # secrets), then the twist past the guardian.
 module Seeds
-  module DeadCalm
+  module JustSeven
     PLACES = {
       "The Steps" => {
-        kind: "town", x: 800, y: 760, visible: true, template: "clock_town",
+        kind: "town", x: 800, y: 760, visible: true, template: "island_city",
         description: "The waterline tier: quays, warehouses, boarding houses, and a smoke lounge called The Pirate King. " \
                      "No wind for weeks. Every ship in harbour is stranded with its sails hanging.",
         notes: "Act 1 starts in The Pirate King, a smoke lounge under the Pirate King's flag (a mainland legend; nobody here ties him to the founder). " \
@@ -28,7 +28,7 @@ module Seeds
       "The Airship Dock" => {
         kind: "dungeon", x: 560, y: 800, visible: false,
         description: "Under the Harbor Master's Guild Hall, where the airships used to tie up. Blown open by the inventor's demo.",
-        notes: "LEFT LEG. Guardian: the Crab (Earth here; the notes' Rock), Red Mask. Mask vision 1 (Red): swimming free. Joy and ease.\n\n" \
+        notes: "LEFT LEG. Guardian: the Crab (Rock), Red Mask. Mask vision 1 (Red): swimming free. Joy and ease.\n\n" \
                "1 Entrance: the inventor's public rocket-engine demo; he dies in the blast that opens the dock (scene: The demo). The swordsman " \
                "clears the way (\"these guys are good\") and nominates the party. The investors will slander them as saboteurs: a duel grievance later.\n" \
                "2 Puzzle: a living, sphincter-like door. Opens to rhythmic pressure, heat or lubrication; clenches tighter against force or damage. " \
@@ -52,7 +52,7 @@ module Seeds
       "The Dump" => {
         kind: "dungeon", x: 1040, y: 800, visible: false,
         description: "The haunted dump at the waterline: heaps of junk nobody can name, and lights at night.",
-        notes: "RIGHT LEG. Guardian: the Raccoon (Earth; the notes' Dark/Ground), Orange Mask. Mask vision 2 (Orange): happily sinking a large ship. " \
+        notes: "RIGHT LEG. Guardian: the Raccoon (Dark/Ground), Orange Mask. Mask vision 2 (Orange): happily sinking a large ship. " \
                "Playful; a willing predator.\n\n" \
                "1 Entrance: with the dock revealed as foot-shaped, someone notices the dump's centre matches. A local kid went in during the dock " \
                "chaos and never came back.\n" \
@@ -83,7 +83,7 @@ module Seeds
       "The King's Garden" => {
         kind: "dungeon", x: 560, y: 520, visible: false,
         description: "The old king's private botanic garden, sealed since his decline. Where he went to reflect, people say.",
-        notes: "LEFT ARM. Guardian: the Orchid Mantis (Wind; the notes' Bug), Yellow Mask. Combiner prism. Mask vision 3 (Yellow): captured in " \
+        notes: "LEFT ARM. Guardian: the Orchid Mantis (Bug; Grass while it's still an orchid), Yellow Mask. Combiner prism. Mask vision 3 (Yellow): captured in " \
                "chains. Anger.\n\n" \
                "1 Entrance: the king sends them on a hunch that the funding gap traces here, hoping for a ledger. He doesn't know what's hidden.\n" \
                "2 Puzzle: an ornate tool shed holds the old king's bonsai tools, hung with care (his secret hobby), enough for everyone. The vines " \
@@ -109,7 +109,7 @@ module Seeds
       "The Sky Bridge" => {
         kind: "dungeon", x: 1040, y: 520, visible: false,
         description: "The sky bridge where sanctioned judicial duels settle grievances, and the sacred chamber at its far end.",
-        notes: "RIGHT ARM. Guardian: the Cormorant (Wind; the notes' Flying), Green Mask. Splitter prism. Mask vision 4 (Green): dragged out of the " \
+        notes: "RIGHT ARM. Guardian: the Cormorant (Flying), Green Mask. Splitter prism. Mask vision 4 (Green): dragged out of the " \
                "water mid-fight, leaving the other kaiju behind. Fear.\n\n" \
                "The chamber's splitter prism casts seven bands; green always falls on the slit the duel-master opens to certify a verdict.\n" \
                "1 Entrance: a court-recognised grievance is needed. A duellist may bring a second, so anyone suited can fight. More than six in " \
@@ -136,7 +136,7 @@ module Seeds
       "The Sword" => {
         kind: "dungeon", x: 260, y: 640, visible: true,
         description: "Offshore, point-down in the seabed: a hilt and crossguard for piers, and a lamp in the pommel the city calls its lighthouse.",
-        notes: "THE SWORD. Guardian: the Fire-bellied Toad (Fire), Indigo Mask. Mask vision 5 (Indigo): being mechanised. Emotion fades.\n\n" \
+        notes: "THE SWORD. Guardian: the Fire-bellied Toad (Fire/Water), Indigo Mask. Mask vision 5 (Indigo): being mechanised. Emotion fades.\n\n" \
                "Clue in: the Left Arm coins carry plain provenance and mint-city marks. The lamp's casing has an engraved ring of city names with " \
                "angles, and they match the coins' mint cities exactly. The road opens with Sign 6's long tide (switch the mode on).\n" \
                "1 Entrance: the long tide strands ships in the mud and exposes a hatch in the blade.\n" \
@@ -167,8 +167,8 @@ module Seeds
       "The Cathedral" => {
         kind: "dungeon", x: 800, y: 330, visible: true,
         description: "The royal cathedral on the third tier, the Heart of the City: a great stained-glass window, a cistern beneath, and the generator.",
-        notes: "TORSO. False boss: the Mechanical Bull (Steel; the notes' Normal). True guardian: the Viper (Earth with a poison bite; the notes' " \
-               "Poison/Grass), Blue Mask. Mask vision 6 (Blue): destroying a city at the Pirate King's command, her will emptied out. Flat. Play " \
+        notes: "TORSO. False boss: the Mechanical Bull (Normal). True guardian: the Viper (Poison/Grass), " \
+               "Blue Mask. Mask vision 6 (Blue): destroying a city at the Pirate King's command, her will emptied out. Flat. Play " \
                "it just before the capstone.\n\n" \
                "Entry: the party brings the dial-and-coins proof to the king, who signs an order opening the sanctum. The compliant cult stands " \
                "aside, devastated. Die-hards under the Duel-Master bar the sanctum and plan a reverse siege, cutting water and power: they think " \
@@ -205,7 +205,7 @@ module Seeds
       "Founders' Hill" => {
         kind: "dungeon", x: 800, y: 130, visible: true,
         description: "The hill and dome at the top of the city, over the founders' mausoleum. Its face looks out to sea.",
-        notes: "HEAD. Guardian: Amethyst 7A (Steel; the notes' Ghost/Steel), Violet Mask, the only mask with a face. Mask vision 7: not a vision, a " \
+        notes: "HEAD. Guardian: Amethyst 7A (Ghost/Steel; weak to Fighting too, as the notes have it), Violet Mask, the only mask with a face. Mask vision 7: not a vision, a " \
                "broadcast to every mask-wearer, NPCs too, once the combiner is placed: pure rage, longing to crush her brother, and her name, " \
                "Swirl-Pool (scene: Vision: Violet).\n\n" \
                "A short continuous sprint, no rests, inside the window between the jaw opening and Fleet Crasher's landfall. Everything is " \
@@ -238,17 +238,24 @@ module Seeds
       }
     }.freeze
 
-    # [from, to, attrs]: the funicular, the tide and the jaw keep three of them shut.
+    # [from, to, attrs]. Three start shut, for the GM to open: the funicular
+    # once both legs are cleared, the Sword's road with the long tide
+    # (Sign 6), the hill when the jaw opens. What each says is the journey,
+    # heard every time the party goes that way, so it's said as the road is
+    # once it's open; why it's shut is in the places' notes.
     ROADS = [
       [ "The Steps", "The Airship Dock", { duration: 0 } ],
       [ "The Steps", "The Dump", { duration: 0 } ],
-      [ "The Steps", "The Reaches", { duration: 1, state: "blocked", travel_event: "The funicular: shut at its gate until both legs are cleared." } ],
+      [ "The Steps", "The Reaches", { duration: 1, state: "blocked",
+                                      travel_event: "The funicular car creaks up the slope, past terraces of washing that hasn't moved in weeks." } ],
       [ "The Reaches", "The King's Garden", { duration: 0 } ],
       [ "The Reaches", "The Sky Bridge", { duration: 0 } ],
       [ "The Reaches", "The Cathedral", { duration: 1 } ],
       [ "The Cathedral", "The Palace", { duration: 0 } ],
-      [ "The Cathedral", "Founders' Hill", { duration: 1, state: "blocked", travel_event: "Barred until the jaw opens." } ],
-      [ "The Steps", "The Sword", { duration: 1, state: "blocked", travel_event: "Across the seabed, only while the long tide is out." } ]
+      [ "The Cathedral", "Founders' Hill", { duration: 1, state: "blocked",
+                                             travel_event: "Up the processional stair to the hill, every bell in the city still singing." } ],
+      [ "The Steps", "The Sword", { duration: 1, state: "blocked",
+                                    travel_event: "Out across the stinking seabed, past ships lying on their sides, to the blade." } ]
     ].freeze
   end
 end

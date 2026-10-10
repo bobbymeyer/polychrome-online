@@ -3,7 +3,7 @@
 # Campaigns written ahead of time (db/seeds/campaigns/<slug>.rb, each a
 # Seeds module), started for a GM.
 namespace :campaigns do
-  desc "Start a written campaign for a GM, by their email (campaigns:seed[dead_calm,gm@example.com])"
+  desc "Start a written campaign for a GM, by their email (campaigns:seed[just_seven,gm@example.com])"
   task :seed, [ :slug, :gm ] => :environment do |_, args|
     gm = args[:gm].presence && User.find_by!(email_address: args[:gm].strip.downcase)
     campaign = Seeds.campaign(args.fetch(:slug)).run(gm: gm)
@@ -12,7 +12,7 @@ namespace :campaigns do
          "#{campaign.secrets.count} secrets. Invite code #{campaign.join_code}."
   end
 
-  desc "Export a campaign's prep as a module (campaigns:export[12,tmp/dead-calm.module.zip])"
+  desc "Export a campaign's prep as a module (campaigns:export[12,tmp/the-just-seven.module.zip])"
   task :export, [ :id, :path ] => :environment do |_, args|
     campaign = Campaign.find(args.fetch(:id))
     export = CampaignModule::Export.new(campaign)
@@ -21,7 +21,7 @@ namespace :campaigns do
     puts "Wrote #{campaign.name} to #{path}."
   end
 
-  desc "Start a campaign from a module file, in a world, for a GM (campaigns:import[oda,tmp/dead-calm.module.zip,gm@example.com])"
+  desc "Start a campaign from a module file, in a world, for a GM (campaigns:import[oda,tmp/the-just-seven.module.zip,gm@example.com])"
   task :import, [ :world, :path, :gm ] => :environment do |_, args|
     world = World.find_by!(slug: args.fetch(:world))
     gm = args[:gm].presence && User.find_by!(email_address: args[:gm].strip.downcase)
@@ -34,7 +34,7 @@ namespace :campaigns do
 end
 
 module Seeds
-  # The campaign module for a slug: "dead_calm" is Seeds::DeadCalm in db/seeds/campaigns/dead_calm.rb.
+  # The campaign module for a slug: "just_seven" is Seeds::JustSeven in db/seeds/campaigns/just_seven.rb.
   def self.campaign(slug)
     slug = slug.to_s.downcase
     raise ArgumentError, "No campaign at db/seeds/campaigns/#{slug}.rb" unless Rails.root.join("db/seeds/campaigns/#{slug}.rb").exist?

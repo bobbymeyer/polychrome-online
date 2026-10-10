@@ -9,8 +9,8 @@
         <td><%= link_to monster.name, entry_path(monster) %><%= tag.span(" · a form of #{form_of[monster.slug].name}", class: "muted") if form_of[monster.slug] %></td>
         <td class="num"><%= number_with_delimiter(monster.stats["max_hp"]) %></td>
         <% if types_matter? %>
-          <td><%= type_tag(monster.base_type) %></td>
-          <td><%= type_profile([ monster.base_type ], monster.affinities)["weak"].map { |t| type_name(t) }.join(", ").presence || "—" %></td>
+          <td><%= safe_join(monster.types.map { |type| type_tag(type) }, " ") %></td>
+          <td><%= type_profile(monster.types, monster.affinities)["weak"].map { |t| type_name(t) }.join(", ").presence || "—" %></td>
         <% end %>
         <td class="num"><%= monster.exp %></td>
         <td class="num"><%= monster.gil %></td>

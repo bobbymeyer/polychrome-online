@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/campaigns/dead_calm")
+require Rails.root.join("db/seeds/campaigns/just_seven")
 
-# A campaign written ahead of time, in Oda (db/seeds/campaigns/dead_calm.rb).
-RSpec.describe Seeds::DeadCalm do
+# A campaign written ahead of time, in Oda (db/seeds/campaigns/just_seven.rb).
+RSpec.describe Seeds::JustSeven do
   before { World.where(slug: "oda").destroy_all }
 
   let(:gm) { User.create!(name: "Bobby", email_address: "gm@example.com", password: "a-long-enough-password") }
@@ -80,6 +80,35 @@ RSpec.describe Seeds::DeadCalm do
     expect(party.first).to be_present
   end
 
+  it "speaks in the island's own voice: its people, its shops, and what the GM is offered" do
+    steps = place("The Steps")
+    town = steps.location.view
+    island = described_class::GENERATOR_TABLES
+    expect(town["services"].map { |s| s["name"] }).to all(be_in(island[:island_service_names][:entries].map { |e| e[:text] }))
+    hooks = island[:island_hooks][:entries].map { |e| e[:text] }
+    expect(town["npcs"].filter_map { |npc| npc["hook"] }).to all(be_in(hooks))
+
+    lines = Seeds::JustSeven::GENERATOR_TABLES[:just_seven_arrivals][:entries].map { |e| e[:text].sub("{place}", "The Steps").sub("{coward}", "") }
+    campaign.offer_arrival_line!(steps)
+    said = campaign.messages.order(:id).last.body[/“(.*)”/, 1]
+    expect(lines).to include(said)
+    dock = place("The Airship Dock")
+    campaign.offer_arrival_line!(dock)
+    expect(campaign.messages.order(:id).last.body).to include("something thumps, slow")
+
+    # Not another Oda campaign: its rows ask for flags only The Just Seven sets.
+    other = campaign.world.campaigns.create!(name: "High Noon")
+    other.set_out!
+    other.offer_arrival_line!(other.current_node)
+    expect(other.messages.order(:id).last.body).not_to include("sail")
+  end
+
+  it "says the open road's journey on each of the roads that start shut" do
+    shut = campaign.map_edges.where(state: "blocked")
+    expect(shut.map(&:travel_event)).to all(be_present)
+    expect(shut.map(&:travel_event).join).not_to match(/shut|barred|only while/i)
+  end
+
   it "puts Amethyst 7A in the Head's last room, and casts the duellists" do
     head = place("Founders' Hill").location
     expect(head.resident_villain.name).to eq("Amethyst 7A")
@@ -138,12 +167,12 @@ RSpec.describe Seeds::DeadCalm do
   end
 end
 
-RSpec.describe "Dead Calm at the table", type: :request do
+RSpec.describe "The Just Seven at the table", type: :request do
   before { World.where(slug: "oda").destroy_all }
 
   it "shows the GM its pages: the campaign, the prep, the table, the moves, the maps, and each dungeon" do
     gm = sign_in_as(make_user("Bobby"))
-    campaign = Seeds::DeadCalm.run(gm: gm)
+    campaign = Seeds::JustSeven.run(gm: gm)
     [ campaign_path(campaign), campaign_prep_path(campaign), campaign_table_path(campaign), campaign_moves_path(campaign),
       campaign_maps_path(campaign), campaign_legends_path(campaign) ].each do |path|
       get path

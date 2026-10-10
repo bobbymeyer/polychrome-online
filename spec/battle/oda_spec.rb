@@ -274,6 +274,13 @@ RSpec.describe "Oda's mechanics" do
       expect(unit(state, "hero")["statuses"]).to be_empty
     end
 
+    it "isn't put on again for someone whose turn runs out: a mask goes on once" do
+      state, = apply(with_unit(battle, "hero", coward: true), command("hero", "don_mask"))
+      _, events = apply(state, { type: "timeout" })
+      expect(of_type(events, :miss).map { |e| e["reason"] }).not_to include("coward")
+      expect(of_type(events, :attack).map { |e| e["actor"] }).to include("hero")
+    end
+
     it "only puts on masks the battle has" do
       expect { build_battle(party: [ hero ], enemies: enemies, masks: {}) }.to raise_error(ArgumentError, /storm_mask/)
     end

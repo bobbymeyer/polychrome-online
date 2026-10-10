@@ -2,7 +2,7 @@
 
 require "rails_helper"
 require Rails.root.join("db/seeds/greenware")
-require Rails.root.join("db/seeds/campaigns/dead_calm")
+require Rails.root.join("db/seeds/campaigns/just_seven")
 
 # A whole world in one file: exported, and made a new world again.
 RSpec.describe WorldPackage do
@@ -20,10 +20,10 @@ RSpec.describe WorldPackage do
     PackageBooks::KINDS.to_h { |kind, scope| [ kind, world.public_send(scope).order(:slug).map { |entry| PackageBooks.attributes(entry).except("image") } ] }
   end
 
-  describe "Oda, with Dead Calm's books, its music and its pictures" do
+  describe "Oda, with The Just Seven's books, its music and its pictures" do
     before { World.where(slug: "oda").destroy_all }
 
-    let!(:campaign) { Seeds::DeadCalm.run }
+    let!(:campaign) { Seeds::JustSeven.run }
     let(:oda) { campaign.world }
 
     it "comes back as a new world, the same book for book, its own, with nothing of its campaigns" do

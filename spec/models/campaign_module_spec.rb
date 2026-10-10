@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/campaigns/dead_calm")
+require Rails.root.join("db/seeds/campaigns/just_seven")
 
 # A GM's prep as a module: exported, carried to a world, made a campaign again.
 RSpec.describe CampaignModule do
@@ -27,14 +27,14 @@ RSpec.describe CampaignModule do
     }
   end
 
-  describe "Dead Calm, out and back in" do
-    let!(:original) { Seeds::DeadCalm.run(gm: gm) }
+  describe "The Just Seven, out and back in" do
+    let!(:original) { Seeds::JustSeven.run(gm: gm) }
 
     it "comes back as the same prep, in a world that had none of its books, which it brings" do
       zip = CampaignModule::Export.new(original).to_zip
       before = prep(original)
       World.where(slug: "oda").destroy_all
-      world = Seeds::Oda.run # Oda as seeded: no Dead Calm in its books
+      world = Seeds::Oda.run # Oda as seeded: none of The Just Seven in its books
       expect(world.monsters.find_by(slug: "crab")).to be_nil
 
       campaign = CampaignModule::Import.new(zip, world: world, gm: other_gm).run!
@@ -43,7 +43,7 @@ RSpec.describe CampaignModule do
       expect(world.monsters.find_by!(slug: "crab").phases.first["becomes"]).to eq("crab_frenzied")
       expect(world.items.masks.count).to eq(7)
       expect(campaign.map_nodes.find_by!(name: "Founders' Hill").location.resident_villain.name).to eq("Amethyst 7A")
-      expect(campaign.rumours.pluck(:body)).to match_array(Seeds::DeadCalm::RUMOURS)
+      expect(campaign.rumours.pluck(:body)).to match_array(Seeds::JustSeven::RUMOURS)
       expect(campaign.gil).to eq(Campaign::STARTING_GIL)
     end
 
@@ -85,7 +85,7 @@ RSpec.describe CampaignModule do
   end
 
   it "carries its pictures: maps, portraits, sprites, panels and its entries' art" do
-    campaign = Seeds::DeadCalm.run(gm: gm)
+    campaign = Seeds::JustSeven.run(gm: gm)
     campaign.root_map.image.attach(io: StringIO.new(picture), filename: "island.png", content_type: "image/png")
     seer = campaign.npcs.find_by!(name: "The Seer")
     seer.portraits.create!(expression: "angry").image.attach(io: StringIO.new(picture), filename: "seer.png", content_type: "image/png")
@@ -103,7 +103,7 @@ RSpec.describe CampaignModule do
   end
 
   it "reads a tampered module's places as far as they make sense, and no further" do
-    campaign = Seeds::DeadCalm.run(gm: gm)
+    campaign = Seeds::JustSeven.run(gm: gm)
     data = CampaignModule::Export.new(campaign).data
     dock = data["places"].find { |place| place["name"] == "The Airship Dock" }
     dock["location"]["overrides"] = { "name" => "The Dock", "boss" => { "kraken_of_nowhere" => 9, "crab" => 99 }, "pins" => { "room-1" => "junk" },

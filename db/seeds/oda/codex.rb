@@ -18,8 +18,8 @@ module Seeds
         body: "Elemental salts ground from crystal seams: red for fire, blue for water, yellow for thunder, grey for earth, green for wind. " \
               "Measured into cartridges and paper charms and fired through rods, staves and barrels. A gun is a cheap, dumb caster; a Mancer " \
               "is the expensive, clever kind. Monks give it up altogether.",
-        gm_notes: "MP is powder (the world's word). The five powders beat each other round a circle; steel is the plain type, shot goes " \
-                  "through armour, and the deep is what the giants are made of."
+        gm_notes: "MP is powder (the world's word). The types are Pokémon's eighteen: the five powders are Fire, Water, Electric (thunder " \
+                  "powder), Ground (earth) and Flying (wind); a gun fires Steel; the giants are Dragon."
       },
       "The Mancers" => {
         category: "People", public: true,
@@ -29,8 +29,9 @@ module Seeds
       },
       "The Giants" => {
         category: "Danger", public: true,
-        body: "Raw powder that stood up. They wake when a seam is dug too deep, and every wound makes them bigger. Steel and shot glance off.",
-        gm_notes: "Giants have the giant trait and the Deep type."
+        body: "Raw powder that stood up. They wake when a seam is dug too deep, and every wound makes them bigger.",
+        gm_notes: "Giants have the giant trait and are Dragon, with what their seam was as their second type. Dragon, Ice and Fairy hurt them " \
+                  "most."
       },
       "The Powder Company" => {
         category: "Faction", public: true,

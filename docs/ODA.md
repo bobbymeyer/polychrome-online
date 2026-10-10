@@ -7,10 +7,10 @@ Oda is the third seeded setting (`db/seeds/oda/`), and the home of its archetype
 - **Oda** is a world of its own, not Earth's cultures renamed. Early modern material culture (16th century or so): matchlocks, clockwork, printing, river trade. Its genres are JRPG, tokusatsu, samurai films and westerns.
 - **The tone swaps.** One session a grim frontier, the next a bright one with a masked hero and a monster of the week. That's the GM's to steer.
 - **Powder** is its magic: elemental salts ground from crystal seams, fired through rods, staves and barrels. A gun is a cheap, dumb caster. MP is called Powder.
-- **Types** (`worlds.damage_types`): Steel (the plain one), Shot (through armour), five powders round a circle (water quenches fire, fire burns wind, wind wears down earth, earth grounds thunder, thunder boils water), and Deep, what the giants are made of: steel and shot glance off it, and it breaks both.
+- **Types** (`worlds.damage_types`): Pokémon's eighteen, with their chart (Bobby's call). Normal is the plain one. The five powders are Fire, Water, Electric (thunder powder), Ground (earth) and Flying (wind); a gun fires Steel; the giants are Dragon. A monster can have a second type (`Monster#types`), and both count against a blow.
 - **Same type** is on (`Battle::RULES` `same_type`): a move of one of the user's own types is half again as strong.
 - **The law.** Whoever refuses a duel is a coward, and a coward has no place in this world (§4).
-- **Masks** belong to one campaign, Dead Calm: there are seven, and that's all (§5, §9). **Giants** wake when a seam is dug too deep.
+- **Masks** belong to one campaign, The Just Seven: there are seven, and that's all (§5, §9). **Giants** wake when a seam is dug too deep.
 - **The atlas.** Noonbell, where every campaign starts, under the bell that rings for duels. Saltpeter, the powder town. Gearhold, the clock town. Mines, forts and a drowned belfry. The cast: Silas Crane (the Smiling Draw, a duellist), Marrow Vey (who woke the giants), and a bought sheriff.
 
 ## 2. The archetypes
@@ -20,14 +20,14 @@ The code says `Job`; screens say archetype. Each has its type, skills, field abi
 | Archetype | Type | Signature | Passive | Payoff |
 | --- | --- | --- | --- | --- |
 | Courtsword | Steel | Sheathe | Second Wind | money |
-| Firemancer … Windmancer | their powder | its Load | Clear Mind (mp_regen) | ABP |
-| Thief | Wind | Mug | First Strike | money |
-| Monk | Earth | Palm Strike | Counter | EXP |
-| Magician | Thunder | Quick | Clear Mind | money |
-| Healer | Water | Triage | Potency | a rumour |
-| Ranger | Shot | Call Hawk | First Strike | money |
-| Soldier | Steel | Pike Thrust | Counter | money |
-| Bodyguard | Earth | Guard | Guardian | money |
+| Firemancer … Windmancer | their powder's: Fire, Water, Electric, Ground, Flying | its Load | Clear Mind (mp_regen) | ABP |
+| Thief | Dark | Mug | First Strike | money |
+| Monk | Fighting | Palm Strike | Counter | EXP |
+| Magician | Psychic | Quick | Clear Mind | money |
+| Healer | Fairy | Triage | Potency | a rumour |
+| Ranger | Flying | Call Hawk | First Strike | money |
+| Soldier | Normal | Pike Thrust | Counter | money |
+| Bodyguard | Steel | Guard | Guardian | money |
 
 ### 2.1 Courtsword
 
@@ -92,7 +92,7 @@ Control, not damage.
 - **Reach.** Shots find targets off the field: leaping, hiding, sent away. These are Aimed Shot, Long Shot, Volley, Pinning Shot and Deadeye.
 - **Long Shot** is big, and reloads.
 - **Call Hawk** brings a companion that `stays` the whole battle; **Call Hound** brings one for three turns.
-- **Typed shot** (fire, thunder, water, stone, wind) is ammunition in the Armory that anyone can fire.
+- **Typed shot** (Fire, Electric, Water, Ground and Flying, by the powder in it) is ammunition in the Armory that anyone can fire. Plain shot is Steel.
 
 ### 2.8 Soldier
 
@@ -112,7 +112,7 @@ The tank: in front of the blow meant for someone else, and in the heaviest of ev
 
 - **Wears** the most defence there is: heavy armour, helmets, and the only shields in Oda. Swords or knives. Defence +20%, and the most HP of anyone.
 - **Guardian** (passive, FF5's Cover): a single blow meant for a badly hurt ally (30% HP or less) comes to the Bodyguard instead, if they're in better shape and free to move.
-- **Guard** (`cover` status) takes every single blow meant for the party, for three turns.
+- **Guard** (`cover` status) takes every single blow meant for the party, for three turns, with the shield set (DEF +30).
 - **Brace** raises their own defences, **Interpose** shields an ally, **Shield Wall** raises the party's defence, and **Unbreakable** gives regen and a great deal of defence.
 - **Shield Bash** can stun.
 - **Escort** (field ability) has the `safe_road` outcome, on Nerve.
@@ -178,7 +178,7 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 
 ## 5. Masks
 
-- **In the Armory:** items of category `mask`, worn as an accessory by anyone. Each has its own type, turns and moves (`items.mask`). There are seven, all Dead Calm's (§9): Red, Orange, Yellow, Green, Indigo, Blue and Violet. Oda's own books have none, and its atlas, cast, tables and codex never mention them.
+- **In the Armory:** items of category `mask`, worn as an accessory by anyone. Each has its own type, turns and moves (`items.mask`). There are seven, all from The Just Seven (§9): Red, Orange, Yellow, Green, Indigo, Blue and Violet. Oda's own books have none, and its atlas, cast, tables and codex never mention them.
 - **Never sold:** found as treasure, or given by the GM.
 - **Its Don.** Wearing one puts **Don the … Mask** on the menu (`Item#don_ability`).
 - **Putting it on** (`transform`), for its turns, the wearer gains:
@@ -214,7 +214,7 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 7. **Fire's rider** is a status of its own: burn.
 8. **The Monk** banks chi rather than chaining forms.
 9. **The Ranger** has a hawk that stays and a hound for three turns.
-10. **Masks** are Dead Calm's seven, each worn by a guardian and dropped when it falls. They live in Oda's Armory, because items are a world's, but nothing else in Oda hands them out.
+10. **Masks** are The Just Seven's, each worn by a guardian and dropped when it falls. They live in Oda's Armory, because items are a world's, but nothing else in Oda hands them out.
 
 ## 8. Not done
 
@@ -223,9 +223,9 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 - **A giant's second phase** (growing on the field).
 - **Rumour-travelling shame:** a coward is known everywhere at once, not town by town.
 
-## 9. Dead Calm, a written campaign
+## 9. The Just Seven, a written campaign
 
-`db/seeds/campaigns/dead_calm.rb` is Bobby's kaiju-mecha campaign, started for a GM with `bin/rails "campaigns:seed[dead_calm,gm@example.com]"`. It makes a campaign in Oda from a blank map, since the island is cut off from the mainland. Run again, it finds that GM's campaign rather than making another.
+`db/seeds/campaigns/just_seven.rb` is Bobby's kaiju-mecha campaign, started for a GM with `bin/rails "campaigns:seed[just_seven,gm@example.com]"`. It makes a campaign in Oda from a blank map, since the island is cut off from the mainland. Run again, it finds that GM's campaign rather than making another.
 
 - **Oda's books gain** (only what's missing):
   - each guardian and its forms;
@@ -239,7 +239,7 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
   - the founding secrets, as chains of clues;
   - the scenes, from the cold open to the seven mask visions;
   - the GM's checklist, as flags.
-- **The notes' types are mapped onto Oda's.** Rock and Ground are Earth, Bug and Flying are Wind, Normal is Steel, Poison/Grass is Earth with a poison bite, and Ghost/Steel is Steel.
+- **Each guardian is the notes' type,** second types too: the Crab Rock, the Raccoon Dark/Ground, the Mantis Bug, the Cormorant Flying, the Toad Fire/Water, the Bull Normal, the Viper Poison/Grass, Amethyst 7A Ghost/Steel (and weak to Fighting, as the notes have it). The masks take their guardians' types; the Violet is Psychic.
 - **Some of the notes' patterns are the GM's to play**, because the engine doesn't do them:
   - striking first on a riposte;
   - "whoever hit it last";
@@ -247,4 +247,32 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
   - freeing a grabbed ally.
 
   Each dungeon's GM notes say which.
+- **The island has its own voice.** The Steps is an Island city, with its own people, shops and buildings. The Just Seven's arrival lines and GM moves are in Oda's tables but ask for the campaign's `just_seven` and `island` flags, so they fit no other campaign and beat Oda's mesa lines on the island.
+- **The numbers come from a simulated playtest** (October 2026). Each dungeon was played 192 times by random four-person parties at the dungeon's level, with the gear a party that level could afford. The fights ran in order, and wounds carried from room to room. The players were the battle simulator's full tactics: heal, raise, keep a Guard up, and use the hardest-hitting move by the type chart. Each guardian was also fought rested by a healer, a magician, a ranger and each other archetype in turn. The aim was a guardian that lasts six to eight rounds, with the party at about half HP, and that a sensible party beats nine times in ten. Real players buff and use items, which the simulation doesn't, so they should do better.
+
+  | Dungeon | Party level | Cleared | Boss rounds | Party HP left |
+  |---|---|---|---|---|
+  | The lounge (Act 1) | 2 | 100% | 3 | 82% |
+  | Left Leg: the Crab | 5 | 90% | 6 | 65% |
+  | Right Leg: the Raccoon | 6 | 100% | 8 | 55% |
+  | Left Arm: the Orchid Mantis | 7 | 95% | 5 | 45% |
+  | Right Arm: the Cormorant | 8 | 98% | 8 | 62% |
+  | The Sword: three water fights, then the Toad | 9 | 96% | 5 | 50% |
+  | The Torso: die-hards, then the Bull and the Viper | 10 | 99% | 7 | 56% |
+  | The Head: die-hards, then Amethyst 7A | 12 | 97% | 6 | 63% |
+
+  What changed from the first pass:
+  - every guardian has more HP: the Crab 1200, the Raccoon 1300, the Mantis 950, the Cormorant 1250, the Toad 900, the Bull 1500 then the Viper 800, and Amethyst 1700;
+  - the physical hitters hit harder;
+  - the Toad's Belly Flash (45 to 24), Hot Skin (a burn every time to half the time) and Tide Call (60 to 40) came down, because at first they wiped a rested party in five rounds;
+  - the Soldier's Strength multiplier went from 125 to 115, because it outhit the Courtsword everywhere;
+  - the Bodyguard's Guard now also raises its DEF by 30 while it guards.
+
+  Things to watch at the table:
+  - Parties of mancers with no healer struggle with the Crab, whose Rock type resists Fire and Wind and whose Harden reflects powder.
+  - The Monk struggles with the Cormorant, which circles out of reach and resists Fighting.
+  - At the Head, a party with only two real damage dealers runs long.
+  - The lounge brawl is a pushover, as a comic opener should be.
+
+  A table of five to seven will find all of it easier.
 - **The Giant Battle is not built.**
