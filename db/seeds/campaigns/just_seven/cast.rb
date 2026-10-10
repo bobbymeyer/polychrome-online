@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-# Who the GM speaks as in Dead Calm (Seeds::DeadCalm). Their notes are the
-# GM's. Someone with a Bestiary entry fights as it, and duels as it: the
+# Who the GM speaks as in The Just Seven (Seeds::JustSeven). Their notes
+# are the GM's. Someone with a Bestiary entry fights as it, and duels as it: the
 # grievances on the sky bridge are with the Mob Leader, the Investors'
 # Second and the Duel-Master. Amethyst 7A lives in the Head: he's who waits
 # in its last room. The kaiju are nonverbal and aren't cast.
 module Seeds
-  module DeadCalm
+  module JustSeven
     CAST = {
       "The Seer" => {
         title: "Old prophet",

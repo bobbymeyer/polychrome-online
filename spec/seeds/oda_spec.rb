@@ -15,7 +15,7 @@ RSpec.describe Seeds::Oda do
     expect(world.jobs.pluck(:name)).to contain_exactly("Courtsword", "Firemancer", "Watermancer", "Thundermancer", "Earthmancer", "Windmancer",
                                                        "Thief", "Monk", "Magician", "Healer", "Ranger", "Soldier", "Bodyguard")
     expect(world.abilities.count).to be >= 100
-    expect(world.items.masks).to be_empty # the seven are Dead Calm's
+    expect(world.items.masks).to be_empty # the seven belong to The Just Seven
     expect(world.monsters.where(giant: true).count).to be >= 2
     expect(world.world_places.count).to eq(8)
     expect(world.world_figures.count).to eq(3)
@@ -36,12 +36,18 @@ RSpec.describe Seeds::Oda do
     expect(world).to be_valid
   end
 
-  it "is its own setting: the five powders round a circle, steel and shot, the deep, noon, and powder for MP" do
-    expect(world.type_chart.plain).to eq("steel")
+  it "has Pokémon's eighteen types and their chart, the powders among them, noon, and powder for MP" do
+    expect(world.type_chart.slugs).to eq(%w[normal fire water electric grass ice fighting poison ground flying psychic bug rock ghost dragon dark steel fairy])
+    expect(world.type_chart.plain).to eq("normal")
     expect(world.type_chart.percent("water", "fire")).to eq(200)
-    expect(world.type_chart.percent("fire", "wind")).to eq(200)
-    expect(world.type_chart.percent("shot", "steel")).to eq(200)
-    expect(world.type_chart.percent("steel", "deep")).to eq(50)
+    expect(world.type_chart.percent("ice", "dragon")).to eq(200)
+    expect(world.type_chart.percent("dragon", "fairy")).to eq(0)
+    expect(world.type_chart.percent("fairy", "dragon")).to eq(200)
+    expect(world.type_chart.percent("steel", "fairy")).to eq(200)
+    expect(world.type_chart.percent("normal", "ghost")).to eq(0)
+    expect(world.jobs.find_by!(slug: "thundermancer").base_type).to eq("electric")
+    expect(world.abilities.find_by!(slug: "aero").effects.first["type"]).to eq("flying")
+    expect(world.monsters.find_by!(slug: "seam_giant").types).to eq(%w[dragon ground])
     expect(world.word("mp")).to eq("Powder")
     expect(world.money(1500)).to eq("1,500 marks")
     expect(world.rule?("same_type")).to be(true)
@@ -91,7 +97,7 @@ RSpec.describe Seeds::Oda do
 
         state, = Battle::Resolver.apply(state, { type: "timeout" })
       end
-      expect(%w[victory defeat input]).to include(state["status"])
+      expect(%w[victory defeat fled input]).to include(state["status"])
     end
   end
 

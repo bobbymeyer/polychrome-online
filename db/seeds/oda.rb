@@ -11,7 +11,7 @@
 # expensive, clever kind. Dig deep enough after the good seams and things
 # wake up: giants of raw powder that grow when they're hurt. Oda has no
 # masks of its own: there are seven in all, and they belong to one
-# campaign, Dead Calm (db/seeds/campaigns/dead_calm).
+# campaign, The Just Seven (db/seeds/campaigns/just_seven).
 #
 # Everyone in Oda knows one law: someone who refuses a duel is a coward,
 # and a coward has no place in this world. A duel is one against one, three
@@ -42,25 +42,35 @@ module Seeds
 
     # --- the setting itself ------------------------------------------------------
 
-    # Steel is the plain one: blades and blows. Shot is lead and a measure of
-    # black powder, and it goes through armour. The five powders beat each
-    # other round a circle (water quenches fire, fire burns the wind, the wind
-    # wears down the stone, stone grounds the thunder, thunder boils the
-    # water), and Deep is what the giants are made of: steel and shot glance
-    # off it, and it breaks both.
-    DAMAGE_TYPES = [
-      { "slug" => "steel", "name" => "Steel", "colour" => "#8a8f98", "shrugs_off" => [], "against" => { "earth" => 50, "deep" => 50 } },
-      { "slug" => "shot", "name" => "Shot", "colour" => "#4a4a4a", "shrugs_off" => [], "against" => { "steel" => 200, "wind" => 50, "deep" => 50 } },
-      { "slug" => "fire", "name" => "Fire", "colour" => "#e0541f", "shrugs_off" => %w[burn], "against" => { "wind" => 200, "fire" => 50, "water" => 50 } },
-      { "slug" => "water", "name" => "Water", "colour" => "#2f6fd6", "shrugs_off" => %w[burn], "against" => { "fire" => 200, "water" => 50, "thunder" => 50 } },
-      { "slug" => "thunder", "name" => "Thunder", "colour" => "#d9b300", "shrugs_off" => %w[paralyze], "against" => { "water" => 200, "thunder" => 50, "earth" => 50 } },
-      { "slug" => "earth", "name" => "Earth", "colour" => "#8a5a2b", "shrugs_off" => %w[slow], "against" => { "thunder" => 200, "earth" => 50, "wind" => 50, "steel" => 200 } },
-      { "slug" => "wind", "name" => "Wind", "colour" => "#4fa88a", "shrugs_off" => %w[blind], "against" => { "earth" => 200, "wind" => 50, "fire" => 50 } },
-      { "slug" => "deep", "name" => "Deep", "colour" => "#5b2a86", "shrugs_off" => %w[sleep confuse doom], "against" => { "steel" => 200, "shot" => 200, "deep" => 50 } }
-    ].freeze
+    # Pokémon's eighteen types (Bobby's call): the base world's chart
+    # (Battle::Types), which leaves out Dragon and Fairy, with those two put
+    # back. Normal is the plain one. The five powders are Fire, Water,
+    # Electric, Ground and Flying; guns fire Steel; the giants are Dragon.
+    POKEMON_CHART = Battle::Types::CHART.to_h { |type, row| [ type, row.dup ] }.tap do |chart|
+      { "fire" => { "dragon" => 50 }, "water" => { "dragon" => 50 }, "electric" => { "dragon" => 50 }, "grass" => { "dragon" => 50 },
+        "ice" => { "dragon" => 200 }, "fighting" => { "fairy" => 50 }, "poison" => { "fairy" => 200 }, "bug" => { "fairy" => 50 },
+        "dark" => { "fairy" => 50 }, "steel" => { "fairy" => 200 } }.each { |type, more| chart.fetch(type).merge!(more) }
+      chart["dragon"] = { "dragon" => 200, "steel" => 50, "fairy" => 0 }
+      chart["fairy"] = { "fire" => 50, "fighting" => 200, "poison" => 50, "dragon" => 200, "dark" => 200, "steel" => 50 }
+    end.freeze
 
-    TERRAIN_TYPES = { "plains" => "wind", "forest" => "earth", "desert" => "fire", "mountain" => "earth",
-                      "cave" => "deep", "crypt" => "deep", "sea" => "water", "town" => "steel" }.freeze
+    TYPE_LOOKS = {
+      "normal" => [ "Normal", "#a8a878" ], "fire" => [ "Fire", "#f08030" ], "water" => [ "Water", "#6890f0" ], "electric" => [ "Electric", "#f8d030" ],
+      "grass" => [ "Grass", "#78c850" ], "ice" => [ "Ice", "#98d8d8" ], "fighting" => [ "Fighting", "#c03028" ], "poison" => [ "Poison", "#a040a0" ],
+      "ground" => [ "Ground", "#e0c068" ], "flying" => [ "Flying", "#a890f0" ], "psychic" => [ "Psychic", "#f85888" ], "bug" => [ "Bug", "#a8b820" ],
+      "rock" => [ "Rock", "#b8a038" ], "ghost" => [ "Ghost", "#705898" ], "dragon" => [ "Dragon", "#7038f8" ], "dark" => [ "Dark", "#705848" ],
+      "steel" => [ "Steel", "#b8b8d0" ], "fairy" => [ "Fairy", "#ee99ac" ]
+    }.freeze
+
+    # As in the games: fire can't be burned, electric paralysed, poison or steel poisoned.
+    SHRUGS_OFF = { "fire" => %w[burn], "electric" => %w[paralyze], "poison" => %w[poison], "steel" => %w[poison] }.freeze
+
+    DAMAGE_TYPES = TYPE_LOOKS.map do |slug, (name, colour)|
+      { "slug" => slug, "name" => name, "colour" => colour, "shrugs_off" => SHRUGS_OFF.fetch(slug, []), "against" => POKEMON_CHART.fetch(slug) }
+    end.freeze
+
+    TERRAIN_TYPES = { "plains" => "normal", "forest" => "grass", "desert" => "ground", "mountain" => "rock",
+                      "cave" => "rock", "crypt" => "ghost", "sea" => "water", "town" => "normal" }.freeze
 
     SKILLS = [
       { "slug" => "draw", "name" => "Draw", "stat" => "agi", "description" => "Getting there first: a blade, a pistol, a hand to a falling cup." },

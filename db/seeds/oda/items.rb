@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # The Outfitter: remedies, powder shot, and each kind of gear in three
-# steps. Oda has no masks of its own: there are seven, and they are Dead
-# Calm's (db/seeds/campaigns/dead_calm). (Seeds::Oda)
+# steps. Oda has no masks of its own: there are seven, and they belong to
+# The Just Seven (db/seeds/campaigns/just_seven). (Seeds::Oda)
 module Seeds
   module Oda
     ITEMS = {
@@ -26,13 +26,13 @@ module Seeds
       fire_shot: { name: "Fire Shot", category: "consumable", price: 90, target: "single_enemy",
                    effects: [ { primitive: "elemental", type: "fire", power: 30 } ], description: "A cartridge of red salt. Lights whatever it hits." },
       thunder_shot: { name: "Thunder Shot", category: "consumable", price: 90, target: "single_enemy",
-                      effects: [ { primitive: "elemental", type: "thunder", power: 30 } ], description: "Yellow salt. Makes the hair stand up on the way out." },
+                      effects: [ { primitive: "elemental", type: "electric", power: 30 } ], description: "Yellow salt. Makes the hair stand up on the way out." },
       water_shot: { name: "Water Shot", category: "consumable", price: 90, target: "single_enemy",
                     effects: [ { primitive: "elemental", type: "water", power: 30 } ], description: "Blue salt. Puts out a fire, or a fire-eater." },
       stone_shot: { name: "Stone Shot", category: "consumable", price: 90, target: "single_enemy",
-                    effects: [ { primitive: "elemental", type: "earth", power: 30 } ], description: "Grey salt, heavy as a fist." },
+                    effects: [ { primitive: "elemental", type: "ground", power: 30 } ], description: "Grey salt, heavy as a fist." },
       wind_shot: { name: "Wind Shot", category: "consumable", price: 90, target: "single_enemy",
-                   effects: [ { primitive: "elemental", type: "wind", power: 30 } ], description: "Green salt. It curves." },
+                   effects: [ { primitive: "elemental", type: "flying", power: 30 } ], description: "Green salt. It curves." },
 
       # --- gear: three steps of each kind. The first is what a new character starts in;
       # the second Noonbell and Saltpeter sell; the third Gearhold, or the Reach.

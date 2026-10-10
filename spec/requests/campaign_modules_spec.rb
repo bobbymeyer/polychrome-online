@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 require "rails_helper"
-require Rails.root.join("db/seeds/campaigns/dead_calm")
+require Rails.root.join("db/seeds/campaigns/just_seven")
 
 RSpec.describe "Campaign modules", type: :request do
   before { World.where(slug: "oda").destroy_all }
 
   let(:bobby) { make_user("Bobby") }
-  let!(:campaign) { Seeds::DeadCalm.run(gm: bobby) }
+  let!(:campaign) { Seeds::JustSeven.run(gm: bobby) }
 
   def module_upload(zip)
     path = Rails.root.join("tmp", "module-#{SecureRandom.hex(4)}.zip")
@@ -22,8 +22,8 @@ RSpec.describe "Campaign modules", type: :request do
     get campaign_campaign_module_path(campaign)
     expect(response).to have_http_status(:ok)
     expect(response.media_type).to eq("application/zip")
-    expect(response.headers["Content-Disposition"]).to include("dead-calm.module.zip")
-    expect(PackageArchive.read(response.body, format: CampaignModule::FORMAT).data["name"]).to eq("Dead Calm")
+    expect(response.headers["Content-Disposition"]).to include("the-just-seven.module.zip")
+    expect(PackageArchive.read(response.body, format: CampaignModule::FORMAT).data["name"]).to eq("The Just Seven")
 
     sign_in_as(make_user("Stranger"))
     get campaign_campaign_module_path(campaign)
@@ -38,8 +38,8 @@ RSpec.describe "Campaign modules", type: :request do
     get new_world_campaign_module_path(campaign.world)
     expect(response.body).to include("Module file")
 
-    post world_campaign_modules_path(campaign.world), params: { module_file: module_upload(zip), name: "Dead Calm, Ines's table" }
-    imported = Campaign.find_by!(name: "Dead Calm, Ines's table")
+    post world_campaign_modules_path(campaign.world), params: { module_file: module_upload(zip), name: "The Just Seven, Ines's table" }
+    imported = Campaign.find_by!(name: "The Just Seven, Ines's table")
     expect(response).to redirect_to(campaign_prep_path(imported))
     expect(imported.gm).to eq(ines)
     expect(imported.scenes.count).to eq(campaign.scenes.count)
@@ -53,7 +53,7 @@ RSpec.describe "Campaign modules", type: :request do
 
     zip = CampaignModule::Export.new(campaign).to_zip
     World.where(slug: "oda").destroy_all
-    world = Seeds::Oda.run # no Dead Calm in it, and Ines can't change its books
+    world = Seeds::Oda.run # none of The Just Seven in it, and Ines can't change its books
     post world_campaign_modules_path(world), params: { module_file: module_upload(zip) }
     expect(flash[:alert]).to include("only the world's editors can add them")
     expect(world.campaigns.count).to eq(0)

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-# Dead Calm's pressure and prep (Seeds::DeadCalm): the omen clock, the
+# The Just Seven's pressure and prep (Seeds::JustSeven): the omen clock, the
 # Torso's siege, the secrets as chains of clues, the scenes the GM plays
 # from the Stage, the flags kept as a checklist, and what's being said on
 # the quays when the party arrives.
 module Seeds
-  module DeadCalm
+  module JustSeven
     # Signs 1 to 6 are the GM's to pace; Sign 7 is fixed to the Head's jaw.
     CLOCKS = [
       { name: "The Seven Signs", segments: 7, place: "The Steps", mode: "The chorus",
@@ -183,7 +183,7 @@ module Seeds
 
     # The GM's own state, as a checklist. Never shown to players.
     FLAGS = {
-      "dead_calm" => [ "yes", "Dead Calm's own lines on arriving and on a failed check ask for this and island (Seeds::DeadCalm::GENERATOR_TABLES)." ],
+      "just_seven" => [ "yes", "The Just Seven's own lines on arriving and on a failed check ask for this and island (Seeds::JustSeven::GENERATOR_TABLES)." ],
       "island" => [ "yes", "Set while the party is on the island. Clear it, and the world's own lines come back." ],
       "masks_found" => [ "0", "Seven in all: Red, Orange, Yellow, Green, Indigo, Blue, Violet. Each mask's vision plays when it's taken." ],
       "combiner_prism" => [ "in the garden", "Left Arm, in a reverse-threaded mount. Carried to the Head's third-eye socket." ],

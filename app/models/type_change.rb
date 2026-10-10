@@ -38,6 +38,7 @@ class TypeChange
     end
     world.monsters.alphabetical.each do |monster|
       uses[monster.base_type] << monster.name
+      uses[monster.second_type] << monster.name if monster.second_type
       monster.affinities.each_key { |type| uses[type] << "#{monster.name}'s affinity" }
     end
     world.jobs.alphabetical.each { |job| uses[job.base_type] << job.name }
@@ -81,6 +82,10 @@ class TypeChange
     world.monsters.each do |monster|
       changes = {}
       changes[:base_type] = send_to(monster.base_type) if removed.include?(monster.base_type)
+      if monster.second_type && removed.include?(monster.second_type)
+        second = send_to(monster.second_type)
+        changes[:second_type] = second == changes.fetch(:base_type, monster.base_type) ? nil : second
+      end
       lost = monster.affinities.slice(*removed)
       if lost.any?
         changes[:affinities] = monster.affinities.except(*removed)

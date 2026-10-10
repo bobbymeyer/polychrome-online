@@ -28,9 +28,9 @@
       <div><dt><%= stat_term(stat) %></dt><dd><%= number_with_delimiter(entry.stats[stat]) %></dd></div>
     <% end %>
   </dl>
-  <% profile = type_profile([ entry.base_type ], entry.affinities) %>
+  <% profile = type_profile(entry.types, entry.affinities) %>
   <dl class="facts facts--wide type-facts">
-    <% if types_matter? %><dt>Type</dt><dd><%= type_tag(entry.base_type) %> <%= link_to "the chart", world_types_path(@world), class: "muted" %></dd><% end %>
+    <% if types_matter? %><dt>Type</dt><dd><%= safe_join(entry.types.map { |type| type_tag(type) }, " ") %> <%= link_to "the chart", world_types_path(@world), class: "muted" %></dd><% end %>
     <% { "weak" => "Weak to", "resist" => "Resists", "immune" => "Immune to", "absorb" => "Absorbs" }.each do |band, label| %>
       <% if profile[band].any? %><dt><%= label %></dt><dd><%= safe_join(profile[band].map { |t| type_tag(t) }, " ") %></dd><% end %>
     <% end %>

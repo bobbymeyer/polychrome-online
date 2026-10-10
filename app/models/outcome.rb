@@ -268,7 +268,7 @@ class Outcome
     engine = campaign.world.type_chart.to_engine
     monsters.each do |monster|
       notes = (known[monster.slug] ||= {})
-      notes["types"] = [ monster.base_type ]
+      notes["types"] = monster.types
       Battle::Types.list(engine).each { |type| notes[type] = monster.affinities.fetch(type, "none") }
       Battle::STATUSES.each { |status| notes[status] = monster.status_immune.include?(status) ? "immune" : "none" }
     end

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Dead Calm: a campaign in Oda, from Bobby's design document ("Kaiju Mecha
+# The Just Seven: a campaign in Oda, from Bobby's design document ("Kaiju Mecha
 # Campaign"). A wind-stranded island city sits on the body of a buried
 # kaiju-mecha; the party finds seven masks, routes light through two prisms
 # and wakes her, just as her ancient brother and rival arrives to finish an
@@ -8,7 +8,7 @@
 # dungeons (Legs, Arms, Sword, Torso, Head), then the Giant Battle, which
 # isn't built yet.
 #
-# Started for a GM with bin/rails "campaigns:seed[dead_calm,gm@example.com]".
+# Started for a GM with bin/rails "campaigns:seed[just_seven,gm@example.com]".
 # It adds what it needs to Oda's books (only what's missing), then makes
 # the campaign: the island's map and dungeons, the cast, the Seven Signs,
 # the secrets, the scenes and the GM's checklist. The campaign starts from
@@ -17,8 +17,8 @@ require_relative "../setting"
 require_relative "../oda"
 
 module Seeds
-  module DeadCalm
-    NAME = "Dead Calm"
+  module JustSeven
+    NAME = "The Just Seven"
 
     module_function
 
@@ -115,7 +115,7 @@ module Seeds
   end
 end
 
-require_relative "dead_calm/books"
-require_relative "dead_calm/places"
-require_relative "dead_calm/cast"
-require_relative "dead_calm/story"
+require_relative "just_seven/books"
+require_relative "just_seven/places"
+require_relative "just_seven/cast"
+require_relative "just_seven/story"
