@@ -18,8 +18,26 @@ module Location::Generation
                                      encounters: location_template.encounter_table&.entries || [],
                                      tables: tables)
       end
-      Generators::Provenance.apply(rolled, past_for(rolled["name"]), seed: seed, lore: campaign.world.lore)
+      rolled = Generators::Provenance.apply(rolled, past_for(rolled["name"]), seed: seed, lore: campaign.world.lore)
+      elaborated(rolled)
     end
+  end
+
+  # The GM's elaboration scale (Generators::Elaboration): extra rooms and
+  # passages around the core, which it cannot reshape.
+  #
+  # AFTER Provenance, and that ordering is load-bearing. Provenance renames
+  # the rooms that aren't the entrance or the boss from the past's names,
+  # picks one event room to carry the fall's trace, and deals heirlooms out
+  # to the treasure rooms -- all by walking rooms. Elaborating first would
+  # change which core room got which, so the dial would alter the core. This
+  # way the core is finished before a thing is added to it.
+  def elaborated(rolled)
+    return rolled unless rolled["kind"] == "dungeon" && elaboration.positive?
+
+    Generators::Elaboration.apply(rolled, level: elaboration, seed: seed,
+                                  encounters: location_template.encounter_table&.entries || [],
+                                  tables: tables)
   end
 
   def view

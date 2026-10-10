@@ -24,6 +24,7 @@ module Generators
   # Pure: same seed, same dungeon.
   module Dungeon
     DECISIONS = %w[encounter event treasure fork boss key trap].freeze
+    DEFAULT_DECISIONS = { "encounter" => 4, "event" => 2, "treasure" => 2, "fork" => 1 }.freeze
     WIDTH = 1000
     HEIGHT = 700
     MAX_EXITS = 3
@@ -283,29 +284,49 @@ module Generators
     end
 
     # Rooms with more than one way onward may hold a fork: one of those ways
-    # gets a visible cost.
+    # gets a visible cost. A fork is the only kind that needs the graph, so
+    # it stays here and the rest is #simple_decision, which
+    # Generators::Elaboration rolls its extra rooms from as well.
+    #
+    # The draws, in order: one #choose, then one more for whichever kind came
+    # up (two for a fork). Nothing may change that order -- every dungeon
+    # ever rolled is that stream (spec/generators/dungeon_spec rolls 300).
     def decision(pool, template, encounters, tables, room, index, edges, depths, edge_list)
-      weights = template.fetch("decisions", { "encounter" => 4, "event" => 2, "treasure" => 2, "fork" => 1 }).dup
+      weights = template.fetch("decisions", DEFAULT_DECISIONS).dup
       onward = neighbours(edges, index).select { |n| depths[n] > depths[index] }
       weights.delete("fork") if onward.size < 2
+      weights = possible(weights, encounters, tables)
+
+      kind = pool.choose(weights)
+      return simple_decision(pool, kind, encounters, tables) unless kind == "fork"
+
+      costly = onward[pool.int(onward.size)]
+      path = edge_list.find { |e| [ e["from"], e["to"] ].sort == [ room["key"], "room-#{costly}" ].sort }
+      cost = pool.pick_fresh(tables.fetch("forks", []))&.fetch("text") || "The way is hard."
+      path["cost"] = cost
+      { "kind" => "fork", "text" => cost, "costly_path" => path["key"] }
+    end
+
+    # The kinds a world can actually roll: drop what it has no table for, and
+    # fall back to an event when that leaves nothing. Deletion keeps the
+    # hash's order, which #choose walks.
+    def possible(weights, encounters, tables)
+      weights = weights.dup
       weights.delete("encounter") if encounters.empty?
       weights.delete("treasure") if tables.fetch("treasure", []).empty?
       weights.delete("trap") if tables.fetch("traps", []).empty?
-      weights = { "event" => 1 } if weights.values.sum.zero?
+      weights.values.sum.zero? ? { "event" => 1 } : weights
+    end
 
-      case pool.choose(weights)
+    # Every decision but a fork: one draw, and no need for the room graph.
+    def simple_decision(pool, kind, encounters, tables)
+      case kind
       when "encounter"
         { "kind" => "encounter", "monsters" => pool.pick(encounters)["monsters"] }
       when "treasure"
         { "kind" => "treasure" }.merge(pool.pick_fresh(tables["treasure"]).slice("item", "gil"))
       when "trap"
         { "kind" => "trap", "text" => pool.pick_fresh(tables["traps"])&.fetch("text") || "A tripwire. (hurt 10)" }
-      when "fork"
-        costly = onward[pool.int(onward.size)]
-        path = edge_list.find { |e| [ e["from"], e["to"] ].sort == [ room["key"], "room-#{costly}" ].sort }
-        cost = pool.pick_fresh(tables.fetch("forks", []))&.fetch("text") || "The way is hard."
-        path["cost"] = cost
-        { "kind" => "fork", "text" => cost, "costly_path" => path["key"] }
       else
         { "kind" => "event", "text" => pool.pick_fresh(tables.fetch("room_events", []))&.fetch("text") || "Something stirs in the dark." }
       end

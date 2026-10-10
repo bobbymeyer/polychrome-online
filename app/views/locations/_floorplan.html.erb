@@ -22,7 +22,7 @@
     <% a = rooms[path["from"]] %>
     <% b = rooms[path["to"]] %>
     <% next unless a && b && (full.(a["key"]) || full.(b["key"])) %>
-    <g class="floorplan__path <%= 'floorplan__path--costly' if path['cost'] %> <%= 'floorplan__path--added' if path['added'] %>"
+    <g class="floorplan__path <%= 'floorplan__path--costly' if path['cost'] %> <%= 'floorplan__path--added' if path['added'] %> <%= 'floorplan__path--elaborated' if path['elaborated'] %>"
        <% if editor %>data-floorplan-path="<%= path['key'] %>" data-floorplan-from="<%= path['from'] %>"<% end %>>
       <title><%= if path["lock"] then "#{path['lock']['name']}: needs #{path['lock']['key_name']}" elsif path["cost"] then "Cost: #{Toll.of(path['cost']).words}" else [ a, b ].map { |r| full.(r["key"]) ? r["name"] : "an unexplored way" }.join(" – ") end %></title>
       <line x1="<%= a['x'] %>" y1="<%= a['y'] %>" x2="<%= b['x'] %>" y2="<%= b['y'] %>" />
@@ -44,7 +44,7 @@
   <% end %>
   <% rooms.each_value do |room| %>
     <% open = full.(room["key"]) %>
-    <g class="floorplan__room <%= 'is-unknown' unless open %> <%= 'is-current' if room['key'] == current %> <%= 'is-resolved' if resolved.include?(room['key']) %> <%= "is-#{room['decision']['kind']}" if open %>"
+    <g class="floorplan__room <%= 'is-unknown' unless open %> <%= 'is-elaborated' if room['elaborated'] %> <%= 'is-current' if room['key'] == current %> <%= 'is-resolved' if resolved.include?(room['key']) %> <%= "is-#{room['decision']['kind']}" if open %>"
        transform="translate(<%= room['x'] %> <%= room['y'] %>)"
        <%# One URL for both: PATCH moves the room, GET is its panel. %>
        <% if editor && location %>data-floorplan-room="<%= room['key'] %>"

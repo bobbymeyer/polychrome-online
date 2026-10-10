@@ -91,6 +91,22 @@ module Location::Tailoring
     key
   end
 
+  # How elaborate this dungeon is (Generators::Elaboration): 0 is the roll
+  # as it came, 5 adds ten rooms of alcoves, side chains and passages
+  # running parallel to the core. The core is untouched at every level --
+  # same rooms, same order -- so this is safe to turn once the story is
+  # pinned on.
+  def elaboration
+    overrides.fetch("elaboration", 0).to_i
+  end
+
+  def elaborate!(level)
+    raise Refusal, "#{name} is a town." unless dungeon?
+
+    level = level.to_i.clamp(0, Generators::Elaboration::MAX_LEVEL)
+    update!(overrides: level.zero? ? overrides.except("elaboration") : overrides.merge("elaboration" => level))
+  end
+
   # Drag a room off where it rolled (Generators::Overrides "moved_rooms").
   # The floorplan's own coordinates, clamped to the sheet.
   def move_room!(key, x:, y:)
@@ -182,6 +198,10 @@ module Location::Tailoring
     overrides.fetch("added_rooms", []).each do |room|
       list << change("room", room["key"], "Added room #{room['name']}")
     end
+    if elaboration.positive?
+      added = view.fetch("rooms", []).count { |room| room["elaborated"] }
+      list << change("elaboration", nil, "Elaborated to #{elaboration} of #{Generators::Elaboration::MAX_LEVEL} (#{added} #{'room'.pluralize(added)} added)")
+    end
     overrides.fetch("moved_rooms", {}).each_key do |key|
       list << change("moved", key, "Moved #{room(key)&.fetch('name') || key}")
     end
@@ -205,6 +225,7 @@ module Location::Tailoring
     when "stock" then set_stock!(nil)
     when "boss" then place_boss!({})
     when "room" then remove_room!(key)
+    when "elaboration" then elaborate!(0)
     when "moved" then set_shape!("moved_rooms", overrides.fetch("moved_rooms", {}).except(key))
     when "path" then cut_path!(key)
     when "cut" then set_shape!("removed_paths", overrides.fetch("removed_paths", []) - [ key ])
