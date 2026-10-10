@@ -34,7 +34,7 @@ module Seeds
       forms = MONSTERS.values.flat_map { |attrs| Array(attrs[:phases]).map { |phase| phase[:becomes].to_sym } }
       Setting.new(slug: "oda", world: Oda::WORLD, abilities: ABILITIES, items: ITEMS,
                   monsters: MONSTERS.sort_by { |slug, _| forms.include?(slug) ? 0 : 1 }.to_h,
-                  location_templates: LOCATION_TEMPLATES).run
+                  generator_tables: GENERATOR_TABLES, location_templates: LOCATION_TEMPLATES).run
     end
 
     def start(world, gm)

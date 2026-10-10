@@ -247,4 +247,5 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
   - freeing a grabbed ally.
 
   Each dungeon's GM notes say which.
+- **The island has its own voice.** The Steps is an Island city, with its own people, shops and buildings. Dead Calm's arrival lines and GM moves are in Oda's tables but ask for the campaign's `dead_calm` and `island` flags, so they fit no other campaign and beat Oda's mesa lines on the island.
 - **The Giant Battle is not built.**

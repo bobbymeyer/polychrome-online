@@ -351,11 +351,79 @@ module Seeds
                                  drops: [ { item: "violet_mask", chance: 100 } ], description: "Two actions a turn, venting heat." }
     }.freeze
 
+    # The island's own voice, so The Steps doesn't sound like a mesa town.
+    # Its people, shops and buildings come from these through its template;
+    # what the GM is offered on arriving and on a failed check comes from
+    # the arrivals and complications rows, which ask for the campaign's
+    # dead_calm and island flags (Seeds::DeadCalm::FLAGS) and so fit no
+    # other campaign. Asking that much, they beat Oda's own rows
+    # (Story::Matcher: the most specific wins).
+    GENERATOR_TABLES = {
+      island_hooks: { name: "Island hooks", kind: "hooks",
+                      entries: texts("Captains a ship that hasn't moved in five weeks, and drinks like it.",
+                                     "Sells wind charms by the dozen. None of them work. Business has never been better.",
+                                     "Swears the harbour bells rang last night with nobody near them.",
+                                     "Lost a nephew in the attack forty years ago and still lights a lamp for the prince.",
+                                     "Owes the Harbor Guild a berth fee for a ship that can't leave.",
+                                     "Has a coin from the mainland and keeps asking people where it came from.",
+                                     "Won't go near {dungeon} after dark. Won't say why.",
+                                     "Is selling passage off the island, for when the wind comes back. Cash now.",
+                                     "Plays the duelling odds on the sky bridge, and has never once lost money on the priest's side.",
+                                     "Hears a thump in the cistern pipes at night, slow, like breathing.") },
+      island_memories: { name: "Island memories", kind: "memories",
+                         entries: texts("I was a girl when the hail came. Stones the size of fists, out of a clear sky, and then the bay was empty.",
+                                        "My grandfather said the founder came out of the dark with a light in his hand. That's all he'd say.",
+                                        "I used to sail. I'd sail now, if there were anything to sail on.",
+                                        "I watched the old king on his balcony the night the prince died. He didn't move. Not once.",
+                                        "There used to be gulls. You don't notice gulls until there aren't any.") },
+      island_wishes: { name: "Island wishes", kind: "wishes",
+                       entries: texts("I want the wind back. That's all. Just the wind.", "I'd like to know what's under {dungeon}.",
+                                      "I want to see the slit on the sky bridge show anything but green, once.") +
+                                [ { text: "My lad took a fever with the stillness. A tonic would see him through.", item: "tonic" },
+                                  { text: "Salt in my eyes from the dead fish on the quay. Anything for it?", item: "eyewash" } ] },
+      island_service_names: { name: "Island service names", kind: "service_names",
+                              entries: texts("The Pirate King", "The Slack Sail", service: "inn") + texts("The Chandlery", "Harbor Stores", service: "shop") +
+                                       texts("The Harbor Guild Hall", service: "guild") + texts("The Seamen's Chapel", "The Lamp House", service: "temple") },
+      island_buildings: { name: "Island buildings", kind: "buildings",
+                          entries: [ { text: "Smoke lounge", service: "inn", width: 90, height: 80, roof: "flat" },
+                                     { text: "Chandlery", service: "shop", width: 70, height: 70, roof: "peak" },
+                                     { text: "Guild hall", service: "guild", width: 90, height: 110, roof: "dome" },
+                                     { text: "Seamen's chapel", service: "temple", width: 60, height: 120, roof: "peak" },
+                                     { text: "Net loft", width: 60, height: 60, roof: "peak", weight: 3 },
+                                     { text: "Warehouse", width: 90, height: 60, roof: "flat", weight: 3 },
+                                     { text: "Stair-street houses", width: 50, height: 70, roof: "flat", weight: 4 },
+                                     { text: "Bell tower", width: 36, height: 140, roof: "peak" } ] },
+      dead_calm_arrivals: { name: "Dead Calm arrivals", kind: "arrivals",
+                            entries: [ { text: "{place}. Not a breath of wind; every sail in harbour hangs like washing.", when: "dead_calm, island, town" },
+                                       { text: "{place} again. The quay cats don't even look up.", when: "dead_calm, island, town, visits >= 2" },
+                                       { text: "{place} by night: the cathedral's glow on the hill, and the bells quiet, for now.", when: "dead_calm, island, town, dark" },
+                                       { text: "{place}. The air doesn't move here either, and somewhere below, something thumps, slow.",
+                                         when: "dead_calm, island, dungeon, first_visit" },
+                                       { text: "{place} is quiet. Under it, the slow thump goes on.", when: "dead_calm, island, dungeon, cleared" },
+                                       { text: "{place}. From up here the whole stranded harbour is laid out below, the sea flat as a plate.",
+                                         when: "dead_calm, island, landmark" },
+                                       { text: "The faithful glance at {place}'s great window and then away, as if it might glance back.",
+                                         when: "dead_calm, island, dungeon, place = The Cathedral" },
+                                       { text: "Out on the water, {place}'s lamp turns, and turns, sweeping a sea nobody can sail.",
+                                         when: "dead_calm, island, dungeon, place = The Sword" },
+                                       { text: "People on the quay find somewhere else to stand when {coward} passes.", when: "dead_calm, island, town, cowards >= 1" } ] },
+      dead_calm_complications: { name: "Dead Calm complications", kind: "complications",
+                                 entries: [ { text: "A bell rings somewhere, though nobody's touched it, and everyone turns to look.", when: "dead_calm, island, town" },
+                                            { text: "The pipes shudder; something under the floor shifts its weight.", when: "dead_calm, island, dungeon", does: "ambush" },
+                                            { text: "A berth fee, a fine from the Harbor Guild, a round for the stranded crews.", when: "dead_calm, island, town", does: "lose 30" },
+                                            { text: "No wind, all day: the heat sits on everyone like a hand.", when: "dead_calm, island, field", does: "weary 20" } ] }
+    }.freeze
+
     # Bobby's dungeons are five rooms (entrance, puzzle, setback, climax,
     # twist). A chain is rolled from this and its rooms pinned to the
     # story's (Seeds::DeadCalm#dungeon!): the twist, after the guardian,
     # is a room added off the boss's.
     LOCATION_TEMPLATES = {
+      island_city: { name: "Island city", kind: "town",
+                     description: "A city on stairs, from the quays to the dome: smoke lounges, chandlers, guild halls and a great many bells.",
+                     config: { services: { inn: 100, shop: 100, guild: 100, temple: 100 }, npcs: [ 5, 8 ], stock: [ 8, 12 ], buildings: [ 12, 16 ],
+                               tables: %w[town_names given_names island_hooks island_memories island_wishes island_service_names island_buildings
+                                          clock_stock] } },
       five_rooms: { name: "Five-room dungeon", kind: "dungeon",
                     description: "Entrance, puzzle, setback, climax, twist: one way in, one guardian, and something learned on the far side.",
                     config: { rooms: [ 4, 6 ], loops: 0, locks: 0, decisions: { event: 1 },

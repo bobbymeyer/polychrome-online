@@ -51,4 +51,15 @@ RSpec.describe Location::Wishes do
     expect(campaign.messages.pluck(:body)).to include(a_string_starting_with("Lenne meets the party: “You cleared The Barrow? I'd given up asking anyone."))
     expect(town.reload.met?("npc-1")).to be(true)
   end
+
+  it "has someone else in town say what's on their mind, told, with the places filled in" do
+    folk = [ { "key" => "npc-0", "name" => "Oskar", "title" => "Innkeeper", "service" => "inn" },
+             { "key" => "npc-1", "name" => "Pell", "title" => "Carter", "hook" => "Wants an escort to {town} and can't pay yet." } ]
+    allow_any_instance_of(Location).to receive(:townsfolk).and_return(folk)
+    campaign.update!(welcomes: { hollin.id.to_s => "The Barrow" })
+    campaign.welcome_back!(hollin)
+    said = campaign.messages.order(:id).last.body
+    expect(said).to start_with("Pell, carter, wants an escort to ")
+    expect(said).not_to include("{")
+  end
 end

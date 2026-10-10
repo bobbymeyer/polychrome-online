@@ -49,8 +49,9 @@ module Campaign::Deeds
       messages.create!(body: "#{host ? host['name'] : 'The whole street'} meets the party: “You cleared #{place}? " \
                              "#{"I'd given up asking anyone. " if wisher}Then you've friends in #{node.name}, and friends pay less.”")
       record_deed!("#{node.name} is grateful for #{place}", at: node, sway: 2, kind: "cleared", seen: true)
+      # A hook is what someone's like ("Wants an escort to {town}"), not what they say: told, filled in.
       hook = folk.find { |f| f != host && f["hook"].present? }
-      messages.create!(body: "#{hook['name']}, #{hook['title'].downcase}: “#{hook['hook']}”") if hook
+      messages.create!(body: "#{hook['name']}, #{hook['title'].downcase}, #{node.location.fill_in(hook['hook']).downcase_first}") if hook
     end
   end
 

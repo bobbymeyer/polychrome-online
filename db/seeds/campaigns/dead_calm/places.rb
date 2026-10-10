@@ -12,7 +12,7 @@ module Seeds
   module DeadCalm
     PLACES = {
       "The Steps" => {
-        kind: "town", x: 800, y: 760, visible: true, template: "clock_town",
+        kind: "town", x: 800, y: 760, visible: true, template: "island_city",
         description: "The waterline tier: quays, warehouses, boarding houses, and a smoke lounge called The Pirate King. " \
                      "No wind for weeks. Every ship in harbour is stranded with its sails hanging.",
         notes: "Act 1 starts in The Pirate King, a smoke lounge under the Pirate King's flag (a mainland legend; nobody here ties him to the founder). " \
@@ -238,17 +238,24 @@ module Seeds
       }
     }.freeze
 
-    # [from, to, attrs]: the funicular, the tide and the jaw keep three of them shut.
+    # [from, to, attrs]. Three start shut, for the GM to open: the funicular
+    # once both legs are cleared, the Sword's road with the long tide
+    # (Sign 6), the hill when the jaw opens. What each says is the journey,
+    # heard every time the party goes that way, so it's said as the road is
+    # once it's open; why it's shut is in the places' notes.
     ROADS = [
       [ "The Steps", "The Airship Dock", { duration: 0 } ],
       [ "The Steps", "The Dump", { duration: 0 } ],
-      [ "The Steps", "The Reaches", { duration: 1, state: "blocked", travel_event: "The funicular: shut at its gate until both legs are cleared." } ],
+      [ "The Steps", "The Reaches", { duration: 1, state: "blocked",
+                                      travel_event: "The funicular car creaks up the slope, past terraces of washing that hasn't moved in weeks." } ],
       [ "The Reaches", "The King's Garden", { duration: 0 } ],
       [ "The Reaches", "The Sky Bridge", { duration: 0 } ],
       [ "The Reaches", "The Cathedral", { duration: 1 } ],
       [ "The Cathedral", "The Palace", { duration: 0 } ],
-      [ "The Cathedral", "Founders' Hill", { duration: 1, state: "blocked", travel_event: "Barred until the jaw opens." } ],
-      [ "The Steps", "The Sword", { duration: 1, state: "blocked", travel_event: "Across the seabed, only while the long tide is out." } ]
+      [ "The Cathedral", "Founders' Hill", { duration: 1, state: "blocked",
+                                             travel_event: "Up the processional stair to the hill, every bell in the city still singing." } ],
+      [ "The Steps", "The Sword", { duration: 1, state: "blocked",
+                                    travel_event: "Out across the stinking seabed, past ships lying on their sides, to the blade." } ]
     ].freeze
   end
 end

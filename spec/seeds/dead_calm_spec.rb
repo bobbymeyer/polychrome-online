@@ -80,6 +80,35 @@ RSpec.describe Seeds::DeadCalm do
     expect(party.first).to be_present
   end
 
+  it "speaks in the island's own voice: its people, its shops, and what the GM is offered" do
+    steps = place("The Steps")
+    town = steps.location.view
+    island = described_class::GENERATOR_TABLES
+    expect(town["services"].map { |s| s["name"] }).to all(be_in(island[:island_service_names][:entries].map { |e| e[:text] }))
+    hooks = island[:island_hooks][:entries].map { |e| e[:text] }
+    expect(town["npcs"].filter_map { |npc| npc["hook"] }).to all(be_in(hooks))
+
+    lines = Seeds::DeadCalm::GENERATOR_TABLES[:dead_calm_arrivals][:entries].map { |e| e[:text].sub("{place}", "The Steps").sub("{coward}", "") }
+    campaign.offer_arrival_line!(steps)
+    said = campaign.messages.order(:id).last.body[/“(.*)”/, 1]
+    expect(lines).to include(said)
+    dock = place("The Airship Dock")
+    campaign.offer_arrival_line!(dock)
+    expect(campaign.messages.order(:id).last.body).to include("something thumps, slow")
+
+    # Not another Oda campaign: its rows ask for flags only Dead Calm sets.
+    other = campaign.world.campaigns.create!(name: "High Noon")
+    other.set_out!
+    other.offer_arrival_line!(other.current_node)
+    expect(other.messages.order(:id).last.body).not_to include("sail")
+  end
+
+  it "says the open road's journey on each of the roads that start shut" do
+    shut = campaign.map_edges.where(state: "blocked")
+    expect(shut.map(&:travel_event)).to all(be_present)
+    expect(shut.map(&:travel_event).join).not_to match(/shut|barred|only while/i)
+  end
+
   it "puts Amethyst 7A in the Head's last room, and casts the duellists" do
     head = place("Founders' Hill").location
     expect(head.resident_villain.name).to eq("Amethyst 7A")

@@ -41,7 +41,9 @@ module Seeds
     ].freeze
 
     SECRETS = [
-      { key: "founder_pirate_king", npc: "The King",
+      # Nobody's to ask about: the king doesn't know it, and a question put the
+      # moment he speaks would interrupt The coins.
+      { key: "founder_pirate_king",
         body: "The city's holy founder was the Pirate King: a southern-sea raider who conquered his own home city with a captured kaiju " \
               "turned mecha, then retired, put her to sleep on the island slope and founded a city on top of her. The cult remembers a warrior-king who brought light.",
         steps: <<~STEPS },
@@ -181,6 +183,8 @@ module Seeds
 
     # The GM's own state, as a checklist. Never shown to players.
     FLAGS = {
+      "dead_calm" => [ "yes", "Dead Calm's own lines on arriving and on a failed check ask for this and island (Seeds::DeadCalm::GENERATOR_TABLES)." ],
+      "island" => [ "yes", "Set while the party is on the island. Clear it, and the world's own lines come back." ],
       "masks_found" => [ "0", "Seven in all: Red, Orange, Yellow, Green, Indigo, Blue, Violet. Each mask's vision plays when it's taken." ],
       "combiner_prism" => [ "in the garden", "Left Arm, in a reverse-threaded mount. Carried to the Head's third-eye socket." ],
       "splitter_prism" => [ "on the sky bridge", "Right Arm chamber ceiling. Carried to the Torso's socket opposite the window." ],

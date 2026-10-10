@@ -159,7 +159,10 @@ module Battle
       when "defend" then true
       when "flee" then state["escapable"]
       when "item" then false
-      else ctx.usable?(unit, ctx.ability(cmd["ability"]))
+      else
+        ability = ctx.ability(cmd["ability"])
+        # A mask goes on once: Don again is a wasted turn (worn, spent, or a coward's).
+        ctx.usable?(unit, ability) && ability["effects"].none? { |e| e["primitive"] == "transform" }
       end
     end
 
