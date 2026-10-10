@@ -189,8 +189,7 @@ module Seeds
       "combiner_prism" => [ "in the garden", "Left Arm, in a reverse-threaded mount. Carried to the Head's third-eye socket." ],
       "splitter_prism" => [ "on the sky bridge", "Right Arm chamber ceiling. Carried to the Torso's socket opposite the window." ],
       "beam" => [ "sweeping", "Set and locked on the cathedral at the Sword's twist; the splitter then makes seven true beams." ],
-      "king" => [ "investigating", "Ally once the Left Arm coins are delivered; signs the Torso order once shown the dial-and-coins proof." ],
-      "ending" => [ "", "Bind (keep the masks and pilot her) or Break (surrender them; she fights unrestrained, wrecking the city top-down)." ]
+      "king" => [ "investigating", "Ally once the Left Arm coins are delivered; signs the Torso order once shown the dial-and-coins proof." ]
     }.freeze
 
     # Talk on the quays when the story starts.

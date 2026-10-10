@@ -33,7 +33,14 @@ module CampaignModule
 
       decision.fetch("monsters", {}).to_h.each_key { |slug| monster!(slug) }
       Array(decision["waves"]).each { |wave| wave.to_h.each_key { |slug| monster!(slug) } if wave.is_a?(Hash) }
+      crew!(decision["crew"]) if decision["crew"].is_a?(Hash)
       item!(decision["item"]) if decision["item"].present?
+    end
+
+    # A crewed fight's stations are Bestiary entries too (Crew).
+    def crew!(crew)
+      stations = crew["stations"].to_h.values + [ crew["default"] ] + Array(crew["wearers"]).map { |row| row.is_a?(Hash) ? row["station"] : nil }
+      stations.compact.uniq.each { |slug| monster!(slug) if slug.is_a?(String) }
     end
 
     # Every entry wanted, its references followed: { kind => [entry, ...] }.

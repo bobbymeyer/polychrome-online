@@ -205,6 +205,20 @@ module CampaignModule
       nil
     end
 
+    # A crewed fight's plan (Crew), naming only stations the world's Bestiary has.
+    def crew(given, monsters)
+      given = hash(given)
+      stations = hash(given["stations"]).select { |job, slug| job.is_a?(String) && monsters.include?(slug) }
+      return if stations.empty?
+
+      wearers = list(given["wearers"]).filter_map do |row|
+        row = hash(row)
+        { "npc" => text(row["npc"]), "station" => row["station"] } if text(row["npc"]).present? && monsters.include?(row["station"])
+      end
+      { "stations" => stations, "default" => (given["default"] if monsters.include?(given["default"])), "wearers" => wearers.presence,
+        "seats" => int(given["seats"])&.clamp(1, 12), "half_below" => int(given["half_below"])&.clamp(0, 12) }.compact
+    end
+
     # A place's changes from what was rolled (Generators::Overrides), as far
     # as they make sense here: the shapes the generator reads, naming only
     # monsters and items the world has.
@@ -225,7 +239,8 @@ module CampaignModule
 
         { "kind" => kind, "text" => text(row["text"]), "monsters" => fight.presence, "gil" => int(row["gil"]),
           "item" => (row["item"] if items.include?(row["item"])), "lock" => text(row["lock"]), "name" => text(row["name"]),
-          "costly_path" => text(row["costly_path"]), "field" => field(row["field"], types), "waves" => waves.presence }.compact
+          "costly_path" => text(row["costly_path"]), "field" => field(row["field"], types), "waves" => waves.presence,
+          "crew" => crew(row["crew"], monsters) }.compact
       end
       # A pinned room keeps its name and decision; a pinned service, its plain fields.
       pins = hash(given["pins"]).filter_map do |key, element|

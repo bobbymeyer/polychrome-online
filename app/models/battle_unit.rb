@@ -20,6 +20,8 @@ class BattleUnit
 
   # Fighting beside the party at the GM's call (the "add_unit" override): no seat, no rewards.
   def guest? = @data["guest"] == true
+  # At a station of a great body (Crew): the damage it takes isn't theirs.
+  def crewing? = @data["crewing"].present?
   # Off the field for good: fled, sent off, a summon gone home.
   def gone? = @data["gone"] == true
   # Called by another (the summon primitive): an add, not one of the fight's own.
