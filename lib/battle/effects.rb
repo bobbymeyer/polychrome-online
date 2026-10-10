@@ -333,6 +333,7 @@ module Battle
 
       percent = 100 if unresisted && percent != :absorb && percent < 100
       amount = amount * SAME_TYPE_POWER / 100 if type && ctx.state.dig("rules", "same_type") && actor.fetch("types", []).include?(type)
+      amount = amount * (100 - Conditions.weakened(ctx.state, type)) / 100 # the field: fire in the shallows
       amount = amount * Masks::GIANT_POWER / 100 if target["giant"] && ctx.status?(actor, "masked")
 
       amount = [ percent == :absorb ? amount : amount * percent / 100, 1 ].max
@@ -572,6 +573,7 @@ module Battle
 
     def hit_chance(ctx, actor, target)
       chance = (BASE_HIT + (ctx.stat(actor, "agi") - ctx.stat(target, "agi")) / 2).clamp(HIT_FLOOR, HIT_CEILING)
+      chance = [ chance - Conditions.dark(ctx.state), 5 ].max # the field: the lights out
       ctx.status?(actor, "blind") ? chance / 2 : chance
     end
 

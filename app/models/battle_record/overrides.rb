@@ -17,6 +17,7 @@ module BattleRecord::Overrides
     gm = choices.dup
     gm["value"] = gm["value"].to_i if gm["value"]
     gm["turns"] = gm["turns"].to_i if gm["turns"]
+    gm["stage"] = gm["stage"].to_i if gm["stage"]
     joining!(gm) if gm["op"] == "add_unit"
     ruling!(gm) if gm["op"] == "rule"
     { "type" => "gm_override", "actor" => "gm" }.merge(gm)

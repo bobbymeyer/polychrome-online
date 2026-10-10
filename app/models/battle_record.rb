@@ -43,14 +43,15 @@ class BattleRecord < ApplicationRecord
   # antagonists: the campaign's NPCs who fight in it (Npc#battle_spec).
   # names: { "dark_mage" => "Sten Pike" }, a name for the first of a kind.
   # room: the dungeon room this fight is for, dealt with when it is won (Settlement).
+  # field: the room's field, in stages (Battle::Conditions): the water rising.
   def self.start!(campaign:, characters:, name:, encounter:, seed: nil, escapable: true, input_seconds: nil, boss: false, terrain: nil,
-                  antagonists: [], names: {}, room: nil, prelude_said: false)
+                  antagonists: [], names: {}, room: nil, prelude_said: false, field: nil)
     seed = seed.presence&.to_i || Random.new_seed % 2**31
     party = characters.map(&:battle_spec)
     raise Refusal, "#{antagonists.find(&:defeated?).name} was defeated for good" if antagonists.any?(&:defeated?)
 
     state = campaign.world.battle(seed: seed, party: party, monsters: encounter, escapable: escapable, items: campaign.battle_items,
-                                  terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec))
+                                  terrain: terrain.presence, extra_enemies: antagonists.map(&:battle_spec), field: field.presence)
     names.each do |slug, named|
       unit = state["units"].find { |u| u["side"] == "enemy" && u.dig("image", "slug") == slug }
       unit.merge!("name" => named, "named" => true) if unit # its own name: kept through its phases

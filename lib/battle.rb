@@ -3,6 +3,7 @@
 require_relative "stats"
 require_relative "battle/rng"
 require_relative "battle/types"
+require_relative "battle/conditions"
 require_relative "battle/state"
 require_relative "battle/context"
 require_relative "battle/effects"

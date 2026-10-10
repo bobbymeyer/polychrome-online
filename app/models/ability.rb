@@ -33,6 +33,9 @@ class Ability < ApplicationRecord
   # reload: turns the user is spent for after it. reach: it finds what's off
   # the field (a Ranger's shot).
   validates :reload_turns, numericality: { only_integer: true, in: 0..Battle::MAX_RELOAD }
+  # interrupt: damage, as a share of the user's max HP, that breaks it while
+  # it winds up. again: the user goes again once it's done.
+  validates :interrupt, numericality: { only_integer: true, in: 0..100 }
   validates :gesture, inclusion: { in: GESTURES }, allow_blank: true
   validates :slug, exclusion: { in: %w[attack], message: "is reserved for the built-in Attack" }
   validate :engine_accepts_effects
@@ -78,7 +81,9 @@ class Ability < ApplicationRecord
       "gesture" => gesture.presence,
       "charge" => (charge if charge.to_i.positive?),
       "reload" => (reload_turns if reload_turns.to_i.positive?),
-      "reach" => (true if reach?)
+      "reach" => (true if reach?),
+      "interrupt" => (interrupt if interrupt.to_i.positive?),
+      "again" => (true if again?)
     }.compact
   end
 

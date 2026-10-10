@@ -196,12 +196,22 @@ module CampaignModule
       attach(beat.image, row["image"])
     end
 
+    # A room's field (Battle::Conditions), if the engine takes it in this
+    # world's types; else none.
+    def field(given, types)
+      built = Battle::Conditions.build(Battle::State.normalize(given), types) if given.is_a?(Hash) || given.is_a?(Array)
+      { "stages" => built["stages"] } if built
+    rescue ArgumentError
+      nil
+    end
+
     # A place's changes from what was rolled (Generators::Overrides), as far
     # as they make sense here: the shapes the generator reads, naming only
     # monsters and items the world has.
     def overrides(given)
       monsters = world.monsters.pluck(:slug).to_set
       items = world.items.pluck(:slug).to_set
+      types = world.type_chart.slugs
       decision = lambda do |row|
         row = hash(row)
         kind = text(row["kind"])
@@ -212,7 +222,7 @@ module CampaignModule
 
         { "kind" => kind, "text" => text(row["text"]), "monsters" => fight.presence, "gil" => int(row["gil"]),
           "item" => (row["item"] if items.include?(row["item"])), "lock" => text(row["lock"]), "name" => text(row["name"]),
-          "costly_path" => text(row["costly_path"]) }.compact
+          "costly_path" => text(row["costly_path"]), "field" => field(row["field"], types) }.compact
       end
       # A pinned room keeps its name and decision; a pinned service, its plain fields.
       pins = hash(given["pins"]).filter_map do |key, element|

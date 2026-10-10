@@ -190,6 +190,112 @@ RSpec.describe "The Just Seven's mechanics" do
     end
   end
 
+  describe "the field: the water rising, the lights out (the Sword, the siege)" do
+    let(:fish) { { id: "eel", name: "Eel", stats: stats(max_hp: 2000, agi: 1, def: 10, mdef: 10), types: %w[water], ai: [] } }
+    let(:enemies) { [ fish.merge(count: 2) ] }
+    let(:shallows) { [ { name: "Ankle-deep", conditions: [ { kind: "weaken", type: "fire", amount: 50 } ] } ] }
+
+    def field(state) = state["field"]
+    def alone(**options) = battle(party: [ hero ], **options)
+    def in_water(stages, **options) = alone(field: { stages: stages }, **options)
+
+    it "takes its stages from the book's words, and nothing else" do
+      expect(in_water(shallows)["field"]).to include("stage" => 0, "since" => 1)
+      expect(alone["field"]).to be_nil
+      expect { in_water([ { name: "Odd", conditions: [ { kind: "levitate" } ] } ]) }.to raise_error(ArgumentError, /unknown condition/)
+      expect { in_water([ { name: "Odd", conditions: [ { kind: "weaken", type: "chaos", amount: 50 } ] } ]) }.to raise_error(ArgumentError, /unknown type/)
+      expect { in_water([ { name: "Odd", conditions: [ { kind: "drown", amount: 90 } ] } ]) }.to raise_error(ArgumentError, /drown amount is 1 to/)
+      expect { in_water([ { name: "", conditions: [] } ]) }.to raise_error(ArgumentError, /needs a name/)
+    end
+
+    it "weakens a type on it, whoever's move it is" do
+      dry, = apply(alone, command("hero", "fire", "eel_a"))
+      wet, = apply(in_water(shallows), command("hero", "fire", "eel_a"))
+      lost = ->(state) { 2000 - unit(state, "eel_a")["hp"] }
+      expect(lost.(wet)).to be_within(2).of(lost.(dry) / 2)
+    end
+
+    it "slows everyone on it, and blinds the blows in the dark" do
+      slow = in_water([ { name: "Waist-deep", conditions: [ { kind: "slow", amount: 50 } ] } ])
+      expect(Battle::Context.new(slow).stat(unit(slow, "hero"), "agi")).to eq(20)
+
+      dark = in_water([ { name: "Lights out", conditions: [ { kind: "dark", amount: 30 } ] } ])
+      lit = alone
+      chance = ->(state) { Battle::Effects.hit_chance(Battle::Context.new(state), unit(state, "eel_a"), unit(state, "hero")) }
+      expect(chance.(dark)).to eq(chance.(lit) - 30)
+    end
+
+    it "carries a move of its type to everyone on the target's side" do
+      state = in_water([ { name: "Chest-deep", conditions: [ { kind: "conduct", type: "fire" } ] } ])
+      _, events = apply(state, command("hero", "fire", "eel_a"))
+      expect(of_type(events, :conducted)).to include(include("actor" => "hero", "damage_type" => "fire", "targets" => %w[eel_a eel_b]))
+      expect(of_type(events, :damage).map { |e| e["target"] }).to include("eel_a", "eel_b")
+    end
+
+    it "drowns all it doesn't spare as the round ends, and the water rises when a stage has lasted" do
+      stages = [ { name: "Waist-deep", rounds: 1, conditions: [ { kind: "drown", amount: 10, spares: "water" } ] },
+                 { name: "Chest-deep", line: "The water's at their chins.", conditions: [ { kind: "drown", amount: 20 } ] } ]
+      state, events = apply(in_water(stages), command("hero", nil, kind: "defend"))
+      expect(of_type(events, :damage).select { |e| e["status"] == "drown" }.map { |e| [ e["target"], e["amount"] ] })
+        .to contain_exactly([ "hero", 30 ]) # the eels live there
+      expect(of_type(events, :field_changed)).to include(include("stage" => 1, "name" => "Chest-deep", "line" => "The water's at their chins."))
+      expect(field(state)).to include("stage" => 1, "since" => 2)
+    end
+
+    it "moves on when the GM says, and not past its last stage" do
+      stages = [ { name: "Lit", conditions: [] }, { name: "Lights out", conditions: [ { kind: "dark", amount: 30 } ] } ]
+      state, events = apply(in_water(stages), gm("field"))
+      expect(of_type(events, :field_changed)).to include(include("name" => "Lights out"))
+      expect { apply(state, gm("field")) }.to raise_error(Battle::InvalidAction, /no stage 3/)
+      expect { apply(alone, gm("field")) }.to raise_error(Battle::InvalidAction, /no field/)
+    end
+  end
+
+  describe "a telegraph that can be broken, and a move that gives another go (the Toad)" do
+    let(:moves) do
+      { flash: { name: "Belly Flash", kind: "skill", target: "all_enemies", charge: 1, interrupt: 2,
+                 effects: [ { primitive: "elemental", type: "fire", power: 30 } ] },
+        tide: { name: "Tide Call", kind: "skill", target: "all_enemies", again: true, effects: [ { primitive: "elemental", type: "water", power: 5 } ] },
+        lash: { name: "Tongue Lash", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 50 } ] } }
+    end
+    let(:script) { [ { use: "flash" } ] }
+    let(:enemies) do
+      [ { id: "toad", name: "Toad", stats: stats(max_hp: 1000, mag: 10, str: 10, atk: 10, agi: 1, def: 1, mdef: 1), types: %w[normal],
+          abilities: %w[flash tide lash], ai: script } ]
+    end
+
+    def round(state, strike: true)
+      state, = apply(state, strike ? command("hero", "attack", "toad") : command("hero", nil, kind: "defend"))
+      apply(state, command("ward", nil, kind: "defend"))
+    end
+
+    it "is broken by enough damage while it winds up, and its user is stunned for a turn" do
+      state, = round(battle, strike: false) # round 1: it winds up
+      expect(unit(state, "toad")["statuses"]).to include(include("kind" => "charging", "interrupt" => 2))
+      state, events = round(state)
+      expect(of_type(events, :interrupted)).to include(include("unit" => "toad", "ability" => "flash"))
+      expect(of_type(events, :cast).select { |e| e["ability"] == "flash" }).to be_empty
+      expect(of_type(events, :turn_skipped)).to include(include("unit" => "toad", "reason" => "down"))
+    end
+
+    it "goes off if not enough comes in" do
+      state, = round(battle, strike: false)
+      _, events = round(state, strike: false)
+      expect(of_type(events, :cast)).to include(include("actor" => "toad", "ability" => "flash"))
+    end
+
+    context "with a move that gives another go" do
+      let(:script) { [ { use: "tide", once: true }, { use: "lash" } ] }
+
+      it "has its user go again at once, once a round" do
+        _, events = round(battle, strike: false)
+        again = of_type(events, :turn_start).select { |e| e["unit"] == "toad" && e["reason"] == "again" }
+        expect(again.size).to eq(1)
+        expect(of_type(events, :cast).map { |e| e["ability"] }).to include("tide", "lash")
+      end
+    end
+  end
+
   describe "a thief among the monsters (the Raccoon)" do
     let(:moves) { { pilfer: { name: "Pilfer", kind: "skill", target: "single_enemy", effects: [ { primitive: "steal", chance: 95 } ] } } }
     let(:enemies) do

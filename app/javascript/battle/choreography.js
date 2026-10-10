@@ -278,6 +278,22 @@ const STEPS = {
     gesture(tl, b.sprite(e.actor), "lunge", at, b.facing(e.actor))
     return 600
   },
+  // The field changes (Battle::Conditions): the water rising, the lights out.
+  field_changed(b, tl, e, at) {
+    b.banner(tl, e.name, at)
+    return 600
+  },
+  // A telegraph broken by the damage it took while winding up.
+  interrupted(b, tl, e, at) {
+    b.popup(tl, e.unit, "INTERRUPTED", "crit", at)
+    gesture(tl, b.sprite(e.unit), "shake", at)
+    return 420
+  },
+  stumbled(b, tl, e, at) {
+    b.popup(tl, e.actor, "GROUNDED", "status", at)
+    gesture(tl, b.sprite(e.actor), "shake", at)
+    return 360
+  },
   // A thief fell (or the party won the field): what it took is the party's again.
   recovered(b, tl, e, at) {
     b.popup(tl, e.unit, `${e.names.join(", ")} back`, "status", at)

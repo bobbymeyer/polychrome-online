@@ -10,6 +10,20 @@
 # secrets), then the twist past the guardian.
 module Seeds
   module JustSeven
+    # The fields three of the Sword's fights and the siege are fought on
+    # (Battle::Conditions): the water rising a stage when a fight runs long,
+    # and the lights going out partway.
+    ANKLE = { name: "Ankle-deep", line: "Cold water round the ankles, and the hiss of every spark going out.", rounds: 4,
+              conditions: [ { kind: "weaken", type: "fire", amount: 50 } ] }.freeze
+    WAIST = { name: "Waist-deep", line: "The water's up to the waist. Every step is a wade.", rounds: 4,
+              conditions: [ { kind: "weaken", type: "fire", amount: 50 }, { kind: "slow", amount: 25 } ] }.freeze
+    CHEST = { name: "Chest-deep", line: "Chest-deep, and cold. Thunder in here would go through everyone.",
+              conditions: [ { kind: "weaken", type: "fire", amount: 50 }, { kind: "slow", amount: 25 }, { kind: "conduct", type: "electric" },
+                            { kind: "drown", amount: 3, spares: "water" } ] }.freeze
+    LIT = { name: "Lamplit", rounds: 2, conditions: [] }.freeze
+    LIGHTS_OUT = { name: "Lights out", line: "The power goes: the die-hards have thrown the switch. Black, and singing.",
+                   conditions: [ { kind: "dark", amount: 30 } ] }.freeze
+
     PLACES = {
       "The Steps" => {
         kind: "town", x: 800, y: 760, visible: true, template: "island_city",
@@ -143,13 +157,15 @@ module Seeds
                "1 Entrance: the long tide strands ships in the mud and exposes a hatch in the blade.\n" \
                "2 Puzzle: no stairs, an old flood-ballast lift. Work the ballast valves (a gauge by the hatch), climb the fuller groove on old " \
                "rigging, or hand-crank the winch. Brute strength does nothing.\n" \
-               "3 Setback: three fights under rising water, a stage each. A fight that runs long pushes the water up a stage early. Ankle-deep: " \
-               "fire weakened, moray eels that bite and hide. Waist-deep: everyone slower, a barnacle crust (thunder is the clean answer). " \
-               "Chest-deep: thunder hits the whole party and a small drowning tick each round; a giant octopus grabs and inks.\n" \
-               "4 Climax: the Toad. Hot Skin burns whoever touches it: a blow up close, not a spell or a shot. Belly Flash is telegraphed (enough damage on the telegraph turn interrupts it " \
-               "and stuns it: a GM call). Dial Spin knocks the targeting lamp around: a sweeping light each round until someone spends an " \
-               "action to jam the dial. Below half, Tide Call: a three-turn flood countdown; at zero the water douses the lamp, hits everyone hard " \
-               "and the toad gets a free turn. Break the mask first.\n" \
+               "3 Setback: three fights under rising water, a stage each, fought on the field (the engine does it): a fight that runs " \
+               "four rounds pushes the water up a stage, and the GM can raise it sooner. Ankle-deep: fire at half strength, moray eels that " \
+               "bite and hide. Waist-deep: everyone a quarter slower, a barnacle crust (thunder is the clean answer). Chest-deep: thunder " \
+               "goes through everyone on a side, and the water takes a little from everyone but the sea's own each round; a giant octopus " \
+               "grabs and inks.\n" \
+               "4 Climax: the Toad. Hot Skin burns whoever touches it: a blow up close, not a spell or a shot. Belly Flash is telegraphed: an eighth of its HP in damage before it goes off " \
+               "interrupts it and stuns it for a turn. Dial Spin knocks the targeting lamp around: a sweeping light each round until someone spends an " \
+               "action to jam the dial. Below half, Tide Call: a three-turn flood countdown; at zero the water douses the lamp " \
+               "(no more Dial Spin), hits everyone hard and the toad goes again at once. Break the mask first.\n" \
                "5 Twist: read the dial against the coins: a kill list. Then set and lock the beam on the city's own heart, the cathedral. The beam " \
                "stops sweeping; the cult reads it as a sign, raising pressure at the Torso. The steady light lets the splitter make seven clean " \
                "beams. Fleet Crasher does not follow it: it's only a lock.",
@@ -158,9 +174,9 @@ module Seeds
         rooms: [
           { name: "The hatch", decision: { kind: "event", text: "Across the stinking seabed, a hatch in the blade, sealed for centuries, crusted, and unplundered." } },
           { name: "The ballast lift", decision: { kind: "trap", text: "An old lift car on ballast tanks. Muscle won't move it. (hurt 10, 1)" } },
-          { name: "Ankle-deep", decision: { kind: "encounter", monsters: { moray_eel: 3 } } },
-          { name: "Waist-deep", decision: { kind: "encounter", monsters: { barnacle_swarm: 2 } } },
-          { name: "Chest-deep", decision: { kind: "encounter", monsters: { giant_octopus: 1 } } },
+          { name: "Ankle-deep", decision: { kind: "encounter", monsters: { moray_eel: 3 }, field: { stages: [ ANKLE, WAIST, CHEST ] } } },
+          { name: "Waist-deep", decision: { kind: "encounter", monsters: { barnacle_swarm: 2 }, field: { stages: [ WAIST, CHEST ] } } },
+          { name: "Chest-deep", decision: { kind: "encounter", monsters: { giant_octopus: 1 }, field: { stages: [ CHEST ] } } },
           { name: "The lamp room", decision: { kind: "boss", monsters: { fire_bellied_toad: 1 } } }
         ],
         twist: [ { name: "The dial", text: "An engraved ring of city names, each with an angle, around the lamp. The beam used to point at the next one." } ]
@@ -178,7 +194,8 @@ module Seeds
                "1 Entrance: the culvert. Plant the clue: the heartbeat thumping through the pipes.\n" \
                "2 Puzzle: the valves were closed in ritual order and won't be forced: persuade a compliant clergy member for the sequence, or read " \
                "the heartbeat through the pipes.\n" \
-               "3 Setback: die-hards and the Duel-Master; meant non-lethal and comic, echoing the lounge mob. Lights out partway (Siege 2).\n" \
+               "3 Setback: die-hards and the Duel-Master; meant non-lethal and comic, echoing the lounge mob. Lights out partway (Siege 2): the field " \
+               "goes dark after two rounds, and blows land less often (or the GM throws the switch sooner).\n" \
                "4 Climax: the Bull (Gore; telegraphed Stampede; Steam Vent; Overclock below half: acts twice), then with no rest the Viper out of " \
                "its cracked chest (Fangs poison whoever is hurt most; telegraphed Spore Mist; Coil holds someone; Venom Surge below half). Any " \
                "blow on the Viper tears a coiled ally free, and that costs them a tenth of their HP.\n" \
@@ -191,7 +208,7 @@ module Seeds
         rooms: [
           { name: "The culvert", decision: { kind: "event", text: "An old royal culvert into the cistern, dark and dripping. Through the pipes, a slow thump, like a heartbeat." } },
           { name: "The ritual valves", decision: { kind: "trap", text: "Valves closed in a ritual order, and chained. Force them and the pipes kick back. (hurt 15)" } },
-          { name: "The barred sanctum", decision: { kind: "encounter", monsters: { die_hard: 3 } } },
+          { name: "The barred sanctum", decision: { kind: "encounter", monsters: { die_hard: 3 }, field: { stages: [ LIT, LIGHTS_OUT ] } } },
           { name: "The generator hall", decision: { kind: "boss", monsters: { mechanical_bull: 1 } } }
         ],
         twist: [ { name: "The heart", text: "Behind the cracked bull, the generator: chambers, valves, conduit grown around something alive, beating." } ]

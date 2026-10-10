@@ -61,6 +61,9 @@ module BattleLogHelper
     when "ko" then field.unit(event["target"])&.party? ? "#{name.('target')} is KO'd!" : "#{name.('target')} is defeated."
     when "revive" then "#{name.('target')} is back on their feet."
     when "defend" then "#{name.('actor')} defends."
+    when "field_changed" then [ "The field: #{event['name']}.", event["line"] ].compact.join(" ")
+    when "conducted" then "It carries through the water to all of them!"
+    when "interrupted" then "#{name.('unit')} is interrupted, and reels!"
     when "stumbled" then "#{name.('actor')} misses, and comes down hard!"
     when "recovered" then "#{event['names'].to_sentence} #{event['names'].one? ? 'is' : 'are'} back in the party's hands."
     when "steal"
@@ -98,6 +101,7 @@ module BattleLogHelper
     return "#{target} takes #{event['amount']} from the burn." if event["status"] == "burn"
     return "Doom comes for #{target}." if event["status"] == "doom"
     return "#{target} tears free, and takes #{event['amount']}." if event["status"] == "held"
+    return "#{target} takes #{event['amount']} from the water." if event["status"] == "drown"
     return "#{target} takes #{event['amount']} in recoil." if event["recoil"]
 
     line = "#{target} takes #{event['amount']} damage."
@@ -235,6 +239,7 @@ module BattleLogHelper
     when "end_battle" then "ends the battle: #{event['result']}."
     when "add_unit" then event["side"] == "party" ? "brings in #{who} to fight beside the party." : "brings in #{who}."
     when "dismiss" then "sends #{who} off."
+    when "field" then "changes the field."
     when "rule" then "rules on #{who}'s idea: #{stat_label(event['stat'])}, #{event['difficulty']}."
     else event["op"].to_s.humanize
     end

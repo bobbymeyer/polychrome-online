@@ -107,7 +107,7 @@ module Battle
 
     def effective_stats(u, basis: nil)
       stats = basis ? u["stats"].merge(basis) : u["stats"]
-      Stats::Derivation.effective(stats, buffs: u["buffs"], statuses: u["statuses"].map { |s| s["kind"] })
+      Stats::Derivation.effective(stats, buffs: u["buffs"] + Conditions.buffs(state), statuses: u["statuses"].map { |s| s["kind"] })
     end
 
     def allies(u, alive: true)
@@ -161,6 +161,7 @@ module Battle
       emit(:damage, target: target["id"], amount: amount, hp: target["hp"], **extra)
       # Struck by an opponent: what it does when hit (a counter), once it's standing or not.
       striker = extra[:actor] && unit(extra[:actor])
+      interrupt(target, amount)
       if striker && striker["side"] != target["side"]
         target["last_hit_by"] = striker["id"] unless extra[:status]
         queue_reaction(target, "hit", by: extra[:damage_type], target: striker["id"])
@@ -267,6 +268,19 @@ module Battle
       target["statuses"] -= gone
       emit(:status_expired, target: target["id"], status: kind, reason: reason)
       Masks.take_off(self, target, gone.first, spent: true) if kind == "masked"
+    end
+
+    # A move winding up that can be interrupted (its "interrupt": a share of
+    # the user's max HP) is, once that much damage has come in since it
+    # began: it's lost, and the user is down for a turn, stunned.
+    def interrupt(unit, amount)
+      winding = unit["statuses"].find { |s| s["kind"] == "charging" && s["interrupt"].to_i.positive? } or return
+      winding["taken"] = winding["taken"].to_i + amount
+      return if winding["taken"] < unit["stats"]["max_hp"] * winding["interrupt"] / 100 || !alive?(unit)
+
+      unit["statuses"].delete(winding)
+      emit(:interrupted, unit: unit["id"], ability: winding.dig("ability", "id"), taken: winding["taken"])
+      add_status(unit, "down", 1) unless status?(unit, "down")
     end
 
     # What a thief took from the party's bag comes back to it: the thief

@@ -90,14 +90,14 @@ module Seeds
                      effects: [ { primitive: "physical", power: 120 } ], description: "Quick, wet and heavier than it looks." },
       hot_skin: { name: "Hot Skin", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "tint",
                   effects: [ { primitive: "status", kind: "burn", chance: 50, duration: 2 } ], description: "Touch it and you'll know." },
-      belly_flash: { name: "Belly Flash", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash", charge: 1,
+      belly_flash: { name: "Belly Flash", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "flash", charge: 1, interrupt: 12,
                      effects: [ { primitive: "elemental", type: "fire", power: 24 } ],
-                     description: "It arches, shows a belly red as a forge, and then the forge opens." },
+                     description: "It arches, shows a belly red as a forge, and then the forge opens. Hit it hard enough first and it reels." },
       dial_spin: { name: "Dial Spin", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "spin",
                    effects: [ { primitive: "elemental", type: "fire", power: 12 } ], description: "The lamp's dial knocked round: a sweeping beam across the room." },
-      tide_call: { name: "Tide Call", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "shake", charge: 3,
+      tide_call: { name: "Tide Call", kind: "skill", target: "all_enemies", mp_cost: 0, gesture: "shake", charge: 3, again: true,
                    effects: [ { primitive: "elemental", type: "water", power: 40 } ],
-                   description: "It croaks, the Sword hums back, and the sea starts coming in." },
+                   description: "It croaks, the Sword hums back, and the sea comes in: over the lamp, over everyone, and the toad goes again." },
 
       # --- the mechanical bull and the Viper (Torso) ---------------------------------------------
       gore: { name: "Gore", kind: "skill", target: "single_enemy", mp_cost: 0, gesture: "lunge",

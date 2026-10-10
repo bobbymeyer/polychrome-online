@@ -162,6 +162,20 @@ module BattlesHelper
     (unit.statuses.map { |s| "#{term(s['kind'])} (#{s['turns']})" } + unit.buffs.map { |b| "#{stat_label(b['stat'])} #{signed(b['amount'])}%" }).join(", ")
   end
 
+  # What a stage of the field does, in words: "Fire −50%, everyone's Agi −25%" (Battle::Conditions).
+  def field_conditions(stage, chart = @battle&.world&.type_chart)
+    name = ->(type) { chart ? chart.name(type) : type.to_s.humanize }
+    stage["conditions"].map do |c|
+      case c["kind"]
+      when "weaken" then "#{name.(c['type'])} −#{c['amount']}%"
+      when "slow" then "everyone's #{stat_label('agi')} −#{c['amount']}%"
+      when "conduct" then "#{name.(c['type'])} hits the whole side"
+      when "drown" then "−#{c['amount']}% #{word('hp')} a round#{" (not #{name.(c['spares'])})" if c['spares']}"
+      when "dark" then "blows #{c['amount']} less likely to land"
+      end
+    end.compact.join(", ")
+  end
+
   # Classes for what lasts on a unit and shows on its sprite: guarding the
   # party (aggro, cover), charged, barriered, off the field.
   def unit_marks(unit)

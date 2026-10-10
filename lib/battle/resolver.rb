@@ -27,7 +27,7 @@ module Battle
   # writes a line for each, and its spec checks every type the property
   # battles emit.
   class Resolver
-    GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle add_unit dismiss rule].freeze
+    GM_OPS = %w[auto execute_round set_hp set_mp add_status remove_status end_battle add_unit dismiss rule field].freeze
     END_RESULTS = %w[victory defeat fled].freeze
 
     def self.apply(state, action)
@@ -750,7 +750,8 @@ module Battle
     # then (#release). Knocked out, the charge is lost with every status.
     def wind_up(unit, ability, target_id, aim = nil)
       unit["statuses"] << { "kind" => "charging", "turns" => ability["charge"], "left" => ability["charge"],
-                            "ability" => ability, "target" => target_id, "aim" => (aim if aim == "last_hit") }.compact
+                            "ability" => ability, "target" => target_id, "aim" => (aim if aim == "last_hit"),
+                            "interrupt" => (ability["interrupt"] if ability["interrupt"].to_i.positive?) }.compact
       ctx.emit(:charging, actor: unit["id"], ability: ability["id"], turns: ability["charge"])
     end
 
@@ -821,13 +822,18 @@ module Battle
       end
       remember(unit, ability, target_id)
       ability = fortify(unit, charged(unit, ability))
+      # Again: the user goes again once the move is done, once a round (the Toad, as the sea comes in).
+      if ability["again"] && !ctx.reacting && unit["again_round"] != state["round"]
+        unit["again_round"] = state["round"]
+        ctx.follow_ups << [ :again, unit ]
+      end
       if ability["target"] == "random_enemy"
         announce(unit, ability, [], cost)
         random_hits(unit, ability)
         return reload(unit, ability)
       end
 
-      targets = reflected(unit, ability, resolve_targets(unit, ability, target_id))
+      targets = conducted(unit, ability, reflected(unit, ability, resolve_targets(unit, ability, target_id)))
       announce(unit, ability, targets, cost)
       if targets.empty?
         return ctx.emit(:miss, actor: unit["id"], ability: ability["id"], reason: "no_target")
@@ -864,6 +870,21 @@ module Battle
       ctx.emit(:patience, actor: unit["id"], waited: waited) if waited.positive? && ability["effects"].any? { |e| e["patience"] }
       spent.uniq.each { |kind| ctx.remove_status(unit, kind, reason: "spent") }
       ability.merge("effects" => effects)
+    end
+
+    # The field conducts it (Battle::Conditions): a single-target move of the
+    # type, at an opponent, finds everyone on that side it can reach (thunder,
+    # chest-deep in water).
+    def conducted(unit, ability, targets)
+      target = targets.first
+      return targets unless ability["target"] == "single_enemy" && target && target["side"] != unit["side"]
+
+      type = ability["effects"].filter_map { |e| Effects.type_of(ctx, e) if %w[physical elemental].include?(e["primitive"]) }.first
+      return targets unless Conditions.conducts?(state, type)
+
+      everyone = ctx.within_reach(unit, ability)
+      ctx.emit(:conducted, actor: unit["id"], damage_type: type, targets: everyone.map { |u| u["id"] })
+      everyone
     end
 
     # Reflect: single-target magic at someone reflecting goes back to its caster.
@@ -929,6 +950,7 @@ module Battle
         kind, unit = job
         case kind
         when :quick then extra_go(unit, state["inputs"][unit["id"]], reason: "quick")
+        when :again then extra_go(unit, state["inputs"][unit["id"]], reason: "again")
         when :mimic then mimic(unit)
         end
         ctx.check_end
@@ -1112,11 +1134,51 @@ module Battle
     end
 
     def close_round(inputs)
+      field_turns unless ctx.over?
       inputs.each { |id, cmd| ctx.unit(id)["last_command"] = cmd }
       ctx.units.each { |u| u["defending"] = false }
       state["inputs"] = {}
       ctx.emit(:round_end, round: state["round"])
       state["round"] += 1 unless ctx.over?
+    end
+
+    # The field at a round's end (Battle::Conditions): the water takes its
+    # share from all it doesn't spare, and a stage that has lasted its
+    # rounds gives way to the next (the water rising).
+    def field_turns
+      Conditions.of(state, "drown").each do |drown|
+        ctx.units.select { |u| ctx.alive?(u) && !(drown["spares"] && u.fetch("types", []).include?(drown["spares"])) }.each do |u|
+          ctx.deal_damage(u, [ u["stats"]["max_hp"] * drown["amount"] / 100, 1 ].max, status: "drown")
+        end
+        ctx.check_end
+        return if ctx.over?
+      end
+
+      field = state["field"] or return
+      rounds = Conditions.current(state)["rounds"]
+      return unless rounds && state["round"] - field["since"] + 1 >= rounds && field["stage"] + 1 < field["stages"].size
+
+      change_field(field["stage"] + 1)
+    end
+
+    def change_field(stage)
+      field = state["field"]
+      field["stage"] = stage
+      field["since"] = state["round"] + 1
+      now = Conditions.current(state)
+      ctx.emit(:field_changed, stage: stage, name: now["name"], line: now["line"])
+    end
+
+    # { op: "field", stage: n }: the field moves to that stage at once (the
+    # water up early, the lights out); with no stage, the next one.
+    def gm_field(action)
+      field = state["field"] or raise InvalidAction, "this fight has no field to change"
+      stage = action.key?("stage") ? Integer(action["stage"]) : field["stage"] + 1
+      raise InvalidAction, "the field has no stage #{stage + 1}" unless stage.between?(0, field["stages"].size - 1)
+      raise InvalidAction, "the field is already #{Conditions.current(state)['name']}" if stage == field["stage"]
+
+      gm_event(action, stage: stage)
+      change_field(stage)
     end
   end
 end

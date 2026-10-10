@@ -232,7 +232,9 @@ module Battle
     # rules: a world's battle rules, on top of the game's own (RULES).
     # masks:  what the transform primitive puts on (Battle::Masks):
     #         { "storm_mask" => { name:, type:, duration:, abilities: [...], image: } }
-    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {}, masks: {})
+    # field:  the field it's fought on, in stages (Battle::Conditions): the water rising, the lights out.
+    def build(seed:, party:, enemies:, abilities: {}, escapable: true, items: {}, terrain: nil, types: nil, summons: {}, rules: {}, masks: {},
+              field: nil)
       rules = normalize(rules).select { |rule, on| RULES.include?(rule) && on == true }
       types = types ? Types.validate!(normalize(types)) : normalize(Types::DEFAULT)
       known = Types.list(types)
@@ -298,6 +300,7 @@ module Battle
         "inputs" => {}
       }.merge(rules.any? ? { "rules" => rules } : {})
        .merge(faces.any? ? { "masks" => faces } : {})
+       .merge((ground = Conditions.build(normalize(field), known)) ? { "field" => ground } : {})
     end
 
     # Where the fight is has a type; anywhere in particular is the plain one.
@@ -538,6 +541,10 @@ module Battle
       reload = ability.fetch("reload", 0)
       raise ArgumentError, "#{id}: reload must be 0 to #{MAX_RELOAD} turns" unless reload.is_a?(Integer) && reload.between?(0, MAX_RELOAD)
       raise ArgumentError, "#{id}: reach is true or false" unless [ nil, true, false ].include?(ability["reach"])
+      raise ArgumentError, "#{id}: again is true or false" unless [ nil, true, false ].include?(ability["again"])
+      interrupt = ability.fetch("interrupt", 0)
+      raise ArgumentError, "#{id}: interrupt must be 0 to 100% of the user's HP" unless interrupt.is_a?(Integer) && interrupt.between?(0, 100)
+      raise ArgumentError, "#{id}: only a move that takes turns to go off can be interrupted" if interrupt.positive? && charge.zero?
       raise ArgumentError, "#{id}: unknown kind #{ability['kind']}" unless ABILITY_KINDS.include?(ability.fetch("kind", "skill"))
       raise ArgumentError, "#{id}: unknown targeting #{ability['target']}" unless TARGETINGS.include?(ability["target"])
 

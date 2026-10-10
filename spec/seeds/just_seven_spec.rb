@@ -24,6 +24,21 @@ RSpec.describe Seeds::JustSeven do
     expect(world.monsters.where(slug: slugs).count).to eq(slugs.size)
   end
 
+  it "fights the Sword's water rooms on the field, rising, and the Toad's telegraph breaks" do
+    rooms = place("The Sword").location.view["rooms"].index_by { |room| room["name"] }
+    expect(rooms["Ankle-deep"].dig("decision", "field", "stages").map { |stage| stage["name"] }).to eq(%w[Ankle-deep Waist-deep Chest-deep])
+    expect(rooms["Chest-deep"].dig("decision", "field", "stages").sole["conditions"]).to include(include("kind" => "conduct", "type" => "electric"))
+    expect(place("The Cathedral").location.view["rooms"].find { |room| room["name"] == "The barred sanctum" }.dig("decision", "field", "stages").last["name"])
+      .to eq("Lights out")
+
+    character = campaign.characters.create!(name: "Ana", job: world.jobs.find_by!(slug: "soldier"), starting_level: 9)
+    battle = BattleRecord.start!(campaign: campaign, characters: [ character ], name: "Ankle-deep", encounter: { "moray_eel" => 1 },
+                                 field: rooms["Ankle-deep"].dig("decision", "field"))
+    expect(battle.state.dig("field", "stages", 0, "name")).to eq("Ankle-deep")
+    expect(world.abilities.find_by!(slug: "belly_flash").to_engine).to include("charge" => 1, "interrupt" => 12)
+    expect(world.abilities.find_by!(slug: "tide_call").to_engine).to include("again" => true)
+  end
+
   it "is made once for a GM: a second run finds it" do
     expect { described_class.run(gm: gm) }.not_to(change { [ Campaign.count, Monster.count, Ability.count ] })
     expect(described_class.run(gm: gm)).to eq(campaign)

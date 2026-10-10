@@ -376,7 +376,7 @@ module Location::Exploration
     leader = who && strongest_monster(decision["monsters"].keys)
     campaign.waylay!(label, decision["monsters"], boss: boss, terrain: location_template.encounter_table&.terrain_type,
                                                   names: ({ leader.slug => who } if leader), location: id, room: target["key"],
-                                                  prelude: (boss_prelude(target, who) if boss))
+                                                  prelude: (boss_prelude(target, who) if boss), field: decision["field"].presence)
     campaign.narrate("#{boss ? 'Boss' : 'Encounter'}! #{"#{who}: " if leader}#{campaign.describe_encounter(decision['monsters'])}.")
   end
 
@@ -393,6 +393,7 @@ module Location::Exploration
     end
     campaign.waylay!("#{villain.name}, in #{name}", monsters, boss: true, terrain: location_template.encounter_table&.terrain_type,
                                                                antagonists: [ villain.id ], location: id, room: target["key"],
+                                                               field: target.dig("decision", "field").presence,
                                                                prelude: villain_prelude(target, villain))
     with = monsters.any? ? ", with #{campaign.describe_encounter(monsters)}" : ""
     campaign.narrate("Boss! #{villain.name}#{", #{villain.title}" if villain.title.present?}#{with}.")

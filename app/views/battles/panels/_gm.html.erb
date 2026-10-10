@@ -109,6 +109,20 @@
   <% end %>
 </section>
 
+<% if (ground = @battle.state["field"]) && !@battle.over? %>
+  <section>
+    <h3>The field</h3>
+    <% now = ground["stages"][ground["stage"]] %>
+    <p><strong><%= now["name"] %></strong><%= ": #{field_conditions(now)}" if now["conditions"].any? %><%= " · rises after #{pluralize(now['rounds'], 'round')}" if now["rounds"] && ground["stage"] + 1 < ground["stages"].size %></p>
+    <% ground["stages"].each_with_index do |stage, i| %>
+      <% next if i == ground["stage"] %>
+      <%= button_to "#{i > ground['stage'] ? 'On to' : 'Back to'} #{stage['name']}", battle_actions_path(@battle), class: "link-button",
+                    params: { gm: { op: "field", stage: i } }, form: { class: "inline" } %>
+    <% end %>
+    <p class="hint">Where the fight is, and what that does. A stage with rounds gives way to the next on its own; move it on early (a fight that runs long, the lights going out).</p>
+  </section>
+<% end %>
+
 <section>
   <h3>The other side</h3>
   <ul class="gm-rows" aria-label="The other side">
