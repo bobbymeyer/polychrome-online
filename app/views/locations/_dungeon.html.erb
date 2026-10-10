@@ -129,7 +129,7 @@
                       data: { controller: "autosubmit" } do %>
           <div class="field">
             <%= label_tag :level, "Elaboration" %>
-            <%= select_tag :level, options_for_select((0..Generators::Elaboration::MAX_LEVEL).map { |n| [ n.zero? ? "As rolled" : "#{n} · #{n * Generators::Elaboration::PER_LEVEL} more rooms", n ] }, location.elaboration),
+            <%= select_tag :level, options_for_select((0..Generators::Elaboration::MAX_LEVEL).map { |n| [ n.zero? ? "As rolled" : "#{n} · up to #{n * Generators::Elaboration::PER_LEVEL} more rooms", n ] }, location.elaboration),
                            data: { action: "autosubmit#submit", help: "Alcoves, side passages and loops around the rooms you pinned. It never moves the core rooms or changes the order the party walks them." } %>
           </div>
         <% end %>

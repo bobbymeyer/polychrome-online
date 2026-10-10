@@ -172,15 +172,56 @@ RSpec.describe Generators::Elaboration do
     end
   end
 
-  it "gives no room more exits than the generator would" do
-    (1..40).each do |seed|
-      grown = elaborate(core(seed), 5, seed)
-      graph(grown).each do |key, others|
-        next unless grown["rooms"].any? { |r| r["key"] == key && !r["elaborated"] }
-
-        expect(others.size).to be <= Generators::Dungeon::MAX_EXITS + 1
+  # Location#barred_by holds the party back from anything DEEPER than a room
+  # with a fight still waiting in it. So a room past the boss could only be
+  # walked once the boss was dead and the dungeon was over -- content nobody
+  # would ever play.
+  it "never puts a room deeper than the boss" do
+    (1..60).each do |seed|
+      rolled = core(seed)
+      ceiling = rolled["rooms"].find { |r| r["key"] == rolled["boss"] }["depth"]
+      LEVELS.each do |level|
+        elaborate(rolled, level, seed)["rooms"].select { |r| r["elaborated"] }.each do |room|
+          expect(room["depth"]).to be <= ceiling, "seed #{seed} level #{level}: #{room['key']} sits past the boss"
+        end
       end
     end
+  end
+
+  it "spreads along the way down instead of piling up at the far end" do
+    rolled = corridor
+    by_depth = Hash.new(0)
+    (1..120).each do |seed|
+      elaborate(rolled, 5, seed)["rooms"].select { |r| r["elaborated"] }.each { |r| by_depth[r["depth"]] += 1 }
+    end
+    total = by_depth.values.sum
+    # Five depths can take a room (1..5); none of them may hoard a third of them.
+    by_depth.each { |depth, n| expect(n).to be < total / 3, "depth #{depth} took #{n} of #{total}" }
+    expect(by_depth.keys.sort).to eq([ 1, 2, 3, 4, 5 ])
+  end
+
+  # The dial may give a room one more way out than the generator's tree cap
+  # (Elaboration::MAX_EXITS) -- it is working around a shape already built,
+  # and the generator's limit leaves cramped rolls nowhere to grow. It may
+  # not go past that.
+  # Dungeon::add_loops doesn't hold itself to MAX_EXITS, so a rolled dungeon
+  # can already have a room with five ways out. The dial must not make a room
+  # busier than its own cap, but it inherits whatever the roll handed it.
+  it "gives no room more ways out than the dial's own cap" do
+    (1..60).each do |seed|
+      rolled = core(seed)
+      was = graph(rolled)
+      graph(elaborate(rolled, 5, seed)).each do |key, others|
+        expect(others.size).to be <= [ was[key].size, described_class::MAX_EXITS ].max,
+                               "seed #{seed}: #{key} went from #{was[key].size} ways to #{others.size}"
+      end
+    end
+  end
+
+  it "fits what it offers on all but the most cramped rolls" do
+    added = (1..120).map { |seed| elaborate(core(seed), 5, seed)["rooms"].count { |r| r["elaborated"] } }
+    expect(added.sum.to_f / added.size).to be > 9 # offered 10
+    expect(added.min).to be > 0 # and the dial always does something
   end
 
   it "draws from a stream of its own, leaving the dungeon's roll alone" do

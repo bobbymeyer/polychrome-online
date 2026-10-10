@@ -46,6 +46,11 @@ module Generators
     SHAPES = { "alcove" => 5, "parallel" => 4, "chain" => 3 }.freeze
 
     # How far an extra sits from its anchor, and how close two rooms may sit.
+    # One more way out than the generator's own tree cap. The dial is working
+    # around a shape that is already built, so holding it to the generator's
+    # limit leaves cramped rolls with nowhere to grow at all.
+    MAX_EXITS = Dungeon::MAX_EXITS + 1
+
     STEP = 62
     CLEARANCE = 54
 
@@ -64,8 +69,15 @@ module Generators
       # The core's own deepest column, so no core room shifts when the dial moves.
       max_depth = [ rooms.filter_map { |room| room["depth"] }.max.to_i, 1 ].max
 
+      # Nothing the dial adds may sit deeper than the boss: Location's
+      # #barred_by holds the party back from anything deeper than a room
+      # with a fight still in it, so a room past the boss can only be
+      # reached once the boss is dead and the place is finished with. Those
+      # rooms would never be played.
+      ceiling = rooms.find { |room| room["key"] == dungeon["boss"] }&.fetch("depth").to_i || max_depth
+
       (level * PER_LEVEL).times do |i|
-        break unless grow(pool, rooms, paths, core, i + 1, max_depth, encounters, tables)
+        break unless grow(pool, rooms, paths, core, i + 1, max_depth, ceiling, encounters, tables)
       end
 
       dungeon.merge("rooms" => rooms, "paths" => paths)
@@ -73,9 +85,9 @@ module Generators
 
     # One extra room, appended to `rooms` and `paths`. nil when there is
     # nowhere left to put one, which ends the growing.
-    def grow(pool, rooms, paths, core, number, max_depth, encounters, tables)
+    def grow(pool, rooms, paths, core, number, max_depth, ceiling, encounters, tables)
       shape = pool.choose(SHAPES)
-      anchor, second = anchors(pool, rooms, paths, core, shape)
+      anchor, second = anchors(pool, rooms, paths, core, shape, ceiling)
       return nil unless anchor
 
       key = "elab-#{number}"
@@ -92,19 +104,40 @@ module Generators
     # Where it hangs. An alcove and a chain take one room; a parallel passage
     # takes two that are ALREADY joined, which is the whole reason it can't
     # become a shortcut. A chain prefers an earlier extra, so the dial grows
-    # outward instead of fanning everything off the core. Always exactly one
-    # draw, so the stream keeps its shape whichever branch runs.
-    def anchors(pool, rooms, paths, core, shape)
-      free = rooms.reject { |room| exits(paths, room["key"]) >= Dungeon::MAX_EXITS }
+    # outward instead of fanning everything off the core.
+    #
+    # Weighted by the exits a room has left, not picked flat. Flat picking
+    # piles the rooms up at the deep end: a chain prefers an extra, extras
+    # hang off whatever came before, and on a corridor that snowballs into
+    # the last column while the first rooms get nothing. Favouring the rooms
+    # with the most exits free spreads the growth along the whole way down.
+    #
+    # And never anchor so deep that the new room lands past the boss -- see
+    # the ceiling in #apply.
+    def anchors(pool, rooms, paths, core, shape, ceiling)
+      # Shallow enough that the new room still lands at or above the boss.
+      # No fallback to the deeper rooms: when the shallow ones are full the
+      # dial stops growing rather than putting a room nobody can walk. So a
+      # high level on a cramped dungeon adds fewer rooms than it offers,
+      # which is the right way round.
+      free = rooms.reject { |room| exits(paths, room["key"]) >= MAX_EXITS || room["depth"].to_i >= ceiling }
       return [ nil, nil ] if free.empty?
 
       if shape == "parallel" && (pairs = joined_pairs(rooms, paths, free)).any?
-        return pairs[pool.int(pairs.size)]
+
+        chosen = pool.pick(pairs.map { |a, b| { "pair" => [ a, b ], "weight" => room_weight(paths, a) + room_weight(paths, b) } })
+        return chosen["pair"]
       end
 
       wanted = shape == "chain" ? free.reject { |room| core.include?(room["key"]) } : free
       wanted = free if wanted.empty?
-      [ wanted[pool.int(wanted.size)], nil ]
+      [ pool.pick(wanted.map { |room| { "room" => room, "weight" => room_weight(paths, room) } })["room"], nil ]
+    end
+
+    # Room for one more way in, and then some: a room with every exit but one
+    # spare is picked before a room that is nearly full.
+    def room_weight(paths, room)
+      [ MAX_EXITS - exits(paths, room["key"]), 1 ].max
     end
 
     # Pairs of rooms a path already joins, both with an exit to spare.
