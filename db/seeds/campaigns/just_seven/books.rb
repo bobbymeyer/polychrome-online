@@ -464,7 +464,38 @@ module Seeds
                              { weight: 2, monsters: { overseer: 1 } }, { weight: 1, monsters: { debris_golem: 1 } } ] }
     }.freeze
 
-    ENCOUNTER_TABLES = DEEPS.to_h { |slug, deep| [ slug, deep.except(:template) ] }.freeze
+    # The island above ground: its streets, the ways between its tiers, and
+    # the seabed the long tide uncovers. The roads roll these when the party
+    # crosses them (Campaign::Travelling, 25% on an open road and every
+    # crossing of a dangerous one), so they are what the city feels like to
+    # move through rather than what its dungeons hold.
+    #
+    # the_streets is also the CITY's table, set on the island_city template.
+    # That is what makes the "ambush" hard move work up here (Outcome#ambush!
+    # rolls on the place's own table and otherwise just says "Nothing comes.
+    # This time."), and it is the table the two waterline roads use, because
+    # down there the road IS the street.
+    WAYS = {
+      the_streets: { name: "The Steps", terrain: "town", tier: 1,
+                     description: "The waterline tier: stranded crews, bored and three drinks past sensible, and the bells going all night.",
+                     entries: [ { weight: 4, monsters: { lounge_brawler: 3 } }, { weight: 3, monsters: { road_bandit: 2 } },
+                                { weight: 2, monsters: { bell_tower_brawler: 2 } },
+                                { weight: 1, monsters: { mob_leader: 1, lounge_brawler: 2 } } ] },
+      the_terraces: { name: "The terraces", terrain: "plains", tier: 2,
+                      description: "The funicular slope between the tiers: washing that hasn't moved in weeks, and what lives behind it.",
+                      entries: [ { weight: 3, monsters: { hound: 2 } }, { weight: 3, monsters: { powder_rat: 3 } },
+                                 { weight: 2, monsters: { storm_crow: 2 } }, { weight: 2, monsters: { rust_lizard: 1 } } ] },
+      the_processional: { name: "The processional way", terrain: "town", tier: 5,
+                          description: "The stair from the cathedral to the hill. The Company holds the top of it, and the cult wants it.",
+                          entries: [ { weight: 3, monsters: { company_rifleman: 3 } }, { weight: 3, monsters: { die_hard: 2 } },
+                                     { weight: 2, monsters: { gunhand: 2 } }, { weight: 1, monsters: { overseer: 1 } } ] },
+      the_seabed: { name: "The stinking seabed", terrain: "sea", tier: 5,
+                    description: "Where the sea was, walked at low tide: ships on their sides, and everything the water left behind.",
+                    entries: [ { weight: 3, monsters: { barnacle_swarm: 2 } }, { weight: 3, monsters: { storm_crow: 3 } },
+                               { weight: 2, monsters: { salt_wraith: 1 } }, { weight: 1, monsters: { moray_eel: 1 } } ] }
+    }.freeze
+
+    ENCOUNTER_TABLES = DEEPS.to_h { |slug, deep| [ slug, deep.except(:template) ] }.merge(WAYS).freeze
 
     # Bobby's dungeons are five rooms (entrance, puzzle, setback, climax,
     # twist). A chain is rolled from this and its rooms pinned to the
@@ -484,6 +515,7 @@ module Seeds
     LOCATION_TEMPLATES = {
       island_city: { name: "Island city", kind: "town",
                      description: "A city on stairs, from the quays to the dome: smoke lounges, chandlers, guild halls and a great many bells.",
+                     encounter_table: "the_streets",
                      config: { services: { inn: 100, shop: 100, guild: 100, temple: 100 }, npcs: [ 5, 8 ], stock: [ 8, 12 ], buildings: [ 12, 16 ],
                                tables: %w[town_names given_names island_hooks island_memories island_wishes island_service_names island_buildings
                                           clock_stock] } },

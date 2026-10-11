@@ -44,12 +44,19 @@ module Seeds
       campaign = world.campaigns.create!(name: NAME, gm: gm)
       map = campaign.maps.create!(name: "The Island", description: "A city climbing an island's slope from the quays to the dome, in a sea with no wind.")
       nodes = PLACES.to_h { |name, attrs| [ name, place!(campaign, map, name, attrs) ] }
-      ROADS.each { |from, to, attrs| campaign.map_edges.create!(from_node: nodes.fetch(from), to_node: nodes.fetch(to), **attrs) }
+      ROADS.each { |from, to, attrs| road!(campaign, nodes.fetch(from), nodes.fetch(to), attrs) }
       cast = CAST.to_h { |name, attrs| [ name, cast!(campaign, nodes, name, attrs) ] }
       story!(campaign, nodes, cast)
       campaign.set_out!(from_the_setting: false)
       RUMOURS.each { |rumour| campaign.start_rumour!(rumour, at: nodes.fetch("The Steps")) }
       campaign
+    end
+
+    # A road, with the table it rolls on named by slug (as the atlas's own
+    # routes are, Seeds::Setting#seed_atlas): MapEdge wants the record.
+    def road!(campaign, from, to, attrs)
+      table = attrs[:encounters] && campaign.world.encounter_tables.find_by!(slug: attrs[:encounters])
+      campaign.map_edges.create!(from_node: from, to_node: to, encounter_table: table, **attrs.except(:encounters))
     end
 
     def place!(campaign, map, name, attrs)
