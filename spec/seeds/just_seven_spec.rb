@@ -137,6 +137,37 @@ RSpec.describe Seeds::JustSeven do
     expect(rolled.keys - theirs).to be_empty
   end
 
+  # The path the MIGRATION takes, which nothing used to cover: add_books on a
+  # world that already exists, with no JustSeven.run to call Oda.run first.
+  # It has to be self-sufficient. It wasn't -- the room_qualities table sat in
+  # Oda's own seeds, the migration never created it, composition stayed off
+  # and every elaborated room on the live island came out "Side room 1".
+  it "adds everything its templates draw on, with nothing else run first" do
+    described_class::LOCATION_TEMPLATES.each_key do |slug|
+      template = world.location_templates.find_by!(slug: slug)
+      next unless template.kind == "dungeon"
+
+      wanted = template.config.fetch("tables")
+      missing = wanted - world.generator_tables.where(slug: wanted).pluck(:slug)
+      expect(missing).to be_empty, "#{slug} names tables add_books doesn't create: #{missing.inspect}"
+    end
+  end
+
+  it "composes names on a world add_books alone has touched" do
+    # Oda from scratch, then only add_books -- the migration, exactly.
+    World.where(slug: "oda").destroy_all
+    require Rails.root.join("db/seeds/oda")
+    fresh = Seeds::Oda.run
+    described_class.add_books(fresh)
+
+    described_class::DEEPS.each_value do |deep|
+      template = fresh.location_templates.find_by!(slug: deep.fetch(:template).to_s)
+      entries = template.table_entries
+      expect(Generators::Dungeon.composed?(entries)).to be(true), "#{template.slug} can't compose"
+      expect(entries["room_qualities"]&.size.to_i).to be >= 10, "#{template.slug} has no qualities"
+    end
+  end
+
   # Five of the seven used to share seed 7: chain_seed took the first
   # corridor seed and every template has the same config. Each takes a
   # corridor of its own now, by its place in the order they're written.
