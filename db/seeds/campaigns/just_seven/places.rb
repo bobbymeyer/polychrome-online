@@ -40,7 +40,7 @@ module Seeds
                    description: "Sign 7: the jaw is open. Fleet Crasher makes landfall within hours." } ]
       },
       "The Airship Dock" => {
-        kind: "dungeon", x: 560, y: 800, visible: false,
+        kind: "dungeon", template: "dock_rooms", x: 560, y: 800, visible: false,
         description: "Under the Harbor Master's Guild Hall, where the airships used to tie up. Blown open by the inventor's demo.",
         notes: "LEFT LEG. Guardian: the Crab (Rock), Red Mask. Mask vision 1 (Red): swimming free. Joy and ease.\n\n" \
                "1 Entrance: the inventor's public rocket-engine demo; he dies in the blast that opens the dock (scene: The demo). The swordsman " \
@@ -64,7 +64,7 @@ module Seeds
         twist: [ { name: "The ankle", text: "A joint the size of a chapel, machined and oiled, older than the city. Something under the streets has ankles." } ]
       },
       "The Dump" => {
-        kind: "dungeon", x: 1040, y: 800, visible: false,
+        kind: "dungeon", template: "dump_rooms", x: 1040, y: 800, visible: false,
         description: "The haunted dump at the waterline: heaps of junk nobody can name, and lights at night.",
         notes: "RIGHT LEG. Guardian: the Raccoon (Dark/Ground), Orange Mask. Mask vision 2 (Orange): happily sinking a large ship. " \
                "Playful; a willing predator.\n\n" \
@@ -95,7 +95,7 @@ module Seeds
                "back the funicular repairs. The sky tram reaches only the Sword's outer pommel."
       },
       "The King's Garden" => {
-        kind: "dungeon", x: 560, y: 520, visible: false,
+        kind: "dungeon", template: "garden_rooms", x: 560, y: 520, visible: false,
         description: "The old king's private botanic garden, sealed since his decline. Where he went to reflect, people say.",
         notes: "LEFT ARM. Guardian: the Orchid Mantis (Bug; Grass while it's still an orchid), Yellow Mask. Combiner prism. Mask vision 3 (Yellow): captured in " \
                "chains. Anger.\n\n" \
@@ -121,7 +121,7 @@ module Seeds
         twist: [ { name: "The treasury", decision: { kind: "treasure", gil: 600 } } ]
       },
       "The Sky Bridge" => {
-        kind: "dungeon", x: 1040, y: 520, visible: false,
+        kind: "dungeon", template: "bridge_rooms", x: 1040, y: 520, visible: false,
         description: "The sky bridge where sanctioned judicial duels settle grievances, and the sacred chamber at its far end.",
         notes: "RIGHT ARM. Guardian: the Cormorant (Flying), Green Mask. Splitter prism. Mask vision 4 (Green): dragged out of the " \
                "water mid-fight, leaving the other kaiju behind. Fear.\n\n" \
@@ -149,7 +149,7 @@ module Seeds
         twist: [ { name: "The splitter", text: "A prism screwed into the ceiling splits the light into seven bands, and green always lands on the slit. Always." } ]
       },
       "The Sword" => {
-        kind: "dungeon", x: 260, y: 640, visible: true,
+        kind: "dungeon", template: "sword_rooms", x: 260, y: 640, visible: true,
         description: "Offshore, point-down in the seabed: a hilt and crossguard for piers, and a lamp in the pommel the city calls its lighthouse.",
         notes: "THE SWORD. Guardian: the Fire-bellied Toad (Fire/Water), Indigo Mask. Mask vision 5 (Indigo): being mechanised. Emotion fades.\n\n" \
                "Clue in: the Left Arm coins carry plain provenance and mint-city marks. The lamp's casing has an engraved ring of city names with " \
@@ -182,7 +182,7 @@ module Seeds
         twist: [ { name: "The dial", text: "An engraved ring of city names, each with an angle, around the lamp. The beam used to point at the next one." } ]
       },
       "The Cathedral" => {
-        kind: "dungeon", x: 800, y: 330, visible: true,
+        kind: "dungeon", template: "cathedral_rooms", x: 800, y: 330, visible: true,
         description: "The royal cathedral on the third tier, the Heart of the City: a great stained-glass window, a cistern beneath, and the generator.",
         notes: "TORSO. False boss: the Mechanical Bull (Normal). True guardian: the Viper (Poison/Grass), " \
                "Blue Mask. Mask vision 6 (Blue): destroying a city at the Pirate King's command, her will emptied out. Flat. Play " \
@@ -221,7 +221,7 @@ module Seeds
                "Becomes an ally with the Left Arm coins (scene: The coins). Signs the order opening the Torso."
       },
       "Founders' Hill" => {
-        kind: "dungeon", x: 800, y: 130, visible: true,
+        kind: "dungeon", template: "hill_rooms", x: 800, y: 130, visible: true,
         description: "The hill and dome at the top of the city, over the founders' mausoleum. Its face looks out to sea.",
         notes: "HEAD. Guardian: Amethyst 7A (Ghost/Steel; weak to Fighting too, as the notes have it), Violet Mask, the only mask with a face. Mask vision 7: not a vision, a " \
                "broadcast to every mask-wearer, NPCs too, once the combiner is placed: pure rage, longing to crush her brother, and her name, " \

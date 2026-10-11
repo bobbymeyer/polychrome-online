@@ -18,7 +18,8 @@ RSpec.describe Seeds::JustSeven do
     expect(world.items.masks.pluck(:slug)).to contain_exactly(*%w[red_mask orange_mask yellow_mask green_mask indigo_mask blue_mask violet_mask])
     slugs = described_class::MONSTERS.keys.map(&:to_s)
     [ world.abilities.where(slug: described_class::ABILITIES.keys.map(&:to_s)), world.items.where(slug: described_class::ITEMS.keys.map(&:to_s)),
-      world.monsters.where(slug: slugs), world.location_templates.where(slug: "five_rooms") ].each do |scope|
+      world.monsters.where(slug: slugs), world.location_templates.where(slug: described_class::LOCATION_TEMPLATES.keys.map(&:to_s)),
+      world.encounter_tables.where(slug: described_class::ENCOUNTER_TABLES.keys.map(&:to_s)) ].each do |scope|
       scope.each { |entry| expect(entry).to be_valid, "#{entry.class} #{entry.slug}: #{entry.errors.full_messages}" }
     end
     expect(world.monsters.where(slug: slugs).count).to eq(slugs.size)
@@ -52,6 +53,68 @@ RSpec.describe Seeds::JustSeven do
   it "is made once for a GM: a second run finds it" do
     expect { described_class.run(gm: gm) }.not_to(change { [ Campaign.count, Monster.count, Ability.count ] })
     expect(described_class.run(gm: gm)).to eq(campaign)
+  end
+
+  # Each dungeon has a table of its own, themed to it, so the elaboration
+  # dial and any un-pinned room it rolls fight the right things. They shared
+  # five_rooms, which has no table at all, and the dial could only add
+  # treasure, events and traps to them.
+  it "gives each dungeon its own encounter table, and none of them a guardian to meet twice" do
+    wanted = described_class::DEEPS.to_h { |table, deep| [ deep.fetch(:template).to_s, table.to_s ] }
+    described_class::PLACES.each do |name, attrs|
+      next unless attrs[:kind] == "dungeon"
+
+      template = place(name).location.location_template
+      expect(wanted).to have_key(template.slug), "#{name} is still on #{template.slug}"
+      expect(template.encounter_table&.slug).to eq(wanted[template.slug]), name
+      # The shape the pins hang on: the room count, the loops and the locks
+      # settle the keys and the corridor before a name is drawn, so these
+      # must be the same across all seven or a story comes off its rooms.
+      expect(template.settings.slice("rooms", "loops", "locks")).to eq("rooms" => [ 4, 6 ], "loops" => 0, "locks" => 0), name
+    end
+    expect(wanted.values.uniq.size).to eq(7) # one each, not one shared
+
+    # A guardian never turns up as a wandering encounter, and neither do the
+    # phase forms or the named antagonists.
+    guardians = %w[crab raccoon orchid_mantis cormorant fire_bellied_toad mechanical_bull viper amethyst_7a
+                   duel_master smiling_draw investors_second fleet_crasher]
+    wandering = world.encounter_tables.where(slug: described_class::ENCOUNTER_TABLES.keys.map(&:to_s))
+                     .flat_map { |table| table.entries.flat_map { |entry| entry["monsters"].keys } }.uniq
+    expect(wandering & guardians).to be_empty
+    expect(world.monsters.where(slug: wandering).count).to eq(wandering.size) # all in the Bestiary
+  end
+
+  # The claim the migration rests on: moving a dungeon from five_rooms to its
+  # own template leaves the story exactly where it was pinned. The shape is
+  # settled from the config and the seed before a name is drawn, and every
+  # template carries the same config.
+  it "keeps every pinned room and the way down when a dungeon changes template" do
+    dungeon = place("The Sword").location
+    was = dungeon.view
+    generic = world.location_templates.find_by!(slug: "five_rooms")
+
+    dungeon.update!(location_template: generic)
+    expect(dungeon.reload.view["rooms"].map { |r| r.slice("key", "name", "decision", "depth") })
+      .to eq(was["rooms"].map { |r| r.slice("key", "name", "decision", "depth") })
+    expect(dungeon.view["paths"].map { |p| p.slice("key", "from", "to") }).to eq(was["paths"].map { |p| p.slice("key", "from", "to") })
+    expect(dungeon.view["entrance"]).to eq(was["entrance"])
+    expect(dungeon.view["boss"]).to eq(was["boss"])
+  end
+
+  it "fills the elaboration dial's rooms from the dungeon's own table" do
+    dungeon = place("The Sword").location
+    dungeon.elaborate!(5)
+    added = dungeon.reload.view["rooms"].select { |room| room["elaborated"] }
+    expect(added).not_to be_empty
+
+    fights = added.select { |room| room["decision"]["kind"] == "encounter" }
+    expect(fights).not_to be_empty, "the dial added no fights: #{added.map { |r| r['decision']['kind'] }.tally}"
+    theirs = dungeon.location_template.encounter_table.entries.flat_map { |entry| entry["monsters"].keys }.uniq
+    expect(fights.flat_map { |room| room["decision"]["monsters"].keys }.uniq - theirs).to be_empty
+
+    # And the six pinned rooms still read as written, at every level.
+    written = described_class::PLACES.fetch("The Sword")[:rooms].map { |room| room[:name] }
+    expect(dungeon.view["rooms"].reject { |r| r["added"] || r["elaborated"] }.sort_by { |r| r["depth"] }.map { |r| r["name"] }).to eq(written)
   end
 
   it "starts at the Steps, on its own island, with the GM and the party's money" do
