@@ -204,6 +204,34 @@ RSpec.describe Character do
       expect(bartz.equipped).to be_empty
     end
 
+    it "wears two accessories at once, the second finding the free slot" do
+      bare = bartz.stats.values_at("str", "agi")
+      bartz.add_item!(item.("power_ring"))
+      bartz.add_item!(item.("hermes_sandals"))
+      bartz.equip!(item.("power_ring"))
+      bartz.equip!(item.("hermes_sandals"))
+      expect(bartz.reload.equipped.transform_values { |slot| slot.item.slug })
+        .to eq("accessory" => "power_ring", "accessory_2" => "hermes_sandals")
+      expect(bartz.stats.values_at("str", "agi")).to eq([ bare.first + 5, bare.last + 4 ]) # both count
+
+      bartz.add_item!(item.("silver_bracer")) # both full: the first gives way
+      bartz.equip!(item.("silver_bracer"))
+      expect(bartz.reload.equipped.transform_values { |slot| slot.item.slug })
+        .to eq("accessory" => "silver_bracer", "accessory_2" => "hermes_sandals")
+      expect(bartz.quantity_of(item.("power_ring"))).to eq(1)
+    end
+
+    it "wears an accessory in the slot asked for, and nothing else there" do
+      bartz.add_item!(item.("power_ring"))
+      bartz.equip!(item.("power_ring"), slot: "accessory_2")
+      expect(bartz.reload.equipped.keys).to eq([ "accessory_2" ])
+
+      bartz.add_item!(item.("broadsword"))
+      bartz.equip!(item.("broadsword"), slot: "accessory") # a sword is worn in one place only
+      expect(bartz.reload.equipped["weapon"].item.slug).to eq("broadsword")
+      expect(bartz.equipment_slots.new(slot: "accessory", item: item.("broadsword"))).not_to be_valid
+    end
+
     it "swaps, returning the old item" do
       bartz.add_item!(item.("broadsword"), 2)
       bartz.equip!(item.("broadsword"))

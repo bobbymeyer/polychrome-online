@@ -14,11 +14,11 @@ class Characters::EquipmentController < ApplicationController
     changes = choices.reject { |slot, item_id| equipped[slot]&.item_id.to_s == item_id.to_s }
     items = @world.items.where(id: changes.values.compact_blank).index_by { |item| item.id.to_s }
 
-    misplaced = changes.select { |slot, id| id.present? && items[id]&.slot != slot }
+    misplaced = changes.select { |slot, id| id.present? && !items[id]&.slots&.include?(slot) }
     return sheet_error("#{misplaced.keys.to_sentence} can't hold that") if misplaced.any?
 
     Character.transaction do
-      changes.each { |slot, id| id.blank? ? @character.unequip!(slot) : @character.equip!(items[id]) }
+      changes.each { |slot, id| id.blank? ? @character.unequip!(slot) : @character.equip!(items[id], slot: slot) }
     end
     redirect_to character_path(@character), notice: "Equipment updated.", status: :see_other
   end

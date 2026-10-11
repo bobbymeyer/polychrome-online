@@ -20,6 +20,13 @@ class Item < ApplicationRecord
   }.freeze
   EQUIPMENT_CATEGORIES = (CATEGORIES.keys - [ "consumable" ]).freeze
 
+  # Two accessory slots, so a mask (Battle::Masks) and a trinket can be worn
+  # at once: a mask is who a character is in The Just Seven, and taking it
+  # off to wear a ring was never the choice the campaign meant to offer.
+  ACCESSORY_SLOTS = %w[accessory accessory_2].freeze
+  # A character's slots, in the order the sheet shows them (Character::SLOTS).
+  SLOTS = (CATEGORIES.values.compact.uniq - [ "accessory" ] + ACCESSORY_SLOTS).freeze
+
   normalizes :target, with: ->(value) { value.presence }
 
   validates :category, inclusion: { in: CATEGORIES.keys }
@@ -65,6 +72,12 @@ class Item < ApplicationRecord
 
   def slot
     CATEGORIES[category]
+  end
+
+  # Where it can be worn: its own slot, or either accessory slot. Empty for
+  # a consumable, which is worn nowhere.
+  def slots
+    slot == "accessory" ? ACCESSORY_SLOTS : Array(slot)
   end
 
   def stats=(values)
