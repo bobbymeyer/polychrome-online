@@ -12,7 +12,7 @@
     <div class="stat-inputs equipment-inputs">
       <% Character::SLOTS.each do |slot| %>
         <% current = equipped[slot]&.item %>
-        <% fits, misfits = bag.select { |item| item.slot == slot }.partition { |item| @character.job.equips?(item) } %>
+        <% fits, misfits = bag.select { |item| item.slots.include?(slot) }.partition { |item| @character.job.equips?(item) } %>
         <% options = ([ current ].compact + fits).uniq.map { |item| [ item.name, item.id ] } +
                      misfits.reject { |item| item == current }.map { |item| [ "#{item.name}: #{term(item.category).downcase}, not for a #{@character.job.name}", item.id, { disabled: true } ] } %>
         <div class="field">

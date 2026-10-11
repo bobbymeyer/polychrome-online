@@ -16,7 +16,7 @@ class Character < ApplicationRecord
 
   include Progression, Abilities, Equipment, Background, InBattle, Courage
 
-  SLOTS = %w[weapon shield head body accessory].freeze
+  SLOTS = Item::SLOTS
 
   include CampaignPages
 

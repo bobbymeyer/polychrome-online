@@ -95,7 +95,7 @@ Every table that belongs to a world carries `world_id`. This is the only second-
 - `characters` — player-owned; job state, stats, inventory
 - `character_jobs` — job, ABP, level
 - `ability_slots` — equipped cross-job abilities
-- `inventories`, `equipment_slots`
+- `inventories`, `equipment_slots` — weapon, shield, head, body and two accessory slots (`Item::SLOTS`; Oda wears its masks in them, §5 of docs/ODA.md)
 - `flags` — campaign-scope key/value for the GM's own state (a choice's outcome, a count), never shown to players. What the party knows is one thing: its secrets, revealed (`Secret`), which a choice, a check's uncover, a cleared place or a leak brings out. Rumours are how news travels, not a kind of knowledge; the codex is the world's, not the campaign's.
 
 ### Session

@@ -132,6 +132,16 @@ RSpec.describe "Campaigns and characters", type: :request do
       expect(response).to redirect_to(character_path(bartz))
       expect(bartz.equipped.transform_values { |s| s.item.slug }).to eq("weapon" => "broadsword", "shield" => "buckler")
 
+      bartz.add_item!(item.("power_ring"))
+      bartz.add_item!(item.("hermes_sandals"))
+      patch character_equipment_path(bartz), params: { equipment: {
+        accessory: item.("hermes_sandals").id, accessory_2: item.("power_ring").id
+      } }
+      expect(bartz.equipped.transform_values { |s| s.item.slug })
+        .to include("accessory" => "hermes_sandals", "accessory_2" => "power_ring")
+      patch character_equipment_path(bartz), params: { equipment: { accessory: "", accessory_2: "" } }
+      expect(bartz.equipped.keys).to contain_exactly("weapon", "shield")
+
       patch character_equipment_path(bartz), params: { equipment: { weapon: "", shield: item.("buckler").id } }
       expect(bartz.equipped.keys).to eq([ "shield" ])
       expect(bartz.quantity_of(item.("broadsword"))).to eq(1)

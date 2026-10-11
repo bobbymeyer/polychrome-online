@@ -178,7 +178,7 @@ Winning a duel, or satisfaction, clears the flag (`Duel`), and the table hears i
 
 ## 5. Masks
 
-- **In the Armory:** items of category `mask`, worn as an accessory by anyone. Each has its own type, turns and moves (`items.mask`). There are seven, all from The Just Seven (§9): Red, Orange, Yellow, Green, Indigo, Blue and Violet. Oda's own books have none, and its atlas, cast, tables and codex never mention them.
+- **In the Armory:** items of category `mask`, worn by anyone in either of a character's two accessory slots (`Item::ACCESSORY_SLOTS`), so wearing one costs them no trinket. Each has its own type, turns and moves (`items.mask`). There are seven, all from The Just Seven (§9): Red, Orange, Yellow, Green, Indigo, Blue and Violet. Oda's own books have none, and its atlas, cast, tables and codex never mention them.
 - **Never sold:** found as treasure, or given by the GM.
 - **Its Don.** Wearing one puts **Don the … Mask** on the menu (`Item#don_ability`).
 - **Putting it on** (`transform`), for its turns, the wearer gains:

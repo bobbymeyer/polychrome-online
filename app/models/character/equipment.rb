@@ -23,13 +23,15 @@ module Character::Equipment
   end
 
   # Put an item from their bag into its slot; whatever was there goes back.
-  def equip!(item)
+  # An accessory goes in the slot asked for, or in the free one of the two.
+  def equip!(item, slot: nil)
     raise Refusal, "#{job.name} can't equip #{item.name}" unless item.equipment? && job.equips?(item)
 
+    slot = item.slots.include?(slot) ? slot : free_slot_for(item)
     transaction do
-      unequip!(item.slot)
+      unequip!(slot)
       take_item!(item)
-      equipment_slots.create!(slot: item.slot, item: item)
+      equipment_slots.create!(slot: slot, item: item)
     end
   end
 
@@ -68,6 +70,14 @@ module Character::Equipment
   end
 
   private
+
+  # Where an item goes when no slot is asked for: its own, or the first
+  # accessory slot nobody is using, so a mask leaves the other free. Both
+  # taken, the first gives way.
+  def free_slot_for(item)
+    worn = equipment_slots.pluck(:slot)
+    item.slots.find { |slot| worn.exclude?(slot) } || item.slots.first
+  end
 
   # A new character arrives dressed for their job, as in the games: the
   # cheapest thing in the Armory for each slot the job can use. Accessories
