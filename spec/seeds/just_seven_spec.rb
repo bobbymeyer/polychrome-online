@@ -84,6 +84,59 @@ RSpec.describe Seeds::JustSeven do
     expect(world.monsters.where(slug: wandering).count).to eq(wandering.size) # all in the Bestiary
   end
 
+  # The island above ground. Every road the campaign seeded was made without
+  # a table, so travelling between the tiers rolled nothing at all.
+  it "gives every road a table that matches its ground" do
+    wanted = described_class::ROADS.to_h { |from, to, attrs| [ [ from, to ].sort, attrs[:encounters] ] }
+    expect(wanted.values).to all(be_present) # no road left quiet
+
+    campaign.map_edges.includes(:from_node, :to_node, :encounter_table).each do |edge|
+      slug = wanted.fetch([ edge.from_node.name, edge.to_node.name ].sort)
+      expect(edge.encounter_table&.slug).to eq(slug), "#{edge.from_node.name} - #{edge.to_node.name}"
+    end
+    # The ground each one is on: streets at the waterline, terraces up the
+    # slope, the processional at the top, the seabed out to the blade.
+    expect(wanted[[ "The Airship Dock", "The Steps" ].sort]).to eq("the_streets")
+    expect(wanted[[ "The Reaches", "The Steps" ].sort]).to eq("the_terraces")
+    expect(wanted[[ "Founders' Hill", "The Cathedral" ].sort]).to eq("the_processional")
+    expect(wanted[[ "The Steps", "The Sword" ].sort]).to eq("the_seabed")
+    # And the states are untouched, because they set the odds.
+    expect(campaign.map_edges.where(state: "blocked").count).to eq(3)
+  end
+
+  it "gives the city its own table, which is what lets the GM call an ambush there" do
+    steps = place("The Steps").location
+    expect(steps.location_template.slug).to eq("island_city")
+    expect(steps.location_template.encounter_table&.slug).to eq("the_streets")
+
+    campaign.update!(current_node: place("The Steps"))
+    ambush = Outcome.of("ambush")
+    expect(ambush.bites?(campaign)).to be(true) # a hard move with nowhere to come from is no move
+    said = ambush.apply!(campaign, by: gm)
+    expect(said).to start_with("Encounter!")
+    expect(campaign.reload.pending_encounter).to be_present
+    theirs = steps.location_template.encounter_table.entries.flat_map { |e| e["monsters"].keys }.uniq
+    expect(campaign.pending_encounter["monsters"].keys - theirs).to be_empty
+  end
+
+  it "rolls a road's own monsters when the party crosses it" do
+    campaign.update!(current_node: place("The Steps"))
+    edge = campaign.map_edges.joins(:to_node).find_by(map_nodes: { name: "The Airship Dock" }) ||
+           campaign.map_edges.joins(:from_node).find_by(map_nodes: { name: "The Airship Dock" })
+    table = edge.encounter_table
+    theirs = table.entries.flat_map { |e| e["monsters"].keys }.uniq
+
+    # 25% a crossing on an open road, so cross until one lands.
+    rolled = nil
+    20.times do
+      campaign.update!(current_node: place("The Steps"))
+      rolled = campaign.travel!(edge)
+      break if rolled
+    end
+    expect(rolled).to be_present, "no encounter in 20 crossings of a 25% road"
+    expect(rolled.keys - theirs).to be_empty
+  end
+
   # The claim the migration rests on: moving a dungeon from five_rooms to its
   # own template leaves the story exactly where it was pinned. The shape is
   # settled from the config and the seed before a name is drawn, and every

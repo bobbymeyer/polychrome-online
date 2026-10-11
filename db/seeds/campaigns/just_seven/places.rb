@@ -268,18 +268,28 @@ module Seeds
     # (Sign 6), the hill when the jaw opens. What each says is the journey,
     # heard every time the party goes that way, so it's said as the road is
     # once it's open; why it's shut is in the places' notes.
+    # Each road rolls on a table of its own (Seeds::JustSeven#start turns
+    # `encounters` into the table). Which one follows the ground: the two
+    # waterline roads are city streets, the slope and the Reaches are the
+    # terraces, the top of the city is the processional way, and the way out
+    # to the Sword is the seabed the long tide uncovers.
+    #
+    # The states are left as they were: an open road rolls on 25% of
+    # crossings and a dangerous one on every crossing
+    # (Pointcrawl::Encounters::CHANCE), so marking these dangerous would
+    # change the campaign's pacing rather than fill a gap in it.
     ROADS = [
-      [ "The Steps", "The Airship Dock", { duration: 0 } ],
-      [ "The Steps", "The Dump", { duration: 0 } ],
-      [ "The Steps", "The Reaches", { duration: 1, state: "blocked",
+      [ "The Steps", "The Airship Dock", { duration: 0, encounters: "the_streets" } ],
+      [ "The Steps", "The Dump", { duration: 0, encounters: "the_streets" } ],
+      [ "The Steps", "The Reaches", { duration: 1, state: "blocked", encounters: "the_terraces",
                                       travel_event: "The funicular car creaks up the slope, past terraces of washing that hasn't moved in weeks." } ],
-      [ "The Reaches", "The King's Garden", { duration: 0 } ],
-      [ "The Reaches", "The Sky Bridge", { duration: 0 } ],
-      [ "The Reaches", "The Cathedral", { duration: 1 } ],
-      [ "The Cathedral", "The Palace", { duration: 0 } ],
-      [ "The Cathedral", "Founders' Hill", { duration: 1, state: "blocked",
+      [ "The Reaches", "The King's Garden", { duration: 0, encounters: "the_terraces" } ],
+      [ "The Reaches", "The Sky Bridge", { duration: 0, encounters: "the_terraces" } ],
+      [ "The Reaches", "The Cathedral", { duration: 1, encounters: "the_terraces" } ],
+      [ "The Cathedral", "The Palace", { duration: 0, encounters: "the_processional" } ],
+      [ "The Cathedral", "Founders' Hill", { duration: 1, state: "blocked", encounters: "the_processional",
                                              travel_event: "Up the processional stair to the hill, every bell in the city still singing." } ],
-      [ "The Steps", "The Sword", { duration: 1, state: "blocked",
+      [ "The Steps", "The Sword", { duration: 1, state: "blocked", encounters: "the_seabed",
                                     travel_event: "Out across the stinking seabed, past ships lying on their sides, to the blade." } ]
     ].freeze
   end
