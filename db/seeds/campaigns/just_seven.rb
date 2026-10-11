@@ -36,7 +36,8 @@ module Seeds
       forms = monsters.values.flat_map { |attrs| Array(attrs[:phases]).map { |phase| phase[:becomes].to_sym } }
       Setting.new(slug: "oda", world: Oda::WORLD, abilities: ABILITIES.merge(STATION_ABILITIES), items: ITEMS,
                   monsters: monsters.each_with_index.sort_by { |(slug, _), i| [ forms.include?(slug) ? 0 : 1, i ] }.map(&:first).to_h,
-                  generator_tables: GENERATOR_TABLES, location_templates: LOCATION_TEMPLATES).run
+                  generator_tables: GENERATOR_TABLES, encounter_tables: ENCOUNTER_TABLES,
+                  location_templates: LOCATION_TEMPLATES).run
     end
 
     def start(world, gm)
@@ -55,11 +56,14 @@ module Seeds
       node = campaign.map_nodes.create!(map: map, name: name, kind: attrs[:kind], x: attrs[:x], y: attrs[:y], visible: attrs[:visible],
                                         description: attrs[:description], notes: attrs[:notes])
       Array(attrs[:modes]).each { |mode| node.add_mode!(mode) }
-      if attrs[:template]
+      # Rooms first: a dungeon names a template of its own now (for its
+      # encounter table), and testing :template first would send it down
+      # the town branch and leave it with no rooms at all.
+      if attrs[:rooms]
+        node.update!(location: dungeon!(campaign, name, attrs))
+      elsif attrs[:template]
         template = campaign.world.location_templates.find_by!(slug: attrs[:template])
         node.update!(location: campaign.locations.create!(location_template: template, overrides: { "name" => name }))
-      elsif attrs[:rooms]
-        node.update!(location: dungeon!(campaign, name, attrs))
       end
       node
     end
@@ -68,7 +72,7 @@ module Seeds
     # to the story's in order, entrance to guardian, and the twist added
     # past the guardian's room.
     def dungeon!(campaign, name, attrs)
-      template = campaign.world.location_templates.find_by!(slug: "five_rooms")
+      template = campaign.world.location_templates.find_by!(slug: attrs.fetch(:template, "five_rooms"))
       rooms = attrs[:rooms].map(&:deep_stringify_keys)
       seed = chain_seed(template, rooms.size)
       chain = Generators::Dungeon.generate(seed: seed, template: template.settings, encounters: [], tables: template.table_entries)["rooms"]

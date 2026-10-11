@@ -418,20 +418,88 @@ module Seeds
                                             { text: "No wind, all day: the heat sits on everyone like a hand.", when: "just_seven, island, field", does: "weary 20" } ] }
     }.freeze
 
+    # What lives in each dungeon besides its guardian: a table of its own,
+    # themed to the place. Not one shared table, because the Dock's fauna
+    # isn't the Garden's and the Hill is held by the Company rather than by
+    # anything that swims.
+    #
+    # The guardians are deliberately absent, and so are their forms (a
+    # frenzy is a phase, not a creature) and the named antagonists (the
+    # Duel-Master, the Smiling Draw, the Investors' Second). A boss that
+    # wanders the corridor isn't a boss.
+    #
+    # Each is scaled under its guardian's level. These are what the
+    # elaboration dial fills its rooms with (Generators::Elaboration), and
+    # what an un-pinned room rolls if a GM rerolls one: until they existed
+    # the dial could only add treasure, events and traps, because
+    # Dungeon.possible drops "encounter" when there is nothing to fight.
+    DEEPS = {
+      the_dock: { template: :dock_rooms, name: "The flooded dock", terrain: "sea", tier: 2,
+                  description: "Under the Guild Hall, where the airships tied up: salt, silt and the things the first sign washed in.",
+                  entries: [ { weight: 4, monsters: { seam_crawler: 2 } }, { weight: 3, monsters: { rust_lizard: 2 } },
+                             { weight: 3, monsters: { powder_rat: 3 } }, { weight: 1, monsters: { salt_wraith: 1 } } ] },
+      the_dump: { template: :dump_rooms, name: "The junk hoard", terrain: "town", tier: 3,
+                  description: "Scavengers, and the hoard scavenging back: everything in here was made by someone who could.",
+                  entries: [ { weight: 3, monsters: { hound: 2 } }, { weight: 3, monsters: { powder_rat: 3 } },
+                             { weight: 2, monsters: { rust_lizard: 2 } }, { weight: 2, monsters: { debris_golem: 1 } } ] },
+      the_garden: { template: :garden_rooms, name: "The King's Garden", terrain: "forest", tier: 3,
+                    description: "Kept green a long time after anyone kept it: what grew, and what came to eat what grew.",
+                    entries: [ { weight: 3, monsters: { hawk: 2 } }, { weight: 3, monsters: { storm_crow: 2 } },
+                               { weight: 2, monsters: { orchid_bloom: 1 } } ] },
+      the_bridge: { template: :bridge_rooms, name: "The Sky Bridge", terrain: "mountain", tier: 4,
+                    description: "Open air both sides, a long way up: birds own it, and whoever the Company pays to watch it.",
+                    entries: [ { weight: 4, monsters: { storm_crow: 3 } }, { weight: 3, monsters: { hawk: 2 } },
+                               { weight: 2, monsters: { company_rifleman: 2 } } ] },
+      the_blade: { template: :sword_rooms, name: "The drowned blade", terrain: "sea", tier: 5,
+                   description: "Inside the Sword as the tide works it: everything in here breathes water, or used to breathe at all.",
+                   entries: [ { weight: 3, monsters: { barnacle_swarm: 2 } }, { weight: 3, monsters: { moray_eel: 1 } },
+                              { weight: 2, monsters: { drowned_bellringer: 1 } }, { weight: 1, monsters: { giant_octopus: 1 } } ] },
+      the_cistern: { template: :cathedral_rooms, name: "The cistern", terrain: "crypt", tier: 5,
+                     description: "Under the Heart of the City: the die-hards' siege lines, the old bellringers, and water in the dark.",
+                     entries: [ { weight: 3, monsters: { bell_tower_brawler: 3 } }, { weight: 3, monsters: { die_hard: 2 } },
+                                { weight: 2, monsters: { drowned_bellringer: 1 } } ] },
+      the_dome: { template: :hill_rooms, name: "The dome", terrain: "town", tier: 6,
+                  description: "The Company holds the head, and pays well for the privilege: rifles, overseers, and the machines they salvaged.",
+                  entries: [ { weight: 4, monsters: { company_rifleman: 3 } }, { weight: 3, monsters: { gunhand: 2 } },
+                             { weight: 2, monsters: { overseer: 1 } }, { weight: 1, monsters: { debris_golem: 1 } } ] }
+    }.freeze
+
+    ENCOUNTER_TABLES = DEEPS.to_h { |slug, deep| [ slug, deep.except(:template) ] }.freeze
+
     # Bobby's dungeons are five rooms (entrance, puzzle, setback, climax,
     # twist). A chain is rolled from this and its rooms pinned to the
     # story's (Seeds::JustSeven#dungeon!): the twist, after the guardian,
     # is a room added off the boss's.
+    #
+    # The config below is the one every dungeon uses, down to the room
+    # count. It MUST stay the same across the seven, because the shape is
+    # what the pins hang on: Generators::Dungeon settles the room count,
+    # the edges and the depths from `rooms`, `loops` and the seed before it
+    # draws a single name, so identical config plus the stored seed means
+    # identical room keys. Change `rooms` for one dungeon and that
+    # dungeon's story comes off its rooms.
+    FIVE_ROOMS = { rooms: [ 4, 6 ], loops: 0, locks: 0, decisions: { event: 1 },
+                   tables: %w[mine_names mine_rooms room_events forks treasure locks traps] }.freeze
+
     LOCATION_TEMPLATES = {
       island_city: { name: "Island city", kind: "town",
                      description: "A city on stairs, from the quays to the dome: smoke lounges, chandlers, guild halls and a great many bells.",
                      config: { services: { inn: 100, shop: 100, guild: 100, temple: 100 }, npcs: [ 5, 8 ], stock: [ 8, 12 ], buildings: [ 12, 16 ],
                                tables: %w[town_names given_names island_hooks island_memories island_wishes island_service_names island_buildings
                                           clock_stock] } },
+      # The generic one, kept: a dungeon of Bobby's that hasn't been given a
+      # table of its own still rolls from this.
       five_rooms: { name: "Five-room dungeon", kind: "dungeon",
                     description: "Entrance, puzzle, setback, climax, twist: one way in, one guardian, and something learned on the far side.",
-                    config: { rooms: [ 4, 6 ], loops: 0, locks: 0, decisions: { event: 1 },
-                              tables: %w[mine_names mine_rooms room_events forks treasure locks traps] } }
-    }.freeze
+                    config: FIVE_ROOMS }
+    }.merge(
+      # One per dungeon, the same five-room shape pointed at its own table.
+      DEEPS.to_h do |table, deep|
+        [ deep.fetch(:template),
+          { name: "#{deep.fetch(:name)} (five rooms)", kind: "dungeon", encounter_table: table.to_s,
+            description: "#{deep.fetch(:description)} Five rooms, and its own table.",
+            config: FIVE_ROOMS } ]
+      end
+    ).freeze
   end
 end
