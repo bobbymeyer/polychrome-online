@@ -363,6 +363,19 @@ module Seeds
     # other campaign. Asking that much, they beat Oda's own rows
     # (Story::Matcher: the most specific wins).
     GENERATOR_TABLES = {
+      # One axis of a composed room name (Generators::Dungeon.room_name): a
+      # quality goes in front of a part, "The flooded ballast gallery".
+      # Shared by all seven dungeons, so each only writes its own parts.
+      #
+      # It lives HERE and not in Oda's own tables.rb, and that matters:
+      # add_books seeds this hash and nothing else, so a table it needs that
+      # sat in Oda's seeds would never be created by the migration. That is
+      # exactly what happened -- the parts arrived, the qualities didn't,
+      # composition stayed off and every room came out "Side room 1".
+      room_qualities: { name: "Room qualities", kind: "room_qualities",
+                        entries: texts("flooded", "collapsed", "upper", "lower", "cold", "abandoned",
+                                       "sealed", "burnt", "narrow", "deep", "silted", "forgotten") },
+
       # The other axis of a composed room name: what each dungeon is MADE of,
       # bare and lowercase, for one of Oda's room_qualities to go in front of
       # (Generators::Dungeon.room_name). A vocabulary each, so no two of them

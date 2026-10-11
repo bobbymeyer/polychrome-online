@@ -263,14 +263,18 @@ RSpec.describe Generators::Elaboration do
     expect(names).to all(satisfy { |n| parts.any? { |part| n.end_with?(part) } })
   end
 
-  it "falls back to the flat table when a world hasn't given it both" do
+  it "falls back to the flat table with no parts, and reads plainly with no qualities" do
     flat = { "rooms" => [ { "text" => "Pithead" }, { "text" => "Cage Shaft" }, { "text" => "Gallery" } ] }
     names = elaborate_with(corridor, 1, 3, "x", tables: flat)["rooms"].select { |r| r["elaborated"] }.map { |r| r["name"] }
     expect(names).to all(satisfy { |n| [ "Pithead", "Cage Shaft", "Gallery" ].include?(n) })
 
-    # Parts without qualities isn't enough to compose, so it stays flat.
-    half = flat.merge("room_parts" => [ { "text" => "berth" } ])
-    expect(elaborate_with(corridor, 1, 3, "x", tables: half)["rooms"].last["name"]).not_to start_with("The ")
+    # Parts and no qualities: compose them undressed rather than fall through
+    # to a flat table the template may have dropped. Requiring both is how
+    # the live island ended up full of "Side room 1".
+    half = { "room_parts" => [ { "text" => "berth" }, { "text" => "winch room" } ] }
+    plain = elaborate_with(corridor, 1, 3, "x", tables: half)["rooms"].select { |r| r["elaborated"] }.map { |r| r["name"] }
+    expect(plain).to all(match(/\AThe (berth|winch room)\z/))
+    expect(plain).not_to include(a_string_matching(/Side room/))
   end
 
   it "draws from a stream of its own, leaving the dungeon's roll alone" do

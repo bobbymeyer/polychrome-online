@@ -338,8 +338,13 @@ module Generators
       composed?(tables) ? composed(pool, tables, taken) : pool.pick_fresh(tables.fetch("rooms", []))&.fetch("text")
     end
 
+    # Parts alone are enough: "The ballast gallery". Qualities only dress
+    # them. Requiring both meant a template with parts and no qualities fell
+    # through to its flat "rooms" table -- and a template that had dropped
+    # that table had nothing left, so every room came out "Side room 1". A
+    # half-configured dungeon should read plainly, not fail.
     def composed?(tables)
-      tables.fetch("room_parts", []).any? && tables.fetch("room_qualities", []).any?
+      tables.fetch("room_parts", []).any?
     end
 
     REDRAWS = 6
