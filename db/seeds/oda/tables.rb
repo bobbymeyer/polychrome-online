@@ -111,6 +111,13 @@ module Seeds
                     entries: texts("Gate", "Stockade Yard", "Armoury", "Watchtower", "Cookhouse", "Strongroom", "Stables", "Chief's Quarters", "Powder Magazine") },
       belfry_rooms: { name: "Belfry rooms", kind: "rooms",
                       entries: texts("Drowned Nave", "Bell Stair", "Ringing Chamber", "Vestry", "Salt Cellar", "Clock Room", "The Bell Itself") },
+      # One axis of a composed room name (Generators::Dungeon.room_name): a
+      # quality goes in front of a part, "The flooded ballast gallery". Shared
+      # by every setting in Oda that opts in, so a dungeon only has to write
+      # its own parts.
+      room_qualities: { name: "Room qualities", kind: "room_qualities",
+                        entries: texts("flooded", "collapsed", "upper", "lower", "cold", "abandoned",
+                                       "sealed", "burnt", "narrow", "deep", "silted", "forgotten") },
       room_events: { name: "Room events", kind: "room_events",
                      entries: texts("A duel's chalk circle on the floor, and two sets of boot marks. One set leaves fast.",
                                     "A seam of raw powder in the wall, pulsing like a slow heart.",

@@ -15,6 +15,21 @@ RSpec.describe Generators::Elaboration do
                           encounters: GeneratorFixtures.encounters, tables: dungeon_tables)
   end
 
+  def elaborate_with(dungeon, level, seed, variant, tables: dungeon_tables)
+    described_class.apply(dungeon, level: level, seed: seed, variant: variant,
+                          encounters: GeneratorFixtures.encounters, tables: tables)
+  end
+
+  # A world that has given its dungeon both axes of a composed name.
+  def composing_tables
+    dungeon_tables.merge(
+      "room_parts" => %w[pommel\ stair fuller\ groove ballast\ gallery blade\ hollow quillon\ vault
+                         lamp\ housing flood\ gate crossguard\ pier].map { |t| { "text" => t } },
+      "room_qualities" => %w[flooded collapsed upper lower cold abandoned sealed burnt narrow deep silted
+                             forgotten].map { |t| { "text" => t } }
+    )
+  end
+
   # A corridor, which is the shape a seeded campaign pins its story onto
   # (Seeds::JustSeven#chain_seed hunts for exactly this).
   def corridor(count = 6)
@@ -222,6 +237,40 @@ RSpec.describe Generators::Elaboration do
     added = (1..120).map { |seed| elaborate(core(seed), 5, seed)["rooms"].count { |r| r["elaborated"] } }
     expect(added.sum.to_f / added.size).to be > 9 # offered 10
     expect(added.min).to be > 0 # and the dial always does something
+  end
+
+  # The bug this was all about: a seeder hands its dungeons the same seed
+  # (Seeds::JustSeven#chain_seed finds the first corridor seed and every one
+  # of its templates has the same config), so five of seven came out on seed
+  # 7 and elaborated into the identical six rooms in the identical order.
+  it "tells two dungeons on the same seed apart by their variant" do
+    one = elaborate_with(corridor, 5, 7, "The Sword")
+    two = elaborate_with(corridor, 5, 7, "Founders' Hill")
+    expect(one["rooms"].drop(6)).not_to eq(two["rooms"].drop(6))
+    expect(one["rooms"].drop(6).map { |r| r["name"] }).not_to eq(two["rooms"].drop(6).map { |r| r["name"] })
+
+    # Still deterministic: the same pair gives the same dungeon.
+    expect(elaborate_with(corridor, 5, 7, "The Sword")).to eq(one)
+  end
+
+  it "composes names from a part and a quality, and never says one twice" do
+    grown = elaborate_with(corridor, 5, 3, "The Sword", tables: composing_tables)
+    names = grown["rooms"].select { |r| r["elaborated"] }.map { |r| r["name"] }
+    expect(names.size).to eq(10)
+    expect(names.uniq).to eq(names) # no repeats inside one dungeon
+    expect(names).to all(match(/\AThe \w+ /))
+    parts = composing_tables["room_parts"].map { |row| row["text"] }
+    expect(names).to all(satisfy { |n| parts.any? { |part| n.end_with?(part) } })
+  end
+
+  it "falls back to the flat table when a world hasn't given it both" do
+    flat = { "rooms" => [ { "text" => "Pithead" }, { "text" => "Cage Shaft" }, { "text" => "Gallery" } ] }
+    names = elaborate_with(corridor, 1, 3, "x", tables: flat)["rooms"].select { |r| r["elaborated"] }.map { |r| r["name"] }
+    expect(names).to all(satisfy { |n| [ "Pithead", "Cage Shaft", "Gallery" ].include?(n) })
+
+    # Parts without qualities isn't enough to compose, so it stays flat.
+    half = flat.merge("room_parts" => [ { "text" => "berth" } ])
+    expect(elaborate_with(corridor, 1, 3, "x", tables: half)["rooms"].last["name"]).not_to start_with("The ")
   end
 
   it "draws from a stream of its own, leaving the dungeon's roll alone" do

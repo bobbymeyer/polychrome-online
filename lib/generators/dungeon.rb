@@ -40,11 +40,18 @@ module Generators
       depths = depths(edges, count)
       boss = (0...count).max_by { |i| [ depths[i], i ] }
 
-      names = pool.sample(tables.fetch("rooms", []), count)
+      # Composed names when the tables are there, else the flat list exactly
+      # as before: a template on "rooms" alone must roll what it always did.
+      if composed?(tables)
+        taken = []
+        names = Array.new(count) { composed(pool, tables, taken).tap { |name| taken << name } }
+      else
+        names = pool.sample(tables.fetch("rooms", []), count).map { |row| row&.fetch("text") }
+      end
       rooms = Array.new(count) do |i|
         {
           "key" => "room-#{i}",
-          "name" => i.zero? ? "Entrance" : (names[i]&.fetch("text") || "Room #{i}"),
+          "name" => i.zero? ? "Entrance" : (names[i] || "Room #{i}"),
           "depth" => depths[i]
         }
       end
@@ -316,6 +323,36 @@ module Generators
       weights.delete("treasure") if tables.fetch("treasure", []).empty?
       weights.delete("trap") if tables.fetch("traps", []).empty?
       weights.values.sum.zero? ? { "event" => 1 } : weights
+    end
+
+    # A room's name. Composed from a part and a quality when the world has
+    # given this dungeon both ("The flooded ballast gallery"), else drawn
+    # from its flat "rooms" table. A dozen qualities against eight parts is
+    # about a hundred names from twenty rows, which is what stops seven
+    # dungeons sharing a vocabulary and saying the same thing twice.
+    #
+    # taken: the names this dungeon has used already. A clash redraws the
+    # quality rather than the part, so a dungeon works through its own parts
+    # before it starts dressing them differently.
+    def room_name(pool, tables, taken = [])
+      composed?(tables) ? composed(pool, tables, taken) : pool.pick_fresh(tables.fetch("rooms", []))&.fetch("text")
+    end
+
+    def composed?(tables)
+      tables.fetch("room_parts", []).any? && tables.fetch("room_qualities", []).any?
+    end
+
+    REDRAWS = 6
+
+    def composed(pool, tables, taken)
+      part = pool.pick_fresh(tables.fetch("room_parts", []))&.fetch("text") or return nil
+      name = nil
+      REDRAWS.times do
+        quality = pool.pick_fresh(tables.fetch("room_qualities", []))&.fetch("text")
+        name = quality ? "The #{quality} #{part}" : "The #{part}"
+        break unless taken.include?(name)
+      end
+      name
     end
 
     # Every decision but a fork: one draw, and no need for the room graph.

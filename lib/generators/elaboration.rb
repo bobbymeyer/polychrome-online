@@ -58,14 +58,20 @@ module Generators
 
     # dungeon: a rolled (and provenanced) dungeon. Returns a new one; the
     # argument is left alone.
-    def apply(dungeon, level:, seed:, encounters: [], tables: {})
+    # variant: what tells two dungeons on the SAME seed apart. Seeded
+    # campaigns hand their dungeons identical seeds -- Seeds::JustSeven's
+    # chain_seed hunts for the first corridor seed and every one of its
+    # templates has the same config, so five of the seven came out on seed 7
+    # and elaborated into the same six rooms, in the same order. The seed
+    # alone is not enough entropy; the location's own name is.
+    def apply(dungeon, level:, seed:, variant: nil, encounters: [], tables: {})
       level = level.to_i.clamp(0, MAX_LEVEL)
       return dungeon if level.zero? || dungeon["kind"] != "dungeon"
 
       rooms = Overrides.deep_dup(dungeon["rooms"])
       paths = Overrides.deep_dup(dungeon["paths"])
       core = rooms.map { |room| room["key"] }
-      pool = Pool.new(Battle::Rng.new(Battle::Rng.seed_state(Integer(seed) ^ SALT)))
+      pool = Pool.new(Battle::Rng.new(stream_for(seed, variant)))
       # The core's own deepest column, so no core room shifts when the dial moves.
       max_depth = [ rooms.filter_map { |room| room["depth"] }.max.to_i, 1 ].max
 
@@ -83,6 +89,14 @@ module Generators
       dungeon.merge("rooms" => rooms, "paths" => paths)
     end
 
+    # Its own stream, salted away from the dungeon's own roll and stirred by
+    # the variant so that two dungeons on one seed are not one dungeon twice.
+    def stream_for(seed, variant)
+      mixed = Integer(seed) ^ SALT
+      variant.to_s.each_byte { |byte| mixed = ((mixed * 31) + byte) & 0xFFFF_FFFF }
+      Battle::Rng.seed_state(mixed)
+    end
+
     # One extra room, appended to `rooms` and `paths`. nil when there is
     # nowhere left to put one, which ends the growing.
     def grow(pool, rooms, paths, core, number, max_depth, ceiling, encounters, tables)
@@ -91,7 +105,7 @@ module Generators
       return nil unless anchor
 
       key = "elab-#{number}"
-      room = { "key" => key, "name" => name(pool, tables, number),
+      room = { "key" => key, "name" => name(pool, tables, number, rooms.map { |other| other["name"] }),
                "depth" => [ anchor, second ].compact.map { |room| room["depth"].to_i }.min + 1,
                "decision" => decision(pool, encounters, tables), "elaborated" => true }
       place(room, rooms, anchor, max_depth)
@@ -159,9 +173,11 @@ module Generators
       Dungeon.simple_decision(pool, pool.choose(Dungeon.possible(SPREAD, encounters, tables)), encounters, tables)
     end
 
-    # Named from the world's own room table, falling back to something plain.
-    def name(pool, tables, number)
-      pool.pick_fresh(tables.fetch("rooms", []))&.fetch("text") || "Side room #{number}"
+    # Named the way the dungeon's own rooms are (Dungeon.room_name): composed
+    # from a part and a quality where the world gives this dungeon both, else
+    # from its flat table. `taken` keeps one dungeon from repeating itself.
+    def name(pool, tables, number, taken)
+      Dungeon.room_name(pool, tables, taken) || "Side room #{number}"
     end
 
     # Its depth's column, as Dungeon::layout draws them, then the first free

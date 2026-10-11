@@ -137,6 +137,53 @@ RSpec.describe Seeds::JustSeven do
     expect(rolled.keys - theirs).to be_empty
   end
 
+  # Five of the seven used to share seed 7: chain_seed took the first
+  # corridor seed and every template has the same config. Each takes a
+  # corridor of its own now, by its place in the order they're written.
+  it "rolls each dungeon from a corridor of its own" do
+    seeds = campaign.map_nodes.filter_map(&:location).select(&:dungeon?).to_h { |d| [ d.name, d.seed ] }
+    expect(seeds.size).to eq(7)
+    expect(seeds.values.uniq.size).to eq(7), "shared seeds: #{seeds.inspect}"
+  end
+
+  # The complaint, inverted and measured. Before: at the dial's third notch
+  # the seven dungeons made 42 rooms with 10 distinct names between them, and
+  # five of the seven made the identical six in the identical order -- they
+  # shared a seed (chain_seed) and a twelve-row list of mine names.
+  it "names the dial's rooms without the island repeating itself" do
+    dungeons = campaign.map_nodes.filter_map(&:location).select(&:dungeon?)
+    expect(dungeons.size).to eq(7)
+    dungeons.each { |dungeon| dungeon.elaborate!(5) }
+
+    by_dungeon = dungeons.to_h do |dungeon|
+      [ dungeon.name, dungeon.reload.view["rooms"].select { |room| room["elaborated"] }.map { |room| room["name"] } ]
+    end
+    all = by_dungeon.values.flatten
+
+    expect(all.size).to be >= 60 # ten a dungeon, give or take a cramped roll
+    expect(all.uniq.size).to eq(all.size), "repeated across the island: #{all.tally.select { |_, n| n > 1 }.inspect}"
+    by_dungeon.each_value { |names| expect(names.uniq).to eq(names) }
+    # No two dungeons share a vocabulary, so no two share a room name.
+    by_dungeon.values.combination(2) { |a, b| expect(a & b).to be_empty }
+    # And they read as composed, from that dungeon's own parts.
+    expect(all).to all(match(/\AThe \w+ /))
+  end
+
+  it "gives each dungeon its own room parts, and shares Oda's qualities" do
+    wanted = described_class::DEEPS.to_h { |_, deep| [ deep.fetch(:template).to_s, deep.fetch(:parts).to_s ] }
+    described_class::PLACES.each_value do |attrs|
+      next unless attrs[:kind] == "dungeon"
+
+      template = world.location_templates.find_by!(slug: attrs[:template])
+      tables = template.config["tables"]
+      expect(tables).to include(wanted.fetch(template.slug), "room_qualities"), template.slug
+      expect(tables).not_to include("mine_rooms"), "#{template.slug} still shares the mine names"
+      expect(template.table_entries["room_parts"].size).to be >= 6
+      expect(template.table_entries["room_qualities"].size).to be >= 10
+    end
+    expect(wanted.values.uniq.size).to eq(7) # a vocabulary each
+  end
+
   # The claim the migration rests on: moving a dungeon from five_rooms to its
   # own template leaves the story exactly where it was pinned. The shape is
   # settled from the config and the seed before a name is drawn, and every
