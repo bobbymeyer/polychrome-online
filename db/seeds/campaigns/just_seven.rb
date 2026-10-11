@@ -81,7 +81,7 @@ module Seeds
     def dungeon!(campaign, name, attrs)
       template = campaign.world.location_templates.find_by!(slug: attrs.fetch(:template, "five_rooms"))
       rooms = attrs[:rooms].map(&:deep_stringify_keys)
-      seed = chain_seed(template, rooms.size)
+      seed = chain_seed(template, rooms.size, nth: nth_for(name))
       chain = Generators::Dungeon.generate(seed: seed, template: template.settings, encounters: [], tables: template.table_entries)["rooms"]
                                  .sort_by { |room| room["depth"] }
       pins = chain.zip(rooms).to_h { |room, story| [ room["key"], story ] }
@@ -94,13 +94,34 @@ module Seeds
                                  overrides: { "name" => name, "pins" => pins, "added_rooms" => added })
     end
 
-    # The first seed that rolls the rooms as one corridor, each a step
-    # deeper than the last: the five-room shape, never a branch.
-    def chain_seed(template, count)
+    # The NTH seed that rolls the rooms as one corridor, each a step deeper
+    # than the last: the five-room shape, never a branch.
+    #
+    # The nth is what stops the seven sharing a seed. Taking the first
+    # corridor seed is deterministic given the template's config, and all
+    # seven templates carry the same config -- so five of them came out on
+    # seed 7 and, since the dial grew from the seed, elaborated into the
+    # identical rooms.
+    #
+    # The nth and not an offset to search forward from: corridor seeds are
+    # sparse, so distinct offsets funnel onto the same next one (the Dock and
+    # the Sky Bridge both landed on 506 that way). Distinct nths cannot
+    # collide, because they are distinct seeds by definition.
+    def chain_seed(template, count, nth: 1)
+      found = 0
       (1..).find do |seed|
         rooms = Generators::Dungeon.generate(seed: seed, template: template.settings, encounters: [], tables: template.table_entries)["rooms"]
-        rooms.size == count && rooms.map { |room| room["depth"] }.sort == (0...count).to_a
+        next false unless rooms.size == count && rooms.map { |room| room["depth"] }.sort == (0...count).to_a
+
+        (found += 1) == nth
       end
+    end
+
+    # Which corridor each dungeon takes: its place in the order they're
+    # written. A position rather than a hash of the name, so no two can land
+    # on the same one however the island is renamed or reordered.
+    def nth_for(name)
+      1 + PLACES.keys.select { |place| PLACES.fetch(place)[:kind] == "dungeon" }.index(name).to_i
     end
 
     def cast!(campaign, nodes, name, attrs)

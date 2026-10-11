@@ -363,6 +363,19 @@ module Seeds
     # other campaign. Asking that much, they beat Oda's own rows
     # (Story::Matcher: the most specific wins).
     GENERATOR_TABLES = {
+      # The other axis of a composed room name: what each dungeon is MADE of,
+      # bare and lowercase, for one of Oda's room_qualities to go in front of
+      # (Generators::Dungeon.room_name). A vocabulary each, so no two of them
+      # name a room the same way -- which is the whole point, since all seven
+      # used to share one twelve-row list of mine names.
+      dock_parts: { name: "Airship Dock parts", kind: "room_parts", entries: texts("mooring gallery", "gantry walk", "winch room", "tether yard", "ballast locker", "shell store", "pump house", "berth") },
+      dump_parts: { name: "Dump parts", kind: "room_parts", entries: texts("sorting floor", "scrap terrace", "furnace room", "picker's run", "bale yard", "cable spool", "parts bin", "tip face") },
+      garden_parts: { name: "King's Garden parts", kind: "room_parts", entries: texts("glasshouse", "parterre", "seed vault", "orangery", "mirror walk", "potting shed", "water stair", "arbour") },
+      bridge_parts: { name: "Sky Bridge parts", kind: "room_parts", entries: texts("span", "pier head", "cable house", "lamp post", "wind gallery", "counterweight room", "parapet walk", "toll house") },
+      sword_parts: { name: "Sword parts", kind: "room_parts", entries: texts("pommel stair", "fuller groove", "ballast gallery", "blade hollow", "quillon vault", "lamp housing", "flood gate", "crossguard pier") },
+      cathedral_parts: { name: "Cathedral parts", kind: "room_parts", entries: texts("culvert", "cistern floor", "bell stair", "ringing chamber", "vestry", "conduit run", "valve house", "rood loft") },
+      hill_parts: { name: "Founders' Hill parts", kind: "room_parts", entries: texts("brow gallery", "socket room", "optic run", "dome walk", "signal loft", "founder's study", "survey office", "crown stair") },
+
       island_hooks: { name: "Island hooks", kind: "hooks",
                       entries: texts("Captains a ship that hasn't moved in five weeks, and drinks like it.",
                                      "Sells wind charms by the dozen. None of them work. Business has never been better.",
@@ -434,31 +447,31 @@ module Seeds
     # the dial could only add treasure, events and traps, because
     # Dungeon.possible drops "encounter" when there is nothing to fight.
     DEEPS = {
-      the_dock: { template: :dock_rooms, name: "The flooded dock", terrain: "sea", tier: 2,
+      the_dock: { template: :dock_rooms, parts: :dock_parts, name: "The flooded dock", terrain: "sea", tier: 2,
                   description: "Under the Guild Hall, where the airships tied up: salt, silt and the things the first sign washed in.",
                   entries: [ { weight: 4, monsters: { seam_crawler: 2 } }, { weight: 3, monsters: { rust_lizard: 2 } },
                              { weight: 3, monsters: { powder_rat: 3 } }, { weight: 1, monsters: { salt_wraith: 1 } } ] },
-      the_dump: { template: :dump_rooms, name: "The junk hoard", terrain: "town", tier: 3,
+      the_dump: { template: :dump_rooms, parts: :dump_parts, name: "The junk hoard", terrain: "town", tier: 3,
                   description: "Scavengers, and the hoard scavenging back: everything in here was made by someone who could.",
                   entries: [ { weight: 3, monsters: { hound: 2 } }, { weight: 3, monsters: { powder_rat: 3 } },
                              { weight: 2, monsters: { rust_lizard: 2 } }, { weight: 2, monsters: { debris_golem: 1 } } ] },
-      the_garden: { template: :garden_rooms, name: "The King's Garden", terrain: "forest", tier: 3,
+      the_garden: { template: :garden_rooms, parts: :garden_parts, name: "The King's Garden", terrain: "forest", tier: 3,
                     description: "Kept green a long time after anyone kept it: what grew, and what came to eat what grew.",
                     entries: [ { weight: 3, monsters: { hawk: 2 } }, { weight: 3, monsters: { storm_crow: 2 } },
                                { weight: 2, monsters: { orchid_bloom: 1 } } ] },
-      the_bridge: { template: :bridge_rooms, name: "The Sky Bridge", terrain: "mountain", tier: 4,
+      the_bridge: { template: :bridge_rooms, parts: :bridge_parts, name: "The Sky Bridge", terrain: "mountain", tier: 4,
                     description: "Open air both sides, a long way up: birds own it, and whoever the Company pays to watch it.",
                     entries: [ { weight: 4, monsters: { storm_crow: 3 } }, { weight: 3, monsters: { hawk: 2 } },
                                { weight: 2, monsters: { company_rifleman: 2 } } ] },
-      the_blade: { template: :sword_rooms, name: "The drowned blade", terrain: "sea", tier: 5,
+      the_blade: { template: :sword_rooms, parts: :sword_parts, name: "The drowned blade", terrain: "sea", tier: 5,
                    description: "Inside the Sword as the tide works it: everything in here breathes water, or used to breathe at all.",
                    entries: [ { weight: 3, monsters: { barnacle_swarm: 2 } }, { weight: 3, monsters: { moray_eel: 1 } },
                               { weight: 2, monsters: { drowned_bellringer: 1 } }, { weight: 1, monsters: { giant_octopus: 1 } } ] },
-      the_cistern: { template: :cathedral_rooms, name: "The cistern", terrain: "crypt", tier: 5,
+      the_cistern: { template: :cathedral_rooms, parts: :cathedral_parts, name: "The cistern", terrain: "crypt", tier: 5,
                      description: "Under the Heart of the City: the die-hards' siege lines, the old bellringers, and water in the dark.",
                      entries: [ { weight: 3, monsters: { bell_tower_brawler: 3 } }, { weight: 3, monsters: { die_hard: 2 } },
                                 { weight: 2, monsters: { drowned_bellringer: 1 } } ] },
-      the_dome: { template: :hill_rooms, name: "The dome", terrain: "town", tier: 6,
+      the_dome: { template: :hill_rooms, parts: :hill_parts, name: "The dome", terrain: "town", tier: 6,
                   description: "The Company holds the head, and pays well for the privilege: rifles, overseers, and the machines they salvaged.",
                   entries: [ { weight: 4, monsters: { company_rifleman: 3 } }, { weight: 3, monsters: { gunhand: 2 } },
                              { weight: 2, monsters: { overseer: 1 } }, { weight: 1, monsters: { debris_golem: 1 } } ] }
@@ -495,7 +508,7 @@ module Seeds
                                { weight: 2, monsters: { salt_wraith: 1 } }, { weight: 1, monsters: { moray_eel: 1 } } ] }
     }.freeze
 
-    ENCOUNTER_TABLES = DEEPS.to_h { |slug, deep| [ slug, deep.except(:template) ] }.merge(WAYS).freeze
+    ENCOUNTER_TABLES = DEEPS.to_h { |slug, deep| [ slug, deep.except(:template, :parts) ] }.merge(WAYS).freeze
 
     # Bobby's dungeons are five rooms (entrance, puzzle, setback, climax,
     # twist). A chain is rolled from this and its rooms pinned to the
@@ -511,6 +524,18 @@ module Seeds
     # dungeon's story comes off its rooms.
     FIVE_ROOMS = { rooms: [ 4, 6 ], loops: 0, locks: 0, decisions: { event: 1 },
                    tables: %w[mine_names mine_rooms room_events forks treasure locks traps] }.freeze
+
+    # A dungeon's own tables: its parts and Oda's shared qualities in place of
+    # the twelve mine names all seven used to share. `tables` is not part of
+    # #settings, so swapping it changes the names a dungeon rolls and nothing
+    # about its shape -- which is what the pins hang on.
+    # def self., not def: books.rb reopens this module, and module_function
+    # from just_seven.rb doesn't carry across the new body -- so a bare def
+    # here is an instance method and LOCATION_TEMPLATES can't call it while
+    # it's being built.
+    def self.five_rooms_tables(parts)
+      FIVE_ROOMS.fetch(:tables) - %w[mine_rooms] + [ parts.to_s, "room_qualities" ]
+    end
 
     LOCATION_TEMPLATES = {
       island_city: { name: "Island city", kind: "town",
@@ -529,8 +554,8 @@ module Seeds
       DEEPS.to_h do |table, deep|
         [ deep.fetch(:template),
           { name: "#{deep.fetch(:name)} (five rooms)", kind: "dungeon", encounter_table: table.to_s,
-            description: "#{deep.fetch(:description)} Five rooms, and its own table.",
-            config: FIVE_ROOMS } ]
+            description: "#{deep.fetch(:description)} Five rooms, its own monsters and its own words for its rooms.",
+            config: FIVE_ROOMS.merge(tables: five_rooms_tables(deep.fetch(:parts))) } ]
       end
     ).freeze
   end

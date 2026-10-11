@@ -35,7 +35,10 @@ module Location::Generation
   def elaborated(rolled)
     return rolled unless rolled["kind"] == "dungeon" && elaboration.positive?
 
-    Generators::Elaboration.apply(rolled, level: elaboration, seed: seed,
+    # variant: this location's own name, so two dungeons that a seeder gave
+    # the same seed don't elaborate into the same rooms. Its name rather than
+    # its id: stable if the campaign is seeded again, and unique on an island.
+    Generators::Elaboration.apply(rolled, level: elaboration, seed: seed, variant: name,
                                   encounters: location_template.encounter_table&.entries || [],
                                   tables: tables)
   end

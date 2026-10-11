@@ -20,6 +20,12 @@ class GeneratorTable < ApplicationRecord
     "buildings" => %w[text service width height roof],
     "stock" => %w[item],
     "rooms" => %w[text],
+    # A dungeon's room names, composed: a quality and a part make "The
+    # flooded ballast gallery" (Generators::Dungeon.room_name). A dozen
+    # qualities against eight parts is a hundred names from twenty rows,
+    # which is what keeps a dungeon from saying the same thing twice.
+    "room_parts" => %w[text],
+    "room_qualities" => %w[text],
     "room_events" => %w[text],
     "forks" => %w[text],
     # A room's trap, written like a fork's cost (Location::Exploration).
@@ -56,6 +62,11 @@ class GeneratorTable < ApplicationRecord
   # A town draws on these too, but does without them (no couplets).
   COUPLET_KINDS = %w[memories wishes].freeze
   DUNGEON_KINDS = %w[dungeon_names rooms room_events forks treasure].freeze
+  # Room names can come from a flat "rooms" table or be composed from a
+  # part and a quality (Generators::Dungeon.room_name). Either satisfies a
+  # dungeon, so neither of the composing kinds belongs in DUNGEON_KINDS --
+  # a template on flat names isn't missing anything.
+  COMPOSED_ROOM_KINDS = %w[room_parts room_qualities].freeze
 
   # What a line of "Add many at once" holds, per kind; buildings are too
   # fiddly to paste. Any line can end in "| 3" for a weight.
@@ -66,6 +77,8 @@ class GeneratorTable < ApplicationRecord
     "wishes" => "a townsperson's wish, in their own words, then | and an item's name if it's a thing the party could bring them " \
                 "({dungeon} names the nearest dungeon: clearing it is what they wish for)",
     "rooms" => "a room's name", "room_events" => "what happens there",
+    "room_parts" => "a part of this place, lowercase and bare (ballast gallery), for a quality to go in front of",
+    "room_qualities" => "a quality to put in front of a part, lowercase (flooded)",
     "forks" => "what the costly way costs, then in brackets what it takes, if the game takes it (A sealed door. (pay 100); Poison gas. (hurt 10); A long climb. (2); Loose rock. (ambush))", "locks" => "the lock, then | and its key (Portal | Blue crystal)",
     "traps" => "a trap, then in brackets what it does when it goes off (A tripwire and a powder charge. (hurt 20); A pit. (hurt 10, 1))",
     "service_names" => "a name, then | and the service (inn, shop, guild or temple)",

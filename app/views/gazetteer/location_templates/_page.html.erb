@@ -45,7 +45,11 @@
 </section>
 
 <% needed = entry.town? ? GeneratorTable::TOWN_KINDS : GeneratorTable::DUNGEON_KINDS + (s["locks"].to_i.positive? ? [ "locks" ] : []) + (s.dig("decisions", "trap").to_i.positive? ? [ "traps" ] : []) %>
-<% missing = needed - entry.table_entries.keys %>
+<% has = entry.table_entries.keys %>
+<%# Room names come from a flat "rooms" table OR from a part and a quality
+    composed (Generators::Dungeon.room_name), so either way it has them. %>
+<% has += [ "rooms" ] if (GeneratorTable::COMPOSED_ROOM_KINDS - has).empty? %>
+<% missing = needed - has %>
 <% if missing.any? %>
   <p class="flash flash--alert" role="status">
     No <%= missing.map { |k| k.humanize.downcase }.to_sentence %> <%= missing.one? ? "table" : "tables" %> to draw from, so
