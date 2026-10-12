@@ -8,15 +8,24 @@ module CampaignModule
   class Export
     attr_reader :campaign
 
-    def initialize(campaign)
+    # pictures: false, and nothing is downloaded: the records alone (what a
+    # baible skeleton needs, BaibleSkeleton).
+    def initialize(campaign, pictures: true)
       @campaign = campaign
       @books = Books.new(campaign.world)
       @assets = {}
+      @pictures = pictures
     end
 
     def to_zip = PackageArchive.new(FORMAT, data, @assets).to_zip
 
     def filename = "#{campaign.name.parameterize.presence || 'campaign'}.module.zip"
+
+    # Every book entry the prep names, its references followed: { kind => [entry, ...] }.
+    def book_entries
+      data
+      @books.entries
+    end
 
     def data
       @data ||= begin
@@ -38,7 +47,7 @@ module CampaignModule
 
     # A picture into the archive, once however often it's used: its name there, or nil.
     def asset(attachment)
-      return unless attachment&.attached?
+      return unless @pictures && attachment&.attached?
 
       blob = attachment.blob
       ext = File.extname(blob.filename.to_s).delete(".").downcase.presence || Rack::Mime::MIME_TYPES.invert[blob.content_type]&.delete(".") || "png"

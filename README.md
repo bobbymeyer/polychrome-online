@@ -71,7 +71,8 @@ Pages hide what you can't do and the server refuses it anyway
   Puma. It isn't optional: a battle's round timer is a job (`BattleTimeoutJob`),
   and so are the language model's drafts.
 - Images and music are made outside the game, in baible, and uploaded into
-  their slots (HANDOFF §8). They're Active Storage files in `storage/`. Sprite
+  their slots (HANDOFF §8). A campaign's Prep page has "Export for baible": a
+  skeleton of every empty slot it uses, for baible to import. They're Active Storage files in `storage/`. Sprite
   rips used as placeholders go in the same way and never into the repo.
 - Password reset emails need Action Mailer configured for production (SMTP,
   and a `from` address in `ApplicationMailer`).
