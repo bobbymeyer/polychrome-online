@@ -189,6 +189,13 @@ The GM keeps families through rerolls and edits a place's past on the atlas; an 
 - Build phase: sprite rips as placeholders. They never enter a shared deploy or an export. Layout decisions made against them are provisional.
 - Images and music are made outside the game, in **baible**, a separate, general worldbuilding asset tool, and uploaded into their slots: book entries, portraits (one per expression) and sprites, maps, mode pictures, scene panels, and the Music book's tracks (or a link). Nothing in polychrome records how an asset was made: no seed, prompt, recipe, model or LoRAs.
   - Built here first (step 9, a ComfyUI pipeline), then moved out to baible whole, music generation with it.
+  - What a campaign still needs goes to baible as a **skeleton** (baible's `docs/SKELETON.md`, format 1): Prep's "Export for baible" (`BaibleSkeleton`). It's every empty slot the campaign uses:
+    - the cast's and the party's designs, portraits (the expressions they lack, as variants) and sprites;
+    - the creatures, items, archetypes and place pictures its prep names;
+    - its maps, mode pictures and scene panels;
+    - the world's scene themes and each boss's own.
+
+    Each comes with a ref naming its slot (`npc/12/portrait/happy`, `monster/7`, `world/1/music/town`), so baible's manifest maps files back. Exporting again asks only for what's still empty. Reading the manifest back into the slots isn't built: files are uploaded by hand.
 - Later still: human artists. The same slots take their work.
 
 ## 9. Known problems, ranked

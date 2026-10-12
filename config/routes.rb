@@ -109,6 +109,8 @@ Rails.application.routes.draw do
       resource :prep, only: :show
       # The campaign's prep as a module, to download (CampaignModule::Export).
       resource :campaign_module, path: "module", only: :show
+      # What art and music it still needs, as a skeleton for baible (BaibleSkeleton).
+      resource :baible_skeleton, path: "baible", only: :show
       # Every battle's numbers together, for the GM balancing the game (Battle::Report.across).
       resource :battle_report, only: :show
       # A fight played out many times before anyone plays it (BattleSimulation).
