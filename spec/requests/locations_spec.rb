@@ -253,6 +253,22 @@ RSpec.describe "Locations", type: :request do
       expect(cave.overrides).not_to have_key("elaboration")
     end
 
+    it "shows an elaborated dungeon that goes by its rolled name, in the rooms that name grows" do
+      cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
+      cave = generate("goblin_cave", on: cave_node)
+      cave.update!(seed: 4)
+      cave.revert!("name") # the map place's name it was given, taken back: it goes by the roll's
+      rolled = Location.find(cave.id).generated["name"]
+      cave.update!(overrides: cave.overrides.merge("name" => rolled)) # named again, by hand, what it's called anyway
+      patch location_elaboration_path(cave), params: { level: "2" }
+      named = cave.reload.view["rooms"]
+
+      cave.revert!("name") # its own name again: the GM's is gone, and the roll's is the same
+      expect(Location.find(cave.id).view["rooms"]).to eq(named)
+      get location_path(cave)
+      expect(response).to have_http_status(:ok)
+    end
+
     it "keeps an elaborated room the GM pinned as the dial rises, and through a reroll" do
       cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
       cave = generate("goblin_cave", on: cave_node)

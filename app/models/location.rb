@@ -54,9 +54,10 @@ class Location < ApplicationRecord
   ROLLING = [ :campaign, { map_node: :world_place }, { location_template: %i[world encounter_table] } ].freeze
 
   # Its name without the whole view: the GM's, else the rolled one.
-  def name
-    overrides["name"].to_s.strip.empty? ? generated["name"] : overrides["name"]
-  end
+  def name = name_over(generated)
+
+  # The name a roll of it goes by: the GM's, else the roll's own.
+  def name_over(rolled) = overrides["name"].to_s.strip.empty? ? rolled["name"] : overrides["name"]
 
   private
 
