@@ -253,6 +253,22 @@ RSpec.describe "Locations", type: :request do
       expect(cave.overrides).not_to have_key("elaboration")
     end
 
+    it "turned down, takes the party out of the rooms it took away, and their ways and places off the change list" do
+      cave = generate("goblin_cave", on: campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true))
+      cave.update!(seed: 4)
+      cave.elaborate!(3)
+      grown = cave.view["rooms"].select { |r| r["elaborated"] }.map { |r| r["key"] }
+      cave.move_room!(grown.first, x: 10, y: 10)
+      cave.connect_rooms!(cave.view["entrance"], grown.last)
+      cave.update!(progress: cave.progress.merge("current" => grown.first, "visited" => [ cave.view["entrance"], grown.first ]))
+
+      cave.elaborate!(0)
+      expect(cave.reload.current_room_key).to eq(cave.view["entrance"])
+      expect(cave.visited).not_to include(grown.first)
+      expect(cave.overrides.slice("moved_rooms", "added_paths")).to be_empty
+      expect(cave.changes.map { |c| c["kind"] }).not_to include("moved", "path")
+    end
+
     it "shows an elaborated dungeon that goes by its rolled name, in the rooms that name grows" do
       cave_node = campaign.map_nodes.create!(name: "Cave", kind: "dungeon", x: 300, y: 300, visible: true)
       cave = generate("goblin_cave", on: cave_node)
@@ -284,7 +300,8 @@ RSpec.describe "Locations", type: :request do
       expect(cave.reload.room(room["key"])).to include("name" => room["name"], "decision" => room["decision"])
 
       # A level is not a layout, so unlike moved rooms and joined ways it
-      # survives a reroll.
+      # survives a reroll (to a seed that has room for all eight: not every one does).
+      allow(Location).to receive(:new_seed).and_return(1)
       post location_reroll_path(cave)
       expect(cave.reload.elaboration).to eq(4)
       expect(cave.view["rooms"].count { |r| r["elaborated"] }).to eq(8)

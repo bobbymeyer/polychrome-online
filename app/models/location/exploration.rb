@@ -223,10 +223,9 @@ module Location::Exploration
     toll&.outcomes&.each { |outcome| outcome.can_happen!(campaign) }
     raise Refusal, "The party has #{campaign.money(campaign.gil)}; that way costs #{campaign.money(toll.price)}" if toll && toll.price > campaign.gil
 
-    # Walking on past a trap nobody disarmed sets it off.
-    spring_trap!(from) if from && trap_waiting?(from)
-
     transaction do
+      # Walking on past a trap nobody disarmed sets it off.
+      spring_trap!(from) if from && trap_waiting?(from)
       walk_away_from_fight!(to: key)
       pay!(path, toll) if path&.dig("cost") && !paid?(path)
       if lock && !unlocked?(lock)

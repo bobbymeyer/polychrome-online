@@ -104,7 +104,12 @@ module Location::Tailoring
     raise Refusal, "#{name} is a town." unless dungeon?
 
     level = level.to_i.clamp(0, Generators::Elaboration::MAX_LEVEL)
-    update!(overrides: level.zero? ? overrides.except("elaboration") : overrides.merge("elaboration" => level))
+    before = view.fetch("rooms", []).map { |r| r["key"] }
+    self.overrides = level.zero? ? overrides.except("elaboration") : overrides.merge("elaboration" => level)
+    @generated = @view = nil # the rooms at the new level
+    # Turned down, the rooms it took away go as a removed room does: off the party, the plan and the change list.
+    dialled, progress = without_rooms(before - view.fetch("rooms", []).map { |r| r["key"] }, overrides)
+    update!(overrides: dialled, progress: progress)
   end
 
   # Drag a room off where it rolled (Generators::Overrides "moved_rooms").
@@ -263,16 +268,23 @@ module Location::Tailoring
     end
 
     remaining = added.reject { |r| doomed.include?(r["key"]) }
-    progress = self.progress.merge("visited" => visited - doomed)
-    progress["current"] = view["entrance"] if doomed.include?(progress["current"])
-    # Its ways and its place go with it, so the change list stops naming it.
-    shape = { "added_paths" => overrides.fetch("added_paths", []).reject { |pair| pair.any? { |end_| doomed.include?(end_) } },
-              "moved_rooms" => overrides.fetch("moved_rooms", {}).except(*doomed) }
-    kept, emptied = shape.partition { |_, value| value.present? }
-    update!(overrides: overrides.merge("added_rooms" => remaining, **kept.to_h).except(*emptied.to_h.keys), progress: progress)
+    kept, progress = without_rooms(doomed, overrides.merge("added_rooms" => remaining))
+    update!(overrides: kept, progress: progress)
   end
 
   private
+
+  # The overrides and progress once these rooms are gone: the party isn't
+  # in them or remembered there, and their ways and places go with them,
+  # so the change list stops naming them.
+  def without_rooms(doomed, overrides)
+    progress = self.progress.merge("visited" => visited - doomed)
+    progress["current"] = view["entrance"] if doomed.include?(progress["current"])
+    shape = { "added_paths" => overrides.fetch("added_paths", []).reject { |pair| pair.any? { |end_| doomed.include?(end_) } },
+              "moved_rooms" => overrides.fetch("moved_rooms", {}).except(*doomed) }
+    kept, emptied = shape.partition { |_, value| value.present? }
+    [ overrides.merge(kept.to_h).except(*emptied.to_h.keys), progress ]
+  end
 
   def change(kind, key, summary)
     { "kind" => kind, "key" => key, "summary" => summary }

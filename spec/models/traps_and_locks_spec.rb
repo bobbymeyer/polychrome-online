@@ -39,6 +39,14 @@ RSpec.describe "Traps, picked locks and getting caught" do
     expect(campaign.messages.pluck(:body)).to include("The trap goes off!")
   end
 
+  it "stays set when the walk past it is refused" do
+    key, beyond = trapped
+    allow(dungeon).to receive(:walk_away_from_fight!).and_raise(Refusal, "Not now")
+    expect { dungeon.move_to!(beyond) }.to raise_error(Refusal, "Not now")
+    expect(dungeon.reload.trap_waiting?(key)).to be(true)
+    expect(campaign.messages.pluck(:body)).not_to include("The trap goes off!")
+  end
+
   it "is disarmed on a successful check, and goes off on a failed one" do
     key, = trapped
     allow(campaign).to receive(:check!).and_wrap_original do |original, **args|

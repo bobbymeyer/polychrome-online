@@ -9,11 +9,12 @@ class Locations::TrapsController < ApplicationController
 
   def create
     room = params.expect(:room)
-    if params[:verdict] == "disarm"
+    case params.expect(:verdict)
+    when "disarm"
       character = @campaign.characters.find(params.expect(:character_id))
       @location.disarm_trap!(room, character: character, stat: params.expect(:stat), difficulty: params[:difficulty].presence || "normal")
-    else
-      @location.spring_trap!(room)
+    when "spring" then @location.spring_trap!(room)
+    else raise ActionController::BadRequest, "A trap is disarmed or let go off"
     end
     back
   end

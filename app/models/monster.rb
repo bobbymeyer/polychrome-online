@@ -195,12 +195,14 @@ class Monster < ApplicationRecord
   def still_needed
     return if destroyed_by_association # the whole world is going, books and all
 
+    # Each looks through a whole book of the world: once each.
+    summoners, rollers, bosses, fighters, forms = summoned_by, rolled_by, boss_of, fought_as_by, form_of
     needs = []
-    needs << "#{summoned_by.map(&:name).to_sentence} #{summoned_by.one? ? 'summons' : 'summon'} it" if summoned_by.any?
-    needs << "#{rolled_by.map(&:name).to_sentence} #{rolled_by.one? ? 'rolls' : 'roll'} it" if rolled_by.any?
-    needs << "it is the boss of #{boss_of.map(&:name).to_sentence}" if boss_of.any?
-    needs << "#{fought_as_by.to_sentence} #{fought_as_by.one? ? 'fights' : 'fight'} as it" if fought_as_by.any?
-    needs << "it is a form of #{form_of.map(&:name).to_sentence}" if form_of.any?
+    needs << "#{summoners.map(&:name).to_sentence} #{summoners.one? ? 'summons' : 'summon'} it" if summoners.any?
+    needs << "#{rollers.map(&:name).to_sentence} #{rollers.one? ? 'rolls' : 'roll'} it" if rollers.any?
+    needs << "it is the boss of #{bosses.map(&:name).to_sentence}" if bosses.any?
+    needs << "#{fighters.to_sentence} #{fighters.one? ? 'fights' : 'fight'} as it" if fighters.any?
+    needs << "it is a form of #{forms.map(&:name).to_sentence}" if forms.any?
     return if needs.empty?
 
     errors.add(:base, "#{name} is still needed: #{needs.to_sentence}. Change those first.")
