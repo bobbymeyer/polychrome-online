@@ -181,8 +181,12 @@ module Battle
   DISABLING_STATUSES = %w[sleep paralyze stop down reloading held].freeze
   # They act on their own: berserk attacks, confuse attacks anyone, rage an ally.
   RUNAWAY_STATUSES = %w[berserk confuse rage].freeze
+  # Not free for a go outside its turn (haste's second, One More, All-Out
+  # Attack, Battle::Context#free?): out of it, off the field, winding up, or
+  # not itself. A berserker is free enough: it swings.
+  NOT_FREE_STATUSES = (DISABLING_STATUSES + OUT_OF_REACH_STATUSES + RUNAWAY_STATUSES - %w[berserk] + %w[charging]).freeze
   # No command while these last: the unit's turn is already spoken for.
-  NO_INPUT_STATUSES = (DISABLING_STATUSES + OUT_OF_REACH_STATUSES + RUNAWAY_STATUSES + %w[charging]).freeze
+  NO_INPUT_STATUSES = (NOT_FREE_STATUSES + %w[berserk]).freeze
   # What a job gives beyond numbers (Battle::Effects, #take_turn):
   #   counter      — sometimes strikes back when hit by an enemy's blow
   #   regen        — a little HP back at the end of each of its turns

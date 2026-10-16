@@ -605,7 +605,7 @@ module Battle
       return false if foes.empty? || !foes.all? { |foe| ctx.status?(foe, "down") }
       return false unless ctx.events[mark..].any? { |e| e["type"] == "one_more" }
 
-      crew = ctx.allies(unit).reject { |ally| (DISABLING_STATUSES + %w[airborne away charging confuse rage]).any? { |kind| ctx.status?(ally, kind) } }
+      crew = ctx.allies(unit).select { |ally| ctx.free?(ally) }
       return false if crew.empty?
 
       ctx.emit(:all_out, actor: unit["id"], units: crew.map { |ally| ally["id"] }, targets: foes.map { |foe| foe["id"] })
@@ -635,8 +635,7 @@ module Battle
     # no countdowns): haste's second go, and One More.
     # repeat: the move to go again with, for a unit the AI plays (One More).
     def extra_go(unit, cmd, reason: nil, repeat: nil)
-      return unless ctx.alive?(unit)
-      return if (DISABLING_STATUSES + %w[airborne away charging confuse rage]).any? { |kind| ctx.status?(unit, kind) }
+      return unless ctx.free?(unit)
 
       ai = unit["side"] == "enemy" || unit["guest"]
       ability = if ctx.status?(unit, "berserk") then ctx.ability("attack")
@@ -814,50 +813,70 @@ module Battle
     end
 
     # aim: the script's target strategy, for a move that takes turns to go
-    # off and finds its mark again then (last_hit).
+    # off and finds its mark again then (last_hit). Every way out of a move
+    # once it is paid for runs what it set off (#follow_up): an again, a
+    # Quick go, a Mimic come now, never inside whoever is next.
     def use_ability(unit, ability, target_id, aim: nil)
-      if ability["kind"] == "magic" && ctx.status?(unit, "silence")
-        return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: "silenced")
-      end
-
-      cost = ctx.ability_cost(ability)
-      if unit["mp"] < cost
-        return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: "no_mp")
-      end
-      blood = State.hp_cost(unit, ability)
-      if blood.positive? && unit["hp"] <= blood
-        return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: "no_hp")
+      if (reason = unusable(unit, ability))
+        return ctx.emit(:action_failed, actor: unit["id"], ability: ability["id"], reason: reason)
       end
       return wind_up(unit, ability, target_id, aim) if ability.fetch("charge", 0).positive? && !ability["released"]
 
+      cost = pay(unit, ability)
+      remember(unit, ability, target_id)
+      ability = fortify(unit, charged(unit, ability))
+      go_again(unit) if ability["again"]
+      if ability["target"] == "random_enemy"
+        announce(unit, ability, [], cost)
+        random_hits(unit, ability)
+        reload(unit, ability)
+      elsif (targets = landing(unit, ability, target_id, cost))
+        apply_effects(unit, ability, targets)
+        reload(unit, ability)
+      else
+        follow_up
+      end
+    end
+
+    # Why the unit can't use the move now, if it can't: silenced (magic), or short of MP or HP.
+    def unusable(unit, ability)
+      blood = State.hp_cost(unit, ability)
+      if ability["kind"] == "magic" && ctx.status?(unit, "silence") then "silenced"
+      elsif unit["mp"] < ctx.ability_cost(ability) then "no_mp"
+      elsif blood.positive? && unit["hp"] <= blood then "no_hp"
+      end
+    end
+
+    # The move's MP and HP, spent; the MP it cost, for the log.
+    def pay(unit, ability)
+      cost = ctx.ability_cost(ability)
+      blood = State.hp_cost(unit, ability)
       unit["mp"] -= cost
       if blood.positive?
         unit["hp"] -= blood
         ctx.emit(:hp_paid, actor: unit["id"], amount: blood, hp: unit["hp"])
       end
-      remember(unit, ability, target_id)
-      ability = fortify(unit, charged(unit, ability))
-      # Again: the user goes again once the move is done, once a round (the Toad, as the sea comes in).
-      if ability["again"] && !ctx.reacting && unit["again_round"] != state["round"]
-        unit["again_round"] = state["round"]
-        ctx.follow_ups << [ :again, unit ]
-      end
-      if ability["target"] == "random_enemy"
-        announce(unit, ability, [], cost)
-        random_hits(unit, ability)
-        return reload(unit, ability)
-      end
+      cost
+    end
 
+    # Again: the user goes again once the move is done, once a round (the Toad, as the sea comes in).
+    def go_again(unit)
+      return if ctx.reacting || unit["again_round"] == state["round"]
+
+      unit["again_round"] = state["round"]
+      ctx.follow_ups << [ :again, unit ]
+    end
+
+    # Who the move lands on, announced; nil when it never lands: nobody to
+    # hit, or its user cut down or stopped before the blow (#iai, #forestalled?).
+    def landing(unit, ability, target_id, cost)
       targets = conducted(unit, ability, reflected(unit, ability, resolve_targets(unit, ability, target_id)))
       announce(unit, ability, targets, cost)
       if targets.empty?
         ctx.emit(:miss, actor: unit["id"], ability: ability["id"], reason: "no_target")
-        return follow_up # what the move gave (another go) comes now, not inside whoever is next
+        return
       end
-      return follow_up if iai(unit, ability, targets) || forestalled?(unit, ability, targets)
-
-      apply_effects(unit, ability, targets)
-      reload(unit, ability)
+      targets unless iai(unit, ability, targets) || forestalled?(unit, ability, targets)
     end
 
     # The last move each side made, for a Mimic (not a Mimic's own copy).
