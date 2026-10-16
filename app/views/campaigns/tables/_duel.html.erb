@@ -1,9 +1,8 @@
 <%# A duel at the table (Duel, docs/ODA.md): one meter each, the same target, which moves and narrows round by round.
     The challenged player swings theirs; the GM swings the opponent's. A swing shows only when both are in; then the
     round's grades join the card below. At the end, the result in large type: a winner, or SATISFACTION.
-    duel; gm (the GM's seat); you (the seat's character). %>
-<% you = local_assigns[:you] %>
-<% mine = ->(side) { side == "gm" ? gm : (you == duel.character || (gm && duel.character.user_id.nil?)) } %>
+    duel; seat (Seat). %>
+<% mine = ->(side) { duel.swing_for?(seat, side) } %>
 <section class="duel" aria-label="A duel">
   <header class="duel__head">
     <p class="duel__title">Duel</p>
@@ -65,7 +64,7 @@
     </table>
   <% end %>
 
-  <% if duel.over? && gm %>
+  <% if duel.over? && seat.gm? %>
     <%= button_to "Put it away", campaign_duel_path(duel.campaign, duel), method: :patch, class: "button", form: { class: "inline" } %>
   <% end %>
 </section>

@@ -45,29 +45,44 @@ class Duel < ApplicationRecord
 
   def name_of(side) = side == "character" ? character.name : opponent_name
 
+  # Whether a seat swings this side: the opponent's is the GM's, who plays
+  # them; the character's is their player's, or the GM's for a character
+  # nobody plays.
+  def swing_for?(seat, side)
+    case side
+    when "gm" then seat.gm?
+    when "character" then seat.character == character || (seat.gm? && character.user_id.nil?)
+    else false
+    end
+  end
+
   # One side swings in the round under way: where the needle stopped. Once
   # both have, the round is shown to the table; after the last, the duel ends.
+  # Both sides swing at once, so each swing reads the rounds under a lock.
   def swing!(side, position)
-    raise Refusal, "The duel is over" unless on?
     raise ArgumentError, "unknown side #{side}" unless DuelMeter::SIDES.include?(side)
-    raise Refusal, "#{name_of(side)} has swung this round" if swung?(side)
 
-    at = DuelMeter.position(position)
-    grade = DuelMeter.grade(zone, at)
-    entry = rounds.reject { |r| revealed?(r) }.first
-    played = rounds.dup
-    if entry
-      played[played.index(entry)] = entry.merge("swings" => entry["swings"].merge(side => swing_data(at, grade)))
-    else
-      played << { "swings" => { side => swing_data(at, grade) } }
+    at = begin
+      DuelMeter.position(position)
+    rescue ArgumentError => e
+      raise Refusal, e.message
     end
-    transaction do
+    with_lock do
+      raise Refusal, "The duel is over" unless on?
+      raise Refusal, "#{name_of(side)} has swung this round" if swung?(side)
+
+      grade = DuelMeter.grade(zone, at)
+      entry = rounds.reject { |r| revealed?(r) }.first
+      played = rounds.dup
+      if entry
+        played[played.index(entry)] = entry.merge("swings" => entry["swings"].merge(side => swing_data(at, grade)))
+      else
+        played << { "swings" => { side => swing_data(at, grade) } }
+      end
       update!(rounds: played)
       reveal!(played.last) if revealed?(played.last)
     end
     campaign.table_changed
-  rescue ArgumentError => e
-    raise Refusal, e.message
   end
 
   # The GM puts the result away.

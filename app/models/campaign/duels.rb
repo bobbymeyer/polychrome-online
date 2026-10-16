@@ -40,8 +40,10 @@ module Campaign::Duels
   def call_out!(character:, npc: nil, monster: nil)
     raise Refusal, "Someone has to answer the challenge" unless npc || monster
 
-    narrate("#{character.name} challenges #{npc&.name || monster.name} to a duel, and the challenge is taken.")
-    duel!(character: character, npc: npc, monster: monster)
+    transaction do
+      narrate("#{character.name} challenges #{npc&.name || monster.name} to a duel, and the challenge is taken.")
+      duel!(character: character, npc: npc, monster: monster)
+    end
   end
 
   def challenged_character
@@ -55,19 +57,22 @@ module Campaign::Duels
     challenger_npc&.name || challenger_monster&.name || "Someone"
   end
 
-  # The challenged character's answer: the duel, or a coward.
+  # The challenged character's answer: the duel, or a coward. A duel that
+  # can't start (a battle came first) leaves the challenge waiting.
   def answer_challenge!(accept:)
     character = challenged_character or raise Refusal, "Nobody has been challenged"
     npc = challenger_npc
     monster = challenger_monster
-    update!(challenge: nil)
-    if accept
-      narrate("#{character.name} accepts.")
-      duel!(character: character, npc: npc, monster: monster)
-    else
-      character.refuse_duel!(npc&.name || monster&.name || "someone")
-      table_changed
-      nil
+    transaction do
+      update!(challenge: nil)
+      if accept
+        narrate("#{character.name} accepts.")
+        duel!(character: character, npc: npc, monster: monster)
+      else
+        character.refuse_duel!(npc&.name || monster&.name || "someone")
+        table_changed
+        nil
+      end
     end
   end
 
@@ -82,6 +87,7 @@ module Campaign::Duels
   end
 
   def duel!(character:, npc: nil, monster: nil)
+    raise Refusal, "A battle is on: the duel can wait until it's over" if battle_on?
     raise Refusal, "#{character.name} can't stand to fight a duel" unless character.conscious?
     raise Refusal, "A duel is on: one at a time" if current_duel&.on?
 

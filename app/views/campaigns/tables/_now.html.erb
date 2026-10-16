@@ -57,7 +57,7 @@
   </p>
   <% end %>
   <%= render "campaigns/tables/current_battle", campaign: campaign %>
-  <%= render "campaigns/tables/duel", duel: campaign.current_duel, gm: gm, you: local_assigns[:you] if state == "duel" %>
+  <%= render "campaigns/tables/duel", duel: campaign.current_duel, seat: seat if state == "duel" %>
   <%# The challenged player's answer, on their own screen. %>
   <% if !gm && state == "challenge" && local_assigns[:you] && local_assigns[:you] == campaign.challenged_character %>
     <div class="table-now__do">
