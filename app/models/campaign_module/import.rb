@@ -14,6 +14,8 @@ module CampaignModule
     # can_add_books: whether whoever imports may add entries to the world's
     # books (Authorization#can_edit_world?). Without it, a module that
     # needs entries the world lacks is refused, and says which.
+    include PackageReading
+
     def initialize(source, world:, gm:, can_add_books: true, name: nil)
       @archive = source.is_a?(PackageArchive) ? source : PackageArchive.read(source, format: FORMAT)
       @world = world
@@ -42,7 +44,9 @@ module CampaignModule
       end
 
       Campaign.transaction do
-        PackageBooks.add!(world, data["books"], archive, from: data["name"].presence || "the module")
+        # Only someone who may change the world's books adds to them: without that, what the module
+        # needs is refused above, and anything else it carries stays out of the world.
+        PackageBooks.add!(world, data["books"], archive, from: data["name"].presence || "the module") if @can_add_books
         campaign = world.campaigns.create!(name: @name || data["name"].presence || "Imported campaign", gm: gm,
                                            lines: data["lines"], veils: data["veils"], open_jobs: open_jobs)
         build!(campaign)
@@ -57,12 +61,7 @@ module CampaignModule
 
     private
 
-    def rows(kind) = Array(data.dig("books", kind)).select { |row| row.is_a?(Hash) && row["slug"].present? }
-
-    def text(value) = value.is_a?(String) ? value : nil
-    def int(value) = JsonCasting.integer(value)
-    def list(value) = value.is_a?(Array) ? value : []
-    def hash(value) = value.is_a?(Hash) ? value : {}
+    def rows(kind) = records(hash(data["books"])[kind]).select { |row| PackageBooks.slug?(row["slug"]) }
 
     # --- the prep ---------------------------------------------------------------------
 
@@ -74,31 +73,33 @@ module CampaignModule
       clocks!(campaign)
       secrets!(campaign)
       scenes!(campaign)
-      list(data["flags"]).each { |flag| campaign.flags.create!(key: text(flag["key"]), value: text(flag["value"]).to_s, note: text(flag["note"])) }
+      records(data["flags"]).each { |flag| campaign.flags.create!(key: text(flag["key"]), value: text(flag["value"]).to_s, note: text(flag["note"])) }
       campaign.update!(current_node: @refs[data["start"]]) if @refs[data["start"]].is_a?(MapNode)
       campaign.set_out!(from_the_setting: false)
-      list(data["rumours"]).each do |rumour|
-        at = @refs[rumour["at"]] or next
-        campaign.start_rumour!(text(rumour["body"]), at: at, about: @refs[rumour["about"]], sway: Rumour::SWAYS.include?(rumour["sway"]) ? rumour["sway"] : 0)
+      records(data["rumours"]).each do |rumour|
+        at, about = @refs[rumour["at"]], @refs[rumour["about"]]
+        next unless at.is_a?(MapNode)
+
+        campaign.start_rumour!(text(rumour["body"]), at: at, about: (about if about.is_a?(MapNode)), sway: Rumour::SWAYS.include?(rumour["sway"]) ? rumour["sway"] : 0)
       end
     end
 
     def maps!(campaign)
-      maps = list(data["maps"])
+      maps = records(data["maps"])
       maps.each do |row|
         map = campaign.maps.create!(name: text(row["name"]).presence || "Map", x: int(row["x"]), y: int(row["y"]), description: text(row["description"]))
         attach(map.image, row["image"])
         @refs[row["ref"]] = map
       end
       maps.each { |row| @refs[row["ref"]].update!(parent: @refs[row["parent"]]) if @refs[row["parent"]].is_a?(Map) }
-      list(data["map_links"]).each do |row|
+      records(data["map_links"]).each do |row|
         from, to = @refs[row["from"]], @refs[row["to"]]
         campaign.map_links.create!(from_map: from, to_map: to, direction: text(row["direction"])) if from.is_a?(Map) && to.is_a?(Map)
       end
     end
 
     def places!(campaign)
-      list(data["places"]).each do |row|
+      records(data["places"]).each do |row|
         map = @refs[row["map"]]
         node = campaign.map_nodes.create!(name: text(row["name"]), kind: text(row["kind"]), x: int(row["x"]).to_i, y: int(row["y"]).to_i,
                                           visible: row["visible"] == true, map: (map if map.is_a?(Map)),
@@ -112,7 +113,7 @@ module CampaignModule
           node.update!(location: location)
           @refs[spot["ref"]] = location
         end
-        list(row["modes"]).each do |mode_row|
+        records(row["modes"]).each do |mode_row|
           mode = node.modes.create!(key: text(mode_row["key"]), name: text(mode_row["name"]), line: text(mode_row["line"]),
                                     description: text(mode_row["description"]), closed: list(mode_row["closed"]), times: list(mode_row["times"]),
                                     music: music(mode_row["music"]), activities: text(mode_row["activities"]),
@@ -126,7 +127,7 @@ module CampaignModule
     end
 
     def roads!(campaign)
-      list(data["roads"]).each do |row|
+      records(data["roads"]).each do |row|
         from, to = @refs[row["from"]], @refs[row["to"]]
         next unless from.is_a?(MapNode) && to.is_a?(MapNode)
 
@@ -137,7 +138,7 @@ module CampaignModule
     end
 
     def cast!(campaign)
-      list(data["cast"]).each do |row|
+      records(data["cast"]).each do |row|
         home = @refs[row["home"]]
         npc = campaign.npcs.create!(name: text(row["name"]), title: text(row["title"]), description: text(row["description"]), colour: text(row["colour"]),
                                     monster: world.monsters.find_by(slug: row["monster"]), location: (home.location if home.is_a?(MapNode)),
@@ -151,7 +152,7 @@ module CampaignModule
     end
 
     def clocks!(campaign)
-      list(data["clocks"]).each do |row|
+      records(data["clocks"]).each do |row|
         mode = @refs[row["mode"]]
         node = @refs[row["place"]]
         campaign.clocks.create!(name: text(row["name"]), segments: int(row["segments"]) || 6, public: row["public"] == true,
@@ -162,7 +163,7 @@ module CampaignModule
     end
 
     def secrets!(campaign)
-      list(data["secrets"]).each do |row|
+      records(data["secrets"]).each do |row|
         node = @refs[row["place"]]
         npc = @refs[row["npc"]]
         campaign.secrets.create!(key: text(row["key"]), body: text(row["body"]), steps: text(row["steps"]),
@@ -171,19 +172,19 @@ module CampaignModule
     end
 
     def scenes!(campaign)
-      list(data["scenes"]).each do |row|
+      records(data["scenes"]).each do |row|
         node = @refs[row["place"]]
         mode = @refs[row["mode"]]
-        scene = campaign.scenes.create!(name: text(row["name"]), ending: text(row["ending"]) || "none", encounter: hash(row["encounter"]),
+        scene = campaign.scenes.create!(name: text(row["name"]), ending: text(row["ending"]) || "none", encounter: encounter(row["encounter"]),
                                         map_node: (node if node.is_a?(MapNode)), mode: (mode if mode.is_a?(Mode)))
-        list(row["beats"]).each_with_index { |beat, i| beat!(scene, beat, i) }
+        records(row["beats"]).each_with_index { |beat, i| beat!(scene, beat, i) }
       end
     end
 
     def beat!(scene, row, position)
       speaker = @refs[row["speaker"]]
       place = @refs[row["place"]]
-      figures = list(row["figures"]).filter_map do |figure|
+      figures = records(row["figures"]).filter_map do |figure|
         npc = @refs[figure["npc"]]
         { "type" => "Npc", "id" => npc.id, "side" => figure["side"], "expression" => figure["expression"] } if npc.is_a?(Npc)
       end
@@ -263,6 +264,12 @@ module CampaignModule
     end
 
     # --- small things -----------------------------------------------------------------
+
+    # A scene's battle ending, { slug => count }: the world's monsters, in the counts the scene form allows.
+    def encounter(given)
+      monsters = world.monsters.pluck(:slug).to_set
+      hash(given).select { |slug, count| monsters.include?(slug) && int(count).is_a?(Integer) && int(count).positive? }.transform_values { |count| int(count).clamp(1, 9) }
+    end
 
     def open_jobs
       slugs = list(data["open_jobs"]).map(&:to_s) & world.jobs.pluck(:slug)

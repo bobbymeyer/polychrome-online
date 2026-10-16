@@ -38,7 +38,8 @@ module Location::Generation
     # variant: this location's own name, so two dungeons that a seeder gave
     # the same seed don't elaborate into the same rooms. Its name rather than
     # its id: stable if the campaign is seeded again, and unique on an island.
-    Generators::Elaboration.apply(rolled, level: elaboration, seed: seed, variant: name,
+    # Read from this roll, not #name: that asks for #generated, which is this.
+    Generators::Elaboration.apply(rolled, level: elaboration, seed: seed, variant: name_over(rolled),
                                   encounters: location_template.encounter_table&.entries || [],
                                   tables: tables)
   end
