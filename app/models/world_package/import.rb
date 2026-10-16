@@ -11,6 +11,8 @@ module WorldPackage
   class Import
     attr_reader :archive, :owner
 
+    include PackageReading
+
     def initialize(source, owner:, name: nil, slug: nil)
       @archive = source.is_a?(PackageArchive) ? source : PackageArchive.read(source, format: FORMAT)
       @owner = owner
@@ -24,7 +26,7 @@ module WorldPackage
 
     def run!
       World.transaction do
-        world = World.create!(hash(data["world"]).slice(*(SETTING - %w[history])).merge("name" => name, "slug" => free_slug, "owner" => owner))
+        world = World.create!(setting.merge("name" => name, "slug" => free_slug, "owner" => owner))
         tracks!(world)
         PackageBooks.add!(world, books, archive, from: name)
         canon!(world)
@@ -39,10 +41,17 @@ module WorldPackage
 
     private
 
-    def text(value) = value.is_a?(String) ? value : nil
-    def int(value) = JsonCasting.integer(value)
-    def list(value) = value.is_a?(Array) ? value : []
-    def hash(value) = value.is_a?(Hash) ? value : {}
+    # What each of the setting's fields holds: a field in another shape is left at the new world's default.
+    SHAPES = {
+      "description" => String, "voice" => String, "avoid" => String, "lines" => String, "veils" => String,
+      "damage_types" => Array, "skills" => Array, "origins" => Array,
+      "terrain_types" => Hash, "terms" => Hash, "calendar" => Hash, "battle_rules" => Hash
+    }.freeze
+
+    def setting
+      given = hash(data["world"])
+      SHAPES.select { |field, shape| given[field].is_a?(shape) }.to_h { |field, _| [ field, given[field] ] }
+    end
 
     # The address asked for, or the package's, or the name's; with a number
     # on the end if a world here has it already.
@@ -54,7 +63,7 @@ module WorldPackage
     end
 
     def tracks!(world)
-      list(data["tracks"]).each do |row|
+      records(data["tracks"]).each do |row|
         track = world.tracks.new(name: text(row["name"]), scene: text(row["scene"]), source: text(row["source"]) || "upload",
                                  url: text(row["url"]), position: int(row["position"]).to_i)
         archive.attach(track.audio, row["audio"], kind: "audio")
@@ -67,24 +76,24 @@ module WorldPackage
     # The books as written, a monster's own music pointed at this world's copy of the track.
     def books
       hash(data["books"]).to_h do |kind, rows|
-        [ kind, list(rows).map { |row| row.is_a?(Hash) && row["music"] ? row.merge("music" => @tracks[row["music"]]) : row } ]
+        [ kind, records(rows).map { |row| row["music"] ? row.merge("music" => @tracks[row["music"]]) : row } ]
       end
     end
 
     def canon!(world)
-      maps = list(data["maps"])
+      maps = records(data["maps"])
       maps.each do |row|
         map = world.world_maps.create!(name: text(row["name"]), x: int(row["x"]), y: int(row["y"]), description: text(row["description"]))
         archive.attach(map.image, row["image"])
         @refs[row["ref"]] = map
       end
       maps.each { |row| @refs[row["ref"]].update!(parent: @refs[row["parent"]]) if @refs[row["parent"]].is_a?(WorldMap) }
-      list(data["map_links"]).each do |row|
+      records(data["map_links"]).each do |row|
         from, to = @refs[row["from"]], @refs[row["to"]]
         world.world_map_links.create!(from_map: from, to_map: to, direction: text(row["direction"])) if from.is_a?(WorldMap) && to.is_a?(WorldMap)
       end
 
-      list(data["places"]).each do |row|
+      records(data["places"]).each do |row|
         map = @refs[row["map"]]
         @refs[row["ref"]] = world.world_places.create!(
           name: text(row["name"]), kind: text(row["kind"]), x: int(row["x"]).to_i, y: int(row["y"]).to_i, known: row["known"] == true,
@@ -93,7 +102,7 @@ module WorldPackage
           location_template: world.location_templates.find_by(slug: row["template"]), world_map: (map if map.is_a?(WorldMap))
         )
       end
-      list(data["routes"]).each do |row|
+      records(data["routes"]).each do |row|
         from, to = @refs[row["from"]], @refs[row["to"]]
         next unless from.is_a?(WorldPlace) && to.is_a?(WorldPlace)
 
@@ -102,7 +111,7 @@ module WorldPackage
                                    encounter_table: world.encounter_tables.find_by(slug: row["encounters"]))
       end
 
-      list(data["figures"]).each do |row|
+      records(data["figures"]).each do |row|
         place = @refs[row["place"]]
         figure = world.world_figures.create!(name: text(row["name"]), title: text(row["title"]), blurb: text(row["blurb"]),
                                              description: text(row["description"]), colour: text(row["colour"]),
@@ -115,18 +124,18 @@ module WorldPackage
         @refs[row["ref"]] = figure
       end
 
-      list(data["codex"]).each do |row|
+      records(data["codex"]).each do |row|
         world.codex_entries.create!(title: text(row["title"]), category: text(row["category"]), body: text(row["body"]), gm_notes: text(row["gm_notes"]),
                                     public: row["public"] != false, history_key: place_key(text(row["history_key"])), edited: row["edited"] == true)
       end
 
-      list(data["fronts"]).each do |row|
+      records(data["fronts"]).each do |row|
         id = ->(ref, kind) { (record = @refs[ref]).is_a?(kind) ? record.id : nil }
-        clocks = list(row["clocks"]).map do |clock|
-          hash(clock).slice(*%w[name segments triggers full_line public mode_name mode_line mode_description impulse portents])
+        clocks = records(row["clocks"]).map do |clock|
+          clock.slice(*%w[name segments triggers full_line public mode_name mode_line mode_description impulse portents])
                      .merge("place_id" => id.(clock["place"], WorldPlace), "source_id" => id.(clock["source"], WorldPlace))
         end
-        secrets = list(row["secrets"]).map do |secret|
+        secrets = records(row["secrets"]).map do |secret|
           { "body" => text(secret["body"]), "steps" => text(secret["steps"]), "key" => text(secret["key"]),
             "place_id" => id.(secret["place"], WorldPlace), "figure_id" => id.(secret["figure"], WorldFigure) }
         end

@@ -5,8 +5,10 @@
 # (CampaignModule) and a whole world (WorldPackage) travel this way.
 #
 # Read from an upload, so it's read carefully: only those names, only
-# pictures and sound, and a cap on how much it holds. Nothing is written to
-# disk; entries are read into memory and attached from there.
+# pictures and sound (by what their bytes are, not their names), and caps on
+# what it holds: entries, each entry, and all of it unpacked (a few hundred
+# kilobytes of zip can unpack to gigabytes). Nothing is written to disk;
+# entries are read into memory and attached from there.
 class PackageArchive
   IMAGES = %w[png jpg jpeg webp gif].freeze
   SOUNDS = %w[mp3 ogg oga wav m4a].freeze
@@ -17,6 +19,12 @@ class PackageArchive
                             max_bytes: 300.megabytes, entry_bytes: World::MUSIC_MAX_BYTES + 1.megabyte }
   }.freeze
   MAX_ENTRIES = 2000
+  # What a slot takes, by what the bytes are (Marcel): an SVG named .png is
+  # an SVG, and isn't a picture here.
+  CONTENT_TYPES = {
+    "image" => %w[image/png image/jpeg image/webp image/gif],
+    "audio" => %w[audio/mpeg audio/ogg audio/x-wav audio/wav audio/mp4 audio/x-m4a]
+  }.freeze
 
   # A file in the archive: its name there and its bytes.
   Asset = Data.define(:name, :bytes) do
@@ -55,17 +63,22 @@ class PackageArchive
 
     data = nil
     assets = {}
+    unpacked = 0
     Zip::File.open_buffer(StringIO.new(bytes)) do |zip|
       raise Refusal, "That file holds too many files to be #{kind[:what]}." if zip.size > MAX_ENTRIES
 
       zip.each do |entry|
         next if entry.directory?
-        raise Refusal, "#{entry.name} in that file is too big." if entry.size > kind[:entry_bytes]
+        next unless entry.name == kind[:data] || asset_name?(format, entry.name)
+
+        read = read_entry(entry, kind)
+        unpacked += read.bytesize
+        raise Refusal, "That file unpacks to more than #{kind[:max_bytes] / 1.megabyte} MB, too much for #{kind[:what]}." if unpacked > kind[:max_bytes]
 
         if entry.name == kind[:data]
-          data = JSON.parse(entry.get_input_stream.read(kind[:entry_bytes]))
-        elsif asset_name?(format, entry.name)
-          assets[entry.name] = Asset.new(name: entry.name, bytes: entry.get_input_stream.read(kind[:entry_bytes]))
+          data = JSON.parse(read)
+        else
+          assets[entry.name] = Asset.new(name: entry.name, bytes: read)
         end
       end
     end
@@ -78,12 +91,24 @@ class PackageArchive
     raise Refusal, "That file isn't #{kind[:what]} (it isn't a .zip with a #{kind[:data]} in it)."
   end
 
+  # An entry's bytes, read no further than an entry may be: what the zip
+  # says an entry's size is can lie, so it's what comes out that counts.
+  def self.read_entry(entry, kind)
+    raise Refusal, "#{entry.name} in that file is too big." if entry.size > kind[:entry_bytes]
+
+    read = entry.get_input_stream.read(kind[:entry_bytes] + 1).to_s
+    raise Refusal, "#{entry.name} in that file is too big." if read.bytesize > kind[:entry_bytes]
+
+    read
+  end
+  private_class_method :read_entry
+
   # A file from the archive into an attachment slot, when it's the kind the
   # slot takes ("image", "audio"). A name the archive doesn't have is
   # skipped: the slot stays empty, as in a package without art.
   def attach(slot, name, kind: "image")
     asset = name.is_a?(String) && assets[name]
-    return unless asset && asset.content_type.start_with?("#{kind}/")
+    return unless asset && CONTENT_TYPES.fetch(kind).include?(asset.content_type)
 
     slot.attach(io: StringIO.new(asset.bytes), filename: File.basename(asset.name), content_type: asset.content_type)
   end

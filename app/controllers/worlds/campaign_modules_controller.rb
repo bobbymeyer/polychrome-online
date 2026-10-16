@@ -6,7 +6,9 @@
 # someone who can change the world's books.
 class Worlds::CampaignModulesController < ApplicationController
   include WorldScoped
+  include PackageUpload
   before_action :require_account
+  package_upload CampaignModule::FORMAT, only: :create
 
   def new; end
 

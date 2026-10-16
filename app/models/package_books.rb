@@ -18,6 +18,9 @@ module PackageBooks
 
   module_function
 
+  # A slug a package can name an entry by: a real one, not blank (a blank one would be made from the name).
+  def slug?(value) = value.is_a?(String) && value.strip.present?
+
   # An entry as a package writes it: its columns, less what's this database's.
   def attributes(entry)
     attrs = entry.attributes.except(*SKIP)
@@ -34,7 +37,7 @@ module PackageBooks
   def add!(world, books, archive, from:)
     rows = KINDS.flat_map do |kind, scope|
       have = world.public_send(scope).pluck(:slug)
-      Array(books.is_a?(Hash) ? books[kind] : nil).select { |row| row.is_a?(Hash) && row["slug"].is_a?(String) && !have.include?(row["slug"]) }
+      Array(books.is_a?(Hash) ? books[kind] : nil).select { |row| row.is_a?(Hash) && slug?(row["slug"]) && !have.include?(row["slug"]) }
                                                     .map { |row| [ scope, row ] }
     end
     pending = rows.dup

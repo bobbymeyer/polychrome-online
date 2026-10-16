@@ -3,7 +3,9 @@
 # A world package, uploaded (WorldPackage::Import): a new world from it,
 # owned by whoever uploaded it, as "Copy this world" makes one.
 class WorldImportsController < ApplicationController
+  include PackageUpload
   before_action :require_account
+  package_upload WorldPackage::FORMAT, only: :create
 
   def new; end
 
