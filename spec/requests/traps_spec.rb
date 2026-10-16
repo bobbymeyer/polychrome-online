@@ -25,6 +25,13 @@ RSpec.describe "Traps in a dungeon", type: :request do
     expect(dungeon.reload.resolved?(room)).to be(true)
   end
 
+  it "springs it only when told to" do
+    sit(campaign, "gm")
+    post location_traps_path(dungeon), params: { room: room, verdict: "disarn" }
+    expect(response).to have_http_status(:bad_request)
+    expect(dungeon.reload.trap_waiting?(room)).to be(true)
+  end
+
   it "has someone try to disarm it" do
     sit(campaign, "gm")
     post location_traps_path(dungeon), params: { room: room, verdict: "disarm", character_id: bartz.id, stat: "agi", difficulty: "easy" }

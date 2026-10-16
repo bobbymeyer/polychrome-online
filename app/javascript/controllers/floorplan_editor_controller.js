@@ -16,12 +16,14 @@ export default class extends Controller {
     this.onDown = this.down.bind(this)
     this.onMove = this.move.bind(this)
     this.onUp = this.up.bind(this)
+    this.onKey = this.key.bind(this)
     this.element.addEventListener("pointerdown", this.onDown)
-    this.element.addEventListener("keydown", this.key.bind(this))
+    this.element.addEventListener("keydown", this.onKey)
   }
 
   disconnect() {
     this.element.removeEventListener("pointerdown", this.onDown)
+    this.element.removeEventListener("keydown", this.onKey)
     window.removeEventListener("pointermove", this.onMove)
     window.removeEventListener("pointerup", this.onUp)
   }
