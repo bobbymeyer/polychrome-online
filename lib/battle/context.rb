@@ -99,6 +99,11 @@ module Battle
       DISABLING_STATUSES.any? { |kind| status?(u, kind) }
     end
 
+    # Standing and free for a go outside its turn (NOT_FREE_STATUSES).
+    def free?(u)
+      alive?(u) && NOT_FREE_STATUSES.none? { |kind| status?(u, kind) }
+    end
+
     # basis: stats to use in place of the unit's own, before buffs (a
     # mastered ability cast outside its job keeps its job's stats).
     def stat(u, name, basis: nil)
