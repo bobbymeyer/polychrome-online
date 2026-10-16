@@ -385,4 +385,80 @@ RSpec.describe "The Just Seven's mechanics" do
       expect(of_type(events, :miss)).to include(include("actor" => "raccoon", "reason" => "nothing_to_steal"))
     end
   end
+
+  # Where the guardians' mechanics meet each other (the second tech-lead review): each was
+  # found by reading, and the property battles (spec/support/random_table.rb) now reach them.
+  describe "when its mechanics meet" do
+    let(:moves) do
+      { quake: { name: "Quake", kind: "magic", target: "all_enemies", cost: { mp: 0 }, effects: [ { primitive: "elemental", type: "normal", power: 60 } ] },
+        snap: { name: "Snap", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 20 } ] },
+        clamp: { name: "Clamp", kind: "skill", target: "single_enemy", effects: [ { primitive: "grab", duration: 3 } ] },
+        tide: { name: "Tide Call", kind: "skill", target: "all_enemies", again: true, effects: [ { primitive: "elemental", type: "water", power: 5 } ] } }
+    end
+    let(:mage) { { id: "hero", name: "Hero", stats: stats(max_hp: 999, max_mp: 0, mag: 60, agi: 99), abilities: %w[quake] } }
+    def foe(id, ai, **extra) = { id: id, name: id.capitalize, stats: stats(max_hp: 400, agi: 1, mdef: 0), types: %w[normal], abilities: %w[snap clamp hide call_eagle tide], ai: ai }.merge(extra)
+    def form(max_hp, ai = [ { use: "attack" } ]) = { name: "Unbound", stats: stats(max_hp: max_hp, agi: 1, mdef: 0), abilities: %w[snap], ai: ai }
+
+    it "drops what a boss's old script was still to answer when it changes form" do
+      imp = foe("imp", [ { when: "hit", use: "snap" }, { use: "attack" } ], stats: stats(max_hp: 500, agi: 1, mdef: 0))
+      boss = foe("boss", [ { use: "attack" }, { when: "hit", use: "snap" } ], phases: [ { hp_below: 90, becomes: form(400) } ])
+      state = build_battle(seed: 3, party: [ mage ], enemies: [ imp, boss ], abilities: BattleFixtures.abilities.merge(moves))
+      state, events = apply(state, command("hero", "quake"))
+      expect(of_type(events, :phase)).to include(include("actor" => "boss"))
+      expect(of_type(events, :reacts).map { |e| e["actor"] }).to eq([ "imp" ]) # the boss's answer was the old form's
+      expect(state["status"]).to eq("input")
+    end
+
+    it "says the HP a smaller form cuts a boss to" do
+      boss = foe("boss", [ { use: "attack" } ], phases: [ { hp_below: 90, becomes: form(100) } ])
+      state, events = apply(build_battle(party: [ mage ], enemies: [ boss ], abilities: BattleFixtures.abilities.merge(moves)), gm("set_hp", unit: "boss", value: 300))
+      expect(of_type(events, :phase).first).to include("hp" => 100, "max_hp" => 100)
+      expect(unit(state, "boss")["hp"]).to eq(100)
+    end
+
+    it "takes a last breath from the ground, and leaves nothing of it behind: no status, no grip, no add" do
+      { "hide" => ->(after) { expect(unit(after, "boss")["statuses"]).to be_empty },
+        "clamp" => ->(after) { expect(held(after, "hero")).to be_nil },
+        "call_eagle" => ->(after) { expect(after["units"].select { |u| u["summoned"] && !u["gone"] }).to be_empty } }.each do |move, check|
+        boss = foe("boss", [ { when: "falls", use: move }, { use: "attack" } ], stats: stats(max_hp: 10, agi: 1, mdef: 0))
+        minion = foe("minion", [ { use: "attack" } ], stats: stats(max_hp: 2000, agi: 1, mdef: 0)) # the fight goes on
+        state = build_battle(party: [ mage.merge(abilities: %w[attack]) ], enemies: [ boss, minion ], abilities: BattleFixtures.abilities.merge(moves))
+        after, events = apply(state, gm("set_hp", unit: "boss", value: 0))
+        expect(of_type(events, :reacts)).to include(include("actor" => "boss", "trigger" => "falls", "ability" => move))
+        check.(after)
+      end
+    end
+
+    it "lets one the water takes have its last breath before the victory" do
+      boss = foe("boss", [ { when: "falls", use: "snap" }, { use: "snap" } ], stats: stats(max_hp: 10, agi: 1, mdef: 0), hp: 1)
+      deep = { stages: [ { name: "Chest-deep", conditions: [ { kind: "drown", amount: 25, spares: "water" } ] } ] }
+      state = build_battle(party: [ mage.merge(abilities: %w[attack]) ], enemies: [ boss ], abilities: BattleFixtures.abilities.merge(moves), field: deep)
+      _, events = apply(state, command("hero", nil, kind: "defend"))
+      breath = events.index { |e| e["type"] == "reacts" && e["actor"] == "boss" && e["trigger"] == "falls" }
+      expect(breath).to be < events.index { |e| e["type"] == "victory" }
+    end
+
+    it "gives another go straight after the move, even one that found nobody" do
+      toad = foe("toad", [ { use: "tide" } ], stats: stats(max_hp: 400, agi: 50, mdef: 0))
+      imp = foe("imp", [ { use: "attack" } ], stats: stats(max_hp: 400, agi: 20, mdef: 0))
+      away = { "kind" => "away", "turns" => 2, "left" => 2, "self" => true, "power" => 0 }
+      state = build_battle(party: [ mage.merge(abilities: %w[attack], stats: stats(max_hp: 999, agi: 1)) ], enemies: [ toad, imp ], abilities: BattleFixtures.abilities.merge(moves))
+      state = with_unit(state, "hero", statuses: [ away ]) # off the field: the tide finds nobody
+      _, events = apply(state, { type: "timeout" })
+      again = events.index { |e| e["type"] == "turn_start" && e["reason"] == "again" }
+      expect(again).not_to be_nil
+      expect(events[0...again].reverse.find { |e| e["type"] == "turn_start" }).to include("unit" => "toad")
+    end
+
+    it "keeps what a move gave waiting while its blow is answered, so the other go is answered too" do
+      tide_mage = mage.merge(abilities: %w[tide], stats: stats(max_hp: 999, mag: 30, agi: 99))
+      imp = foe("imp", [ { when: "hit", use: "snap" }, { use: "attack" } ], stats: stats(max_hp: 2000, agi: 1, mdef: 0))
+      state = build_battle(party: [ tide_mage ], enemies: [ imp ], abilities: BattleFixtures.abilities.merge(moves))
+      _, events = apply(state, command("hero", "tide"))
+      again = events.index { |e| e["type"] == "turn_start" && e["reason"] == "again" }
+      answers = events.each_index.select { |i| events[i]["type"] == "reacts" }
+      expect(answers.size).to eq(2) # the tide, and the other go's tide, each answered
+      expect(answers.first).to be < again
+    end
+  end
 end

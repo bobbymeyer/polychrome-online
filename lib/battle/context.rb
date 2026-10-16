@@ -283,6 +283,19 @@ module Battle
       add_status(unit, "down", 1) unless status?(unit, "down")
     end
 
+    # A last breath is taken from the ground (Resolver#react), and what it
+    # did to its own taker doesn't outlast it: what a knock-out clears is
+    # cleared again. The fallen keep no status (an away from a dive, a mask)
+    # or buff, hold nobody fast, and what they called goes home.
+    def lay_to_rest(unit)
+      let_go(unit, reason: "holder_fell")
+      mask = unit["statuses"].find { |s| s["kind"] == "masked" }
+      Masks.take_off(self, unit, mask, spent: false) if mask
+      unit["statuses"] = []
+      unit["buffs"] = []
+      units.each { |creature| send_home(creature) if creature.dig("summoned", "by") == unit["id"] && !creature["gone"] }
+    end
+
     # What a thief took from the party's bag comes back to it: the thief
     # fell, or the party won the field (Effects#lift).
     def give_back(thief)
@@ -353,9 +366,13 @@ module Battle
         u.merge!(form.except(*kept))
         u["phases"] = phases.drop(1)
         u.delete("fired")
+        # What the old script was still to answer goes with it: its rules aren't this form's.
+        reactions.reject! { |r| r["unit"] == u["id"] }
         u["hp"] = u["hp"].clamp(1, form["stats"]["max_hp"])
         u["mp"] = u["mp"].clamp(0, form["stats"]["max_mp"])
-        emit(:phase, actor: u["id"], was: was, name: u["name"], form: form["name"], line: phase["say"], music: form["music"])
+        # The HP it comes in with, which a smaller form cuts: the view never works it out (§12).
+        emit(:phase, actor: u["id"], was: was, name: u["name"], form: form["name"], line: phase["say"], music: form["music"],
+                     hp: u["hp"], max_hp: form["stats"]["max_hp"])
         # What the phase gives back: a heal, seen as any heal is.
         restored = form["stats"]["max_hp"] * phase["restore"] / 100
         restore_hp(u, restored, phase: true) if restored.positive?

@@ -71,6 +71,17 @@ RSpec.describe "Duels" do
       campaign.call_out!(character: bartz, monster: rival)
       expect { campaign.challenge!(character: bartz, monster: rival) }.to raise_error(Refusal, /duel is on/)
     end
+
+    it "starts no duel while a battle is on, leaving the challenge waiting and the log as it was" do
+      campaign.challenge!(character: bartz, monster: rival)
+      start_battle(campaign: campaign)
+      said = campaign.messages.count
+      expect { campaign.answer_challenge!(accept: true) }.to raise_error(Refusal, /battle is on/)
+      expect { campaign.call_out!(character: bartz, monster: rival) }.to raise_error(Refusal, /battle is on/)
+      expect(campaign.reload.challenge).to include("character_id" => bartz.id)
+      expect(campaign.duels).to be_empty
+      expect(campaign.messages.count).to eq(said)
+    end
   end
 
   describe "the duel" do
@@ -129,6 +140,22 @@ RSpec.describe "Duels" do
 
     it "takes only a swing that stops on the meter" do
       expect { duel.swing!("character", 900) }.to raise_error(Refusal)
+    end
+
+    it "keeps both swings when the two sides swing at once" do
+      stale = Duel.find(duel.id)
+      swing(duel, "character", "good")
+      swing(stale, "gm", "okay")
+      expect(duel.reload.shown_rounds.size).to eq(1)
+    end
+
+    it "lets a seat swing only its own side" do
+      gm = Seat.gm
+      player = Seat.of(bartz)
+      expect([ duel.swing_for?(gm, "gm"), duel.swing_for?(player, "character") ]).to eq([ true, true ])
+      expect([ duel.swing_for?(player, "gm"), duel.swing_for?(gm, "character"), duel.swing_for?(player, "x") ]).to eq([ false, true, false ])
+      bartz.update!(user: User.create!(name: "Krile", email_address: "krile@example.com", password: "a-long-enough-password"))
+      expect(duel.reload.swing_for?(gm, "character")).to be(false)
     end
   end
 end

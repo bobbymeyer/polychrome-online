@@ -118,8 +118,84 @@ module BattleFixtures
                 effects: [ { primitive: "physical", power: 50, hits: 3 } ] },
       call_hawk: { name: "Call Hawk", kind: "skill", target: "self", cost: { mp: 3 }, effects: [ { primitive: "summon", creature: "hawk", stays: 1 } ] },
       don_mask: { name: "Don the Storm Mask", kind: "skill", target: "self", cost: { mp: 0 }, effects: [ { primitive: "transform", mask: "storm_mask" } ] },
-      raijin: { name: "Raijin", kind: "skill", target: "all_enemies", cost: { mp: 0 }, effects: [ { primitive: "physical", type: "electric", power: 120 } ] }
+      raijin: { name: "Raijin", kind: "skill", target: "all_enemies", cost: { mp: 0 }, effects: [ { primitive: "physical", type: "electric", power: 120 } ] },
+      # The Just Seven's guardians' moves (docs/ODA.md §9), for the menagerie below.
+      clamp: { name: "Clamp", kind: "skill", target: "single_enemy", effects: [ { primitive: "grab", duration: 3, breaks: "fire" } ] },
+      coil: { name: "Coil", kind: "skill", target: "single_enemy", effects: [ { primitive: "grab", duration: 2, tear: 10 } ] },
+      pilfer: { name: "Pilfer", kind: "skill", target: "single_enemy", effects: [ { primitive: "steal", chance: 70 } ] },
+      riposte: { name: "Riposte", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 60 } ] },
+      snap: { name: "Snap", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 50 } ] },
+      bill: { name: "Hooked Bill", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 50 } ] },
+      dive: { name: "Dive", kind: "skill", target: "single_enemy", charge: 1, effects: [ { primitive: "physical", power: 80, stumble: 1 } ] },
+      circle: { name: "Circle", kind: "skill", target: "self", effects: [ { primitive: "away", who: "self", duration: 1, aloft: 1 } ] },
+      flash: { name: "Belly Flash", kind: "skill", target: "all_enemies", charge: 1, interrupt: 2,
+               effects: [ { primitive: "elemental", type: "fire", power: 25 } ] },
+      tide: { name: "Tide Call", kind: "skill", target: "all_enemies", again: true, effects: [ { primitive: "elemental", type: "water", power: 8 } ] },
+      lash: { name: "Tongue Lash", kind: "skill", target: "single_enemy", effects: [ { primitive: "physical", power: 50 } ] }
     }
+  end
+
+  # The monsters The Just Seven brought to the engine, in groups a random
+  # table can meet (RandomTable): a boss with forms (the second smaller than
+  # the first) and minions that answer blows, mourn and take a last breath;
+  # a grabber and a thief; a striker that answers up close and a bird that
+  # dives at whoever hit it last; a toad that winds up and goes again.
+  def menagerie
+    [ [ warden, *imps ], [ crab, raccoon ], [ mantis, cormorant ], [ toad, *imps(1) ] ]
+  end
+
+  def warden
+    unbound = { name: "Warden Unbound", stats: stats(max_hp: 160, max_mp: 0, str: 16, atk: 14, agi: 9, def: 6, mdef: 4), types: %w[fire],
+                abilities: %w[goblin_punch], ai: [ { use: "goblin_punch" } ], rewards: { exp: 40, gil: 60 } }
+    # Smaller than the HP it comes in with, and nothing given back: the phase itself cuts the HP. It dives away as it falls.
+    last = unbound.merge(name: "Warden, Last Breath", stats: stats(max_hp: 40, max_mp: 0, str: 20, atk: 18, agi: 11, def: 2, mdef: 2),
+                         abilities: %w[goblin_punch hide], ai: [ { use: "goblin_punch" }, { when: "falls", use: "hide" } ])
+    { id: "warden", name: "Warden", boss: true, stats: stats(max_hp: 380, max_mp: 0, str: 12, atk: 11, agi: 7, def: 6, mdef: 4),
+      types: %w[normal], rewards: { exp: 30, gil: 40 }, abilities: %w[snap hide],
+      phases: [ { hp_below: 70, becomes: unbound, say: "Enough.", restore: 10 }, { hp_below: 35, becomes: last } ],
+      ai: [ { use: "attack" }, { when: "hit", use: "snap" }, { when: "falls", use: "hide" } ] }
+  end
+
+  def imps(count = 2)
+    [ { id: "imp", name: "Imp", count: count, stats: stats(max_hp: 40, max_mp: 10, str: 8, atk: 7, agi: 12, def: 2, mdef: 2), types: %w[dark],
+        rewards: { exp: 5, gil: 6 }, abilities: %w[snap goblin_punch call_eagle],
+        ai: [ { when: "hit", use: "snap" }, { when: "ally_falls", once: true, say: "Cousin!", use: "goblin_punch" },
+              { when: "falls", use: "call_eagle" }, { use: "attack" } ] } ]
+  end
+
+  def crab
+    { id: "crab", name: "Crab", stats: stats(max_hp: 160, max_mp: 0, str: 12, atk: 11, agi: 5, def: 10, mdef: 6), types: %w[water],
+      rewards: { exp: 20, gil: 20 }, abilities: %w[clamp coil],
+      ai: [ { when: "falls", use: "clamp" }, { if: { chance: 50 }, use: "clamp", target: "lowest_hp" }, { use: "coil" } ] }
+  end
+
+  def raccoon
+    { id: "raccoon", name: "Raccoon", stats: stats(max_hp: 70, max_mp: 0, str: 8, atk: 8, agi: 30, def: 3, mdef: 3), types: %w[dark],
+      rewards: { exp: 10, gil: 15 }, abilities: %w[pilfer], ai: [ { if: { chance: 60 }, use: "pilfer" }, { use: "attack" } ] }
+  end
+
+  def mantis
+    { id: "mantis", name: "Mantis", stats: stats(max_hp: 140, max_mp: 0, str: 14, atk: 13, agi: 14, def: 5, mdef: 3), types: %w[bug],
+      rewards: { exp: 18, gil: 20 }, abilities: %w[riposte], ai: [ { when: "struck", use: "riposte" }, { use: "attack" } ] }
+  end
+
+  def cormorant
+    { id: "cormorant", name: "Cormorant", stats: stats(max_hp: 110, max_mp: 0, str: 11, atk: 10, agi: 16, def: 4, mdef: 3), types: %w[flying],
+      rewards: { exp: 16, gil: 18 }, abilities: %w[bill dive circle],
+      ai: [ { if: { chance: 20 }, use: "circle" }, { if: { chance: 30 }, use: "dive", target: "last_hit" }, { use: "bill", target: "last_hit" } ] }
+  end
+
+  def toad
+    { id: "toad", name: "Toad", stats: stats(max_hp: 260, max_mp: 0, str: 12, atk: 11, mag: 12, agi: 6, def: 5, mdef: 5), types: %w[water],
+      rewards: { exp: 30, gil: 30 }, abilities: %w[flash tide lash],
+      ai: [ { use: "tide", once: true }, { if: { chance: 40 }, use: "flash" }, { use: "lash" } ] }
+  end
+
+  # Water that rises as the fight goes on (Battle::Conditions), to its chest-deep last.
+  def rising_water
+    { stages: [ { name: "Ankle-deep", rounds: 2, conditions: [ { kind: "weaken", type: "fire", amount: 50 } ] },
+                { name: "Waist-deep", rounds: 2, conditions: [ { kind: "slow", amount: 25 }, { kind: "dark", amount: 10 } ] },
+                { name: "Chest-deep", conditions: [ { kind: "conduct", type: "electric" }, { kind: "drown", amount: 8, spares: "water" } ] } ] }
   end
 
   # What the transform primitive puts on.

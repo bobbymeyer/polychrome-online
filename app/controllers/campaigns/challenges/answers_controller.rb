@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # The challenged character answers (Campaign::Duels): their player, or the
-# GM for a character nobody is playing. Accept, and the duel starts; refuse,
-# and they are a coward until they win one.
+# GM, who can answer for anyone (the player said it out loud, or nobody
+# plays them). Accept, and the duel starts; refuse, and they are a coward
+# until they win one.
 class Campaigns::Challenges::AnswersController < Campaigns::BaseController
   def create
     character = @campaign.challenged_character or return redirect_back_or_to(campaign_table_path(@campaign), status: :see_other)
