@@ -21,7 +21,12 @@ RSpec.describe "Battle resolver properties" do
                                   buff_expired turn_skipped timeout desperation unit_joined unit_left custom_action custom_roll
                                   jump land away back covered counter second_wind mp_restored
                                   shielded confused mp_lost hp_paid charging summoned one_more all_out
-                                  gathered patience reflected iai quick mimic transformed unmasked reraise])
+                                  gathered patience reflected iai quick mimic transformed unmasked reraise
+                                  phase reacts says wave interrupted steal recovered field_changed])
+    # The guardians' mechanics (spec/support/battle_helpers.rb, the menagerie): each reached, not just written.
+    triggers = all_events.select { |e| e["type"] == "reacts" }.map { |e| e["trigger"] }.uniq
+    expect(triggers).to include("hit", "struck", "ally_falls", "falls")
+    expect(all_events).to include(include("type" => "status_applied", "status" => "held"), include("type" => "turn_start", "reason" => "again"))
     expect(tables.filter_map { |t| t.steps.last&.at(2)&.fetch("status") }.uniq).to include("victory", "defeat")
     expect(all_events.map { |e| e["type"] }).to include("item_used")
   end
@@ -102,21 +107,25 @@ RSpec.describe "Battle resolver properties" do
     gone = ->(u) { u["statuses"].any? { |s| Battle::OUT_OF_REACH_STATUSES.include?(s["kind"]) } }
     each_step do |_, before, _, after, events|
       away = before["units"].select(&gone).map { |u| u["id"] }
+      aloft = before["units"].select { |u| Battle::State.aloft?(u) }.map { |u| u["id"] }
       side = (before["units"] + after["units"]).to_h { |u| [ u["id"], u["side"] ] }
-      reach = false
+      move = nil
       events.each do |e|
         case e["type"]
-        when "attack", "cast" then reach = before["abilities"].dig(e["ability"], "reach")
-        when "turn_start" then reach = false
+        when "attack", "cast" then move = before["abilities"][e["ability"]]
+        when "turn_start" then move = nil
         when "jump" then away << e["actor"]
-        when "away" then away << e["unit"]
-        when "land" then away.delete(e["actor"])
-        when "back" then away.delete(e["unit"])
-        when "ko" then away.delete(e["target"])
+        when "away"
+          away << e["unit"]
+          aloft << e["unit"] if move&.fetch("effects", [])&.any? { |effect| effect["aloft"] == 1 } # circling: up high, not gone
+        when "land" then away.delete(e["actor"]) && aloft.delete(e["actor"])
+        when "back" then away.delete(e["unit"]) && aloft.delete(e["unit"])
+        when "ko" then away.delete(e["target"]) && aloft.delete(e["target"])
         when "damage", "miss"
           # Out of the enemy's reach (an ally can still hand them a potion).
-          # (A move with reach can find them: a Ranger's shot.)
-          expect(away).not_to include(e["target"]) if e["actor"] && side[e["actor"]] != side[e["target"]] && e["reason"] != "no_target" && !reach
+          # (A move with reach can find them: a Ranger's shot; and a spell finds one circling.)
+          reached = move && (move["reach"] || (move["kind"] == "magic" && aloft.include?(e["target"])))
+          expect(away).not_to include(e["target"]) if e["actor"] && side[e["actor"]] != side[e["target"]] && e["reason"] != "no_target" && !reached
         end
       end
       expect(Battle::State.awaiting_input(after) & after["units"].select(&gone).map { |u| u["id"] }).to be_empty
@@ -130,11 +139,13 @@ RSpec.describe "Battle resolver properties" do
     end
   end
 
-  it "only uses up items by using them, one at a time, never below zero" do
+  it "only changes the bag by using an item, a thief lifting one, or a thief giving them back, never below zero" do
     each_step do |_, before, _, after, events|
       before["items"].each do |id, item|
         used = events.count { |e| e["type"] == "item_used" && e["item"] == id }
-        expect(after["items"][id]["count"]).to eq(item["count"] - used)
+        lifted = events.count { |e| e["type"] == "steal" && e["item"] == id && e.key?("left") } # an enemy's, from the bag (Effects#lift)
+        back = events.sum { |e| e["type"] == "recovered" ? e["items"].count(id) : 0 }
+        expect(after["items"][id]["count"]).to eq(item["count"] - used - lifted + back)
         expect(after["items"][id]["count"]).to be >= 0
       end
     end
@@ -149,6 +160,25 @@ RSpec.describe "Battle resolver properties" do
     end
   end
 
+  # The view plays the events and never computes an outcome (§12): every HP a unit ends a step on is one an event told it.
+  it "tells the view each unit's HP as it changes, so the events end where the state does" do
+    each_step do |_, before, _, after, events|
+      shown = before["units"].to_h { |u| [ u["id"], u["hp"] ] }
+      events.each do |e|
+        whose = case e["type"]
+        when "hp_paid", "phase" then e["actor"]
+        when "gm_override" then e["unit"]
+        when "ko" then (shown[e["target"]] = 0) && nil
+        else e["target"]
+        end
+        shown[whose] = e["hp"] if whose && e.key?("hp") && shown.key?(whose)
+      end
+      after["units"].each do |u|
+        expect(shown[u["id"]]).to eq(u["hp"]), "#{u['id']} ends on #{u['hp']} HP, but the events last said #{shown[u['id']]}" if shown.key?(u["id"])
+      end
+    end
+  end
+
   it "never reports negative or non-integer amounts" do
     each_step do |_, _, _, _, events|
       events.select { |e| e.key?("amount") && e["type"] != "buff_applied" && e["type"] != "buff_expired" }.each do |e|
@@ -158,17 +188,41 @@ RSpec.describe "Battle resolver properties" do
     end
   end
 
-  it "never lets a KO'd unit act or be damaged" do
+  it "never lets a KO'd unit act or be damaged, but for its own last breath as it falls" do
     each_step do |_, before, _, _, events|
       down = before["units"].reject { |u| u["hp"].positive? }.map { |u| u["id"] }
+      breathing = [] # fallen this step, with a last breath to come (a script's "falls" rule)
       events.each do |e|
         case e["type"]
         when "ko" then down << e["target"]
         when "revive", "second_wind" then down.delete(e["target"])
+        when "reacts" then breathing << e["actor"] if e["trigger"] == "falls" && down.include?(e["actor"])
         when "turn_start" then expect(down).not_to include(e["unit"])
-        when "attack", "cast", "defend" then expect(down).not_to include(e["actor"])
+        when "defend" then expect(down).not_to include(e["actor"])
+        when "attack", "cast" then expect(down).not_to include(e["actor"]) unless breathing.delete(e["actor"])
         when "damage", "heal", "status_applied", "buff_applied" then expect(down).not_to include(e["target"])
         end
+      end
+    end
+  end
+
+  it "sends the adds home with whoever called them, and lets a grip go when its holder falls or leaves" do
+    each_step do |_, _, _, after, _|
+      fallen = after["units"].select { |u| u["hp"].zero? || u["gone"] }.map { |u| u["id"] }
+      called = after["units"].select { |u| u["summoned"] && !u["gone"] && u["hp"].positive? }
+      expect(called.select { |u| fallen.include?(u.dig("summoned", "by")) }.map { |u| u["id"] }).to be_empty
+      held = after["units"].select { |u| u["statuses"].any? { |s| s["kind"] == "held" && fallen.include?(s["by"]) } }
+      expect(held.map { |u| u["id"] }).to be_empty
+    end
+  end
+
+  it "gives another go straight after the move that gives it, never inside someone else's turn" do
+    each_step do |_, _, _, _, events|
+      events.each_with_index do |event, i|
+        next unless event["type"] == "turn_start" && event["reason"] == "again"
+
+        previous = events[0...i].reverse.find { |e| e["type"] == "turn_start" }
+        expect(previous&.dig("unit")).to eq(event["unit"])
       end
     end
   end
@@ -198,7 +252,13 @@ RSpec.describe "Battle resolver properties" do
         turns = turns.map { |e| e["unit"] }
         quickened, quick = quick.partition { |e| e["reason"] == "quick" }.map { |list| list }
         quickened = quickened.map { |e| e["unit"] }
-        again, hasty = quick.partition { |e| e["reason"] == "one_more" }.map { |list| list.map { |e| e["unit"] } }
+        again, quick = quick.partition { |e| e["reason"] == "one_more" }.map { |list| list }
+        again = again.map { |e| e["unit"] }
+        # Another go from a move that gives one (an ability's "again"): once a round, only for whoever used one.
+        another, hasty = quick.partition { |e| e["reason"] == "again" }.map { |list| list.map { |e| e["unit"] } }
+        expect(another).to eq(another.uniq)
+        gave_another = round.select { |e| %w[attack cast].include?(e["type"]) && before["abilities"].dig(e["ability"], "again") }.map { |e| e["actor"] }
+        expect(another - gave_another).to be_empty
         expect(turns).to eq(turns.uniq)
         expect(hasty).to eq(hasty.uniq)
         expect(again).to eq(again.uniq)
@@ -213,10 +273,12 @@ RSpec.describe "Battle resolver properties" do
     end
   end
 
-  it "knocks down only on a weakness or a critical hit, once, and never gives One More for someone already down" do
+  it "knocks down only on a weakness or a critical hit (or a wind-up broken), once, and never gives One More for someone already down" do
     each_step do |_, _, _, _, events|
       events.each_with_index do |event, i|
         next unless event["type"] == "status_applied" && event["status"] == "down"
+        # A telegraph broken while it wound up stuns its user for a turn (an ability's "interrupt").
+        next if events[i - 1]&.then { |e| e["type"] == "interrupted" && e["unit"] == event["target"] }
 
         # Any blow on it in the go that knocked it down: a multi-hit move needs only one to find the weakness.
         go = events[0...i].rindex { |e| e["type"] == "turn_start" }

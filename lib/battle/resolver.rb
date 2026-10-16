@@ -851,9 +851,10 @@ module Battle
       targets = conducted(unit, ability, reflected(unit, ability, resolve_targets(unit, ability, target_id)))
       announce(unit, ability, targets, cost)
       if targets.empty?
-        return ctx.emit(:miss, actor: unit["id"], ability: ability["id"], reason: "no_target")
+        ctx.emit(:miss, actor: unit["id"], ability: ability["id"], reason: "no_target")
+        return follow_up # what the move gave (another go) comes now, not inside whoever is next
       end
-      return if iai(unit, ability, targets) || forestalled?(unit, ability, targets)
+      return follow_up if iai(unit, ability, targets) || forestalled?(unit, ability, targets)
 
       apply_effects(unit, ability, targets)
       reload(unit, ability)
@@ -959,6 +960,9 @@ module Battle
 
     # What a move set off, once it's done: an ally's Quick go, a Mimic.
     def follow_up
+      # Inside a reaction, what the move it answers gave waits for that move: react, then follow_up (#apply_effects).
+      return if ctx.reacting
+
       while (job = ctx.follow_ups.shift)
         break if ctx.over?
 
@@ -1032,6 +1036,7 @@ module Battle
         ctx.reacting = true
         use_ability(unit, own(unit, ability).merge("released" => true), target)
         ctx.reacting = false
+        ctx.lay_to_rest(unit) unless ctx.alive?(unit)
         ctx.check_end
       end
     end
@@ -1165,7 +1170,7 @@ module Battle
         ctx.units.select { |u| ctx.alive?(u) && !(drown["spares"] && u.fetch("types", []).include?(drown["spares"])) }.each do |u|
           ctx.deal_damage(u, [ u["stats"]["max_hp"] * drown["amount"] / 100, 1 ].max, status: "drown")
         end
-        ctx.check_end
+        settle # whoever the water took gets their last breath before the end is decided
         return if ctx.over?
       end
 

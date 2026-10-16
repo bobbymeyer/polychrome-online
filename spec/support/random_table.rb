@@ -29,7 +29,10 @@ class RandomTable
                            },
       terrain: Battle::TYPES.sample(random: @chooser),
       enemies: enemies || [ BattleFixtures.goblins(@chooser.rand(1..4)), BattleFixtures.ogre, BattleFixtures.skeletons(@chooser.rand(1..3)),
-                            BattleFixtures.giant ].sample(random: @chooser),
+                            BattleFixtures.giant, *BattleFixtures.menagerie ].sample(random: @chooser),
+      # Some fights come in waves, and some are on water that rises.
+      waves: @chooser.rand(3).zero? ? [ BattleFixtures.goblins(@chooser.rand(1..2)), BattleFixtures.imps(1) ].first(@chooser.rand(1..2)) : [],
+      field: (BattleFixtures.rising_water if @chooser.rand(3).zero?),
       abilities: BattleFixtures.abilities,
       summons: BattleFixtures.summons,
       masks: BattleFixtures.masks,
@@ -129,8 +132,13 @@ class RandomTable
   def gm_action(state)
     target = state["units"].reject { |u| u["gone"] }.sample(random: @chooser)
     alive = state["units"].select { |u| u["hp"].positive? && !u["gone"] }
-    case @chooser.rand(9)
+    case @chooser.rand(10)
     when 0 then { "type" => "gm_override", "op" => "execute_round" }
+    when 9
+      return { "type" => "gm_override", "op" => "execute_round" } unless state["field"]
+
+      others = (0...state["field"]["stages"].size).to_a - [ state["field"]["stage"] ]
+      { "type" => "gm_override", "op" => "field", "stage" => others.sample(random: @chooser) }
     when 1 then { "type" => "gm_override", "op" => "set_hp", "unit" => target["id"],
                   "value" => @chooser.rand(-10..(target["stats"]["max_hp"] + 10)) }
     when 2 then { "type" => "gm_override", "op" => "set_mp", "unit" => target["id"], "value" => @chooser.rand(0..50) }
