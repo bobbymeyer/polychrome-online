@@ -43,5 +43,10 @@ module Polychrome
 
     # An optional language model for drafts and suggestions (config/llm.yml).
     config.x.llm = config_for(:llm)
+
+    # Open sign-up everywhere but production (see production.rb). Set here,
+    # not left unset: an unset config.x key reads as an empty, truthy
+    # OrderedOptions, which would quietly close it.
+    config.x.registrations_close_after_first = false
   end
 end

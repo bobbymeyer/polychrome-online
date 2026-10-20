@@ -12,5 +12,5 @@
     </div>
     <div class="actions"><%= form.submit "Sign in", class: "button" %></div>
   <% end %>
-  <p><%= link_to "Make an account", new_registration_path %> · <%= link_to "Forgot your password?", new_password_path %></p>
+  <p><% if User.registrations_open? %><%= link_to "Make an account", new_registration_path %> · <% end %><%= link_to "Forgot your password?", new_password_path %></p>
 </div>

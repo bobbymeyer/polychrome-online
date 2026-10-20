@@ -3,6 +3,7 @@
 # Making an account. The first account ever made is the admin (see User).
 class RegistrationsController < ApplicationController
   allow_unauthenticated_access
+  before_action :require_open_registrations
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to new_registration_path, alert: "Try again later." }
 
   def new
@@ -18,5 +19,13 @@ class RegistrationsController < ApplicationController
     else
       render :new, status: :unprocessable_content
     end
+  end
+
+  private
+
+  def require_open_registrations
+    return if User.registrations_open?
+
+    redirect_to new_session_path, alert: "Sign-up is closed. Ask whoever runs this place for an account.", status: :see_other
   end
 end

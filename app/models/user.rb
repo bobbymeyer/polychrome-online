@@ -28,6 +28,13 @@ class User < ApplicationRecord
   # Change a world's books: an admin, or, for a world a GM made, its owner
   # and the GMs running campaigns in it. The Base World has no owner, so it
   # stays the admins': GMs copy it to make one of their own.
+  # Whether a stranger may make an account. Always, unless this environment
+  # closes sign-up after the first (production does): then only until someone
+  # has one. Guests don't count -- they came in through a campaign, not here.
+  def self.registrations_open?
+    Rails.configuration.x.registrations_close_after_first != true || !where(guest: false).exists?
+  end
+
   # A player who joined local co-op from the shared screen with just a name
   # (JoinsController): an account like any other, minus the email and
   # password they never chose. They sign in by scanning the code again.

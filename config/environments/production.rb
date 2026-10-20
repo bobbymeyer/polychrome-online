@@ -57,6 +57,12 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
+  # Sign-up closes once there is an account (guests don't count). The first
+  # account runs the place; after that, anyone who can reach the server could
+  # otherwise make themselves one, and a server on a tailnet is still a server.
+  # Reopen it to let a friend in by starting with REGISTRATIONS_OPEN=1.
+  config.x.registrations_close_after_first = ENV["REGISTRATIONS_OPEN"] != "1"
+
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "example.com" }
 

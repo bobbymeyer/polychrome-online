@@ -28,6 +28,43 @@ RSpec.describe "Accounts", type: :request do
       expect(response.body).to include("Lenna")
     end
 
+    context "where sign-up closes after the first account, as in production" do
+      around do |example|
+        config = Rails.configuration.x
+        was = config.registrations_close_after_first
+        config.registrations_close_after_first = true
+        example.run
+      ensure
+        config.registrations_close_after_first = was
+      end
+
+      it "lets the first account in, then turns everyone else away" do
+        get new_session_path
+        expect(response.body).to include("Make an account")
+
+        post registration_path, params: { user: { name: "Bobby", email_address: "bobby@example.com", password: "long enough pw", password_confirmation: "long enough pw" } }
+        expect(User.find_by!(email_address: "bobby@example.com")).to be_admin
+
+        sign_out
+        get new_session_path
+        expect(response.body).not_to include("Make an account")
+        get new_registration_path
+        expect(response).to redirect_to(new_session_path)
+        expect(flash[:alert]).to include("Sign-up is closed")
+
+        expect {
+          post registration_path, params: { user: { name: "Lenna", email_address: "lenna@example.com", password: "long enough pw", password_confirmation: "long enough pw" } }
+        }.not_to change(User, :count)
+        expect(response).to redirect_to(new_session_path)
+      end
+
+      it "doesn't count guests, who came in through a campaign" do
+        User.guest!("Faris")
+        get new_registration_path
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
     it "rejects a short password or a taken email" do
       make_user("Taken")
       post registration_path, params: { user: { name: "X", email_address: "x@example.com", password: "short", password_confirmation: "short" } }
