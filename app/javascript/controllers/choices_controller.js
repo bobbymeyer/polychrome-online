@@ -14,7 +14,7 @@ export default class extends Controller {
     const options = new Map()
     for (const select of fresh.querySelectorAll("form select[name]")) {
       const key = this.key(select)
-      if (!options.has(key)) options.set(key, select.innerHTML)
+      if (!options.has(key)) options.set(key, this.plainOptions(select))
     }
 
     let updated = 0
@@ -28,6 +28,13 @@ export default class extends Controller {
       updated += 1
     }
     this.say(updated ? "Choices refreshed." : "Nothing to refresh on this page: save the entry, then edit it.")
+  }
+
+  // The options as the page offers them, without the choice that page happened to have made.
+  plainOptions(select) {
+    const copy = select.cloneNode(true)
+    copy.querySelectorAll("option").forEach((option) => option.removeAttribute("selected"))
+    return copy.innerHTML
   }
 
   key(select) {
