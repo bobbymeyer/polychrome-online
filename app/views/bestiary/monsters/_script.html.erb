@@ -1,0 +1,25 @@
+<%# A monster's AI script in words: on its page (links: true) and as the form's own reading of the rules as they are typed
+    (BehaviorPreviewsController), where a rule that can never come up on its turn is marked. %>
+<% links = local_assigns.fetch(:links, true) %>
+<% abilities = entry.abilities.index_by(&:slug) %>
+<% unreachable = unreachable_rules(entry.ai_script) %>
+<ol class="ai-script">
+  <% entry.ai_script.each_with_index do |rule, index| %>
+    <li class="<%= "is-unreachable" if unreachable.include?(index) %>">
+      <% conditions = rule.fetch("if", {}) %>
+      <% moment = describe_moment(rule["when"], rule["by"]) %>
+      <% if moment %><%= moment %><%= ", if " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") if conditions.any? %>:
+      <% elsif conditions.empty? && rule["once"] %>The first chance it gets:
+      <% else %><%= conditions.empty? ? "Otherwise" : "If " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") %>:<% end %>
+      <% ability = abilities[rule["use"]] %>
+      <%= ability && links ? link_to(ability.name, world_grimoire_ability_path(@world, ability)) : (ability&.name || "Attack") %>
+      <% if rule["target"] %><span class="muted">→ <%= term(rule["target"]) %></span><% end %>
+      <% if rule["once"] %><span class="muted">(once)</span><% end %>
+      <% if rule["say"].present? %><em class="ai-script__say">“<%= rule["say"] %>”</em><% end %>
+      <% if unreachable.include?(index) %><span class="ai-script__warn">Never reached while it can use the rule above.</span><% end %>
+    </li>
+  <% end %>
+</ol>
+<% unless entry.ai_script.last&.then { |rule| rule["if"].blank? } %>
+  <p class="hint">When no rule matches: Attack.</p>
+<% end %>

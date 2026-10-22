@@ -1,0 +1,12 @@
+<%# One roll is one roll: ten more say how it tends to go. The Bestiary form fetches this frame for the saved entry. %>
+<%= turbo_frame_tag "trial_forecast" do %>
+  <% forecast = @trial.forecast %>
+  <p>
+    <strong>Over <%= Monster::Trial::ROLLS %> more rolls<%= " against a level-5 party" if turbo_frame_request? %>:</strong> the party won <%= forecast["wins"] %> of <%= forecast["runs"] %>,
+    in <%= forecast["rounds"] %> rounds on average, with <%= forecast["downed"] %> of them down at the end
+    and <%= forecast["hp_left"] %>% of their <%= word("hp") %> left.
+    <% if turbo_frame_request? %>
+      <span class="hint">The saved version. <%= link_to "The full trial", world_bestiary_monster_trial_path(@world, @monster), data: { turbo_frame: "_top" } %></span>
+    <% end %>
+  </p>
+<% end %>

@@ -4,7 +4,7 @@
 # terrain and tier. Map edges point at these; crossing an edge rolls on one
 # (Pointcrawl::Encounters).
 class EncounterTable < ApplicationRecord
-  include BookEntry
+  include BookEntry, Revisable
 
   TERRAINS = %w[plains forest desert mountain cave crypt sea town].freeze
   # The damage type of a fight here (World#terrain_type).

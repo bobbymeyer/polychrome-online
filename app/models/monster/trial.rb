@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# A Bestiary entry tried against a party before anyone has to meet it: a
+# A Bestiary entry (or the form's unsaved version of one) tried against a party before anyone has to meet it: a
 # level-5 party of the world's archetypes in starting gear, some of the
 # creature, everyone on their default command, through the engine. What
 # the seed specs do for every monster, on the entry's page for one. Pure
@@ -92,7 +92,11 @@ class Monster::Trial
     end.tally.sort_by { |name, n| [ -n, name ] }
   end
 
-  def battle(seed) = monster.world.battle(seed: seed, party: party, monsters: { monster.slug => count })
+  # An entry as the books hold it fights from the books; one the form is still changing (or hasn't saved) fights as it stands.
+  def battle(seed)
+    fight = monster.persisted? && !monster.changed? ? { monsters: { monster.slug => count } } : { monsters: {}, extra_enemies: [ monster.to_engine(count: count) ] }
+    monster.world.battle(seed: seed, party: party, **fight)
+  end
 
   def enemy_ids = state["units"].select { |u| u["side"] == "enemy" }.map { |u| u["id"] }
   def own_ids = state["units"].select { |u| u["side"] == "enemy" && !u["summoned"] }.map { |u| u["id"] }

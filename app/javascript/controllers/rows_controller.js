@@ -19,6 +19,7 @@ export default class extends Controller {
       else if (field.type !== "hidden") field.value = ""
     })
     this.bodyTarget.append(row)
+    this.dispatch("added")
     row.querySelector("input:not([type=hidden]), select")?.focus()
   }
 }

@@ -35,6 +35,8 @@
   <%= link_to "Maps →", campaign_maps_path(@campaign) %>
 </nav>
 
+<%= render "campaigns/preps/next", campaign: @campaign if table_gm? %>
+
 <%= render "campaigns/preps/scenes", campaign: @campaign %>
 
 <% if table_gm? %>
@@ -42,10 +44,14 @@
     <%= render "campaigns/preps/clocks", campaign: @campaign %>
     <%= render "campaigns/preps/moment", campaign: @campaign %>
   </div>
-  <% reference = { "secrets" => "Secrets", "deeds" => "Deeds", "rumours" => "Rumours", "flags" => "Flags", "bag" => "Bag" } %>
+  <%# In the order prep goes: what is hidden, what is said, what is carried; then what the story has made of the table so far. %>
+  <% stocked = { "secrets" => "Secrets", "rumours" => "Rumours", "bag" => "Bag" } %>
+  <% running = { "deeds" => "Deeds", "flags" => "Flags" } %>
+  <% reference = stocked.merge(running) %>
   <div class="drawers prep-reference" data-controller="drawers" aria-label="The reference">
     <div class="drawers__tabs" role="group" aria-label="Look up">
       <% reference.each do |key, label| %>
+        <%= tag.span("Running so far", class: "drawers__sep") if key == running.keys.first %>
         <%= tag.button label, type: "button", class: "drawers__tab", aria: { expanded: false, controls: "prep_#{key}" },
                               data: { drawers_target: "tab", key: key, action: "drawers#toggle" } %>
       <% end %>

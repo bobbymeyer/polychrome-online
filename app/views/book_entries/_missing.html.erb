@@ -1,0 +1,9 @@
+<%# "Missing one?": make the entry in another tab, come back, and pull the new choices into the selects above without
+    losing what has been typed here (choices_controller). links: [[label, path], ...] %>
+<p class="hint missing" data-controller="choices">
+  Missing one?
+  <% links.each do |label, path| %><%= link_to "#{label} ↗", path, target: "_blank", rel: "noopener" %> <% end %>
+  opens in a new tab.
+  <button type="button" class="button button--quiet" data-action="choices#refresh">Refresh the choices</button>
+  <span data-choices-target="status" role="status"></span>
+</p>

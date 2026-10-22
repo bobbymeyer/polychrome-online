@@ -41,15 +41,14 @@
           <%= link_to "#{in_campaign.world.name}'s books", world_path(in_campaign.world), class: "muted" %>
         </nav>
       <% elsif @world&.persisted? %>
-        <nav class="topbar__books" aria-label="Books">
+        <nav class="topbar__books" aria-label="Books" data-controller="search" data-action="keydown@window->search#key">
           <%= link_to @world.name, world_path(@world), class: "topbar__world" %>
-          <%= book_nav_link "Bestiary", world_bestiary_monsters_path(@world), :bestiary %>
-          <%= book_nav_link "Compendium", world_compendium_jobs_path(@world), :compendium %>
-          <%= book_nav_link "Grimoire", world_grimoire_abilities_path(@world), :grimoire %>
-          <%= book_nav_link "Armory", world_armory_items_path(@world), :armory %>
-          <%= book_nav_link "Encounters", world_encounters_encounter_tables_path(@world), :encounters %>
-          <%= book_nav_link "Gazetteer", world_gazetteer_location_templates_path(@world), :gazetteer %>
-          <%= book_nav_link "Generators", world_generation_generator_tables_path(@world), :generation %>
+          <% World::Books::LIST.each do |book| %>
+            <%= book_nav_link book.nav, polymorphic_path([ @world, book.key, book.model ]), book.key %>
+          <% end %>
+          <%= form_with url: world_search_path(@world), method: :get, class: "topbar__search", role: "search" do %>
+            <%= search_field_tag :q, nil, "aria-label": "Search the books", placeholder: "Search ( / )", data: { search_target: "input" } %>
+          <% end %>
         </nav>
       <% end %>
       <%# The account is one item: your name, with everything about you and this device under it. %>

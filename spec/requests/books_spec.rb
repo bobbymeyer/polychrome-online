@@ -189,6 +189,80 @@ RSpec.describe "Books", type: :request do
       expect(page.text.squish).to include("Goblin King · a form of Goblin") # forms marked in the index
     end
 
+    it "indexes the form's sections, keeps the rarely used rule columns out of the way until a rule needs them, and fetches the saved entry's trial" do
+      goblin = create_monster(world)
+      get edit_world_bestiary_monster_path(world, goblin)
+      expect(page.css("nav.form-index a").map { |a| a["href"] }).to include("#identity", "#stat-block", "#behavior", "#phases", "#drops", "#art")
+      expect(page.at("table.grid-form--wide")["class"]).to include("grid-form--simple")
+      expect(page.css("table.grid-form--wide th[data-advanced]").map(&:text)).to eq([ "By", "Ally HP < %", "Ally down", "Every Nth round" ])
+      expect(page.at("turbo-frame#trial_forecast")["src"]).to eq(world_bestiary_monster_trial_path(world, goblin))
+      expect(page.at("#monster_script_reading").text.squish).to include("Otherwise: Attack")
+
+      goblin.update!(ai_script: [ { if: { ally_hp_below: 30 }, use: "attack" } ])
+      get edit_world_bestiary_monster_path(world, goblin)
+      expect(page.at("table.grid-form--wide")["class"]).not_to include("grid-form--simple")
+
+      get new_world_bestiary_monster_path(world)
+      expect(page.at("turbo-frame#trial_forecast")).to be_nil
+    end
+
+    it "reads the form's rules and phases back in words without saving anything, and marks a rule that can never come up" do
+      create_monster(world, slug: "goblin_king", name: "Goblin King", boss: true)
+      post world_bestiary_behavior_preview_path(world),
+           params: { monster: { ai_script: { "0" => { use: "fire", self_hp_below: "30", once: "1", say: "Burn." }, "1" => { use: "attack" }, "2" => { use: "fire" } },
+                                phases: { "0" => { hp_below: "50", becomes: "goblin_king", restore: "10" } } } },
+           headers: { "Accept" => "text/vnd.turbo-stream.html" }
+      expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+      text = Nokogiri::HTML.fragment(response.body).text.squish
+      expect(text).to include("If own HP below 30%: Fire (once) “Burn.”", "Otherwise: Attack", "Never reached while it can use the rule above", "Below 50% HP: becomes Goblin King (10% HP back)")
+      expect(response.body).to include('target="monster_script_reading"', 'target="monster_phases_reading"')
+      expect(response.body).not_to include("<a ")
+      expect(world.monsters.count).to eq(1)
+    end
+
+    it "starts a new entry from another, without its slug or its picture" do
+      goblin = create_monster(world, level: 4, ai_script: [ { use: "fire", self_hp_below: 30 } ])
+      get world_bestiary_monster_path(world, goblin)
+      expect(page.at("a[href='#{new_world_bestiary_monster_path(world, from: 'goblin')}']")&.text).to eq("Duplicate")
+
+      get new_world_bestiary_monster_path(world, from: "goblin")
+      expect(page.at("input[name='monster[name]']")["value"]).to eq("Goblin (copy)")
+      expect(page.at("input[name='monster[level]']")["value"]).to eq("4")
+      expect(page.at("select[name='monster[ai_script][0][use]'] option[selected]")&.text).to eq("Fire")
+      expect(page.at("input[name='monster[slug]']")["value"]).to be_blank
+      expect(page.at("form.start-from select[name=from] option[selected]")&.text).to include("Goblin")
+
+      get new_world_bestiary_monster_path(world, from: "nobody")
+      expect(page.at("input[name='monster[name]']")["value"]).to be_blank
+    end
+
+    it "tries the form's entry as it stands, saved or not, and sets it among the entries nearest its level" do
+      create_monster(world, slug: "slime", name: "Slime", level: 3)
+      create_monster(world, slug: "ogre", name: "Ogre", level: 40)
+      goblin = create_monster(world, level: 4)
+      stats = monster_stats.transform_values(&:to_s).merge("max_hp" => "9999", "str" => "99")
+      headers = { "Accept" => "text/vnd.turbo-stream.html" }
+
+      post world_bestiary_strength_preview_path(world, editing: "goblin"), params: { monster: { name: "Warlord", level: "5", base_type: world.type_chart.plain, stats: stats } }, headers: headers
+      expect(response.body).to include('target="monster_strength"')
+      text = Nokogiri::HTML.fragment(response.body).text.squish
+      expect(text).to include("As it stands, 2 × Warlord", "the party won", "of 10", "Nearest in level")
+      rows = Nokogiri::HTML.fragment(response.body).css("tbody tr").map { |row| row.at("td").text }
+      expect(rows).to eq([ "Slime", "Warlord", "Ogre" ]) # by level, the entry being edited left out, itself in its place
+      expect(Nokogiri::HTML.fragment(response.body).at("tr.is-current td").text).to eq("Warlord")
+      expect(goblin.reload.name).to eq("Goblin")
+      expect(world.monsters.count).to eq(3)
+
+      post world_bestiary_strength_preview_path(world), params: { monster: { name: "Hollow", level: "5", stats: { max_hp: "10" } } }, headers: headers
+      expect(Nokogiri::HTML.fragment(response.body).text.squish).to include("Not tried yet:")
+    end
+
+    it "answers a frame request for the trial with just its forecast" do
+      goblin = create_monster(world)
+      get world_bestiary_monster_trial_path(world, goblin), headers: { "Turbo-Frame" => "trial_forecast" }
+      expect(page.at("turbo-frame#trial_forecast").text.squish).to include("Over 10 more rolls against a level-5 party", "The full trial")
+    end
+
     it "keeps a boss's own music when its track is given a scene, says whose it is in the Music book, and lets it go when the track does" do
       theme = world.tracks.create!(name: "Forge theme", source: "link", url: "https://youtu.be/dQw4w9WgXcQ")
       warden = create_monster(world, slug: "warden", name: "Warden", boss: true, music: "track:#{theme.id}")

@@ -3,8 +3,20 @@
   <h1><%= @world.name %></h1>
   <div class="actions">
     <%= link_to "New campaign", new_world_campaign_path(@world), class: "button" %>
-    <% if can_make_games? %><%= link_to "Import a module", new_world_campaign_module_path(@world), class: "button button--quiet" %><% end %>
-    <%= link_to "Copy this world", new_world_path(copy_from: @world.slug), class: "button button--quiet" %>
+    <% if can_edit_world? %><%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %><% end %>
+  </div>
+</div>
+<%= render "worlds/searches/form", world: @world, query: nil %>
+<%# What a world is made of, by what you are doing: the books are the shelf below. %>
+<nav class="world-nav" aria-label="<%= @world.name %>">
+  <div>
+    <h2 class="eyebrow">The rules</h2>
+    <%= link_to "Types", world_types_path(@world), class: "button button--quiet" %>
+    <%= link_to "Skills", world_skills_path(@world), class: "button button--quiet" %>
+    <%= link_to "Origins", world_origins_path(@world), class: "button button--quiet" %>
+  </div>
+  <div>
+    <h2 class="eyebrow">The setting</h2>
     <%= link_to "Codex", world_codex_entries_path(@world), class: "button button--quiet" %>
     <%= link_to "Music", world_tracks_path(@world), class: "button button--quiet" %>
     <% if knows_the_lore? %>
@@ -12,14 +24,15 @@
       <%= link_to "Cast", world_world_figures_path(@world), class: "button button--quiet" %>
       <%= link_to "Fronts", world_world_fronts_path(@world), class: "button button--quiet" %>
       <%= link_to "History", world_history_path(@world), class: "button button--quiet" %>
-      <%= link_to "Export world", world_package_path(@world), class: "button button--quiet", data: { turbo: false } %>
     <% end %>
-    <%= link_to "Types", world_types_path(@world), class: "button button--quiet" %>
-    <%= link_to "Skills", world_skills_path(@world), class: "button button--quiet" %>
-    <%= link_to "Origins", world_origins_path(@world), class: "button button--quiet" %>
-    <% if can_edit_world? %><%= link_to "Edit world", edit_world_path(@world), class: "button button--quiet" %><% end %>
   </div>
-</div>
+  <div>
+    <h2 class="eyebrow">Taking it elsewhere</h2>
+    <% if can_make_games? %><%= link_to "Import a module", new_world_campaign_module_path(@world), class: "button button--quiet" %><% end %>
+    <%= link_to "Copy this world", new_world_path(copy_from: @world.slug), class: "button button--quiet" %>
+    <% if knows_the_lore? %><%= link_to "Export world", world_package_path(@world), class: "button button--quiet", data: { turbo: false } %><% end %>
+  </div>
+</nav>
 <p class="hint">
   <% if @world.owner %>Made by <%= @world.owner.name %>. <% end %>
   <% if can_edit_world? %>
@@ -48,23 +61,37 @@
   </section>
 <% end %>
 
+<% if can_edit_world? %>
+  <% loose = World::LooseEnds.new(@world) %>
+  <section class="window loose-ends">
+    <h2>Loose ends</h2>
+    <% if loose.none? %>
+      <p class="empty">Nothing is left loose: every book has entries and every table has its groups.</p>
+    <% else %>
+      <ul class="refs">
+        <% loose.items.each do |item| %>
+          <li>
+            <%= item.summary %><%= item.records.any? ? ":" : "" %>
+            <% item.records.each_with_index do |record, i| %><%= link_to record.name, polymorphic_path([ @world, item.book.key, record ]) %><%= "," unless i == item.records.size - 1 %> <% end %>
+            <% if item.records.empty? %><%= link_to "Add one", polymorphic_path([ :new, @world, item.book.key, item.book.model.model_name.singular.to_sym ]) %><% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+    <p class="hint"><%= link_to "Recent edits to the books", world_revisions_path(@world) %>, each with the way to put it back.</p>
+  </section>
+<% end %>
+
 <div class="shelf">
-  <% [
-       ["Bestiary", :bestiary, "Monsters: stat blocks, affinities, behavior, drops.", @world.monsters],
-       ["Archetype Compendium", :compendium, "Archetypes: stat modifiers, equipment, learn tables.", @world.jobs],
-       ["Grimoire", :grimoire, "Abilities, composed from the engine's primitives.", @world.abilities],
-       ["Armory", :armory, "Items and equipment.", @world.items],
-       ["Encounter Tables", :encounters, "Weighted monster groups by terrain and tier.", @world.encounter_tables],
-       ["Gazetteer", :gazetteer, "Town and dungeon templates that locations are rolled from.", @world.location_templates],
-       ["Generator Tables", :generation, "Names, hooks, rooms, buildings and loot for the generators.", @world.generator_tables]
-     ].each do |title, book, blurb, entries| %>
-    <section class="window shelf__book" style="<%= accent_style(book) %>">
-      <h2><%= link_to title, polymorphic_path([@world, book, entries.klass]) %></h2>
-      <p><%= blurb %></p>
+  <% World::Books::LIST.each do |book| %>
+    <% entries = book.entries(@world) %>
+    <section class="window shelf__book" style="<%= accent_style(book.key) %>">
+      <h2><%= link_to book.title, polymorphic_path([ @world, book.key, book.model ]) %></h2>
+      <p><%= book.blurb %></p>
       <p class="muted"><%= pluralize(entries.count, "entry") %></p>
       <ul class="refs refs--inline">
         <% entries.order(:name).limit(8).each do |entry| %>
-          <li><%= link_to entry.name, polymorphic_path([@world, book, entry]) %></li>
+          <li><%= link_to entry.name, polymorphic_path([ @world, book.key, entry ]) %></li>
         <% end %>
       </ul>
     </section>

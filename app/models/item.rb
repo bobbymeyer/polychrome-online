@@ -4,7 +4,7 @@
 # input); consumables carry an effect list in the same closed primitive
 # vocabulary as abilities.
 class Item < ApplicationRecord
-  include BookEntry
+  include BookEntry, Revisable
 
   # Category -> equipment slot. Jobs grant equip permission by category.
   CATEGORIES = {

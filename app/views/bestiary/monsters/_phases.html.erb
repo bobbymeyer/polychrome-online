@@ -1,0 +1,15 @@
+<%# Its phases in words (Monster#phases), on its page and in the form's reading of them. %>
+<% links = local_assigns.fetch(:links, true) %>
+<% forms = entry.forms.index_by(&:slug) %>
+<% if entry.phases.any? %>
+<ol class="ai-script">
+  <% entry.phases.each do |phase| %>
+    <li>
+      Below <%= phase["hp_below"] %>% <%= word("hp") %>: becomes
+      <% if (form = forms[phase["becomes"]]) %><%= links ? link_to(form.name, world_bestiary_monster_path(@world, form)) : form.name %><% else %><%= phase["becomes"] %><% end %>
+      <% if phase["restore"].to_i.positive? %><span class="muted">(<%= phase["restore"] %>% <%= word("hp") %> back)</span><% end %>
+      <% if phase["say"].present? %><em class="ai-script__say">“<%= phase["say"] %>”</em><% end %>
+    </li>
+  <% end %>
+</ol>
+<% end %>

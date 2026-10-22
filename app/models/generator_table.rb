@@ -4,7 +4,7 @@
 # rolled from. Each table has one kind; its entries are weighted rows whose
 # fields depend on the kind. Raw material, so no art of its own.
 class GeneratorTable < ApplicationRecord
-  include BookEntry
+  include BookEntry, Revisable
 
   # kind => the fields its entries use (besides "weight").
   KINDS = {

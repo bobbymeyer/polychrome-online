@@ -12,6 +12,7 @@ class World < ApplicationRecord
   # Campaigns and battles first (they use the books), then the canon (it
   # points into the books), then the books themselves.
   has_many :campaigns, dependent: :destroy
+  has_many :book_revisions, dependent: :delete_all # at the books' entries
   has_many :battles, class_name: "BattleRecord", dependent: :destroy
   has_many :world_fronts, dependent: :destroy # at places and figures
   has_many :world_figures, dependent: :destroy # at places and monsters

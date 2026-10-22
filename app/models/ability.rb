@@ -3,7 +3,7 @@
 # Grimoire entry: one of the engine's closed primitives, composed (§3.1).
 # `effects` is stored in exactly the shape Battle::Resolver reads.
 class Ability < ApplicationRecord
-  include BookEntry
+  include BookEntry, Revisable
 
   # field: a move outside battle (FieldUse), a skill check with an outcome;
   # never in battle.
