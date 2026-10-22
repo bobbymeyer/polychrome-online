@@ -1,10 +1,10 @@
-<%# The form's entry against a level-5 party on default commands (Monster::Trial), and among the entries nearest its level. %>
+<%# The form's entry against a party (level 5, or its own level if higher) on default commands (Monster::Trial), and among the entries nearest its level. %>
 <% if trial.nil? %>
   <p class="hint">Not tried yet: <%= monster.errors.full_messages.to_sentence %>.</p>
 <% else %>
   <% forecast = trial.forecast %>
   <p>
-    <strong>As it stands, <%= trial.count %> × <%= monster.name %></strong> against a level-5 party of <%= trial.party.map { |u| u[:name] }.to_sentence %>
+    <strong>As it stands, <%= trial.count %> × <%= monster.name %></strong> against a level-<%= trial.level %> party of <%= trial.party.map { |u| u[:name] }.to_sentence %>
     on default commands: the party won <%= forecast["wins"] %> of <%= forecast["runs"] %>, in <%= forecast["rounds"] %> rounds on average,
     with <%= forecast["downed"] %> of them down at the end and <%= forecast["hp_left"] %>% of their <%= word("hp") %> left.
     <span class="hint"><%= pacing_verdict(monster, forecast["rounds"]) %></span>

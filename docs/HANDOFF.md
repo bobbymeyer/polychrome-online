@@ -84,6 +84,7 @@ Every table that belongs to a world carries `world_id`. This is the only second-
 - `abilities` — primitive + params + targeting + cost
 - `items`, `equipment`
 - `generator_tables` — name lists, NPC hooks, room templates, shop archetypes, building archetypes
+- `book_revisions` — what a monster, ability, item, encounter table, location template or generator table was before each of its last 20 edits: the whole row, who made the edit and which columns it changed (§9.8)
 
 ### Campaign
 
@@ -183,6 +184,12 @@ The GM keeps families through rerolls and edits a place's past on the atlas; an 
 
 **Books.** Each book is a Rails resource namespace. Each entry has two faces: a form and a rendered "page" (stat block, prose, cross-references, image). Cross-references between entries are the index.
 
+**Building content.** What the person writing the books and the prep is given, in boring Rails (§12):
+- **The shelf.** `World::Books` lists the seven books once (the world's page, the masthead, the search and the loose ends all read it). The world's page groups its actions by what they are for (the rules, the setting, taking it elsewhere). A search runs across the books by name or slug (`Worlds::SearchesController`; `/` or Ctrl/Cmd+K from any book page); it leaves out the codex, atlas and cast, which hold the GM's side. **Loose ends** (`World::LooseEnds`, for those who can edit) lists what is certainly unfinished: an empty book, an encounter table with no groups, an archetype that teaches nothing, a creature no table sends. A boss, a form another entry becomes and a creature an ability calls are never listed.
+- **The monster form.** An index of its sections; the rarely used columns of an AI script folded away until a rule needs one; "Start from" and Duplicate; "Missing one?" links to make an item, monster or ability in another tab and pull it into the selects. It reads itself back as it is typed (see §12): the rules and phases in the words of the entry's page, a rule that can never come up marked, and **how it fares**, the entry as it stands tried against a party (`Monster::Trial`) beside the entries nearest its level. The trial party is level 5, the reference the Bestiary's guidance is written for (a first boss takes six rounds or more, a towpath creature two or three), or the creature's own level when that is higher (`Stats::Growth.base_stats`), in starting gear at any level.
+- **Prep.** "Next to prepare" (`Campaign::Preparation`) names the next few things to set up in the order prep goes: where the party starts, someone to talk to, a scene, a clock, a secret, the chest. A step is done when there is any of it; nothing says how much is enough.
+- **Mistakes.** A refused save links each problem to the field or section it is about and takes focus. What is typed into a book's form is kept in the browser and offered back if the page is left unsaved; it is never put back on its own. The edit log is §9.8.
+
 ## 8. Asset pipeline
 
 - Book entries have an image slot (Active Storage) plus variant recipe. Nothing references pixels, so replacing an image is a file replace.
@@ -208,6 +215,7 @@ The GM keeps families through rerolls and edits a place's past on the atlas; an 
 6. Animation/DOM race — see §6.
 7. Stat derivation bugs — pure module, heavy tests.
 8. Editions — decided: **worlds are live.** A GM develops their world as they play it, so editing the Bestiary changes live campaigns, on purpose. There are no world versions and no pins. What stays stable: a battle in progress (it copies what it needs when it starts), anything a GM has pinned in a location, and the people of a place the party has been to (it keeps the name tables it was rolled from then, so the innkeeper they met keeps her name; a reroll, or letting go of that change, takes the world's tables again). Forking is copying: a new world can start from another world's books, here or from a world package. The seed never overwrites an existing entry; `bin/rails base_world:update` does, explicitly.
+   **An edit can be taken back.** Not by versions, but per entry: `BookRevision` (the `Revisable` concern) keeps what a monster, ability, item, encounter table, location template or generator table was before each of its last 20 edits. The world's page links to the log of recent edits and each entry to its own (`Worlds::RevisionsController`, for those who can change the books); putting an entry back (`Worlds::Revisions::RestoresController`) is an edit like any other, so it is validated, kept in the log and can itself be taken back, and it refuses, with the reason, when the old version no longer fits the books (it names an entry that has gone). Not kept: archetypes (their learn tables are rows of their own, which a snapshot of the entry would not bring back), pictures, and an entry's deletion (its log goes with it). The edit form says when campaigns are playing in the world, and that a battle already under way keeps what it copied.
 9. Turbo Drive vs persistent game screen — game is one long-lived page fed by streams; books use ordinary Turbo Drive navigation.
 
 ## 10. Stack
@@ -245,5 +253,6 @@ Steps 1–3 are the proof. If the battle isn't fun with a GM in the seat, nothin
 - When the game says no ("the party can't afford that"), a model raises `Refusal`, and the person who asked sees it as an alert. `ArgumentError` means a bug, and crashes.
 - The table hears the game through `Campaign#narrate`.
 - Broadcasts come in two kinds. A page refresh goes `_later` and debounced (each viewer fetches their own page again, as their own seat, so a burst of changes is one fetch). A targeted stream that carries a moment's state (a battle beat, a line said, the countdown, the GM's panels) goes at once, in order, rendered from the state as it is then: rendered later, a beat's board could show a state the battle has already moved past.
+- A live reading of a form (a script in words, an entry tried as it stands) is a POST of the form's rows, answered with a Turbo Stream drawn from an unsaved record by the same partials the entry's page uses. Nothing is validated for saving or kept, and the words are written once, never again in JavaScript. A reading says plainly when it can't be made ("Not tried yet: …").
 - A migration that removes or changes a column runs outside a transaction (`disable_ddl_transaction!`). SQLite rebuilds the table to do it, and inside a transaction it can't switch foreign keys off, so the rebuild fires ON DELETE actions on other tables. `spec/migrations_spec.rb` checks. New foreign keys stay plain; the models clean up (`dependent:`).
 
