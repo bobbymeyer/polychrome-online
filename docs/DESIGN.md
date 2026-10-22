@@ -1008,3 +1008,26 @@ Record each place where the game needed more than the Swiss defaults: what chang
 - **Red for a deadline.** A deadline passing is a red card, and its last day is a red band. That's
   the one place red means something other than a move: the game stopping you. A grey or black
   card read as one more notice, and the Persona table missed the biggest beat of its campaign.
+
+## Divergences: the authoring pages
+
+The books and Prep are where a world is written, not played, so they stay nearer the Swiss start than the stage. These are the
+places they needed more.
+
+- **A long form carries its own index.** The monster form is one submit, so it isn't tabbed: a thin sticky bar under the masthead
+  links to its sections (`.form-index`), and the problems of a refused save link into them.
+- **Detail is folded, not removed.** A long hint keeps one line and folds the rest into a `details.help`; the columns of the AI
+  script most rules never use (`[data-advanced]`) sit behind a "More conditions" button, and come out on their own for a rule that
+  needs one. Swiss would show it all; an author writing twenty rules reads the grid more than the manual.
+- **Red also marks what needs fixing.** Red is kept for game moves, but an invalid field is outlined in it
+  (`.field_with_errors`), as is the warning on a rule that can never come up and the rule beside the live-campaigns notice. A
+  refused save has to stand out on a long page, and grey and ink did not.
+- **Notices are a left rule.** The live-campaigns warning, the browser's draft offer and the form's problems are a panel with a
+  4px rule down the left edge (the flash's 8px, narrower), not a banner: they sit among fields.
+- **Readings are plain lists.** "As it reads" and "How it fares" are an ordered list and a table in the page's own type, without
+  the stage's slants, so they look like what the entry's page will show.
+- **The masthead has a search field.** In the books nav, small, transparent with a paper outline, `/` to focus it. It is the one
+  text field on the bar.
+- **Group labels over quiet buttons.** The world's page groups its actions under small `eyebrow` labels ("The rules", "The
+  setting", "Taking it elsewhere"); Prep's reference tabs have a "Running so far" label between what is stocked and what the
+  story has made.

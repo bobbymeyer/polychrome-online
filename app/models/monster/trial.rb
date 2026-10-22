@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 # A Bestiary entry (or the form's unsaved version of one) tried against a party before anyone has to meet it: a
-# level-5 party of the world's archetypes in starting gear, some of the
+# party of the world's archetypes in starting gear (level 5, the reference; a creature labelled above that is tried
+# against a party of its own level, so a level-40 beast is not judged against a fresh adventurer), some of the
 # creature, everyone on their default command, through the engine. What
 # the seed specs do for every monster, on the entry's page for one. Pure
 # over the books: nothing is saved.
@@ -10,14 +11,19 @@
 # creature used and how often, who fell and when, what it inflicted. And
 # one roll is one roll: ten more from here say how it tends to go.
 class Monster::Trial
-  BASE = { max_hp: 150, max_mp: 30, str: 12, mag: 12, vit: 12, spr: 12, agi: 12 }.freeze
+  # Level 5 is a fresh adventurer (Stats::Growth) and what the Bestiary's guidance is written for.
+  REFERENCE_LEVEL = 5
   ROUNDS = 60
   ROLLS = 10
 
-  attr_reader :monster, :count, :party, :state, :events
+  attr_reader :monster, :count, :level, :party, :state, :events
 
-  def initialize(monster, count: nil, seed: monster.id)
+  # The party level a creature is tried against by default: the reference level, or its own if that is higher.
+  def self.level_for(monster) = monster.level.to_i.clamp(REFERENCE_LEVEL, Stats::Growth::MAX_LEVEL)
+
+  def initialize(monster, count: nil, seed: monster.id, level: nil)
     @monster = monster
+    @level = (level || self.class.level_for(monster)).clamp(1, Stats::Growth::MAX_LEVEL)
     @count = count || (monster.boss? ? 1 : 2) # a boss comes alone
     @party = build_party(monster.world)
     @seed = seed
@@ -113,7 +119,7 @@ class Monster::Trial
     items = world.items.select(&:equipment?)
     jobs.map do |job|
       gear = items.select { |item| job.equips?(item) }.group_by(&:slot).values.map { |pieces| pieces.min_by(&:price) }
-      stats = Stats::Derivation.derive(base: BASE, job: job.to_derivation, equipment: gear.map(&:to_equipment), passives: job.passives)
+      stats = Stats::Derivation.derive(base: Stats::Growth.base_stats(level), job: job.to_derivation, equipment: gear.map(&:to_equipment), passives: job.passives)
       { id: job.slug, name: job.name, stats: stats, abilities: job.abilities.pluck(:slug) }.merge(job.battle_type)
     end
   end

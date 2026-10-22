@@ -257,6 +257,28 @@ RSpec.describe "Books", type: :request do
       expect(Nokogiri::HTML.fragment(response.body).text.squish).to include("Not tried yet:")
     end
 
+    it "tries a creature against a party of its own level when it is labelled above the reference, and says so" do
+      create_monster(world, slug: "wyrm", name: "Wyrm", level: 40)
+      stats = monster_stats.transform_values(&:to_s)
+      headers = { "Accept" => "text/vnd.turbo-stream.html" }
+
+      get world_bestiary_monster_trial_path(world, "wyrm")
+      expect(page.text.squish).to include("Against a level-40 party", "level 5, or the creature's own level if that is higher (here, level 40)")
+      expect(page.css("a").map { |a| a["href"] }).to include(a_string_including("count=2&level=40"), a_string_including("level=5"))
+      get world_bestiary_monster_trial_path(world, "wyrm", level: 10)
+      expect(page.text.squish).to include("Against a level-10 party")
+      get world_bestiary_monster_path(world, "wyrm")
+      expect(page.text).to include("Try it against a level-40 party")
+
+      post world_bestiary_strength_preview_path(world), params: { monster: { name: "Wyrm", level: "40", base_type: world.type_chart.plain, stats: stats } }, headers: headers
+      expect(Nokogiri::HTML.fragment(response.body).text.squish).to include("against a level-40 party")
+      post world_bestiary_strength_preview_path(world), params: { monster: { name: "Newt", level: "2", base_type: world.type_chart.plain, stats: stats } }, headers: headers
+      expect(Nokogiri::HTML.fragment(response.body).text.squish).to include("against a level-5 party")
+
+      get edit_world_bestiary_monster_path(world, "wyrm")
+      expect(page.at("turbo-frame#trial_forecast").text).to include("level-40 party")
+    end
+
     it "answers a frame request for the trial with just its forecast" do
       goblin = create_monster(world)
       get world_bestiary_monster_trial_path(world, goblin), headers: { "Turbo-Frame" => "trial_forecast" }

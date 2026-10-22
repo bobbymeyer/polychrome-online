@@ -7,7 +7,7 @@
   </div>
 </div>
 <p>
-  Against a level-5 party of <%= @trial.party.map { |u| u[:name] }.to_sentence %> in starting gear, everyone on their default command
+  Against a level-<%= @trial.level %> party of <%= @trial.party.map { |u| u[:name] }.to_sentence %> in starting gear, everyone on their default command
   (Attack, so this is a floor: a table that uses its arts does better).
   <strong><%= { "victory" => "The party won", "defeat" => "The party fell", "input" => "Still going" }.fetch(@trial.outcome, @trial.outcome) %></strong>
   <%= @trial.outcome == "input" ? "after" : "in" %> <%= pluralize(@trial.rounds, "round") %>.
@@ -45,9 +45,13 @@
 <%= render "forecast" %>
 <p class="hint">
   Seed <%= @trial.state["seed"] %>. <%= link_to "Edit #{@monster.name}", edit_world_bestiary_monster_path(@world, @monster) %>, or try
-  <% [ 1, 2, 3, 4 ].each do |n| %><%= link_to "#{n} of them", world_bestiary_monster_trial_path(@world, @monster, count: n) %><%= ", " unless n == 4 %><% end %>,
-  or <%= link_to "another roll", world_bestiary_monster_trial_path(@world, @monster, count: @trial.count, seed: @trial.state["seed"].to_i + 1) %>.
+  <% [ 1, 2, 3, 4 ].each do |n| %><%= link_to "#{n} of them", world_bestiary_monster_trial_path(@world, @monster, count: n, level: @trial.level) %><%= ", " unless n == 4 %><% end %>,
+  or <%= link_to "another roll", world_bestiary_monster_trial_path(@world, @monster, count: @trial.count, seed: @trial.state["seed"].to_i + 1, level: @trial.level) %>.
   A first boss should take a party like this six rounds or more and cost it someone; a towpath creature, two or three.
+  The party is level <%= Monster::Trial::REFERENCE_LEVEL %>, or the creature's own level if that is higher<%= " (here, level #{@trial.level})" unless @trial.level == Monster::Trial::REFERENCE_LEVEL %>; in starting gear at any level.
+  Try it against a party of level
+  <% levels = ([ Monster::Trial::REFERENCE_LEVEL, 10, 20, 40 ] + [ Monster::Trial.level_for(@monster) ]).uniq.sort %>
+  <% levels.each_with_index do |n, i| %><%= n == @trial.level ? tag.strong(n) : link_to(n, world_bestiary_monster_trial_path(@world, @monster, count: @trial.count, level: n)) %><%= i == levels.size - 1 ? "." : ", " %><% end %>
   <% if (counters = @trial.untried_counters).any? %>
     Its answers to blows of <%= counters.map { |t| term(t) }.to_sentence %> never come here: this party only attacks.
   <% end %>

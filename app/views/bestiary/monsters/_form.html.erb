@@ -72,10 +72,10 @@
     <div class="reading" id="monster_strength" aria-live="polite">
       <% if entry.persisted? %>
         <%= turbo_frame_tag "trial_forecast", src: world_bestiary_monster_trial_path(@world, entry), loading: :lazy do %>
-          <p class="hint">Trying the saved version against a level-5 party…</p>
+          <p class="hint">Trying the saved version against a level-<%= Monster::Trial.level_for(entry) %> party…</p>
         <% end %>
       <% else %>
-        <p class="hint">Change a stat and it is tried against a level-5 party, and set beside the entries nearest its level.</p>
+        <p class="hint">Change a stat and it is tried against a party (level 5, or its own level if higher), and set beside the entries nearest its level.</p>
       <% end %>
     </div>
   </fieldset>

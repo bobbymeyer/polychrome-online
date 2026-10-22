@@ -232,8 +232,8 @@ module BooksHelper
     script.each_index.select { |index| index > last && script[index]["when"].blank? }.to_set
   end
 
-  # How long a fight against a level-5 party lasts, against what the Bestiary asks of it (Bestiary::TrialsController's hint):
-  # a first boss takes six rounds or more, a towpath creature two or three.
+  # How long a fight against a party of the creature's level (at least 5) lasts, against what the Bestiary asks of it
+  # (Bestiary::TrialsController's hint): a first boss takes six rounds or more, a towpath creature two or three.
   def pacing_verdict(monster, rounds)
     if monster.boss?
       rounds >= 6 ? "Within the usual range for a boss (six rounds or more)." : "Short for a boss: a first boss should take a party like this six rounds or more."
