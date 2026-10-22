@@ -19,6 +19,8 @@ class PackageArchive
                             max_bytes: 300.megabytes, entry_bytes: World::MUSIC_MAX_BYTES + 1.megabyte }
   }.freeze
   MAX_ENTRIES = 2000
+  # The names a package may hold pictures and sound under, one pattern a format, built once.
+  ASSET_NAMES = KINDS.transform_values { |kind| %r{\Aassets/[a-z0-9_-]+\.(?:#{kind[:files].join('|')})\z} }.freeze
   # What a slot takes, by what the bytes are (Marcel): an SVG named .png is
   # an SVG, and isn't a picture here.
   CONTENT_TYPES = {
@@ -40,7 +42,7 @@ class PackageArchive
   end
 
   def self.asset_name?(format, name)
-    name.match?(%r{\Aassets/[a-z0-9_-]+\.(#{KINDS.fetch(format)[:files].join('|')})\z})
+    name.match?(ASSET_NAMES.fetch(format))
   end
 
   def to_zip

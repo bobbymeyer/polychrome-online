@@ -1,4 +1,4 @@
-# Run using bin/ci
+# Run using bin/ci. GitHub runs the same steps as parallel jobs (.github/workflows/ci.yml): change the two together.
 
 CI.run do
   step "Setup", "bin/setup --skip-server"
