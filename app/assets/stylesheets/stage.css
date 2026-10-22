@@ -1972,3 +1972,13 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 /* Saying a world is live before it is changed; the draft a browser kept. */
 .live-warning { margin: 0 0 16px; padding: 8px 12px; border-left: 4px solid var(--signal); background: var(--control-fill); max-width: 1000px; }
 .draft-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; padding: 8px 12px; border-left: 4px solid var(--ink); background: var(--control-fill); max-width: 1000px; }
+
+/* A refused save: the fields Rails marks stand out without breaking the form's layout; the problems link to them. */
+.field_with_errors { display: contents; }
+.field_with_errors input, .field_with_errors select, .field_with_errors textarea { border-color: var(--signal); outline: 2px solid var(--signal); outline-offset: -1px; }
+.field_with_errors label { color: var(--signal); }
+.form-errors:focus { outline: none; }
+.form-errors a { color: inherit; text-decoration: underline; }
+.empty-book { max-width: 560px; }
+.help { margin: 0 0 12px; }
+.help > summary { cursor: pointer; font-size: 13px; font-weight: 700; }

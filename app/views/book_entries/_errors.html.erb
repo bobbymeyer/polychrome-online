@@ -1,9 +1,11 @@
+<%# The problems, each a link to the field or section it is about; the page comes to them when a save is refused. %>
 <% if entry.errors.any? %>
-  <div class="form-errors" role="alert">
+  <div class="form-errors" role="alert" tabindex="-1" data-controller="summary">
     <h2><%= pluralize(entry.errors.count, "problem") %> to fix</h2>
     <ul>
-      <% entry.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
+      <% entry.errors.each do |error| %>
+        <% anchor = error_anchor(entry, error.attribute) %>
+        <li><%= anchor ? link_to(error.full_message, "##{anchor}") : error.full_message %></li>
       <% end %>
     </ul>
   </div>
