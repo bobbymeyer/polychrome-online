@@ -6,7 +6,7 @@
 # engine reads the entry through #to_engine; enemies in a battle are
 # instances of it.
 class Monster < ApplicationRecord
-  include BookEntry
+  include BookEntry, Revisable
   include Colourable
 
   validates :level, numericality: { only_integer: true, greater_than: 0 }

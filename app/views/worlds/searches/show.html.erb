@@ -1,0 +1,21 @@
+<% content_for :title, @query.present? ? "“#{@query}” · #{@world.name}" : "Search · #{@world.name}" %>
+<nav class="crumbs"><%= link_to @world.name, world_path(@world) %> / Search</nav>
+<h1>Search the books</h1>
+<%= render "worlds/searches/form", world: @world, query: @query %>
+<% if @query.blank? %>
+  <p class="hint">By name or slug, across the Bestiary, Compendium, Grimoire, Armory, Encounter Tables, Gazetteer and Generator Tables. Press / on any of this world's pages to come here.</p>
+<% elsif @results.empty? %>
+  <p class="empty">Nothing in <%= @world.name %>'s books is called “<%= @query %>”.</p>
+<% else %>
+  <% @results.each do |book, entries, total| %>
+    <section class="window">
+      <h2><%= link_to book.title, polymorphic_path([ @world, book.key, book.model ]) %></h2>
+      <ul class="refs">
+        <% entries.each do |entry| %>
+          <li><%= link_to entry.name, polymorphic_path([ @world, book.key, entry ]) %> <span class="muted">· <%= entry.slug %></span></li>
+        <% end %>
+      </ul>
+      <% if total > entries.size %><p class="hint"><%= total - entries.size %> more: narrow the search.</p><% end %>
+    </section>
+  <% end %>
+<% end %>

@@ -1,0 +1,18 @@
+<%# The next few things to set up, in the order prep goes (Campaign::Preparation); gone once there is nothing left. %>
+<% preparation = Campaign::Preparation.new(campaign) %>
+<% upcoming = preparation.next_up %>
+<% if upcoming.any? %>
+  <section class="window prep-next" aria-label="Next to prepare">
+    <h2>Next to prepare</h2>
+    <ol class="prep-next__list">
+      <% upcoming.each do |step| %>
+        <% path = { start: campaign_maps_path(campaign), cast: new_campaign_npc_path(campaign) }.fetch(step.key, "##{step.key}") %>
+        <li>
+          <%= link_to step.title, path %><%= tag.span(" (optional)", class: "muted") if step.optional %>
+          <span class="muted"><%= step.why %></span>
+        </li>
+      <% end %>
+    </ol>
+    <p class="hint"><%= preparation.done_count %> of <%= preparation.steps.size %> set up.</p>
+  </section>
+<% end %>

@@ -1,0 +1,33 @@
+<% content_for :title, @entry ? "History of #{@entry.name} · #{@world.name}" : "Recent edits · #{@world.name}" %>
+<nav class="crumbs">
+  <%= link_to @world.name, world_path(@world) %> /
+  <% if @entry %><%= link_to @entry.name, polymorphic_path([ @world, World::Books.for(@entry).key, @entry ]) %> / History<% else %>Recent edits<% end %>
+</nav>
+<h1><%= @entry ? "History of #{@entry.name}" : "Recent edits to the books" %></h1>
+<p class="hint">
+  Every edit to a monster, ability, item, encounter table, template or generator table keeps what it was before. Putting an entry back
+  is an edit too, so it can be taken back. The last <%= Revisable::KEPT %> edits of each entry are kept; pictures and archetypes' learn tables are not.
+</p>
+<% if @revisions.empty? %>
+  <p class="empty">Nothing has been changed yet.</p>
+<% else %>
+  <table class="book-table book-table--plain">
+    <thead><tr><th>When</th><th>Who</th><% unless @entry %><th>Entry</th><% end %><th>What changed</th><th></th></tr></thead>
+    <tbody>
+      <% @revisions.each do |revision| %>
+        <tr>
+          <td><%= time_ago_in_words(revision.created_at) %> ago</td>
+          <td><%= revision.user&.name || "the seeds, or the console" %></td>
+          <% unless @entry %>
+            <td><% if (entry = revision.record) %><%= link_to entry.name, polymorphic_path([ @world, World::Books.for(entry).key, entry ]) %><% end %></td>
+          <% end %>
+          <td><%= revision.changes_in_words.to_sentence %></td>
+          <td>
+            <%= button_to "Put it back", world_revision_restore_path(@world, revision), class: "button button--quiet",
+                          form: { data: { turbo_confirm: "Put #{revision.record&.name} back as it was before this edit?" } } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

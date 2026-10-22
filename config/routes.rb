@@ -26,6 +26,8 @@ Rails.application.routes.draw do
       resources :monsters, param: :slug do
         resource :trial, only: :show # tried against a level-5 party (Monster::Trial)
       end
+      resource :behavior_preview, only: :create # the entry form's rules and phases in words, as they are typed
+      resource :strength_preview, only: :create # the form's entry tried against a level-5 party, and set among its neighbours
     end
     namespace :compendium do
       resources :jobs, param: :slug
@@ -60,6 +62,11 @@ Rails.application.routes.draw do
       resource :types, only: %i[show edit update]
       resource :skills, only: %i[show edit update]
       resource :origins, only: %i[show edit update]
+      resource :search, only: :show # the books, by name
+      # The books' edit log, and putting an entry back as it was before an edit.
+      resources :revisions, only: :index do
+        resource :restore, only: :create, module: :revisions
+      end
 
       # The setting's canon: its atlas, its cast, its lore.
       resources :world_places, path: "atlas", except: :show, controller: "places"

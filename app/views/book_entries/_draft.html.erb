@@ -1,0 +1,5 @@
+<%# What is typed into an entry's form is kept in this browser (draft_controller), offered back if the page is left unsaved. %>
+<div data-controller="draft" data-draft-key-value="<%= key %>"
+     data-action="input->draft#save change->draft#save rows:added->draft#save turbo:submit-end->draft#submitted">
+  <%= yield %>
+</div>

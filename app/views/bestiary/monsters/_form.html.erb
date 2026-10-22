@@ -1,5 +1,26 @@
-<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form" do |f| %>
+<%# A new entry can start from another (?from=slug, MonstersController#new). %>
+<% if entry.new_record? && @world.monsters.exists? %>
+  <%= form_with url: new_world_bestiary_monster_path(@world), method: :get, class: "start-from" do %>
+    <label for="from">Start from</label>
+    <%= select_tag :from, options_for_select(monster_options(@world.monsters), params[:from]), include_blank: "A blank entry" %>
+    <%= submit_tag "Use it", name: nil, class: "button button--quiet" %>
+  <% end %>
+<% end %>
+<%= form_with model: entry, url: entry.persisted? ? entry_path(entry) : entries_path, class: "book-form",
+              data: { controller: "preview", preview_reading_url_value: world_bestiary_behavior_preview_path(@world),
+                      preview_strength_url_value: world_bestiary_strength_preview_path(@world, editing: (entry.slug if entry.persisted?)),
+                      action: "input->preview#changed change->preview#changed rows:added->preview#changed" } do |f| %>
+  <nav class="form-index" aria-label="Sections of this entry">
+    <a href="#identity">Identity</a>
+    <a href="#stat-block">Stat block</a>
+    <a href="#resistances"><%= types_matter? ? "Type chart" : "Blows" %></a>
+    <a href="#behavior">Behavior</a>
+    <a href="#phases">Phases</a>
+    <a href="#drops">Drops</a>
+    <a href="#art">Art</a>
+  </nav>
   <%= render "book_entries/errors", entry: entry %>
+  <div id="identity" class="form-section">
   <%= render "book_entries/identity_fields", f: f %>
   <div class="field-row">
     <div class="field"><%= f.label :level %><%= f.number_field :level, min: 1 %></div>
@@ -34,8 +55,9 @@
     <%= f.select :music, options_for_select(@world.named_music_choices(keep: entry.music), entry.music), include_blank: "The boss music (or the battle's, if it isn't one)" %>
     <p class="hint">A track from the world's Music book, called by name there. A second form with its own changes the music as it comes.</p>
   </div>
+  </div>
 
-  <fieldset class="panel">
+  <fieldset class="panel" id="stat-block">
     <legend>Stat block</legend>
     <div class="stat-inputs">
       <% Stats::NAMES.each do |stat| %>
@@ -45,9 +67,20 @@
         </div>
       <% end %>
     </div>
+    <%# How it fares: the saved version's trial fetched once the form is in view, then the form as it stands (StrengthPreviewsController). %>
+    <h3>How it fares</h3>
+    <div class="reading" id="monster_strength" aria-live="polite">
+      <% if entry.persisted? %>
+        <%= turbo_frame_tag "trial_forecast", src: world_bestiary_monster_trial_path(@world, entry), loading: :lazy do %>
+          <p class="hint">Trying the saved version against a level-5 party…</p>
+        <% end %>
+      <% else %>
+        <p class="hint">Change a stat and it is tried against a level-5 party, and set beside the entries nearest its level.</p>
+      <% end %>
+    </div>
   </fieldset>
 
-  <fieldset class="panel">
+  <fieldset class="panel" id="resistances">
     <% if types_matter? %>
       <legend>Exceptions to the type chart</legend>
       <p class="hint">Its type already decides what's super effective against it. Set one here only where this monster breaks the chart: a boss immune to fire, a slime that drinks water.</p>
@@ -77,7 +110,9 @@
     </div>
   </fieldset>
 
-  <fieldset class="panel">
+  <%# Columns most rules never use stay out of the way until asked for, or until a rule needs one. %>
+  <% more = entry.ai_script.any? { |rule| rule["by"] || (rule.fetch("if", {}).keys & %w[ally_hp_below ally_ko round_multiple]).any? } %>
+  <fieldset class="panel" id="behavior" data-controller="columns" data-action="change->columns#reveal">
     <legend>AI script</legend>
     <p class="hint">First matching rule wins; all filled conditions must hold. With no rule matching, it attacks. Leave "Use" blank to remove a row.
       "Once" fires a rule one time a battle (a self-buff that isn't recast, a move it has one of). "Says" is a line said as the rule fires:
@@ -85,13 +120,17 @@
       turn: when hit (by blows of one type, if "By" says), when one of its side falls, or with its last breath as it falls. A reaction comes
       at once, free of its charge, and never sets off another. A summon that stays "0" turns stays while its summoner stands, and goes
       down with it: the adds are the boss's.</p>
+    <p class="hint">
+      <button type="button" class="button button--quiet" data-columns-target="button" data-action="columns#toggle" aria-pressed="<%= more %>"><%= more ? "Fewer conditions" : "More conditions" %></button>
+      By type of blow, ally HP, an ally down, every Nth round.
+    </p>
     <%# Battle abilities: a field ability is a move outside battle (FieldUse), never in one. %>
     <% abilities = [["Attack", "attack"]] + @world.abilities.in_battle.order(:name).map { |a| [a.name, a.slug] } %>
     <%# Eleven columns: the grid scrolls sideways rather than crush its selects to three letters. %>
     <div class="grid-scroll">
-    <table class="grid-form grid-form--wide" data-controller="rows">
+    <table class="grid-form grid-form--wide <%= "grid-form--simple" unless more %>" data-controller="rows" data-columns-target="table">
       <thead>
-        <tr><th>When</th><th>By</th><th>Own HP &lt; %</th><th>Ally HP &lt; %</th><th>Ally down</th><th>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th><th>Once</th><th>Says</th></tr>
+        <tr><th>When</th><th data-advanced>By</th><th>Own HP &lt; %</th><th data-advanced>Ally HP &lt; %</th><th data-advanced>Ally down</th><th data-advanced>Every Nth round</th><th>Chance %</th><th>Use</th><th>Target</th><th>Once</th><th>Says</th></tr>
       </thead>
       <tbody data-rows-target="body">
         <% rows_with_blanks(entry.ai_script).each_with_index do |rule, i| %>
@@ -99,14 +138,14 @@
           <% name = ->(key) { json_field_name(f, :ai_script, i, key) } %>
           <tr>
             <td><%= select_tag name.(:when), options_for_select([ [ "On its turn", "" ], [ "When hit", "hit" ], [ "Before a blow up close lands", "struck" ], [ "When an ally falls", "ally_falls" ], [ "As it falls", "falls" ] ], rule["when"]), "aria-label": "When, rule #{i + 1}" %></td>
-            <td><%= select_tag name.(:by), options_for_select(type_options, rule["by"]), include_blank: "Any blow", "aria-label": "By, rule #{i + 1}" %></td>
+            <td data-advanced><%= select_tag name.(:by), options_for_select(type_options, rule["by"]), include_blank: "Any blow", "aria-label": "By, rule #{i + 1}" %></td>
             <td><%= number_field_tag name.(:self_hp_below), c["self_hp_below"], min: 1, max: 100, "aria-label": "Own HP below, rule #{i + 1}" %></td>
-            <td><%= number_field_tag name.(:ally_hp_below), c["ally_hp_below"], min: 1, max: 100, "aria-label": "Ally HP below, rule #{i + 1}" %></td>
-            <td>
+            <td data-advanced><%= number_field_tag name.(:ally_hp_below), c["ally_hp_below"], min: 1, max: 100, "aria-label": "Ally HP below, rule #{i + 1}" %></td>
+            <td data-advanced>
               <%= hidden_field_tag name.(:ally_ko), "0", id: nil %>
               <%= check_box_tag name.(:ally_ko), "1", c["ally_ko"], id: nil, "aria-label": "Ally down, rule #{i + 1}" %>
             </td>
-            <td><%= number_field_tag name.(:round_multiple), c["round_multiple"], min: 1, "aria-label": "Every Nth round, rule #{i + 1}" %></td>
+            <td data-advanced><%= number_field_tag name.(:round_multiple), c["round_multiple"], min: 1, "aria-label": "Every Nth round, rule #{i + 1}" %></td>
             <td><%= number_field_tag name.(:chance), c["chance"], min: 1, max: 100, "aria-label": "Chance, rule #{i + 1}" %></td>
             <td><%= select_tag name.(:use), options_for_select(abilities, rule["use"]), include_blank: true, "aria-label": "Use, rule #{i + 1}" %></td>
             <td><%= select_tag name.(:target), options_for_select(Battle::AI::STRATEGIES.map { |s| [term(s), s] }, rule["target"]), include_blank: "Default", "aria-label": "Target, rule #{i + 1}" %></td>
@@ -121,9 +160,13 @@
       <tfoot><tr><td colspan="11"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
     </table>
     </div>
+    <%# The rules as the page will read them, redrawn as they are typed (BehaviorPreviewsController). %>
+    <%= render "book_entries/missing", links: [ [ "New ability", new_world_grimoire_ability_path(@world) ] ] %>
+    <h3>As it reads</h3>
+    <div class="reading" id="monster_script_reading"><%= render "bestiary/monsters/script", entry: entry, links: false %></div>
   </fieldset>
 
-  <fieldset class="panel">
+  <fieldset class="panel" id="phases">
     <legend>Phases</legend>
     <p class="hint">Below that share of its HP it becomes the entry named: that entry's name, look, stats and script, with the HP it has left
       (plus what the phase restores). In order, each line below the last. The entry it becomes is written as any other: a second form is
@@ -143,9 +186,11 @@
       </tbody>
       <tfoot><tr><td colspan="4"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
     </table>
+    <%= render "book_entries/missing", links: [ [ "New monster", new_world_bestiary_monster_path(@world) ] ] %>
+    <div class="reading" id="monster_phases_reading"><%= render "bestiary/monsters/phases", entry: entry, links: false %></div>
   </fieldset>
 
-  <fieldset class="panel">
+  <fieldset class="panel" id="drops">
     <legend>Drop table</legend>
     <% items = @world.items.order(:name).map { |item| [item.name, item.slug] } %>
     <table class="grid-form" data-controller="rows">
@@ -160,9 +205,10 @@
       </tbody>
       <tfoot><tr><td colspan="2"><button type="button" class="button button--quiet" data-action="rows#add">Add a row</button></td></tr></tfoot>
     </table>
+  <%= render "book_entries/missing", links: [ [ "New item", new_world_armory_item_path(@world) ] ] %>
   </fieldset>
 
-  <%= render "book_entries/art_fields", f: f %>
+  <div id="art" class="form-section"><%= render "book_entries/art_fields", f: f %></div>
   <div class="actions">
     <%= f.submit class: "button" %>
     <%= link_to "Cancel", entry.persisted? ? entry_path(entry) : entries_path, class: "button button--quiet" %>

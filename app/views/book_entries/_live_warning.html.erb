@@ -1,0 +1,11 @@
+<%# A world is live: its campaigns read the books as they are saved (HANDOFF §9.8). Said before the entry is changed. %>
+<% campaigns = world.campaigns.order(:name).to_a %>
+<% if campaigns.any? %>
+  <% fighting = BattleRecord.where(world_id: world.id, status: "input").pluck(:campaign_id).compact.uniq %>
+  <aside class="live-warning" aria-label="Campaigns in this world">
+    <strong><%= pluralize(campaigns.size, "campaign") %> play in <%= world.name %>:</strong>
+    <%= safe_sentence(campaigns.map { |campaign| safe_join([ campaign.name, (tag.span(" (a battle is under way)", class: "muted") if fighting.include?(campaign.id)) ]) }) %>.
+    A change reaches them as soon as it is saved; a battle already under way keeps what it copied.
+    Each edit is kept in <%= link_to "the edit log", world_revisions_path(world) %> and can be put back.
+  </aside>
+<% end %>

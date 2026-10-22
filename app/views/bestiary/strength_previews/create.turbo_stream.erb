@@ -1,0 +1,3 @@
+<%= turbo_stream.update "monster_strength" do %>
+  <%= render "bestiary/monsters/strength", monster: @monster, trial: @trial, neighbours: @neighbours %>
+<% end %>

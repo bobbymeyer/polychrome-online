@@ -223,6 +223,25 @@ module BooksHelper
     end
   end
 
+  # The rules of a script that can't come up on the creature's turn: once a rule with no moment, no condition and no "once"
+  # is reached, it takes every turn. (Only while it can use the move: a spell it has no MP for falls through.)
+  def unreachable_rules(script)
+    last = script.index { |rule| rule["when"].blank? && rule["if"].blank? && !rule["once"] }
+    return Set.new unless last
+
+    script.each_index.select { |index| index > last && script[index]["when"].blank? }.to_set
+  end
+
+  # How long a fight against a level-5 party lasts, against what the Bestiary asks of it (Bestiary::TrialsController's hint):
+  # a first boss takes six rounds or more, a towpath creature two or three.
+  def pacing_verdict(monster, rounds)
+    if monster.boss?
+      rounds >= 6 ? "Within the usual range for a boss (six rounds or more)." : "Short for a boss: a first boss should take a party like this six rounds or more."
+    else
+      rounds <= 3 ? "Within the usual range for an ordinary creature (two or three rounds)." : "Long for an ordinary creature: two or three rounds is usual."
+    end
+  end
+
   # Field name for a JSON column key inside a form: monster[stats][str]
   def json_field_name(form, *keys)
     form.object_name + keys.map { |k| "[#{k}]" }.join

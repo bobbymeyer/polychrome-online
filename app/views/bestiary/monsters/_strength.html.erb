@@ -1,0 +1,26 @@
+<%# The form's entry against a level-5 party on default commands (Monster::Trial), and among the entries nearest its level. %>
+<% if trial.nil? %>
+  <p class="hint">Not tried yet: <%= monster.errors.full_messages.to_sentence %>.</p>
+<% else %>
+  <% forecast = trial.forecast %>
+  <p>
+    <strong>As it stands, <%= trial.count %> × <%= monster.name %></strong> against a level-5 party of <%= trial.party.map { |u| u[:name] }.to_sentence %>
+    on default commands: the party won <%= forecast["wins"] %> of <%= forecast["runs"] %>, in <%= forecast["rounds"] %> rounds on average,
+    with <%= forecast["downed"] %> of them down at the end and <%= forecast["hp_left"] %>% of their <%= word("hp") %> left.
+    <span class="hint"><%= pacing_verdict(monster, forecast["rounds"]) %></span>
+  </p>
+  <table class="book-table book-table--plain strength-table">
+    <thead>
+      <tr><th>Nearest in level</th><th class="num">Lv</th><% Stats::NAMES.each do |stat| %><th class="num"><%= stat_label(stat) %></th><% end %></tr>
+    </thead>
+    <tbody>
+      <% neighbours.each do |other| %>
+        <tr class="<%= "is-current" if other.equal?(monster) %>">
+          <td><%= other.equal?(monster) ? monster.name : other.name %></td>
+          <td class="num"><%= other.level %></td>
+          <% Stats::NAMES.each do |stat| %><td class="num"><%= number_with_delimiter(other.stats[stat]) %></td><% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

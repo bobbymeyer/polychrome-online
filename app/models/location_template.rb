@@ -3,7 +3,7 @@
 # Gazetteer book entry (§2, §4): a town or dungeon archetype with the
 # settings its generator uses. Campaign locations are rolled from these.
 class LocationTemplate < ApplicationRecord
-  include BookEntry
+  include BookEntry, Revisable
 
   KINDS = %w[town dungeon].freeze
   RANGES = { "town" => %w[npcs stock buildings], "dungeon" => %w[rooms] }.freeze

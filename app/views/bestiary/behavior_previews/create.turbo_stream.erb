@@ -1,0 +1,6 @@
+<%= turbo_stream.update "monster_script_reading" do %>
+  <%= render "bestiary/monsters/script", entry: @monster, links: false %>
+<% end %>
+<%= turbo_stream.update "monster_phases_reading" do %>
+  <%= render "bestiary/monsters/phases", entry: @monster, links: false %>
+<% end %>

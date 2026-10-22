@@ -1,0 +1,4 @@
+<%= form_with url: world_search_path(world), method: :get, class: "search-form", role: "search" do %>
+  <%= search_field_tag :q, query, "aria-label": "Search the books", placeholder: "Search #{world.name}'s books", data: { search_target: "input" } %>
+  <%= submit_tag "Search", name: nil, class: "button button--quiet" %>
+<% end %>

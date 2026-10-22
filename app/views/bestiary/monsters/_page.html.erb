@@ -3,6 +3,7 @@
   <div>
     <p class="eyebrow">Bestiary · Level <%= entry.level %><%= " · Boss" if entry.boss? %><%= " · Undead" if entry.undead? %><%= " · Giant" if entry.giant? %></p>
     <h1><%= entry.name %></h1>
+    <% if can_edit_world? %><p class="hint"><%= link_to "Duplicate", new_world_bestiary_monster_path(@world, from: entry.slug) %> to start a new entry from this one.</p><% end %>
     <dl class="facts">
       <dt>EXP</dt><dd><%= entry.exp %></dd>
       <dt><%= word("currency").upcase_first %></dt><dd><%= entry.gil %></dd>
@@ -46,40 +47,10 @@
 <section class="window">
   <h2>Behavior</h2>
   <p class="hint"><%= link_to "Try it against a level-5 party", world_bestiary_monster_trial_path(@world, entry) %>: how a fight with <%= entry.boss? ? "it" : "two of them" %> goes on default commands.</p>
-  <% abilities = entry.abilities.index_by(&:slug) %>
-  <ol class="ai-script">
-    <% entry.ai_script.each do |rule| %>
-      <li>
-        <% conditions = rule.fetch("if", {}) %>
-        <% moment = describe_moment(rule["when"], rule["by"]) %>
-        <% if moment %><%= moment %><%= ", if " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") if conditions.any? %>:
-        <% elsif conditions.empty? && rule["once"] %>The first chance it gets:
-        <% else %><%= conditions.empty? ? "Otherwise" : "If " + conditions.map { |name, value| describe_condition(name, value) }.join(" and ") %>:<% end %>
-        <% ability = abilities[rule["use"]] %>
-        <%= ability ? link_to(ability.name, world_grimoire_ability_path(@world, ability)) : "Attack" %>
-        <% if rule["target"] %><span class="muted">→ <%= term(rule["target"]) %></span><% end %>
-        <% if rule["once"] %><span class="muted">(once)</span><% end %>
-        <% if rule["say"].present? %><em class="ai-script__say">“<%= rule["say"] %>”</em><% end %>
-      </li>
-    <% end %>
-  </ol>
-  <% unless entry.ai_script.last&.then { |rule| rule["if"].blank? } %>
-    <p class="hint">When no rule matches: Attack.</p>
-  <% end %>
+  <%= render "bestiary/monsters/script", entry: entry %>
   <% if entry.phases.any? %>
-    <%# Its phases: what it becomes, below what share of its HP, saying what (Monster#phases). %>
     <h3>Phases</h3>
-    <% forms = entry.forms.index_by(&:slug) %>
-    <ol class="ai-script">
-      <% entry.phases.each do |phase| %>
-        <li>
-          Below <%= phase["hp_below"] %>% <%= word("hp") %>: becomes
-          <% if (form = forms[phase["becomes"]]) %><%= link_to form.name, world_bestiary_monster_path(@world, form) %><% else %><%= phase["becomes"] %><% end %>
-          <% if phase["restore"].to_i.positive? %><span class="muted">(<%= phase["restore"] %>% <%= word("hp") %> back)</span><% end %>
-          <% if phase["say"].present? %><em class="ai-script__say">“<%= phase["say"] %>”</em><% end %>
-        </li>
-      <% end %>
-    </ol>
+    <%= render "bestiary/monsters/phases", entry: entry %>
   <% end %>
   <% if (of = entry.form_of).any? %>
     <p class="hint">A form of <%= safe_sentence(of.map { |m| link_to(m.name, world_bestiary_monster_path(@world, m)) }) %>.</p>

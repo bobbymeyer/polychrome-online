@@ -1937,3 +1937,38 @@ body[data-view="stage"]:hover .stage-leave { opacity: .5; }
 .table-time__scene .table-time__view { margin-left: 2px; white-space: nowrap; }
 .table-time__view--play { background: var(--signal); }
 .table-time__beat { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--grey); }
+
+/* The monster form: an index that stays under the masthead, rules read back in words, the columns most rules skip. */
+.form-index { position: sticky; top: var(--topbar); z-index: 4; display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 16px; padding: 8px 0; background: var(--paper); border-bottom: 1px solid var(--rule); font-size: 13px; font-weight: 700; }
+.form-section, fieldset.panel[id] { scroll-margin-top: calc(var(--topbar) + 48px); }
+.start-from { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; max-width: 1000px; }
+.start-from label { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.start-from select { flex: 1 1 auto; }
+.grid-form--simple [data-advanced] { display: none; }
+.grid-form--wide.grid-form--simple { min-width: 860px; }
+.reading h3, fieldset > h3 { margin: 8px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+.reading { margin: 0 0 8px; }
+.ai-script li.is-unreachable { opacity: .55; }
+.ai-script__warn { margin-left: 8px; font-size: 12px; font-weight: 700; color: var(--signal); }
+
+/* The world page's actions by what they are for; the books' search, on the page and in the masthead. */
+.world-nav { display: flex; flex-wrap: wrap; gap: 12px 32px; margin: 0 0 24px; }
+.world-nav > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.world-nav .eyebrow { flex-basis: 100%; margin: 0; }
+.search-form { display: flex; gap: 8px; max-width: 520px; margin: 0 0 16px; }
+.topbar__search { margin: 0; }
+.topbar__search input { width: 148px; padding: 2px 8px; font-size: 13px; line-height: 20px; background: transparent; color: var(--paper); border-color: var(--paper); }
+.topbar__search input::placeholder { color: var(--paper); opacity: .7; }
+.topbar__search input:focus { background: var(--paper); color: var(--ink); }
+.loose-ends .refs li { margin-bottom: 4px; }
+
+/* Prep: the next things to set up, and the reference tabs split between what is stocked and what is running. */
+.prep-next { margin: 0 0 24px; }
+.prep-next__list { margin: 0 0 8px; padding-left: 24px; display: grid; gap: 6px; }
+.prep-next__list a { font-weight: 700; }
+.drawers__sep { align-self: center; margin-left: 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--grey); }
+.missing button { margin-left: 4px; }
+
+/* Saying a world is live before it is changed; the draft a browser kept. */
+.live-warning { margin: 0 0 16px; padding: 8px 12px; border-left: 4px solid var(--signal); background: var(--control-fill); max-width: 1000px; }
+.draft-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; padding: 8px 12px; border-left: 4px solid var(--ink); background: var(--control-fill); max-width: 1000px; }
