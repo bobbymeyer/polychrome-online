@@ -7,7 +7,15 @@
   <%= link_to "Type chart", world_types_path(@world), class: "button button--quiet" if %i[bestiary grimoire].include?(book_key) && types_matter? %>
 </div>
 <% if @entries.empty? %>
-  <p class="empty">The <%= book_title %> is empty.</p>
+  <% book = World::Books::LIST.find { |candidate| candidate.key == book_key } %>
+  <section class="window empty-book">
+    <p class="empty">The <%= book_title %> is empty.</p>
+    <p><%= book.blurb %></p>
+    <% if can_edit_world? %>
+      <%= link_to "Add the first #{entry_class.model_name.human.downcase}", polymorphic_path([:new, @world, book_key, entry_class.model_name.singular.to_sym]), class: "button" %>
+      <p class="hint">Or <%= link_to "copy another world", new_world_path, class: "muted" %> to start from its books.</p>
+    <% end %>
+  </section>
 <% else %>
   <%= render "table", entries: @entries %>
 <% end %>

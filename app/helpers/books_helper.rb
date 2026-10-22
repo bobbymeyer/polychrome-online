@@ -242,6 +242,19 @@ module BooksHelper
     end
   end
 
+  # Where on the form an error belongs: a monster's JSON settings are sections of their own; any other attribute is a
+  # field of that name. Nil for what belongs to no field ("base").
+  ERROR_SECTIONS = {
+    "Monster" => { stats: "stat-block", affinities: "resistances", status_immune: "resistances", ai_script: "behavior",
+                   phases: "phases", drops: "drops", image: "art", variant: "art" }
+  }.freeze
+
+  def error_anchor(entry, attribute)
+    return if attribute == :base
+
+    ERROR_SECTIONS.dig(entry.class.name, attribute) || "#{entry.model_name.param_key}_#{attribute}"
+  end
+
   # Field name for a JSON column key inside a form: monster[stats][str]
   def json_field_name(form, *keys)
     form.object_name + keys.map { |k| "[#{k}]" }.join
